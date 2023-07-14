@@ -106,6 +106,8 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import QS from 'qs'
+  import RouterQuery from '@/router/query'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE,
@@ -143,10 +145,27 @@
       }
     },
     async created() {
+      const params = this.$route.query
+      const { searchName,  sort } = QS.parse(params?.query)
+      if (sort) {
+        this.table.sort = sort
+      }
       await this.getSetTemplates()
+      if (searchName) {
+        this.searchName = searchName
+        this.handleFilterTemplate()
+      }
     },
     methods: {
+      setRoute() {
+        const page = {
+          sort: this.table.sort,
+          searchName: this.searchName
+        }
+        RouterQuery.set({ query: QS.stringify(page) })
+      },
       async getSetTemplates() {
+        this.setRoute()
         const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
           bizId: this.bizId,
           params: {
@@ -219,10 +238,12 @@
           ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
           : originList
         this.table.stuff.type = this.searchName ? 'search' : 'default'
+        this.setRoute()
       },
       handleClearFilter() {
         this.list = this.originList
         this.table.stuff.type = 'default'
+        this.setRoute()
       },
       handleSelectable(row) {
         return !row.set_instance_count

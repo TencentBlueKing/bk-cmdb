@@ -35,7 +35,7 @@
           :allow-clear="true"
           :searchable="true"
           v-model="filter.mainClassification"
-          @selected="handleSelect"
+          @selected="(id) => handleSelect(id)"
           @clear="() => handleSelect()">
           <bk-option v-for="category in mainList"
             :key="category.id"
@@ -163,6 +163,7 @@
 
 <script>
   import { mapActions, mapGetters } from 'vuex'
+  import QS from 'qs'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
@@ -170,6 +171,7 @@
     MENU_BUSINESS_SERVICE_TEMPLATE_EDIT
   } from '@/dictionary/menu-symbol'
   import CmdbLoading from '@/components/loading/loading'
+  import RouterQuery from '@/router/query'
   export default {
     components: {
       CmdbLoading
@@ -239,6 +241,20 @@
     async created() {
       try {
         await this.getServiceClassification()
+        const routeParams = this.$route.query
+        const query = QS.parse(routeParams?.query)
+        const filter = QS.parse(routeParams?.filter)
+        if (query && filter) {
+          const { page = {}  } = query
+          const { limit = 20, sort = '-id', start = 0 } = page
+          this.table.pagination.current = parseInt(start, 10) + 1
+          this.table.pagination.limit = parseInt(limit, 10)
+          this.table.sort = sort
+          this.filter = filter
+          const { mainClassification = '', secondaryClassification = '' } = filter
+          this.handleSelect(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
+          return
+        }
         await this.getTableData()
       } catch (e) {
         console.log(e)
@@ -251,6 +267,10 @@
         'getServiceTemplateSyncStatus'
       ]),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
+      setRoute() {
+        RouterQuery.set({ query: QS.stringify(this.params, { encode: false }),
+                          filter: QS.stringify(this.filter, { encode: false }) })
+      },
       async getTableData() {
         try {
           const templateData = await this.getTemplateData()
@@ -258,6 +278,7 @@
             this.table.pagination.current -= 1
             this.getTableData()
           }
+          this.setRoute()
           this.table.pagination.count = templateData.count
           this.table.list = templateData.info.map((template) => {
             const second = this.allSecondaryList.find(clazz => clazz.id === template.service_category_id)
@@ -356,10 +377,10 @@
           })
         }
       },
-      handleSelect(id = '') {
+      handleSelect(id = '', secondId = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         this.maincategoryId = id
-        this.handleSelectSecondary()
+        this.handleSelectSecondary(secondId)
       },
       handleSelectSecondary(id = '') {
         this.categoryId = id
