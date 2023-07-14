@@ -15,38 +15,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202305121010
+package y3_10_202307141648
 
 import (
 	"context"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.10.202305121010", upgrade)
-}
-
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202305121010")
-
-	if err = addFieldTemplateCollection(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add field template collection failed, err: %v", err)
-		return err
+func addTemplateIDColumnAndIndex(ctx context.Context, db dal.RDB) error {
+	collections := []string{common.BKTableNameObjAttDes, common.BKTableNameObjUnique}
+	index := types.Index{
+		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
+		Keys: bson.D{
+			{
+				common.BKTemplateID, 1,
+			},
+			{
+				common.BKOwnerIDField, 1,
+			},
+		},
+		Background: true,
 	}
 
-	if err = addFieldTemplateIndex(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add field template index failed, err: %v", err)
-		return err
+	for _, collection := range collections {
+		if err := db.Table(collection).AddColumn(ctx, common.BKTemplateID, 0); err != nil {
+			blog.Errorf("add %s column to table %s failed, err: %v", common.BKTemplateID, collection, err)
+			return err
+		}
+
+		if err := addIndexIfNotExist(ctx, db, collection, []types.Index{index}); err != nil {
+			blog.Errorf("add index failed, table: %s, index: %+v, err: %v", collection, index, err)
+			return err
+		}
 	}
 
-	if err = addTemplateIDColumnAndIndex(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add bk_template_id field and index failed, err: %v", err)
-		return err
-	}
-
-	blog.Infof("upgrade y3.10.202305121010 add field template collection success")
 	return nil
 }
