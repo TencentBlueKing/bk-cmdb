@@ -238,10 +238,10 @@ func (s *service) authorizeObjsBindFieldTemplate(kit *rest.Kit, templateID int64
 	for _, id := range objIDs {
 		resource = append(resource, meta.ResourceAttribute{
 			Basic: meta.Basic{
-				Type:   meta.Model,
-				Action: meta.Update,
+				Type:       meta.Model,
+				Action:     meta.Update,
+				InstanceID: id,
 			},
-			Layers: []meta.Item{{Type: meta.Model, InstanceID: id}},
 		})
 	}
 
