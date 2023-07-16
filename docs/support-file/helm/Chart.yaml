@@ -1,9 +1,9 @@
 apiVersion: v2
-appVersion: 3.10.29-feature-field-template-beta2
+appVersion: 3.10.29-feature-field-template-alpha6
 description: BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database.
 name: bk-cmdb
 type: application
-version: 3.11.30-feature-field-template-beta2
+version: 3.11.30-feature-field-template-alpha6
 dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
