@@ -271,9 +271,16 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 			}
 		}
 
+		// 兼容进程中enable为nil的场景，改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致同步失败
+		defaultEnable := false
+		if inputProcBindInfo.Std.Enable == nil {
+			inputProcBindInfo.Std.Enable = &defaultEnable
+		}
+
 		if !exists || IsAsDefaultValue(row.Std.Enable.AsDefaultValue) {
+			// 兼容进程模板中enable为nil的场景，将进程数据改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致同步失败
 			if row.Std.Enable.Value == nil && inputProcBindInfo.Std.Enable != nil {
-				inputProcBindInfo.Std.Enable = nil
+				inputProcBindInfo.Std.Enable = &defaultEnable
 				changed = true
 			} else if row.Std.Enable.Value != nil && inputProcBindInfo.Std.Enable == nil {
 				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
@@ -557,6 +564,12 @@ func (pbi ProcPropertyBindInfo) NewProcBindInfo(cErr cErr.DefaultCCErrorIf,
 		procBindInfo.Std.Protocol = &protocol
 
 		procBindInfo.Std.Enable = row.Std.Enable.Value
+
+		// 兼容进程模板中enable为nil的场景，将进程数据改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致主机转移失败
+		if row.Std.Enable.Value == nil {
+			defaultEnable := false
+			procBindInfo.Std.Enable = &defaultEnable
+		}
 
 		if row.extra != nil {
 			procBindInfo.extra = row.extra.NewProcBindInfo()
