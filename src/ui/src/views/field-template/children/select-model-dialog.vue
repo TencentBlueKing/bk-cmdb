@@ -236,7 +236,7 @@
           </i18n>
         </bk-checkbox>
         <div class="operation">
-          <bk-button theme="primary" :disabled="!selectedLocal.length"
+          <bk-button theme="primary"
             @click="handleConfirm">{{ $t('确定') }}</bk-button>
           <bk-button @click="handleCancel">{{ $t('取消') }}</bk-button>
         </div>
