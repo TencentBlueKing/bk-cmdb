@@ -65,7 +65,7 @@
           clearable
           font-size="medium"
           v-model.trim="filter.templateName"
-          @enter="getTableData(true)"
+          @enter="setRoute()"
           @clear="handlePageChange(1)">
         </bk-input>
       </div>
@@ -163,7 +163,6 @@
 
 <script>
   import { mapActions, mapGetters } from 'vuex'
-  import QS from 'qs'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
@@ -215,6 +214,9 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
+      query() {
+        return RouterQuery.getAll()
+      },
       params() {
         const maincategoryId = this.maincategoryId ? this.maincategoryId : 0
         const id = this.categoryId
@@ -238,24 +240,15 @@
         return Object.values(this.filter).some(value => !!value)
       }
     },
+    watch: {
+      query() {
+        this.getQueryList()
+      }
+    },
     async created() {
       try {
         await this.getServiceClassification()
-        const routeParams = this.$route.query
-        const query = QS.parse(routeParams?.query)
-        const filter = QS.parse(routeParams?.filter)
-        if (query && filter) {
-          const { page = {}  } = query
-          const { limit = 20, sort = '-id', start = 0 } = page
-          this.table.pagination.current = parseInt(start, 10) + 1
-          this.table.pagination.limit = parseInt(limit, 10)
-          this.table.sort = sort
-          this.filter = filter
-          const { mainClassification = '', secondaryClassification = '' } = filter
-          this.handleSelect(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
-          return
-        }
-        await this.getTableData()
+        this.getQueryList('init')
       } catch (e) {
         console.log(e)
       }
@@ -267,18 +260,39 @@
         'getServiceTemplateSyncStatus'
       ]),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
+      getQueryList(type = 'default') {
+        const routeParams = this.query
+        const { current = 1, limit = 20, sort = '-id', mainClassification = '', secondaryClassification = '', templateName = '' } = routeParams
+        this.table.pagination.current = parseInt(current, 10)
+        this.table.pagination.limit = parseInt(limit, 10)
+        this.table.sort = sort
+        this.filter = {
+          mainClassification,
+          secondaryClassification,
+          templateName
+        }
+        if (type === 'init') {
+          // 刚进来回显选择框数据
+          this.handleSelect(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
+        } else {
+          this.getTableData()
+        }
+      },
       setRoute() {
-        RouterQuery.set({ query: QS.stringify(this.params, { encode: false }),
-                          filter: QS.stringify(this.filter, { encode: false }) })
+        const { sort, pagination } = this.table
+        const { current, limit } = pagination
+        const { mainClassification, secondaryClassification, templateName } = this.filter
+        RouterQuery.set({ sort, current, limit,
+                          mainClassification, secondaryClassification, templateName,
+                          _t: Date.now() })
       },
       async getTableData() {
         try {
           const templateData = await this.getTemplateData()
           if (templateData.count && !templateData.info.length) {
             this.table.pagination.current -= 1
-            this.getTableData()
+            this.setRoute()
           }
-          this.setRoute()
           this.table.pagination.count = templateData.count
           this.table.list = templateData.info.map((template) => {
             const second = this.allSecondaryList.find(clazz => clazz.id === template.service_category_id)
@@ -385,7 +399,7 @@
       handleSelectSecondary(id = '') {
         this.categoryId = id
         this.filter.secondaryClassification = id
-        this.getTableData(true)
+        this.setRoute()
       },
       cloneTemplate(sourceTemplateId) {
         this.$routerActions.redirect({
@@ -443,7 +457,7 @@
       },
       handlePageChange(page) {
         this.table.pagination.current = page
-        this.getTableData()
+        this.setRoute()
       },
       handleRowClick(row, event, column) {
         if (column.property === 'operation') return
@@ -468,7 +482,7 @@
         this.categoryId = null
         this.secondaryList = []
         await this.getServiceClassification()
-        await this.getTableData()
+        this.setRoute()
       }
     }
   }

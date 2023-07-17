@@ -42,7 +42,7 @@
           clearable
           right-icon="icon-search"
           v-model.trim="searchName"
-          @enter="handleFilterTemplate"
+          @enter="setRoute"
           @clear="handleClearFilter">
         </bk-input>
       </div>
@@ -106,7 +106,6 @@
 
 <script>
   import { mapGetters } from 'vuex'
-  import QS from 'qs'
   import RouterQuery from '@/router/query'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -137,35 +136,39 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId'])
+      ...mapGetters('objectBiz', ['bizId']),
+      query() {
+        return RouterQuery.getAll()
+      },
     },
     watch: {
       originList() {
         this.getSyncStatus()
-      }
+      },
+      query() {
+        this.getQueryList()
+      },
     },
     async created() {
-      const params = this.$route.query
-      const { searchName,  sort } = QS.parse(params?.query)
-      if (sort) {
-        this.table.sort = sort
-      }
-      await this.getSetTemplates()
-      if (searchName) {
-        this.searchName = searchName
-        this.handleFilterTemplate()
-      }
+      await this.getQueryList('init')
     },
     methods: {
-      setRoute() {
-        const page = {
-          sort: this.table.sort,
-          searchName: this.searchName
+      async getQueryList(type = 'default') {
+        const params = this.query
+        const { searchName = '',  sort = '-last_time' } = params
+        this.table.sort = sort
+        this.searchName = searchName
+        if (type === 'init') {
+          await this.getSetTemplates()
+          this.setRoute()
+          return
         }
-        RouterQuery.set({ query: QS.stringify(page) })
+        this.handleFilterTemplate()
+      },
+      setRoute() {
+        RouterQuery.set({ sort: this.table.sort, searchName: this.searchName, _t: Date.now() })
       },
       async getSetTemplates() {
-        this.setRoute()
         const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
           bizId: this.bizId,
           params: {
@@ -238,11 +241,11 @@
           ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
           : originList
         this.table.stuff.type = this.searchName ? 'search' : 'default'
-        this.setRoute()
       },
       handleClearFilter() {
         this.list = this.originList
         this.table.stuff.type = 'default'
+        this.searchName = ''
         this.setRoute()
       },
       handleSelectable(row) {
@@ -274,6 +277,8 @@
           return
         }
         this.table.sort = this.$tools.getSort(sort, '-last_time')
+        this.searchName = ''
+        this.setRoute()
         this.getSetTemplates()
       },
       handleGoBusinessTopo() {
@@ -289,7 +294,7 @@
       handleFilterClear() {
         this.searchName = ''
         this.table.stuff.type = 'default'
-        this.getSetTemplates()
+        this.setRoute()
       }
     }
   }
