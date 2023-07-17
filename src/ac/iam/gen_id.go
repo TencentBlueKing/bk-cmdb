@@ -99,6 +99,8 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
 		return make([]types.Resource, 0), nil
+	case meta.FieldTemplate:
+		return genFieldTemplateResource(act, rscType, a)
 	default:
 		if IsCMDBSysInstance(a.Basic.Type) {
 			return genSysInstanceResource(act, rscType, a)
@@ -726,6 +728,24 @@ func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
+	}
+
+	// create action do not related to instance authorize
+	if att.Action == meta.Create || att.Action == meta.CreateMany {
+		return make([]types.Resource, 0), nil
+	}
+
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
+
+	return []types.Resource{r}, nil
+}
+
+func genFieldTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System: SystemIDCMDB,
+		Type:   types.ResourceType(FieldGroupingTemplate),
 	}
 
 	// create action do not related to instance authorize

@@ -33,7 +33,8 @@ type SecretsClient interface {
 }
 
 // NewSecretsClient new a secrets client
-func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prometheus.Registerer) (SecretsClient, error) {
+func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prometheus.Registerer) (SecretsClient,
+	error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}

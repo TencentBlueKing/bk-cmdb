@@ -16,6 +16,9 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	"configcenter/src/source_controller/coreservice/service/capability"
+	fieldtmpl "configcenter/src/source_controller/coreservice/service/field_template"
+	"configcenter/src/source_controller/coreservice/service/kube"
 	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
 
 	"github.com/emicklei/go-restful/v3"
@@ -65,8 +68,9 @@ func (s *coreService) initModel(web *restful.WebService) {
 		Path:    "/delete/table/model/cascade",
 		Handler: s.CascadeDeleteTableModel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model", Handler: s.SearchModel})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/read/model/with/attribute", Handler: s.SearchModelWithAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/model", Handler: s.ListModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/with/attribute",
+		Handler: s.SearchModelWithAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/read/model/statistics", Handler: s.GetModelStatistics})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/tables", Handler: s.CreateModelTables})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
@@ -242,6 +246,7 @@ func (s *coreService) initMainline(web *restful.WebService) {
 	// add handler for model topo and business topo
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/model",
 		Handler: s.SearchMainlineModelTopo})
+
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path: "/read/mainline/instance/{bk_biz_id}", Handler: s.SearchMainlineInstanceTopo})
 
@@ -277,31 +282,15 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host/lock/search", Handler: s.QueryLockHost})
 
 	// dynamic grouping handlers.
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/create/dynamicgroup",
-		Handler: s.CreateDynamicGroup,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPut,
-		Path:    "/update/dynamicgroup/{bk_biz_id}/{id}",
-		Handler: s.UpdateDynamicGroup,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodGet,
-		Path:    "/find/dynamicgroup/{bk_biz_id}/{id}",
-		Handler: s.GetDynamicGroup,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodDelete,
-		Path:    "/delete/dynamicgroup/{bk_biz_id}/{id}",
-		Handler: s.DeleteDynamicGroup,
-	})
-	utility.AddHandler(rest.Action{
-		Verb:    http.MethodPost,
-		Path:    "/findmany/dynamicgroup/search",
-		Handler: s.SearchDynamicGroup,
-	})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/dynamicgroup", Handler: s.CreateDynamicGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.UpdateDynamicGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.GetDynamicGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/dynamicgroup/{bk_biz_id}/{id}",
+		Handler: s.DeleteDynamicGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/dynamicgroup/search",
+		Handler: s.SearchDynamicGroup})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/usercustom/{bk_user}",
 		Handler: s.AddUserCustom})
@@ -497,7 +486,8 @@ func (s *coreService) initAuth(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/auth/resource", Handler: s.SearchAuthResource})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/auth/resource",
+		Handler: s.SearchAuthResource})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -556,6 +546,11 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 }
 
 func (s *coreService) initService(web *restful.WebService) {
+	c := &capability.Capability{
+		Utility: rest.NewRestUtility(rest.Config{ErrorIf: s.engine.CCErr, Language: s.engine.Language}),
+		Core:    s.core,
+	}
+
 	s.initModelClassification(web)
 	s.initModel(web)
 	s.initAssociationKind(web)
@@ -579,7 +574,10 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCloudSync(web)
 	s.initAuth(web)
 	s.initCommon(web)
-	s.initKube(web)
+	kube.InitKube(c)
 	s.initProject(web)
 	s.initModelQuote(web)
+	fieldtmpl.InitFieldTemplate(c)
+
+	c.Utility.AddToRestfulWebService(web)
 }

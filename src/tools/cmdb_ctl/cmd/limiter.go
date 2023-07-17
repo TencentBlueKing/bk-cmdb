@@ -82,7 +82,8 @@ type limiterConf struct {
 func (c *limiterConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&c.rule, "rule", "",
 		`the api limiter rule to set, a json like '{"rulename":"rule1","appcode":"gse","user":"","ip":"","method":"POST","url":"^/api/v3/module/search/[^\\s/]+/[0-9]+/[0-9]+/?$","limit":1000,"ttl":60,"denyall":false}'`)
-	cmd.PersistentFlags().StringVar(&c.rulenames, "rulenames", "", `the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'`)
+	cmd.PersistentFlags().StringVar(&c.rulenames, "rulenames", "",
+		`the api limiter rule names to get or del, multiple names is separated with ',',like 'name1,name2'`)
 }
 
 // NewLimiterCommand TODO

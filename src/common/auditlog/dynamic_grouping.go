@@ -32,7 +32,8 @@ func NewDynamicGroupAuditLog(clientSet coreservice.CoreServiceClientInterface) *
 }
 
 // GenerateAuditLog generates an audit log for dynamic grouping operations.
-func (l *DynamicGroupAuditLog) GenerateAuditLog(param *generateAuditCommonParameter, dynamicGroup *metadata.DynamicGroup) ([]metadata.AuditLog, error) {
+func (l *DynamicGroupAuditLog) GenerateAuditLog(param *generateAuditCommonParameter,
+	dynamicGroup *metadata.DynamicGroup) ([]metadata.AuditLog, error) {
 	if dynamicGroup == nil {
 		return make([]metadata.AuditLog, 0), nil
 	}
@@ -62,7 +63,7 @@ func (l *DynamicGroupAuditLog) GenerateAuditLog(param *generateAuditCommonParame
 	content[common.CreateTimeField] = dynamicGroup.CreateTime
 	content[common.LastTimeField] = dynamicGroup.UpdateTime
 
-	logs := []metadata.AuditLog{metadata.AuditLog{
+	logs := []metadata.AuditLog{{
 		AuditType:       metadata.DynamicGroupType,
 		ResourceType:    metadata.DynamicGroupRes,
 		Action:          param.action,

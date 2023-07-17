@@ -71,7 +71,8 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 }
 
 // NewLogics get logics handle
-func NewLogics(b *backbone.Engine, header http.Header, cache redis.Client, synchronizeSrv synchronize.SynchronizeClientInterface) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache redis.Client,
+	synchronizeSrv synchronize.SynchronizeClientInterface) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:         b,

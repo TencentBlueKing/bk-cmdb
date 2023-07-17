@@ -93,7 +93,8 @@ func (o *operation) DeleteHosts(supplierAccount string, hostIDS []int64) error {
 		hostIDArr = append(hostIDArr, strconv.Itoa(hostID))
 	}
 
-	return client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Host().DeleteHostBatch(strings.Join(hostIDArr, ","))
+	return client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Host().DeleteHostBatch(strings.Join(hostIDArr,
+		","))
 }
 
 // FindCommonInstLikeName TODO

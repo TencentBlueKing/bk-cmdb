@@ -94,3 +94,8 @@ export const BUILTIN_MODEL_RESOURCE_TYPES = Object.freeze({
  * @constant {String} 未分类模型分组 ID
  */
 export const UNCATEGORIZED_GROUP_ID = 'bk_uncategorized'
+
+export const UNIUQE_TYPES = Object.freeze({
+  UNION: 'union',
+  SINGLE: 'single',
+})

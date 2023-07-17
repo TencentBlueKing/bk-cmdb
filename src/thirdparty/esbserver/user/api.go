@@ -39,7 +39,8 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 }
 
 // ListUsers get user list from user manager
-func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
+func (p *user) ListUsers(ctx context.Context, h http.Header,
+	params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
 	// response demo
 	/*
 		{
@@ -154,7 +155,8 @@ func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[s
 }
 
 // GetDepartmentProfile get department profile from user manager
-func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error) {
+func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse,
+	err error) {
 	resp = &metadata.EsbDepartmentProfileResponse{}
 	subPath := "/v2/usermanage/list_department_profiles/"
 	h := q.Header

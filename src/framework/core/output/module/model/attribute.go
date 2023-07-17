@@ -116,7 +116,8 @@ func (cli *attribute) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().UpdateObjectAttribute(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().UpdateObjectAttribute(item,
+			cond); nil != err {
 			return err
 		}
 	}

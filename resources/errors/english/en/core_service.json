@@ -41,5 +41,8 @@
     "1113052": "the selected field combination duplicates with existing rules, please do not create redundant rules",
     "1113053": "association constraint mismatch",
     "1113039": "Failed to create unique index, value [%s] duplicated",
+    "1113040": "The field grouping template has attribute configuration, deletion is not allowed",
+    "1113041": "The field grouping template has unique validation configuration, deletion is not allowed",
+    "1113042": "The field grouping template has relationship with the model, deletion is not allowed",
     "":""
 }

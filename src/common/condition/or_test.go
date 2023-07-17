@@ -27,12 +27,12 @@ func TestORField(t *testing.T) {
 	}
 
 	testDataArr := []testData{
-		testData{
-			input:  []types.MapStr{types.MapStr{"a": "c"}},
+		{
+			input:  []types.MapStr{{"a": "c"}},
 			output: `{"$or":[{"a":"c"}]}`,
 		},
-		testData{
-			input:  []types.MapStr{types.MapStr{"a": "c"}, types.MapStr{"b": "c"}},
+		{
+			input:  []types.MapStr{{"a": "c"}, {"b": "c"}},
 			output: `{"$or":[{"a":"c"},{"b":"c"}]}`,
 		},
 	}
@@ -65,11 +65,11 @@ func TestORArrField(t *testing.T) {
 	}
 
 	testDataArr := []testData{
-		testData{
+		{
 			input:  []interface{}{types.MapStr{"a": "c"}},
 			output: `{"$or":[{"a":"c"}]}`,
 		},
-		testData{
+		{
 			input:  []interface{}{types.MapStr{"a": "c"}, types.MapStr{"b": "c"}},
 			output: `{"$or":[{"a":"c"},{"b":"c"}]}`,
 		},
@@ -100,12 +100,12 @@ func TestORMapStrArrField(t *testing.T) {
 	}
 
 	testDataArr := []testData{
-		testData{
-			input:  []types.MapStr{types.MapStr{"a": "c"}},
+		{
+			input:  []types.MapStr{{"a": "c"}},
 			output: `{"$or":[{"a":"c"}]}`,
 		},
-		testData{
-			input:  []types.MapStr{types.MapStr{"a": "c"}, types.MapStr{"b": "c"}},
+		{
+			input:  []types.MapStr{{"a": "c"}, {"b": "c"}},
 			output: `{"$or":[{"a":"c"},{"b":"c"}]}`,
 		},
 	}

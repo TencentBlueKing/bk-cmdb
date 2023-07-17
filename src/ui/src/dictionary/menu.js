@@ -40,6 +40,7 @@ import {
   MENU_MODEL_TOPOLOGY_NEW,
   MENU_MODEL_BUSINESS_TOPOLOGY,
   MENU_MODEL_ASSOCIATION,
+  MENU_MODEL_FIELD_TEMPLATE,
 
   MENU_ANALYSIS_AUDIT,
   MENU_ANALYSIS_OPERATION,
@@ -173,6 +174,11 @@ const menus = [{
     i18n: '关联类型',
     icon: 'icon-cc-nav-associated',
     route: getMenuRoute(modelViews, MENU_MODEL_ASSOCIATION)
+  }, {
+    id: MENU_MODEL_FIELD_TEMPLATE,
+    i18n: '字段组合模板',
+    icon: 'icon-cc-menu-field-template',
+    route: getMenuRoute(modelViews, MENU_MODEL_FIELD_TEMPLATE)
   }]
 }, {
   id: MENU_ANALYSIS,

@@ -75,7 +75,8 @@ func (a *Authorize) calculateAnyPolicy(
 }
 
 // authFieldValue is to calculate the authorize status for attribute.
-func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (bool, error) {
+func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (bool,
+	error) {
 	// must be a FieldValue type
 	fv, can := p.Element.(*operator.FieldValue)
 	if !can {
@@ -115,6 +116,7 @@ func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscM
 	}
 }
 
+// NOCC:golint/fnsize(设计如此)
 func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (
 	bool, error) {
 
@@ -278,9 +280,8 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	}
 }
 
-// authWithPath TODO
-// if a user has a path based auth policy, then we need to check if the user's path is matched with policy's path or
-// not, if one of use's path is matched, then user is authorized.
+// authWithPath if a user has a path based auth policy, then we need to check if the user's path is matched with
+// policy's path or not, if one of use's path is matched, then user is authorized.
 func (a *Authorize) authWithPath(p *operator.Policy, fv *operator.FieldValue, authPath []string) (bool, error) {
 	if !reflect.ValueOf(fv.Value).IsValid() && len(authPath) == 0 {
 		// if policy have the path, then user's auth path must can not be empty.

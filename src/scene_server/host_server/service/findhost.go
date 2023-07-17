@@ -148,7 +148,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("FindHostsByServiceTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
+		blog.Errorf("validate failed, err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -186,7 +186,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
-		blog.Errorf("FindHostsByServiceTemplates failed, GetModuleIDByCond err:%s, cond:%#v, rid:%s", err.Error(), moduleCond, ctx.Kit.Rid)
+		blog.Errorf("get module id failed, err: %v, cond:%#v, rid: %s", err, moduleCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -206,7 +206,8 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("FindHostsByServiceTemplates failed, findDistinctHostInfo err: %s, distinctHostCond:%#v, searchHostCond:%#v, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("find distinct host info failed, err: %v, distinctHostCond: %#v, searchHostCond: %#v, rid: %s",
+			err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -281,7 +282,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("FindHostsBySetTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
+		blog.Errorf("validate failed, err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -340,7 +341,8 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("FindHostsBySetTemplates failed, findDistinctHostInfo err: %s, distinctHostCond:%#v, searchHostCond:%#v, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("find distinct host info failed, err: %v, distinctHostCond: %#v, searchHostCond: %#v, rid: %s",
+			err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -368,7 +370,8 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	// generate search condition, if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
+	// generate search condition,
+	// if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
 	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{bizID},
 	}
