@@ -42,7 +42,7 @@
           clearable
           right-icon="icon-search"
           v-model.trim="searchName"
-          @enter="setRoute"
+          @enter="handleFilterTemplate"
           @clear="handleClearFilter">
         </bk-input>
       </div>
@@ -98,7 +98,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }"
         @create="handleCreate"
-        @clear="handleFilterClear"
+        @clear="handleClearFilter"
       ></cmdb-table-empty>
     </bk-table>
   </div>
@@ -144,29 +144,22 @@
     watch: {
       originList() {
         this.getSyncStatus()
-      },
-      query() {
-        this.getQueryList()
-      },
+      }
     },
     async created() {
-      await this.getQueryList('init')
+      await this.getQueryList()
     },
     methods: {
-      async getQueryList(type = 'default') {
+      async getQueryList() {
         const params = this.query
         const { searchName = '',  sort = '-last_time' } = params
         this.table.sort = sort
         this.searchName = searchName
-        if (type === 'init') {
-          await this.getSetTemplates()
-          this.setRoute()
-          return
-        }
-        this.handleFilterTemplate()
+        await this.getSetTemplates()
+        this.setRoute()
       },
       setRoute() {
-        RouterQuery.set({ sort: this.table.sort, searchName: this.searchName, _t: Date.now() })
+        RouterQuery.set({ sort: this.table.sort, searchName: this.searchName })
       },
       async getSetTemplates() {
         const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
@@ -187,6 +180,9 @@
         }))
         this.list = list
         this.originList = list
+        if (this.searchName) {
+          this.handleFilterTemplate()
+        }
       },
       async getSyncStatus() {
         try {
@@ -241,6 +237,7 @@
           ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
           : originList
         this.table.stuff.type = this.searchName ? 'search' : 'default'
+        this.setRoute()
       },
       handleClearFilter() {
         this.list = this.originList
