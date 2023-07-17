@@ -29,7 +29,8 @@ func (s *Service) Find(req *restful.Request, resp *restful.Response) {
 	input := &metadata.SynchronizeFindInfoParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("FindInstance , but decode body failed, err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -51,7 +52,8 @@ func (s *Service) SetIdentifierFlag(req *restful.Request, resp *restful.Response
 	input := &metadata.SetIdenifierFlag{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("SetIdentifierFlag , but decode body failed, err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 

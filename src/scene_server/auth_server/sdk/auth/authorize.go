@@ -69,7 +69,8 @@ func (a *Authorize) AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatch
 	return a.authorizeBatch(ctx, opts, false)
 }
 
-func (a *Authorize) authorizeBatch(ctx context.Context, opts *types.AuthBatchOptions, exact bool) ([]*types.Decision, error) {
+func (a *Authorize) authorizeBatch(ctx context.Context, opts *types.AuthBatchOptions, exact bool) ([]*types.Decision,
+	error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}

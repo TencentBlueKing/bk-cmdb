@@ -1,15 +1,21 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
+// Package extensions defines extensional utilities for auth
 package extensions
 
 import (
@@ -24,6 +30,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -31,6 +38,67 @@ import (
 // this variable is used to accelerate the way to check if a business is resource pool
 // business or not.
 var resourcePoolBusinessID int64
+
+// Authorize cc auth resource, returns no permission response(only when not authorized) and if user is authorized
+func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribute) (
+	*metadata.BaseResp, bool) {
+
+	if !am.Enabled() {
+		return nil, true
+	}
+
+	blog.V(5).Infof("start authorize resources: %+v, rid: %s", resources, kit.Rid)
+
+	// authorize all auth resources
+	user := meta.UserInfo{
+		UserName:        kit.User,
+		SupplierAccount: kit.SupplierAccount,
+	}
+	decisions, err := am.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
+	if err != nil {
+		blog.Errorf("authorize failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
+		return &metadata.BaseResp{
+			Code:   common.CCErrCommCheckAuthorizeFailed,
+			ErrMsg: kit.CCError.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			Result: false,
+		}, false
+	}
+
+	authorized := true
+	permissionRes := make([]meta.ResourceAttribute, 0)
+	for idx, decision := range decisions {
+		if decision.Authorized {
+			continue
+		}
+
+		permissionRes = append(permissionRes, resources[idx])
+		authorized = false
+	}
+
+	if authorized {
+		return nil, true
+	}
+
+	// get permissions that user need to apply for this request
+	permission, err := am.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, permissionRes)
+	if err != nil {
+		blog.Errorf("get permission to apply failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
+		return &metadata.BaseResp{
+			Code:   common.CCErrCommCheckAuthorizeFailed,
+			ErrMsg: kit.CCError.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			Result: false,
+		}, false
+	}
+
+	blog.Errorf("request is not authorized, need permission: %+v, err: %v, rid: %s", permission, err, kit.Rid)
+
+	return &metadata.BaseResp{
+		Code:        common.CCNoPermission,
+		ErrMsg:      kit.CCError.Error(common.CCErrCommAuthNotHavePermission).Error(),
+		Result:      false,
+		Permissions: permission,
+	}, false
+}
 
 // getResourcePoolBusinessID to get bizID of resource pool
 // this function is concurrent safe.
@@ -95,7 +163,7 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 	return nil
 }
 
-// Enabled TODO
+// Enabled returns if authorization is enabled
 func (am *AuthManager) Enabled() bool {
 	return auth.EnableAuthorize()
 }

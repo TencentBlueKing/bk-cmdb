@@ -20,6 +20,9 @@ type UpdateOption struct {
 	Condition mapstr.MapStr `json:"condition" mapstructure:"condition"`
 	// can edit all fields, including not editable properties, used by collectors
 	CanEditAll bool `json:"can_edit_all" mapstructure:"can_edit_all"`
+	// IsSync in the update scene, it is distinguished whether it is
+	// a synchronization scene of the field template
+	IsSync bool `json:"is_sync" mapstructure:"is_sync"`
 }
 
 // CreatePartDataOption newly added headers and default values the user update scenario
@@ -33,6 +36,9 @@ type UpdateTableOption struct {
 	CreateData CreatePartDataOption `json:"create_data" mapstructure:"create_data"`
 	UpdateData mapstr.MapStr        `json:"update_data" mapstructure:"update_data"`
 	Condition  mapstr.MapStr        `json:"condition" mapstructure:"condition"`
+	// IsSync in the update scene, it is distinguished whether it is
+	// a synchronization scene of the field template
+	IsSync bool `json:"is_sync" mapstructure:"is_sync"`
 }
 
 // UpdatedOptionResult common update result

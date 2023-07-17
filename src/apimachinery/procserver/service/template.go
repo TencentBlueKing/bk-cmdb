@@ -9,7 +9,8 @@ import (
 )
 
 // CreateServiceTemplate TODO
-func (s *service) CreateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
+func (s *service) CreateServiceTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/create/proc/service_template"
 
@@ -49,7 +50,8 @@ func (s *service) DeleteServiceTemplate(ctx context.Context, h http.Header,
 }
 
 // SearchServiceTemplate TODO
-func (s *service) SearchServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
+func (s *service) SearchServiceTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/findmany/proc/service_template"
 
@@ -80,7 +82,8 @@ func (s *service) FindServiceTemplateCountInfo(ctx context.Context, h http.Heade
 }
 
 // UpdateServiceTemplate TODO
-func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
+func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/update/proc/service_template"
 
@@ -95,7 +98,8 @@ func (s *service) UpdateServiceTemplate(ctx context.Context, h http.Header, data
 }
 
 // RemoveTemplateBindingOnModule TODO
-func (s *service) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
+func (s *service) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error) {
 	resp = new(metadata.ResponseDataMapStr)
 	subPath := "/delete/proc/template_binding_on_module"
 

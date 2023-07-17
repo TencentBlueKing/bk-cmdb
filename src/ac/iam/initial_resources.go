@@ -53,6 +53,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	BizSetTemplate:            "集群模板",
 	BizTopology:               "业务拓扑",
 	BizProcessServiceTemplate: "服务模板",
+	FieldGroupingTemplate:     "字段组合模板",
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
@@ -475,6 +476,17 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Kube Workload Event",
 			Description:   "容器工作负载事件",
 			DescriptionEn: "kube workload event",
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            FieldGroupingTemplate,
+			Name:          ResourceTypeIDMap[FieldGroupingTemplate],
+			NameEn:        "Field Grouping Template",
+			Description:   "字段组合模板",
+			DescriptionEn: "Field Grouping Template",
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},

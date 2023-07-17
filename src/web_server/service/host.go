@@ -555,7 +555,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 	}
 
 	objIDNameMap := make(map[string]string, 0)
-	for _, val := range objects.Data.Info {
+	for _, val := range objects.Info {
 		objIDNameMap[val.ObjectID] = val.ObjectName
 	}
 

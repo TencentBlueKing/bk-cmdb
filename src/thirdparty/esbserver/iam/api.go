@@ -49,7 +49,8 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metada
 }
 
 // RegisterResourceCreatorAction register iam resource instance with creator, returns related actions with policy id that the creator gained
-func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
+func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header,
+	instance metadata.IamInstanceWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	resp := new(esbIamCreatorActionResp)
@@ -77,7 +78,8 @@ func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Hea
 }
 
 // BatchRegisterResourceCreatorAction batch register iam resource instances with creator, returns related actions with policy id that the creator gained
-func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header, instances metadata.IamInstancesWithCreator) (
+func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
+	instances metadata.IamInstancesWithCreator) (
 	[]metadata.IamCreatorActionPolicy, error) {
 
 	resp := new(esbIamCreatorActionResp)
@@ -105,7 +107,8 @@ func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header htt
 }
 
 // BatchOperateInstanceAuth batch grant or revoke iam resource instances' authorization
-func (i *iam) BatchOperateInstanceAuth(ctx context.Context, header http.Header, req *metadata.IamBatchOperateInstanceAuthReq) (
+func (i *iam) BatchOperateInstanceAuth(ctx context.Context, header http.Header,
+	req *metadata.IamBatchOperateInstanceAuthReq) (
 	[]metadata.IamBatchOperateInstanceAuthRes, error) {
 
 	resp := new(esbIamBatchOperateInstanceAuthResp)

@@ -19,6 +19,7 @@ package filter
 
 import (
 	"fmt"
+	"reflect"
 
 	"configcenter/pkg/filter"
 )
@@ -42,6 +43,10 @@ func And(rules ...filter.RuleFactory) (*filter.Expression, error) {
 
 	andRules := make([]filter.RuleFactory, 0)
 	for _, rule := range rules {
+		if rule == nil || reflect.ValueOf(rule).IsNil() {
+			continue
+		}
+
 		for expr, ok := rule.(*filter.Expression); ok; expr, ok = rule.(*filter.Expression) {
 			rule = expr.RuleFactory
 		}
@@ -62,6 +67,16 @@ func And(rules ...filter.RuleFactory) (*filter.Expression, error) {
 		default:
 			return nil, fmt.Errorf("rule type %s is invalid", rule.WithType())
 		}
+	}
+
+	if len(andRules) == 0 {
+		return nil, fmt.Errorf("rules are all nil")
+	}
+
+	if len(andRules) == 1 {
+		return &filter.Expression{
+			RuleFactory: andRules[0],
+		}, nil
 	}
 
 	return &filter.Expression{

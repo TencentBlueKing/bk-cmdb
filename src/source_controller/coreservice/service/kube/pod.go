@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (s *coreService) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOption, ids []uint64) ([]types.Pod,
+func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOption, ids []uint64) ([]types.Pod,
 	[]types.Container, map[int64]struct{}, error) {
 	pods, containers := make([]types.Pod, 0), make([]types.Container, 0)
 	now := time.Now().Unix()
@@ -82,7 +82,7 @@ func (s *coreService) combinePodData(kit *rest.Kit, inputData *types.CreatePodsO
 }
 
 // BatchCreatePod batch create pods
-func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
+func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 
 	inputData := new(types.CreatePodsOption)
 	if err := ctx.DecodeInto(inputData); err != nil {
@@ -136,7 +136,7 @@ func (s *coreService) BatchCreatePod(ctx *rest.Contexts) {
 	ctx.RespEntity(pods)
 }
 
-func (s *coreService) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
+func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
 	types.Pod, int64, error) {
 
 	sysSpec, hasPod, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
@@ -172,7 +172,7 @@ func (s *coreService) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, biz
 	return podInfo, nodeID, nil
 }
 
-func (s *coreService) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
+func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
 	types.Container, error) {
 
 	container := types.Container{
@@ -203,7 +203,7 @@ func (s *coreService) combinationContainerInfo(kit *rest.Kit, containerID, podID
 }
 
 // ListPod list pod
-func (s *coreService) ListPod(ctx *rest.Contexts) {
+func (s *service) ListPod(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)
@@ -225,7 +225,7 @@ func (s *coreService) ListPod(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-func (s *coreService) DeletePods(ctx *rest.Contexts) {
+func (s *service) DeletePods(ctx *rest.Contexts) {
 	opt := new(types.DeletePodsByIDsOption)
 	if err := ctx.DecodeInto(opt); err != nil {
 		ctx.RespAutoError(err)
@@ -265,7 +265,7 @@ func (s *coreService) DeletePods(ctx *rest.Contexts) {
 }
 
 // ListContainer list container
-func (s *coreService) ListContainer(ctx *rest.Contexts) {
+func (s *service) ListContainer(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)

@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"strconv"
@@ -31,7 +31,7 @@ import (
 )
 
 // updateNodeField here you need to update the has_pod in the node uniformly
-func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{}) error {
+func (s *service) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{}) error {
 
 	if len(nodeIDMap) == 0 {
 		return nil
@@ -59,7 +59,7 @@ func (s *coreService) updateNodeField(kit *rest.Kit, nodeIDMap map[int64]struct{
 }
 
 // BatchCreateNode batch create nodes
-func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
+func (s *service) BatchCreateNode(ctx *rest.Contexts) {
 
 	inputData := new(types.CreateNodesOption)
 	if err := ctx.DecodeInto(inputData); err != nil {
@@ -78,7 +78,7 @@ func (s *coreService) BatchCreateNode(ctx *rest.Contexts) {
 }
 
 // SearchNodes search nodes
-func (s *coreService) SearchNodes(ctx *rest.Contexts) {
+func (s *service) SearchNodes(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -104,7 +104,7 @@ func (s *coreService) SearchNodes(ctx *rest.Contexts) {
 }
 
 // BatchUpdateNode batch update node.
-func (s *coreService) BatchUpdateNode(ctx *rest.Contexts) {
+func (s *service) BatchUpdateNode(ctx *rest.Contexts) {
 
 	input := new(types.UpdateNodeOption)
 	if err := ctx.DecodeInto(input); nil != err {
@@ -147,7 +147,7 @@ func (s *coreService) BatchUpdateNode(ctx *rest.Contexts) {
 }
 
 // BatchDeleteNode batch delete nodes.
-func (s *coreService) BatchDeleteNode(ctx *rest.Contexts) {
+func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 	option := new(types.BatchDeleteNodeOption)
 	if err := ctx.DecodeInto(option); nil != err {
 		ctx.RespAutoError(err)

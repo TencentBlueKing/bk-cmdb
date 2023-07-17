@@ -29,7 +29,20 @@ func init() {
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commObjectUniqueIndexes = []types.Index{}
+var commObjectUniqueIndexes = []types.Index{
+	{
+		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_bkSupplierAccount",
+		Keys: bson.D{
+			{
+				common.BKTemplateID, 1,
+			},
+			{
+				common.BKOwnerIDField, 1,
+			},
+		},
+		Background: true,
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedObjectUniqueIndexes = []types.Index{

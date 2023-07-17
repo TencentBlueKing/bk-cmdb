@@ -64,12 +64,14 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 }
 
 var topoURLRegexp = regexp.MustCompile(fmt.Sprintf(
-	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set|project)/.*$", verbs))
-var objectURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/(object|biz|biz_set|project)$", verbs))
+	"^/api/v3/(%s)/(inst|object|objects|topo|biz|module|set|resource|biz_set|project|field_template)/.*$", verbs))
+var objectURLRegexp = regexp.MustCompile(fmt.Sprintf(
+	"^/api/v3/(%s)/(object|biz|biz_set|project|field_template)$", verbs))
 
 var kubeURLRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/kube/.*$", verbs))
 
 // WithTopo parse topo api's url
+// NOCC:golint/fnsize(设计如此)
 func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot

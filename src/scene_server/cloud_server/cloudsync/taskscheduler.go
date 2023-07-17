@@ -191,7 +191,7 @@ func (t *taskScheduler) GetTaskList() ([]*metadata.CloudSyncTask, error) {
 	tasks := []*metadata.CloudSyncTask{}
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	for oid, _ := range t.tasklist {
+	for oid := range t.tasklist {
 		if node, err := t.hashring.Get(fmt.Sprintf("%d", t.tasklist[oid].TaskID)); err != nil {
 			blog.Errorf("hashring Get err:%s", err.Error())
 			return nil, err

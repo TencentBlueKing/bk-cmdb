@@ -124,7 +124,8 @@ func (s *Service) UpdateSyncTask(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.UpdateSyncTask(ctx.Kit, taskID, option)
 		if err != nil {
-			blog.Errorf("UpdateSyncTask failed, err:%s, taskID:%d, option:%#v, rid:%s", err, taskID, option, ctx.Kit.Rid)
+			blog.Errorf("UpdateSyncTask failed, err:%s, taskID:%d, option:%#v, rid:%s", err, taskID, option,
+				ctx.Kit.Rid)
 			return err
 		}
 

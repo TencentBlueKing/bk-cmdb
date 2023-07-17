@@ -42,7 +42,8 @@ import (
 
 var (
 	// 标准字段，不论在什么环境上都需要使用的
-	ignoreField = map[string]struct{}{"template_row_id": struct{}{}, "row_id": struct{}{}, common.BKIP: struct{}{}, common.BKPort: struct{}{}, common.BKProtocol: struct{}{}, common.BKEnable: struct{}{}}
+	ignoreField = map[string]struct{}{"template_row_id": {}, "row_id": {}, common.BKIP: {},
+		common.BKPort: {}, common.BKProtocol: {}, common.BKEnable: {}}
 )
 var (
 	//  内部变量，不允许改变，改变值请用对应的Register 方案

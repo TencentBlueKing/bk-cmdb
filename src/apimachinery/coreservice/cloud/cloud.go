@@ -26,19 +26,28 @@ import (
 type CloudInterface interface {
 	// CreateAccount TODO
 	// cloud account
-	CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
-	SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
-	UpdateAccount(ctx context.Context, h http.Header, accountID int64, option map[string]interface{}) errors.CCErrorCoder
+	CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount,
+		errors.CCErrorCoder)
+	SearchAccount(ctx context.Context, h http.Header,
+		option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder)
+	UpdateAccount(ctx context.Context, h http.Header, accountID int64,
+		option map[string]interface{}) errors.CCErrorCoder
 	DeleteAccount(ctx context.Context, h http.Header, accountID int64) errors.CCErrorCoder
-	SearchAccountConf(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder)
+	SearchAccountConf(ctx context.Context, h http.Header,
+		option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder)
 
-	CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder)
-	SearchSyncTask(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder)
+	CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask,
+		errors.CCErrorCoder)
+	SearchSyncTask(ctx context.Context, h http.Header,
+		option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder)
 	UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, option map[string]interface{}) errors.CCErrorCoder
 	DeleteSyncTask(ctx context.Context, h http.Header, taskID int64) errors.CCErrorCoder
-	CreateSyncHistory(ctx context.Context, h http.Header, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
-	SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
-	DeleteDestroyedHostRelated(ctx context.Context, h http.Header, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
+	CreateSyncHistory(ctx context.Context, h http.Header, history *metadata.SyncHistory) (*metadata.SyncHistory,
+		errors.CCErrorCoder)
+	SearchSyncHistory(ctx context.Context, h http.Header,
+		option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder)
+	DeleteDestroyedHostRelated(ctx context.Context, h http.Header,
+		option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
 }
 
 // NewCloudInterfaceClient TODO

@@ -45,7 +45,9 @@ export const IAM_VIEWS = {
   // 云发现任务
   CLOUD_RESOURCE_TASK: 'sys_cloud_resource_task',
   // 项目
-  PROJECT: 'project'
+  PROJECT: 'project',
+  // 项目
+  FIELD_TEMPLATE: 'field_grouping_template'
 }
 
 export const IAM_VIEWS_NAME = {
@@ -66,7 +68,8 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CLOUD_AREA]: ['管控区域', 'BK-Network Area'],
   [IAM_VIEWS.CLOUD_ACCOUNT]: ['云账户', 'Cloud Account'],
   [IAM_VIEWS.CLOUD_RESOURCE_TASK]: ['云资源发现任务', 'Cloud Resource Task'],
-  [IAM_VIEWS.PROJECT]: ['项目', 'Project']
+  [IAM_VIEWS.PROJECT]: ['项目', 'Project'],
+  [IAM_VIEWS.FIELD_TEMPLATE]: ['字段组合模板', 'Field Template']
 }
 
 /**
@@ -1226,6 +1229,47 @@ export const IAM_ACTIONS = {
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
       instances: [IAM_VIEWS.BIZ_SET]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  C_FIELD_TEMPLATE: {
+    id: 'create_field_grouping_template',
+    name: ['字段组合模板创建', 'Create Field Template'],
+    cmdb_action: 'fieldTemplate.create'
+  },
+  U_FIELD_TEMPLATE: {
+    id: 'edit_field_grouping_template',
+    name: ['字段组合模板编辑', 'Update Field Template'],
+    cmdb_action: 'fieldTemplate.update',
+    relation: [{
+      view: IAM_VIEWS.FIELD_TEMPLATE,
+      instances: [IAM_VIEWS.FIELD_TEMPLATE]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  R_FIELD_TEMPLATE: {
+    id: 'view_field_grouping_template',
+    name: ['字段组合模板查看', 'View Field Template'],
+    cmdb_action: 'fieldTemplate.findMany',
+    relation: [{
+      view: IAM_VIEWS.FIELD_TEMPLATE,
+      instances: [IAM_VIEWS.FIELD_TEMPLATE]
+    }],
+    transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
+      resource_id: relationIds[0]
+    })
+  },
+  D_FIELD_TEMPLATE: {
+    id: 'delete_field_grouping_template',
+    name: ['字段组合模板删除', 'Delete Field Template'],
+    cmdb_action: 'fieldTemplate.delete',
+    relation: [{
+      view: IAM_VIEWS.FIELD_TEMPLATE,
+      instances: [IAM_VIEWS.FIELD_TEMPLATE]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]

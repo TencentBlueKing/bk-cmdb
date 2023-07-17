@@ -23,7 +23,8 @@ import (
 )
 
 // CreateBiz TODO
-func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header,
+	params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/biz/%s"
 
@@ -78,7 +79,8 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 }
 
 // SearchBiz TODO
-func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"
 	err = a.client.Post().

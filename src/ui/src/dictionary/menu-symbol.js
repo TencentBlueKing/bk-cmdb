@@ -88,6 +88,16 @@ export const MENU_MODEL_TOPOLOGY_NEW = 'menu_model_topology_new'
 export const MENU_MODEL_BUSINESS_TOPOLOGY = 'menu_model_business_topology'
 export const MENU_MODEL_ASSOCIATION = 'menu_model_association'
 export const MENU_MODEL_DETAILS = 'menu_model_details'
+export const MENU_MODEL_FIELD_TEMPLATE = 'menu_model_field_template'
+export const MENU_MODEL_FIELD_TEMPLATE_CREATE = 'menu_model_field_template_create'
+export const MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC = 'menu_model_field_template_create_basic'
+export const MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS = 'menu_model_field_template_create_field_settings'
+export const MENU_MODEL_FIELD_TEMPLATE_EDIT = 'menu_model_field_template_edit'
+export const MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC = 'menu_model_field_template_edit_basic'
+export const MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS = 'menu_model_field_template_edit_field_settings'
+export const MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING = 'menu_model_field_template_edit_binding'
+export const MENU_MODEL_FIELD_TEMPLATE_BIND = 'menu_model_field_template_bind'
+export const MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL = 'menu_model_field_template_sync_model'
 
 /**
  * 运营分析
