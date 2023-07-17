@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_10_202305121010
+package y3_10_202307171520
 
 import (
 	"context"
@@ -26,27 +26,27 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.10.202305121010", upgrade)
+	upgrader.RegistUpgrader("y3.10.202307171520", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.10.202305121010")
+	blog.Infof("start execute y3.10.202307171520")
 
 	if err = addFieldTemplateCollection(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add field template collection failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202307171520 add field template collection failed, err: %v", err)
 		return err
 	}
 
 	if err = addFieldTemplateIndex(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add field template index failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202307171520 add field template index failed, err: %v", err)
 		return err
 	}
 
 	if err = addTemplateIDColumnAndIndex(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202305121010 add bk_template_id field and index failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202307171520 add bk_template_id field and index failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.10.202305121010 add field template collection success")
+	blog.Infof("upgrade y3.10.202307171520 add field template collection success")
 	return nil
 }
