@@ -11,17 +11,18 @@
  */
 
 import { reactive, shallowReactive, ref } from 'vue'
+
 import store from '@/store'
 
 export const targetMap = {
   model: '模型',
-  instance: '实例'
+  instance: '实例',
 }
 
 const defaultSetting = {
   targets: Object.keys(targetMap),
   models: [],
-  instances: []
+  instances: [],
 }
 
 export const currentSetting = shallowReactive({ ...defaultSetting })
@@ -29,14 +30,14 @@ export const currentSetting = shallowReactive({ ...defaultSetting })
 export const finalSetting = ref({
   targets: Object.keys(targetMap),
   models: [],
-  instances: []
+  instances: [],
 })
 
 export const allModelIds = ref([])
 
 export const handleReset = () => {
-  currentSetting.targets = Object.keys(targetMap),
-  currentSetting.models = []
+  ;(currentSetting.targets = Object.keys(targetMap)),
+    (currentSetting.models = [])
   currentSetting.instances = []
 
   finalSetting.value = currentSetting
@@ -49,8 +50,12 @@ export default function useAdvancedSetting(options = {}) {
 
   const handleShow = () => {
     activeSetting.targets = currentSetting.targets
-    activeSetting.models = currentSetting.targets.includes('model') ? currentSetting.models : []
-    activeSetting.instances = currentSetting.targets.includes('instance') ? currentSetting.instances : []
+    activeSetting.models = currentSetting.targets.includes('model')
+      ? currentSetting.models
+      : []
+    activeSetting.instances = currentSetting.targets.includes('instance')
+      ? currentSetting.instances
+      : []
     onShow && onShow()
   }
 
@@ -69,9 +74,10 @@ export default function useAdvancedSetting(options = {}) {
     onCancel && onCancel()
   }
 
-  const handleTargetClick = (value) => {
+  const handleTargetClick = value => {
     if (activeSetting.targets.includes(value)) {
-      activeSetting.targets.length > 1 && activeSetting.targets.splice(activeSetting.targets.indexOf(value), 1)
+      activeSetting.targets.length > 1 &&
+        activeSetting.targets.splice(activeSetting.targets.indexOf(value), 1)
     } else {
       activeSetting.targets.push(value)
     }
@@ -81,19 +87,23 @@ export default function useAdvancedSetting(options = {}) {
   allModelIds.value = []
   const classifications = store.getters['objectModelClassify/classifications']
   const displayModelList = []
-  classifications.forEach((classification) => {
+  classifications.forEach(classification => {
     displayModelList.push({
       ...classification,
-      bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden)
+      bk_objects: classification.bk_objects.filter(
+        model => !model.bk_ispaused && !model.bk_ishidden
+      ),
     })
   })
-  displayModelList.forEach(model => allModelIds.value.push(...model.bk_objects.map(m => m.bk_obj_id)))
+  displayModelList.forEach(model =>
+    allModelIds.value.push(...model.bk_objects.map(m => m.bk_obj_id))
+  )
 
   return {
     activeSetting,
     handleShow,
     handleConfirm,
     handleCancel,
-    handleTargetClick
+    handleTargetClick,
   }
 }

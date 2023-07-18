@@ -15,8 +15,10 @@ import { computed, ref, watch } from 'vue'
 export default function (pendings = [], initValue = false) {
   let timer = null
   const pending = ref(initValue)
-  const realtimePending = computed(() => pendings.some(pending => pending.value))
-  watch(realtimePending, (value) => {
+  const realtimePending = computed(() =>
+    pendings.some(pending => pending.value)
+  )
+  watch(realtimePending, value => {
     if (value) {
       timer && clearTimeout(timer)
       pending.value = value

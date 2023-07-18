@@ -25,10 +25,10 @@ const actions = {
           condition: { bk_account_id: id },
           page: {
             start: 0,
-            limit: 1
-          }
+            limit: 1,
+          },
         },
-        config
+        config,
       })
       if (info.length) {
         return Promise.resolve(info[0])
@@ -49,10 +49,10 @@ const actions = {
   },
   delete(context, { id, config }) {
     return $http.delete(`delete/cloud/account/${id}`, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

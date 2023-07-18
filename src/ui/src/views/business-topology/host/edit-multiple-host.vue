@@ -17,9 +17,13 @@
     :title="slider.title"
     :width="800"
     :before-close="handleSliderBeforeClose">
-    <div class="form-content" slot="content" style="height: 100%"
-      v-bkloading="{ isLoading: $loading(Object.values(request)) }">
-      <component :is="slider.component"
+    <div
+      slot="content"
+      v-bkloading="{ isLoading: $loading(Object.values(request)) }"
+      class="form-content"
+      style="height: 100%">
+      <component
+        :is="slider.component"
         ref="multipleForm"
         v-bind="slider.props"
         @on-submit="handleMultipleSave"
@@ -30,8 +34,8 @@
 </template>
 
 <script>
-  import editMultipleHost from '@/mixins/edit-multiple-host'
-  export default {
-    mixins: [editMultipleHost]
-  }
+import editMultipleHost from '@/mixins/edit-multiple-host'
+export default {
+  mixins: [editMultipleHost],
+}
 </script>

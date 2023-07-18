@@ -11,6 +11,7 @@
  */
 
 import { computed, ref, watch } from 'vue'
+
 import store from '@/store'
 import routerActions from '@/router/actions'
 import RouterQuery from '@/router/query'
@@ -26,20 +27,28 @@ export default function useHistory(state) {
   const selectIndex = ref(-1)
   const localForceHide = ref(false)
 
-  watch(keyword, (value) => {
+  watch(keyword, value => {
     if (!value) {
       selectIndex.value = -1
       localForceHide.value = false
     }
   })
 
-  const isSelectHistory = computed(() => !keyword.value.length || selectHistory.value)
+  const isSelectHistory = computed(
+    () => !keyword.value.length || selectHistory.value
+  )
   const hasHistory = computed(() => historyList.value.length > 0)
   const isForceHide = computed(() => forceHide.value || localForceHide.value)
   // eslint-disable-next-line max-len
-  const showHistory = computed(() => focusWithin.value && !isForceHide.value && isSelectHistory.value && hasHistory.value)
+  const showHistory = computed(
+    () =>
+      focusWithin.value &&
+      !isForceHide.value &&
+      isSelectHistory.value &&
+      hasHistory.value
+  )
 
-  const onkeydown = (event) => {
+  const onkeydown = event => {
     const { keyCode } = event
     const keyCodeMap = { enter: 13, up: 38, down: 40 }
     if (!showHistory.value || !Object.values(keyCodeMap).includes(keyCode)) {
@@ -61,15 +70,15 @@ export default function useHistory(state) {
     store.commit('fullTextSearch/clearSearchHistory')
   }
 
-  const handleHistorySearch = (history) => {
+  const handleHistorySearch = history => {
     localForceHide.value = true
     routerActions.redirect({
       name: route.value.name,
       query: {
         ...route.value.query,
         keyword: history,
-        t: Date.now()
-      }
+        t: Date.now(),
+      },
     })
   }
 
@@ -80,6 +89,6 @@ export default function useHistory(state) {
     selectIndex,
     onkeydown,
     handleHistorySearch,
-    handlClearHistory
+    handlClearHistory,
   }
 }

@@ -19,7 +19,9 @@ export default class CachedPromise {
 
   get(id) {
     if (typeof id === 'undefined') {
-      return Object.keys(this.cache).map(requestId => this.cache[requestId].promise)
+      return Object.keys(this.cache).map(
+        requestId => this.cache[requestId].promise
+      )
     }
     return has(this.cache, id) ? this.cache[id].promise : null
   }
@@ -30,7 +32,7 @@ export default class CachedPromise {
 
   getGroupedIds(id) {
     const groupedIds = []
-    Object.keys(this.cache).forEach((requestId) => {
+    Object.keys(this.cache).forEach(requestId => {
       const isInclude = groupedIds.includes(requestId)
       const isMatch = this.cache[requestId].config.requestGroup.includes(id)
       if (!isInclude && isMatch) {
@@ -53,14 +55,14 @@ export default class CachedPromise {
     if (typeof deleteIds === 'undefined') {
       requestIds = Object.keys(this.cache)
     } else if (deleteIds instanceof Array) {
-      deleteIds.forEach((id) => {
+      deleteIds.forEach(id => {
         requestIds = [...requestIds, ...this.getDeleteIds(id)]
       })
     } else {
       requestIds = this.getDeleteIds(deleteIds)
     }
     requestIds = [...new Set(requestIds)]
-    requestIds.forEach((requestId) => {
+    requestIds.forEach(requestId => {
       delete this.cache[requestId]
     })
     return Promise.resolve(deleteIds)

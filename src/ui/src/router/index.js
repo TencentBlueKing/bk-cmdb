@@ -14,30 +14,8 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import has from 'has'
 
-import StatusError from './StatusError.js'
-
-import preload from '@/setup/preload'
-import afterload from '@/setup/afterload'
-import { setupValidator } from '@/setup/validate'
 import { $error } from '@/magicbox'
 import i18n from '@/i18n'
-import { changeDocumentTitle } from '@/utils/change-document-title'
-import { OPERATION } from '@/dictionary/iam-auth'
-
-import {
-  before as businessBeforeInterceptor
-} from './business-interceptor'
-
-import {
-  MENU_ENTRY,
-  MENU_BUSINESS_SET,
-  MENU_BUSINESS,
-  MENU_RESOURCE,
-  MENU_MODEL,
-  MENU_ANALYSIS,
-  MENU_PLATFORM_MANAGEMENT
-} from '@/dictionary/menu-symbol'
-
 import {
   indexViews,
   hostLandingViews,
@@ -46,10 +24,26 @@ import {
   resourceViews,
   modelViews,
   analysisViews,
-  platformManagementViews
+  platformManagementViews,
 } from '@/views'
-
+import { changeDocumentTitle } from '@/utils/change-document-title'
+import { OPERATION } from '@/dictionary/iam-auth'
+import {
+  MENU_ENTRY,
+  MENU_BUSINESS_SET,
+  MENU_BUSINESS,
+  MENU_RESOURCE,
+  MENU_MODEL,
+  MENU_ANALYSIS,
+  MENU_PLATFORM_MANAGEMENT,
+} from '@/dictionary/menu-symbol'
 import dynamicRouterView from '@/components/layout/dynamic-router-view'
+import preload from '@/setup/preload'
+import afterload from '@/setup/afterload'
+import { setupValidator } from '@/setup/validate'
+
+import { before as businessBeforeInterceptor } from './business-interceptor'
+import StatusError from './StatusError.js'
 
 Vue.use(Router)
 
@@ -59,20 +53,23 @@ const statusRouters = [
   {
     name: '404',
     path: '/404',
-    components: require('@/views/status/404')
-  }, {
+    components: require('@/views/status/404'),
+  },
+  {
     name: 'error',
     path: '/error',
-    components: require('@/views/status/error')
-  }
+    components: require('@/views/status/error'),
+  },
 ]
 
-const redirectRouters = [{
-  path: '*',
-  redirect: {
-    name: '404'
-  }
-}]
+const redirectRouters = [
+  {
+    path: '*',
+    redirect: {
+      name: '404',
+    },
+  },
+]
 
 const router = new Router({
   mode: 'hash',
@@ -85,37 +82,37 @@ const router = new Router({
       component: dynamicRouterView,
       children: indexViews,
       path: '/',
-      redirect: '/index'
+      redirect: '/index',
     },
     {
       name: MENU_BUSINESS_SET,
       components: {
         default: dynamicRouterView,
         error: require('@/views/status/error').default,
-        permission: require('@/views/status/non-exist-business-set').default
+        permission: require('@/views/status/non-exist-business-set').default,
       },
       children: businessSetViews,
       path: '/business-set/:bizSetId',
       meta: {
         menu: {
-          i18n: '业务集'
-        }
-      }
+          i18n: '业务集',
+        },
+      },
     },
     {
       name: MENU_BUSINESS,
       components: {
         default: dynamicRouterView,
         error: require('@/views/status/error').default,
-        permission: require('@/views/status/non-exist-business').default
+        permission: require('@/views/status/non-exist-business').default,
       },
       children: businessViews,
       path: '/business/:bizId?',
       meta: {
         menu: {
-          i18n: '业务'
-        }
-      }
+          i18n: '业务',
+        },
+      },
     },
     {
       name: MENU_MODEL,
@@ -125,9 +122,9 @@ const router = new Router({
       redirect: '/model/index',
       meta: {
         menu: {
-          i18n: '模型'
-        }
-      }
+          i18n: '模型',
+        },
+      },
     },
     {
       name: MENU_RESOURCE,
@@ -137,9 +134,9 @@ const router = new Router({
       redirect: '/resource/index',
       meta: {
         menu: {
-          i18n: '资源'
-        }
-      }
+          i18n: '资源',
+        },
+      },
     },
     {
       name: MENU_ANALYSIS,
@@ -149,9 +146,9 @@ const router = new Router({
       redirect: '/analysis/audit',
       meta: {
         menu: {
-          i18n: '运营分析'
-        }
-      }
+          i18n: '运营分析',
+        },
+      },
     },
     {
       name: MENU_PLATFORM_MANAGEMENT,
@@ -161,14 +158,17 @@ const router = new Router({
       redirect: '/platform-management/global-config',
       meta: {
         auth: {
-          view: [{ type: OPERATION.R_CONFIG_ADMIN }, { type: OPERATION.U_CONFIG_ADMIN }]
+          view: [
+            { type: OPERATION.R_CONFIG_ADMIN },
+            { type: OPERATION.U_CONFIG_ADMIN },
+          ],
         },
         menu: {
-          i18n: '平台管理'
-        }
-      }
-    }
-  ]
+          i18n: '平台管理',
+        },
+      },
+    },
+  ],
 })
 
 const beforeHooks = new Set()
@@ -183,14 +183,17 @@ export const addBeforeHooks = function (hook) {
 
 function cancelRequest(app) {
   const pendingRequest = app.$http.queue.get()
-  const cancelId = pendingRequest.filter(request => request.cancelWhenRouteChange).map(request => request.requestId)
+  const cancelId = pendingRequest
+    .filter(request => request.cancelWhenRouteChange)
+    .map(request => request.requestId)
   app.$http.cancelRequest(cancelId)
 }
 
 // eslint-disable-next-line no-unused-vars
 const checkViewAuthorize = async to => Promise.resolve()
 
-const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
+const setLoading = loading =>
+  router.app.$store.commit('setGlobalLoading', loading)
 
 const checkAvailable = (to, from) => {
   if (typeof to.meta.checkAvailable === 'function') {
@@ -204,7 +207,7 @@ const checkAvailable = (to, from) => {
 
 const setupStatus = {
   preload: true,
-  afterload: true
+  afterload: true,
 }
 
 router.beforeEach((to, from, next) => {
@@ -220,7 +223,6 @@ router.beforeEach((to, from, next) => {
        */
       to.name !== from.name && router.app.$store.commit('setTitle', '')
 
-
       /**
        * 将非 permission 的 view 设置为 default
        */
@@ -232,7 +234,9 @@ router.beforeEach((to, from, next) => {
        * 如果路由中的业务 ID 改变了，应该继续往下执行到业务拦截器，否则在同页路由下直接执行路由跳转，不再执行往后的逻辑
        */
       const isFromBiz = from.matched[0]?.name === MENU_BUSINESS
-      const bizIsChanged = isFromBiz && parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)
+      const bizIsChanged =
+        isFromBiz &&
+        parseInt(to.params.bizId, 10) !== parseInt(from.params.bizId, 10)
 
       if (to.name === from.name && !bizIsChanged) {
         return next()
@@ -278,7 +282,7 @@ router.beforeEach((to, from, next) => {
       /**
        * 执行路由配置中的before钩子
        */
-      if (to.meta?.before && !await to.meta?.before?.(to, from, router.app)) {
+      if (to.meta?.before && !(await to.meta?.before?.(to, from, router.app))) {
         return false
       }
 
@@ -318,7 +322,7 @@ router.afterEach(async (to, from) => {
   }
 })
 
-router.onError((error) => {
+router.onError(error => {
   if (/Loading chunk (\d*) failed/.test(error.message)) {
     $error(i18n.t('资源请求失败提示'))
   }

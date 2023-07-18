@@ -19,10 +19,10 @@ export default {
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '运营统计'
+      i18n: '运营统计',
     },
     auth: {
-      view: { type: OPERATION.R_STATISTICAL_REPORT }
-    }
-  })
+      view: { type: OPERATION.R_STATISTICAL_REPORT },
+    },
+  }),
 }

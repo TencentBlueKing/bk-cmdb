@@ -11,89 +11,103 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref, watch, onMounted } from 'vue'
-  import router from '@/router/index.js'
-  import store from '@/store'
-  import RouterQuery from '@/router/query'
-  import { getValue } from '@/utils/tools'
-  import ServiceTemplateConfig from './children/template-config.vue'
-  import ServiceTemplateInstance from './children/template-instance.vue'
+import { computed, defineComponent, ref, watch, onMounted } from 'vue'
 
-  export default defineComponent({
-    components: {
-      ServiceTemplateConfig,
-      ServiceTemplateInstance
-    },
-    setup() {
-      const $tab = ref(null)
+import store from '@/store'
+import { getValue } from '@/utils/tools'
+import router from '@/router/index.js'
+import RouterQuery from '@/router/query'
 
-      const query = computed(() => RouterQuery.getAll())
+import ServiceTemplateConfig from './children/template-config.vue'
+import ServiceTemplateInstance from './children/template-instance.vue'
 
-      const active = ref(query.value.tab)
+export default defineComponent({
+  components: {
+    ServiceTemplateConfig,
+    ServiceTemplateInstance,
+  },
+  setup() {
+    const $tab = ref(null)
 
-      const bizId = computed(() => store.getters['objectBiz/bizId'])
+    const query = computed(() => RouterQuery.getAll())
 
-      const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
+    const active = ref(query.value.tab)
 
-      const checkSyncStatus = async () => {
-        try {
-          const { service_templates: syncStatusList = [] } = await store.dispatch('serviceTemplate/getServiceTemplateSyncStatus', {
+    const bizId = computed(() => store.getters['objectBiz/bizId'])
+
+    const templateId = computed(() =>
+      parseInt(router.app.$route.params.templateId, 10)
+    )
+
+    const checkSyncStatus = async () => {
+      try {
+        const { service_templates: syncStatusList = [] } = await store.dispatch(
+          'serviceTemplate/getServiceTemplateSyncStatus',
+          {
             bizId: bizId.value,
             params: {
               is_partial: true,
-              service_template_ids: [templateId.value]
+              service_template_ids: [templateId.value],
             },
             config: {
-              cancelPrevious: true
-            }
-          })
-          const needSync = getValue(syncStatusList, '0.need_sync')
-          const tabHeader = $tab.value.$el.querySelector('.bk-tab-label-item.is-last')
-          if (needSync) {
-            tabHeader.classList.add('has-tips')
-          } else {
-            tabHeader.classList.remove('has-tips')
+              cancelPrevious: true,
+            },
           }
-        } catch (error) {
-          console.error(error)
+        )
+        const needSync = getValue(syncStatusList, '0.need_sync')
+        const tabHeader = $tab.value.$el.querySelector(
+          '.bk-tab-label-item.is-last'
+        )
+        if (needSync) {
+          tabHeader.classList.add('has-tips')
+        } else {
+          tabHeader.classList.remove('has-tips')
         }
-      }
-
-      const handleSyncStatusChange = () => {
-        checkSyncStatus()
-      }
-
-      const handleActiveChange = (value) => {
-        active.value = value
-      }
-
-      watch(active, (active) => {
-        RouterQuery.set({
-          tab: active
-        })
-      }, { immediate: true })
-
-      onMounted(() => {
-        checkSyncStatus()
-      })
-
-      return {
-        bizId,
-        templateId,
-        $tab,
-        active,
-        handleSyncStatusChange,
-        handleActiveChange
+      } catch (error) {
+        console.error(error)
       }
     }
-  })
+
+    const handleSyncStatusChange = () => {
+      checkSyncStatus()
+    }
+
+    const handleActiveChange = value => {
+      active.value = value
+    }
+
+    watch(
+      active,
+      active => {
+        RouterQuery.set({
+          tab: active,
+        })
+      },
+      { immediate: true }
+    )
+
+    onMounted(() => {
+      checkSyncStatus()
+    })
+
+    return {
+      bizId,
+      templateId,
+      $tab,
+      active,
+      handleSyncStatusChange,
+      handleActiveChange,
+    }
+  },
+})
 </script>
 
 <template>
   <div class="details-layout">
-    <bk-tab class="template-tab"
-      type="unborder-card"
+    <bk-tab
       ref="$tab"
+      class="template-tab"
+      type="unborder-card"
       :active.sync="active">
       <bk-tab-panel :label="$t('服务模板配置')" name="config">
         <service-template-config
@@ -119,12 +133,14 @@
         padding: 0;
         margin: 0;
       }
+
       .bk-tab-section {
         padding: 0;
       }
     }
-    ::v-deep .bk-tab-label-item.has-tips:before {
-      content: "";
+
+    ::v-deep .bk-tab-label-item.has-tips::before {
+      content: '';
       position: absolute;
       top: 18px;
       right: 12px;

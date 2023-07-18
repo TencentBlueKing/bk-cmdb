@@ -1,4 +1,3 @@
-
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
@@ -15,20 +14,20 @@ export const LANG_COOKIE_NAME = 'blueking_language'
 
 export const LANG_KEYS = Object.freeze({
   ZH_CN: 'zh_CN',
-  EN: 'en'
+  EN: 'en',
 })
 
 export const LANG_SET = Object.freeze([
   {
     id: LANG_KEYS.EN,
     name: 'English',
-    icon: 'english'
+    icon: 'english',
   },
   {
     id: LANG_KEYS.ZH_CN,
     alias: ['zh-cn'],
     name: '中文',
     apiLocale: 'zh-cn',
-    icon: 'chinese'
-  }
+    icon: 'chinese',
+  },
 ])

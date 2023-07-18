@@ -12,15 +12,16 @@
 
 /* eslint-disable no-unused-vars */
 
-import $http from '@/api'
 import Vue from 'vue'
 import has from 'has'
+
+import $http from '@/api'
 import { MENU_RESOURCE_COLLECTION } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODEL_COLLECTION_KEYS } from '@/dictionary/model-constants.js'
 
 const state = {
   usercustom: {},
-  globalUsercustom: {}
+  globalUsercustom: {},
 }
 
 const getters = {
@@ -28,17 +29,20 @@ const getters = {
   firstEntryKey: () => 'custom_first_entry',
   recentlyKey: () => 'custom_recently',
   usercustom: state => state.usercustom,
-  getCustomData: state => (key, defaultData = null) => {
-    if (has(state.usercustom, key)) {
-      return state.usercustom[key]
-    }
-    return defaultData
-  },
+  getCustomData:
+    state =>
+    (key, defaultData = null) => {
+      if (has(state.usercustom, key)) {
+        return state.usercustom[key]
+      }
+      return defaultData
+    },
   resourceCollection: (state, getters, rootState, rootGetters) => {
     const collection = [...(state.usercustom[MENU_RESOURCE_COLLECTION] || [])]
 
-    Object.keys(BUILTIN_MODEL_COLLECTION_KEYS).forEach((modelId) => {
-      const collected = state.usercustom[BUILTIN_MODEL_COLLECTION_KEYS[modelId]] ?? true
+    Object.keys(BUILTIN_MODEL_COLLECTION_KEYS).forEach(modelId => {
+      const collected =
+        state.usercustom[BUILTIN_MODEL_COLLECTION_KEYS[modelId]] ?? true
       if (collected) {
         collection.unshift(modelId)
       }
@@ -46,51 +50,63 @@ const getters = {
 
     const models = rootGetters['objectModelClassify/models']
 
-    return collection.filter(modelId => models.some(model => model.bk_obj_id === modelId))
-  }
+    return collection.filter(modelId =>
+      models.some(model => model.bk_obj_id === modelId)
+    )
+  },
 }
 
 const actions = {
   /**
-     * 保存用户字段配置
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 保存用户字段配置
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   saveUsercustom({ commit, state, dispatch }, usercustom = {}, config = {}) {
-    return $http.post('usercustom', usercustom, { cancelWhenRouteChange: false, ...config }).then(() => {
-      $http.cancelCache('searchUserCustom')
-      commit('setUsercustom', usercustom)
-      return state.usercustom
-    })
+    return $http
+      .post('usercustom', usercustom, {
+        cancelWhenRouteChange: false,
+        ...config,
+      })
+      .then(() => {
+        $http.cancelCache('searchUserCustom')
+        commit('setUsercustom', usercustom)
+        return state.usercustom
+      })
   },
 
   /**
-     * 获取用户字段配置
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @return {promises} promises 对象
-     */
+   * 获取用户字段配置
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @return {promises} promises 对象
+   */
   searchUsercustom({ commit, state, dispatch }, { config }) {
-    const mergedConfig = Object.assign({
-      requestId: 'searchUserCustom'
-    }, config)
-    return $http.post('usercustom/user/search', {}, mergedConfig).then((usercustom) => {
-      commit('setUsercustom', usercustom)
-      return usercustom
-    })
+    const mergedConfig = Object.assign(
+      {
+        requestId: 'searchUserCustom',
+      },
+      config
+    )
+    return $http
+      .post('usercustom/user/search', {}, mergedConfig)
+      .then(usercustom => {
+        commit('setUsercustom', usercustom)
+        return usercustom
+      })
   },
 
   /**
-     * 获取默认字段配置
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @return {promises} promises 对象
-     */
+   * 获取默认字段配置
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @return {promises} promises 对象
+   */
   getUserDefaultCustom({ commit, state, dispatch }) {
     return $http.post('usercustom/default/search')
   },
@@ -104,28 +120,36 @@ const actions = {
     }
     newUsercustomData.unshift(id)
     dispatch('saveUsercustom', {
-      recently_models: newUsercustomData
+      recently_models: newUsercustomData,
     })
   },
 
   saveGlobalUsercustom({ commit }, { objId, params, config }) {
-    return $http.post(`usercustom/default/model/${objId}`, params, config).then((data) => {
-      commit('setGlobalUsercustom', {
-        [`${objId}_global_custom_table_columns`]: params.global_custom_table_columns
+    return $http
+      .post(`usercustom/default/model/${objId}`, params, config)
+      .then(data => {
+        commit('setGlobalUsercustom', {
+          [`${objId}_global_custom_table_columns`]:
+            params.global_custom_table_columns,
+        })
+        return data
       })
-      return data
-    })
   },
 
   getGlobalUsercustom({ commit }, { config }) {
-    const mergedConfig = Object.assign({
-      requestId: 'getGlobalUsercustom'
-    }, config)
-    return $http.post('usercustom/default/model', {}, mergedConfig).then((usercustom) => {
-      commit('setGlobalUsercustom', usercustom)
-      return usercustom
-    })
-  }
+    const mergedConfig = Object.assign(
+      {
+        requestId: 'getGlobalUsercustom',
+      },
+      config
+    )
+    return $http
+      .post('usercustom/default/model', {}, mergedConfig)
+      .then(usercustom => {
+        commit('setGlobalUsercustom', usercustom)
+        return usercustom
+      })
+  },
 }
 
 const mutations = {
@@ -140,7 +164,7 @@ const mutations = {
     for (const key in globalUsercustom) {
       Vue.set(state.globalUsercustom, key, globalUsercustom[key])
     }
-  }
+  },
 }
 
 export default {
@@ -148,5 +172,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

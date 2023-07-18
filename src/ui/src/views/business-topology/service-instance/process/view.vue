@@ -11,24 +11,23 @@
 -->
 
 <template>
-  <section class="view-process" v-test-id="'viewProcess'">
+  <section v-test-id="'viewProcess'" class="view-process">
     <process-options></process-options>
     <process-list class="process-list"></process-list>
   </section>
 </template>
 
 <script>
-  import ProcessOptions from './options'
-  import ProcessList from './list'
-  export default {
-    name: 'view-process',
-    components: {
-      ProcessOptions,
-      ProcessList
-    },
-    data() {
-      return {
-      }
-    }
-  }
+import ProcessOptions from './options'
+import ProcessList from './list'
+export default {
+  name: 'view-process',
+  components: {
+    ProcessOptions,
+    ProcessList,
+  },
+  data() {
+    return {}
+  },
+}
 </script>

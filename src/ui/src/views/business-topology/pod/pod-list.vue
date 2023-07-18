@@ -11,349 +11,402 @@
 -->
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
-  import store from '@/store'
-  import RouterQuery from '@/router/query'
-  import routerActions from '@/router/actions'
-  import tableMixin from '@/mixins/table'
-  import { getDefaultPaginationConfig, getSort, getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
-  import { transformGeneralModelCondition, getDefaultData } from '@/components/filters/utils.js'
-  import podValueFilter from '@/filters/pod'
-  import ColumnsConfig from '@/components/columns-config/columns-config.js'
-  import PodListOptions from './pod-list-options.vue'
-  import { MENU_POD_DETAILS } from '@/dictionary/menu-symbol'
-  import { CONTAINER_OBJECTS, CONTAINER_OBJECT_PROPERTY_KEYS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
-  import containerPropertyService, { getPodTopoNodeProps } from '@/service/container/property.js'
-  import containerPodService from '@/service/container/pod.js'
-  import { getContainerNodeType } from '@/service/container/common.js'
+import {
+  computed,
+  defineComponent,
+  reactive,
+  ref,
+  watch,
+  watchEffect,
+} from 'vue'
 
-  export default defineComponent({
-    components: {
-      PodListOptions
-    },
-    filters: {
-      podValueFilter
-    },
-    mixins: [tableMixin],
-    mounted() {
-      this.disabledTableSettingDefaultBehavior()
-    },
-    setup() {
-      const requestIds = {
-        property: Symbol(),
-        list: Symbol()
+import store from '@/store'
+import {
+  getDefaultPaginationConfig,
+  getSort,
+  getHeaderProperties,
+  getHeaderPropertyName,
+} from '@/utils/tools.js'
+import { MENU_POD_DETAILS } from '@/dictionary/menu-symbol'
+import {
+  CONTAINER_OBJECTS,
+  CONTAINER_OBJECT_PROPERTY_KEYS,
+  CONTAINER_OBJECT_INST_KEYS,
+} from '@/dictionary/container'
+import routerActions from '@/router/actions'
+import RouterQuery from '@/router/query'
+import containerPropertyService, {
+  getPodTopoNodeProps,
+} from '@/service/container/property.js'
+import containerPodService from '@/service/container/pod.js'
+import { getContainerNodeType } from '@/service/container/common.js'
+import ColumnsConfig from '@/components/columns-config/columns-config.js'
+import {
+  transformGeneralModelCondition,
+  getDefaultData,
+} from '@/components/filters/utils.js'
+import podValueFilter from '@/filters/pod'
+import tableMixin from '@/mixins/table'
+
+import PodListOptions from './pod-list-options.vue'
+
+export default defineComponent({
+  components: {
+    PodListOptions,
+  },
+  filters: {
+    podValueFilter,
+  },
+  mixins: [tableMixin],
+  setup() {
+    const requestIds = {
+      property: Symbol(),
+      list: Symbol(),
+    }
+
+    const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
+    const MODEL_NAME_KEY =
+      CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].NAME
+    const MODEL_FULL_NAME_KEY =
+      CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].FULL_NAME
+
+    const tableRef = ref(null)
+
+    const table = reactive({
+      data: [],
+      header: [],
+      selection: [],
+      sort: MODEL_ID_KEY,
+      pagination: getDefaultPaginationConfig(),
+    })
+
+    const columnsConfig = reactive({
+      disabledColumns: [MODEL_ID_KEY, MODEL_NAME_KEY],
+    })
+
+    const properties = ref([])
+
+    const columnsConfigKey = 'pod_custom_table_columns'
+
+    const bizId = computed(() => store.getters['objectBiz/bizId'])
+
+    const selectedNode = computed(
+      () => store.getters['businessHost/selectedNode']
+    )
+
+    const query = computed(() => RouterQuery.getAll())
+
+    const filter = reactive({
+      field: query.value.field || MODEL_FULL_NAME_KEY,
+      value: '',
+      operator: '$regex',
+    })
+
+    // 在模型管理中可以配置展示列（全局的）
+    const globalUsercustom = computed(
+      () => store.getters['userCustom/globalUsercustom']
+    )
+
+    const usercustom = computed(() => store.getters['userCustom/usercustom'])
+    const customColumns = computed(
+      () => usercustom.value[columnsConfigKey] || []
+    )
+    const globalCustomColumns = computed(
+      () => globalUsercustom.value?.pod_global_custom_table_columns || []
+    )
+
+    // 查询条件组件相关属性数据
+    const filterProperty = computed(() =>
+      properties.value.find(property => property.id === filter.field)
+    )
+    const filterType = computed(
+      () => filterProperty.value?.bk_property_type ?? 'singlechar'
+    )
+
+    const getList = async () => {
+      if (!selectedNode.value) {
+        return
       }
 
-      const MODEL_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID
-      const MODEL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].NAME
-      const MODEL_FULL_NAME_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].FULL_NAME
+      if (selectedNode.value?.data?.is_folder) {
+        table.data = []
+        table.pagination.count = 0
 
-      const tableRef = ref(null)
-
-      const table = reactive({
-        data: [],
-        header: [],
-        selection: [],
-        sort: MODEL_ID_KEY,
-        pagination: getDefaultPaginationConfig()
-      })
-
-      const columnsConfig = reactive({
-        disabledColumns: [
-          MODEL_ID_KEY,
-          MODEL_NAME_KEY
-        ]
-      })
-
-      const properties = ref([])
-
-      const columnsConfigKey = 'pod_custom_table_columns'
-
-      const bizId = computed(() => store.getters['objectBiz/bizId'])
-
-      const selectedNode = computed(() => store.getters['businessHost/selectedNode'])
-
-      const query = computed(() => RouterQuery.getAll())
-
-      const filter = reactive({
-        field: query.value.field || MODEL_FULL_NAME_KEY,
-        value: '',
-        operator: '$regex'
-      })
-
-      // 在模型管理中可以配置展示列（全局的）
-      const globalUsercustom = computed(() => store.getters['userCustom/globalUsercustom'])
-
-      const usercustom = computed(() => store.getters['userCustom/usercustom'])
-      const customColumns = computed(() => usercustom.value[columnsConfigKey] || [])
-      const globalCustomColumns = computed(() =>  globalUsercustom.value?.pod_global_custom_table_columns || [])
-
-      // 查询条件组件相关属性数据
-      const filterProperty = computed(() => properties.value.find(property => property.id === filter.field))
-      const filterType = computed(() => filterProperty.value?.bk_property_type ?? 'singlechar')
-
-      const getList = async () => {
-        if (!selectedNode.value) {
-          return
-        }
-
-        if (selectedNode.value?.data?.is_folder) {
-          table.data = []
-          table.pagination.count = 0
-
-          return
-        }
-
-        const params = getSearchParams()
-        if (!params.fields?.length) {
-          return
-        }
-
-        try {
-          const { list, count } = await containerPodService.find(params, {
-            requestId: requestIds.list,
-            cancelPrevious: true,
-            globalPermission: false
-          })
-
-          table.data = list
-          table.pagination.count = count
-        } catch (error) {
-          console.error(error)
-        }
+        return
       }
 
-      const saveColumnsConfig = (properties = []) => store.dispatch('userCustom/saveUsercustom', {
-        [columnsConfigKey]: properties.map(property => property.bk_property_id)
-      })
+      const params = getSearchParams()
+      if (!params.fields?.length) {
+        return
+      }
 
-      // 自定义表头变更后，更新table.header
-      watch(customColumns, () => setTableHeader())
-
-      watchEffect(async () => {
-        const podProperties = await containerPropertyService.getMany({
-          objId: CONTAINER_OBJECTS.POD
-        }, {
-          requestId: requestIds.property,
-          fromCache: true
+      try {
+        const { list, count } = await containerPodService.find(params, {
+          requestId: requestIds.list,
+          cancelPrevious: true,
+          globalPermission: false,
         })
 
-        properties.value = [...podProperties, ...getPodTopoNodeProps()]
+        table.data = list
+        table.pagination.count = count
+      } catch (error) {
+        console.error(error)
+      }
+    }
 
-        setTableHeader()
-
-        getList()
+    const saveColumnsConfig = (properties = []) =>
+      store.dispatch('userCustom/saveUsercustom', {
+        [columnsConfigKey]: properties.map(property => property.bk_property_id),
       })
 
-      // 监听查询参数触发查询
-      watch(
-        query,
-        async (query) => {
-          const {
-            tab = 'podList',
-            node,
-            page = 1,
-            limit = table.pagination.limit,
-            value = '',
-            operator = '',
-            field = MODEL_FULL_NAME_KEY
-          } = query
-          updateFilter(field, value, operator)
+    // 自定义表头变更后，更新table.header
+    watch(customColumns, () => setTableHeader())
 
-          table.pagination.current = parseInt(page, 10)
-          table.pagination.limit = parseInt(limit, 10)
-
-          if (tab === 'podList' && node && selectedNode.value) {
-            getList()
-          }
+    watchEffect(async () => {
+      const podProperties = await containerPropertyService.getMany(
+        {
+          objId: CONTAINER_OBJECTS.POD,
+        },
+        {
+          requestId: requestIds.property,
+          fromCache: true,
         }
       )
 
-      const setTableHeader = () => {
-        const configColumns = customColumns.value.length ? customColumns.value : globalCustomColumns.value
-        const headerProperties = getHeaderProperties(properties.value, configColumns, columnsConfig.disabledColumns)
+      properties.value = [...podProperties, ...getPodTopoNodeProps()]
 
-        table.header = headerProperties.map(property => ({
-          id: property.bk_property_id,
-          name: getHeaderPropertyName(property),
-          property
-        }))
+      setTableHeader()
+
+      getList()
+    })
+
+    // 监听查询参数触发查询
+    watch(query, async query => {
+      const {
+        tab = 'podList',
+        node,
+        page = 1,
+        limit = table.pagination.limit,
+        value = '',
+        operator = '',
+        field = MODEL_FULL_NAME_KEY,
+      } = query
+      updateFilter(field, value, operator)
+
+      table.pagination.current = parseInt(page, 10)
+      table.pagination.limit = parseInt(limit, 10)
+
+      if (tab === 'podList' && node && selectedNode.value) {
+        getList()
       }
+    })
 
-      const clearTableHeader = () => {
-        table.header = []
-      }
+    const setTableHeader = () => {
+      const configColumns = customColumns.value.length
+        ? customColumns.value
+        : globalCustomColumns.value
+      const headerProperties = getHeaderProperties(
+        properties.value,
+        configColumns,
+        columnsConfig.disabledColumns
+      )
 
-      // 更新filter数据，无值状态时则使用默认数据初始化
-      const updateFilter = (field, value = '', operator = '') => {
-        if (field) {
-          filter.field = field
-        }
-
-        if (!filterProperty.value) return
-
-        // 业务集中的singlechar类型统一使用$regex
-        const options = filterType.value === 'singlechar' ? { operator: '$regex', value: '' } : {}
-        const defaultData = { ...getDefaultData(filterProperty.value), ...options }
-
-        filter.operator = operator || defaultData.operator
-        filter.value = value || defaultData.value
-      }
-
-      // 计算查询条件参数
-      const getSearchParams = () => {
-        const params = {
-          bk_biz_id: bizId.value,
-          fields: table.header.map(item => item.id),
-          page: {
-            start: table.pagination.limit * (table.pagination.current - 1),
-            limit: table.pagination.limit,
-            sort: table.sort
-          },
-          filter: {
-            condition: 'AND',
-            rules: []
-          }
-        }
-
-        const selectedNodeData = selectedNode.value.data
-
-        // 容器节点的属性ID
-        const fieldMap = {
-          [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
-          [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID
-        }
-        const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
-
-        if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
-          params.filter.rules.push({
-            field: 'ref',
-            operator: 'filter_object',
-            value: {
-              condition: 'AND',
-              rules: [
-                {
-                  field: 'id',
-                  operator: 'equal',
-                  value: selectedNodeData.bk_inst_id
-                },
-                {
-                  field: 'kind',
-                  operator: 'equal',
-                  value: selectedNodeData.bk_obj_id
-                }
-              ]
-            }
-          })
-        } else if (nodeType !== CONTAINER_OBJECTS.FOLDER) {
-          // 添加节点的属性ID参数，如 bk_namespace_id
-          params.filter.rules.push({
-            field: fieldMap[nodeType],
-            operator: 'equal',
-            value: selectedNodeData.bk_inst_id
-          })
-        }
-
-        const condition = {
-          [filter.field]: {
-            value: filter.value,
-            operator: filter.operator
-          }
-        }
-
-        const { conditions } = transformGeneralModelCondition(condition, properties.value)
-
-        if (conditions) {
-          params.filter.rules.push(...conditions.rules)
-        }
-
-        return params
-      }
-
-      const getColumnSortable = (column) => {
-        const topoNodePropIds = getPodTopoNodeProps()?.map(prop => prop.bk_property_id) ?? []
-        return !topoNodePropIds.includes(column.id) ? 'custom' : false
-      }
-
-      const handlePageChange = (current = 1) => {
-        RouterQuery.set({
-          page: current,
-          _t: Date.now()
-        })
-      }
-
-      const handleLimitChange = (limit) => {
-        RouterQuery.set({
-          limit,
-          page: 1,
-          _t: Date.now()
-        })
-      }
-
-      const handleSortChange = (sort) => {
-        table.sort = getSort(sort)
-        RouterQuery.set('_t', Date.now())
-      }
-
-      const handleValueClick = (row, column) => {
-        if (column.id !== 'id') {
-          return
-        }
-        routerActions.redirect({
-          name: MENU_POD_DETAILS,
-          params: {
-            bizId: bizId.value,
-            podId: row.id
-          },
-          history: true
-        })
-      }
-
-      const handleSelectionChange = (selection) => {
-        table.selection = selection
-      }
-
-      const handleHeaderClick = (column) => {
-        if (column.type !== 'setting') {
-          return false
-        }
-        ColumnsConfig.open({
-          props: {
-            properties: properties.value,
-            selected: table.header.map(item => item.id),
-            disabledColumns: columnsConfig.disabledColumns
-          },
-          handler: {
-            apply: async (properties) => {
-              // 先清空表头，防止更新排序后未重新渲染
-              clearTableHeader()
-              await saveColumnsConfig(properties)
-              getList()
-            },
-            reset: async () => {
-              clearTableHeader()
-              await saveColumnsConfig([])
-              getList()
-            }
-          }
-        })
-      }
-
-      return {
-        requestIds,
-        tableRef,
-        table,
-        filter,
-        handlePageChange,
-        handleLimitChange,
-        handleSortChange,
-        handleValueClick,
-        handleSelectionChange,
-        handleHeaderClick,
-        getColumnSortable
-      }
+      table.header = headerProperties.map(property => ({
+        id: property.bk_property_id,
+        name: getHeaderPropertyName(property),
+        property,
+      }))
     }
-  })
+
+    const clearTableHeader = () => {
+      table.header = []
+    }
+
+    // 更新filter数据，无值状态时则使用默认数据初始化
+    const updateFilter = (field, value = '', operator = '') => {
+      if (field) {
+        filter.field = field
+      }
+
+      if (!filterProperty.value) return
+
+      // 业务集中的singlechar类型统一使用$regex
+      const options =
+        filterType.value === 'singlechar'
+          ? { operator: '$regex', value: '' }
+          : {}
+      const defaultData = {
+        ...getDefaultData(filterProperty.value),
+        ...options,
+      }
+
+      filter.operator = operator || defaultData.operator
+      filter.value = value || defaultData.value
+    }
+
+    // 计算查询条件参数
+    const getSearchParams = () => {
+      const params = {
+        bk_biz_id: bizId.value,
+        fields: table.header.map(item => item.id),
+        page: {
+          start: table.pagination.limit * (table.pagination.current - 1),
+          limit: table.pagination.limit,
+          sort: table.sort,
+        },
+        filter: {
+          condition: 'AND',
+          rules: [],
+        },
+      }
+
+      const selectedNodeData = selectedNode.value.data
+
+      // 容器节点的属性ID
+      const fieldMap = {
+        [CONTAINER_OBJECTS.CLUSTER]:
+          CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
+        [CONTAINER_OBJECTS.NAMESPACE]:
+          CONTAINER_OBJECT_PROPERTY_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
+      }
+      const nodeType = getContainerNodeType(selectedNodeData.bk_obj_id)
+
+      if (nodeType === CONTAINER_OBJECTS.WORKLOAD) {
+        params.filter.rules.push({
+          field: 'ref',
+          operator: 'filter_object',
+          value: {
+            condition: 'AND',
+            rules: [
+              {
+                field: 'id',
+                operator: 'equal',
+                value: selectedNodeData.bk_inst_id,
+              },
+              {
+                field: 'kind',
+                operator: 'equal',
+                value: selectedNodeData.bk_obj_id,
+              },
+            ],
+          },
+        })
+      } else if (nodeType !== CONTAINER_OBJECTS.FOLDER) {
+        // 添加节点的属性ID参数，如 bk_namespace_id
+        params.filter.rules.push({
+          field: fieldMap[nodeType],
+          operator: 'equal',
+          value: selectedNodeData.bk_inst_id,
+        })
+      }
+
+      const condition = {
+        [filter.field]: {
+          value: filter.value,
+          operator: filter.operator,
+        },
+      }
+
+      const { conditions } = transformGeneralModelCondition(
+        condition,
+        properties.value
+      )
+
+      if (conditions) {
+        params.filter.rules.push(...conditions.rules)
+      }
+
+      return params
+    }
+
+    const getColumnSortable = column => {
+      const topoNodePropIds =
+        getPodTopoNodeProps()?.map(prop => prop.bk_property_id) ?? []
+      return !topoNodePropIds.includes(column.id) ? 'custom' : false
+    }
+
+    const handlePageChange = (current = 1) => {
+      RouterQuery.set({
+        page: current,
+        _t: Date.now(),
+      })
+    }
+
+    const handleLimitChange = limit => {
+      RouterQuery.set({
+        limit,
+        page: 1,
+        _t: Date.now(),
+      })
+    }
+
+    const handleSortChange = sort => {
+      table.sort = getSort(sort)
+      RouterQuery.set('_t', Date.now())
+    }
+
+    const handleValueClick = (row, column) => {
+      if (column.id !== 'id') {
+        return
+      }
+      routerActions.redirect({
+        name: MENU_POD_DETAILS,
+        params: {
+          bizId: bizId.value,
+          podId: row.id,
+        },
+        history: true,
+      })
+    }
+
+    const handleSelectionChange = selection => {
+      table.selection = selection
+    }
+
+    const handleHeaderClick = column => {
+      if (column.type !== 'setting') {
+        return false
+      }
+      ColumnsConfig.open({
+        props: {
+          properties: properties.value,
+          selected: table.header.map(item => item.id),
+          disabledColumns: columnsConfig.disabledColumns,
+        },
+        handler: {
+          apply: async properties => {
+            // 先清空表头，防止更新排序后未重新渲染
+            clearTableHeader()
+            await saveColumnsConfig(properties)
+            getList()
+          },
+          reset: async () => {
+            clearTableHeader()
+            await saveColumnsConfig([])
+            getList()
+          },
+        },
+      })
+    }
+
+    return {
+      requestIds,
+      tableRef,
+      table,
+      filter,
+      handlePageChange,
+      handleLimitChange,
+      handleSortChange,
+      handleValueClick,
+      handleSelectionChange,
+      handleHeaderClick,
+      getColumnSortable,
+    }
+  },
+  mounted() {
+    this.disabledTableSettingDefaultBehavior()
+  },
+})
 </script>
 
 <template>
@@ -363,9 +416,10 @@
       :table-selection="table.selection"
       :filter="filter">
     </pod-list-options>
-    <bk-table class="pod-table"
-      v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
+    <bk-table
       ref="tableRef"
+      v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
+      class="pod-table"
       :data="table.data"
       :pagination="table.pagination"
       :max-height="$APP.height - 250"
@@ -374,11 +428,18 @@
       @sort-change="handleSortChange"
       @selection-change="handleSelectionChange"
       @header-click="handleHeaderClick">
-      <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
-      <bk-table-column v-for="column in table.header"
-        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)"
-        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
+      <bk-table-column
+        type="selection"
+        width="50"
+        align="center"
+        fixed></bk-table-column>
+      <bk-table-column
+        v-for="column in table.header"
         :key="column.id"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)"
+        :min-width="
+          $tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })
+        "
         :sortable="getColumnSortable(column)"
         :prop="column.id"
         :label="column.name"

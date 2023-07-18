@@ -16,9 +16,9 @@ export default {
     if (typeof this.render === 'function') {
       return this.render(h, {
         type: this.type,
-        property: this.property
+        property: this.property,
       })
     }
     return ''
-  }
+  },
 }

@@ -17,7 +17,7 @@ export default function (h, { serviceTemplateId, bizId, property }) {
     props: {
       serviceTemplateId,
       bizId,
-      property
-    }
+      property,
+    },
   })
 }

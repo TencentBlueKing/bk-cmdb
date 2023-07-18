@@ -21,7 +21,7 @@ export const pickQuery = (query = {}, include = [], exclude = []) => {
     queryKeys = queryKeys.filter(item => !exclude.includes(item))
   }
   const newQuery = {}
-  queryKeys.forEach(key => newQuery[key] = query[key])
+  queryKeys.forEach(key => (newQuery[key] = query[key]))
   return newQuery
 }
 
@@ -30,12 +30,12 @@ export default function useRoute(root) {
 
   watch(
     () => root.$route,
-    (route) => {
+    route => {
       state.route = route
     }
   )
 
   return {
-    ...toRefs(state)
+    ...toRefs(state),
   }
 }

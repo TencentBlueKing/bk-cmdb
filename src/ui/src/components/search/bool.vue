@@ -22,27 +22,27 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-bool',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: [String, Boolean],
-        default: ''
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-bool',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: [String, Boolean],
+      default: '',
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value.toString()
-        },
-        set(value) {
-          const realValue = value && value === 'true'
-          this.$emit('input', realValue)
-          this.$emit('change', realValue)
-        }
-      }
-    }
-  }
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value.toString()
+      },
+      set(value) {
+        const realValue = value && value === 'true'
+        this.$emit('input', realValue)
+        this.$emit('change', realValue)
+      },
+    },
+  },
+}
 </script>

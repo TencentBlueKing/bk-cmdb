@@ -10,31 +10,35 @@
  * limitations under the License.
 -->
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <head>
-        <meta charset="utf-8">
-        <title><%= htmlWebpackPlugin.options.config.BUILD_TITLE %></title>
-        <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-        <style>
-            html,body {
-                height: 100%;
-                font-family: "PingFang SC","Microsoft YaHei";
-                font-size: 14px;
-            }
-            * {
-                padding: 0;
-                margin: 0;
-                box-sizing: border-box;
-            }
-        </style>
+      <meta charset="utf-8" />
+      <title><%= htmlWebpackPlugin.options.config.BUILD_TITLE %></title>
+      <link
+        rel="shortcut icon"
+        href="/static/favicon.ico"
+        type="image/x-icon" />
+      <style>
+        html,
+        body {
+          height: 100%;
+          font-family: 'PingFang SC', 'Microsoft YaHei';
+          font-size: 14px;
+        }
+        * {
+          padding: 0;
+          margin: 0;
+          box-sizing: border-box;
+        }
+      </style>
     </head>
-</head>
-<body>
+  </head>
+  <body>
     <script>
-        window.LOGIN_ERROR = '{{.error}}'
+      window.LOGIN_ERROR = '{{.error}}'
     </script>
     <div id="login"></div>
-</body>
+  </body>
 </html>

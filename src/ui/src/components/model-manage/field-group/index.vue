@@ -12,46 +12,61 @@
 
 <template>
   <div
+    v-bkloading="{
+      isLoading: $loading(Object.values(requestIds)),
+      extCls: 'field-loading',
+    }"
     class="field-group"
     :class="{
       'is-dragging': isDragging,
-      'is-readonly': !updateAuth
-    }"
-    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
-  >
+      'is-readonly': !updateAuth,
+    }">
     <div class="field-options">
-      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
+      <cmdb-auth
+        v-if="isShowOptionBtn"
+        :auth="authResources"
+        @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button theme="primary" :disabled="disabled || activeModel.bk_ispaused"
-            @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
+          <bk-button
+            theme="primary"
+            :disabled="disabled || activeModel.bk_ispaused"
+            @click="handleAddField(displayGroupedProperties[0])"
+            >{{ $t('新建字段') }}</bk-button
+          >
         </template>
       </cmdb-auth>
-      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
+      <cmdb-auth
+        v-if="isShowOptionBtn"
+        :auth="authResources"
+        @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button :disabled="disabled || activeModel.bk_ispaused" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
+          <bk-button
+            :disabled="disabled || activeModel.bk_ispaused"
+            @click="handleAddGroup"
+            >{{ $t('新建分组') }}</bk-button
+          >
         </template>
       </cmdb-auth>
-      <bk-button @click="previewShow = true" :disabled="!properties.length">{{
-        $t("字段预览")
+      <bk-button :disabled="!properties.length" @click="previewShow = true">{{
+        $t('字段预览')
       }}</bk-button>
       <bk-input
+        v-model.trim="keyword"
         class="filter-input"
         clearable
         right-icon="icon-search"
-        :placeholder="$t('请输入关键字')"
-        v-model.trim="keyword"
-      >
+        :placeholder="$t('请输入关键字')">
       </bk-input>
       <bk-button
+        v-if="canEditSort"
         text
         class="setting-btn"
         icon="cog"
-        v-if="canEditSort"
-        @click="configProperty.show = true"
-      ></bk-button>
+        @click="configProperty.show = true"></bk-button>
     </div>
     <div class="group-wrapper">
       <draggable
+        v-model="displayGroupedProperties"
         class="group-list"
         tag="div"
         draggable=".group-item"
@@ -62,49 +77,50 @@
         :disabled="!updateAuth"
         @start="handleGroupDragStart"
         @end="handleGroupDragEnd"
-        @change="handleGroupDragChange"
-        v-model="displayGroupedProperties"
-      >
+        @change="handleGroupDragChange">
         <div
-          class="group-item"
           v-for="(group, groupIndex) in displayGroupedProperties"
           :key="group.bk_classification_id"
-          :class="[{ 'is-collapse': !groupCollapseState[group.info.bk_group_id] }]">
-          <div class="group-header" slot="title">
+          class="group-item"
+          :class="[
+            { 'is-collapse': !groupCollapseState[group.info.bk_group_id] },
+          ]">
+          <div slot="title" class="group-header">
             <collapse-group-title
+              v-bk-tooltips="{
+                disabled: !isBuiltInGroup(group.info),
+                content: $t('全局配置不可以在业务内调整'),
+                placement: 'right',
+              }"
               :drag-icon="updateAuth"
               :dropdown-menu="isEditable(group.info)"
               :collapse="groupCollapseState[group.info.bk_group_id]"
               :title="`${group.info.bk_group_name} ( ${group.properties.length} )`"
-              @click.native="toggleGroup(group)"
               :commands="[
                 {
                   text: $t('编辑分组'),
                   auth: authResources,
                   onUpdateAuth: handleReceiveAuth,
                   disabled: !isEditable(group.info),
-                  handler: () => handleEditGroup(group)
+                  handler: () => handleEditGroup(group),
                 },
                 {
                   text: $t('删除分组'),
-                  disabled: !isEditable(group.info) || group.info['bk_isdefault'],
+                  disabled:
+                    !isEditable(group.info) || group.info['bk_isdefault'],
                   auth: authResources,
-                  handler: () => handleDeleteGroup(group, groupIndex)
-                }
+                  handler: () => handleDeleteGroup(group, groupIndex),
+                },
               ]"
-              v-bk-tooltips="{
-                disabled: !isBuiltInGroup(group.info),
-                content: $t('全局配置不可以在业务内调整'),
-                placement: 'right'
-              }">
+              @click.native="toggleGroup(group)">
             </collapse-group-title>
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
-              class="field-list clearfix"
               v-show="!groupCollapseState[group.info.bk_group_id]"
-              tag="ul"
               v-model="group.properties"
+              class="field-list clearfix"
+              tag="ul"
               ghost-class="field-item-ghost"
               draggable=".field-item"
               group="field-list"
@@ -112,23 +128,26 @@
               :disabled="!updateAuth || !isEditable(group.info)"
               :class="{
                 empty: !group.properties.length,
-                disabled: !updateAuth || !isEditable(group.info)
+                disabled: !updateAuth || !isEditable(group.info),
               }"
               @start="handleModelDragStart"
               @end="handleModelDragEnd"
-              @change="handleModelDragChange"
-            >
+              @change="handleModelDragChange">
               <li
-                class="field-item fl"
                 v-for="(property, fieldIndex) in group.properties"
-                :class="{
-                  'only-ready': !updateAuth || !isFieldEditable(property)
-                }"
                 :key="fieldIndex"
+                class="field-item fl"
+                :class="{
+                  'only-ready': !updateAuth || !isFieldEditable(property),
+                }"
                 @click="
-                  handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })
-                "
-              >
+                  handleFieldDetailsView({
+                    group,
+                    index: groupIndex,
+                    fieldIndex,
+                    property,
+                  })
+                ">
                 <span class="drag-icon"></span>
                 <div class="drag-content">
                   <div class="field-name">
@@ -147,66 +166,77 @@
                     class="mr10"
                     :auth="authResources"
                     @update-auth="handleReceiveAuth"
-                    @click.native.stop
-                  >
+                    @click.native.stop>
                     <bk-button
                       slot-scope="{ disabled }"
                       class="field-button"
                       :text="true"
                       :disabled="disabled || !isFieldEditable(property, false)"
-                      @click.stop="handleEditField(group, property)"
-                    >
+                      @click.stop="handleEditField(group, property)">
                       <i class="field-button-icon icon-cc-edit-shape"></i>
                     </bk-button>
                   </cmdb-auth>
                   <cmdb-auth
-                    class="mr10"
-                    @update-auth="handleReceiveAuth"
-                    :auth="authResources"
-                    @click.native.stop
                     v-if="!property.ispre"
-                  >
+                    class="mr10"
+                    :auth="authResources"
+                    @update-auth="handleReceiveAuth"
+                    @click.native.stop>
                     <bk-button
                       slot-scope="{ disabled }"
                       class="field-button"
                       :text="true"
                       :disabled="disabled || !isFieldEditable(property)"
                       @click.stop="
-                        handleDeleteField({ property, index: groupIndex, fieldIndex })
-                      "
-                    >
+                        handleDeleteField({
+                          property,
+                          index: groupIndex,
+                          fieldIndex,
+                        })
+                      ">
                       <i class="field-button-icon bk-icon icon-cc-del"></i>
                     </bk-button>
                   </cmdb-auth>
                 </template>
               </li>
-              <li class="field-add fl" v-if="isEditable(group.info)">
-                <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
+              <li v-if="isEditable(group.info)" class="field-add fl">
+                <cmdb-auth
+                  v-if="isShowOptionBtn"
+                  :auth="authResources"
+                  tag="div"
+                  @update-auth="handleReceiveAuth">
                   <bk-button
                     slot-scope="{ disabled }"
                     class="field-add-btn"
                     :text="true"
                     :disabled="disabled"
-                    @click.stop="handleAddField(group)"
-                  >
+                    @click.stop="handleAddField(group)">
                     <i class="bk-icon icon-plus"></i>
-                    {{customObjId ? $t('新建业务字段') : $t('添加')}}
+                    {{ customObjId ? $t('新建业务字段') : $t('添加') }}
                   </bk-button>
                 </cmdb-auth>
               </li>
-              <li class="property-empty" v-if="!isEditable(group.info) && !group.properties.length">{{$t('暂无字段')}}</li>
+              <li
+                v-if="!isEditable(group.info) && !group.properties.length"
+                class="property-empty">
+                {{ $t('暂无字段') }}
+              </li>
             </draggable>
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources">
-            <bk-button slot-scope="{ disabled }"
+          <cmdb-auth
+            v-if="isShowOptionBtn"
+            :auth="authResources"
+            @update-auth="handleReceiveAuth">
+            <bk-button
+              slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
               :disabled="disabled || activeModel.bk_ispaused"
               @click.stop="handleAddGroup">
               <i class="bk-icon icon-cc-plus"></i>
-              {{customObjId ? $t('新建业务分组') : $t('添加分组')}}
+              {{ customObjId ? $t('新建业务分组') : $t('添加分组') }}
             </bk-button>
           </cmdb-auth>
         </div>
@@ -219,101 +249,125 @@
       </cmdb-data-empty>
     </div>
 
-    <bk-dialog class="bk-dialog-no-padding"
+    <bk-dialog
       v-model="dialog.isShow"
+      class="bk-dialog-no-padding"
       :mask-close="false"
       :width="600"
       @cancel="handleCancelAddProperty"
       @confirm="handleConfirmAddProperty">
-      <div class="dialog-title" slot="tools">{{$t('新建字段')}}</div>
+      <div slot="tools" class="dialog-title">{{ $t('新建字段') }}</div>
       <div class="dialog-content">
         <div class="dialog-filter">
-          <bk-input type="text" class="cmdb-form-input" clearable
-            v-model.trim="dialog.filter" right-icon="bk-icon icon-search">
+          <bk-input
+            v-model.trim="dialog.filter"
+            type="text"
+            class="cmdb-form-input"
+            clearable
+            right-icon="bk-icon icon-search">
           </bk-input>
         </div>
-        <ul class="dialog-property clearfix" ref="dialogProperty">
-          <li class="property-item fl"
+        <ul ref="dialogProperty" class="dialog-property clearfix">
+          <li
             v-for="(property, index) in sortedProperties"
             v-show="filter(property)"
-            :key="index">
-            <label class="property-label"
+            :key="index"
+            class="property-item fl">
+            <label
+              class="property-label"
               :class="{
-                checked: dialog.selectedProperties.includes(property)
+                checked: dialog.selectedProperties.includes(property),
               }"
               :title="property.bk_property_name"
               @click="handleSelectProperty(property)">
-              {{property.bk_property_name}}
+              {{ property.bk_property_name }}
             </label>
           </li>
         </ul>
       </div>
     </bk-dialog>
 
-    <bk-dialog class="bk-dialog-no-padding group-dialog"
+    <bk-dialog
       v-model="groupDialog.isShow"
+      class="bk-dialog-no-padding group-dialog"
       width="480"
       :mask-close="false"
       @after-leave="handleCancelGroupLeave">
-      <div class="group-dialog-header" slot="tools">{{groupDialog.title}}</div>
-      <div class="group-dialog-content" v-if="groupDialog.isShowContent">
+      <div slot="tools" class="group-dialog-header">
+        {{ groupDialog.title }}
+      </div>
+      <div v-if="groupDialog.isShowContent" class="group-dialog-content">
         <label class="label-item">
-          <span>{{$t('分组名称')}}</span>
+          <span>{{ $t('分组名称') }}</span>
           <span class="color-danger">*</span>
-          <div class="cmdb-form-item" :class="{ 'is-error': errors.has('groupName') }">
-            <bk-input v-model.trim="groupForm.groupName"
+          <div
+            class="cmdb-form-item"
+            :class="{ 'is-error': errors.has('groupName') }">
+            <bk-input
+              v-model.trim="groupForm.groupName"
+              v-validate="'required|length:128'"
               :placeholder="$t('请输入xx', { name: $t('分组名称') })"
-              name="groupName"
-              v-validate="'required|length:128'">
+              name="groupName">
             </bk-input>
-            <p class="form-error">{{errors.first('groupName')}}</p>
+            <p class="form-error">{{ errors.first('groupName') }}</p>
           </div>
         </label>
         <div class="label-item">
-          <span>{{$t('是否默认折叠')}}</span>
+          <span>{{ $t('是否默认折叠') }}</span>
           <div class="cmdb-form-item">
-            <bk-switcher theme="primary" v-model="groupForm.isCollapse" size="small"></bk-switcher>
+            <bk-switcher
+              v-model="groupForm.isCollapse"
+              theme="primary"
+              size="small"></bk-switcher>
           </div>
         </div>
       </div>
-      <div class="group-dialog-footer" slot="footer">
-        <bk-button theme="primary"
+      <div slot="footer" class="group-dialog-footer">
+        <bk-button
           v-if="groupDialog.type === 'create'"
+          theme="primary"
           :disabled="errors.has('groupName')"
           @click="handleCreateGroup">
-          {{$t('提交')}}
+          {{ $t('提交') }}
         </bk-button>
-        <bk-button theme="primary"
+        <bk-button
           v-else
+          theme="primary"
           :disabled="errors.has('groupName')"
           @click="handleUpdateGroup">
-          {{$t('保存')}}
+          {{ $t('保存') }}
         </bk-button>
-        <bk-button @click="groupDialog.isShow = false">{{$t('取消')}}</bk-button>
+        <bk-button @click="groupDialog.isShow = false">{{
+          $t('取消')
+        }}</bk-button>
       </div>
     </bk-dialog>
 
     <bk-sideslider
       ref="sidesliderComp"
-      class="sides-slider"
       v-transfer-dom
+      class="sides-slider"
       :width="640"
       :title="slider.title"
       :is-show.sync="slider.isShow"
       :before-close="slider.beforeClose"
       @hidden="handleSliderHidden">
-      <field-details-view v-if="slider.isShow && slider.view === 'details'"
+      <field-details-view
+        v-if="slider.isShow && slider.view === 'details'"
         slot="content"
         :field="slider.curField"
         :can-edit="updateAuth && isFieldEditable(slider.curField, false)"
         @on-edit="handleEditField(slider.curGroup, slider.curField)"
-        @on-delete="handleDeleteField({
-          property: slider.curField,
-          index: slider.index,
-          fieldIndex: slider.fieldIndex
-        })">
+        @on-delete="
+          handleDeleteField({
+            property: slider.curField,
+            index: slider.index,
+            fieldIndex: slider.fieldIndex,
+          })
+        ">
       </field-details-view>
-      <the-field-detail v-else-if="slider.isShow && slider.view === 'operation'"
+      <the-field-detail
+        v-else-if="slider.isShow && slider.view === 'operation'"
         ref="fieldForm"
         slot="content"
         :is-main-line-model="isMainLineModel"
@@ -335,7 +389,8 @@
       :width="676"
       :title="$t('字段预览')"
       :is-show.sync="previewShow">
-      <preview-field v-if="previewShow"
+      <preview-field
+        v-if="previewShow"
         slot="content"
         :properties="properties"
         :property-groups="groups">
@@ -349,9 +404,10 @@
       :width="676"
       :title="$t('实例表格字段排序设置')"
       :before-close="handleColumnsConfigSliderBeforeClose">
-      <cmdb-columns-config slot="content"
-        ref="cmdbColumnsConfig"
+      <cmdb-columns-config
         v-if="configProperty.show"
+        slot="content"
+        ref="cmdbColumnsConfig"
         :properties="properties"
         :selected="configProperty.selected"
         :disabled-columns="disabledConfig"
@@ -365,547 +421,608 @@
 </template>
 
 <script>
-  import Draggable from 'vuedraggable'
-  import has from 'has'
-  import debounce from 'lodash.debounce'
-  import theFieldDetail from './field-detail'
-  import previewField from './preview-field'
-  import fieldDetailsView from './field-view'
-  import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
-  import { mapGetters, mapActions, mapState } from 'vuex'
-  import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
-  import { v4 as uuidv4 } from 'uuid'
-  import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
-  import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+import Draggable from 'vuedraggable'
+import has from 'has'
+import debounce from 'lodash.debounce'
+import { mapGetters, mapActions, mapState } from 'vuex'
+import { v4 as uuidv4 } from 'uuid'
 
-  export default {
-    name: 'FieldGroup',
-    components: {
-      Draggable,
-      theFieldDetail,
-      previewField,
-      fieldDetailsView,
-      CmdbColumnsConfig,
-      CollapseGroupTitle,
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
+import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
+
+import theFieldDetail from './field-detail'
+import previewField from './preview-field'
+import fieldDetailsView from './field-view'
+
+export default {
+  name: 'FieldGroup',
+  components: {
+    Draggable,
+    theFieldDetail,
+    previewField,
+    fieldDetailsView,
+    CmdbColumnsConfig,
+    CollapseGroupTitle,
+  },
+  props: {
+    customObjId: String,
+  },
+  data() {
+    return {
+      updateAuth: false,
+      isDragging: false,
+      properties: [],
+      groups: [],
+      groupedProperties: [],
+      displayGroupedProperties: [],
+      previewShow: false,
+      keyword: '',
+      groupCollapseState: {},
+      initGroupState: {},
+      fieldTypeMap: PROPERTY_TYPE_NAMES,
+      dialog: {
+        isShow: false,
+        group: null,
+        filter: '',
+        selectedProperties: [],
+        addedProperties: [],
+        deletedProperties: [],
+      },
+      groupDialog: {
+        isShowContent: false,
+        isShow: false,
+        type: 'create',
+        title: this.$t('新建分组'),
+      },
+      groupForm: {
+        groupName: '',
+        isCollapse: false,
+      },
+      slider: {
+        view: 'details',
+        isShow: false,
+        title: this.$t('新建字段'),
+        isEditField: false,
+        curField: {},
+        curGroup: {},
+        group: {},
+        beforeClose: null,
+        index: null,
+        fieldIndex: null,
+        backView: '',
+      },
+      configProperty: {
+        show: false,
+        selected: [],
+      },
+      requestIds: {
+        properties: Symbol(),
+        propertyGroups: Symbol(),
+      },
+      dataEmpty: {
+        type: 'search',
+      },
+    }
+  },
+  computed: {
+    ...mapState('userCustom', ['globalUsercustom']),
+    ...mapGetters(['supplierAccount']),
+    ...mapGetters('objectModel', ['activeModel']),
+    ...mapGetters('objectMainLineModule', ['isMainLine']),
+    isGlobalView() {
+      const [topRoute] = this.$route.matched
+      return topRoute ? topRoute.name !== MENU_BUSINESS : true
     },
-    props: {
-      customObjId: String
-    },
-    data() {
-      return {
-        updateAuth: false,
-        isDragging: false,
-        properties: [],
-        groups: [],
-        groupedProperties: [],
-        displayGroupedProperties: [],
-        previewShow: false,
-        keyword: '',
-        groupCollapseState: {},
-        initGroupState: {},
-        fieldTypeMap: PROPERTY_TYPE_NAMES,
-        dialog: {
-          isShow: false,
-          group: null,
-          filter: '',
-          selectedProperties: [],
-          addedProperties: [],
-          deletedProperties: []
-        },
-        groupDialog: {
-          isShowContent: false,
-          isShow: false,
-          type: 'create',
-          title: this.$t('新建分组')
-        },
-        groupForm: {
-          groupName: '',
-          isCollapse: false
-        },
-        slider: {
-          view: 'details',
-          isShow: false,
-          title: this.$t('新建字段'),
-          isEditField: false,
-          curField: {},
-          curGroup: {},
-          group: {},
-          beforeClose: null,
-          index: null,
-          fieldIndex: null,
-          backView: ''
-        },
-        configProperty: {
-          show: false,
-          selected: []
-        },
-        requestIds: {
-          properties: Symbol(),
-          propertyGroups: Symbol()
-        },
-        dataEmpty: {
-          type: 'search',
-        }
+    bizId() {
+      if (this.isGlobalView) {
+        return null
       }
+      return parseInt(this.$route.params.bizId, 10)
     },
-    computed: {
-      ...mapState('userCustom', ['globalUsercustom']),
-      ...mapGetters(['supplierAccount']),
-      ...mapGetters('objectModel', ['activeModel']),
-      ...mapGetters('objectMainLineModule', ['isMainLine']),
-      isGlobalView() {
-        const [topRoute] = this.$route.matched
-        return topRoute ? topRoute.name !== MENU_BUSINESS : true
-      },
-      bizId() {
-        if (this.isGlobalView) {
-          return null
-        }
-        return parseInt(this.$route.params.bizId, 10)
-      },
-      objId() {
-        return this.$route.params.modelId || this.customObjId
-      },
-      isReadOnly() {
-        return this.activeModel && this.activeModel.bk_ispaused
-      },
-      sortedProperties() {
-        const propertiesSorted = this.isGlobalView ? this.groupedProperties : this.bizGroupedProperties
-        let properties = []
-        propertiesSorted.forEach((group) => {
-          properties = properties.concat(group.properties)
-        })
-        return properties
-      },
-      groupedPropertiesCount() {
-        const count = {}
-        this.groupedProperties.forEach(({ info, properties }) => {
-          const groupId = info.bk_group_id
-          count[groupId] = properties.length
-        })
-        return count
-      },
-      bizGroupedProperties() {
-        return this.groupedProperties.filter(group => this.isBizCustomData(group.info))
-      },
-      curModel() {
-        if (!this.objId) return {}
-        return this.$store.getters['objectModelClassify/getModelById'](this.objId)
-      },
-      modelId() {
-        return this.curModel.id || null
-      },
-      isMainLineModel() {
-        return this.isMainLine(this.curModel)
-      },
-      authResources() {
-        if (this.customObjId) { // 业务自定义字段
-          return {
-            type: this.$OPERATION.U_BIZ_MODEL_CUSTOM_FIELD,
-            relation: [this.$store.getters['objectBiz/bizId']]
-          }
-        }
+    objId() {
+      return this.$route.params.modelId || this.customObjId
+    },
+    isReadOnly() {
+      return this.activeModel && this.activeModel.bk_ispaused
+    },
+    sortedProperties() {
+      const propertiesSorted = this.isGlobalView
+        ? this.groupedProperties
+        : this.bizGroupedProperties
+      let properties = []
+      propertiesSorted.forEach(group => {
+        properties = properties.concat(group.properties)
+      })
+      return properties
+    },
+    groupedPropertiesCount() {
+      const count = {}
+      this.groupedProperties.forEach(({ info, properties }) => {
+        const groupId = info.bk_group_id
+        count[groupId] = properties.length
+      })
+      return count
+    },
+    bizGroupedProperties() {
+      return this.groupedProperties.filter(group =>
+        this.isBizCustomData(group.info)
+      )
+    },
+    curModel() {
+      if (!this.objId) return {}
+      return this.$store.getters['objectModelClassify/getModelById'](this.objId)
+    },
+    modelId() {
+      return this.curModel.id || null
+    },
+    isMainLineModel() {
+      return this.isMainLine(this.curModel)
+    },
+    authResources() {
+      if (this.customObjId) {
+        // 业务自定义字段
         return {
-          relation: [this.modelId],
-          type: this.$OPERATION.U_MODEL
+          type: this.$OPERATION.U_BIZ_MODEL_CUSTOM_FIELD,
+          relation: [this.$store.getters['objectBiz/bizId']],
         }
-      },
-      disabledConfig() {
-        const disabled = {
-          host: ['bk_host_innerip', 'bk_cloud_id'],
-          biz: ['bk_biz_name']
-        }
-        return disabled[this.objId] || ['bk_inst_name']
-      },
-      curGlobalCustomTableColumns() {
-        return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
-      },
-      canEditSort() {
-        return !this.customObjId
-      },
-      isShowOptionBtn() {
-        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
+      }
+      return {
+        relation: [this.modelId],
+        type: this.$OPERATION.U_MODEL,
       }
     },
-    watch: {
-      groupedProperties: {
-        handler() {
-          this.filterField()
-        },
-        deep: true
-      },
-      keyword() {
-        this.handleFilter()
+    disabledConfig() {
+      const disabled = {
+        host: ['bk_host_innerip', 'bk_cloud_id'],
+        biz: ['bk_biz_name'],
       }
+      return disabled[this.objId] || ['bk_inst_name']
     },
-    async created() {
-      this.handleFilter = debounce(this.filterField, 300)
-      const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+    curGlobalCustomTableColumns() {
+      return this.globalUsercustom[`${this.objId}_global_custom_table_columns`]
+    },
+    canEditSort() {
+      return !this.customObjId
+    },
+    isShowOptionBtn() {
+      return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
+    },
+  },
+  watch: {
+    groupedProperties: {
+      handler() {
+        this.filterField()
+      },
+      deep: true,
+    },
+    keyword() {
+      this.handleFilter()
+    },
+  },
+  async created() {
+    this.handleFilter = debounce(this.filterField, 300)
+    const [properties, groups] = await Promise.all([
+      this.getProperties(),
+      this.getPropertyGroups(),
+    ])
+    this.properties = properties
+    this.groups = groups
+    this.init(properties, groups)
+  },
+  beforeDestroy() {
+    // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
+    this.$refs?.sidesliderComp?.handleClose?.()
+  },
+  methods: {
+    ...mapActions('objectModelFieldGroup', [
+      'searchGroup',
+      'updateGroup',
+      'switchGroupIndex',
+      'deleteGroup',
+      'createGroup',
+      'updatePropertyGroup',
+      'updatePropertySort',
+    ]),
+    ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+    toggleGroup(group) {
+      this.groupCollapseState[`${group.info.bk_group_id}`] =
+        !this.groupCollapseState[`${group.info.bk_group_id}`]
+    },
+    isBizCustomData(data) {
+      return has(data, 'bk_biz_id') && data.bk_biz_id > 0
+    },
+    isBuiltInGroup(group) {
+      if (this.isGlobalView) {
+        return false
+      }
+      return !this.isBizCustomData(group)
+    },
+    isFieldEditable(item, checkIspre = true) {
+      if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
+        return false
+      }
+      if (!this.isGlobalView) {
+        return this.isBizCustomData(item)
+      }
+      return true
+    },
+    isEditable(group) {
+      if (this.isReadOnly) {
+        return false
+      }
+      if (this.isGlobalView) {
+        return true
+      }
+      return this.isBizCustomData(group)
+    },
+    canRiseGroup(index, group) {
+      if (this.isGlobalView) {
+        return index !== 0
+      }
+      const customDataIndex = this.bizGroupedProperties.indexOf(group)
+      return customDataIndex !== 0
+    },
+    canDropGroup(index, group) {
+      if (this.isGlobalView) {
+        return index !== this.groupedProperties.length - 1
+      }
+      const customDataIndex = this.bizGroupedProperties.indexOf(group)
+      return customDataIndex !== this.bizGroupedProperties.length - 1
+    },
+    async resetData(filedId) {
+      const [properties, groups] = await Promise.all([
+        this.getProperties(),
+        this.getPropertyGroups(),
+      ])
+      if (filedId && this.slider.isShow) {
+        const field = properties.find(
+          property => property.bk_property_id === filedId
+        )
+        if (field) {
+          this.slider.curField = field
+        } else {
+          this.handleSliderHidden()
+        }
+      }
       this.properties = properties
       this.groups = groups
       this.init(properties, groups)
     },
-    beforeDestroy() {
-      // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
-      this.$refs?.sidesliderComp?.handleClose?.()
+    init(properties, groups) {
+      properties = this.sortProperties(properties)
+      const separatedGroups = this.separateBizCustomGroups(groups)
+      const groupCollapseState = {}
+      const groupedProperties = separatedGroups.map(group => {
+        groupCollapseState[group.bk_group_id] = group.is_collapse
+        return {
+          info: group,
+          properties: properties.filter(property => {
+            if (
+              ['default', 'none'].includes(property.bk_property_group) &&
+              group.bk_group_id === 'default'
+            ) {
+              return true
+            }
+            return property.bk_property_group === group.bk_group_id
+          }),
+        }
+      })
+      const seletedProperties = this.$tools.getHeaderProperties(
+        properties,
+        [],
+        this.disabledConfig
+      )
+      this.configProperty.selected =
+        this.curGlobalCustomTableColumns ||
+        seletedProperties.map(property => property.bk_property_id)
+      this.initGroupState = this.$tools.clone(groupCollapseState)
+      this.groupCollapseState = Object.assign(
+        {},
+        groupCollapseState,
+        this.groupCollapseState
+      )
+      this.groupedProperties = groupedProperties
     },
-    methods: {
-      ...mapActions('objectModelFieldGroup', [
-        'searchGroup',
-        'updateGroup',
-        'switchGroupIndex',
-        'deleteGroup',
-        'createGroup',
-        'updatePropertyGroup',
-        'updatePropertySort'
-      ]),
-      ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-      toggleGroup(group) {
-        this.groupCollapseState[`${group.info.bk_group_id}`] = !this.groupCollapseState[`${group.info.bk_group_id}`]
-      },
-      isBizCustomData(data) {
-        return has(data, 'bk_biz_id') && data.bk_biz_id > 0
-      },
-      isBuiltInGroup(group) {
-        if (this.isGlobalView) {
-          return false
-        }
-        return !this.isBizCustomData(group)
-      },
-      isFieldEditable(item, checkIspre = true) {
-        if ((checkIspre && item.ispre) || this.isReadOnly || !this.updateAuth) {
-          return false
-        }
-        if (!this.isGlobalView) {
-          return this.isBizCustomData(item)
-        }
-        return true
-      },
-      isEditable(group) {
-        if (this.isReadOnly) {
-          return false
-        }
-        if (this.isGlobalView) {
-          return true
-        }
-        return this.isBizCustomData(group)
-      },
-      canRiseGroup(index, group) {
-        if (this.isGlobalView) {
-          return index !== 0
-        }
-        const customDataIndex = this.bizGroupedProperties.indexOf(group)
-        return customDataIndex !== 0
-      },
-      canDropGroup(index, group) {
-        if (this.isGlobalView) {
-          return index !== (this.groupedProperties.length - 1)
-        }
-        const customDataIndex = this.bizGroupedProperties.indexOf(group)
-        return customDataIndex !== (this.bizGroupedProperties.length - 1)
-      },
-      async resetData(filedId) {
-        const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
-        if (filedId && this.slider.isShow) {
-          const field = properties.find(property => property.bk_property_id === filedId)
-          if (field) {
-            this.slider.curField = field
-          } else {
-            this.handleSliderHidden()
-          }
-        }
-        this.properties = properties
-        this.groups = groups
-        this.init(properties, groups)
-      },
-      init(properties, groups) {
-        properties = this.sortProperties(properties)
-        const separatedGroups = this.separateBizCustomGroups(groups)
-        const groupCollapseState = {}
-        const groupedProperties = separatedGroups.map((group) => {
-          groupCollapseState[group.bk_group_id] = group.is_collapse
-          return {
-            info: group,
-            properties: properties.filter((property) => {
-              if (['default', 'none'].includes(property.bk_property_group) && group.bk_group_id === 'default') {
-                return true
-              }
-              return property.bk_property_group === group.bk_group_id
+    filterField() {
+      if (this.keyword) {
+        const reg = new RegExp(this.keyword, 'i')
+        const displayGroupedProperties = []
+        this.groupedProperties.forEach(group => {
+          const matchedProperties = []
+          group.properties.forEach(property => {
+            if (
+              reg.test(property.bk_property_name) ||
+              reg.test(property.bk_property_id)
+            ) {
+              matchedProperties.push(property)
+            }
+          })
+          if (matchedProperties.length) {
+            displayGroupedProperties.push({
+              ...group,
+              properties: matchedProperties,
             })
           }
         })
-        const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
-        this.configProperty.selected = this.curGlobalCustomTableColumns
-          || seletedProperties.map(property => property.bk_property_id)
-        this.initGroupState = this.$tools.clone(groupCollapseState)
-        this.groupCollapseState = Object.assign({}, groupCollapseState, this.groupCollapseState)
-        this.groupedProperties = groupedProperties
-      },
-      filterField() {
-        if (this.keyword) {
-          const reg = new RegExp(this.keyword, 'i')
-          const displayGroupedProperties = []
-          this.groupedProperties.forEach((group) => {
-            const matchedProperties = []
-            group.properties.forEach((property) => {
-              if (reg.test(property.bk_property_name) || reg.test(property.bk_property_id)) {
-                matchedProperties.push(property)
-              }
-            })
-            if (matchedProperties.length) {
-              displayGroupedProperties.push({
-                ...group,
-                properties: matchedProperties
-              })
-            }
-          })
-          displayGroupedProperties.forEach((group) => {
-            this.groupCollapseState[group.info.bk_group_id] = false
-          })
-          this.displayGroupedProperties = displayGroupedProperties
+        displayGroupedProperties.forEach(group => {
+          this.groupCollapseState[group.info.bk_group_id] = false
+        })
+        this.displayGroupedProperties = displayGroupedProperties
+      } else {
+        this.displayGroupedProperties = this.groupedProperties
+      }
+    },
+    getPropertyGroups() {
+      return this.searchGroup({
+        objId: this.objId,
+        params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
+        config: {
+          requestId: this.requestIds.propertyGroups,
+          cancelPrevious: true,
+        },
+      })
+    },
+    getProperties() {
+      const params = {
+        bk_obj_id: this.objId,
+        bk_supplier_account: this.supplierAccount,
+      }
+      if (!this.isGlobalView) {
+        params.bk_biz_id = this.bizId
+      }
+      return this.searchObjectAttribute({
+        params,
+        config: {
+          requestId: this.requestIds.properties,
+          cancelPrevious: true,
+        },
+      })
+    },
+    separateBizCustomGroups(groups) {
+      const publicGroups = []
+      const bizCustomGroups = []
+      groups.forEach(group => {
+        if (this.isBizCustomData(group)) {
+          bizCustomGroups.push(group)
         } else {
-          this.displayGroupedProperties = this.groupedProperties
+          publicGroups.push(group)
         }
-      },
-      getPropertyGroups() {
-        return this.searchGroup({
-          objId: this.objId,
-          params: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
-          config: {
-            requestId: this.requestIds.propertyGroups,
-            cancelPrevious: true
-          }
-        })
-      },
-      getProperties() {
-        const params = {
-          bk_obj_id: this.objId,
-          bk_supplier_account: this.supplierAccount
+      })
+      publicGroups.sort(
+        (groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index
+      )
+      bizCustomGroups.sort(
+        (groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index
+      )
+      return [...publicGroups, ...bizCustomGroups]
+    },
+    sortProperties(properties) {
+      properties.sort(
+        (propertyA, propertyB) =>
+          propertyA.bk_property_index - propertyB.bk_property_index
+      )
+      return properties
+    },
+    handleCancelAddProperty() {
+      this.dialog.isShow = false
+      this.dialog.selectedProperties = []
+      this.dialog.addedProperties = []
+      this.dialog.deletedProperties = []
+      this.dialog.filter = ''
+      this.dialog.group = null
+      this.$nextTick(() => {
+        this.$refs.dialogProperty.style.height = 'auto'
+      })
+    },
+    handleSelectProperty(property) {
+      const { selectedProperties } = this.dialog
+      const { addedProperties } = this.dialog
+      const { deletedProperties } = this.dialog
+      const selectedIndex = selectedProperties.indexOf(property)
+      const addedIndex = addedProperties.indexOf(property)
+      const deletedIndex = deletedProperties.indexOf(property)
+      if (selectedIndex !== -1) {
+        selectedProperties.splice(selectedIndex, 1)
+        const isDeleteFromGroup =
+          property.bk_property_group === this.dialog.group.info.bk_group_id
+        if (isDeleteFromGroup && deletedIndex === -1) {
+          deletedProperties.push(property)
         }
-        if (!this.isGlobalView) {
-          params.bk_biz_id = this.bizId
+        if (addedIndex !== -1) {
+          addedProperties.splice(addedIndex, 1)
         }
-        return this.searchObjectAttribute({
-          params,
-          config: {
-            requestId: this.requestIds.properties,
-            cancelPrevious: true
-          }
-        })
-      },
-      separateBizCustomGroups(groups) {
-        const publicGroups = []
-        const bizCustomGroups = []
-        groups.forEach((group) => {
-          if (this.isBizCustomData(group)) {
-            bizCustomGroups.push(group)
+      } else {
+        selectedProperties.push(property)
+        const isAddFromOtherGroup =
+          property.bk_property_group !== this.dialog.group.info.bk_group_id
+        if (isAddFromOtherGroup && addedIndex === -1) {
+          addedProperties.push(property)
+        }
+        if (deletedIndex !== -1) {
+          deletedProperties.splice(deletedIndex, 1)
+        }
+      }
+    },
+    handleConfirmAddProperty() {
+      const { selectedProperties, addedProperties, deletedProperties } =
+        this.dialog
+      if (addedProperties.length || deletedProperties.length) {
+        this.groupedProperties.forEach(group => {
+          if (group === this.dialog.group) {
+            // eslint-disable-next-line max-len
+            const resortedProperties = [...selectedProperties].sort(
+              (propertyA, propertyB) =>
+                propertyA.bk_property_index - propertyB.bk_property_index
+            )
+            group.properties = resortedProperties
           } else {
-            publicGroups.push(group)
-          }
-        })
-        publicGroups.sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
-        bizCustomGroups.sort((groupA, groupB) => groupA.bk_group_index - groupB.bk_group_index)
-        return [...publicGroups, ...bizCustomGroups]
-      },
-      sortProperties(properties) {
-        properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
-        return properties
-      },
-      handleCancelAddProperty() {
-        this.dialog.isShow = false
-        this.dialog.selectedProperties = []
-        this.dialog.addedProperties = []
-        this.dialog.deletedProperties = []
-        this.dialog.filter = ''
-        this.dialog.group = null
-        this.$nextTick(() => {
-          this.$refs.dialogProperty.style.height = 'auto'
-        })
-      },
-      handleSelectProperty(property) {
-        const { selectedProperties } = this.dialog
-        const { addedProperties } = this.dialog
-        const { deletedProperties } = this.dialog
-        const selectedIndex = selectedProperties.indexOf(property)
-        const addedIndex = addedProperties.indexOf(property)
-        const deletedIndex = deletedProperties.indexOf(property)
-        if (selectedIndex !== -1) {
-          selectedProperties.splice(selectedIndex, 1)
-          const isDeleteFromGroup = property.bk_property_group === this.dialog.group.info.bk_group_id
-          if (isDeleteFromGroup && deletedIndex === -1) {
-            deletedProperties.push(property)
-          }
-          if (addedIndex !== -1) {
-            addedProperties.splice(addedIndex, 1)
-          }
-        } else {
-          selectedProperties.push(property)
-          const isAddFromOtherGroup = property.bk_property_group !== this.dialog.group.info.bk_group_id
-          if (isAddFromOtherGroup && addedIndex === -1) {
-            addedProperties.push(property)
-          }
-          if (deletedIndex !== -1) {
-            deletedProperties.splice(deletedIndex, 1)
-          }
-        }
-      },
-      handleConfirmAddProperty() {
-        const {
-          selectedProperties,
-          addedProperties,
-          deletedProperties
-        } = this.dialog
-        if (addedProperties.length || deletedProperties.length) {
-          this.groupedProperties.forEach((group) => {
-            if (group === this.dialog.group) {
-              // eslint-disable-next-line max-len
-              const resortedProperties = [...selectedProperties].sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
-              group.properties = resortedProperties
-            } else {
-              const resortedProperties = group.properties.filter(property => !addedProperties.includes(property))
-              if (group.info.bk_group_id === 'none') {
-                Array.prototype.push.apply(resortedProperties, deletedProperties)
-              }
-              resortedProperties.sort((A, B) => A.bk_property_index - B.bk_property_index)
-              group.properties = resortedProperties
+            const resortedProperties = group.properties.filter(
+              property => !addedProperties.includes(property)
+            )
+            if (group.info.bk_group_id === 'none') {
+              Array.prototype.push.apply(resortedProperties, deletedProperties)
             }
-          })
-        }
-        this.handleCancelAddProperty()
-      },
-      filter(property) {
-        return property.bk_property_name.toLowerCase().indexOf(this.dialog.filter.toLowerCase()) !== -1
-      },
-      handleEditGroup(group) {
-        this.groupDialog.isShow = true
-        this.groupDialog.isShowContent = true
-        this.groupDialog.type = 'update'
-        this.groupDialog.title = this.$t('编辑分组')
-        this.groupDialog.group = group
-        this.groupForm.isCollapse = group.info.is_collapse
-        this.groupForm.groupName = group.info.bk_group_name
-      },
-      async handleUpdateGroup() {
+            resortedProperties.sort(
+              (A, B) => A.bk_property_index - B.bk_property_index
+            )
+            group.properties = resortedProperties
+          }
+        })
+      }
+      this.handleCancelAddProperty()
+    },
+    filter(property) {
+      return (
+        property.bk_property_name
+          .toLowerCase()
+          .indexOf(this.dialog.filter.toLowerCase()) !== -1
+      )
+    },
+    handleEditGroup(group) {
+      this.groupDialog.isShow = true
+      this.groupDialog.isShowContent = true
+      this.groupDialog.type = 'update'
+      this.groupDialog.title = this.$t('编辑分组')
+      this.groupDialog.group = group
+      this.groupForm.isCollapse = group.info.is_collapse
+      this.groupForm.groupName = group.info.bk_group_name
+    },
+    async handleUpdateGroup() {
+      const valid = await this.$validator.validate('groupName')
+      if (!valid) {
+        return
+      }
+      const curGroup = this.groupDialog.group
+      // eslint-disable-next-line max-len
+      const isExist = this.groupedProperties.some(
+        originalGroup =>
+          originalGroup !== curGroup &&
+          originalGroup.info.bk_group_name === this.groupForm.groupName
+      )
+      if (isExist) {
+        this.$error(this.$t('该名字已经存在'))
+        return
+      }
+      const params = {
+        condition: {
+          id: curGroup.info.id,
+        },
+        data: {
+          bk_group_name: this.groupForm.groupName,
+          is_collapse: this.groupForm.isCollapse,
+        },
+      }
+      if (!this.isGlobalView) {
+        params.bk_biz_id = this.bizId
+      }
+      await this.updateGroup({
+        params,
+        config: {
+          requestId: `put_updateGroup_name_${curGroup.info.id}`,
+          cancelPrevious: true,
+        },
+      })
+      curGroup.info.bk_group_name = this.groupForm.groupName
+      curGroup.info.is_collapse = this.groupForm.isCollapse
+      this.groupCollapseState[curGroup.info.bk_group_id] =
+        this.groupForm.isCollapse
+      this.groupDialog.isShow = false
+      this.$success(this.$t('修改成功'))
+    },
+    handleAddGroup() {
+      this.groupDialog.isShow = true
+      this.groupDialog.isShowContent = true
+      this.groupDialog.type = 'create'
+      this.groupDialog.title = this.$t('新建分组')
+    },
+    handleCancelGroupLeave() {
+      this.groupDialog.group = {}
+      this.groupForm.groupName = ''
+      this.groupForm.isCollapse = false
+      this.groupDialog.isShowContent = false
+      this.groupDialog.isShow = false
+    },
+    async handleCreateGroup() {
+      try {
         const valid = await this.$validator.validate('groupName')
         if (!valid) {
           return
         }
-        const curGroup = this.groupDialog.group
-        // eslint-disable-next-line max-len
-        const isExist = this.groupedProperties.some(originalGroup => originalGroup !== curGroup && originalGroup.info.bk_group_name === this.groupForm.groupName)
+        const { groupedProperties } = this
+        const isExist = groupedProperties.some(
+          group => group.info.bk_group_name === this.groupForm.groupName
+        )
         if (isExist) {
           this.$error(this.$t('该名字已经存在'))
           return
         }
+        const latestIndex = Math.max(
+          ...groupedProperties.map(group => group.info.bk_group_index)
+        )
         const params = {
-          condition: {
-            id: curGroup.info.id
-          },
-          data: {
-            bk_group_name: this.groupForm.groupName,
-            is_collapse: this.groupForm.isCollapse
-          }
+          bk_group_id: uuidv4(),
+          bk_group_index: latestIndex + 1,
+          bk_group_name: this.groupForm.groupName,
+          bk_obj_id: this.objId,
+          bk_supplier_account: this.supplierAccount,
+          is_collapse: this.groupForm.isCollapse,
         }
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
         }
-        await this.updateGroup({
-          params,
-          config: {
-            requestId: `put_updateGroup_name_${curGroup.info.id}`,
-            cancelPrevious: true
-          }
+        const group = await this.createGroup({ params })
+        groupedProperties.push({
+          info: group,
+          properties: [],
         })
-        curGroup.info.bk_group_name = this.groupForm.groupName
-        curGroup.info.is_collapse = this.groupForm.isCollapse
-        this.groupCollapseState[curGroup.info.bk_group_id] = this.groupForm.isCollapse
+        this.$set(this.groupCollapseState, group.bk_group_id, group.is_collapse)
         this.groupDialog.isShow = false
-        this.$success(this.$t('修改成功'))
-      },
-      handleAddGroup() {
-        this.groupDialog.isShow = true
-        this.groupDialog.isShowContent = true
-        this.groupDialog.type = 'create'
-        this.groupDialog.title = this.$t('新建分组')
-      },
-      handleCancelGroupLeave() {
-        this.groupDialog.group = {}
-        this.groupForm.groupName = ''
-        this.groupForm.isCollapse = false
-        this.groupDialog.isShowContent = false
-        this.groupDialog.isShow = false
-      },
-      async handleCreateGroup() {
-        try {
-          const valid = await this.$validator.validate('groupName')
-          if (!valid) {
-            return
-          }
-          const { groupedProperties } = this
-          const isExist = groupedProperties.some(group => group.info.bk_group_name === this.groupForm.groupName)
-          if (isExist) {
-            this.$error(this.$t('该名字已经存在'))
-            return
-          }
-          const latestIndex = Math.max(...groupedProperties.map(group => group.info.bk_group_index))
-          const params = {
-            bk_group_id: uuidv4(),
-            bk_group_index: latestIndex + 1,
-            bk_group_name: this.groupForm.groupName,
-            bk_obj_id: this.objId,
-            bk_supplier_account: this.supplierAccount,
-            is_collapse: this.groupForm.isCollapse
-          }
-          if (!this.isGlobalView) {
-            params.bk_biz_id = this.bizId
-          }
-          const group = await this.createGroup({ params })
-          groupedProperties.push({
-            info: group,
-            properties: []
-          })
-          this.$set(this.groupCollapseState, group.bk_group_id, group.is_collapse)
-          this.groupDialog.isShow = false
-          this.$success(this.$t('创建成功'))
-        } catch (err) {
-          console.log(err)
-        }
-      },
-      async handleDeleteGroup(group, index) {
-        if (group.properties.length) {
-          this.$error(this.$t('请先清空该分组下的字段'))
-          return
-        }
-        await this.deleteGroup({
-          id: group.info.id,
-          config: {
-            data: this.isGlobalView ? {} : { bk_biz_id: this.bizId }
-          }
-        })
-        this.groupedProperties.splice(index, 1)
-        this.$success(this.$t('删除成功'))
-      },
-      resortGroups() {
-        this.groupedProperties.sort((groupA, groupB) => groupA.info.bk_group_index - groupB.info.bk_group_index)
-      },
-      handleGroupDragChange({ moved }) {
-        const groupA = this.displayGroupedProperties[moved.oldIndex]
-        const groupB = this.displayGroupedProperties[moved.newIndex]
-        this.updateGroupIndex(groupA, groupB)
-      },
-      updateGroupIndex(groupA, groupB) {
-        return this.switchGroupIndex({
-          params: {
-            condition: {
-              id: [groupA.info.id, groupB.info.id],
-            },
+        this.$success(this.$t('创建成功'))
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    async handleDeleteGroup(group, index) {
+      if (group.properties.length) {
+        this.$error(this.$t('请先清空该分组下的字段'))
+        return
+      }
+      await this.deleteGroup({
+        id: group.info.id,
+        config: {
+          data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
+        },
+      })
+      this.groupedProperties.splice(index, 1)
+      this.$success(this.$t('删除成功'))
+    },
+    resortGroups() {
+      this.groupedProperties.sort(
+        (groupA, groupB) =>
+          groupA.info.bk_group_index - groupB.info.bk_group_index
+      )
+    },
+    handleGroupDragChange({ moved }) {
+      const groupA = this.displayGroupedProperties[moved.oldIndex]
+      const groupB = this.displayGroupedProperties[moved.newIndex]
+      this.updateGroupIndex(groupA, groupB)
+    },
+    updateGroupIndex(groupA, groupB) {
+      return this.switchGroupIndex({
+        params: {
+          condition: {
+            id: [groupA.info.id, groupB.info.id],
           },
-          config: {
-            requestId: 'put_updateGroup_index',
-            cancelPrevious: true
-          }
-        }).then(() => {
+        },
+        config: {
+          requestId: 'put_updateGroup_index',
+          cancelPrevious: true,
+        },
+      })
+        .then(() => {
           const groupAIndex = groupA.info.bk_group_index
           const groupBIndex = groupB.info.bk_group_index
           groupA.info.bk_group_index = groupBIndex
@@ -913,215 +1030,238 @@
           this.resortGroups()
           this.$success(this.$t('修改成功'))
         })
-          .catch((err) => {
-            console.log(err)
-          })
-      },
-      handleModelDragChange(moveInfo) {
-        if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
-          const info = moveInfo.moved
-            ? { ...moveInfo.moved }
-            : { ...moveInfo.added }
-          this.updatePropertyIndex(info)
-        }
-      },
-      async updatePropertyIndex({ element: property, newIndex }) {
-        let curIndex = 0
-        let curGroup = ''
+        .catch(err => {
+          console.log(err)
+        })
+    },
+    handleModelDragChange(moveInfo) {
+      if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
+        const info = moveInfo.moved
+          ? { ...moveInfo.moved }
+          : { ...moveInfo.added }
+        this.updatePropertyIndex(info)
+      }
+    },
+    async updatePropertyIndex({ element: property, newIndex }) {
+      let curIndex = 0
+      let curGroup = ''
 
-        for (const group of this.groupedProperties) {
-          const len = group.properties.length
-          for (const item of group.properties) {
-            if (item.bk_property_id === property.bk_property_id) {
-              // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
-              if (newIndex > 0 && group.properties.length !== 1) {
-                // 拖拽插件bug 跨组拖动到最后的位置index会多1
-                const index = newIndex === len ? newIndex - 2 : newIndex - 1
-                curIndex = Number(group.properties[index].bk_property_index) + 1
-              }
-              curGroup = group.info.bk_group_id
-              break
+      for (const group of this.groupedProperties) {
+        const len = group.properties.length
+        for (const item of group.properties) {
+          if (item.bk_property_id === property.bk_property_id) {
+            // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
+            if (newIndex > 0 && group.properties.length !== 1) {
+              // 拖拽插件bug 跨组拖动到最后的位置index会多1
+              const index = newIndex === len ? newIndex - 2 : newIndex - 1
+              curIndex = Number(group.properties[index].bk_property_index) + 1
             }
+            curGroup = group.info.bk_group_id
+            break
           }
         }
+      }
 
-        const params = {
-          bk_property_group: curGroup,
-          bk_property_index: curIndex
-        }
+      const params = {
+        bk_property_group: curGroup,
+        bk_property_index: curIndex,
+      }
 
-        if (!this.isGlobalView) {
-          params.bk_biz_id = this.bizId
-        }
+      if (!this.isGlobalView) {
+        params.bk_biz_id = this.bizId
+      }
 
-        try {
-          await this.updatePropertySort({
-            objId: this.objId,
-            propertyId: property.id,
-            params,
-            config: {
-              requestId: `updatePropertySort_${this.objId}`
-            }
-          })
+      try {
+        await this.updatePropertySort({
+          objId: this.objId,
+          propertyId: property.id,
+          params,
+          config: {
+            requestId: `updatePropertySort_${this.objId}`,
+          },
+        })
 
-          // 重新初始化字段及分组
-          this.resetData()
+        // 重新初始化字段及分组
+        this.resetData()
 
-          this.$success(this.$t('修改成功'))
-        } catch (error) {
-          console.log(error)
-        }
-      },
-      handleAddField(group = {}) {
-        this.slider.isEditField = false
-        this.slider.curField = {}
-        this.slider.curGroup = group.info
-        this.slider.title = this.$t('新建字段')
-        this.slider.isShow = true
-        this.slider.beforeClose = this.handleSliderBeforeClose
-        this.slider.view = 'operation'
-      },
-      handleEditField(group, property) {
-        this.slider.isEditField = true
-        this.slider.curField = property
-        this.slider.curGroup = group.info
-        this.slider.title = this.$t('编辑字段')
-        this.slider.isShow = true
-        this.slider.beforeClose = this.handleSliderBeforeClose
-        this.slider.view = 'operation'
-      },
-      handleFieldSave(filedId) {
-        this.handleBackView()
-        this.resetData(filedId)
-      },
-      handleDeleteField({ property: field, index, fieldIndex }) {
-        this.$bkInfo({
-          title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
-          subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
-          confirmLoading: this.$loading('deleteObjectAttribute'),
-          confirmFn: async () => {
-            if (this.$loading('deleteObjectAttribute')) return false
-            try {
-              const res = await this.$store.dispatch('objectModelProperty/deleteObjectAttribute', {
+        this.$success(this.$t('修改成功'))
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    handleAddField(group = {}) {
+      this.slider.isEditField = false
+      this.slider.curField = {}
+      this.slider.curGroup = group.info
+      this.slider.title = this.$t('新建字段')
+      this.slider.isShow = true
+      this.slider.beforeClose = this.handleSliderBeforeClose
+      this.slider.view = 'operation'
+    },
+    handleEditField(group, property) {
+      this.slider.isEditField = true
+      this.slider.curField = property
+      this.slider.curGroup = group.info
+      this.slider.title = this.$t('编辑字段')
+      this.slider.isShow = true
+      this.slider.beforeClose = this.handleSliderBeforeClose
+      this.slider.view = 'operation'
+    },
+    handleFieldSave(filedId) {
+      this.handleBackView()
+      this.resetData(filedId)
+    },
+    handleDeleteField({ property: field, index, fieldIndex }) {
+      this.$bkInfo({
+        title: this.$tc('确定删除字段？', field.bk_property_name, {
+          name: field.bk_property_name,
+        }),
+        subTitle: this.$t('删除模型字段提示', {
+          property: field.bk_property_name,
+          model: this.curModel.bk_obj_name,
+        }),
+        confirmLoading: this.$loading('deleteObjectAttribute'),
+        confirmFn: async () => {
+          if (this.$loading('deleteObjectAttribute')) return false
+          try {
+            const res = await this.$store.dispatch(
+              'objectModelProperty/deleteObjectAttribute',
+              {
                 id: field.id,
                 config: {
                   data: this.isGlobalView ? {} : { bk_biz_id: this.bizId },
                   requestId: 'deleteObjectAttribute',
-                  originalResponse: true
-                }
-              })
-              this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
-              if (res.data.bk_error_msg === 'success' && res.data.bk_error_code === 0) {
-                this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
-                this.handleSliderHidden()
-                this.$success(this.$t('删除成功'))
-                this.resetData()
+                  originalResponse: true,
+                },
               }
-            } catch (error) {
-              console.log(error)
+            )
+            this.$http.cancel(
+              `post_searchObjectAttribute_${this.activeModel.bk_obj_id}`
+            )
+            if (
+              res.data.bk_error_msg === 'success' &&
+              res.data.bk_error_code === 0
+            ) {
+              this.displayGroupedProperties[index].properties.splice(
+                fieldIndex,
+                1
+              )
+              this.handleSliderHidden()
+              this.$success(this.$t('删除成功'))
+              this.resetData()
             }
+          } catch (error) {
+            console.log(error)
           }
+        },
+      })
+    },
+    handleBackView() {
+      if (this.slider.backView === 'details') {
+        this.handleFieldDetailsView({
+          group: this.slider.group,
+          index: this.slider.index,
+          fieldIndex: this.slider.fieldIndex,
+          property: this.slider.curField,
         })
-      },
-      handleBackView() {
-        if (this.slider.backView === 'details') {
-          this.handleFieldDetailsView({
-            group: this.slider.group,
-            index: this.slider.index,
-            fieldIndex: this.slider.fieldIndex,
-            property: this.slider.curField
-          })
-        } else {
-          this.handleSliderHidden()
-        }
-      },
-      handleSliderBeforeClose() {
-        return this.$refs.fieldForm.beforeClose(this.handleBackView)
-      },
-      handleSliderHidden() {
-        this.slider.isShow = false
-        this.slider.curField = {}
-        this.slider.beforeClose = null
-        this.slider.backView = ''
-      },
-      handleFieldDetailsView({ group, index, fieldIndex, property }) {
-        this.slider.isShow = true
-        this.slider.curField = property
-        this.slider.curGroup = group.info
-        this.slider.group = group
-        this.slider.view = 'details'
-        this.slider.backView = 'details'
-        this.slider.title = this.$t('字段详情')
-        this.slider.index = index
-        this.slider.fieldIndex = fieldIndex
-        this.slider.beforeClose = null
-      },
-      handleReceiveAuth(auth) {
-        this.updateAuth = auth
-      },
-      handleApplyConfig(properties) {
-        const setProperties = properties.map(property => property.bk_property_id)
-        this.$store.dispatch('userCustom/saveGlobalUsercustom', {
+      } else {
+        this.handleSliderHidden()
+      }
+    },
+    handleSliderBeforeClose() {
+      return this.$refs.fieldForm.beforeClose(this.handleBackView)
+    },
+    handleSliderHidden() {
+      this.slider.isShow = false
+      this.slider.curField = {}
+      this.slider.beforeClose = null
+      this.slider.backView = ''
+    },
+    handleFieldDetailsView({ group, index, fieldIndex, property }) {
+      this.slider.isShow = true
+      this.slider.curField = property
+      this.slider.curGroup = group.info
+      this.slider.group = group
+      this.slider.view = 'details'
+      this.slider.backView = 'details'
+      this.slider.title = this.$t('字段详情')
+      this.slider.index = index
+      this.slider.fieldIndex = fieldIndex
+      this.slider.beforeClose = null
+    },
+    handleReceiveAuth(auth) {
+      this.updateAuth = auth
+    },
+    handleApplyConfig(properties) {
+      const setProperties = properties.map(property => property.bk_property_id)
+      this.$store
+        .dispatch('userCustom/saveGlobalUsercustom', {
           objId: this.objId,
           params: {
-            global_custom_table_columns: setProperties
-          }
-        }).then(() => {
+            global_custom_table_columns: setProperties,
+          },
+        })
+        .then(() => {
           this.configProperty.selected = setProperties
           this.configProperty.show = false
         })
-      },
-      handleModelDragStart() {
-        this.isDragging = true
-      },
-      handleModelDragEnd() {
-        this.isDragging = false
-      },
-      handleGroupDragStart() {
-        this.isDragging = true
-      },
-      handleGroupDragEnd() {
-        this.isDragging = false
-      },
-      handleClearFilter() {
-        this.keyword = ''
-      },
-      handleColumnsConfigSliderBeforeClose() {
-        const refColumns = this.$refs.cmdbColumnsConfig
-        if (!refColumns) {
-          return
-        }
-        const { columnsChangedValues } = refColumns
-        if (columnsChangedValues?.()) {
-          refColumns.setChanged(true)
-          return refColumns.beforeClose(() => {
-            this.configProperty.show = false
-          })
-        }
-        this.configProperty.show = false
+    },
+    handleModelDragStart() {
+      this.isDragging = true
+    },
+    handleModelDragEnd() {
+      this.isDragging = false
+    },
+    handleGroupDragStart() {
+      this.isDragging = true
+    },
+    handleGroupDragEnd() {
+      this.isDragging = false
+    },
+    handleClearFilter() {
+      this.keyword = ''
+    },
+    handleColumnsConfigSliderBeforeClose() {
+      const refColumns = this.$refs.cmdbColumnsConfig
+      if (!refColumns) {
+        return
       }
-    }
-  }
+      const { columnsChangedValues } = refColumns
+      if (columnsChangedValues?.()) {
+        refColumns.setChanged(true)
+        return refColumns.beforeClose(() => {
+          this.configProperty.show = false
+        })
+      }
+      this.configProperty.show = false
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
 $modelHighlightColor: #3c96ff;
+
 .field-group {
   height: 100%;
   padding: 20px;
+
   @include scrollbar-y;
 }
 
 .field-options {
   display: flex;
   margin: 0 0 14px;
+
   .bk-button {
     margin-right: 10px;
   }
+
   .filter-input {
     width: 240px;
     margin-left: auto;
   }
+
   .setting-btn {
     margin-left: 10px;
     height: 32px;
@@ -1129,6 +1269,7 @@ $modelHighlightColor: #3c96ff;
     color: #979ba5;
     border: 1px solid #c4c6cc;
     border-radius: 2px;
+
     /deep/ .icon-cog {
       font-size: 16px;
       vertical-align: 2px;
@@ -1140,15 +1281,18 @@ $modelHighlightColor: #3c96ff;
   position: relative;
 }
 
-.group-item + .group-item{
+.group-item + .group-item {
   margin-top: 15px;
 }
+
 /deep/ .collapse-layout {
   width: 100%;
+
   .collapse-trigger {
     display: flex;
     align-items: center;
   }
+
   .collapse-arrow {
     margin-right: 8px;
     color: #63656e;
@@ -1165,17 +1309,21 @@ $modelHighlightColor: #3c96ff;
   margin-top: 7px;
   font-size: 14px;
   position: relative;
+
   &.empty {
     min-height: 70px;
   }
+
   &.disabled {
     .field-item {
       cursor: pointer;
+
       &::before {
         display: none !important;
       }
     }
   }
+
   .field-item {
     display: flex;
     align-items: center;
@@ -1186,38 +1334,48 @@ $modelHighlightColor: #3c96ff;
     margin: 0 12px 12px 0;
     border: 1px solid #dcdee5;
     border-radius: 2px;
-    background-color: #ffffff;
+    background-color: #fff;
     user-select: none;
     cursor: pointer;
+
     &.only-ready {
       background-color: #f4f6f9;
     }
+
     &:hover {
       border-color: #3a84ff;
       background-color: #f0f5ff;
+
       .drag-icon {
         visibility: visible;
+
         @at-root .is-dragging & {
           visibility: hidden;
         }
+
         @at-root .is-readonly & {
           visibility: hidden;
         }
       }
+
       .field-button {
         visibility: visible;
+
         @at-root .is-dragging & {
           visibility: hidden;
         }
       }
+
       &::before {
         display: block;
       }
+
       @at-root .is-dragging & {
         border-color: #dcdee5;
         background-color: #fff;
       }
     }
+
     &-ghost {
       background-color: #f5f7fa !important;
       border: 1px dashed #dcdee5;
@@ -1232,23 +1390,30 @@ $modelHighlightColor: #3c96ff;
         display: none !important;
       }
     }
+
     .drag-icon {
       @include dragIcon;
+
       visibility: hidden;
       margin: 0 4px;
     }
+
     .drag-content {
       flex: 1;
       width: 0;
       color: #737987;
+
       .field-name {
         display: flex;
         align-items: center;
         font-size: 12px;
+
         span {
           line-height: 21px;
+
           @include ellipsis;
         }
+
         i {
           font-size: 16px;
           font-style: normal;
@@ -1257,56 +1422,69 @@ $modelHighlightColor: #3c96ff;
           line-height: 7px;
         }
       }
+
       p {
         font-size: 12px;
         color: #c4c6cc;
+
         @include ellipsis;
       }
+
       .field-id {
         margin-left: 4px;
       }
     }
+
     .field-button {
       font-size: 0;
       visibility: hidden;
       color: #63656e;
+
       &:hover {
         color: #3a84ff;
       }
+
       .field-button-icon {
         font-size: 14px;
       }
+
       &.is-disabled {
         color: #c4c6cc;
       }
     }
   }
+
   .field-add {
     width: 246px;
     height: 58px;
     margin: 0 12px 12px 0;
-    .auth-box{
+
+    .auth-box {
       display: block;
       height: 100%;
     }
+
     .field-add-btn {
       width: 100%;
       height: 100%;
       border: 1px dashed #dcdee5;
-      background-color: #ffffff;
+      background-color: #fff;
       border-radius: 2px;
       font-size: 12px;
+
       &:not(.is-disabled):hover {
         color: #3a84ff;
         border-color: #3a84ff;
       }
     }
+
     .icon-plus {
       font-weight: bold;
       margin-top: -4px;
       font-size: 16px;
     }
   }
+
   .property-empty {
     width: calc(100% - 10px);
     height: 60px;
@@ -1314,15 +1492,17 @@ $modelHighlightColor: #3c96ff;
     border: 1px dashed #dde4eb;
     text-align: center;
     font-size: 14px;
-    color: #aaaaaa;
+    color: #aaa;
     margin: 10px 0 10px 5px;
   }
 }
+
 .add-group {
-  margin: 15px 0 0 0;
+  margin: 15px 0 0;
   font-size: 0;
+
   .add-group-trigger {
-    color: #63656E;
+    color: #63656e;
     font-size: 14px;
     height: 30px;
     padding-right: 30px;
@@ -1330,38 +1510,47 @@ $modelHighlightColor: #3c96ff;
     text-align: left;
     padding-left: 2px;
     border-radius: 2px;
+
     &.is-disabled {
       color: #c4c6cc;
+
       .icon {
         color: #63656e;
       }
     }
+
     .icon-cc-plus {
       margin: -4px 2px 0 0;
       display: inline-block;
       vertical-align: middle;
       font-size: 18px;
     }
+
     &:not(.is-disabled):hover {
       background-color: #f0f1f5;
     }
   }
 }
+
 .dialog-title {
   padding: 20px 13px;
   font-size: 20px;
   color: #333948;
 }
+
 .dialog-content {
   width: 470px;
-  padding: 0 0 20px 0;
+  padding: 0 0 20px;
   margin: 0 auto;
 }
+
 .dialog-filter {
   position: relative;
+
   input {
     padding-right: 40px;
   }
+
   .icon-search {
     position: absolute;
     right: 11px;
@@ -1369,46 +1558,57 @@ $modelHighlightColor: #3c96ff;
     font-size: 18px;
   }
 }
+
 .dialog-property {
   padding: 3px 29px;
-  margin: 28px 0 0 0;
+  margin: 28px 0 0;
   max-height: 300px;
+
   @include scrollbar-y;
+
   .field-item {
     width: 50%;
-    margin: 0 0 22px 0;
+    margin: 0 0 22px;
+
     .property-label {
       float: left;
       max-width: 100%;
       padding: 0 0 0 4px;
       line-height: 18px;
       cursor: pointer;
+
       @include ellipsis;
-      &:before {
-        content: "";
+
+      &::before {
+        content: '';
         display: inline-block;
         vertical-align: -4px;
         width: 18px;
         height: 18px;
-        background: #fff url("../../../assets/images/checkbox-sprite.png")
+        background: #fff url('../../../assets/images/checkbox-sprite.png')
           no-repeat;
         background-position: 0 -62px;
       }
-      &.checked:before {
+
+      &.checked::before {
         background-position: -33px -62px;
       }
     }
   }
 }
+
 .group-dialog-header {
   color: #313237;
   font-size: 20px;
   padding: 18px 24px 14px;
 }
+
 .group-dialog-content {
   padding: 0 24px;
+
   .cmdb-form-item {
     margin: 10px 0 20px;
+
     &.is-error {
       /deep/ .bk-form-input {
         border-color: #ff5656;
@@ -1416,14 +1616,16 @@ $modelHighlightColor: #3c96ff;
     }
   }
 }
+
 .group-dialog-footer {
   .bk-button + .bk-button {
     margin-left: 10px;
   }
 }
-.sides-slider{
+
+.sides-slider {
   :deep(.slider-main) {
-    padding:20px 40px;
+    padding: 20px 40px;
   }
 }
 </style>

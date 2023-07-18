@@ -27,5 +27,5 @@ export default {
       return vm.confirmPromise
     }
     return true
-  }
+  },
 }

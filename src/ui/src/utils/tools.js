@@ -13,9 +13,13 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+
 import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
-import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+} from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
@@ -31,9 +35,9 @@ export function getPropertyText(property, item) {
   const propertyType = property.bk_property_type
   let propertyValue = item[propertyId]
   if (
-    propertyValue === null
-        || propertyValue === undefined
-        || propertyValue === ''
+    propertyValue === null ||
+    propertyValue === undefined ||
+    propertyValue === ''
   ) {
     return '--'
   }
@@ -42,7 +46,10 @@ export function getPropertyText(property, item) {
     const enumOption = options.find(option => option.id === propertyValue)
     propertyValue = enumOption ? enumOption.name : '--'
   } else if (['date', 'time'].includes(propertyType)) {
-    propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+    propertyValue = formatTime(
+      propertyValue,
+      propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'
+    )
   } else if (propertyType === 'foreignkey') {
     if (Array.isArray(propertyValue)) {
       propertyValue = propertyValue.map(inst => inst.bk_inst_name).join(',')
@@ -54,7 +61,9 @@ export function getPropertyText(property, item) {
 }
 
 function getDefaultOptionValue(property) {
-  const defaultOption = (property.option || []).find(option => option.is_default)
+  const defaultOption = (property.option || []).find(
+    option => option.is_default
+  )
   if (defaultOption) {
     return defaultOption.id
   }
@@ -62,7 +71,9 @@ function getDefaultOptionValue(property) {
 }
 
 function getDefaultOptionMultiValue(property) {
-  const defaultOptions = (property.option || []).filter(option => option.is_default)
+  const defaultOptions = (property.option || []).filter(
+    option => option.is_default
+  )
   return defaultOptions.map(option => option.id)
 }
 
@@ -79,7 +90,7 @@ function getDefaultOptionEnumQuoteValue(property) {
  */
 export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
-  properties.forEach((property) => {
+  properties.forEach(property => {
     const propertyId = property.bk_property_id
     const propertyType = property.bk_property_type
     const propertyDefault = property.default
@@ -87,44 +98,66 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
-      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-      const  value = has(inst, propertyId) ? formatedTime : propertyDefault
+      const formatedTime = formatTime(
+        inst[propertyId],
+        propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'
+      )
+      const value = has(inst, propertyId) ? formatedTime : propertyDefault
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || ''
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
-        values[propertyId] = typeof property.option === 'boolean' ? property.option : false
+        values[propertyId] =
+          typeof property.option === 'boolean' ? property.option : false
       } else {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
       const defaultValue = autoSelect ? getDefaultOptionValue(property) : ''
-      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+      values[propertyId] = isNullish(inst[propertyId])
+        ? defaultValue
+        : inst[propertyId]
     } else if ([PROPERTY_TYPES.ENUMMULTI].includes(propertyType)) {
-      const defaultValue = autoSelect ? getDefaultOptionMultiValue(property) : []
-      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+      const defaultValue = autoSelect
+        ? getDefaultOptionMultiValue(property)
+        : []
+      values[propertyId] = isNullish(inst[propertyId])
+        ? defaultValue
+        : inst[propertyId]
     } else if ([PROPERTY_TYPES.ENUMQUOTE].includes(propertyType)) {
-      const defaultValue = autoSelect ? getDefaultOptionEnumQuoteValue(property) : []
-      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+      const defaultValue = autoSelect
+        ? getDefaultOptionEnumQuoteValue(property)
+        : []
+      values[propertyId] = isNullish(inst[propertyId])
+        ? defaultValue
+        : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
       const defaultValue = autoSelect ? propertyDefault : ''
-      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+      values[propertyId] = isNullish(inst[propertyId])
+        ? defaultValue
+        : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || null
     } else if (['table'].includes(propertyType)) {
       // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
       // 接口需要过滤掉不允许编辑及内置的字段
-      const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
+      const tableColumns = property.option?.filter(
+        property => property.editable && !property.bk_isapi
+      )
       // eslint-disable-next-line max-len
-      values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
+      values[propertyId] = (inst[propertyId] || []).map(row =>
+        getInstFormValues(tableColumns || [], row, autoSelect)
+      )
     } else if (propertyType === PROPERTY_TYPES.INNER_TABLE) {
       const defaultValue = property.option.default || []
-      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+      values[propertyId] = isNullish(inst[propertyId])
+        ? defaultValue
+        : inst[propertyId]
     } else {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
       values[propertyId] = value || ''
     }
   })
@@ -138,7 +171,6 @@ export function isEmptyValue(value) {
 export function isNullish(value) {
   return [null, undefined].includes(value)
 }
-
 
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
@@ -173,7 +205,11 @@ export function getPropertyDefaultValue(property, value) {
 
 export function formatPropertyValue(value, property) {
   // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
-  const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+  const arrayValueTypes = [
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ORGANIZATION,
+  ]
   if (arrayValueTypes.includes(property?.bk_property_type)) {
     return !Array.isArray(value) ? [value] : value
   }
@@ -182,7 +218,7 @@ export function formatPropertyValue(value, property) {
 
 export function formatValues(values, properties) {
   const formatted = { ...values }
-  properties.forEach((property) => {
+  properties.forEach(property => {
     const key = property.bk_property_id
     if (has(formatted, key)) {
       formatted[key] = formatValue(formatted[key], property)
@@ -250,7 +286,9 @@ export function getPropertyPriority(property) {
  * @return {Array} 默认展示的前六个模型属性
  */
 export function getDefaultHeaderProperties(properties) {
-  return [...properties].sort((A, B) => getPropertyPriority(A) - getPropertyPriority(B)).slice(0, 6)
+  return [...properties]
+    .sort((A, B) => getPropertyPriority(A) - getPropertyPriority(B))
+    .slice(0, 6)
 }
 
 /**
@@ -261,8 +299,10 @@ export function getDefaultHeaderProperties(properties) {
  */
 export function getCustomHeaderProperties(properties, customColumns) {
   const columnProperties = []
-  customColumns.forEach((propertyId) => {
-    const columnProperty = properties.find(property => property.bk_property_id === propertyId)
+  customColumns.forEach(propertyId => {
+    const columnProperty = properties.find(
+      property => property.bk_property_id === propertyId
+    )
     if (columnProperty) {
       columnProperties.push(columnProperty)
     }
@@ -277,7 +317,11 @@ export function getCustomHeaderProperties(properties, customColumns) {
  * @param {Array} fixedPropertyIds - 需固定在表格前面的属性ID
  * @return {Array} 表头属性
  */
-export function getHeaderProperties(properties, customColumns, fixedPropertyIds = []) {
+export function getHeaderProperties(
+  properties,
+  customColumns,
+  fixedPropertyIds = []
+) {
   let headerProperties
   if (customColumns && customColumns.length) {
     headerProperties = getCustomHeaderProperties(properties, customColumns)
@@ -285,10 +329,14 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
     headerProperties = getDefaultHeaderProperties(properties)
   }
   if (fixedPropertyIds.length) {
-    headerProperties = headerProperties.filter(property => !fixedPropertyIds.includes(property.bk_property_id))
+    headerProperties = headerProperties.filter(
+      property => !fixedPropertyIds.includes(property.bk_property_id)
+    )
     const fixedProperties = []
-    fixedPropertyIds.forEach((id) => {
-      const property = properties.find(property => property.bk_property_id === id)
+    fixedPropertyIds.forEach(id => {
+      const property = properties.find(
+        property => property.bk_property_id === id
+      )
       if (property) {
         fixedProperties.push(property)
       }
@@ -299,14 +347,24 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
 }
 
 export function getHeaderPropertyName(property) {
-  if (!property.bk_property_name.endsWith(`(${property.unit})`) && property.unit) {
+  if (
+    !property.bk_property_name.endsWith(`(${property.unit})`) &&
+    property.unit
+  ) {
     return `${property.bk_property_name}(${property.unit})`
   }
   return property.bk_property_name
 }
 
 export function getHeaderPropertyMinWidth(property, options = {}) {
-  const { fontSize = 12, hasSort = false, offset = 30, name, min = 0, preset = {} } = options
+  const {
+    fontSize = 12,
+    hasSort = false,
+    offset = 30,
+    name,
+    min = 0,
+    preset = {},
+  } = options
 
   // 预设的固定宽度不需要计算直接使用
   const presetMinWidth = { ...PRESET_TABLE_HEADER_MIN_WIDTH, ...preset }
@@ -322,10 +380,18 @@ export function getHeaderPropertyMinWidth(property, options = {}) {
   const totalCount = content?.length ?? 0
 
   // 分别按字母与非字母计算字符占用的总宽度
-  const contentWidth = ((totalCount - letterCount) * fontSize) + (letterCount * fontSize * 0.7)
+  const contentWidth =
+    (totalCount - letterCount) * fontSize + letterCount * fontSize * 0.7
 
-  const objKeyMap = { ...CONTAINER_OBJECT_INST_KEYS, ...BUILTIN_MODEL_PROPERTY_KEYS }
-  const baseWidth = (property.bk_property_id === objKeyMap[property.bk_obj_id]?.ID ?? 'bk_inst_id') ? 50 : contentWidth
+  const objKeyMap = {
+    ...CONTAINER_OBJECT_INST_KEYS,
+    ...BUILTIN_MODEL_PROPERTY_KEYS,
+  }
+  const baseWidth =
+    property.bk_property_id === objKeyMap[property.bk_obj_id]?.ID ??
+    'bk_inst_id'
+      ? 50
+      : contentWidth
 
   const finalWidth = baseWidth + (hasSort ? 22 : 0) + offset
 
@@ -345,10 +411,14 @@ export function getValidateEvents(property) {
   const type = property.bk_property_type
   const isChar = ['singlechar', 'longchar'].includes(type)
   const hasRegular = !!property.option
-  const isSelectType = [PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(type)
+  const isSelectType = [
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION,
+  ].includes(type)
   if ((isChar && hasRegular) || isSelectType) {
     return {
-      'data-vv-validate-on': 'change|blur'
+      'data-vv-validate-on': 'change|blur',
     }
   }
   return {}
@@ -368,7 +438,7 @@ export function getValidateRules(property) {
     bk_property_type: propertyType,
     option,
     isrequired,
-    ismultiple
+    ismultiple,
   } = property
 
   if (isrequired) {
@@ -378,7 +448,7 @@ export function getValidateRules(property) {
   const isSelectType = [
     PROPERTY_TYPES.ENUMMULTI,
     PROPERTY_TYPES.ENUMQUOTE,
-    PROPERTY_TYPES.ORGANIZATION
+    PROPERTY_TYPES.ORGANIZATION,
   ].includes(propertyType)
 
   if (option) {
@@ -426,12 +496,17 @@ export function getValue() {
 export function transformHostSearchParams(params) {
   const transformedParams = clone(params)
   const conditions = transformedParams.condition
-  conditions.forEach((item) => {
-    item.condition.forEach((field) => {
+  conditions.forEach(item => {
+    item.condition.forEach(field => {
       const { operator } = field
       const { value } = field
-      if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
-        field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length)
+      if (
+        ['$in', '$nin', '$multilike'].includes(operator) &&
+        !Array.isArray(value)
+      ) {
+        field.value = value
+          .split(/\n|;|；|,|，/)
+          .filter(str => str.trim().length)
           .map(str => str.trim())
       }
     })
@@ -439,16 +514,20 @@ export function transformHostSearchParams(params) {
   return transformedParams
 }
 
-const defaultPaginationConfig = window.innerHeight > 750
-  ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
-  : { limit: 10, 'limit-list': [10, 50, 100, 500] }
+const defaultPaginationConfig =
+  window.innerHeight > 750
+    ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
+    : { limit: 10, 'limit-list': [10, 50, 100, 500] }
 export function getDefaultPaginationConfig(customConfig = {}, useQuery = true) {
   const RouterQuery = require('@/router/query').default
   const config = {
     count: 0,
     current: useQuery ? parseInt(RouterQuery.get('page', 1), 10) : 1,
-    limit: useQuery ? parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit), 10) : defaultPaginationConfig.limit,
-    'limit-list': customConfig['limit-list'] || defaultPaginationConfig['limit-list']
+    limit: useQuery
+      ? parseInt(RouterQuery.get('limit', defaultPaginationConfig.limit), 10)
+      : defaultPaginationConfig.limit,
+    'limit-list':
+      customConfig['limit-list'] || defaultPaginationConfig['limit-list'],
   }
   return config
 }
@@ -456,14 +535,17 @@ export function getDefaultPaginationConfig(customConfig = {}, useQuery = true) {
 export function getPageParams(pagination) {
   return {
     start: (pagination.current - 1) * pagination.limit,
-    limit: pagination.limit
+    limit: pagination.limit,
   }
 }
 
 export function localSort(data, compareKey) {
   return data.sort((A, B) => {
     if (has(A, compareKey) && has(B, compareKey)) {
-      return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', { sensitivity: 'accent', caseFirst: 'lower' })
+      return A[compareKey].localeCompare(B[compareKey], 'zh-Hans-CN', {
+        sensitivity: 'accent',
+        caseFirst: 'lower',
+      })
     }
     return 0
   })
@@ -478,6 +560,7 @@ export function versionSort(data, compareKey) {
     let i = 0
     const arr1 = a[compareKey].split('.')
     const arr2 = b[compareKey].split('.')
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const s1 = arr1[i]
       const s2 = arr2[i]
@@ -522,7 +605,7 @@ export function sortTopoTree(topoTree, compareKey, childrenKey) {
   })
 
   if (childrenKey) {
-    topoTree?.forEach((node) => {
+    topoTree?.forEach(node => {
       if (node[childrenKey]) {
         sortTopoTree(node[childrenKey], compareKey, childrenKey)
       }
@@ -531,17 +614,22 @@ export function sortTopoTree(topoTree, compareKey, childrenKey) {
 }
 
 export function isEmptyPropertyValue(originalValue) {
-  return originalValue === ''
-    || originalValue === null
-    || originalValue === undefined
-    || (Array.isArray(originalValue) && originalValue.length === 0)
+  return (
+    originalValue === '' ||
+    originalValue === null ||
+    originalValue === undefined ||
+    (Array.isArray(originalValue) && originalValue.length === 0)
+  )
 }
 
 export function getPropertyCopyValue(originalValue, propertyType) {
   if (isEmptyPropertyValue(originalValue)) {
     return '--'
   }
-  const type = typeof propertyType === 'string' ? propertyType : propertyType.bk_property_type
+  const type =
+    typeof propertyType === 'string'
+      ? propertyType
+      : propertyType.bk_property_type
   let value
   switch (type) {
     case 'date':
@@ -567,10 +655,12 @@ export function getPropertyCopyValue(originalValue, propertyType) {
       break
     }
     case 'enum':
-      value =  propertyType.option.find(item => item.id === originalValue).name
+      value = propertyType.option.find(item => item.id === originalValue).name
       break
     case 'enummulti':
-      value = originalValue.map(value => propertyType.option.find(item => item.id === value).name).join('\n')
+      value = originalValue
+        .map(value => propertyType.option.find(item => item.id === value).name)
+        .join('\n')
       break
     default:
       value = originalValue
@@ -586,14 +676,17 @@ export function isUseComplexValueType(property) {
     PROPERTY_TYPES.SERVICE_TEMPLATE,
     PROPERTY_TYPES.ORGANIZATION,
     PROPERTY_TYPES.MAP,
-    PROPERTY_TYPES.ENUMQUOTE
+    PROPERTY_TYPES.ENUMQUOTE,
   ]
   return types.includes(property.bk_property_type)
 }
 
 export function isShowOverflowTips(property) {
   const otherTypes = [PROPERTY_TYPES.TOPOLOGY]
-  return !isUseComplexValueType(property) && !otherTypes.includes(property.bk_property_type)
+  return (
+    !isUseComplexValueType(property) &&
+    !otherTypes.includes(property.bk_property_type)
+  )
 }
 
 export function getPropertyPlaceholder(property) {
@@ -608,19 +701,25 @@ export function getPropertyPlaceholder(property) {
     PROPERTY_TYPES.LIST,
     PROPERTY_TYPES.DATE,
     PROPERTY_TYPES.TIME,
-    PROPERTY_TYPES.TIMEZONE
-  ].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+    PROPERTY_TYPES.TIMEZONE,
+  ].includes(property.bk_property_type)
+    ? '请选择xx'
+    : '请输入xx'
   return t(placeholderTxt, { name: property.bk_property_name })
 }
 
+// eslint-disable-next-line no-unused-vars
 export function getPropertyDefaultEmptyValue(_property) {
   return ''
 }
 
 export function isPropertySortable(property) {
   if (property.bk_obj_id === BUILTIN_MODELS.HOST) {
-    return ![PROPERTY_TYPES.FOREIGNKEY, PROPERTY_TYPES.TOPOLOGY, PROPERTY_TYPES.INNER_TABLE]
-      .includes(property.bk_property_type)
+    return ![
+      PROPERTY_TYPES.FOREIGNKEY,
+      PROPERTY_TYPES.TOPOLOGY,
+      PROPERTY_TYPES.INNER_TABLE,
+    ].includes(property.bk_property_type)
   }
 
   return ![PROPERTY_TYPES.INNER_TABLE].includes(property.bk_property_type)
@@ -657,5 +756,5 @@ export default {
   getPropertyPlaceholder,
   getPropertyDefaultValue,
   versionSort,
-  isPropertySortable
+  isPropertySortable,
 }

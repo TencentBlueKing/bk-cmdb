@@ -11,12 +11,14 @@
  */
 
 import Vue, { toRef, watch } from 'vue'
-import contentComponent from './export'
+import { bkInfoBox } from 'bk-magic-vue'
+
 import store from '@/store'
 import i18n from '@/i18n'
+
+import contentComponent from './export'
 import useState from './state'
 import useTask from './task'
-import { bkInfoBox } from 'bk-magic-vue'
 let instance = null
 const [state, { setState, resetState }] = useState()
 const [, { reset: resetTask }] = useTask()
@@ -33,7 +35,7 @@ const close = () => {
   visible.value = false
 }
 
-watch(visible, (value) => {
+watch(visible, value => {
   if (value) return
   resetState()
   resetTask()
@@ -47,14 +49,14 @@ const beforeClose = () => {
   if (step.value !== 2 || !status.value === 'pending') {
     return true
   }
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     bkInfoBox({
       title: i18n.t('确认关闭'),
       subTitle: i18n.t('数据导出终止提示'),
       okText: i18n.t('确定'),
       cancelText: i18n.t('取消'),
       confirmFn: () => resolve(true),
-      cancelFn: () => resolve(false)
+      cancelFn: () => resolve(false),
     })
   })
 }
@@ -65,7 +67,7 @@ const beforeClose = () => {
 const createSideslider = () => {
   const Component = Vue.extend({
     components: {
-      contentComponent
+      contentComponent,
     },
     mounted() {
       document.body.appendChild(this.$el)
@@ -80,16 +82,16 @@ const createSideslider = () => {
     render() {
       return (
         <bk-sideslider
-          is-show={ visible.value }
-          width={ 700 }
-          title={ title.value }
-          transfer={ true }
-          before-close={ beforeClose }
-          { ...{ on: { 'update:isShow': close } } }>
+          is-show={visible.value}
+          width={700}
+          title={title.value}
+          transfer={true}
+          before-close={beforeClose}
+          {...{ on: { 'update:isShow': close } }}>
           <content-component slot="content"></content-component>
         </bk-sideslider>
       )
-    }
+    },
   })
   return new Component({ store, i18n })
 }

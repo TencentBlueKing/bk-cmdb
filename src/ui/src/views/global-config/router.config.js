@@ -10,24 +10,29 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
-import { MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG, MENU_PLATFORM_MANAGEMENT } from '@/dictionary/menu-symbol.js'
+import {
+  MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
+  MENU_PLATFORM_MANAGEMENT,
+} from '@/dictionary/menu-symbol.js'
 import { OPERATION } from '@/dictionary/iam-auth'
+import Meta from '@/router/meta'
 
-export default [{
-  name: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
-  path: 'global-config',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    menu: {
-      i18n: '全局配置',
-      parent: MENU_PLATFORM_MANAGEMENT
-    },
-    auth: {
-      view: { type: OPERATION.U_CONFIG_ADMIN }
-    },
-    layout: {
-      breadcrumbs: true
-    },
-  })
-}]
+export default [
+  {
+    name: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
+    path: 'global-config',
+    component: () => import('./index.vue'),
+    meta: new Meta({
+      menu: {
+        i18n: '全局配置',
+        parent: MENU_PLATFORM_MANAGEMENT,
+      },
+      auth: {
+        view: { type: OPERATION.U_CONFIG_ADMIN },
+      },
+      layout: {
+        breadcrumbs: true,
+      },
+    }),
+  },
+]

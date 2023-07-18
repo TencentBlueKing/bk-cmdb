@@ -11,36 +11,41 @@
 -->
 
 <template>
-  <div class="table" v-bkloading="{ isLoading: loading }">
+  <div v-bkloading="{ isLoading: loading }" class="table">
     <div class="table-info clearfix" @click="expanded = !expanded">
       <div class="info-title fl">
-        <i class="icon bk-icon icon-right-shape"
+        <i
+          class="icon bk-icon icon-right-shape"
           :class="{ 'is-open': expanded }">
         </i>
-        <span class="title-text">{{title}}</span>
-        <span class="title-count">({{associationInstances.length}})</span>
+        <span class="title-text">{{ title }}</span>
+        <span class="title-count">({{ associationInstances.length }})</span>
       </div>
-      <div class="info-pagination fr" v-show="pagination.count" @click.stop>
-        <span class="pagination-info">{{getPaginationInfo()}}</span>
+      <div v-show="pagination.count" class="info-pagination fr" @click.stop>
+        <span class="pagination-info">{{ getPaginationInfo() }}</span>
         <span class="pagination-toggle">
-          <i class="pagination-icon bk-icon icon-cc-arrow-down left"
+          <i
+            class="pagination-icon bk-icon icon-cc-arrow-down left"
             :class="{ disabled: pagination.current === 1 }"
             @click="togglePage(-1)">
           </i>
-          <i class="pagination-icon bk-icon icon-cc-arrow-down right"
+          <i
+            class="pagination-icon bk-icon icon-cc-arrow-down right"
             :class="{ disabled: pagination.current === totalPage }"
             @click="togglePage(1)">
           </i>
         </span>
       </div>
     </div>
-    <bk-table class="association-table"
+    <bk-table
       v-show="expanded"
+      class="association-table"
       :data="list"
       :max-height="462"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleShowDetails">
-      <bk-table-column v-for="(column, index) in header"
+      <bk-table-column
+        v-for="(column, index) in header"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
@@ -59,491 +64,552 @@
       <bk-table-column :label="$t('操作')">
         <template slot-scope="{ row }">
           <cmdb-auth :auth="authResources">
-            <bk-button slot-scope="{ disabled }"
+            <bk-button
+              slot-scope="{ disabled }"
               text
               theme="primary"
               :disabled="disabled"
               @click.stop="showTips($event, row)">
-              {{$t('取消关联')}}
+              {{ $t('取消关联') }}
             </bk-button>
           </cmdb-auth>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        :auth="permissionAuth"></cmdb-table-empty>
     </bk-table>
-    <div class="confirm-tips" ref="confirmTips" v-show="confirm.show">
-      <p class="tips-content">{{$t('确认取消')}}</p>
+    <div v-show="confirm.show" ref="confirmTips" class="confirm-tips">
+      <p class="tips-content">{{ $t('确认取消') }}</p>
       <div class="tips-option">
-        <bk-button class="tips-button" theme="primary" @click.stop="cancelAssociation">{{$t('确认')}}</bk-button>
-        <bk-button class="tips-button" theme="default" @click.stop="hideTips">{{$t('取消')}}</bk-button>
+        <bk-button
+          class="tips-button"
+          theme="primary"
+          @click.stop="cancelAssociation"
+          >{{ $t('确认') }}</bk-button
+        >
+        <bk-button class="tips-button" theme="default" @click.stop="hideTips">{{
+          $t('取消')
+        }}</bk-button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  import bus from '@/utils/bus.js'
-  import { mapGetters } from 'vuex'
-  import authMixin from '../mixin-auth'
-  import instanceService from '@/service/instance/instance'
-  import businessSetService from '@/service/business-set/index.js'
-  import {
-    BUILTIN_MODELS,
-    BUILTIN_MODEL_PROPERTY_KEYS,
-    BUILTIN_MODEL_RESOURCE_TYPES
-  } from '@/dictionary/model-constants.js'
+import { mapGetters } from 'vuex'
 
-  export default {
-    name: 'cmdb-relation-list-table',
-    mixins: [authMixin],
-    props: {
-      type: {
-        type: String,
-        required: true
-      },
-      targetObjId: {
-        type: String,
-        required: true
-      },
-      associationType: {
-        type: Object,
-        required: true
-      },
-      associationInstances: {
-        type: Array,
-        required: true
-      },
-      objId: {
-        type: String,
-        required: true
-      }
+import bus from '@/utils/bus.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+  BUILTIN_MODEL_RESOURCE_TYPES,
+} from '@/dictionary/model-constants.js'
+import instanceService from '@/service/instance/instance'
+import businessSetService from '@/service/business-set/index.js'
+
+import authMixin from '../mixin-auth'
+
+export default {
+  name: 'cmdb-relation-list-table',
+  mixins: [authMixin],
+  props: {
+    type: {
+      type: String,
+      required: true,
     },
-    data() {
-      return {
-        properties: [],
-        list: [],
-        pagination: {
-          count: 0,
-          current: 1,
-          size: 10
-        },
-        table: {
-          stuff: {
-            type: 'default',
-            payload: {
-              emptyText: this.$t('bk.table.emptyText')
-            }
-          }
-        },
-        expanded: false,
-        confirm: {
-          instance: null,
-          item: null,
-          target: null,
-          id: null,
-          show: false
-        }
-      }
+    targetObjId: {
+      type: String,
+      required: true,
     },
-    computed: {
-      ...mapGetters('objectModelClassify', ['models', 'getModelById']),
-      model() {
-        return this.getModelById(this.targetObjId) || {}
+    associationType: {
+      type: Object,
+      required: true,
+    },
+    associationInstances: {
+      type: Array,
+      required: true,
+    },
+    objId: {
+      type: String,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      properties: [],
+      list: [],
+      pagination: {
+        count: 0,
+        current: 1,
+        size: 10,
       },
-      permissionAuth() {
-        if (this.model.bk_obj_id === 'biz') {
-          return {
-            type: this.$OPERATION.R_BUSINESS
-          }
-        }
-        return null
+      table: {
+        stuff: {
+          type: 'default',
+          payload: {
+            emptyText: this.$t('bk.table.emptyText'),
+          },
+        },
       },
-      title() {
-        const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
-        return `${desc}-${this.model.bk_obj_name}`
+      expanded: false,
+      confirm: {
+        instance: null,
+        item: null,
+        target: null,
+        id: null,
+        show: false,
       },
-      propertyRequest() {
-        return `get_${this.targetObjId}_association_list_table_properties`
-      },
-      instanceRequest() {
-        return `get_${this.targetObjId}_association_list_table_instances`
-      },
-      page() {
-        // 每次in当前页的id查询，因此page参数每次都是0-size
+    }
+  },
+  computed: {
+    ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+    model() {
+      return this.getModelById(this.targetObjId) || {}
+    },
+    permissionAuth() {
+      if (this.model.bk_obj_id === 'biz') {
         return {
-          limit: this.pagination.size,
-          start: 0
+          type: this.$OPERATION.R_BUSINESS,
         }
-      },
-      totalPage() {
-        return Math.ceil(this.pagination.count / this.pagination.size)
-      },
-      isSource() {
-        return this.type === 'source'
-      },
-      // 模型实例id，用于查询模型实例数据
-      instanceIds() {
-        // eslint-disable-next-line max-len
-        return this.associationInstances.map(instance => (this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id))
-      },
-      currentPageInstanceIds() {
-        const start = (this.pagination.current - 1) * this.pagination.size
-        return this.instanceIds.slice(start, start + this.pagination.size)
-      },
-      header() {
-        const fixedPropertyIds = this.targetObjId === BUILTIN_MODELS.HOST ? ['bk_host_innerip', 'bk_host_innerip_v6'] : []
-        const headerProperties = this.$tools.getHeaderProperties(this.properties, [], fixedPropertyIds)
-        const header = headerProperties.map(property => ({
-          id: property.bk_property_id,
-          name: this.$tools.getHeaderPropertyName(property),
-          property
-        }))
-        return header
-      },
-      loading() {
-        return this.$loading([
-          this.propertyRequest,
-          this.instanceRequest
-        ])
-      },
-      resourceType() {
-        return this.$parent.resourceType
-      },
-      authResources() {
-        const authTypes = {
-          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]: this.INST_AUTH.U_BUSINESS,
-          [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]: this.INST_AUTH.U_BUSINESS_SET
-        }
-        return authTypes[this.resourceType] || this.INST_AUTH.U_INST
+      }
+      return null
+    },
+    title() {
+      const desc =
+        this.type === 'source'
+          ? this.associationType.src_des
+          : this.associationType.dest_des
+      return `${desc}-${this.model.bk_obj_name}`
+    },
+    propertyRequest() {
+      return `get_${this.targetObjId}_association_list_table_properties`
+    },
+    instanceRequest() {
+      return `get_${this.targetObjId}_association_list_table_instances`
+    },
+    page() {
+      // 每次in当前页的id查询，因此page参数每次都是0-size
+      return {
+        limit: this.pagination.size,
+        start: 0,
       }
     },
-    watch: {
-      associationInstances: {
-        handler(associationInstances) {
-          associationInstances.length && this.expanded && this.getData()
-        },
-        immediate: true
-      },
-      expanded(expanded) {
-        expanded && this.getData()
+    totalPage() {
+      return Math.ceil(this.pagination.count / this.pagination.size)
+    },
+    isSource() {
+      return this.type === 'source'
+    },
+    // 模型实例id，用于查询模型实例数据
+    instanceIds() {
+      // eslint-disable-next-line max-len
+      return this.associationInstances.map(instance =>
+        this.isSource ? instance.bk_asst_inst_id : instance.bk_inst_id
+      )
+    },
+    currentPageInstanceIds() {
+      const start = (this.pagination.current - 1) * this.pagination.size
+      return this.instanceIds.slice(start, start + this.pagination.size)
+    },
+    header() {
+      const fixedPropertyIds =
+        this.targetObjId === BUILTIN_MODELS.HOST
+          ? ['bk_host_innerip', 'bk_host_innerip_v6']
+          : []
+      const headerProperties = this.$tools.getHeaderProperties(
+        this.properties,
+        [],
+        fixedPropertyIds
+      )
+      const header = headerProperties.map(property => ({
+        id: property.bk_property_id,
+        name: this.$tools.getHeaderPropertyName(property),
+        property,
+      }))
+      return header
+    },
+    loading() {
+      return this.$loading([this.propertyRequest, this.instanceRequest])
+    },
+    resourceType() {
+      return this.$parent.resourceType
+    },
+    authResources() {
+      const authTypes = {
+        [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS]]:
+          this.INST_AUTH.U_BUSINESS,
+        [BUILTIN_MODEL_RESOURCE_TYPES[BUILTIN_MODELS.BUSINESS_SET]]:
+          this.INST_AUTH.U_BUSINESS_SET,
       }
+      return authTypes[this.resourceType] || this.INST_AUTH.U_INST
     },
-    created() {
-      bus.$on('expand-all-relation-table', (expandAll) => {
-        this.expanded = expandAll
-      })
-    },
-    beforeDestroy() {
-      bus.$off('expand-all-relation-table')
-    },
-    methods: {
-      getData() {
-        this.getProperties()
-        this.getInstances()
+  },
+  watch: {
+    associationInstances: {
+      handler(associationInstances) {
+        associationInstances.length && this.expanded && this.getData()
       },
-      async getProperties() {
-        try {
-          this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
+      immediate: true,
+    },
+    expanded(expanded) {
+      expanded && this.getData()
+    },
+  },
+  created() {
+    bus.$on('expand-all-relation-table', expandAll => {
+      this.expanded = expandAll
+    })
+  },
+  beforeDestroy() {
+    bus.$off('expand-all-relation-table')
+  },
+  methods: {
+    getData() {
+      this.getProperties()
+      this.getInstances()
+    },
+    async getProperties() {
+      try {
+        this.properties = await this.$store.dispatch(
+          'objectModelProperty/searchObjectAttribute',
+          {
             params: {
-              bk_obj_id: this.targetObjId
+              bk_obj_id: this.targetObjId,
             },
             config: {
               fromCache: true,
-              requestId: this.propertyRequest
-            }
-          })
-        } catch (e) {
-          console.error(e)
-          this.properties = []
-        }
-      },
-      async getInstances() {
-        let promise
-        const config = {
-          requestId: this.instanceRequest,
-          cancelPrevious: true,
-          globalError: false,
-          globalPermission: false
-        }
-        try {
-          switch (this.targetObjId) {
-            case BUILTIN_MODELS.HOST:
-              promise = this.getHostInstances(config)
-              break
-            case BUILTIN_MODELS.BUSINESS:
-              promise = this.getBusinessInstances(config)
-              break
-            case BUILTIN_MODELS.BUSINESS_SET:
-              promise = this.getBusinessSetInstances(config)
-              break
-            default:
-              promise = this.getModelInstances(config)
+              requestId: this.propertyRequest,
+            },
           }
-          const data = await promise
-
-          const dataListKeys = {
-            [BUILTIN_MODELS.BUSINESS_SET]: 'list'
-          }
-          const dataListKey = dataListKeys[this.targetObjId] || 'info'
-
-          this.list = data[dataListKey]
-
-          // 此处总数需要使用总实例数，而非data.count因使用in当前页的id查询data.count只是当前页的条数
-          this.pagination.count = this.associationInstances?.length
-
-          // 向前翻一页
-          if (this.pagination.count && !data[dataListKey].length) {
-            this.pagination.current -= 1
-            this.getInstances()
-          }
-        } catch (e) {
-          console.warn(e)
-          this.list = []
-          this.pagination.count = 0
+        )
+      } catch (e) {
+        console.error(e)
+        this.properties = []
+      }
+    },
+    async getInstances() {
+      let promise
+      const config = {
+        requestId: this.instanceRequest,
+        cancelPrevious: true,
+        globalError: false,
+        globalPermission: false,
+      }
+      try {
+        switch (this.targetObjId) {
+          case BUILTIN_MODELS.HOST:
+            promise = this.getHostInstances(config)
+            break
+          case BUILTIN_MODELS.BUSINESS:
+            promise = this.getBusinessInstances(config)
+            break
+          case BUILTIN_MODELS.BUSINESS_SET:
+            promise = this.getBusinessSetInstances(config)
+            break
+          default:
+            promise = this.getModelInstances(config)
         }
-      },
-      getHostInstances(config) {
-        const models = ['biz', 'set', 'module', 'host']
-        const hostCondition = {
-          field: 'bk_host_id',
-          operator: '$in',
-          value: this.currentPageInstanceIds
+        const data = await promise
+
+        const dataListKeys = {
+          [BUILTIN_MODELS.BUSINESS_SET]: 'list',
         }
-        const condition = models.map(model => ({
-          bk_obj_id: model,
-          fields: [],
-          condition: model === 'host' ? [hostCondition] : []
-        }))
-        return this.$store.dispatch('hostSearch/searchHost', {
+        const dataListKey = dataListKeys[this.targetObjId] || 'info'
+
+        this.list = data[dataListKey]
+
+        // 此处总数需要使用总实例数，而非data.count因使用in当前页的id查询data.count只是当前页的条数
+        this.pagination.count = this.associationInstances?.length
+
+        // 向前翻一页
+        if (this.pagination.count && !data[dataListKey].length) {
+          this.pagination.current -= 1
+          this.getInstances()
+        }
+      } catch (e) {
+        console.warn(e)
+        this.list = []
+        this.pagination.count = 0
+      }
+    },
+    getHostInstances(config) {
+      const models = ['biz', 'set', 'module', 'host']
+      const hostCondition = {
+        field: 'bk_host_id',
+        operator: '$in',
+        value: this.currentPageInstanceIds,
+      }
+      const condition = models.map(model => ({
+        bk_obj_id: model,
+        fields: [],
+        condition: model === 'host' ? [hostCondition] : [],
+      }))
+      return this.$store
+        .dispatch('hostSearch/searchHost', {
           params: {
             bk_biz_id: -1,
             condition,
             id: {
               data: [],
               exact: 0,
-              flag: 'bk_host_innerip|bk_host_outerip'
+              flag: 'bk_host_innerip|bk_host_outerip',
             },
             page: {
               ...this.page,
-              sort: 'bk_host_id'
-            }
-          },
-          config
-        }).then(data => ({
-          count: data.count,
-          info: data.info.map(item => item.host)
-        }))
-      },
-      getBusinessInstances(config) {
-        return this.$store.dispatch('objectBiz/searchBusiness', {
-          params: {
-            condition: {
-              bk_biz_id: {
-                $in: this.currentPageInstanceIds
-              }
+              sort: 'bk_host_id',
             },
-            fields: [],
-            page: {
-              ...this.page,
-              sort: 'bk_biz_id'
-            }
           },
-          config
+          config,
         })
-      },
-      getBusinessSetInstances(config) {
-        const params = {
-          fields: [],
-          bk_biz_set_filter: {
-            condition: 'AND',
-            rules: [{ field: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID, operator: 'in', value: this.currentPageInstanceIds }]
-          },
-          page: this.page
-        }
-
-        return businessSetService.find(params, config)
-      },
-      getModelInstances(config) {
-        return instanceService.find({
-          bk_obj_id: this.targetObjId,
-          params: {
-            fields: [],
-            page: {
-              ...this.page,
-              sort: 'bk_inst_id'
+        .then(data => ({
+          count: data.count,
+          info: data.info.map(item => item.host),
+        }))
+    },
+    getBusinessInstances(config) {
+      return this.$store.dispatch('objectBiz/searchBusiness', {
+        params: {
+          condition: {
+            bk_biz_id: {
+              $in: this.currentPageInstanceIds,
             },
-            conditions: {
-              condition: 'AND',
-              rules: [{
+          },
+          fields: [],
+          page: {
+            ...this.page,
+            sort: 'bk_biz_id',
+          },
+        },
+        config,
+      })
+    },
+    getBusinessSetInstances(config) {
+      const params = {
+        fields: [],
+        bk_biz_set_filter: {
+          condition: 'AND',
+          rules: [
+            {
+              field:
+                BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+              operator: 'in',
+              value: this.currentPageInstanceIds,
+            },
+          ],
+        },
+        page: this.page,
+      }
+
+      return businessSetService.find(params, config)
+    },
+    getModelInstances(config) {
+      return instanceService.find({
+        bk_obj_id: this.targetObjId,
+        params: {
+          fields: [],
+          page: {
+            ...this.page,
+            sort: 'bk_inst_id',
+          },
+          conditions: {
+            condition: 'AND',
+            rules: [
+              {
                 field: 'bk_inst_id',
                 operator: 'in',
-                value: this.currentPageInstanceIds
-              }]
-            }
+                value: this.currentPageInstanceIds,
+              },
+            ],
           },
-          config
+        },
+        config,
+      })
+    },
+    async cancelAssociation() {
+      try {
+        const asstInstance = this.associationInstances.find(instance => {
+          const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
+          // 关联实例数据中的模型实例id与模型实例id比较
+          return instance[key] === this.confirm.id
         })
-      },
-      async cancelAssociation() {
-        try {
-          const asstInstance = this.associationInstances.find((instance) => {
-            const key = this.isSource ? 'bk_asst_inst_id' : 'bk_inst_id'
-            // 关联实例数据中的模型实例id与模型实例id比较
-            return instance[key] === this.confirm.id
-          })
-          await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
-            id: asstInstance.id,
-            objId: this.objId,
-            config: { data: {} }
-          })
-          this.hideTips()
-          this.$success(this.$t('取消关联成功'))
-          this.$emit('delete-association', asstInstance.id)
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      getPaginationInfo() {
-        return this.$tc('页码', this.pagination.current, {
-          current: this.pagination.current,
-          count: this.pagination.count,
-          total: this.totalPage
+        await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
+          id: asstInstance.id,
+          objId: this.objId,
+          config: { data: {} },
         })
-      },
-      togglePage(step) {
-        const { current } = this.pagination
-        const newCurrent = current + step
-        if (newCurrent < 1 || newCurrent > this.totalPage) {
-          return false
-        }
-        this.pagination.current = newCurrent
-        this.getInstances()
-      },
-      hideTips() {
-        this.confirm.instance && this.confirm.instance.hide()
-      },
-      getRowInstId(item) {
-        const specialModel = ['host', 'biz', 'set', 'module']
-        const mapping = {
-          [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID
-        }
-        specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
-        return item[mapping[this.targetObjId] || 'bk_inst_id']
-      },
-      showTips(event, item) {
-        this.confirm.item = item
-        this.confirm.id = this.getRowInstId(item)
-        this.confirm.instance = this.$bkPopover(event.target, {
-          content: this.$refs.confirmTips,
-          theme: 'light',
-          zIndex: 9999,
-          width: 200,
-          trigger: 'click',
-          boundary: 'window',
-          arrow: true,
-          interactive: true,
-          onHidden: () => {
-            this.confirm.instance && this.confirm.instance.destroy()
-            this.confirm.instance = null
-          }
-        })
-        this.confirm.show = true
-        this.$nextTick(() => {
-          this.confirm.instance.show()
-        })
-      },
-      async handleShowDetails(row, event, column) {
-        if (this.header.findIndex(prop => prop.id === column.property) !== 0) {
-          return
-        }
-        const showInstanceDetails = await import('@/components/instance/details')
-        const nameMapping = {
-          host: 'bk_host_innerip',
-          biz: 'bk_biz_name',
-          [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
-        }
-        const idMapping = {
-          host: 'bk_host_id',
-          biz: 'bk_biz_id',
-          [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
-        }
-        showInstanceDetails.default({
-          bk_obj_id: this.targetObjId,
-          bk_inst_id: row[idMapping[this.targetObjId] || 'bk_inst_id'],
-          title: `${this.model.bk_obj_name}-${row[nameMapping[this.targetObjId] || 'bk_inst_name']}`
-        })
+        this.hideTips()
+        this.$success(this.$t('取消关联成功'))
+        this.$emit('delete-association', asstInstance.id)
+      } catch (e) {
+        console.error(e)
       }
-    }
-  }
+    },
+    getPaginationInfo() {
+      return this.$tc('页码', this.pagination.current, {
+        current: this.pagination.current,
+        count: this.pagination.count,
+        total: this.totalPage,
+      })
+    },
+    togglePage(step) {
+      const { current } = this.pagination
+      const newCurrent = current + step
+      if (newCurrent < 1 || newCurrent > this.totalPage) {
+        return false
+      }
+      this.pagination.current = newCurrent
+      this.getInstances()
+    },
+    hideTips() {
+      this.confirm.instance && this.confirm.instance.hide()
+    },
+    getRowInstId(item) {
+      const specialModel = ['host', 'biz', 'set', 'module']
+      const mapping = {
+        [BUILTIN_MODELS.BUSINESS_SET]:
+          BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+      }
+      specialModel.forEach(key => (mapping[key] = `bk_${key}_id`))
+      return item[mapping[this.targetObjId] || 'bk_inst_id']
+    },
+    showTips(event, item) {
+      this.confirm.item = item
+      this.confirm.id = this.getRowInstId(item)
+      this.confirm.instance = this.$bkPopover(event.target, {
+        content: this.$refs.confirmTips,
+        theme: 'light',
+        zIndex: 9999,
+        width: 200,
+        trigger: 'click',
+        boundary: 'window',
+        arrow: true,
+        interactive: true,
+        onHidden: () => {
+          this.confirm.instance && this.confirm.instance.destroy()
+          this.confirm.instance = null
+        },
+      })
+      this.confirm.show = true
+      this.$nextTick(() => {
+        this.confirm.instance.show()
+      })
+    },
+    async handleShowDetails(row, event, column) {
+      if (this.header.findIndex(prop => prop.id === column.property) !== 0) {
+        return
+      }
+      const showInstanceDetails = await import('@/components/instance/details')
+      const nameMapping = {
+        host: 'bk_host_innerip',
+        biz: 'bk_biz_name',
+        [BUILTIN_MODELS.BUSINESS_SET]: [
+          BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
+        ],
+      }
+      const idMapping = {
+        host: 'bk_host_id',
+        biz: 'bk_biz_id',
+        [BUILTIN_MODELS.BUSINESS_SET]: [
+          BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+        ],
+      }
+      showInstanceDetails.default({
+        bk_obj_id: this.targetObjId,
+        bk_inst_id: row[idMapping[this.targetObjId] || 'bk_inst_id'],
+        title: `${this.model.bk_obj_name}-${
+          row[nameMapping[this.targetObjId] || 'bk_inst_name']
+        }`,
+      })
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .table {
-        margin: 0 0 12px 0;
+.table {
+  margin: 0 0 12px;
+}
+
+.table-info {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 2px 2px 0 0;
+  line-height: 42px;
+  background-color: #dcdee5;
+  font-size: 14px;
+}
+
+.info-title {
+  cursor: pointer;
+
+  .icon {
+    display: inline-block;
+    vertical-align: middle;
+    transition: transform 0.2s linear;
+    margin-top: -3px;
+
+    &.is-open {
+      transform: rotate(90deg);
     }
-    .table-info {
-        height: 42px;
-        padding: 0 20px;
-        border-radius: 2px 2px 0 0;
-        line-height: 42px;
-        background-color: #DCDEE5;
-        font-size: 14px;
+  }
+
+  .title-text {
+    color: #000;
+  }
+
+  .title-count {
+    color: #8b8d95;
+  }
+}
+
+.info-pagination {
+  color: #8b8d95;
+
+  .pagination-toggle {
+    margin-left: 10px;
+
+    .pagination-icon {
+      font-size: 14px;
+      color: #979ba5;
+      cursor: pointer;
+
+      &.disabled {
+        color: #c4c6cc;
+        cursor: not-allowed;
+      }
+
+      &.left {
+        transform: rotate(90deg);
+      }
+
+      &.right {
+        transform: rotate(-90deg);
+      }
     }
-    .info-title {
-        cursor: pointer;
-        .icon {
-            display: inline-block;
-            vertical-align: middle;
-            transition: transform .2s linear;
-            margin-top: -3px;
-            &.is-open {
-                transform: rotate(90deg);
-            }
-        }
-        .title-text {
-            color: #000;
-        }
-        .title-count {
-            color: #8b8d95;
-        }
+  }
+}
+
+.confirm-tips {
+  padding: 9px 0;
+  text-align: center;
+
+  .tips-content {
+    color: $cmdbTextColor;
+    line-height: 20px;
+  }
+
+  .tips-option {
+    margin: 12px 0 0;
+
+    .tips-button {
+      height: 26px;
+      line-height: 24px;
+      padding: 0 16px;
+      min-width: 56px;
+      font-size: 12px;
     }
-    .info-pagination {
-        color: #8b8d95;
-        .pagination-toggle {
-            margin-left: 10px;
-            .pagination-icon {
-                font-size: 14px;
-                color: #979BA5;
-                cursor: pointer;
-                &.disabled {
-                    color: #C4C6CC;
-                    cursor: not-allowed;
-                }
-                &.left {
-                    transform: rotate(90deg);
-                }
-                &.right {
-                    transform: rotate(-90deg);
-                }
-            }
-        }
-    }
-    .confirm-tips {
-        padding: 9px 0;
-        text-align: center;
-        .tips-content {
-            color: $cmdbTextColor;
-            line-height: 20px;
-        }
-        .tips-option {
-            margin: 12px 0 0 0;
-            .tips-button {
-                height: 26px;
-                line-height: 24px;
-                padding: 0 16px;
-                min-width: 56px;
-                font-size: 12px;
-            }
-        }
-    }
+  }
+}
 </style>

@@ -18,7 +18,7 @@ function createIdProperty(objId) {
   const keyMap = {
     biz: 'bk_biz_id',
     host: 'bk_host_id',
-    bk_project: 'id'
+    bk_project: 'id',
   }
   return {
     id: Date.now(),
@@ -34,91 +34,96 @@ function createIdProperty(objId) {
     isreadonly: true,
     editable: false,
     bk_property_group: null,
-    _is_inject_: true
+    _is_inject_: true,
   }
 }
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 创建对象模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 创建对象模型属性
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   createObjectAttribute({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/objectattr', params, config)
   },
 
   /**
-     * 业务下创建对象模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  createBizObjectAttribute({ commit, state, dispatch }, { bizId, params, config }) {
+   * 业务下创建对象模型属性
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  createBizObjectAttribute(
+    { commit, state, dispatch },
+    { bizId, params, config }
+  ) {
     return $http.post(`/create/objectattr/biz/${bizId}`, params, config)
   },
 
   /**
-     * 删除对象模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} id 被删除的数据记录的唯一标识id
-     * @return {promises} promises 对象
-     */
+   * 删除对象模型属性
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} id 被删除的数据记录的唯一标识id
+   * @return {promises} promises 对象
+   */
   deleteObjectAttribute({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/objectattr/${id}`, config)
   },
 
   /**
-     * 更新对象属性模型
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} id 被删除的数据记录的唯一标识id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 更新对象属性模型
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} id 被删除的数据记录的唯一标识id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   updateObjectAttribute({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`update/objectattr/${id}`, params, config)
   },
 
   /**
-     * 业务下更新对象属性模型
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} id 被删除的数据记录的唯一标识id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  updateBizObjectAttribute({ commit, state, dispatch }, { bizId, id, params, config }) {
+   * 业务下更新对象属性模型
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} id 被删除的数据记录的唯一标识id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  updateBizObjectAttribute(
+    { commit, state, dispatch },
+    { bizId, id, params, config }
+  ) {
     return $http.put(`update/objectattr/biz/${bizId}/id/${id}`, params, config)
   },
 
   /**
-     * 查询对象属性模型
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr/web', params, config).then((data) => {
+   * 查询对象属性模型
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchObjectAttribute(
+    { commit, state, dispatch },
+    { params, config, injectId = false }
+  ) {
+    return $http.post('find/objectattr/web', params, config).then(data => {
       if (injectId !== params.bk_obj_id) {
         return data
       }
@@ -133,44 +138,49 @@ const actions = {
   },
 
   /**
-     * 批量查询对象属性模型
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  batchSearchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr/web', params, config).then((properties) => {
-      const result = {}
-      params.bk_obj_id.$in.forEach((objId) => {
-        result[objId] = []
-      })
-      properties.forEach((property) => {
-        result[property.bk_obj_id].push(property)
-      })
-      Object.keys(result).forEach((objId) => {
-        if (injectId === objId) {
-          // eslint-disable-next-line no-underscore-dangle
-          const alreadyInject = result[objId].some(property => property._is_inject_)
-          if (!alreadyInject) {
-            result[objId].unshift(createIdProperty(objId))
+   * 批量查询对象属性模型
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  batchSearchObjectAttribute(
+    { commit, state, dispatch },
+    { params, config, injectId = false }
+  ) {
+    return $http
+      .post('find/objectattr/web', params, config)
+      .then(properties => {
+        const result = {}
+        params.bk_obj_id.$in.forEach(objId => {
+          result[objId] = []
+        })
+        properties.forEach(property => {
+          result[property.bk_obj_id].push(property)
+        })
+        Object.keys(result).forEach(objId => {
+          if (injectId === objId) {
+            // eslint-disable-next-line no-underscore-dangle
+            const alreadyInject = result[objId].some(
+              property => property._is_inject_
+            )
+            if (!alreadyInject) {
+              result[objId].unshift(createIdProperty(objId))
+            }
           }
-        }
+        })
+        return result
       })
-      return result
-    })
-  }
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

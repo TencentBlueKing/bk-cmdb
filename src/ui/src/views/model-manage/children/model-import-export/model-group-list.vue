@@ -13,18 +13,16 @@
 <template>
   <div class="model-group-list">
     <div
-      class="model-group-item"
       v-for="(modelGroup, groupIndex) in groups"
       :key="modelGroup.bk_classification_id"
+      class="model-group-item"
       :class="{
         'is-collapse':
-          modelGroupCollapseStates[modelGroup.bk_classification_id]
-      }"
-    >
+          modelGroupCollapseStates[modelGroup.bk_classification_id],
+      }">
       <div
         class="model-group-header"
-        @click="toggleModelGroupCollapse(modelGroup.bk_classification_id)"
-      >
+        @click="toggleModelGroupCollapse(modelGroup.bk_classification_id)">
         <bk-icon class="model-group-collapse-icon" type="down-shape" />
         {{ modelGroup.bk_classification_name }}（
         {{ modelGroup.bk_objects.length }} ）
@@ -32,25 +30,24 @@
       </div>
       <bk-transition name="collapse" duration-type="ease">
         <ul
-          class="model-list"
           v-show="!modelGroupCollapseStates[modelGroup.bk_classification_id]"
-        >
+          class="model-list">
           <li
+            v-for="(model, modelIndex) in modelGroup.bk_objects"
+            :key="model.bk_obj_id"
             class="model-item"
             :class="{
-              'is-active': selectedModelId === model.bk_obj_id
+              'is-active': selectedModelId === model.bk_obj_id,
             }"
-            v-for="(model, modelIndex) in modelGroup.bk_objects"
-            @click="selectModel(model)"
-            :key="model.bk_obj_id"
-          >
+            @click="selectModel(model)">
             <model-summary :data="model"></model-summary>
-            <slot name="model-append"
+            <slot
+              name="model-append"
               v-bind="{
                 modelGroup,
                 groupIndex,
                 model,
-                modelIndex
+                modelIndex,
               }">
             </slot>
           </li>
@@ -61,48 +58,49 @@
 </template>
 
 <script>
-  import { defineComponent, reactive, toRef } from 'vue'
-  import ModelSummary from './model-summary.vue'
+import { defineComponent, reactive, toRef } from 'vue'
 
-  export default defineComponent({
-    name: 'ModelGroupList',
-    components: {
-      ModelSummary
+import ModelSummary from './model-summary.vue'
+
+export default defineComponent({
+  name: 'ModelGroupList',
+  components: {
+    ModelSummary,
+  },
+  props: {
+    // 模型分组数据
+    groups: {
+      type: Array,
+      required: true,
+      default: () => [],
     },
-    props: {
-      // 模型分组数据
-      groups: {
-        type: Array,
-        required: true,
-        default: () => []
-      },
-      // 选中模型的 bk_obj_id
-      selectedModelId: {
-        type: String,
-        default: ''
-      }
+    // 选中模型的 bk_obj_id
+    selectedModelId: {
+      type: String,
+      default: '',
     },
-    setup(props, { emit }) {
-      const modelGroupCollapseStates = reactive({})
+  },
+  setup(props, { emit }) {
+    const modelGroupCollapseStates = reactive({})
 
-      const toggleModelGroupCollapse = (groupId) => {
-        const collapse = toRef(modelGroupCollapseStates, groupId)
+    const toggleModelGroupCollapse = groupId => {
+      const collapse = toRef(modelGroupCollapseStates, groupId)
 
-        collapse.value = !collapse.value
-      }
+      collapse.value = !collapse.value
+    }
 
-      const selectModel = (model) => {
-        emit('update:selectedModelId', model.bk_obj_id)
-        emit('model-select', model)
-      }
+    const selectModel = model => {
+      emit('update:selectedModelId', model.bk_obj_id)
+      emit('model-select', model)
+    }
 
-      return {
-        selectModel,
-        modelGroupCollapseStates,
-        toggleModelGroupCollapse
-      }
-    },
-  })
+    return {
+      selectModel,
+      modelGroupCollapseStates,
+      toggleModelGroupCollapse,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
@@ -146,7 +144,7 @@
     transition: background-color 200ms ease;
 
     &::before {
-      content: "";
+      content: '';
       display: block;
       position: absolute;
       top: 0;
@@ -168,7 +166,6 @@
       background-color: #fff;
       width: 100%;
     }
-
   }
 }
 </style>

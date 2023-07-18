@@ -18,260 +18,324 @@
     :is-show.sync="isShow"
     :before-close="handleSliderBeforeClose"
     @hidden="handleHidden">
-    <bk-form slot="content"
-      class="dynamic-group-form"
+    <bk-form
+      slot="content"
       ref="form"
-      form-type="vertical"
-      v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
+      v-bkloading="{
+        isLoading: $loading([
+          request.mainline,
+          request.property,
+          request.details,
+        ]),
+      }"
+      class="dynamic-group-form"
+      form-type="vertical">
       <bk-form-item :label="$t('业务')" required>
-        <cmdb-business-selector class="form-item"
-          disabled
-          :value="bizId">
+        <cmdb-business-selector class="form-item" disabled :value="bizId">
         </cmdb-business-selector>
       </bk-form-item>
       <bk-form-item :label="$t('分组名称')" required>
-        <bk-input class="form-item"
+        <bk-input
           v-model.trim="formData.name"
           v-validate="'required|length:256'"
+          class="form-item"
           data-vv-name="name"
           :data-vv-as="$t('查询名称')"
           :placeholder="$t('请输入xx', { name: $t('查询名称') })">
         </bk-input>
-        <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
+        <p v-if="errors.has('name')" class="form-error">
+          {{ errors.first('name') }}
+        </p>
       </bk-form-item>
       <bk-form-item :label="$t('查询对象')" required>
-        <form-target class="form-item"
+        <form-target
           v-model="formData.bk_obj_id"
+          class="form-item"
           :disabled="!isCreateMode"
           @change="handleModelChange">
         </form-target>
       </bk-form-item>
-      <bk-form-item class="form-condition-tips"
+      <bk-form-item
+        class="form-condition-tips"
         desc-type="icon"
         desc-icon="icon-cc-tips"
         :label="$t('查询条件')"
         :desc="$t('针对查询内容进行条件过滤')">
-        <form-property-list ref="propertyList" @remove="handleRemoveProperty"></form-property-list>
-        <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
+        <form-property-list
+          ref="propertyList"
+          @remove="handleRemoveProperty"></form-property-list>
+        <bk-button
+          class="form-condition-button"
+          :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
           icon="icon-plus-circle"
           :text="true"
           @click="showPropertySelector">
-          {{$t('继续添加')}}
+          {{ $t('继续添加') }}
         </bk-button>
-        <input type="hidden"
+        <input
+          v-model="selectedProperties.length"
           v-validate="'min_value:1'"
+          type="hidden"
           data-vv-name="condition"
-          :data-vv-as="$t('查询条件')"
-          v-model="selectedProperties.length">
-        <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
+          :data-vv-as="$t('查询条件')" />
+        <p v-if="errors.has('condition')" class="form-error">
+          {{ $t('请添加查询条件') }}
+        </p>
       </bk-form-item>
     </bk-form>
-    <div class="dynamic-group-options" slot="footer">
+    <div slot="footer" class="dynamic-group-options">
       <cmdb-auth :auth="saveAuth">
-        <bk-button class="mr10" slot-scope="{ disabled }"
+        <bk-button
+          slot-scope="{ disabled }"
+          class="mr10"
           theme="primary"
           :disabled="disabled"
           :loading="$loading([request.create, request.update])"
           @click="handleConfirm">
-          {{isCreateMode ? $t('提交') : $t('保存')}}
+          {{ isCreateMode ? $t('提交') : $t('保存') }}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="mr10" theme="default" @click="handleSliderBeforeClose('cancel')">{{$t('取消')}}</bk-button>
+      <bk-button
+        class="mr10"
+        theme="default"
+        @click="handleSliderBeforeClose('cancel')"
+        >{{ $t('取消') }}</bk-button
+      >
     </div>
   </bk-sideslider>
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
-  import FormPropertyList from './form-property-list.vue'
-  import FormPropertySelector from './form-property-selector.js'
-  import FormTarget from './form-target.vue'
-  import RouterQuery from '@/router/query'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import useSideslider from '@/hooks/use-sideslider'
-  import isEqual from 'lodash/isEqual'
-  export default {
-    components: {
-      FormPropertyList,
-      FormTarget
-    },
-    props: {
-      id: [String, Number],
-      title: String
-    },
-    provide() {
-      return {
-        dynamicGroupForm: this
-      }
-    },
-    data() {
-      return {
-        isShow: false,
-        details: null,
-        formData: {
-          name: '',
-          bk_obj_id: 'host'
-        },
-        originFormData: {
-          bk_obj_id: 'host',
-          name: '',
-        },
-        selectedProperties: [],
-        originProperties: [],
-        request: Object.freeze({
-          mainline: Symbol('mainline'),
-          property: Symbol('property'),
-          details: Symbol('details'),
-          create: Symbol('create'),
-          update: Symbol('update')
-        }),
-        availableModelIds: Object.freeze(['host', 'module', 'set']),
-        availableModels: [],
-        propertyMap: {},
-        disabledPropertyMap: {}
-      }
-    },
-    computed: {
-      ...mapGetters(['supplierAccount']),
-      ...mapGetters('objectBiz', ['bizId']),
-      isCreateMode() {
-        return !this.id
+import { mapGetters } from 'vuex'
+import isEqual from 'lodash/isEqual'
+
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import RouterQuery from '@/router/query'
+import useSideslider from '@/hooks/use-sideslider'
+
+import FormPropertyList from './form-property-list.vue'
+import FormPropertySelector from './form-property-selector.js'
+import FormTarget from './form-target.vue'
+export default {
+  components: {
+    FormPropertyList,
+    FormTarget,
+  },
+  provide() {
+    return {
+      dynamicGroupForm: this,
+    }
+  },
+  props: {
+    id: [String, Number],
+    title: String,
+  },
+  data() {
+    return {
+      isShow: false,
+      details: null,
+      formData: {
+        name: '',
+        bk_obj_id: 'host',
       },
-      searchTargetModels() {
-        return this.availableModels.filter(model => ['host', 'set'].includes(model.bk_obj_id))
+      originFormData: {
+        bk_obj_id: 'host',
+        name: '',
       },
-      saveAuth() {
-        if (this.id) {
-          return { type: this.$OPERATION.U_CUSTOM_QUERY, relation: [this.bizId, this.id] }
-        }
-        return { type: this.$OPERATION.C_CUSTOM_QUERY, relation: [this.bizId] }
-      }
+      selectedProperties: [],
+      originProperties: [],
+      request: Object.freeze({
+        mainline: Symbol('mainline'),
+        property: Symbol('property'),
+        details: Symbol('details'),
+        create: Symbol('create'),
+        update: Symbol('update'),
+      }),
+      availableModelIds: Object.freeze(['host', 'module', 'set']),
+      availableModels: [],
+      propertyMap: {},
+      disabledPropertyMap: {},
+    }
+  },
+  computed: {
+    ...mapGetters(['supplierAccount']),
+    ...mapGetters('objectBiz', ['bizId']),
+    isCreateMode() {
+      return !this.id
     },
-    async created() {
-      await this.getMainLineModels()
-      await this.getModelProperties()
+    searchTargetModels() {
+      return this.availableModels.filter(model =>
+        ['host', 'set'].includes(model.bk_obj_id)
+      )
+    },
+    saveAuth() {
       if (this.id) {
-        this.getDetails()
+        return {
+          type: this.$OPERATION.U_CUSTOM_QUERY,
+          relation: [this.bizId, this.id],
+        }
       }
-      const { beforeClose, setChanged } = useSideslider(this.relationInfo)
-      this.beforeClose = beforeClose
-      this.setChanged = setChanged
+      return { type: this.$OPERATION.C_CUSTOM_QUERY, relation: [this.bizId] }
     },
-    methods: {
-      async getMainLineModels() {
-        try {
-          const models = await this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+  },
+  async created() {
+    await this.getMainLineModels()
+    await this.getModelProperties()
+    if (this.id) {
+      this.getDetails()
+    }
+    const { beforeClose, setChanged } = useSideslider(this.relationInfo)
+    this.beforeClose = beforeClose
+    this.setChanged = setChanged
+  },
+  methods: {
+    async getMainLineModels() {
+      try {
+        const models = await this.$store.dispatch(
+          'objectMainLineModule/searchMainlineObject',
+          {
             config: {
               requestId: this.request.mainline,
-              fromCache: true
-            }
-          })
-          // 业务调用方暂时只需要一下三种类型的查询
-          // eslint-disable-next-line max-len
-          const availableModels = this.availableModelIds.map(modelId => models.find(model => model.bk_obj_id === modelId))
-          this.availableModels = Object.freeze(availableModels)
-        } catch (error) {
-          console.error(error)
-        }
-      },
-      async getModelProperties() {
-        try {
-          const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
+              fromCache: true,
+            },
+          }
+        )
+        // 业务调用方暂时只需要一下三种类型的查询
+        // eslint-disable-next-line max-len
+        const availableModels = this.availableModelIds.map(modelId =>
+          models.find(model => model.bk_obj_id === modelId)
+        )
+        this.availableModels = Object.freeze(availableModels)
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    async getModelProperties() {
+      try {
+        const propertyMap = await this.$store.dispatch(
+          'objectModelProperty/batchSearchObjectAttribute',
+          {
             params: {
               bk_biz_id: this.bizId,
-              bk_obj_id: { $in: this.availableModels.map(model => model.bk_obj_id) },
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: {
+                $in: this.availableModels.map(model => model.bk_obj_id),
+              },
+              bk_supplier_account: this.supplierAccount,
             },
             config: {
               requestId: this.request.property,
-              fromCache: true
-            }
-          })
-          propertyMap.module.unshift(this.getServiceTemplateProperty())
-          this.propertyMap = Object.freeze(propertyMap)
+              fromCache: true,
+            },
+          }
+        )
+        propertyMap.module.unshift(this.getServiceTemplateProperty())
+        this.propertyMap = Object.freeze(propertyMap)
 
-          Object.keys(this.propertyMap).forEach((objId) => {
-            this.disabledPropertyMap[objId] = this.propertyMap[objId]
-              .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
-              .map(item => item.bk_property_id)
-          })
-        } catch (error) {
-          console.error(error)
-          this.propertyMap = {}
-        }
-      },
-      getServiceTemplateProperty() {
-        return {
-          id: Date.now(),
-          bk_obj_id: 'module',
-          bk_property_id: 'service_template_id',
-          bk_property_name: this.$t('服务模板'),
-          bk_property_index: -1,
-          bk_property_type: 'service-template',
-          isonly: true,
-          ispre: true,
-          bk_isapi: true,
-          bk_issystem: true,
-          isreadonly: true,
-          editable: false,
-          bk_property_group: null,
-          _is_inject_: true
-        }
-      },
-      async getDetails() {
-        try {
-          const details = await this.$store.dispatch('dynamicGroup/details', {
-            bizId: this.bizId,
-            id: this.id,
-            config: {
-              requestId: this.request.details
-            }
-          })
-          const transformedDetails = this.transformDetails(details)
-          this.originFormData.name = transformedDetails.name
-          this.originFormData.bk_obj_id = transformedDetails.bk_obj_id
-          this.formData.name = transformedDetails.name
-          this.formData.bk_obj_id = transformedDetails.bk_obj_id
-          this.details = transformedDetails
-          this.$nextTick(this.setDetailsSelectedProperties)
-          setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
-        } catch (error) {
-          console.error(error)
-        }
-      },
-      transformDetails(details) {
-        const { condition } = details.info
-        const transformedCondition = []
-        condition.forEach((data) => {
-          const realCondition = (data.condition || []).reduce((accumulator, current) => {
+        Object.keys(this.propertyMap).forEach(objId => {
+          this.disabledPropertyMap[objId] = this.propertyMap[objId]
+            .filter(
+              item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+            )
+            .map(item => item.bk_property_id)
+        })
+      } catch (error) {
+        console.error(error)
+        this.propertyMap = {}
+      }
+    },
+    getServiceTemplateProperty() {
+      return {
+        id: Date.now(),
+        bk_obj_id: 'module',
+        bk_property_id: 'service_template_id',
+        bk_property_name: this.$t('服务模板'),
+        bk_property_index: -1,
+        bk_property_type: 'service-template',
+        isonly: true,
+        ispre: true,
+        bk_isapi: true,
+        bk_issystem: true,
+        isreadonly: true,
+        editable: false,
+        bk_property_group: null,
+        _is_inject_: true,
+      }
+    },
+    async getDetails() {
+      try {
+        const details = await this.$store.dispatch('dynamicGroup/details', {
+          bizId: this.bizId,
+          id: this.id,
+          config: {
+            requestId: this.request.details,
+          },
+        })
+        const transformedDetails = this.transformDetails(details)
+        this.originFormData.name = transformedDetails.name
+        this.originFormData.bk_obj_id = transformedDetails.bk_obj_id
+        this.formData.name = transformedDetails.name
+        this.formData.bk_obj_id = transformedDetails.bk_obj_id
+        this.details = transformedDetails
+        this.$nextTick(this.setDetailsSelectedProperties)
+        setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    transformDetails(details) {
+      const { condition } = details.info
+      const transformedCondition = []
+      condition.forEach(data => {
+        const realCondition = (data.condition || []).reduce(
+          (accumulator, current) => {
             if (['$gte', '$lte'].includes(current.operator)) {
               // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
-              const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
+              const isRange =
+                data.condition.filter(cond => cond.field === current.field)
+                  ?.length > 1
 
               // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
-              let index = accumulator.findIndex(exist => exist.field === current.field)
+              let index = accumulator.findIndex(
+                exist => exist.field === current.field
+              )
               if (index === -1) {
-                index = accumulator.push({
-                  field: current.field,
-                  operator: isRange ? '$range' : current.operator,
-                  value: isRange ? [] : current.value
-                }) - 1
+                index =
+                  accumulator.push({
+                    field: current.field,
+                    operator: isRange ? '$range' : current.operator,
+                    value: isRange ? [] : current.value,
+                  }) - 1
               }
               const range = accumulator[index]
 
               // 如果是范围并且确保field一致，需要组装为一个范围数组格式值
               if (isRange && current.field === range.field) {
-                range.value?.[current.operator === '$gte' ? 'unshift' : 'push'](current.value)
+                range.value?.[current.operator === '$gte' ? 'unshift' : 'push'](
+                  current.value
+                )
               }
             } else if (current.operator === '$eq') {
               // 将老数据的eq转换为当前支持的数据格式
-              const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
-              const property = this.getConditionProperty(data.bk_obj_id, current.field)
-              if (property && transformType.includes(property.bk_property_type)) {
+              const transformType = [
+                'singlechar',
+                'longchar',
+                'enum',
+                'objuser',
+              ]
+              const property = this.getConditionProperty(
+                data.bk_obj_id,
+                current.field
+              )
+              if (
+                property &&
+                transformType.includes(property.bk_property_type)
+              ) {
                 accumulator.push({
                   field: current.field,
                   operator: '$in',
-                  value: Array.isArray(current.value) ? current.value : [current.value]
+                  value: Array.isArray(current.value)
+                    ? current.value
+                    : [current.value],
                 })
               } else {
                 accumulator.push(current)
@@ -280,125 +344,139 @@
               accumulator.push(current)
             }
             return accumulator
-          }, [])
-          if (data.time_condition) {
-            data.time_condition.rules.forEach(({ field, start, end }) => {
-              realCondition.push({
-                field,
-                operator: '$range',
-                value: [start, end]
-              })
+          },
+          []
+        )
+        if (data.time_condition) {
+          data.time_condition.rules.forEach(({ field, start, end }) => {
+            realCondition.push({
+              field,
+              operator: '$range',
+              value: [start, end],
             })
-          }
-          transformedCondition.push({
-            bk_obj_id: data.bk_obj_id,
-            condition: realCondition
           })
-        })
-        return {
-          ...details,
-          info: {
-            condition: transformedCondition
-          }
         }
-      },
-      getConditionProperty(modelId, field) {
-        const properties = this.propertyMap[modelId] || []
-        return properties.find(property => property.bk_property_id === field)
-      },
-      setDetailsSelectedProperties() {
-        const conditions = this.details.info.condition
-        const properties = []
-        conditions.forEach(({ bk_obj_id: modelId, condition }) => {
-          condition.forEach(({ field }) => {
-            const property = this.propertyMap[modelId].find(property => property.bk_property_id === field)
-            property && properties.push(property)
-          })
+        transformedCondition.push({
+          bk_obj_id: data.bk_obj_id,
+          condition: realCondition,
         })
-        this.selectedProperties = properties
-        this.originProperties = properties
-      },
-      handleModelChange() {
-        this.selectedProperties = []
-      },
-      showPropertySelector() {
-        FormPropertySelector.show({
+      })
+      return {
+        ...details,
+        info: {
+          condition: transformedCondition,
+        },
+      }
+    },
+    getConditionProperty(modelId, field) {
+      const properties = this.propertyMap[modelId] || []
+      return properties.find(property => property.bk_property_id === field)
+    },
+    setDetailsSelectedProperties() {
+      const conditions = this.details.info.condition
+      const properties = []
+      conditions.forEach(({ bk_obj_id: modelId, condition }) => {
+        condition.forEach(({ field }) => {
+          const property = this.propertyMap[modelId].find(
+            property => property.bk_property_id === field
+          )
+          property && properties.push(property)
+        })
+      })
+      this.selectedProperties = properties
+      this.originProperties = properties
+    },
+    handleModelChange() {
+      this.selectedProperties = []
+    },
+    showPropertySelector() {
+      FormPropertySelector.show(
+        {
           selected: this.selectedProperties,
-          handler: this.handlePropertySelected
-        }, this)
-      },
-      handlePropertySelected(selected) {
-        this.selectedProperties = selected
-      },
-      handleRemoveProperty(property) {
-        const index = this.selectedProperties.findIndex(target => target.id === property.id)
-        if (index > -1) {
-          this.selectedProperties.splice(index, 1)
+          handler: this.handlePropertySelected,
+        },
+        this
+      )
+    },
+    handlePropertySelected(selected) {
+      this.selectedProperties = selected
+    },
+    handleRemoveProperty(property) {
+      const index = this.selectedProperties.findIndex(
+        target => target.id === property.id
+      )
+      if (index > -1) {
+        this.selectedProperties.splice(index, 1)
+      }
+    },
+    async handleConfirm() {
+      try {
+        const results = [
+          await this.$validator.validateAll(),
+          await this.$refs.propertyList.$validator.validateAll(),
+        ]
+        if (results.some(isValid => !isValid)) {
+          return false
         }
-      },
-      async handleConfirm() {
-        try {
-          const results = [
-            await this.$validator.validateAll(),
-            await this.$refs.propertyList.$validator.validateAll()
-          ]
-          if (results.some(isValid => !isValid)) {
-            return false
-          }
-          if (this.id) {
-            await this.updateDynamicGroup()
-          } else {
-            await this.createDynamicGroup()
-          }
-          this.close('submit')
-        } catch (error) {
-          console.error(error)
+        if (this.id) {
+          await this.updateDynamicGroup()
+        } else {
+          await this.createDynamicGroup()
         }
-      },
-      updateDynamicGroup() {
-        return this.$store.dispatch('dynamicGroup/update', {
-          bizId: this.bizId,
-          id: this.id,
-          params: {
-            bk_biz_id: this.bizId,
-            bk_obj_id: this.formData.bk_obj_id,
-            name: this.formData.name,
-            info: {
-              condition: this.getSubmitCondition()
-            }
+        this.close('submit')
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    updateDynamicGroup() {
+      return this.$store.dispatch('dynamicGroup/update', {
+        bizId: this.bizId,
+        id: this.id,
+        params: {
+          bk_biz_id: this.bizId,
+          bk_obj_id: this.formData.bk_obj_id,
+          name: this.formData.name,
+          info: {
+            condition: this.getSubmitCondition(),
           },
-          config: {
-            requestId: this.request.update
-          }
-        })
-      },
-      createDynamicGroup() {
-        return this.$store.dispatch('dynamicGroup/create', {
-          params: {
-            bk_biz_id: this.bizId,
-            bk_obj_id: this.formData.bk_obj_id,
-            name: this.formData.name,
-            info: {
-              condition: this.getSubmitCondition()
-            }
+        },
+        config: {
+          requestId: this.request.update,
+        },
+      })
+    },
+    createDynamicGroup() {
+      return this.$store.dispatch('dynamicGroup/create', {
+        params: {
+          bk_biz_id: this.bizId,
+          bk_obj_id: this.formData.bk_obj_id,
+          name: this.formData.name,
+          info: {
+            condition: this.getSubmitCondition(),
           },
-          config: {
-            requestId: this.request.create
-          }
-        })
-      },
-      getSubmitCondition() {
-        const baseConditionMap = {}
-        const timeConditionMap = {}
-        const propertyCondition = this.$refs.propertyList.condition
-        Object.values(propertyCondition).forEach(({ property, operator, value }) => {
-          if (property.bk_property_type === 'time') { // 时间类型特殊处理
-            const timeCondition = timeConditionMap[property.bk_obj_id] || { oper: 'and', rules: [] }
+        },
+        config: {
+          requestId: this.request.create,
+        },
+      })
+    },
+    getSubmitCondition() {
+      const baseConditionMap = {}
+      const timeConditionMap = {}
+      const propertyCondition = this.$refs.propertyList.condition
+      Object.values(propertyCondition).forEach(
+        ({ property, operator, value }) => {
+          if (property.bk_property_type === 'time') {
+            // 时间类型特殊处理
+            const timeCondition = timeConditionMap[property.bk_obj_id] || {
+              oper: 'and',
+              rules: [],
+            }
             const [start, end] = value
             timeCondition.rules.push({
               field: property.bk_property_id,
               start,
-              end
+              end,
             })
             timeConditionMap[property.bk_obj_id] = timeCondition
             return
@@ -406,113 +484,130 @@
           const submitCondition = baseConditionMap[property.bk_obj_id] || []
           if (operator === '$range') {
             const [start, end] = value
-            submitCondition.push({
-              field: property.bk_property_id,
-              operator: '$gte',
-              value: start
-            }, {
-              field: property.bk_property_id,
-              operator: '$lte',
-              value: end
-            })
+            submitCondition.push(
+              {
+                field: property.bk_property_id,
+                operator: '$gte',
+                value: start,
+              },
+              {
+                field: property.bk_property_id,
+                operator: '$lte',
+                value: end,
+              }
+            )
           } else {
             submitCondition.push({
               field: property.bk_property_id,
               operator,
-              value
+              value,
             })
           }
           baseConditionMap[property.bk_obj_id] = submitCondition
-        })
-        const baseConditions = Object.keys(baseConditionMap).map(modelId => ({
-          bk_obj_id: modelId,
-          condition: baseConditionMap[modelId]
-        }))
-        Object.keys(timeConditionMap).forEach((modelId) => {
-          const condition = baseConditions.find(condition => condition.bk_obj_id === modelId)
-          if (condition) {
-            condition.time_condition = timeConditionMap[modelId]
-          } else {
-            baseConditions.push({
-              bk_obj_id: modelId,
-              time_condition: timeConditionMap[modelId]
-            })
-          }
-        })
-        return baseConditions
-      },
-      close(type) {
-        this.isShow = false
-        if (type !== 'normal') {
-          RouterQuery.set({
-            _t: Date.now()
-          })
         }
-      },
-      show() {
-        this.isShow = true
-      },
-      handleSliderBeforeClose(type = 'normal') {
-        const changedValues = !isEqual(this.formData, this.originFormData)
-        const changedProperties =  !isEqual(this.selectedProperties, this.originProperties)
-        if (changedValues || changedProperties) {
-          this.setChanged(true)
-          this.beforeClose(() => {
-            this.close(type)
-          })
+      )
+      const baseConditions = Object.keys(baseConditionMap).map(modelId => ({
+        bk_obj_id: modelId,
+        condition: baseConditionMap[modelId],
+      }))
+      Object.keys(timeConditionMap).forEach(modelId => {
+        const condition = baseConditions.find(
+          condition => condition.bk_obj_id === modelId
+        )
+        if (condition) {
+          condition.time_condition = timeConditionMap[modelId]
         } else {
-          this.close(type)
-          return true
+          baseConditions.push({
+            bk_obj_id: modelId,
+            time_condition: timeConditionMap[modelId],
+          })
         }
-        return false
-      },
-      handleHidden() {
-        this.$emit('close')
+      })
+      return baseConditions
+    },
+    close(type) {
+      this.isShow = false
+      if (type !== 'normal') {
+        RouterQuery.set({
+          _t: Date.now(),
+        })
       }
-    }
-  }
+    },
+    show() {
+      this.isShow = true
+    },
+    handleSliderBeforeClose(type = 'normal') {
+      const changedValues = !isEqual(this.formData, this.originFormData)
+      const changedProperties = !isEqual(
+        this.selectedProperties,
+        this.originProperties
+      )
+      if (changedValues || changedProperties) {
+        this.setChanged(true)
+        this.beforeClose(() => {
+          this.close(type)
+        })
+      } else {
+        this.close(type)
+        return true
+      }
+      return false
+    },
+    handleHidden() {
+      this.$emit('close')
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .dynamic-group-form {
-        padding: 20px;
-        height: 100%;
-        @include scrollbar-y;
-        .form-item {
-            width: 100%;
-        }
-        .form-error {
-            position: absolute;
-            top: 100%;
-            font-size: 12px;
-            line-height: 14px;
-            color: $dangerColor;
-        }
-        .form-condition-tips {
-            /deep/ .bk-label .bk-label-text{
-                display: inline-flex;
-                align-items: center;
-                .bk-icon {
-                    margin-left: 4px;
-                }
-            }
-        }
-        .form-condition-button {
-            /deep/ > div {
-                display: flex;
-                align-items: center;
-                .bk-icon {
-                    top: 0;
-                }
-            }
-        }
+.dynamic-group-form {
+  padding: 20px;
+  height: 100%;
+
+  @include scrollbar-y;
+
+  .form-item {
+    width: 100%;
+  }
+
+  .form-error {
+    position: absolute;
+    top: 100%;
+    font-size: 12px;
+    line-height: 14px;
+    color: $dangerColor;
+  }
+
+  .form-condition-tips {
+    /deep/ .bk-label .bk-label-text {
+      display: inline-flex;
+      align-items: center;
+
+      .bk-icon {
+        margin-left: 4px;
+      }
     }
-    .dynamic-group-options {
-        display: flex;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        padding: 0 20px;
-        border-top: 1px solid $borderColor;
+  }
+
+  .form-condition-button {
+    /deep/ > div {
+      display: flex;
+      align-items: center;
+
+      .bk-icon {
+        top: 0;
+      }
     }
+  }
+}
+
+.dynamic-group-options {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 0 20px;
+  border-top: 1px solid $borderColor;
+}
 </style>

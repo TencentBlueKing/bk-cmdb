@@ -10,17 +10,21 @@
  * limitations under the License.
  */
 
-import store from '@/store'
 import cloneDeep from 'lodash/cloneDeep'
-import { getValue } from '@/utils/tools'
 
+import store from '@/store'
+import { getValue } from '@/utils/tools'
 import propertyService from '@/service/property/property.js'
 import propertyGroupService from '@/service/property/group.js'
 import setTemplateService from '@/service/set-template/index.js'
 
 export const templateDetailRequestId = Symbol()
 
-export default async function userTemplagteData(bizId, templateId, isFetchTemplate) {
+export default async function userTemplagteData(
+  bizId,
+  templateId,
+  isFetchTemplate
+) {
   const dataReqs = [
     // 集群属性与分组
     propertyService.find({ bk_obj_id: 'set', bk_biz_id: bizId }),
@@ -28,24 +32,24 @@ export default async function userTemplagteData(bizId, templateId, isFetchTempla
   ]
 
   if (isFetchTemplate) {
-    dataReqs.push(setTemplateService.getFullOne(
-      { bk_biz_id: bizId, id: templateId },
-      { requestId: templateDetailRequestId }
-    ))
+    dataReqs.push(
+      setTemplateService.getFullOne(
+        { bk_biz_id: bizId, id: templateId },
+        { requestId: templateDetailRequestId }
+      )
+    )
   }
 
   const templateState = {
     templateName: '',
     configProperties: [],
     propertyConfig: {},
-    formDataCopy: {} // 需要纳入表单填写检测的数据拷贝
+    formDataCopy: {}, // 需要纳入表单填写检测的数据拷贝
   }
 
-  const [
-    setProperties,
-    setPropertyGroup,
-    templateData
-  ] = await Promise.all(dataReqs)
+  const [setProperties, setPropertyGroup, templateData] = await Promise.all(
+    dataReqs
+  )
 
   // 编辑态必要的数据初始化
   if (isFetchTemplate) {
@@ -53,8 +57,10 @@ export default async function userTemplagteData(bizId, templateId, isFetchTempla
 
     // 属性设置
     const propertyConfigList = templateData.attributes || []
-    propertyConfigList.forEach((item) => {
-      const property = setProperties.find(prop => prop.id === item.bk_attribute_id)
+    propertyConfigList.forEach(item => {
+      const property = setProperties.find(
+        prop => prop.id === item.bk_attribute_id
+      )
 
       if (property) {
         // 已配置属性列表
@@ -67,14 +73,14 @@ export default async function userTemplagteData(bizId, templateId, isFetchTempla
 
     templateState.formDataCopy = cloneDeep({
       templateName: templateState.templateName,
-      propertyConfig: templateState.propertyConfig
+      propertyConfig: templateState.propertyConfig,
     })
   }
 
   return {
     setProperties,
     setPropertyGroup,
-    ...templateState
+    ...templateState,
   }
 }
 
@@ -83,11 +89,11 @@ export const getTemplateSyncStatus = async (bizId, templateId) => {
     const data = await store.dispatch('setTemplate/getSetTemplateStatus', {
       bizId,
       params: {
-        set_template_ids: [templateId]
+        set_template_ids: [templateId],
       },
       config: {
-        cancelPrevious: true
-      }
+        cancelPrevious: true,
+      },
     })
     const needSync = getValue(data, '0.need_sync')
 

@@ -11,30 +11,34 @@
 -->
 
 <script>
-  import { defineComponent } from 'vue'
+import { defineComponent } from 'vue'
 
-  export default defineComponent({
-    props: {
-      auth: Object,
-      authorized: Boolean,
-      tag: {
-        type: String,
-        default: 'span'
-      }
+export default defineComponent({
+  props: {
+    auth: Object,
+    authorized: Boolean,
+    tag: {
+      type: String,
+      default: 'span',
     },
-    render(h) {
-      return h(this.tag, {
+  },
+  render(h) {
+    return h(
+      this.tag,
+      {
         directives: [
           {
             name: 'cursor',
             value: {
               auth: this.auth,
-              active: !this.authorized
-            }
-          }
+              active: !this.authorized,
+            },
+          },
         ],
-        staticClass: 'auth-mask'
-      }, this.$slots.default)
-    }
-  })
+        staticClass: 'auth-mask',
+      },
+      this.$slots.default
+    )
+  },
+})
 </script>

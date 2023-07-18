@@ -14,37 +14,51 @@ import memoize from 'lodash.memoize'
 import cytoscape from 'cytoscape'
 import popper from 'cytoscape-popper'
 import dagre from 'cytoscape-dagre'
-import { layout, style } from './graphics-config'
+
 import { generateObjIcon } from '@/utils/util'
+
+import { layout, style } from './graphics-config'
 cytoscape.use(popper)
 cytoscape.use(dagre)
-const makeSVG = memoize((element) => {
-  if (!element.isNode()) return
-  return new Promise((resolve) => {
-    const data = element.data()
-    const image = new Image()
-    image.onload = () => {
-      const unselected = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
-        name: data.name,
-        iconColor: '#798aad',
-        backgroundColor: '#fff'
-      }))}`
-      const selected = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
-        name: data.name,
-        iconColor: '#fff',
-        backgroundColor: '#3a84ff'
-      }))}`
-      const hover = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateObjIcon(image, {
-        name: data.name,
-        iconColor: '#3a84ff',
-        backgroundColor: '#fff'
-      }))}`
-      resolve({ selected, unselected, hover })
-    }
-    image.onerror = () => resolve({ selected: 'none', unselected: 'none', hover: 'none' })
-    image.src = `${window.location.origin}/static/svg/${data.icon.substr(5)}.svg`
-  })
-}, element => element.data().icon)
+const makeSVG = memoize(
+  element => {
+    if (!element.isNode()) return
+    return new Promise(resolve => {
+      const data = element.data()
+      const image = new Image()
+      image.onload = () => {
+        const unselected = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+          generateObjIcon(image, {
+            name: data.name,
+            iconColor: '#798aad',
+            backgroundColor: '#fff',
+          })
+        )}`
+        const selected = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+          generateObjIcon(image, {
+            name: data.name,
+            iconColor: '#fff',
+            backgroundColor: '#3a84ff',
+          })
+        )}`
+        const hover = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+          generateObjIcon(image, {
+            name: data.name,
+            iconColor: '#3a84ff',
+            backgroundColor: '#fff',
+          })
+        )}`
+        resolve({ selected, unselected, hover })
+      }
+      image.onerror = () =>
+        resolve({ selected: 'none', unselected: 'none', hover: 'none' })
+      image.src = `${window.location.origin}/static/svg/${data.icon.substr(
+        5
+      )}.svg`
+    })
+  },
+  element => element.data().icon
+)
 export default class Graphics {
   constructor(container) {
     this.current = null
@@ -57,7 +71,7 @@ export default class Graphics {
       maxZoom: 5,
       wheelSensitivity: 0.5,
       pixelRatio: 2,
-      elements: []
+      elements: [],
     })
     this.on('layoutstop', event => this.handleLayoutStop(event))
     this.on('resize', event => this.handleResize(event))
@@ -79,7 +93,7 @@ export default class Graphics {
     const currentPosition = this.current.renderedPosition()
     const delta = {
       x: this.position.x - currentPosition.x,
-      y: this.position.y - currentPosition.y
+      y: this.position.y - currentPosition.y,
     }
     this.cytoscape.panBy(delta)
   }
@@ -137,7 +151,7 @@ export default class Graphics {
     }
     // 设置新的当前节点
     this.current = node
-    this.position = node && ({ ...node.renderedPosition() })
+    this.position = node && { ...node.renderedPosition() }
     if (this.current) {
       this.current.addClass(['current', 'highlight']).removeClass('weaken')
     }
@@ -150,7 +164,7 @@ export default class Graphics {
     const node = this.cytoscape.getElementById(id)
     const elements = this.cytoscape.elements()
     const neighborhood = node.neighborhood()
-    elements.forEach((element) => {
+    elements.forEach(element => {
       if (element.same(node)) return
       if (neighborhood.has(element)) {
         element.addClass('highlight')
@@ -172,7 +186,7 @@ export default class Graphics {
       return !existElement.length
     })
     const elements = this.cytoscape.add(newList)
-    elements.forEach(async (element) => {
+    elements.forEach(async element => {
       const background = await makeSVG(element)
       element.data('background', background)
     })

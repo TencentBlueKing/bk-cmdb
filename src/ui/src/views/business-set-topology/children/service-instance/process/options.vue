@@ -14,12 +14,16 @@
   <div class="options">
     <div class="left"></div>
     <div class="right">
-      <bk-checkbox class="options-expand-all" v-model="expandAll" @change="handleExpandAllChange">
-        {{$t('全部展开')}}
+      <bk-checkbox
+        v-model="expandAll"
+        class="options-expand-all"
+        @change="handleExpandAllChange">
+        {{ $t('全部展开') }}
       </bk-checkbox>
-      <bk-input class="options-search ml10"
+      <bk-input
         ref="searchSelect"
         v-model.trim="searchValue"
+        class="options-search ml10"
         right-icon="bk-icon icon-search"
         clearable
         :max-width="200"
@@ -27,106 +31,112 @@
         @enter="handleSearch"
         @clear="handleSearch">
       </bk-input>
-      <view-switcher :show-tips="false" class="ml10" active="process"></view-switcher>
+      <view-switcher
+        :show-tips="false"
+        class="ml10"
+        active="process"></view-switcher>
     </div>
   </div>
 </template>
 
 <script>
-  import ViewSwitcher from '@/views/business-topology/service-instance/common/view-switcher'
-  import Bus from '@/views/business-topology/service-instance/common/bus'
-  import { mapGetters } from 'vuex'
-  import RouterQuery from '@/router/query'
-  export default {
-    components: {
-      ViewSwitcher
-    },
-    data() {
-      return {
-        withTemplate: true,
-        searchData: [],
-        searchValue: '',
-        expandAll: false,
-        selection: {
-          process: null,
-          value: [],
-          requestId: null
-        }
-      }
-    },
-    computed: {
-      ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('businessHost', ['selectedNode']),
-      serviceTemplateId() {
-        return this.selectedNode && this.selectedNode.data.service_template_id
-      }
-    },
-    watch: {
-      selectedNode() {
-        this.searchValue = ''
-        RouterQuery.set({
-          node: this.selectedNode.id,
-          instanceName: ''
-        })
-        Bus.$emit('filter-change', this.searchValue)
-      }
-    },
-    created() {
-      Bus.$on('process-selection-change', this.handleProcessSelectionChange)
-      Bus.$on('process-list-change', this.handleProcessListChange)
-      Bus.$on('filter-clear', this.filterClear)
-    },
-    beforeDestroy() {
-      Bus.$off('process-selection-change', this.handleProcessSelectionChange)
-      Bus.$off('process-list-change', this.handleProcessListChange)
-      Bus.$off('filter-clear', this.filterClear)
-    },
-    methods: {
-      handleProcessSelectionChange(process, selection, requestId) {
-        if (selection.length) {
-          this.selection.process = process
-          this.selection.value = selection
-          this.selection.requestId = requestId
-        } else if (process === this.selection.process) {
-          this.selection.process = null
-          this.selection.value = []
-          this.selection.requestId = null
-        }
+import { mapGetters } from 'vuex'
+
+import RouterQuery from '@/router/query'
+import ViewSwitcher from '@/views/business-topology/service-instance/common/view-switcher'
+import Bus from '@/views/business-topology/service-instance/common/bus'
+export default {
+  components: {
+    ViewSwitcher,
+  },
+  data() {
+    return {
+      withTemplate: true,
+      searchData: [],
+      searchValue: '',
+      expandAll: false,
+      selection: {
+        process: null,
+        value: [],
+        requestId: null,
       },
-      handleSearch() {
-        Bus.$emit('filter-list', this.searchValue)
-      },
-      handleExpandAllChange(expand) {
-        Bus.$emit('expand-all-change', expand)
-      },
-      handleProcessListChange() {
-        this.expandAll = false
-        this.selection = {
-          process: null,
-          value: [],
-          requestId: null
-        }
-      },
-      filterClear() {
-        this.searchValue = ''
-      }
     }
-  }
+  },
+  computed: {
+    ...mapGetters('objectBiz', ['bizId']),
+    ...mapGetters('businessHost', ['selectedNode']),
+    serviceTemplateId() {
+      return this.selectedNode && this.selectedNode.data.service_template_id
+    },
+  },
+  watch: {
+    selectedNode() {
+      this.searchValue = ''
+      RouterQuery.set({
+        node: this.selectedNode.id,
+        instanceName: '',
+      })
+      Bus.$emit('filter-change', this.searchValue)
+    },
+  },
+  created() {
+    Bus.$on('process-selection-change', this.handleProcessSelectionChange)
+    Bus.$on('process-list-change', this.handleProcessListChange)
+    Bus.$on('filter-clear', this.filterClear)
+  },
+  beforeDestroy() {
+    Bus.$off('process-selection-change', this.handleProcessSelectionChange)
+    Bus.$off('process-list-change', this.handleProcessListChange)
+    Bus.$off('filter-clear', this.filterClear)
+  },
+  methods: {
+    handleProcessSelectionChange(process, selection, requestId) {
+      if (selection.length) {
+        this.selection.process = process
+        this.selection.value = selection
+        this.selection.requestId = requestId
+      } else if (process === this.selection.process) {
+        this.selection.process = null
+        this.selection.value = []
+        this.selection.requestId = null
+      }
+    },
+    handleSearch() {
+      Bus.$emit('filter-list', this.searchValue)
+    },
+    handleExpandAllChange(expand) {
+      Bus.$emit('expand-all-change', expand)
+    },
+    handleProcessListChange() {
+      this.expandAll = false
+      this.selection = {
+        process: null,
+        value: [],
+        requestId: null,
+      }
+    },
+    filterClear() {
+      this.searchValue = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .options {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        .left,
-        .right {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-    }
-    .options-search {
-        width: 300px;
-    }
+.options {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+
+  .left,
+  .right {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+}
+
+.options-search {
+  width: 300px;
+}
 </style>

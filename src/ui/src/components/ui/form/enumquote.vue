@@ -11,110 +11,121 @@
 -->
 
 <script setup>
-  import { computed, ref, watch } from 'vue'
-  import modelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
-  import { t } from '@/i18n'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import isEqual from 'lodash/isEqual'
-  import { isEmptyPropertyValue } from '@/utils/tools'
+import { computed, ref, watch } from 'vue'
+import isEqual from 'lodash/isEqual'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String, Number],
-      default: ''
+import { t } from '@/i18n'
+import { isEmptyPropertyValue } from '@/utils/tools'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import modelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
+
+const props = defineProps({
+  value: {
+    type: [Array, String, Number],
+    default: '',
+  },
+  multiple: {
+    type: Boolean,
+    default: true,
+  },
+  autoSelect: {
+    type: Boolean,
+    default: true,
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  options: {
+    type: Array,
+    default() {
+      return []
     },
-    multiple: {
-      type: Boolean,
-      default: true
-    },
-    autoSelect: {
-      type: Boolean,
-      default: true
-    },
-    disabled: {
-      type: Boolean,
-      default: false
-    },
-    options: {
-      type: Array,
-      default() {
-        return []
+  },
+})
+
+const emit = defineEmits(['input', 'change', 'on-selected'])
+const instanceSelector = ref(null)
+
+// 如果初始值是大于1个元素的数组但multiple为false，则设置选择组件的multipl为true，满足编辑时仍然展示原始值的需求
+const initValue = props.value
+const localMultiple = computed(() => {
+  if (Array.isArray(initValue) && initValue.length > 1 && !props.multiple) {
+    return true
+  }
+  return props.multiple
+})
+
+const refModelId = computed(
+  () => props.options.map(item => item.bk_obj_id)?.[0]
+)
+
+const refModelInstIds = computed({
+  get() {
+    if (!isEmptyPropertyValue(props.value)) {
+      if (!localMultiple.value) {
+        return Array.isArray(props.value) ? props.value[0] : props.value
       }
+      return props.value
     }
-  })
 
-  const emit = defineEmits(['input', 'change', 'on-selected'])
-  const instanceSelector = ref(null)
-
-  // 如果初始值是大于1个元素的数组但multiple为false，则设置选择组件的multipl为true，满足编辑时仍然展示原始值的需求
-  const initValue = props.value
-  const localMultiple = computed(() => {
-    if (Array.isArray(initValue) && initValue.length > 1 && !props.multiple) {
-      return true
+    // 自动选择时取出默认值
+    if (props.autoSelect) {
+      const defaultValue = props.options.map(item => item.bk_inst_id)
+      return localMultiple.value ? defaultValue : defaultValue[0]
     }
-    return props.multiple
+
+    return localMultiple.value ? [] : ''
+  },
+  set(values) {
+    emit('input', values)
+    emit('change', values)
+    emit('on-selected', values)
+  },
+})
+
+const searchPlaceholder = computed(() =>
+  t('请输入xx', {
+    name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称'),
   })
+)
 
-  const refModelId = computed(() => props.options.map(item => item.bk_obj_id)?.[0])
-
-  const refModelInstIds = computed({
-    get() {
-      if (!isEmptyPropertyValue(props.value)) {
-        if (!localMultiple.value) {
-          return Array.isArray(props.value) ? props.value[0] : props.value
-        }
-        return props.value
-      }
-
-      // 自动选择时取出默认值
-      if (props.autoSelect) {
-        const defaultValue = props.options.map(item => item.bk_inst_id)
-        return localMultiple.value ? defaultValue : defaultValue[0]
-      }
-
-      return localMultiple.value ? [] : ''
-    },
-    set(values) {
-      emit('input', values)
-      emit('change', values)
-      emit('on-selected', values)
-    }
-  })
-
-  const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
-
-  watch(() => props.value, (val) => {
+watch(
+  () => props.value,
+  val => {
     // 将默认值同步回给上层组件
     if (!isEqual(val, refModelInstIds.value)) {
       emit('input', refModelInstIds.value)
     }
-  }, { immediate: true })
+  },
+  { immediate: true }
+)
 
-  defineExpose({
-    focus: () => instanceSelector?.value?.focus()
-  })
+defineExpose({
+  focus: () => instanceSelector?.value?.focus(),
+})
 </script>
 <script>
-  export default {
-    name: 'cmdb-form-enumquote'
-  }
+export default {
+  name: 'cmdb-form-enumquote',
+}
 </script>
 
 <template>
   <model-instance-selector
     ref="instanceSelector"
+    v-model="refModelInstIds"
     class="form-enumqoute-selector"
     :obj-id="refModelId"
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="true"
-    :multiple="localMultiple"
-    v-model="refModelInstIds">
+    :multiple="localMultiple">
   </model-instance-selector>
 </template>
 
 <style lang="scss" scoped>
-  .form-enumqoute-selector {
-    width: 100%;
-  }
+.form-enumqoute-selector {
+  width: 100%;
+}
 </style>

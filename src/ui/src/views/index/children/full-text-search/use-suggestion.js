@@ -11,10 +11,18 @@
  */
 
 import { computed, watch, ref } from 'vue'
+
 import useItem from './use-item.js'
 
 export default function useSuggestion(state) {
-  const { result, showHistory, selectHistory, focusWithin, keyword, forceHide } = state
+  const {
+    result,
+    showHistory,
+    selectHistory,
+    focusWithin,
+    keyword,
+    forceHide,
+  } = state
 
   const list = computed(() => (result.value.hits || []).slice(0, 8))
 
@@ -32,10 +40,17 @@ export default function useSuggestion(state) {
   const isForceHide = computed(() => forceHide.value || localForceHide.value)
 
   // eslint-disable-next-line max-len
-  const showSuggestion = computed(() => focusWithin.value && !isForceHide.value && !isShowHistory.value && hasKeyword.value && hasSuggestion.value)
+  const showSuggestion = computed(
+    () =>
+      focusWithin.value &&
+      !isForceHide.value &&
+      !isShowHistory.value &&
+      hasKeyword.value &&
+      hasSuggestion.value
+  )
 
   return {
     suggestion,
-    showSuggestion
+    showSuggestion,
   }
 }

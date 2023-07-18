@@ -11,9 +11,9 @@
  */
 
 interface IProperty {
-  id: number,
-  bk_property_id: number,
-  bk_property_name: string,
-  bk_isapi: boolean,
+  id: number
+  bk_property_id: number
+  bk_property_name: string
+  bk_isapi: boolean
   bk_property_group: string
 }

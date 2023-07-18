@@ -11,9 +11,10 @@
 -->
 
 <template>
-  <bk-date-picker class="cmdb-date"
+  <bk-date-picker
     v-bind="otherAttrs"
     v-model="date"
+    class="cmdb-date"
     transfer
     editable
     :clearable="clearable"
@@ -23,69 +24,70 @@
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-form-date',
-    props: {
-      value: {
-        type: String,
-        default: ''
-      },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      clearable: {
-        type: Boolean,
-        default: true
-      },
-      placeholder: {
-        type: String,
-        default: ''
-      }
+export default {
+  name: 'cmdb-form-date',
+  props: {
+    value: {
+      type: String,
+      default: '',
     },
-    computed: {
-      date: {
-        get() {
-          if (!this.value) {
-            return ''
-          }
-          return new Date(this.value)
-        },
-        set(value) {
-          const previousValue = this.value
-          const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD')
-          this.$emit('input', currentValue)
-          if (currentValue !== previousValue) {
-            this.$emit('change', currentValue, previousValue)
-          }
-        },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    clearable: {
+      type: Boolean,
+      default: true,
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
+  },
+  computed: {
+    date: {
+      get() {
+        if (!this.value) {
+          return ''
+        }
+        return new Date(this.value)
       },
-      otherAttrs() {
-        // 排除options属性，因与date-picker组件props类型冲突，不能直接用
-        const { options, ...otherAttrs } = this.$attrs
-        return otherAttrs
-      }
-    }
-  }
+      set(value) {
+        const previousValue = this.value
+        const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD')
+        this.$emit('input', currentValue)
+        if (currentValue !== previousValue) {
+          this.$emit('change', currentValue, previousValue)
+        }
+      },
+    },
+    otherAttrs() {
+      // 排除options属性，因与date-picker组件props类型冲突，不能直接用
+      const { options, ...otherAttrs } = this.$attrs
+      return otherAttrs
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .cmdb-date {
-    width: 100%;
+.cmdb-date {
+  width: 100%;
 
-    &[size="small"] {
-      ::v-deep {
-        .bk-date-picker-rel {
-          .icon-wrapper {
-            height: 26px;
-            line-height: 26px;
-          }
-          .bk-date-picker-editor {
-            height: 26px;
-            line-height: 26px;
-          }
+  &[size='small'] {
+    ::v-deep {
+      .bk-date-picker-rel {
+        .icon-wrapper {
+          height: 26px;
+          line-height: 26px;
+        }
+
+        .bk-date-picker-editor {
+          height: 26px;
+          line-height: 26px;
         }
       }
     }
   }
+}
 </style>

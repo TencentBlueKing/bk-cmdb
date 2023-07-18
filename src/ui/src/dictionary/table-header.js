@@ -14,10 +14,10 @@ export const processTableHeader = [
   'bk_func_name',
   'bk_process_name',
   'bk_start_param_regex',
-  'bind_info'
+  'bind_info',
 ]
 
 export const PRESET_TABLE_HEADER_MIN_WIDTH = Object.freeze({
   bk_host_innerip: 120,
-  bk_cloud_id: 120
+  bk_cloud_id: 120,
 })

@@ -11,6 +11,7 @@
  */
 
 import { ref } from 'vue'
+
 import CombineRequest from '@/api/combine-request.js'
 
 // 每一片的大小（一次请求的最大实例个数）
@@ -27,19 +28,23 @@ export default function useInstanceCount(state = {}, root) {
 
   const fetchData = async function () {
     const requestIds = []
-    const allResult = await CombineRequest.setup(Symbol(), (params) => {
-      const requestId = `searchInstanceCount_${params.join()}`
-      requestIds.push(requestId)
-      return root.$store.dispatch('objectCommonInst/searchInstanceCount', {
-        params: {
-          condition: { obj_ids: params }
-        },
-        config: {
-          requestId,
-          globalError: false
-        }
-      })
-    }, { segment, concurrency }).add(modelIds)
+    const allResult = await CombineRequest.setup(
+      Symbol(),
+      params => {
+        const requestId = `searchInstanceCount_${params.join()}`
+        requestIds.push(requestId)
+        return root.$store.dispatch('objectCommonInst/searchInstanceCount', {
+          params: {
+            condition: { obj_ids: params },
+          },
+          config: {
+            requestId,
+            globalError: false,
+          },
+        })
+      },
+      { segment, concurrency }
+    ).add(modelIds)
 
     // 关闭迭代器与取消请求
     root.$once('hook:beforeDestroy', () => {
@@ -59,7 +64,7 @@ export default function useInstanceCount(state = {}, root) {
           console.error(reason?.message)
           continue
         }
-        list.push(...value ?? [])
+        list.push(...(value ?? []))
       }
       // 一个批次更新一次
       instanceCounts.value.push(list)
@@ -67,6 +72,6 @@ export default function useInstanceCount(state = {}, root) {
   }
 
   return {
-    fetchData
+    fetchData,
   }
 }

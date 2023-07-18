@@ -64,7 +64,7 @@ const matched = []
 function searchAndReplace(targetDir) {
   function find(dir) {
     const dirList = fs.readdirSync(dir, { withFileTypes: true })
-    dirList.forEach((dirent) => {
+    dirList.forEach(dirent => {
       if (dirent.isDirectory() && dirent.name !== 'node_modules') {
         find(path.join(dir, dirent.name))
       } else if (dirent.isFile()) {
@@ -78,11 +78,17 @@ function searchAndReplace(targetDir) {
         const content = fs.readFileSync(filepath, { encoding: 'utf8' })
 
         // 已添加则不处理
-        if (content.startsWith(oldLicense) || content.startsWith(newLicense) || content.startsWith(newLicenseForHTML)) {
+        if (
+          content.startsWith(oldLicense) ||
+          content.startsWith(newLicense) ||
+          content.startsWith(newLicenseForHTML)
+        ) {
           return
         }
 
-        const writeLicenseContent = htmlTypeExts.includes(fileext) ? newLicenseForHTML : newLicense
+        const writeLicenseContent = htmlTypeExts.includes(fileext)
+          ? newLicenseForHTML
+          : newLicense
 
         // 将license内容添加到原内容的头部
         const newContent = `${writeLicenseContent}\n\n${content}`

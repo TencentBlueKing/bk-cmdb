@@ -14,51 +14,59 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 导出模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkObjId 模型id
-     * @return {promises} promises 对象
-     */
-  exportObjectAttribute({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-    return $http.post(`${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/export`, params, config)
+   * 导出模型属性
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {String} bkObjId 模型id
+   * @return {promises} promises 对象
+   */
+  exportObjectAttribute(
+    { commit, state, dispatch, rootGetters },
+    { objId, params, config }
+  ) {
+    return $http.post(
+      `${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/export`,
+      params,
+      config
+    )
   },
 
   /**
-     * 导入模型属性
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkObjId 模型id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  importObjectAttribute({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-    return $http.post(`${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/import`, params, config)
-  }
+   * 导入模型属性
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {String} bkObjId 模型id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  importObjectAttribute(
+    { commit, state, dispatch, rootGetters },
+    { objId, params, config }
+  ) {
+    return $http.post(
+      `${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/import`,
+      params,
+      config
+    )
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

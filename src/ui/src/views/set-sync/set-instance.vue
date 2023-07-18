@@ -12,16 +12,18 @@
 
 <template>
   <div class="set-instance-layout">
-    <cmdb-collapse class="property-container" v-if="hasPropertyDiff"
+    <cmdb-collapse
+      v-if="hasPropertyDiff"
+      class="property-container"
       :label="$t('属性变更')"
       :size="collapseSize"
       arrow-type="filled">
-      <property-difference
-        :property-diff="propertyDiff">
-      </property-difference>
+      <property-difference :property-diff="propertyDiff"> </property-difference>
     </cmdb-collapse>
 
-    <cmdb-collapse class="module-container" v-if="hasModuleDiff"
+    <cmdb-collapse
+      v-if="hasModuleDiff"
+      class="module-container"
       :label="$t('拓扑结构变更')"
       :size="collapseSize"
       arrow-type="filled">
@@ -34,47 +36,48 @@
 </template>
 
 <script>
-  import ModuleDifference from './module-difference.vue'
-  import PropertyDifference from './property-difference.vue'
+import ModuleDifference from './module-difference.vue'
+import PropertyDifference from './property-difference.vue'
 
-  export default {
-    components: {
-      ModuleDifference,
-      PropertyDifference
+export default {
+  components: {
+    ModuleDifference,
+    PropertyDifference,
+  },
+  props: {
+    propertyDiff: {
+      type: Array,
+      required: true,
     },
-    props: {
-      propertyDiff: {
-        type: Array,
-        required: true
-      },
-      moduleDiff: {
-        type: Object,
-        required: true
-      },
-      moduleHostCount: {
-        type: Object,
-        default: () => ({})
-      },
-      collapseSize: {
-        type: String
-      }
+    moduleDiff: {
+      type: Object,
+      required: true,
     },
-    data() {
-      return {
-      }
+    moduleHostCount: {
+      type: Object,
+      default: () => ({}),
     },
-    computed: {
-      hasPropertyDiff() {
-        return this.propertyDiff?.length > 0
-      },
-      hasModuleDiff() {
-        return this.moduleDiff.module_diffs?.length > 0
-      }
-    }
-  }
+    collapseSize: {
+      type: String,
+    },
+  },
+  data() {
+    return {}
+  },
+  computed: {
+    hasPropertyDiff() {
+      return this.propertyDiff?.length > 0
+    },
+    hasModuleDiff() {
+      return this.moduleDiff.module_diffs?.length > 0
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
+/* stylelint-disable no-duplicate-selectors */
+
 .set-instance-layout {
   .property-container {
     .property-difference {

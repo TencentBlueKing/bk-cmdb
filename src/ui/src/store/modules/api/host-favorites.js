@@ -14,118 +14,118 @@
 import $http from '@/api'
 
 const state = {
-  applying: null
+  applying: null,
 }
 
 const getters = {
   applying: state => state.applying,
-  applyingInfo: (state) => {
+  applyingInfo: state => {
     if (state.applying) {
       return JSON.parse(state.applying.info)
     }
     return null
   },
-  applyingProperties: (state) => {
+  applyingProperties: state => {
     const properties = []
     if (state.applying) {
       const ignore = ['biz']
       const params = JSON.parse(state.applying.query_params)
-      params.forEach((param) => {
+      params.forEach(param => {
         if (!ignore.includes(param.bk_obj_id)) {
           properties.push({
             bk_obj_id: param.bk_obj_id,
-            bk_property_id: param.field
+            bk_property_id: param.field,
           })
         }
       })
     }
     return properties
   },
-  applyingConditions: (state) => {
+  applyingConditions: state => {
     const conditions = {}
     if (state.applying) {
       const ignore = ['biz']
       const params = JSON.parse(state.applying.query_params)
-      params.forEach((param) => {
+      params.forEach(param => {
         const objId = param.bk_obj_id
         if (!ignore.includes(objId)) {
           conditions[objId] = conditions[objId] || []
           conditions[objId].push({
             field: param.field,
             operator: param.operator,
-            value: param.value
+            value: param.value,
           })
         }
       })
     }
     return conditions
-  }
+  },
 }
 
 const actions = {
   /**
-     * 搜索收藏
-     * @param {Object} context store上下文
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 搜索收藏
+   * @param {Object} context store上下文
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   searchFavorites(context, { params, config }) {
     return $http.post('hosts/favorites/search', params, config)
   },
   /**
-     * 新加收藏
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 新加收藏
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   createFavorites({ commit, state, dispatch }, { params, config }) {
     return $http.post('hosts/favorites', params, config)
   },
 
   /**
-     * 编辑收藏
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} id 收藏的主键
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 编辑收藏
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} id 收藏的主键
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   updateFavorites({ commit, state, dispatch }, { id, params, config }) {
     return $http.put(`hosts/favorites/${id}`, params, config)
   },
 
   /**
-     * 删除收藏
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} id 收藏的主键
-     * @return {Promise} promise 对象
-     */
+   * 删除收藏
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} id 收藏的主键
+   * @return {Promise} promise 对象
+   */
   deleteFavorites({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`hosts/favorites/${id}`, config)
   },
 
   /**
-     * 收藏使用次数加一
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} id 收藏的主键
-     * @return {Promise} promise 对象
-     */
+   * 收藏使用次数加一
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} id 收藏的主键
+   * @return {Promise} promise 对象
+   */
   incrFavorites({ commit, state, dispatch }, { id }) {
     return $http.put(`hosts/favorites/${id}/incr`)
-  }
+  },
 }
 
 const mutations = {
   setApplying(state, collection) {
     state.applying = collection
-  }
+  },
 }
 
 export default {
@@ -133,5 +133,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

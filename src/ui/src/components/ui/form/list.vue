@@ -11,8 +11,11 @@
 -->
 
 <template>
-  <bk-select class="form-list-selector"
+  <bk-select
+    v-bind="$attrs"
+    ref="selector"
     v-model="selected"
+    class="form-list-selector"
     :clearable="allowClear"
     :searchable="searchable"
     :disabled="disabled"
@@ -20,98 +23,102 @@
     :placeholder="placeholder"
     :font-size="fontSize"
     :popover-options="{
-      boundary: 'window'
-    }"
-    v-bind="$attrs"
-    ref="selector">
-    <bk-option v-for="(option, index) in options"
-      :key="index"
+      boundary: 'window',
+    }">
+    <bk-option
+      v-for="(option, index) in options"
       :id="option"
+      :key="index"
       :name="option">
     </bk-option>
   </bk-select>
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-form-list',
-    props: {
-      value: {
-        type: [Array, String],
-        default: ''
-      },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      multiple: {
-        type: Boolean,
-        default: false
-      },
-      allowClear: {
-        type: Boolean,
-        default: false
-      },
-      autoSelect: {
-        type: Boolean,
-        default: true
-      },
-      options: {
-        type: Array,
-        default: () => []
-      },
-      placeholder: {
-        type: String,
-        default: ''
-      },
-      fontSize: {
-        type: [String, Number],
-        default: 'medium'
-      }
+export default {
+  name: 'cmdb-form-list',
+  props: {
+    value: {
+      type: [Array, String],
+      default: '',
     },
-    data() {
-      return {
-        selected: this.multiple ? [] : ''
-      }
+    disabled: {
+      type: Boolean,
+      default: false,
     },
-    computed: {
-      searchable() {
-        return this.options.length > 7
-      }
+    multiple: {
+      type: Boolean,
+      default: false,
     },
-    watch: {
-      value(value) {
-        this.selected = value
-      },
-      selected(selected) {
-        this.$emit('input', selected)
-        this.$emit('on-selected', selected)
-      }
+    allowClear: {
+      type: Boolean,
+      default: false,
     },
-    created() {
-      this.initValue()
+    autoSelect: {
+      type: Boolean,
+      default: true,
     },
-    methods: {
-      initValue() {
-        try {
-          if (this.autoSelect && (!this.value || (this.multiple && !this.value.length))) {
-            this.selected = this.multiple ? [this.options[0]] : (this.options[0] || '')
-          } else {
-            this.selected = this.value
-          }
-        } catch (error) {
-          this.selected = this.multiple ? [] : ''
-        }
-      },
-      focus() {
-        this.$refs.selector.show()
-      }
+    options: {
+      type: Array,
+      default: () => [],
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
+    fontSize: {
+      type: [String, Number],
+      default: 'medium',
+    },
+  },
+  data() {
+    return {
+      selected: this.multiple ? [] : '',
     }
-  }
+  },
+  computed: {
+    searchable() {
+      return this.options.length > 7
+    },
+  },
+  watch: {
+    value(value) {
+      this.selected = value
+    },
+    selected(selected) {
+      this.$emit('input', selected)
+      this.$emit('on-selected', selected)
+    },
+  },
+  created() {
+    this.initValue()
+  },
+  methods: {
+    initValue() {
+      try {
+        if (
+          this.autoSelect &&
+          (!this.value || (this.multiple && !this.value.length))
+        ) {
+          this.selected = this.multiple
+            ? [this.options[0]]
+            : this.options[0] || ''
+        } else {
+          this.selected = this.value
+        }
+      } catch (error) {
+        this.selected = this.multiple ? [] : ''
+      }
+    },
+    focus() {
+      this.$refs.selector.show()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .form-list-selector {
-        width: 100%;
-    }
+.form-list-selector {
+  width: 100%;
+}
 </style>

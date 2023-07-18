@@ -12,6 +12,7 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
+
 import global from './modules/global.js'
 import request from './modules/request.js'
 import index from './modules/view/index.js'
@@ -63,19 +64,15 @@ import setSync from './modules/api/set-sync.js'
 import setTemplate from './modules/api/set-template.js'
 import cloud from './modules/api/cloud.js'
 import hostApply from './modules/api/host-apply'
-
 import resourceDirectory from './modules/api/resource-directory.js'
 import resource from './modules/api/resource.js'
-
 import organization from './modules/api/organization'
-
 import businessHost from './modules/view/business-host.js'
 import resourceHost from './modules/view/resource-host.js'
 import cloudarea from './modules/api/cloudarea'
 import audit from './modules/api/audit.js'
 import dynamicGroup from './modules/api/dynamic-group'
 import versionLog from './modules/api/version-log'
-
 import globalConfig from './modules/global-config.js'
 import bizSet from './modules/biz-set.js'
 
@@ -144,8 +141,8 @@ const store = new Vuex.Store({
     organization,
     audit,
     dynamicGroup,
-    versionLog
-  }
+    versionLog,
+  },
 })
 
 export const useStore = () => store

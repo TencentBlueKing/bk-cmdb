@@ -11,9 +11,10 @@
 -->
 
 <template>
-  <bk-date-picker style="width: 100%"
+  <bk-date-picker
     v-bind="otherAttrs"
     v-model="time"
+    style="width: 100%"
     transfer
     :font-size="fontSize"
     :placeholder="placeholder || $t('选择日期范围')"
@@ -24,66 +25,72 @@
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-form-date-range',
-    props: {
-      value: {
-        type: [Array, String],
-        default() {
-          return []
-        }
+export default {
+  name: 'cmdb-form-date-range',
+  props: {
+    value: {
+      type: [Array, String],
+      default() {
+        return []
       },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      timer: Boolean,
-      clearable: {
-        type: Boolean,
-        default: true
-      },
-      placeholder: {
-        type: String,
-        default: ''
-      },
-      fontSize: {
-        type: [String, Number],
-        default: 'medium'
-      }
     },
-    data() {
-      return {
-        localValue: [...this.value]
-      }
+    disabled: {
+      type: Boolean,
+      default: false,
     },
-    computed: {
-      time: {
-        get() {
-          return this.localValue.map(date => (date ? new Date(date) : ''))
-        },
-        set(value) {
-          const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))
-          this.localValue = localValue.filter(date => !!date)
-        }
-      },
-      otherAttrs() {
-        // 排除options属性，因与date-picker组件props类型冲突，不能直接用
-        const { options, ...otherAttrs } = this.$attrs
-        return otherAttrs
-      }
+    timer: Boolean,
+    clearable: {
+      type: Boolean,
+      default: true,
     },
-    watch: {
-      value(value) {
-        if ([...value].join('') !== this.localValue.join('')) {
-          this.localValue = [...value]
-        }
-      },
-      localValue(value, oldValue) {
-        if (value.join('') !== [...this.value].join('')) {
-          this.$emit('input', [...value])
-          this.$emit('change', [...value], [...oldValue])
-        }
-      }
+    placeholder: {
+      type: String,
+      default: '',
+    },
+    fontSize: {
+      type: [String, Number],
+      default: 'medium',
+    },
+  },
+  data() {
+    return {
+      localValue: [...this.value],
     }
-  }
+  },
+  computed: {
+    time: {
+      get() {
+        return this.localValue.map(date => (date ? new Date(date) : ''))
+      },
+      set(value) {
+        const localValue = value.map(date =>
+          this.$tools.formatTime(
+            date,
+            this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'
+          )
+        )
+        this.localValue = localValue.filter(date => !!date)
+      },
+    },
+    otherAttrs() {
+      // 排除options属性，因与date-picker组件props类型冲突，不能直接用
+      const { options, ...otherAttrs } = this.$attrs
+
+      return otherAttrs
+    },
+  },
+  watch: {
+    value(value) {
+      if ([...value].join('') !== this.localValue.join('')) {
+        this.localValue = [...value]
+      }
+    },
+    localValue(value, oldValue) {
+      if (value.join('') !== [...this.value].join('')) {
+        this.$emit('input', [...value])
+        this.$emit('change', [...value], [...oldValue])
+      }
+    },
+  },
+}
 </script>

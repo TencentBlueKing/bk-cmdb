@@ -11,213 +11,231 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, ref, toRef, toRefs, PropType, watch } from 'vue'
-  import { getPropertyDefaultValue } from '@/utils/tools.js'
-  import GridLayout from '@/components/ui/other/grid-layout.vue'
-  import GridItem from '@/components/ui/other/grid-item.vue'
-  import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
-  import PropertyModal from './property-modal.vue'
-  import useProperty from './use-property.js'
+import type { PropType } from 'vue'
 
-  interface IProperty {
-    id: number,
-    'bk_property_id': string,
-    'bk_isapi': boolean,
-    'bk_property_group': string
-  }
+import { defineComponent, ref, toRef, toRefs, watch } from 'vue'
 
-  interface IPropertyGroup {
-    'bk_biz_id': number
-  }
+import { getPropertyDefaultValue } from '@/utils/tools.js'
+import GridLayout from '@/components/ui/other/grid-layout.vue'
+import GridItem from '@/components/ui/other/grid-item.vue'
+import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
 
-  export default defineComponent({
-    components: {
-      GridLayout,
-      GridItem,
-      PropertyFormElement,
-      PropertyModal
+import PropertyModal from './property-modal.vue'
+import useProperty from './use-property.js'
+
+interface IProperty {
+  id: number
+  bk_property_id: string
+  bk_isapi: boolean
+  bk_property_group: string
+}
+
+interface IPropertyGroup {
+  bk_biz_id: number
+}
+
+export default defineComponent({
+  components: {
+    GridLayout,
+    GridItem,
+    PropertyFormElement,
+    PropertyModal,
+  },
+  props: {
+    properties: {
+      type: Array as PropType<IProperty[]>,
+      required: true,
     },
-    props: {
-      properties: {
-        type: Array as PropType<IProperty[]>,
-        required: true
-      },
-      propertyGroups: {
-        type: Array as PropType<IPropertyGroup[]>,
-        required: true
-      },
-      selected: {
-        type: Array as PropType<IProperty[]>,
-        default: () => ([])
-      },
-      config: {
-        type: Object,
-        default: () => ({})
-      },
-      exclude: {
-        type: Array as PropType<string[]>,
-        default: () => ([])
-      },
-      formElementSize: String,
-      formElementFontSize: String,
-      maxColumns: Number
+    propertyGroups: {
+      type: Array as PropType<IPropertyGroup[]>,
+      required: true,
     },
-    setup(props, { emit }) {
-      const propertyFormEl = ref(null)
+    selected: {
+      type: Array as PropType<IProperty[]>,
+      default: () => [],
+    },
+    config: {
+      type: Object,
+      default: () => ({}),
+    },
+    exclude: {
+      type: Array as PropType<string[]>,
+      default: () => [],
+    },
+    formElementSize: String,
+    formElementFontSize: String,
+    maxColumns: Number,
+  },
+  setup(props, { emit }) {
+    const propertyFormEl = ref(null)
 
-      const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
+    const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
 
-      const propertyModalVisible = ref(false)
+    const propertyModalVisible = ref(false)
 
-      // 当前选中的属性列表
-      const selectedList = ref([])
-      watch(() => props.selected, (selected) => {
+    // 当前选中的属性列表
+    const selectedList = ref([])
+    watch(
+      () => props.selected,
+      selected => {
         selectedList.value = selected.slice()
-      })
+      }
+    )
 
-      // 初始化需要展示的属性设置列表
-      const {
-        displayGroups: configPropertyGroups,
-        displayProperties: configGroupedProperties
-      } = useProperty({
-        properties: selectedList,
-        propertyGroups: toRef(props, 'propertyGroups'),
-        exclude: toRef(props, 'exclude'),
-      })
+    // 初始化需要展示的属性设置列表
+    const {
+      displayGroups: configPropertyGroups,
+      displayProperties: configGroupedProperties,
+    } = useProperty({
+      properties: selectedList,
+      propertyGroups: toRef(props, 'propertyGroups'),
+      exclude: toRef(props, 'exclude'),
+    })
 
-      // 配置结果
-      const propertyConfig = ref({})
+    // 配置结果
+    const propertyConfig = ref({})
 
-      // 使用传递进来的config初始化配置，统一使用属性id作为key
-      watch(() => props.config, (config) => {
+    // 使用传递进来的config初始化配置，统一使用属性id作为key
+    watch(
+      () => props.config,
+      config => {
         for (const [id, value] of Object.entries(config)) {
           propertyConfig.value[id] = value
         }
+      }
+    )
+
+    // 选中项变化时同步配置列表，新添加的属性会被初始化
+    watch(selectedList, selectedList => {
+      const newConfig = {}
+      selectedList.forEach(property => {
+        newConfig[property.id] = getPropertyDefaultValue(
+          property,
+          propertyConfig.value[property.id]
+        )
       })
+      propertyConfig.value = newConfig
+    })
 
-      // 选中项变化时同步配置列表，新添加的属性会被初始化
-      watch(selectedList, (selectedList) => {
-        const newConfig = {}
-        selectedList.forEach((property) => {
-          newConfig[property.id] = getPropertyDefaultValue(property, propertyConfig.value[property.id])
-        })
-        propertyConfig.value = newConfig
-      })
-
-      const handleSelectField = () => {
-        propertyModalVisible.value = true
-      }
-
-      const handleRemoveField = (property) => {
-        const index = selectedList.value.indexOf(property)
-        if (index !== -1) {
-          selectedList.value.splice(index, 1)
-        }
-
-        emit('change', property)
-      }
-
-      const handleChange = (value, property) => {
-        emit('change', property, value)
-      }
-
-      const isRequired = (property) => {
-        const excludeType = ['bool']
-        return !excludeType.includes(property.bk_property_type)
-      }
-
-      return {
-        selectedList,
-        sortedGroups,
-        groupedProperties,
-        propertyModalVisible,
-        configPropertyGroups,
-        configGroupedProperties,
-        propertyConfig,
-        propertyFormEl,
-        isRequired,
-        handleSelectField,
-        handleRemoveField,
-        handleChange
-      }
-    },
-    methods: {
-      async validateAll() {
-        // 获得每一个表单元素的校验方法
-        const validates = (this.$refs.propertyFormEl || [])
-          .map(formElement => formElement.$validator.validateAll())
-
-        if (validates.length) {
-          const results = await Promise.all(validates)
-          return results.every(valid => valid)
-        }
-
-        return true
-      },
-      async validate() {
-        const propertyFormEls = this.$refs.propertyFormEl || []
-        const validates = []
-        propertyFormEls.forEach(async (formElement) => {
-          const [[key, val]] = Object.entries(formElement.fields)
-          // 只检测dirty字段
-          if (val.dirty) {
-            validates.push(formElement.$validator.validate(key))
-          }
-        })
-
-        if (validates.length) {
-          const results = await Promise.all(validates)
-          return results.every(valid => valid)
-        }
-
-        return true
-      },
-      getData() {
-        return this.propertyConfig
-      }
+    const handleSelectField = () => {
+      propertyModalVisible.value = true
     }
-  })
+
+    const handleRemoveField = property => {
+      const index = selectedList.value.indexOf(property)
+      if (index !== -1) {
+        selectedList.value.splice(index, 1)
+      }
+
+      emit('change', property)
+    }
+
+    const handleChange = (value, property) => {
+      emit('change', property, value)
+    }
+
+    const isRequired = property => {
+      const excludeType = ['bool']
+      return !excludeType.includes(property.bk_property_type)
+    }
+
+    return {
+      selectedList,
+      sortedGroups,
+      groupedProperties,
+      propertyModalVisible,
+      configPropertyGroups,
+      configGroupedProperties,
+      propertyConfig,
+      propertyFormEl,
+      isRequired,
+      handleSelectField,
+      handleRemoveField,
+      handleChange,
+    }
+  },
+  methods: {
+    async validateAll() {
+      // 获得每一个表单元素的校验方法
+      const validates = (this.$refs.propertyFormEl || []).map(formElement =>
+        formElement.$validator.validateAll()
+      )
+
+      if (validates.length) {
+        const results = await Promise.all(validates)
+        return results.every(valid => valid)
+      }
+
+      return true
+    },
+    async validate() {
+      const propertyFormEls = this.$refs.propertyFormEl || []
+      const validates = []
+      propertyFormEls.forEach(async formElement => {
+        const [[key, val]] = Object.entries(formElement.fields)
+        // 只检测dirty字段
+        if (val.dirty) {
+          validates.push(formElement.$validator.validate(key))
+        }
+      })
+
+      if (validates.length) {
+        const results = await Promise.all(validates)
+        return results.every(valid => valid)
+      }
+
+      return true
+    },
+    getData() {
+      return this.propertyConfig
+    },
+  },
+})
 </script>
 
 <template>
   <div class="property-config">
     <div class="select-trigger">
-      <bk-button
-        icon="plus"
-        @click="handleSelectField">
-        {{$t('添加属性字段')}}
+      <bk-button icon="plus" @click="handleSelectField">
+        {{ $t('添加属性字段') }}
       </bk-button>
       <slot name="tips"></slot>
     </div>
     <slot name="selected-list" v-bind="configPropertyGroups">
-      <div class="selected-list" v-if="configPropertyGroups.length">
-        <cmdb-collapse class="property-group"
+      <div v-if="configPropertyGroups.length" class="selected-list">
+        <cmdb-collapse
           v-for="(group, groupIndex) in configPropertyGroups"
+          :key="groupIndex"
+          class="property-group"
           :label="group.bk_group_name"
-          arrow-type="filled"
-          :key="groupIndex">
-          <grid-layout mode="form"
+          arrow-type="filled">
+          <grid-layout
+            mode="form"
             class="form-content"
             :min-width="360"
             :max-width="560"
             :gap="24"
             :max-columns="maxColumns">
-            <grid-item class="form-item" required
+            <grid-item
               v-for="property in configGroupedProperties[groupIndex]"
               :key="property.id"
+              class="form-item"
+              required
               :label="property.bk_property_name"
               :label-width="120">
               <property-form-element
                 ref="propertyFormEl"
+                v-model="propertyConfig[property.id]"
                 :must-required="isRequired(property)"
                 :property="property"
                 :size="formElementSize"
                 :font-size="formElementFontSize"
-                v-model="propertyConfig[property.id]"
                 @change="handleChange">
               </property-form-element>
               <template #append>
-                <i class="item-remove bk-icon icon-close" @click="handleRemoveField(property)"></i>
+                <i
+                  class="item-remove bk-icon icon-close"
+                  @click="handleRemoveField(property)"></i>
               </template>
             </grid-item>
           </grid-layout>
@@ -234,59 +252,60 @@
 </template>
 
 <style lang="scss" scoped>
-  .property-config {
-    .select-trigger {
-      display: flex;
-      align-items: center;
+.property-config {
+  .select-trigger {
+    display: flex;
+    align-items: center;
+  }
+
+  .selected-list {
+    margin-top: 16px;
+
+    .property-group {
+      & + .property-group {
+        margin-top: 12px;
+      }
     }
 
-    .selected-list {
-      margin-top: 16px;
+    .form-content {
+      padding: 24px;
+    }
 
-      .property-group {
-        & + .property-group {
-          margin-top: 12px;
-        }
-      }
+    .form-item {
+      position: relative;
+      padding: 2px 12px 4px;
 
-      .form-content {
-        padding: 24px;
-      }
-
-      .form-item {
-        position: relative;
-        padding: 2px 12px 4px 12px;
-
-        &:hover {
-          background: #f5f6fa;
-
-          .item-remove {
-            opacity: 1;
-          }
-        }
+      &:hover {
+        background: #f5f6fa;
 
         .item-remove {
-          position: absolute;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          right: 0;
-          top: 0;
-          font-size: 20px;
-          opacity: 0;
-          cursor: pointer;
-          color: $textColor;
-          &:hover {
-            color: $dangerColor;
-          }
+          opacity: 1;
         }
+      }
 
-        ::v-deep .form-error {
-          margin-top: 4px;
+      .item-remove {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        right: 0;
+        top: 0;
+        font-size: 20px;
+        opacity: 0;
+        cursor: pointer;
+        color: $textColor;
+
+        &:hover {
+          color: $dangerColor;
         }
+      }
+
+      ::v-deep .form-error {
+        margin-top: 4px;
       }
     }
   }
+}
 </style>

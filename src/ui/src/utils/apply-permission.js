@@ -10,14 +10,16 @@
  * limitations under the License.
  */
 
-import { translateAuth } from '@/setup/permission'
 import store from '@/store'
+import { translateAuth } from '@/setup/permission'
 
 export default function applyPermission(auth, action) {
   return new Promise(async (resolve, reject) => {
     try {
       const permission = translateAuth(auth)
-      const url = await store.dispatch('auth/getSkipUrl', { params: permission })
+      const url = await store.dispatch('auth/getSkipUrl', {
+        params: permission,
+      })
       if (!action) {
         window.open(url)
       } else {

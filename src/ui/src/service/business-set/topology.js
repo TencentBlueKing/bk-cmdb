@@ -19,16 +19,19 @@ import $http from '@/api'
  * @param {number} parentInstanceId 上一级的实例 ID
  * @returns {Promise}
  */
-export const findChildren = ({
-  bizSetId,
-  parentModelId,
-  parentInstanceId,
-}, config) => $http.post('find/biz_set/topo_path', {
-  bk_biz_set_id: bizSetId,
-  bk_parent_obj_id: parentModelId,
-  bk_parent_id: parentInstanceId,
-}, config)
-
+export const findChildren = (
+  { bizSetId, parentModelId, parentInstanceId },
+  config
+) =>
+  $http.post(
+    'find/biz_set/topo_path',
+    {
+      bk_biz_set_id: bizSetId,
+      bk_parent_obj_id: parentModelId,
+      bk_parent_id: parentInstanceId,
+    },
+    config
+  )
 
 /**
  * 获取实例数量
@@ -37,7 +40,12 @@ export const findChildren = ({
  * @param {Object} config 请求配置
  * @returns {Promise}
  */
-export const getInstanceCount = (bizSetId, condition, config) => $http.post(`count/topoinst/host_service_inst/biz_set/${bizSetId}`, { condition }, config)
+export const getInstanceCount = (bizSetId, condition, config) =>
+  $http.post(
+    `count/topoinst/host_service_inst/biz_set/${bizSetId}`,
+    { condition },
+    config
+  )
 
 /**
  * 获取业务下资源的拓扑路径
@@ -47,10 +55,11 @@ export const getInstanceCount = (bizSetId, condition, config) => $http.post(`cou
  * @param {Object} config 请求配置
  * @returns {Promise}
  */
-export const findTopoPath = ({ bizSetId, bizId }, params, config) => $http.post(`find/topopath/biz_set/${bizSetId}/biz/${bizId}`, params, config)
+export const findTopoPath = ({ bizSetId, bizId }, params, config) =>
+  $http.post(`find/topopath/biz_set/${bizSetId}/biz/${bizId}`, params, config)
 
 export const TopologyService = {
   findChildren,
   findTopoPath,
-  getInstanceCount
+  getInstanceCount,
 }

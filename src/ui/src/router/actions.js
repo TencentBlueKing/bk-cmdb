@@ -11,12 +11,21 @@
  */
 
 import has from 'has'
-import router from './index'
 import { Base64 } from 'js-base64'
 import merge from 'lodash/merge'
+
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 
-export const redirect = function ({ name, params = {}, query = {}, history = false, reload = false, back = false }) {
+import router from './index'
+
+export const redirect = function ({
+  name,
+  params = {},
+  query = {},
+  history = false,
+  reload = false,
+  back = false,
+}) {
   const queryBackup = { ...query }
   const currentRoute = router.app.$route
 
@@ -40,7 +49,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
     const data = {
       name: currentRoute.name,
       params: { ...currentRoute.params },
-      query: { ...currentRoute.query }
+      query: { ...currentRoute.query },
     }
     const base64 = Base64.encode(JSON.stringify(data))
     // eslint-disable-next-line no-underscore-dangle
@@ -51,7 +60,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   } else if (back) {
     // 后退操作会注入back，此时从历史记录中删除当前记录
     try {
-      const index = historyList.findIndex((item) => {
+      const index = historyList.findIndex(item => {
         const history = JSON.parse(Base64.decode(item))
         return history.name === name
       })
@@ -67,7 +76,7 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   const to = {
     name,
     params,
-    query: queryBackup
+    query: queryBackup,
   }
   if (reload) {
     const { href } = router.resolve(to)
@@ -76,7 +85,11 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   } else {
     const { resolved } = router.resolve(to)
     // 注入bizId，未改造的页面跳转，可能会遗漏了bizId的设置
-    if (resolved.matched.length && resolved.matched[0].name === MENU_BUSINESS && !params.bizId) {
+    if (
+      resolved.matched.length &&
+      resolved.matched[0].name === MENU_BUSINESS &&
+      !params.bizId
+    ) {
       to.params.bizId = router.app.$route.params.bizId
       console.warn('路由跳转未提供参数bizId, 已自动注入当前URL中的bizId')
     }
@@ -88,7 +101,8 @@ export const back = function (customRoute = {}) {
   let record
   if (has(router.app.$route.query, '_f')) {
     try {
-      const historyList = JSON.parse(window.sessionStorage.getItem('history')) || []
+      const historyList =
+        JSON.parse(window.sessionStorage.getItem('history')) || []
       record = historyList.pop()
     } catch (e) {
       // ignore
@@ -114,5 +128,5 @@ export const open = function (to) {
 export default {
   redirect,
   back,
-  open
+  open,
 }

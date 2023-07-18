@@ -11,61 +11,71 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
-  import routerActions from '@/router/actions'
-  import { getModelInstanceByIds, getModelInstanceDetailRoute } from '@/service/instance/common'
-  import Loading from '@/components/loading/index.vue'
-  import FlexTag from '@/components/ui/flex-tag'
+import { computed, ref, watchEffect } from 'vue'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String],
-      default: () => ([])
-    },
-    property: {
-      type: Object,
-      default: () => ({})
-    }
-  })
+import routerActions from '@/router/actions'
+import {
+  getModelInstanceByIds,
+  getModelInstanceDetailRoute,
+} from '@/service/instance/common'
+import Loading from '@/components/loading/index.vue'
+import FlexTag from '@/components/ui/flex-tag'
 
-  defineExpose({
-    getCopyValue: () => tagList.value.join('\n') || '--'
-  })
+const props = defineProps({
+  value: {
+    type: [Array, String],
+    default: () => [],
+  },
+  property: {
+    type: Object,
+    default: () => ({}),
+  },
+})
 
-  const options = computed(() => props.property.option || [])
-  const instIds = computed(() => (props.value || []).map(id => Number(id)))
-  const modelId = computed(() => options.value?.[0]?.bk_obj_id)
+defineExpose({
+  getCopyValue: () => tagList.value.join('\n') || '--',
+})
 
-  const list = ref([])
-  const requestId = Symbol()
-  watchEffect(async () => {
-    if (!instIds.value.length) {
-      list.value = []
-      return
-    }
+const options = computed(() => props.property.option || [])
+const instIds = computed(() => (props.value || []).map(id => Number(id)))
+const modelId = computed(() => options.value?.[0]?.bk_obj_id)
 
-    try {
-      const result = await getModelInstanceByIds(modelId.value, instIds.value, { requestId })
-      list.value = result
-    } catch (error) {
-      list.value = []
-    }
-  })
-
-  const tagList = computed(() => list.value.map(item => item.name))
-
-  const handleGoDetail = (index) => {
-    const item = list.value[index]
-    const route = getModelInstanceDetailRoute(item.modelId, item.id, item)
-    routerActions.open(route)
+const list = ref([])
+const requestId = Symbol()
+watchEffect(async () => {
+  if (!instIds.value.length) {
+    list.value = []
+    return
   }
+
+  try {
+    const result = await getModelInstanceByIds(modelId.value, instIds.value, {
+      requestId,
+    })
+    list.value = result
+  } catch (error) {
+    list.value = []
+  }
+})
+
+const tagList = computed(() => list.value.map(item => item.name))
+
+const handleGoDetail = index => {
+  const item = list.value[index]
+  const route = getModelInstanceDetailRoute(item.modelId, item.id, item)
+  routerActions.open(route)
+}
 </script>
 
 <template>
   <div class="enumquote-value">
     <loading :loading="$loading(requestId)">
-      <div class="empty" v-if="!list.length">--</div>
-      <flex-tag v-else :is-link-style="true" :list="tagList" @click="handleGoDetail"></flex-tag>
+      <div v-if="!list.length" class="empty">--</div>
+      <flex-tag
+        v-else
+        :is-link-style="true"
+        :list="tagList"
+        @click="handleGoDetail"></flex-tag>
     </loading>
   </div>
 </template>

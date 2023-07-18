@@ -13,8 +13,10 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
+
 import { jsonp } from '@/api'
 import { useSiteConfig } from '@/setup/build-in-vars'
+
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
 
@@ -23,7 +25,9 @@ Vue.use(VueI18n)
 const siteConfig = useSiteConfig()
 
 const langInCookie = Cookies.get(LANG_COOKIE_NAME)
-const matchedLang = LANG_SET.find(lang => lang.id === langInCookie || lang?.alias?.includes(langInCookie))
+const matchedLang = LANG_SET.find(
+  lang => lang.id === langInCookie || lang?.alias?.includes(langInCookie)
+)
 const locale = matchedLang?.id || LANG_KEYS.ZH_CN
 
 const i18n = new VueI18n({
@@ -34,15 +38,18 @@ const i18n = new VueI18n({
     // eslint-disable-next-line no-underscore-dangle
     const parsedPath = i18n._path.parsePath(path)
     return parsedPath[parsedPath.length - 1]
-  }
+  },
 })
 
-export const changeLocale = async (locale) => {
+export const changeLocale = async locale => {
   Cookies.remove(LANG_COOKIE_NAME, { path: '' })
-  const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
+  const cookieValue =
+    LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
   Cookies.set(LANG_COOKIE_NAME, cookieValue, {
     expires: 3600,
-    domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
+    domain:
+      siteConfig?.cookieDomain ||
+      window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
   if (siteConfig?.desktopUrl) {

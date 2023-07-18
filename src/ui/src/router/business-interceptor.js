@@ -10,14 +10,14 @@
  * limitations under the License.
  */
 
+import store from '@/store'
+import {
+  setBizSetIdToStorage,
+  setBizSetRecentlyUsed,
+} from '@/utils/business-set-helper.js'
 import { MENU_BUSINESS, MENU_BUSINESS_SET } from '@/dictionary/menu-symbol'
 import businessService from '@/service/business/search.js'
 import businessSetService from '@/service/business-set/index.js'
-import {
-  setBizSetIdToStorage,
-  setBizSetRecentlyUsed
-} from '@/utils/business-set-helper.js'
-import store from '@/store'
 
 const requestId = Symbol('getAuthorizedBusiness')
 
@@ -25,7 +25,7 @@ let committed = false
 export async function getAuthorizedBusiness() {
   const { info } = await store.dispatch('objectBiz/getAuthorizedBusiness', {
     requestId,
-    fromCache: true
+    fromCache: true,
   })
   if (!committed) {
     store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
@@ -34,7 +34,8 @@ export async function getAuthorizedBusiness() {
   return info
 }
 
-export const getAuthorizedBusinessSet = async () => businessSetService.getAuthorizedWithCache()
+export const getAuthorizedBusinessSet = async () =>
+  businessSetService.getAuthorizedWithCache()
 
 export const before = async function (to, from, next) {
   const [toTopRoute] = to.matched
@@ -54,18 +55,27 @@ export const before = async function (to, from, next) {
   }
 
   // 记录上一次是否使用的是业务集视图并且保存id值
-  const isMatchedBusinessSetView = fromTopRoute?.name === MENU_BUSINESS_SET || toTopRoute?.name === MENU_BUSINESS_SET
-  const availableBusinessSetView = isMatchedBusinessSetView && fromTopRoute?.meta?.view !== 'permission'
+  const isMatchedBusinessSetView =
+    fromTopRoute?.name === MENU_BUSINESS_SET ||
+    toTopRoute?.name === MENU_BUSINESS_SET
+  const availableBusinessSetView =
+    isMatchedBusinessSetView && fromTopRoute?.meta?.view !== 'permission'
 
   if (availableBusinessSetView) {
     setBizSetIdToStorage(from.params.bizSetId || to.params.bizSetId)
-    store.commit('bizSet/setBizSetId', from.params.bizSetId || to.params.bizSetId)
+    store.commit(
+      'bizSet/setBizSetId',
+      from.params.bizSetId || to.params.bizSetId
+    )
     store.commit('bizSet/setBizId', from.query.bizId || to.query.bizId)
     setBizSetRecentlyUsed(true)
   }
 
   // 从业务集视图跳出的时候重置view为默认防止再次进入时仍停留在permission
-  if (toTopRoute?.name !== MENU_BUSINESS_SET && fromTopRoute?.name === MENU_BUSINESS_SET) {
+  if (
+    toTopRoute?.name !== MENU_BUSINESS_SET &&
+    fromTopRoute?.name === MENU_BUSINESS_SET
+  ) {
     fromTopRoute.meta.view = 'default'
   }
 
@@ -80,7 +90,11 @@ export const before = async function (to, from, next) {
   const newBizId = parseInt(to.params.bizId, 10)
   const oldBizId = parseInt(from.params.bizId, 10)
 
-  if (fromTopRoute && fromTopRoute.name === MENU_BUSINESS && newBizId !== oldBizId) {
+  if (
+    fromTopRoute &&
+    fromTopRoute.name === MENU_BUSINESS &&
+    newBizId !== oldBizId
+  ) {
     window.location.hash = to.fullPath
     window.location.reload()
     return false
@@ -89,25 +103,32 @@ export const before = async function (to, from, next) {
   // 获取有权限和全部业务列表（带缓存）
   const [authorizedList, allBusinessList] = await Promise.all([
     getAuthorizedBusiness(),
-    businessService.findAll()
+    businessService.findAll(),
   ])
 
-  const id = parseInt(to.params.bizId || window.localStorage.getItem('selectedBusiness'), 10)
+  const id = parseInt(
+    to.params.bizId || window.localStorage.getItem('selectedBusiness'),
+    10
+  )
   const business = allBusinessList.find(business => business.bk_biz_id === id)
   const hasURLId = to.params.bizId
-  const isAuthorized = authorizedList.some(item => item.bk_biz_id === business?.bk_biz_id)
+  const isAuthorized = authorizedList.some(
+    item => item.bk_biz_id === business?.bk_biz_id
+  )
 
   // 缓存无ID，URL无ID，则认为是首次进入业务导航，取一个默认业务id进入到二级路由
   if (!id) {
     // 优先取有权限业务的第一个写入URL中，否则取系统的第一个业务
-    const firstBusiness = authorizedList?.length ? authorizedList?.[0] : allBusinessList?.[0]
+    const firstBusiness = authorizedList?.length
+      ? authorizedList?.[0]
+      : allBusinessList?.[0]
     toTopRoute.meta.view = 'default'
     const defaultId = firstBusiness.bk_biz_id
     window.localStorage.setItem('selectedBusiness', defaultId)
     store.commit('objectBiz/setBizId', defaultId)
     next({
       path: `/business/${defaultId}/index`,
-      replace: true
+      replace: true,
     })
     return false
   }
@@ -123,7 +144,7 @@ export const before = async function (to, from, next) {
     // next执行完之后，会再次进入route.beforeEach即会再次进入到此拦截器中，此时的route为next中指定的
     next({
       path: `/business/${id}/index`,
-      replace: true
+      replace: true,
     })
     return false
   }
@@ -134,10 +155,10 @@ export const before = async function (to, from, next) {
       name: to.name,
       params: {
         ...to.params,
-        bizId: id
+        bizId: id,
       },
       query: to.query,
-      replace: true
+      replace: true,
     })
     return false
   }

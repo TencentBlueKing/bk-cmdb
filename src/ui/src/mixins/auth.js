@@ -15,6 +15,6 @@ export default {
   computed: {
     $OPERATION() {
       return Object.freeze(OPERATION)
-    }
-  }
+    },
+  },
 }

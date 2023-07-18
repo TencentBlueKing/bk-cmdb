@@ -24,7 +24,7 @@ export const QUERY_OPERATOR = Object.freeze({
   // 前端构造的操作符，真实数据中会拆分数据为gte, lte向后台传递
   RANGE: '$range',
   NRANGE: '$nrange',
-  LIKE: '$regex'
+  LIKE: '$regex',
 })
 
 export const QUERY_OPERATOR_SYMBOL = {
@@ -37,7 +37,7 @@ export const QUERY_OPERATOR_SYMBOL = {
   [QUERY_OPERATOR.GTE]: '≥',
   [QUERY_OPERATOR.LTE]: '≤',
   [QUERY_OPERATOR.LIKE]: 'like',
-  [QUERY_OPERATOR.RANGE]: '≤ ≥'
+  [QUERY_OPERATOR.RANGE]: '≤ ≥',
 }
 
 export const QUERY_OPERATOR_DESC = {
@@ -50,7 +50,7 @@ export const QUERY_OPERATOR_DESC = {
   [QUERY_OPERATOR.RANGE]: t('数值范围'),
   [QUERY_OPERATOR.LTE]: t('小于等于'),
   [QUERY_OPERATOR.GTE]: t('大于等于'),
-  [QUERY_OPERATOR.LIKE]: t('模糊')
+  [QUERY_OPERATOR.LIKE]: t('模糊'),
 }
 
 const mapping = {
@@ -64,7 +64,7 @@ const mapping = {
   [QUERY_OPERATOR.GTE]: 'greater_or_equal',
   [QUERY_OPERATOR.RANGE]: 'between',
   [QUERY_OPERATOR.NRANGE]: 'not_between',
-  [QUERY_OPERATOR.LIKE]: 'contains'
+  [QUERY_OPERATOR.LIKE]: 'contains',
 }
 
 export default operator => mapping[operator]

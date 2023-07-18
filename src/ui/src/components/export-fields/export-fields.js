@@ -11,8 +11,10 @@
  */
 
 import Vue from 'vue'
+
 import i18n from '@/i18n'
 import store from '@/store'
+
 import ExportFields from './export-fields.vue'
 export default {
   show(props = {}) {
@@ -25,16 +27,18 @@ export default {
           props,
           on: {
             closed: () => {
-              this.$el && this.$el.parentElement && this.$el.parentElement.removeChild(this.$el)
+              this.$el &&
+                this.$el.parentElement &&
+                this.$el.parentElement.removeChild(this.$el)
               this.$destroy()
-            }
-          }
+            },
+          },
         })
-      }
+      },
     })
     vm.$mount()
     document.body.appendChild(vm.$el)
     vm.$refs.ExportFields.open()
     return vm
-  }
+  },
 }

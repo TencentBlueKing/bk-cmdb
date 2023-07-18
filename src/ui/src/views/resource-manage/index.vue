@@ -13,17 +13,19 @@
 <template>
   <div class="classify-layout clearfix">
     <div class="classify-filter">
-      <bk-input class="filter-input"
+      <bk-input
+        v-model.trim="filter"
+        class="filter-input"
         clearable
         :placeholder="$t('请输入xx', { name: $t('关键字') })"
-        right-icon="icon-search"
-        v-model.trim="filter">
+        right-icon="icon-search">
       </bk-input>
     </div>
     <div v-show="!isEmpty">
-      <div class="classify-waterfall fl"
+      <div
         v-for="col in classifyColumns.length"
-        :key="col">
+        :key="col"
+        class="classify-waterfall fl">
         <cmdb-classify-panel
           v-for="classify in classifyColumns[col - 1]"
           :key="classify['bk_classification_id']"
@@ -42,118 +44,139 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
-  import debounce from 'lodash.debounce'
-  import cmdbClassifyPanel from './children/classify-panel'
-  import useInstanceCount from './children/use-instance-count.js'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import { mapGetters } from 'vuex'
+import debounce from 'lodash.debounce'
 
-  export default {
-    components: {
-      cmdbClassifyPanel
-    },
-    data() {
-      return {
-        filter: '',
-        debounceFilter: null,
-        matchedModels: null,
-        dataEmpty: {
-          type: 'search'
-        }
-      }
-    },
-    computed: {
-      ...mapGetters(['globalLoading']),
-      ...mapGetters('objectModelClassify', ['classifications', 'models']),
-      ...mapGetters('userCustom', { collection: 'resourceCollection' }),
-      filteredClassifications() {
-        const result = []
-        this.classifications.forEach((classification) => {
-          const models = classification.bk_objects.filter((model) => {
-            const isInvisible = model.bk_ishidden
-            const isPaused = model.bk_ispaused
-            const isMatched = this.matchedModels ? this.matchedModels.includes(model.bk_obj_id) : true
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
-            // 集群/模块暂不允许查看实例
-            const isModuleOrSet = [BUILTIN_MODELS.MODULE, BUILTIN_MODELS.SET].includes(model.bk_obj_id)
+import cmdbClassifyPanel from './children/classify-panel'
+import useInstanceCount from './children/use-instance-count.js'
 
-            return !isInvisible && !isPaused && isMatched && !isModuleOrSet
-          })
-          if (models.length) {
-            result.push({
-              ...classification,
-              bk_objects: models
-            })
-          }
-        })
-        return result
+export default {
+  components: {
+    cmdbClassifyPanel,
+  },
+  data() {
+    return {
+      filter: '',
+      debounceFilter: null,
+      matchedModels: null,
+      dataEmpty: {
+        type: 'search',
       },
-      modelIds() {
-        return this.filteredClassifications.map(item => item.bk_objects.map(obj => obj.bk_obj_id))
-      },
-      classifyColumns() {
-        const colHeight = [0, 0, 0, 0]
-        const classifyColumns = [[], [], [], []]
-        this.filteredClassifications.forEach((classify) => {
-          const minColHeight = Math.min(...colHeight)
-          const rowIndex = colHeight.indexOf(minColHeight)
-          classifyColumns[rowIndex].push(classify)
-          colHeight[rowIndex] = colHeight[rowIndex] + this.calcWaterfallHeight(classify)
-        })
-        return classifyColumns
-      },
-      isEmpty() {
-        return this.classifyColumns.every(column => !column.length)
-      }
-    },
-    watch: {
-      filter() {
-        this.debounceFilter()
-      }
-    },
-    created() {
-      this.debounceFilter = debounce(this.filterModel, 300)
-      const { fetchData: getInstanceCount } = useInstanceCount({ modelIds: this.modelIds }, this)
-      getInstanceCount()
-    },
-    methods: {
-      filterModel() {
-        if (this.filter) {
-          const models = this.models.filter(model => model.bk_obj_name.toLocaleLowerCase()
-            .indexOf(this.filter.toLocaleLowerCase()) > -1)
-          this.matchedModels = models.map(model => model.bk_obj_id)
-        } else {
-          this.matchedModels = null
-        }
-      },
-      calcWaterfallHeight(classify) {
-        // 46px 分类高度
-        // 16px 模型列表padding
-        // 36 模型高度
-        return 46 + 16 + (classify.bk_objects.length * 36)
-      },
-      handleClearFilter() {
-        this.filter = ''
-      }
     }
-  }
+  },
+  computed: {
+    ...mapGetters(['globalLoading']),
+    ...mapGetters('objectModelClassify', ['classifications', 'models']),
+    ...mapGetters('userCustom', { collection: 'resourceCollection' }),
+    filteredClassifications() {
+      const result = []
+      this.classifications.forEach(classification => {
+        const models = classification.bk_objects.filter(model => {
+          const isInvisible = model.bk_ishidden
+          const isPaused = model.bk_ispaused
+          const isMatched = this.matchedModels
+            ? this.matchedModels.includes(model.bk_obj_id)
+            : true
+
+          // 集群/模块暂不允许查看实例
+          const isModuleOrSet = [
+            BUILTIN_MODELS.MODULE,
+            BUILTIN_MODELS.SET,
+          ].includes(model.bk_obj_id)
+
+          return !isInvisible && !isPaused && isMatched && !isModuleOrSet
+        })
+        if (models.length) {
+          result.push({
+            ...classification,
+            bk_objects: models,
+          })
+        }
+      })
+      return result
+    },
+    modelIds() {
+      return this.filteredClassifications.map(item =>
+        item.bk_objects.map(obj => obj.bk_obj_id)
+      )
+    },
+    classifyColumns() {
+      const colHeight = [0, 0, 0, 0]
+      const classifyColumns = [[], [], [], []]
+      this.filteredClassifications.forEach(classify => {
+        const minColHeight = Math.min(...colHeight)
+        const rowIndex = colHeight.indexOf(minColHeight)
+        classifyColumns[rowIndex].push(classify)
+        colHeight[rowIndex] =
+          colHeight[rowIndex] + this.calcWaterfallHeight(classify)
+      })
+      return classifyColumns
+    },
+    isEmpty() {
+      return this.classifyColumns.every(column => !column.length)
+    },
+  },
+  watch: {
+    filter() {
+      this.debounceFilter()
+    },
+  },
+  created() {
+    this.debounceFilter = debounce(this.filterModel, 300)
+    const { fetchData: getInstanceCount } = useInstanceCount(
+      { modelIds: this.modelIds },
+      this
+    )
+    getInstanceCount()
+  },
+  methods: {
+    filterModel() {
+      if (this.filter) {
+        const models = this.models.filter(
+          model =>
+            model.bk_obj_name
+              .toLocaleLowerCase()
+              .indexOf(this.filter.toLocaleLowerCase()) > -1
+        )
+        this.matchedModels = models.map(model => model.bk_obj_id)
+      } else {
+        this.matchedModels = null
+      }
+    },
+    calcWaterfallHeight(classify) {
+      // 46px 分类高度
+      // 16px 模型列表padding
+      // 36 模型高度
+      return 46 + 16 + classify.bk_objects.length * 36
+    },
+    handleClearFilter() {
+      this.filter = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .classify-layout{
-        padding: 15px 20px 20px;
-    }
-    .classify-filter {
-        padding: 0 20px 20px 0;
-        .filter-input {
-            width: 240px;
-        }
-    }
-    .classify-waterfall{
-        width: calc((100% - 80px) / 4);
-        margin: 0 0 0 20px;
-        &:first-child{
-            margin: 0;
-        }
-    }
+.classify-layout {
+  padding: 15px 20px 20px;
+}
+
+.classify-filter {
+  padding: 0 20px 20px 0;
+
+  .filter-input {
+    width: 240px;
+  }
+}
+
+.classify-waterfall {
+  width: calc((100% - 80px) / 4);
+  margin: 0 0 0 20px;
+
+  &:first-child {
+    margin: 0;
+  }
+}
 </style>

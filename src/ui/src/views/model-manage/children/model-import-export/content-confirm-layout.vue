@@ -22,15 +22,16 @@
 </template>
 
 <script>
-  import { defineComponent } from 'vue'
+import { defineComponent } from 'vue'
 
-  export default defineComponent({
-    name: 'ContentConfirmLayout'
-  })
+export default defineComponent({
+  name: 'ContentConfirmLayout',
+})
 </script>
 
 <style lang="scss" scoped>
 $borderColor: #dcdee5;
+
 .content-confirm {
   &-layout {
     display: flex;
@@ -46,7 +47,7 @@ $borderColor: #dcdee5;
     background: #fafbfd;
 
     &::after {
-      content:"";
+      content: '';
       display: block;
       position: absolute;
       right: 0;

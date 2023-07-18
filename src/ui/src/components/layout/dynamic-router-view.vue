@@ -12,113 +12,128 @@
 
 <template>
   <div class="clearfix">
-    <dynamic-navigation class="main-navigation" v-show="!isEntry"></dynamic-navigation>
-    <dynamic-breadcrumbs class="main-breadcrumbs" ref="breadcrumbs" v-if="showBreadcrumbs"></dynamic-breadcrumbs>
+    <dynamic-navigation
+      v-show="!isEntry"
+      class="main-navigation"></dynamic-navigation>
+    <dynamic-breadcrumbs
+      v-if="showBreadcrumbs"
+      ref="breadcrumbs"
+      class="main-breadcrumbs"></dynamic-breadcrumbs>
     <div class="main-layout">
-      <div class="main-scroller" ref="scroller">
-        <router-view class="main-views" :name="view" ref="view"></router-view>
+      <div ref="scroller" class="main-scroller">
+        <router-view ref="view" class="main-views" :name="view"></router-view>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
-  import dynamicNavigation from './dynamic-navigation'
-  import dynamicBreadcrumbs from './dynamic-breadcrumbs'
-  import {
-    addResizeListener,
-    removeResizeListener
-  } from '@/utils/resize-events'
-  import { MENU_ENTRY, MENU_ADMIN } from '@/dictionary/menu-symbol'
-  import throttle from 'lodash.throttle'
-  export default {
-    components: {
-      dynamicNavigation,
-      dynamicBreadcrumbs
+import { mapGetters } from 'vuex'
+import throttle from 'lodash.throttle'
+
+import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
+import { MENU_ENTRY, MENU_ADMIN } from '@/dictionary/menu-symbol'
+
+import dynamicNavigation from './dynamic-navigation'
+import dynamicBreadcrumbs from './dynamic-breadcrumbs'
+export default {
+  components: {
+    dynamicNavigation,
+    dynamicBreadcrumbs,
+  },
+  data() {
+    return {
+      refreshKey: Date.now(),
+      meta: this.$route.meta,
+      scrollerObserver: null,
+      scrollerObserverHandler: null,
+    }
+  },
+  computed: {
+    ...mapGetters(['globalLoading']),
+    view() {
+      return this.meta.view
     },
-    data() {
-      return {
-        refreshKey: Date.now(),
-        meta: this.$route.meta,
-        scrollerObserver: null,
-        scrollerObserverHandler: null
-      }
+    isEntry() {
+      const [topRoute] = this.$route.matched
+      return topRoute && [MENU_ENTRY, MENU_ADMIN].includes(topRoute.name)
     },
-    computed: {
-      ...mapGetters(['globalLoading']),
-      view() {
-        return this.meta.view
-      },
-      isEntry() {
-        const [topRoute] = this.$route.matched
-        return topRoute && [MENU_ENTRY, MENU_ADMIN].includes(topRoute.name)
-      },
-      showBreadcrumbs() {
-        return this.$route.meta.layout && this.$route.meta.layout.breadcrumbs
-      }
+    showBreadcrumbs() {
+      return this.$route.meta.layout && this.$route.meta.layout.breadcrumbs
     },
-    watch: {
-      $route() {
-        this.meta = this.$route.meta
-      }
+  },
+  watch: {
+    $route() {
+      this.meta = this.$route.meta
     },
-    created() {
-      this.scrollerObserverHandler = throttle(() => {
+  },
+  created() {
+    this.scrollerObserverHandler = throttle(
+      () => {
         const { scroller } = this.$refs
         if (scroller) {
           const gutter = scroller.offsetHeight - scroller.clientHeight
-          this.$store.commit('setAppHeight', this.$root.$el.offsetHeight - gutter)
+          this.$store.commit(
+            'setAppHeight',
+            this.$root.$el.offsetHeight - gutter
+          )
           this.$store.commit('setScrollerState', {
-            scrollbar: scroller.scrollHeight > scroller.offsetHeight
+            scrollbar: scroller.scrollHeight > scroller.offsetHeight,
           })
         }
-      }, 300, { leading: false, trailing: true })
+      },
+      300,
+      { leading: false, trailing: true }
+    )
+  },
+  mounted() {
+    addResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
+    this.addScrollerObserver()
+  },
+  beforeDestory() {
+    removeResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
+    this.scrollerObserver && this.scrollerObserver.disconnect()
+  },
+  methods: {
+    addScrollerObserver() {
+      this.scrollerObserver = new MutationObserver(this.scrollerObserverHandler)
+      this.scrollerObserver.observe(this.$refs.scroller, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      })
     },
-    mounted() {
-      addResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
-      this.addScrollerObserver()
-    },
-    beforeDestory() {
-      removeResizeListener(this.$refs.scroller, this.scrollerObserverHandler)
-      this.scrollerObserver && this.scrollerObserver.disconnect()
-    },
-    methods: {
-      addScrollerObserver() {
-        this.scrollerObserver = new MutationObserver(this.scrollerObserverHandler)
-        this.scrollerObserver.observe(this.$refs.scroller, {
-          attributes: true,
-          childList: true,
-          subtree: true
-        })
-      }
-    }
-  }
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .main-navigation {
-        float: left;
-    }
-    .main-breadcrumbs {
-        overflow: hidden;
-        position: relative;
-        background-color: #fff;
-        z-index: 100;
-    }
-    .main-layout {
-        position: relative;
-        overflow: hidden;
-        height: calc(100% - 53px);
-        z-index: 99;
-    }
-    .main-scroller {
-        height: 100%;
-        overflow: auto;
-    }
-    .main-views {
-        position: relative;
-        height: 100%;
-        min-width: 1089px;
-    }
+.main-navigation {
+  float: left;
+}
+
+.main-breadcrumbs {
+  overflow: hidden;
+  position: relative;
+  background-color: #fff;
+  z-index: 100;
+}
+
+.main-layout {
+  position: relative;
+  overflow: hidden;
+  height: calc(100% - 53px);
+  z-index: 99;
+}
+
+.main-scroller {
+  height: 100%;
+  overflow: auto;
+}
+
+.main-views {
+  position: relative;
+  height: 100%;
+  min-width: 1089px;
+}
 </style>

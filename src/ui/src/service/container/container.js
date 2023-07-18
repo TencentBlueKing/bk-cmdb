@@ -11,7 +11,11 @@
  */
 
 import http from '@/api'
-import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
+import {
+  CONTAINER_OBJECTS,
+  CONTAINER_OBJECT_INST_KEYS,
+} from '@/dictionary/container.js'
+
 import { enableCount, onePageParams } from '../utils.js'
 
 const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CONTAINER].ID
@@ -21,7 +25,7 @@ const find = async (params, config) => {
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post(api, enableCount(params, false), config),
-      http.post(api, enableCount(params, true), config)
+      http.post(api, enableCount(params, true), config),
     ])
     return { count, list }
   } catch (error) {
@@ -32,24 +36,33 @@ const find = async (params, config) => {
 
 const findById = async (id, podId, bizId, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post(`findmany/kube/container/bk_biz_id/${bizId}`, enableCount({
-      filter: {
-        condition: 'AND',
-        rules: [
-          {
-            field: ID_KEY,
-            operator: 'equal',
-            value: id
+    const {
+      info: [instance = null],
+    } = await http.post(
+      `findmany/kube/container/bk_biz_id/${bizId}`,
+      enableCount(
+        {
+          filter: {
+            condition: 'AND',
+            rules: [
+              {
+                field: ID_KEY,
+                operator: 'equal',
+                value: id,
+              },
+              {
+                field: 'bk_pod_id',
+                operator: 'equal',
+                value: podId,
+              },
+            ],
           },
-          {
-            field: 'bk_pod_id',
-            operator: 'equal',
-            value: podId
-          }
-        ]
-      },
-      page: onePageParams()
-    }, false), config)
+          page: onePageParams(),
+        },
+        false
+      ),
+      config
+    )
 
     return instance
   } catch (error) {
@@ -58,10 +71,11 @@ const findById = async (id, podId, bizId, config = {}) => {
   }
 }
 
-const getOne = async (params, config = {}) => findById(params[ID_KEY], params.podId, params.bizId, config)
+const getOne = async (params, config = {}) =>
+  findById(params[ID_KEY], params.podId, params.bizId, config)
 
 export default {
   find,
   findById,
-  getOne
+  getOne,
 }

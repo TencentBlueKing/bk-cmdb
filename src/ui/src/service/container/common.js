@@ -10,7 +10,12 @@
  * limitations under the License.
  */
 
-import { CONTAINER_OBJECTS, WORKLOAD_TYPES, CONTAINER_OBJECT_NAMES, WORKLOAD_OBJECT_NAMES } from '@/dictionary/container'
+import {
+  CONTAINER_OBJECTS,
+  WORKLOAD_TYPES,
+  CONTAINER_OBJECT_NAMES,
+  WORKLOAD_OBJECT_NAMES,
+} from '@/dictionary/container'
 import containerClusterService from '@/service/container/cluster'
 import containerNamespaceService from '@/service/container/namespace'
 import containerWorkloadService from '@/service/container/workload'
@@ -22,12 +27,12 @@ export const isWorkload = type => Object.values(WORKLOAD_TYPES).includes(type)
 export const isFolder = type => type === CONTAINER_OBJECTS.FOLDER
 
 // 获取容器节点大类型
-export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)
+export const getContainerNodeType = type =>
+  isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type
 
 // 获取容器节点的名称字符集合
-export const getContainerObjectNames = type => (
+export const getContainerObjectNames = type =>
   isWorkload(type) ? WORKLOAD_OBJECT_NAMES[type] : CONTAINER_OBJECT_NAMES[type]
-)
 
 // 与传统模型字段类型的映射，原则上在交互形态完全一致的情况下才可以转换
 export const typeMapping = {
@@ -36,7 +41,7 @@ export const typeMapping = {
   mapString: 'map',
   array: 'array',
   object: 'object',
-  timestamp: 'time'
+  timestamp: 'time',
 }
 
 export const getPropertyType = type => typeMapping[type] || type
@@ -46,14 +51,15 @@ export const getPropertyName = (id, objId, locale) => {
   return propertyNameI18n[objId]?.[id]?.[lang]
 }
 
-export const isContainerObject = objId => Object.values(CONTAINER_OBJECTS).includes(objId)
+export const isContainerObject = objId =>
+  Object.values(CONTAINER_OBJECTS).includes(objId)
 
-export const getContainerInstanceService = (objId) => {
+export const getContainerInstanceService = objId => {
   const services = {
     [CONTAINER_OBJECTS.CLUSTER]: containerClusterService,
     [CONTAINER_OBJECTS.NAMESPACE]: containerNamespaceService,
     [CONTAINER_OBJECTS.WORKLOAD]: containerWorkloadService,
-    [CONTAINER_OBJECTS.NODE]: containerNodeService
+    [CONTAINER_OBJECTS.NODE]: containerNodeService,
   }
 
   return services[objId]
@@ -63,257 +69,253 @@ export const propertyNameI18n = {
   [CONTAINER_OBJECTS.CLUSTER]: {
     name: {
       zh: '集群名称',
-      en: 'clustername'
+      en: 'clustername',
     },
     scheduling_engine: {
       zh: '调度引擎',
-      en: 'enginetype'
+      en: 'enginetype',
     },
     uid: {
       zh: '集群ID',
-      en: 'clusterid'
+      en: 'clusterid',
     },
     xid: {
       zh: 'TKE集群ID',
-      en: 'systemid'
+      en: 'systemid',
     },
     version: {
       zh: '集群版本',
-      en: 'version'
+      en: 'version',
     },
     network_type: {
       zh: '网络类型',
-      en: 'networktype'
+      en: 'networktype',
     },
     region: {
       zh: '所属地域',
-      en: 'region'
+      en: 'region',
     },
     vpc: {
       zh: 'VPC',
-      en: 'vpcid'
+      en: 'vpcid',
     },
     network: {
       zh: '集群网络',
-      en: 'clusternetwork'
+      en: 'clusternetwork',
     },
     type: {
       zh: '集群类型',
-      en: 'clustertype'
-    }
+      en: 'clustertype',
+    },
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
     name: {
       zh: '命名空间名称',
-      en: 'Name'
+      en: 'Name',
     },
     cluster_uid: {
       zh: '集群ID',
-      en: 'clusterid'
+      en: 'clusterid',
     },
     labels: {
       zh: '命名空间标签',
-      en: 'Labels'
+      en: 'Labels',
     },
     resource_quotas: {
       zh: '命名空间资源限制',
-      en: 'Resource Quotas'
-    }
+      en: 'Resource Quotas',
+    },
   },
   [CONTAINER_OBJECTS.WORKLOAD]: {
     name: {
       zh: '工作负载名称',
-      en: 'Name'
+      en: 'Name',
     },
     namespace: {
       zh: '所属命名空间',
-      en: 'Namespace'
+      en: 'Namespace',
     },
     strategy_type: {
       zh: '升级策略',
-      en: 'StrategyType'
+      en: 'StrategyType',
     },
     labels: {
       zh: '工作负载标签',
-      en: 'Labels'
+      en: 'Labels',
     },
     selector: {
       zh: '工作负载选择器',
-      en: 'Selector'
+      en: 'Selector',
     },
     replicas: {
       zh: '工作负载实例数',
-      en: 'Replicas'
+      en: 'Replicas',
     },
     min_ready_seconds: {
       zh: '最小就绪时间',
-      en: 'MinReadySeconds'
+      en: 'MinReadySeconds',
     },
     rolling_update_strategy: {
       zh: '滚动更新策略',
-      en: 'RollingUpdateStrategy'
-    }
+      en: 'RollingUpdateStrategy',
+    },
   },
   [CONTAINER_OBJECTS.NODE]: {
     id: {
       zh: '节点ID',
-      en: 'NodeID'
+      en: 'NodeID',
     },
     name: {
       zh: '节点名称',
-      en: 'Name'
+      en: 'Name',
     },
     roles: {
       zh: '节点角色',
-      en: 'Roles'
+      en: 'Roles',
     },
     labels: {
       zh: '节点标签',
-      en: 'Labels'
+      en: 'Labels',
     },
     taints: {
       zh: '节点污点',
-      en: 'Taints'
+      en: 'Taints',
     },
     unschedulable: {
       zh: '是否可调度',
-      en: 'Unschedulable'
+      en: 'Unschedulable',
     },
     internal_ip: {
       zh: '节点内网IP',
-      en: 'InternalIP'
+      en: 'InternalIP',
     },
     external_ip: {
       zh: '节点外网IP',
-      en: 'ExternalIP'
+      en: 'ExternalIP',
     },
     hostname: {
       zh: '节点主机名',
-      en: 'Hostname'
+      en: 'Hostname',
     },
     runtime_component: {
       zh: '运行时组件',
-      en: 'ContainerRuntime'
+      en: 'ContainerRuntime',
     },
     kube_proxy_mode: {
       zh: 'Kube-proxy 代理模式',
-      en: 'kubeProxy'
+      en: 'kubeProxy',
     },
     pod_cidr: {
       zh: '节点 Pod 地址范围',
-      en: 'PodCIDR'
-    }
+      en: 'PodCIDR',
+    },
   },
   [CONTAINER_OBJECTS.POD]: {
     name: {
       zh: 'Pod 名称',
-      en: 'Name'
-    },
-    namespace: {
-      zh: '所属命名空间',
-      en: 'Namespace'
+      en: 'Name',
     },
     priority: {
       zh: 'Pod 优先级',
-      en: 'Priority'
+      en: 'Priority',
     },
     labels: {
       zh: 'Pod 标签',
-      en: 'Labels'
+      en: 'Labels',
     },
     ip: {
       zh: 'Pod 容器网络IP',
-      en: 'IP'
+      en: 'IP',
     },
     ips: {
       zh: 'Pod 容器网络IPs',
-      en: 'IPs'
+      en: 'IPs',
     },
     controlled_by: {
       zh: '所属副本控制器',
-      en: 'ControlledBy'
+      en: 'ControlledBy',
     },
     container_uid: {
       zh: '容器ID',
-      en: 'Container ID'
+      en: 'Container ID',
     },
     qos_class: {
       zh: 'Pod 服务质量',
-      en: 'QoSClass'
+      en: 'QoSClass',
     },
     volumes: {
       zh: 'Pod 卷信息',
-      en: 'Volumes'
+      en: 'Volumes',
     },
     node_selectors: {
       zh: '将 Pod 指派给节点',
-      en: 'Node-Selectors'
+      en: 'Node-Selectors',
     },
     tolerations: {
       zh: 'Pod 污点',
-      en: 'Tolerations'
+      en: 'Tolerations',
     },
     cluster_uid: {
       zh: '所属 Cluster',
-      en: 'Cluster'
+      en: 'Cluster',
     },
     namespace: {
       zh: '所属 Namespace',
-      en: 'Namespace'
+      en: 'Namespace',
     },
     ref: {
       zh: '所属 Workload',
-      en: 'Workload'
-    }
+      en: 'Workload',
+    },
   },
   [CONTAINER_OBJECTS.CONTAINER]: {
     name: {
       zh: '名称',
-      en: 'Name'
+      en: 'Name',
     },
     container_uid: {
       zh: '容器ID',
-      en: 'Container ID'
+      en: 'Container ID',
     },
     image: {
       zh: '镜像信息',
-      en: 'Image'
+      en: 'Image',
     },
     ports: {
       zh: '容器端口',
-      en: 'Ports'
+      en: 'Ports',
     },
     host_ports: {
       zh: '主机端口映射',
-      en: 'Host Ports'
+      en: 'Host Ports',
     },
     args: {
       zh: '启动参数',
-      en: 'Args'
+      en: 'Args',
     },
     started: {
       zh: '启动时间',
-      en: 'Started'
+      en: 'Started',
     },
     limits: {
       zh: '资源限制',
-      en: 'Limits'
+      en: 'Limits',
     },
     requests: {
       zh: '申请资源大小',
-      en: 'Requests'
+      en: 'Requests',
     },
     liveness: {
       zh: '存活探针',
-      en: 'Liveness'
+      en: 'Liveness',
     },
     environment: {
       zh: '环境变量',
-      en: 'Environment'
+      en: 'Environment',
     },
     mounts: {
       zh: '挂载卷',
-      en: 'Mounts'
-    }
-  }
+      en: 'Mounts',
+    },
+  },
 }

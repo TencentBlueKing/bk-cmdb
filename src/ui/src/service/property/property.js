@@ -11,14 +11,20 @@
  */
 
 import http from '@/api'
-import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+} from '@/dictionary/model-constants.js'
 
 function createIdProperty(objId) {
   const keyMap = {
-    [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
-    [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+    [BUILTIN_MODELS.BUSINESS]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+    [BUILTIN_MODELS.BUSINESS_SET]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
     [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
-    [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID
+    [BUILTIN_MODELS.PROJECT]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID,
   }
   return {
     id: Date.now(),
@@ -34,7 +40,7 @@ function createIdProperty(objId) {
     isreadonly: true,
     editable: false,
     bk_property_group: null,
-    _is_inject_: true
+    _is_inject_: true,
   }
 }
 
@@ -62,16 +68,15 @@ export const find = async (params, config, injectId = false) => {
 export const findBiz = (injectId = false, config) => {
   const params = {
     bk_obj_id: 'biz',
-    bk_supplier_account: window.Supplier.account
+    bk_supplier_account: window.Supplier.account,
   }
   return find(params, config, injectId)
 }
 
-
 export const findBizSet = (injectId = false, config) => {
   const params = {
     bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
-    bk_supplier_account: window.Supplier.account
+    bk_supplier_account: window.Supplier.account,
   }
   return find(params, config, injectId)
 }
@@ -79,5 +84,5 @@ export const findBizSet = (injectId = false, config) => {
 export default {
   find,
   findBiz,
-  findBizSet
+  findBizSet,
 }

@@ -18,7 +18,7 @@ import {
   MENU_RESOURCE_BUSINESS_COLLECTION,
   MENU_RESOURCE_BUSINESS_SET_COLLECTION,
   MENU_RESOURCE_PROJECT,
-  MENU_RESOURCE_PROJECT_COLLECTION
+  MENU_RESOURCE_PROJECT_COLLECTION,
 } from '@/dictionary/menu-symbol'
 
 // 常用的内置模型ID
@@ -28,35 +28,35 @@ export const BUILTIN_MODELS = Object.freeze({
   SET: 'set',
   MODULE: 'module',
   HOST: 'host',
-  PROJECT: 'bk_project'
+  PROJECT: 'bk_project',
 })
 
 // 内置模型ID和名称属性的Key
 export const BUILTIN_MODEL_PROPERTY_KEYS = Object.freeze({
   [BUILTIN_MODELS.BUSINESS_SET]: {
     ID: 'bk_biz_set_id',
-    NAME: 'bk_biz_set_name'
+    NAME: 'bk_biz_set_name',
   },
   [BUILTIN_MODELS.BUSINESS]: {
     ID: 'bk_biz_id',
-    NAME: 'bk_biz_name'
+    NAME: 'bk_biz_name',
   },
   [BUILTIN_MODELS.HOST]: {
     ID: 'bk_host_id',
-    NAME: 'bk_host_name'
+    NAME: 'bk_host_name',
   },
   [BUILTIN_MODELS.MODULE]: {
     ID: 'bk_module_id',
-    NAME: 'bk_module_name'
+    NAME: 'bk_module_name',
   },
   [BUILTIN_MODELS.SET]: {
     ID: 'bk_set_id',
-    NAME: 'bk_set_name'
+    NAME: 'bk_set_name',
   },
   [BUILTIN_MODELS.PROJECT]: {
     ID: 'id',
-    NAME: 'bk_project_name'
-  }
+    NAME: 'bk_project_name',
+  },
 })
 
 // 内置模型路由路径参数的Key
@@ -71,7 +71,7 @@ export const BUILTIN_MODEL_COLLECTION_KEYS = Object.freeze({
   [BUILTIN_MODELS.HOST]: MENU_RESOURCE_HOST_COLLECTION,
   [BUILTIN_MODELS.BUSINESS]: MENU_RESOURCE_BUSINESS_COLLECTION,
   [BUILTIN_MODELS.BUSINESS_SET]: MENU_RESOURCE_BUSINESS_SET_COLLECTION,
-  [BUILTIN_MODELS.PROJECT]: MENU_RESOURCE_PROJECT_COLLECTION
+  [BUILTIN_MODELS.PROJECT]: MENU_RESOURCE_PROJECT_COLLECTION,
 })
 
 // 内置模型收藏后的菜单路由名称
@@ -79,7 +79,7 @@ export const BUILTIN_MODEL_RESOURCE_MENUS = Object.freeze({
   [BUILTIN_MODELS.HOST]: MENU_RESOURCE_HOST,
   [BUILTIN_MODELS.BUSINESS]: MENU_RESOURCE_BUSINESS,
   [BUILTIN_MODELS.BUSINESS_SET]: MENU_RESOURCE_BUSINESS_SET,
-  [BUILTIN_MODELS.PROJECT]: MENU_RESOURCE_PROJECT
+  [BUILTIN_MODELS.PROJECT]: MENU_RESOURCE_PROJECT,
 })
 
 // 内置模型资源类型用于详情区分实例类型与变更记录查询
@@ -87,7 +87,7 @@ export const BUILTIN_MODEL_RESOURCE_TYPES = Object.freeze({
   [BUILTIN_MODELS.HOST]: 'host',
   [BUILTIN_MODELS.BUSINESS]: 'business',
   [BUILTIN_MODELS.BUSINESS_SET]: 'biz_set',
-  [BUILTIN_MODELS.PROJECT]: 'project'
+  [BUILTIN_MODELS.PROJECT]: 'project',
 })
 
 /**

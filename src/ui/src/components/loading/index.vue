@@ -11,19 +11,19 @@
 -->
 
 <template functional>
-  <i class="loading" v-if="props.loading"></i>
+  <i v-if="props.loading" class="loading"></i>
   <div v-else><slot></slot></div>
 </template>
 
 <style lang="scss" scoped>
-  .loading {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-color: transparent;
-    background-image: url("../../assets/images/icon/loading.svg");
-    background-position: center center;
-    background-size: 16px;
-    background-repeat: no-repeat;
-  }
+.loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-color: transparent;
+  background-image: url('../../assets/images/icon/loading.svg');
+  background-position: center center;
+  background-size: 16px;
+  background-repeat: no-repeat;
+}
 </style>

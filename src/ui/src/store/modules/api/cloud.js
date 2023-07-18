@@ -30,8 +30,8 @@ const cloudArea = {
     },
     getHostCount(context, { params, config }) {
       return $http.post('findmany/cloudarea/hostcount', params, config)
-    }
-  }
+    },
+  },
 }
 
 const cloudAccount = {
@@ -41,21 +41,25 @@ const cloudAccount = {
       return $http.post('findmany/cloud/account', params, config)
     },
     async findOne(context, { id, config }) {
-      return context.dispatch('findMany', {
-        params: {
-          condition: {
-            bk_account_id: {
-              $eq: id
-            }
+      return context
+        .dispatch('findMany', {
+          params: {
+            condition: {
+              bk_account_id: {
+                $eq: id,
+              },
+            },
+          },
+          config,
+        })
+        .then(({ info }) => {
+          if (!info.length) {
+            return Promise.reject(
+              new Error(`Can not find cloud account with id:${id}`)
+            )
           }
-        },
-        config
-      }).then(({ info }) => {
-        if (!info.length) {
-          return Promise.reject(new Error(`Can not find cloud account with id:${id}`))
-        }
-        return info[0]
-      })
+          return info[0]
+        })
     },
     verify(context, { params, config }) {
       return $http.post('cloud/account/verify', params, config)
@@ -71,8 +75,8 @@ const cloudAccount = {
     },
     getStatus(context, { params, config }) {
       return $http.post('findmany/cloud/account/validity', params, config)
-    }
-  }
+    },
+  },
 }
 
 const cloudResource = {
@@ -85,22 +89,26 @@ const cloudResource = {
       return $http.post('findmany/cloud/sync/task', params, config)
     },
     findOneTask(context, { id, config }) {
-      return context.dispatch('findTask', {
-        params: {
-          condition: {
-            bk_task_id: {
-              $eq: id
-            }
+      return context
+        .dispatch('findTask', {
+          params: {
+            condition: {
+              bk_task_id: {
+                $eq: id,
+              },
+            },
+            latest_hostcount: true,
           },
-          latest_hostcount: true
-        },
-        config
-      }).then(({ info }) => {
-        if (!info.length) {
-          return Promise.reject(new Error(`Can not find cloud task with id:${id}`))
-        }
-        return info[0]
-      })
+          config,
+        })
+        .then(({ info }) => {
+          if (!info.length) {
+            return Promise.reject(
+              new Error(`Can not find cloud task with id:${id}`)
+            )
+          }
+          return info[0]
+        })
     },
     updateTask(context, { id, params, config }) {
       return $http.put(`update/cloud/sync/task/${id}`, params, config)
@@ -116,8 +124,8 @@ const cloudResource = {
     },
     findHistory(context, { params, config }) {
       return $http.post('findmany/cloud/sync/history', params, config)
-    }
-  }
+    },
+  },
 }
 
 export default {
@@ -125,6 +133,6 @@ export default {
   modules: {
     area: cloudArea,
     account: cloudAccount,
-    resource: cloudResource
-  }
+    resource: cloudResource,
+  },
 }

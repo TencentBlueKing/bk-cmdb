@@ -26,7 +26,8 @@
       <bk-tab-panel name="idle-pool-config" :label="$t('业务空闲机池')">
         <div class="config-container">
           <!--加 v-if 是为了每次进入时初始化表单状态 -->
-          <IdlePoolConfig v-if="activeTabName === 'idle-pool-config'"></IdlePoolConfig>
+          <IdlePoolConfig
+            v-if="activeTabName === 'idle-pool-config'"></IdlePoolConfig>
         </div>
       </bk-tab-panel>
     </bk-tab>
@@ -34,66 +35,69 @@
 </template>
 
 <script>
-  import { ref, watch, onMounted } from 'vue'
-  import BusinessGneralConfig from './children/business-general-config.vue'
-  import PlatformInfoConfig from './children/platform-info-config.vue'
-  import IdlePoolConfig from './children/idle-pool-config.vue'
-  import queryStore from '@/router/query'
-  import store from '@/store'
-  import EventBus from '@/utils/bus'
-  import router from '@/router'
+import { ref, watch, onMounted } from 'vue'
 
-  export default {
-    name: 'global-config',
-    components: {
-      BusinessGneralConfig,
-      PlatformInfoConfig,
-      IdlePoolConfig
-    },
-    setup() {
-      const activeTabName = ref(queryStore.get('tab') || 'business-general-config')
+import store from '@/store'
+import router from '@/router'
+import EventBus from '@/utils/bus'
+import queryStore from '@/router/query'
 
-      store.dispatch('globalConfig/fetchDefaultConfig')
+import BusinessGneralConfig from './children/business-general-config.vue'
+import PlatformInfoConfig from './children/platform-info-config.vue'
+import IdlePoolConfig from './children/idle-pool-config.vue'
 
-      if (!store.state.globalConfig.auth) {
-        router.currentRoute.meta.view = 'permission'
-      }
+export default {
+  name: 'global-config',
+  components: {
+    BusinessGneralConfig,
+    PlatformInfoConfig,
+    IdlePoolConfig,
+  },
+  setup() {
+    const activeTabName = ref(
+      queryStore.get('tab') || 'business-general-config'
+    )
 
-      watch(activeTabName, () => {
-        queryStore.set('tab', activeTabName.value)
-        store.dispatch('globalConfig/fetchConfig')
-          .finally(() => {
-            EventBus.$emit('globalConfig/fetched')
-          })
-      })
+    store.dispatch('globalConfig/fetchDefaultConfig')
 
-      onMounted(() => {
-        queryStore.set('tab', activeTabName.value)
-      })
-
-      return {
-        activeTabName
-      }
+    if (!store.state.globalConfig.auth) {
+      router.currentRoute.meta.view = 'permission'
     }
-  }
+
+    watch(activeTabName, () => {
+      queryStore.set('tab', activeTabName.value)
+      store.dispatch('globalConfig/fetchConfig').finally(() => {
+        EventBus.$emit('globalConfig/fetched')
+      })
+    })
+
+    onMounted(() => {
+      queryStore.set('tab', activeTabName.value)
+    })
+
+    return {
+      activeTabName,
+    }
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  // 覆盖全局设置的内边距，这里因设计要求需要重置
-  ::v-deep .bk-tab .bk-tab-header {
-    padding: 0;
-  }
+// 覆盖全局设置的内边距，这里因设计要求需要重置
+::v-deep .bk-tab .bk-tab-header {
+  padding: 0;
+}
 
-  .bk-tab{
-    background-color: #fff;
-    height: auto;
-    margin: 20px;
-  }
+.bk-tab {
+  background-color: #fff;
+  height: auto;
+  margin: 20px;
+}
 
-  .config-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-    padding-bottom: 50px;
-  }
+.config-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  padding-bottom: 50px;
+}
 </style>

@@ -11,13 +11,15 @@
  */
 
 import Vue from 'vue'
+
 import store from '@/store'
 import i18n from '@/i18n'
 import RouterQuery from '@/router/query'
+
 import ProcessForm from './form.vue'
 const Component = Vue.extend({
   components: {
-    ProcessForm
+    ProcessForm,
   },
   created() {
     this.unwatch = RouterQuery.watch('*', () => {
@@ -31,11 +33,16 @@ const Component = Vue.extend({
     handleClose() {
       document.body.removeChild(this.$el)
       this.$destroy()
-    }
+    },
   },
   render() {
-    return <process-form ref="form" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></process-form>
-  }
+    return (
+      <process-form
+        ref="form"
+        {...{ props: this.$options.attrs }}
+        on-close={this.handleClose}></process-form>
+    )
+  },
 })
 
 export default {
@@ -43,10 +50,10 @@ export default {
     const vm = new Component({
       store,
       i18n,
-      attrs: data
+      attrs: data,
     })
     vm.$mount()
     document.body.appendChild(vm.$el)
     vm.$refs.form.show()
-  }
+  },
 }

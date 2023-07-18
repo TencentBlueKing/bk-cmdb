@@ -11,8 +11,9 @@
 -->
 
 <template>
-  <bk-date-picker class="cmdb-time"
+  <bk-date-picker
     v-model="time"
+    class="cmdb-time"
     type="datetime"
     transfer
     editable
@@ -25,68 +26,73 @@
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-form-time',
-    props: {
-      value: {
-        type: String,
-        default: ''
-      },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      clearable: {
-        type: Boolean,
-        default: true
-      },
-      placeholder: {
-        type: String,
-        default: ''
-      }
+export default {
+  name: 'cmdb-form-time',
+  props: {
+    value: {
+      type: String,
+      default: '',
     },
-    computed: {
-      time: {
-        get() {
-          if (!this.value) {
-            return ''
-          }
-          return new Date(this.value)
-        },
-        set(value) {
-          const previousValue = this.value
-          const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss')
-          this.$emit('input', currentValue)
-          if (currentValue !== previousValue) {
-            this.$emit('change', currentValue, previousValue)
-          }
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    clearable: {
+      type: Boolean,
+      default: true,
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
+  },
+  computed: {
+    time: {
+      get() {
+        if (!this.value) {
+          return ''
+        }
+        return new Date(this.value)
+      },
+      set(value) {
+        const previousValue = this.value
+        const currentValue = this.$tools.formatTime(
+          value,
+          'YYYY-MM-DD HH:mm:ss'
+        )
+        this.$emit('input', currentValue)
+        if (currentValue !== previousValue) {
+          this.$emit('change', currentValue, previousValue)
         }
       },
-      otherAttrs() {
-        // 排除options属性，因与date-picker组件props类型冲突，不能直接用
-        const { options, ...otherAttrs } = this.$attrs
-        return otherAttrs
-      }
     },
-    methods: {
-      handleConfirm() {
-        this.$emit('confirm')
-      }
-    }
-  }
+    otherAttrs() {
+      // 排除options属性，因与date-picker组件props类型冲突，不能直接用
+      // eslint-disable-next-line no-unused-vars
+      const { options, ...otherAttrs } = this.$attrs
+      return otherAttrs
+    },
+  },
+  methods: {
+    handleConfirm() {
+      this.$emit('confirm')
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
 .cmdb-time {
   width: 100%;
 
-  &[size="small"] {
+  &[size='small'] {
     ::v-deep {
       .bk-date-picker-rel {
         .icon-wrapper {
           height: 26px;
           line-height: 26px;
         }
+
         .bk-date-picker-editor {
           height: 26px;
           line-height: 26px;

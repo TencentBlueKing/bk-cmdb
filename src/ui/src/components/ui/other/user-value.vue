@@ -11,69 +11,70 @@
 -->
 
 <template>
-  <blueking-user-selector ref="userSelector" type="info"
+  <blueking-user-selector
     v-if="localValue.length"
+    ref="userSelector"
+    v-bk-overflow-tips
+    type="info"
     :api="api"
-    :value="localValue"
-    v-bk-overflow-tips>
+    :value="localValue">
   </blueking-user-selector>
   <span v-else>--</span>
 </template>
 
 <script>
-  import BluekingUserSelector from '@blueking/user-selector'
-  export default {
-    components: {
-      BluekingUserSelector
+import BluekingUserSelector from '@blueking/user-selector'
+export default {
+  components: {
+    BluekingUserSelector,
+  },
+  props: {
+    value: {
+      type: String,
+      default: '',
     },
-    props: {
-      value: {
-        type: String,
-        default: ''
-      }
-    },
-    data() {
-      return {}
-    },
-    computed: {
-      api() {
-        const { userManage } = window.ESB
-        if (userManage) {
-          try {
-            const url = new URL(userManage)
-            return `${window.API_HOST}proxy/get/usermanage${url.pathname}`
-          } catch (e) {
-            console.error(e)
-          }
+  },
+  data() {
+    return {}
+  },
+  computed: {
+    api() {
+      const { userManage } = window.ESB
+      if (userManage) {
+        try {
+          const url = new URL(userManage)
+          return `${window.API_HOST}proxy/get/usermanage${url.pathname}`
+        } catch (e) {
+          console.error(e)
         }
-        return ''
+      }
+      return ''
+    },
+    localValue: {
+      get() {
+        if (this.value) {
+          return this.value.split(',')
+        }
+        return []
       },
-      localValue: {
-        get() {
-          if (this.value) {
-            return this.value.split(',')
-          }
-          return []
-        }
-      }
     },
-    methods: {
-      getCopyValue() {
-        return this.$refs?.userSelector?.userInfo || '--'
-      }
-    }
-  }
+  },
+  methods: {
+    getCopyValue() {
+      return this.$refs?.userSelector?.userInfo || '--'
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .bk-table{
-        .user-selector{
-            width: 100%;
-            overflow: hidden;
-            display: block;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-    }
-
+.bk-table {
+  .user-selector {
+    width: 100%;
+    overflow: hidden;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
 </style>

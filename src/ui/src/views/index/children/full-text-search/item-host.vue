@@ -9,53 +9,61 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
 -->
-
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="result-item">
     <div class="result-title" @click="data.linkTo(data.source)">
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
-    <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
-      <div class="desc-item"
-        v-html="`${$t('主机ID')}：${getHighlightValue(data.source.bk_host_id, data)}`">
-      </div>
+    <div
+      v-if="properties"
+      class="result-desc"
+      @click="data.linkTo(data.source)">
+      <div
+        class="desc-item"
+        v-html="
+          `${$t('主机ID')}：${getHighlightValue(data.source.bk_host_id, data)}`
+        "></div>
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item hl"
+        <div
           v-if="data.source[property.bk_property_id]"
           :key="childIndex"
-          v-html="`${property.bk_property_name}：${getText(property, data)}`">
-        </div>
+          class="desc-item hl"
+          v-html="
+            `${property.bk_property_name}：${getText(property, data)}`
+          "></div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed } from 'vue'
-  import { getText, getHighlightValue } from './use-item.js'
+import { defineComponent, toRefs, computed } from 'vue'
 
-  export default defineComponent({
-    name: 'item-host',
-    props: {
-      data: {
-        type: Object,
-        default: () => ({})
-      },
-      propertyMap: {
-        type: Object,
-        default: () => ({})
-      }
+import { getText, getHighlightValue } from './use-item.js'
+
+export default defineComponent({
+  name: 'item-host',
+  props: {
+    data: {
+      type: Object,
+      default: () => ({}),
     },
-    setup(props) {
-      const { propertyMap } = toRefs(props)
+    propertyMap: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  setup(props) {
+    const { propertyMap } = toRefs(props)
 
-      const properties = computed(() => propertyMap.value.host)
+    const properties = computed(() => propertyMap.value.host)
 
-      return {
-        properties,
-        getText,
-        getHighlightValue
-      }
+    return {
+      properties,
+      getText,
+      getHighlightValue,
     }
-  })
+  },
+})
 </script>

@@ -11,10 +11,15 @@
  */
 
 import { computed, isRef, ref, unref } from 'vue'
-import store from '@/store'
 import debounce from 'lodash.debounce'
+
+import store from '@/store'
+
 import useSuggestion from './use-suggestion'
-import { currentSetting as advancedSetting, allModelIds } from './use-advanced-setting.js'
+import {
+  currentSetting as advancedSetting,
+  allModelIds,
+} from './use-advanced-setting.js'
 
 const requestId = Symbol('fullTextSearch')
 
@@ -27,16 +32,13 @@ export default function useResult(state) {
   // 如注入 keyword 则为输入联想模式
   const typing = computed(() => isRef(keyword))
 
-  const queryKeyword = computed(() => (typing.value ? keyword.value : route.value.query.keyword))
+  const queryKeyword = computed(() =>
+    typing.value ? keyword.value : route.value.query.keyword
+  )
 
   const params = computed(() => {
     const { query } = route.value
-    const {
-      c: queryObjId,
-      k: kind,
-      ps: limit = 10,
-      p: page = 1
-    } = query
+    const { c: queryObjId, k: kind, ps: limit = 10, p: page = 1 } = query
 
     const kw = queryKeyword.value
     const nonLetter = /\W/.test(kw)
@@ -45,22 +47,24 @@ export default function useResult(state) {
     const queryString = kw.length === 1 ? kw.replace(singleSpecial, '') : kw
 
     const filter = {}
-    advancedSetting.targets.forEach((target) => {
+    advancedSetting.targets.forEach(target => {
       const key = `${target}s`
-      filter[key] = advancedSetting[key].length ? advancedSetting[key] : unref(allModelIds)
+      filter[key] = advancedSetting[key].length
+        ? advancedSetting[key]
+        : unref(allModelIds)
     })
     const params = {
       filter,
       query_string: nonLetter ? `*${queryString}*` : queryString,
       page: {
         start: typing.value ? 0 : (page - 1) * limit,
-        limit: typing.value ? 10 : Number(limit)
-      }
+        limit: typing.value ? 10 : Number(limit),
+      },
     }
 
     if (queryObjId) {
       params.sub_resource = {
-        [`${kind}s`]: queryObjId.split(',')
+        [`${kind}s`]: queryObjId.split(','),
       }
     }
 
@@ -77,8 +81,8 @@ export default function useResult(state) {
       result.value = await store.dispatch('fullTextSearch/search', {
         params: params.value,
         config: {
-          requestId
-        }
+          requestId,
+        },
       })
     } finally {
       fetching.value = false
@@ -89,11 +93,11 @@ export default function useResult(state) {
 
   const suggestionState = {
     result,
-    keyword: queryKeyword
+    keyword: queryKeyword,
   }
   const { suggestion } = useSuggestion(suggestionState)
 
-  const onkeydownResult = (event) => {
+  const onkeydownResult = event => {
     const { keyCode } = event
     const keyCodeMap = { enter: 13, up: 38, down: 40 }
     if (!queryKeyword.value || !Object.values(keyCodeMap).includes(keyCode)) {
@@ -115,6 +119,6 @@ export default function useResult(state) {
     fetching,
     onkeydownResult,
     selectResultIndex,
-    getSearchResult: getSearchResultDebounce
+    getSearchResult: getSearchResultDebounce,
   }
 }

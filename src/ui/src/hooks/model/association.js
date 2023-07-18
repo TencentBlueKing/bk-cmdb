@@ -11,11 +11,12 @@
  */
 
 import { ref, watch } from 'vue'
+
 import modelAssociationService from '@/service/model/association'
 export default function (modelId) {
   const relations = ref([])
   const pending = ref(false)
-  const refresh = async (value) => {
+  const refresh = async value => {
     if (!value) return
     pending.value = true
     relations.value = await modelAssociationService.findAll(value)

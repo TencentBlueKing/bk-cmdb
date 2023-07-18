@@ -14,49 +14,43 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 新加主机查询历史
-     * @param {Function} comit store commit mutation hander
-     * @param {Object} state store state
-     * @param {string} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 新加主机查询历史
+   * @param {Function} comit store commit mutation hander
+   * @param {Object} state store state
+   * @param {string} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   createHostSearchHistory({ commit, state, dispatch }, { params }) {
     return $http.post('hosts/history', params)
   },
 
   /**
-     * 获取主机查询历史
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store disoatch action hander
-     * @param {Number} start 记录开始位置
-     * @param {Number} limit 每页限制条数，最大200
-     * @return {Promise} promise 对象
-     */
+   * 获取主机查询历史
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store disoatch action hander
+   * @param {Number} start 记录开始位置
+   * @param {Number} limit 每页限制条数，最大200
+   * @return {Promise} promise 对象
+   */
   searchHostSearchHistory({ commit, state, dispatch }, { start, limit }) {
     return $http.get(`hosts/history${start}/${limit}`)
-  }
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

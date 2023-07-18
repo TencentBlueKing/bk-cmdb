@@ -11,14 +11,17 @@
 -->
 
 <template>
-  <bk-sideslider v-transfer-dom
+  <bk-sideslider
+    v-transfer-dom
     :is-show.sync="isShow"
     :title="title"
     :width="540"
-    @hidden="handleHidden"
-    :before-close="handleSliderBeforeClose">
-    <component slot="content" ref="component"
+    :before-close="handleSliderBeforeClose"
+    @hidden="handleHidden">
+    <component
       :is="component"
+      slot="content"
+      ref="component"
       :container="this"
       v-bind="componentProps">
     </component>
@@ -26,51 +29,51 @@
 </template>
 
 <script>
-  import AccountForm from './account-form.vue'
-  import AccountDetails from './account-details.vue'
-  export default {
-    components: {
-      [AccountForm.name]: AccountForm,
-      [AccountDetails.name]: AccountDetails
-    },
-    data() {
-      return {
-        isShow: false,
-        title: '',
-        component: null,
-        componentProps: {}
+import AccountForm from './account-form.vue'
+import AccountDetails from './account-details.vue'
+export default {
+  components: {
+    [AccountForm.name]: AccountForm,
+    [AccountDetails.name]: AccountDetails,
+  },
+  data() {
+    return {
+      isShow: false,
+      title: '',
+      component: null,
+      componentProps: {},
+    }
+  },
+  methods: {
+    show(options) {
+      this.componentProps = options.props || {}
+      if (options.type === 'form') {
+        this.component = AccountForm.name
+      } else if (options.type === 'details') {
+        this.component = AccountDetails.name
       }
+      this.title = options.title
+      this.isShow = true
     },
-    methods: {
-      show(options) {
-        this.componentProps = options.props || {}
-        if (options.type === 'form') {
-          this.component = AccountForm.name
-        } else if (options.type === 'details') {
-          this.component = AccountDetails.name
-        }
-        this.title = options.title
-        this.isShow = true
-      },
-      hide() {
-        this.isShow = false
-      },
-      handleHidden() {
-        this.component = null
-        this.componentProps = {}
-      },
-      handleSliderBeforeClose() {
-        const $form = this.$refs.component
-        const { changeValue } = $form
-        if (!changeValue) {
-          return this.hide()
-        }
-        if (changeValue()) {
-          $form.setChanged(true)
-          return $form.beforeClose(this.handleHidden)
-        }
+    hide() {
+      this.isShow = false
+    },
+    handleHidden() {
+      this.component = null
+      this.componentProps = {}
+    },
+    handleSliderBeforeClose() {
+      const $form = this.$refs.component
+      const { changeValue } = $form
+      if (!changeValue) {
         return this.hide()
       }
-    }
-  }
+      if (changeValue()) {
+        $form.setChanged(true)
+        return $form.beforeClose(this.handleHidden)
+      }
+      return this.hide()
+    },
+  },
+}
 </script>

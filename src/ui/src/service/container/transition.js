@@ -10,13 +10,21 @@
  * limitations under the License.
  */
 
-import i18n from '@/i18n/index.js'
 import { CONTAINER_OBJECT_NAMES } from '@/dictionary/container'
-import { isWorkload, isFolder, getContainerNodeType, getPropertyType, getPropertyName, getContainerObjectNames } from './common.js'
 import Utils from '@/components/filters/utils.js'
+import i18n from '@/i18n/index.js'
+
+import {
+  isWorkload,
+  isFolder,
+  getContainerNodeType,
+  getPropertyType,
+  getPropertyName,
+  getContainerObjectNames,
+} from './common.js'
 
 export const normalizationTopo = (topoList, refId) => {
-  const topo = topoList.map((item) => {
+  const topo = topoList.map(item => {
     // 小分类，具体类型
     const { kind } = item
 
@@ -35,7 +43,7 @@ export const normalizationTopo = (topoList, refId) => {
       is_workload: isWorkload(kind),
       is_folder: isFolder(type),
       // 上一级的id
-      ref_id: refId
+      ref_id: refId,
     }
   })
 
@@ -43,23 +51,25 @@ export const normalizationTopo = (topoList, refId) => {
 }
 
 export const normalizationProperty = (propertyList, objId) => {
-  const properties = propertyList.map(item => Utils.defineProperty({
-    id: `${objId}_${item.field}`,
-    bk_obj_id: objId,
-    bk_property_id: item.field,
-    bk_property_name: getPropertyName(item.field, objId, i18n.locale),
-    bk_property_index: Infinity,
-    bk_property_type: getPropertyType(item.type),
-    required: item.required,
-    editable: item.editable,
-    option: item.option,
-    bk_isapi: false
-  }))
+  const properties = propertyList.map(item =>
+    Utils.defineProperty({
+      id: `${objId}_${item.field}`,
+      bk_obj_id: objId,
+      bk_property_id: item.field,
+      bk_property_name: getPropertyName(item.field, objId, i18n.locale),
+      bk_property_index: Infinity,
+      bk_property_type: getPropertyType(item.type),
+      required: item.required,
+      editable: item.editable,
+      option: item.option,
+      bk_isapi: false,
+    })
+  )
 
   return properties
 }
 
 export default {
   normalizationTopo,
-  normalizationProperty
+  normalizationProperty,
 }

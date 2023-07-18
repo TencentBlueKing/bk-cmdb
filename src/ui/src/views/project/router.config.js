@@ -10,27 +10,33 @@
  * limitations under the License.
  */
 
+import {
+  MENU_RESOURCE_PROJECT,
+  MENU_RESOURCE_PROJECT_DETAILS,
+} from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
-import { MENU_RESOURCE_PROJECT, MENU_RESOURCE_PROJECT_DETAILS } from '@/dictionary/menu-symbol'
 
-export default [{
-  name: MENU_RESOURCE_PROJECT,
-  path: 'project',
-  component: () => import('./index.vue'),
-  meta: new Meta({
-    menu: {
-      i18n: '项目'
-    }
-  })
-}, {
-  name: MENU_RESOURCE_PROJECT_DETAILS,
-  path: 'project/details/:projId',
-  component: () => import('./details.vue'),
-  meta: new Meta({
-    menu: {
-      i18n: '项目详情',
-      relative: MENU_RESOURCE_PROJECT
-    },
-    layout: {}
-  })
-}]
+export default [
+  {
+    name: MENU_RESOURCE_PROJECT,
+    path: 'project',
+    component: () => import('./index.vue'),
+    meta: new Meta({
+      menu: {
+        i18n: '项目',
+      },
+    }),
+  },
+  {
+    name: MENU_RESOURCE_PROJECT_DETAILS,
+    path: 'project/details/:projId',
+    component: () => import('./details.vue'),
+    meta: new Meta({
+      menu: {
+        i18n: '项目详情',
+        relative: MENU_RESOURCE_PROJECT,
+      },
+      layout: {},
+    }),
+  },
+]

@@ -10,7 +10,6 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import {
   MENU_BUSINESS,
   MENU_BUSINESS_TRANSFER_HOST,
@@ -18,8 +17,9 @@ import {
   MENU_BUSINESS_HOST_DETAILS,
   MENU_BUSINESS_DELETE_SERVICE,
   MENU_POD_DETAILS,
-  MENU_POD_CONTAINER_DETAILS
+  MENU_POD_CONTAINER_DETAILS,
 } from '@/dictionary/menu-symbol'
+import Meta from '@/router/meta'
 
 export default [
   {
@@ -29,11 +29,12 @@ export default [
     meta: new Meta({
       owner: MENU_BUSINESS,
       menu: {
-        i18n: '业务拓扑'
+        i18n: '业务拓扑',
       },
       customInstanceColumn: 'business_topology_table_column_config',
-      customContainerInstanceColumn: 'business_topology_container_table_column_config',
-      customFilterProperty: 'business_topology_filter_property_config'
+      customContainerInstanceColumn:
+        'business_topology_container_table_column_config',
+      customFilterProperty: 'business_topology_filter_property_config',
     }),
     children: [
       {
@@ -44,9 +45,9 @@ export default [
           owner: MENU_BUSINESS,
           menu: {
             i18n: '主机详情',
-            relative: MENU_BUSINESS_HOST_AND_SERVICE
-          }
-        })
+            relative: MENU_BUSINESS_HOST_AND_SERVICE,
+          },
+        }),
       },
       {
         name: MENU_POD_DETAILS,
@@ -56,23 +57,24 @@ export default [
           owner: MENU_BUSINESS,
           menu: {
             i18n: 'Pod详情',
-            relative: MENU_BUSINESS_HOST_AND_SERVICE
-          }
+            relative: MENU_BUSINESS_HOST_AND_SERVICE,
+          },
         }),
       },
       {
         name: MENU_POD_CONTAINER_DETAILS,
         path: 'pod/:podId/container/:containerId',
-        component: () => import('@/views/pod-details/children/container-details.vue'),
+        component: () =>
+          import('@/views/pod-details/children/container-details.vue'),
         meta: new Meta({
           owner: MENU_BUSINESS,
           menu: {
             i18n: 'Container详情',
-            relative: MENU_BUSINESS_HOST_AND_SERVICE
-          }
-        })
-      }
-    ]
+            relative: MENU_BUSINESS_HOST_AND_SERVICE,
+          },
+        }),
+      },
+    ],
   },
   {
     name: MENU_BUSINESS_TRANSFER_HOST,
@@ -81,9 +83,9 @@ export default [
     meta: new Meta({
       owner: MENU_BUSINESS,
       menu: {
-        relative: MENU_BUSINESS_HOST_AND_SERVICE
-      }
-    })
+        relative: MENU_BUSINESS_HOST_AND_SERVICE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_DELETE_SERVICE,
@@ -93,8 +95,8 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '删除服务实例',
-        relative: MENU_BUSINESS_HOST_AND_SERVICE
-      }
-    })
-  }
+        relative: MENU_BUSINESS_HOST_AND_SERVICE,
+      },
+    }),
+  },
 ]

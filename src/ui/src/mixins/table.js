@@ -14,10 +14,14 @@ export default {
   methods: {
     disabledTableSettingDefaultBehavior() {
       setTimeout(() => {
-        const settingReference = this.$refs?.tableRef?.$el?.querySelector('.bk-table-column-setting .bk-tooltip-ref')
+        const settingReference = this.$refs?.tableRef?.$el?.querySelector(
+          '.bk-table-column-setting .bk-tooltip-ref'
+        )
         // eslint-disable-next-line no-underscore-dangle
-        settingReference && settingReference._tippy && settingReference._tippy.disable()
+        settingReference &&
+          settingReference._tippy &&
+          settingReference._tippy.disable()
       }, 1000)
-    }
-  }
+    },
+  },
 }

@@ -13,7 +13,7 @@
 import moment from 'moment'
 import has from 'has'
 
-const defaultFormatter = (value) => {
+const defaultFormatter = value => {
   if (!value) {
     return '--'
   }
@@ -31,7 +31,7 @@ const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
   return formated
 }
 
-const numericFormatter = (value) => {
+const numericFormatter = value => {
   if (isNaN(value) || value === null || value === undefined || value === '') {
     return '--'
   }
@@ -97,7 +97,9 @@ export function enumeration(value, options, showId = false) {
 }
 
 export function enummulti(value, options, showId = false) {
-  const option = (options || []).filter(option => (value || []).includes(option.id))
+  const option = (options || []).filter(option =>
+    (value || []).includes(option.id)
+  )
   if (!option) {
     return '--'
   }
@@ -108,7 +110,9 @@ export function enummulti(value, options, showId = false) {
 
 export function foreignkey(value) {
   if (Array.isArray(value)) {
-    return value.map(inst => `${inst.bk_inst_name}[${inst.bk_inst_id}]`).join(',')
+    return value
+      .map(inst => `${inst.bk_inst_name}[${inst.bk_inst_id}]`)
+      .join(',')
   }
   if (String(value).length) {
     return value
@@ -174,7 +178,7 @@ const formatterMap = {
   enum: enumeration,
   enummulti,
   array,
-  object
+  object,
 }
 
 export default function formatter(value, property, options) {

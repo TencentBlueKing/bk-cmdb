@@ -11,9 +11,10 @@
  */
 
 import { mapGetters } from 'vuex'
+
 import {
   BUILTIN_MODELS,
-  BUILTIN_MODEL_ROUTEPARAMS_KEYS
+  BUILTIN_MODEL_ROUTEPARAMS_KEYS,
 } from '@/dictionary/model-constants.js'
 
 export default {
@@ -26,21 +27,36 @@ export default {
       return {
         U_BUSINESS: {
           type: this.$OPERATION.U_BUSINESS,
-          relation: [parseInt(bizId, 10)]
+          relation: [parseInt(bizId, 10)],
         },
         U_BUSINESS_SET: {
           type: this.$OPERATION.U_BUSINESS_SET,
-          relation: [parseInt(params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]], 10)]
+          relation: [
+            parseInt(
+              params[
+                BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
+              ],
+              10
+            ),
+          ],
         },
         U_PROJECT: {
           type: this.$OPERATION.U_PROJECT,
-          relation: [parseInt(params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]], 10)]
+          relation: [
+            parseInt(
+              params[BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]],
+              10
+            ),
+          ],
         },
         U_INST: {
           type: this.$OPERATION.U_INST,
-          relation: [(this.getModelById(params.objId) || {}).id, parseInt(instId, 10)]
-        }
+          relation: [
+            (this.getModelById(params.objId) || {}).id,
+            parseInt(instId, 10),
+          ],
+        },
       }
-    }
-  }
+    },
+  },
 }

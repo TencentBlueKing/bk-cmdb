@@ -12,8 +12,7 @@
 
 export const jsonp = (url, data) => {
   if (!url) throw new Error('invalid URL')
-  const callback = `CALLBACK${Math.random().toString()
-    .slice(9, 18)}`
+  const callback = `CALLBACK${Math.random().toString().slice(9, 18)}`
   const JSONP = document.createElement('script')
   JSONP.setAttribute('type', 'text/javascript')
 
@@ -41,7 +40,7 @@ export const jsonp = (url, data) => {
   return new Promise((resolve, reject) => {
     promiseRejecter = reject
     try {
-      window[callback] = (result) => {
+      window[callback] = result => {
         resolve(result)
         headEle.removeChild(JSONP)
         delete window[callback]

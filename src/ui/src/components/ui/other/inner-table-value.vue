@@ -11,50 +11,62 @@
 -->
 
 <script setup>
-  import { computed, ref } from 'vue'
-  import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import { computed, ref } from 'vue'
 
-  const props = defineProps({
-    property: {
-      type: Object,
-      default: () => ({})
-    },
-    instance: {
-      type: Object,
-      default: () => ({})
-    },
-    showOn: String
-  })
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+} from '@/dictionary/model-constants'
 
-  defineExpose({
-    getCopyValue: () => ''
-  })
+const props = defineProps({
+  property: {
+    type: Object,
+    default: () => ({}),
+  },
+  instance: {
+    type: Object,
+    default: () => ({}),
+  },
+  showOn: String,
+})
 
-  const objId = computed(() => props.property?.bk_obj_id)
-  const instanceId = computed(() => {
-    if (BUILTIN_MODELS.HOST === objId.value) {
-      return props.instance?.[objId.value]?.[BUILTIN_MODEL_PROPERTY_KEYS[objId.value]?.ID]
-    }
-    return props.instance?.[BUILTIN_MODEL_PROPERTY_KEYS[objId.value]?.ID || 'bk_inst_id']
-  })
+defineExpose({
+  getCopyValue: () => '',
+})
 
-  const isShowDialog = ref(false)
-  const dialogTitle = computed(() => props.property.bk_property_name)
-
-  const handleClickView = () => {
-    isShowDialog.value = true
+const objId = computed(() => props.property?.bk_obj_id)
+const instanceId = computed(() => {
+  if (BUILTIN_MODELS.HOST === objId.value) {
+    return props.instance?.[objId.value]?.[
+      BUILTIN_MODEL_PROPERTY_KEYS[objId.value]?.ID
+    ]
   }
+  return props.instance?.[
+    BUILTIN_MODEL_PROPERTY_KEYS[objId.value]?.ID || 'bk_inst_id'
+  ]
+})
+
+const isShowDialog = ref(false)
+const dialogTitle = computed(() => props.property.bk_property_name)
+
+const handleClickView = () => {
+  isShowDialog.value = true
+}
 </script>
 
 <template>
   <div class="inner-table-value">
-    <cmdb-form-innertable v-if="showOn === 'default'"
+    <cmdb-form-innertable
+      v-if="showOn === 'default'"
       :property="property"
       :obj-id="objId"
       :instance-id="instanceId"
       :immediate="false"
       :readonly="true" />
-    <div class="view-trigger" v-else-if="showOn === 'cell'" @click="handleClickView">
+    <div
+      v-else-if="showOn === 'cell'"
+      class="view-trigger"
+      @click="handleClickView">
       <i class="bk-cmdb-icon icon-cc-table" />
     </div>
     <bk-dialog
@@ -76,12 +88,13 @@
 </template>
 
 <style lang="scss" scoped>
-  .view-trigger {
-    cursor: pointer;
-    font-size: 12px;
-    color: $primaryColor;
-    &:hover {
-      color: #699df4;
-    }
+.view-trigger {
+  cursor: pointer;
+  font-size: 12px;
+  color: $primaryColor;
+
+  &:hover {
+    color: #699df4;
   }
+}
 </style>

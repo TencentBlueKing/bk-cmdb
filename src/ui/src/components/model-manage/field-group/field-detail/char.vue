@@ -11,54 +11,56 @@
 -->
 
 <template>
-  <div class="form-label cmdb-form-item" :class="{ 'is-error': errors.has('option') }">
-    <span class="label-text">{{$t('正则校验')}}</span>
+  <div
+    class="form-label cmdb-form-item"
+    :class="{ 'is-error': errors.has('option') }">
+    <span class="label-text">{{ $t('正则校验') }}</span>
     <bk-input
+      v-model="localValue"
+      v-validate="'remoteRegular'"
       type="textarea"
       class="raw"
       name="option"
-      v-model="localValue"
       :disabled="isReadOnly"
       data-vv-validate-on="blur"
-      v-validate="'remoteRegular'"
       @input="handleInput">
     </bk-input>
-    <p class="form-error">{{errors.first('option')}}</p>
+    <p class="form-error">{{ errors.first('option') }}</p>
   </div>
 </template>
 
 <script>
-  export default {
-    props: {
-      value: {
-        type: String,
-        default: ''
-      },
-      isReadOnly: {
-        type: Boolean,
-        default: false
-      }
+export default {
+  props: {
+    value: {
+      type: String,
+      default: '',
     },
-    data() {
-      return {
-        localValue: ''
-      }
+    isReadOnly: {
+      type: Boolean,
+      default: false,
     },
-    watch: {
-      value() {
-        this.localValue = this.value === '' ? '' : this.value
-      }
-    },
-    created() {
+  },
+  data() {
+    return {
+      localValue: '',
+    }
+  },
+  watch: {
+    value() {
       this.localValue = this.value === '' ? '' : this.value
     },
-    methods: {
-      handleInput() {
-        this.$emit('input', this.localValue)
-      },
-      validate() {
-        return this.$validator.validateAll()
-      }
-    }
-  }
+  },
+  created() {
+    this.localValue = this.value === '' ? '' : this.value
+  },
+  methods: {
+    handleInput() {
+      this.$emit('input', this.localValue)
+    },
+    validate() {
+      return this.$validator.validateAll()
+    },
+  },
+}
 </script>

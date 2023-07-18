@@ -13,306 +13,361 @@
 <template>
   <div class="host-search-layout">
     <div class="search-bar">
-      <bk-input class="search-input" v-test-id
+      <bk-input
         ref="searchInput"
+        v-model="searchContent"
+        v-test-id
+        class="search-input"
         type="textarea"
         :placeholder="$t('首页主机搜索提示语')"
         :rows="rows"
         :clearable="true"
-        v-model="searchContent"
         @focus="handleFocus"
         @blur="handleBlur"
         @keydown="handleKeydown">
       </bk-input>
       <bk-popover v-bind="popoverProps" ref="popover">
-        <bk-button theme="primary" class="search-btn" v-test-id="'search'"
+        <bk-button
+          v-test-id="'search'"
+          theme="primary"
+          class="search-btn"
           :loading="$loading(request.search)"
           @click="handleSearch()">
           <i class="bk-icon icon-search"></i>
-          {{$t('搜索')}}
+          {{ $t('搜索') }}
         </bk-button>
-        <div class="picking-popover-content" slot="content">
-          <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
+        <div slot="content" class="picking-popover-content">
+          <p>
+            {{ $t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：') }}
+          </p>
           <div class="buttons">
-            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
+            <bk-button
+              v-if="searchFlag.ip"
+              v-test-id="'ipSearch'"
+              theme="primary"
+              size="small"
+              outline
               @click="handleSearch('ip')">
-              {{$t('IP')}}
+              {{ $t('IP') }}
             </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
+            <bk-button
+              v-if="searchFlag.asset"
+              v-test-id="'assetSearch'"
+              theme="primary"
+              size="small"
+              outline
               @click="handleSearch('asset')">
-              {{$t('固资编号')}}
+              {{ $t('固资编号') }}
             </bk-button>
           </div>
         </div>
       </bk-popover>
-      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
+      <bk-link
+        theme="primary"
+        class="advanced-link"
+        @click="handleClickAdvancedSearch"
+        >{{ $t('高级筛选') }}</bk-link
+      >
     </div>
   </div>
 </template>
 
 <script>
-  import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
-  import QS from 'qs'
-  import FilterUtils from '@/components/filters/utils.js'
-  import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
+import QS from 'qs'
 
-  export default {
-    data() {
-      const defaultSearchContent = () => {
-        let content = ''
-        try {
-          content = JSON.parse(window.sessionStorage.getItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)) || ''
-        } catch (e) {
-          console.error(e)
-          content = ''
-        }
-        return content
+import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
+import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
+import FilterUtils from '@/components/filters/utils.js'
+
+export default {
+  data() {
+    const defaultSearchContent = () => {
+      let content = ''
+      try {
+        content =
+          JSON.parse(
+            window.sessionStorage.getItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)
+          ) || ''
+      } catch (e) {
+        console.error(e)
+        content = ''
       }
-      return {
-        rows: 1,
-        searchContent: defaultSearchContent(),
-        textareaDom: null,
-        popoverProps: {
-          width: 280,
-          trigger: 'manual',
-          distance: 12,
-          theme: 'light',
-          placement: 'bottom',
-          tippyOptions: {
-            hideOnClick: true
-          }
+      return content
+    }
+    return {
+      rows: 1,
+      searchContent: defaultSearchContent(),
+      textareaDom: null,
+      popoverProps: {
+        width: 280,
+        trigger: 'manual',
+        distance: 12,
+        theme: 'light',
+        placement: 'bottom',
+        tippyOptions: {
+          hideOnClick: true,
         },
-        searchFlag: {
-          ip: false,
-          asset: false
-        },
-        request: {
-          search: Symbol('search')
-        }
+      },
+      searchFlag: {
+        ip: false,
+        asset: false,
+      },
+      request: {
+        search: Symbol('search'),
+      },
+    }
+  },
+  watch: {
+    searchContent: {
+      handler() {
+        this.$nextTick(this.setRows)
+      },
+      immediate: true,
+    },
+  },
+  mounted() {
+    this.textareaDom =
+      this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
+  },
+  methods: {
+    getSearchList() {
+      // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
+      return FilterUtils.splitIP(this.searchContent)
+    },
+    setRows() {
+      const rows = this.searchContent.split('\n').length || 1
+      this.rows = Math.min(10, rows)
+    },
+    handleFocus() {
+      this.$emit('focus', true)
+      this.setRows()
+    },
+    handleBlur() {
+      if (!this.searchContent.trim().length) {
+        this.searchContent = ''
+      }
+      this.textareaDom && this.textareaDom.blur()
+      this.$emit('focus', false)
+    },
+    handleKeydown(content, event) {
+      const agent = window.navigator.userAgent.toLowerCase()
+      const isMac = /macintosh|mac os x/i.test(agent)
+      const modifierKey = isMac ? event.metaKey : event.ctrlKey
+      if (modifierKey && event.code.toLowerCase() === 'enter') {
+        this.handleSearch()
       }
     },
-    watch: {
-      searchContent: {
-        handler() {
-          this.$nextTick(this.setRows)
-        },
-        immediate: true
+    async handleSearch(force = '') {
+      const searchList = this.getSearchList()
+      if (searchList.length > 10000) {
+        this.$warn(this.$t('最多支持搜索10000条数据'))
+        return
       }
-    },
-    mounted() {
-      this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
-    },
-    methods: {
-      getSearchList() {
-        // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
-        return FilterUtils.splitIP(this.searchContent)
-      },
-      setRows() {
-        const rows = this.searchContent.split('\n').length || 1
-        this.rows = Math.min(10, rows)
-      },
-      handleFocus() {
-        this.$emit('focus', true)
-        this.setRows()
-      },
-      handleBlur() {
-        if (!this.searchContent.trim().length) {
-          this.searchContent = ''
-        }
-        this.textareaDom && this.textareaDom.blur()
-        this.$emit('focus', false)
-      },
-      handleKeydown(content, event) {
-        const agent = window.navigator.userAgent.toLowerCase()
-        const isMac = /macintosh|mac os x/i.test(agent)
-        const modifierKey = isMac ? event.metaKey : event.ctrlKey
-        if (modifierKey && event.code.toLowerCase() === 'enter') {
-          this.handleSearch()
-        }
-      },
-      async handleSearch(force = '') {
-        const searchList = this.getSearchList()
-        if (searchList.length > 10000) {
-          this.$warn(this.$t('最多支持搜索10000条数据'))
+
+      // 保存本次搜索内容
+      window.sessionStorage.setItem(
+        HOME_HOST_SEARCH_CONTENT_STORE_KEY,
+        JSON.stringify(this.searchContent)
+      )
+
+      if (searchList.length) {
+        const IPs = FilterUtils.parseIP(searchList)
+        const {
+          IPv4List,
+          IPv4WithCloudList,
+          IPv6List,
+          IPv6WithCloudList,
+          assetList,
+          cloudIdSet,
+        } = IPs
+
+        this.searchFlag.ip =
+          IPv4List.length ||
+          IPv4WithCloudList.length ||
+          IPv6List.length ||
+          IPv6WithCloudList.length
+        this.searchFlag.asset = assetList.length > 0
+        const isMixSearch =
+          Object.values(this.searchFlag).filter(x => x).length > 1
+
+        // 判断是否存在IP、IPv6、固资编号混合搜索
+        if (!force && isMixSearch) {
+          this.$refs.popover.showHandler()
           return
         }
 
-        // 保存本次搜索内容
-        window.sessionStorage.setItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY, JSON.stringify(this.searchContent))
+        const assetSearch = () => this.handleAssetSearch(assetList)
 
-        if (searchList.length) {
-          const IPs = FilterUtils.parseIP(searchList)
-          const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
-
-          this.searchFlag.ip = IPv4List.length
-            || IPv4WithCloudList.length
-            || IPv6List.length
-            || IPv6WithCloudList.length
-          this.searchFlag.asset = assetList.length > 0
-          const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
-
-          // 判断是否存在IP、IPv6、固资编号混合搜索
-          if (!force && isMixSearch) {
-            this.$refs.popover.showHandler()
-            return
+        const ipSearch = () => {
+          // 不同管控区域+IP的混合搜索
+          if (cloudIdSet.size > 1) {
+            return this.$warn(this.$t('暂不支持不同管控区域的混合搜索'))
           }
 
-          const assetSearch = () => this.handleAssetSearch(assetList)
-
-          const ipSearch = () => {
-            // 不同管控区域+IP的混合搜索
-            if (cloudIdSet.size > 1) {
-              return this.$warn(this.$t('暂不支持不同管控区域的混合搜索'))
-            }
-
-            this.handleIPSearch(IPs)
-          }
-
-          // 优先使用混合搜索下的选择
-          if (force === 'asset') {
-            return assetSearch()
-          }
-          if (force === 'ip') {
-            return ipSearch()
-          }
-
-          // 非混合搜索
-          if (this.searchFlag.asset) {
-            return assetSearch()
-          }
-          if (this.searchFlag.ip) {
-            return ipSearch()
-          }
-        } else {
-          this.searchContent = ''
-          this.textareaDom && this.textareaDom.focus()
+          this.handleIPSearch(IPs)
         }
-      },
-      handleIPSearch(IPs) {
-        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
-        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
-        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
 
-        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
+        // 优先使用混合搜索下的选择
+        if (force === 'asset') {
+          return assetSearch()
+        }
+        if (force === 'ip') {
+          return ipSearch()
+        }
 
-        const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
-        const filter = cloudIds.length ? { 'bk_cloud_id.in': cloudIds.join(',') } : {}
+        // 非混合搜索
+        if (this.searchFlag.asset) {
+          return assetSearch()
+        }
+        if (this.searchFlag.ip) {
+          return ipSearch()
+        }
+      } else {
+        this.searchContent = ''
+        this.textareaDom && this.textareaDom.focus()
+      }
+    },
+    handleIPSearch(IPs) {
+      const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+      IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
+      IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
 
+      const ip = Object.assign(FilterUtils.getDefaultIP(), {
+        text: IPList.join('\n'),
+      })
+
+      const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
+      const filter = cloudIds.length
+        ? { 'bk_cloud_id.in': cloudIds.join(',') }
+        : {}
+
+      this.$routerActions.redirect({
+        name: MENU_RESOURCE_HOST,
+        query: {
+          scope: 'all',
+          ip: QS.stringify(ip, { encode: false }),
+          filter: QS.stringify(filter, { encode: false }),
+        },
+        history: true,
+      })
+    },
+    async handleAssetSearch(list) {
+      try {
+        const filter = {
+          'bk_asset_id.in': list.join(','),
+        }
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {
             scope: 'all',
-            ip: QS.stringify(ip, { encode: false }),
-            filter: QS.stringify(filter, { encode: false })
+            filter: QS.stringify(filter, { encode: false }),
           },
-          history: true
+          history: true,
         })
-      },
-      async handleAssetSearch(list) {
-        try {
-          const filter = {
-            'bk_asset_id.in': list.join(',')
-          }
-          this.$routerActions.redirect({
-            name: MENU_RESOURCE_HOST,
-            query: {
-              scope: 'all',
-              filter: QS.stringify(filter, { encode: false })
-            },
-            history: true
-          })
-        } catch (error) {
-          console.error(true)
-        }
-      },
-      handleClickAdvancedSearch() {
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            adv: 1,
-            scope: 'all'
-          },
-          history: false
-        })
+      } catch (error) {
+        console.error(true)
       }
-    }
-  }
+    },
+    handleClickAdvancedSearch() {
+      this.$routerActions.redirect({
+        name: MENU_RESOURCE_HOST,
+        query: {
+          adv: 1,
+          scope: 'all',
+        },
+        history: false,
+      })
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .host-search-layout {
-        position: relative;
-        width: 100%;
-        max-width: 806px;
-        height: 42px;
-        margin: 0 auto;
+.host-search-layout {
+  position: relative;
+  width: 100%;
+  max-width: 806px;
+  height: 42px;
+  margin: 0 auto;
+}
+
+.search-bar {
+  position: absolute;
+  width: 100%;
+  height: 42px;
+  z-index: 999;
+  display: flex;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 646px;
+
+  /deep/ {
+    .bk-textarea-wrapper {
+      border: 0;
+      border-radius: 0 0 0 2px;
     }
-    .search-bar {
-        position: absolute;
-        width: 100%;
-        height: 42px;
-        z-index: 999;
-        display: flex;
+
+    .bk-form-textarea {
+      min-height: 42px;
+      line-height: 30px;
+      font-size: 14px;
+      border: 1px solid #c4c6cc;
+      padding: 5px 16px;
+      border-radius: 0 0 0 2px;
     }
-    .search-input {
-        flex: 1;
-        max-width: 646px;
-        /deep/ {
-            .bk-textarea-wrapper {
-                border: 0;
-                border-radius: 0 0 0 2px;
-            }
-            .bk-form-textarea {
-                min-height: 42px;
-                line-height: 30px;
-                font-size: 14px;
-                border: 1px solid #C4C6CC;
-                padding: 5px 16px;
-                border-radius: 0 0 0 2px;
-            }
-        }
-    }
-    .search-btn {
-        width: 86px;
-        height: 42px;
-        line-height: 42px;
-        padding: 0;
-        border-radius: 0 2px 2px 0;
-        .icon-search {
-            width: 18px;
-            height: 18px;
-            font-size: 18px;
-            margin: -2px 4px 0 0;
-        }
-    }
-    .search-text {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 640px;
-        height: 42px;
-        line-height: 30px;
-        font-size: 14px;
-        color: #63656E;
-        border: 1px solid #C4C6CC;
-        background-color: #FFFFFF;
-        padding: 5px 16px;
-        z-index: 1;
-        cursor: text;
-        @include ellipsis;
-    }
-    .advanced-link {
-      margin-left: 8px;
-      /deep/ .bk-link-text {
-        font-size: 12px;
-      }
-    }
-    .picking-popover-content {
-      padding: 6px;
-      .buttons {
-        margin-top: 12px;
-        text-align: right;
-      }
-    }
+  }
+}
+
+.search-btn {
+  width: 86px;
+  height: 42px;
+  line-height: 42px;
+  padding: 0;
+  border-radius: 0 2px 2px 0;
+
+  .icon-search {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    margin: -2px 4px 0 0;
+  }
+}
+
+.search-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  max-width: 640px;
+  height: 42px;
+  line-height: 30px;
+  font-size: 14px;
+  color: #63656e;
+  border: 1px solid #c4c6cc;
+  background-color: #fff;
+  padding: 5px 16px;
+  z-index: 1;
+  cursor: text;
+
+  @include ellipsis;
+}
+
+.advanced-link {
+  margin-left: 8px;
+
+  /deep/ .bk-link-text {
+    font-size: 12px;
+  }
+}
+
+.picking-popover-content {
+  padding: 6px;
+
+  .buttons {
+    margin-top: 12px;
+    text-align: right;
+  }
+}
 </style>

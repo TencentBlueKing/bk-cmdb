@@ -19,57 +19,57 @@ export const CONTAINER_OBJECTS = Object.freeze({
   WORKLOAD: 'workload',
   POD: 'pod',
   CONTAINER: 'container',
-  NODE: 'node'
+  NODE: 'node',
 })
 
 export const CONTAINER_OBJECT_NAMES = Object.freeze({
   [CONTAINER_OBJECTS.CLUSTER]: {
     FULL: 'Cluster',
-    SHORT: 'C'
+    SHORT: 'C',
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
     FULL: 'Namespace',
-    SHORT: 'Ns'
+    SHORT: 'Ns',
   },
   [CONTAINER_OBJECTS.FOLDER]: {
     FULL: 'Folder',
-    SHORT: 'F'
+    SHORT: 'F',
   },
   [CONTAINER_OBJECTS.WORKLOAD]: {
     FULL: 'Workload',
-    SHORT: 'Wl'
+    SHORT: 'Wl',
   },
   [CONTAINER_OBJECTS.POD]: {
     FULL: 'Pod',
-    SHORT: 'P'
+    SHORT: 'P',
   },
   [CONTAINER_OBJECTS.CONTAINER]: {
     FULL: 'Container',
-    SHORT: 'Cn'
+    SHORT: 'Cn',
   },
   [CONTAINER_OBJECTS.NODE]: {
     FULL: 'Node',
-    SHORT: 'Nd'
-  }
+    SHORT: 'Nd',
+  },
 })
 
 export const CONTAINER_OBJECT_LEVELS = Object.freeze({
   [CONTAINER_OBJECTS.CLUSTER]: {
     NEXT: CONTAINER_OBJECTS.NAMESPACE,
-    PREV: BUILTIN_MODELS.BUSINESS
+    PREV: BUILTIN_MODELS.BUSINESS,
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
     NEXT: CONTAINER_OBJECTS.WORKLOAD,
-    PREV: CONTAINER_OBJECTS.CLUSTER
+    PREV: CONTAINER_OBJECTS.CLUSTER,
   },
   [CONTAINER_OBJECTS.FOLDER]: {
     NEXT: BUILTIN_MODELS.HOST,
-    PREV: CONTAINER_OBJECTS.CLUSTER
+    PREV: CONTAINER_OBJECTS.CLUSTER,
   },
   [CONTAINER_OBJECTS.WORKLOAD]: {
     NEXT: BUILTIN_MODELS.HOST,
-    PREV: CONTAINER_OBJECTS.NAMESPACE
-  }
+    PREV: CONTAINER_OBJECTS.NAMESPACE,
+  },
 })
 
 export const WORKLOAD_TYPES = Object.freeze({
@@ -80,100 +80,100 @@ export const WORKLOAD_TYPES = Object.freeze({
   GAME_DEPLOYMENT: 'gameDeployment',
   CRON_JOB: 'cronJob',
   JOB: 'job',
-  PODS: 'pods'
+  PODS: 'pods',
 })
 
 export const WORKLOAD_OBJECT_NAMES = Object.freeze({
   [WORKLOAD_TYPES.DEPLOYMENT]: {
     FULL: 'Deployment',
-    SHORT: 'Dp'
+    SHORT: 'Dp',
   },
   [WORKLOAD_TYPES.STATEFUL_SET]: {
     FULL: 'StatefulSet',
-    SHORT: 'Ss'
+    SHORT: 'Ss',
   },
   [WORKLOAD_TYPES.DAEMON_SET]: {
     FULL: 'DaemonSet',
-    SHORT: 'Ds'
+    SHORT: 'Ds',
   },
   [WORKLOAD_TYPES.GAME_STATEFUL_SET]: {
     FULL: 'Game StatefulSet',
-    SHORT: 'Gs'
+    SHORT: 'Gs',
   },
   [WORKLOAD_TYPES.GAME_DEPLOYMENT]: {
     FULL: 'Game Deployments',
-    SHORT: 'Gd'
+    SHORT: 'Gd',
   },
   [WORKLOAD_TYPES.CRON_JOB]: {
     FULL: 'CronJob',
-    SHORT: 'Cj'
+    SHORT: 'Cj',
   },
   [WORKLOAD_TYPES.JOB]: {
     FULL: 'Job',
-    SHORT: 'J'
+    SHORT: 'J',
   },
   [WORKLOAD_TYPES.PODS]: {
     FULL: 'Pod',
-    SHORT: 'P'
-  }
+    SHORT: 'P',
+  },
 })
 
 export const TOPO_MODE_KEYS = Object.freeze({
   CONTAINER: 'container',
   BIZ_NODE: 'bizNode',
   NORMAL: 'normal',
-  NONE: 'none'
+  NONE: 'none',
 })
 
 export const MIX_SEARCH_MODES = Object.freeze({
   LIKE_CONTAINER: 'likeContainer',
   LIKE_NORMAL: 'likeNormal',
-  UNKNOW: 'unknow'
+  UNKNOW: 'unknow',
 })
 
 export const CONTAINER_OBJECT_PROPERTY_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.CLUSTER]: {
     ID: 'bk_cluster_id',
-    NAME: 'bk_cluster_name'
+    NAME: 'bk_cluster_name',
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
     ID: 'bk_namespace_id',
-    NAME: 'bk_namespace_name'
+    NAME: 'bk_namespace_name',
   },
   [CONTAINER_OBJECTS.FOLDER]: {
     ID: 'bk_folder_id',
-    NAME: 'bk_folder_name'
+    NAME: 'bk_folder_name',
   },
   [CONTAINER_OBJECTS.WORKLOAD]: {
     ID: 'bk_workload_id',
-    NAME: 'bk_workload_name'
+    NAME: 'bk_workload_name',
   },
   [CONTAINER_OBJECTS.POD]: {
     ID: 'bk_pod_id',
-    NAME: 'bk_pod_name'
+    NAME: 'bk_pod_name',
   },
   [CONTAINER_OBJECTS.CONTAINER]: {
     ID: 'bk_container_id',
-    NAME: 'bk_container_name'
-  }
+    NAME: 'bk_container_name',
+  },
 })
 
 export const CONTAINER_OBJECT_INST_KEYS = Object.freeze({
   [CONTAINER_OBJECTS.CLUSTER]: {
     ID: 'id',
-    NAME: 'name'
+    NAME: 'name',
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
     ID: 'id',
-    NAME: 'name'
+    NAME: 'name',
   },
   [CONTAINER_OBJECTS.FOLDER]: {
     ID: 'id',
-    NAME: 'name'
+    NAME: 'name',
   },
   [CONTAINER_OBJECTS.WORKLOAD]: {
     ID: 'id',
-    NAME: 'name'
+    NAME: 'name',
   },
   [CONTAINER_OBJECTS.POD]: {
     ID: 'id',
@@ -185,12 +185,12 @@ export const CONTAINER_OBJECT_INST_KEYS = Object.freeze({
     ID: 'id',
     FULL_ID: `${CONTAINER_OBJECTS.NODE}_id`,
     NAME: 'name',
-    FULL_NAME: `${CONTAINER_OBJECTS.NODE}_name`
+    FULL_NAME: `${CONTAINER_OBJECTS.NODE}_name`,
   },
   [CONTAINER_OBJECTS.CONTAINER]: {
     ID: 'id',
     FULL_ID: `${CONTAINER_OBJECTS.CONTAINER}_id`,
     NAME: 'name',
-    FULL_NAME: `${CONTAINER_OBJECTS.CONTAINER}_name`
-  }
+    FULL_NAME: `${CONTAINER_OBJECTS.CONTAINER}_name`,
+  },
 })

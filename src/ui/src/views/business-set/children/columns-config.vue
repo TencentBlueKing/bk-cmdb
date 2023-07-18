@@ -18,8 +18,8 @@
     :title="$t('列表显示属性配置')"
     :before-close="hide">
     <cmdb-columns-config
-      slot="content"
       v-if="isShow"
+      slot="content"
       ref="cmdbColumnsConfig"
       :properties="properties"
       :selected="columnsConfig.selected"
@@ -32,88 +32,110 @@
 </template>
 
 <script>
-  import { defineComponent, computed, reactive, toRefs, watchEffect, ref } from 'vue'
-  import store from '@/store'
-  import { getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
-  import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
+import {
+  defineComponent,
+  computed,
+  reactive,
+  toRefs,
+  watchEffect,
+  ref,
+} from 'vue'
 
-  export default defineComponent({
-    components: {
-      cmdbColumnsConfig
+import store from '@/store'
+import { getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
+import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
+
+export default defineComponent({
+  components: {
+    cmdbColumnsConfig,
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false,
     },
-    props: {
-      show: {
-        type: Boolean,
-        default: false
-      },
-      properties: {
-        type: Array,
-        required: true,
-        default: () => ([])
-      }
+    properties: {
+      type: Array,
+      required: true,
+      default: () => [],
     },
-    setup(props, { emit }) {
-      const { show: isShow, properties } = toRefs(props)
-      const columnsConfigKey = 'biz_set_custom_table_columns'
-      const globalUsercustom = computed(() => store.getters['userCustom/globalUsercustom'])
-      const usercustom = computed(() => store.getters['userCustom/usercustom'])
-      const customBusinessSetColumns = computed(() => usercustom.value[columnsConfigKey] || [])
-      const globalCustomColumns = computed(() =>  globalUsercustom.value?.biz_set_global_custom_table_columns || [])
+  },
+  setup(props, { emit }) {
+    const { show: isShow, properties } = toRefs(props)
+    const columnsConfigKey = 'biz_set_custom_table_columns'
+    const globalUsercustom = computed(
+      () => store.getters['userCustom/globalUsercustom']
+    )
+    const usercustom = computed(() => store.getters['userCustom/usercustom'])
+    const customBusinessSetColumns = computed(
+      () => usercustom.value[columnsConfigKey] || []
+    )
+    const globalCustomColumns = computed(
+      () => globalUsercustom.value?.biz_set_global_custom_table_columns || []
+    )
 
-      const cmdbColumnsConfig = ref(null)
+    const cmdbColumnsConfig = ref(null)
 
-      const columnsConfig = reactive({
-        selected: [],
-        disabledColumns: ['bk_biz_set_id', 'bk_biz_set_name']
+    const columnsConfig = reactive({
+      selected: [],
+      disabledColumns: ['bk_biz_set_id', 'bk_biz_set_name'],
+    })
+
+    watchEffect(() => {
+      // eslint-disable-next-line max-len
+      const customColumns = customBusinessSetColumns.value.length
+        ? customBusinessSetColumns.value
+        : globalCustomColumns.value
+      const headerProperties = getHeaderProperties(
+        properties.value,
+        customColumns,
+        columnsConfig.disabledColumns
+      )
+      const tableHeader = headerProperties.map(property => ({
+        id: property.bk_property_id,
+        name: getHeaderPropertyName(property),
+        property,
+      }))
+      columnsConfig.selected = headerProperties.map(
+        property => property.bk_property_id
+      )
+      emit('update-header', tableHeader)
+    })
+
+    const handleApplayColumnsConfig = properties => {
+      store.dispatch('userCustom/saveUsercustom', {
+        [columnsConfigKey]: properties.map(property => property.bk_property_id),
       })
-
-      watchEffect(() => {
-        // eslint-disable-next-line max-len
-        const customColumns = customBusinessSetColumns.value.length ? customBusinessSetColumns.value : globalCustomColumns.value
-        const headerProperties = getHeaderProperties(properties.value, customColumns, columnsConfig.disabledColumns)
-        const tableHeader = headerProperties.map(property => ({
-          id: property.bk_property_id,
-          name: getHeaderPropertyName(property),
-          property
-        }))
-        columnsConfig.selected = headerProperties.map(property => property.bk_property_id)
-        emit('update-header', tableHeader)
-      })
-
-      const handleApplayColumnsConfig = (properties) => {
-        store.dispatch('userCustom/saveUsercustom', {
-          [columnsConfigKey]: properties.map(property => property.bk_property_id)
-        })
-        emit('update:show', false)
-      }
-
-      const handleResetColumnsConfig = () => {
-        store.dispatch('userCustom/saveUsercustom', {
-          [columnsConfigKey]: []
-        })
-        emit('update:show', false)
-      }
-
-      const hide = () => {
-        const refColumns = cmdbColumnsConfig.value
-        const { columnsChangedValues } = refColumns
-        if (columnsChangedValues()) {
-          refColumns.setChanged(true)
-          return refColumns.beforeClose(() => {
-            emit('update:show', false)
-          })
-        }
-        emit('update:show', false)
-      }
-
-      return {
-        isShow,
-        columnsConfig,
-        hide,
-        handleApplayColumnsConfig,
-        handleResetColumnsConfig,
-        cmdbColumnsConfig
-      }
+      emit('update:show', false)
     }
-  })
+
+    const handleResetColumnsConfig = () => {
+      store.dispatch('userCustom/saveUsercustom', {
+        [columnsConfigKey]: [],
+      })
+      emit('update:show', false)
+    }
+
+    const hide = () => {
+      const refColumns = cmdbColumnsConfig.value
+      const { columnsChangedValues } = refColumns
+      if (columnsChangedValues()) {
+        refColumns.setChanged(true)
+        return refColumns.beforeClose(() => {
+          emit('update:show', false)
+        })
+      }
+      emit('update:show', false)
+    }
+
+    return {
+      isShow,
+      columnsConfig,
+      hide,
+      handleApplayColumnsConfig,
+      handleResetColumnsConfig,
+      cmdbColumnsConfig,
+    }
+  },
+})
 </script>

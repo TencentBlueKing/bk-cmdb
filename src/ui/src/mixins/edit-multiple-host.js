@@ -10,20 +10,21 @@
  * limitations under the License.
  */
 
-import RouterQuery from '@/router/query'
-import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
 import isEqual from 'lodash/isEqual'
+
+import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import RouterQuery from '@/router/query'
 export default {
   props: {
     properties: {
       type: Array,
-      required: true
+      required: true,
     },
     selection: {
       type: Array,
-      required: true
+      required: true,
     },
-    isContainerHost: Boolean
+    isContainerHost: Boolean,
   },
   data() {
     return {
@@ -31,11 +32,11 @@ export default {
         show: false,
         title: '',
         component: null,
-        props: {}
+        props: {},
       },
       request: {
-        propertyGroups: Symbol('propertyGroups')
-      }
+        propertyGroups: Symbol('propertyGroups'),
+      },
     }
   },
   computed: {
@@ -46,14 +47,14 @@ export default {
     saveAuth() {
       const bizHostAuth = (bizId, hostId) => ({
         type: this.$OPERATION.U_HOST,
-        relation: [bizId, hostId]
+        relation: [bizId, hostId],
       })
       const resourceHostAuth = (moduleId, hostId) => ({
         type: this.$OPERATION.U_RESOURCE_HOST,
-        relation: [moduleId, hostId]
+        relation: [moduleId, hostId],
       })
 
-      return this.selection.map((row) => {
+      return this.selection.map(row => {
         if (this.isContainerHost) {
           // TODO: 判断是否为业务主机返回不同的auth
           return bizHostAuth(row.bk_biz_id, row.bk_host_id)
@@ -72,7 +73,7 @@ export default {
         return this.selection.map(row => row.bk_host_id).join(',')
       }
       return this.selection.map(row => row.host.bk_host_id).join(',')
-    }
+    },
   },
   methods: {
     async handleMultipleEdit() {
@@ -96,14 +97,14 @@ export default {
         await this.$store.dispatch('hostUpdate/updateHost', {
           params: {
             ...changedValues,
-            bk_host_id: this.hostIds
-          }
+            bk_host_id: this.hostIds,
+          },
         })
         this.slider.show = false
         this.slider.props.loading = false
         RouterQuery.set({
           _t: Date.now(),
-          page: 1
+          page: 1,
         })
         this.$success(this.$t('修改成功'))
       } catch (e) {
@@ -114,7 +115,7 @@ export default {
     handleSliderBeforeClose() {
       const $form = this.$refs.multipleForm
       const { values, refrenceValues } = $form
-      const changedValues =  !isEqual(values, refrenceValues)
+      const changedValues = !isEqual(values, refrenceValues)
       if (changedValues) {
         $form.setChanged(true)
         return $form.beforeClose(() => {
@@ -128,11 +129,13 @@ export default {
     getPropertyGroups() {
       return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
         objId: 'host',
-        params: this.isGlobalView ? {} : { bk_biz_id: parseInt(this.$route.params.bizId, 10) },
+        params: this.isGlobalView
+          ? {}
+          : { bk_biz_id: parseInt(this.$route.params.bizId, 10) },
         config: {
-          requestId: this.request.propertyGroups
-        }
+          requestId: this.request.propertyGroups,
+        },
       })
-    }
-  }
+    },
+  },
 }

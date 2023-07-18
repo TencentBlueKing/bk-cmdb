@@ -11,19 +11,21 @@
  */
 
 import Vue from 'vue'
+
 import store from '@/store'
-import i18n from '@/i18n'
-import ExportContent from './content.vue'
-import RouterQuery from '@/router/query'
+import i18n, { t } from '@/i18n'
 import $http from '@/api'
 import { $info } from '@/magicbox'
+import RouterQuery from '@/router/query'
+
+import ExportContent from './content.vue'
 const Component = Vue.extend({
   components: {
-    ExportContent
+    ExportContent,
   },
   data() {
     return {
-      visible: false
+      visible: false,
     }
   },
   created() {
@@ -41,37 +43,39 @@ const Component = Vue.extend({
     close() {
       document.body.removeChild(this.$el)
       this.$destroy()
-    }
+    },
   },
   render() {
     return (
       <bk-dialog
-        width={ 768 }
-        value={ this.visible }
-        draggable={ false }
-        close-icon={ false }
-        show-footer={ false }
-        transfer={ false }
-        on-change={ this.toggle }
-        on-after-leave={ this.close }>
-        <export-content { ...{ props: this.$options.attrs }} on-close={ () => this.toggle(false) }></export-content>
+        width={768}
+        value={this.visible}
+        draggable={false}
+        close-icon={false}
+        show-footer={false}
+        transfer={false}
+        on-change={this.toggle}
+        on-after-leave={this.close}>
+        <export-content
+          {...{ props: this.$options.attrs }}
+          on-close={() => this.toggle(false)}></export-content>
       </bk-dialog>
     )
-  }
+  },
 })
 
 export default function (data = {}) {
   const props = {
     limit: 10000,
-    ...data
+    ...data,
   }
   if (props.count <= props.limit) {
     const options = props.options({
       start: 0,
-      limit: props.limit
-    });
-    (async () => {
-      const message = $info(i18n.t('正在导出'), 0)
+      limit: props.limit,
+    })
+    ;(async () => {
+      const message = $info(t('正在导出'), 0)
       try {
         await $http.download(options)
       } catch (error) {
@@ -84,7 +88,7 @@ export default function (data = {}) {
     const vm = new Component({
       store,
       i18n,
-      attrs: props
+      attrs: props,
     })
     vm.$mount()
     document.body.appendChild(vm.$el)

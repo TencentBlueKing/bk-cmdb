@@ -11,75 +11,85 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
-  import modelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
-  import { t } from '@/i18n'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import { getModelInstanceByIds } from '@/service/instance/common'
+import { computed, ref, watchEffect } from 'vue'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String, Number],
-      default: () => ([])
+import { t } from '@/i18n'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import { getModelInstanceByIds } from '@/service/instance/common'
+import modelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
+
+const props = defineProps({
+  value: {
+    type: [Array, String, Number],
+    default: () => [],
+  },
+  options: {
+    type: Array,
+    default() {
+      return []
     },
-    options: {
-      type: Array,
-      default() {
-        return []
-      }
+  },
+  displayType: {
+    type: String,
+    default: 'selector',
+    validator(type) {
+      return ['selector', 'info'].includes(type)
     },
-    displayType: {
-      type: String,
-      default: 'selector',
-      validator(type) {
-        return ['selector', 'info'].includes(type)
-      }
-    }
+  },
+})
+
+const emit = defineEmits(['input', 'change'])
+
+const refModelId = computed(
+  () => props.options.map?.(item => item.bk_obj_id)?.[0]
+)
+const refModelInstIds = computed({
+  get() {
+    return props.value?.map?.(val => Number(val)) ?? []
+  },
+  set(values) {
+    emit('input', values)
+    emit('change', values)
+  },
+})
+const isInfoType = computed(() => props.displayType === 'info')
+
+const searchPlaceholder = computed(() =>
+  t('请输入xx', {
+    name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称'),
   })
+)
 
-  const emit = defineEmits(['input', 'change'])
-
-  const refModelId = computed(() => props.options.map?.(item => item.bk_obj_id)?.[0])
-  const refModelInstIds = computed({
-    get() {
-      return props.value?.map?.(val => Number(val)) ?? []
-    },
-    set(values) {
-      emit('input', values)
-      emit('change', values)
-    }
-  })
-  const isInfoType = computed(() => props.displayType === 'info')
-
-  const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
-
-  const infoValue = ref('')
-  watchEffect(async () => {
-    if (!refModelInstIds.value.length || !isInfoType.value) {
-      return
-    }
-    const result = await getModelInstanceByIds(refModelId.value, refModelInstIds.value)
-    infoValue.value = result?.map?.(item => item.name)?.join(' | ') || '--'
-  })
+const infoValue = ref('')
+watchEffect(async () => {
+  if (!refModelInstIds.value.length || !isInfoType.value) {
+    return
+  }
+  const result = await getModelInstanceByIds(
+    refModelId.value,
+    refModelInstIds.value
+  )
+  infoValue.value = result?.map?.(item => item.name)?.join(' | ') || '--'
+})
 </script>
 <script>
-  export default {
-    name: 'cmdb-search-enumquote'
-  }
+export default {
+  name: 'cmdb-search-enumquote',
+}
 </script>
 
 <template>
   <div v-if="isInfoType">
     <slot name="info-prepend"></slot>
-    {{infoValue}}
+    {{ infoValue }}
   </div>
   <model-instance-selector
     v-else
+    v-model="refModelInstIds"
     :obj-id="refModelId"
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="false"
-    :multiple="true"
-    v-model="refModelInstIds">
+    :multiple="true">
   </model-instance-selector>
 </template>

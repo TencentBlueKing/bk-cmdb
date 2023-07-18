@@ -32,6 +32,7 @@ import $http from '@/api'
  * @param {Array.<Resource>} resources 权限信息列表
  * @returns {Promise}
  */
-export const verifyAuth = resources => $http.post('auth/verify', {
-  resources
-})
+export const verifyAuth = resources =>
+  $http.post('auth/verify', {
+    resources,
+  })

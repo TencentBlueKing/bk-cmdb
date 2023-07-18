@@ -25,26 +25,26 @@ export default {
         return {
           U_HOST: {
             type: this.$OPERATION.U_HOST,
-            relation: [bizId, host.bk_host_id]
+            relation: [bizId, host.bk_host_id],
           },
           D_SERVICE_INSTANCE: {
             type: this.$OPERATION.D_SERVICE_INSTANCE,
-            relation: [bizId]
+            relation: [bizId],
           },
           U_SERVICE_INSTANCE: {
             type: this.$OPERATION.U_SERVICE_INSTANCE,
-            relation: [bizId]
-          }
+            relation: [bizId],
+          },
         }
       }
       return {
         U_HOST: {
           type: this.$OPERATION.U_RESOURCE_HOST,
-          relation: [module[0].bk_module_id, host.bk_host_id]
+          relation: [module[0].bk_module_id, host.bk_host_id],
         },
         D_SERVICE_INSTANCE: null,
-        U_SERVICE_INSTANCE: null
+        U_SERVICE_INSTANCE: null,
       }
-    }
-  }
+    },
+  },
 }

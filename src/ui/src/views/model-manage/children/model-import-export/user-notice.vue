@@ -16,7 +16,7 @@
       <img alt="Notice" src="@/assets/images/notice-pane.png" />
     </div>
     <h2 class="notice-title">
-      {{ t("用户须知") }}
+      {{ t('用户须知') }}
     </h2>
     <div class="notice-content">
       <slot></slot>
@@ -25,17 +25,18 @@
 </template>
 
 <script>
-  import { defineComponent } from 'vue'
-  import { t } from '@/i18n'
+import { defineComponent } from 'vue'
 
-  export default defineComponent({
-    name: 'UserNotice',
-    setup() {
-      return {
-        t
-      }
+import { t } from '@/i18n'
+
+export default defineComponent({
+  name: 'UserNotice',
+  setup() {
+    return {
+      t,
     }
-  })
+  },
+})
 </script>
 
 <style lang="scss" scoped>

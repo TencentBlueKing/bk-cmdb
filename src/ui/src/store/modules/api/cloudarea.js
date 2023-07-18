@@ -14,13 +14,9 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   getCloudarea({ commit, state, dispatch }, { params, config }) {
@@ -28,12 +24,12 @@ const actions = {
   },
   deleteCloudarea(context, { id, config }) {
     return $http.delete(`delete/cloudarea/${id}`, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  actions
+  actions,
 }

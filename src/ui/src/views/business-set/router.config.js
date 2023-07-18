@@ -10,11 +10,11 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import {
   MENU_RESOURCE_BUSINESS_SET,
-  MENU_RESOURCE_BUSINESS_SET_DETAILS
+  MENU_RESOURCE_BUSINESS_SET_DETAILS,
 } from '@/dictionary/menu-symbol.js'
+import Meta from '@/router/meta'
 
 export default [
   {
@@ -23,9 +23,9 @@ export default [
     component: () => import('./index.vue'),
     meta: new Meta({
       menu: {
-        i18n: '业务集'
-      }
-    })
+        i18n: '业务集',
+      },
+    }),
   },
   {
     name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
@@ -34,9 +34,9 @@ export default [
     meta: new Meta({
       menu: {
         i18n: '业务集详情',
-        relative: MENU_RESOURCE_BUSINESS_SET
+        relative: MENU_RESOURCE_BUSINESS_SET,
       },
-      layout: {}
-    })
-  }
+      layout: {},
+    }),
+  },
 ]

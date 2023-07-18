@@ -12,71 +12,78 @@
 
 <template>
   <div class="process-form-property-ip">
-    <div v-bk-tooltips="{ content: localValue, disabled: !disabled || localValue.length < 16 }">
+    <div
+      v-bk-tooltips="{
+        content: localValue,
+        disabled: !disabled || localValue.length < 16,
+      }">
       <cmdb-input-select
+        v-bind="$attrs"
+        v-model="localValue"
         name="ip"
         :placeholder="$t('请选择或输入IP')"
-        :options="IPList"
-        v-bind="$attrs"
-        v-model="localValue">
+        :options="IPList">
       </cmdb-input-select>
     </div>
   </div>
 </template>
 
 <script>
-  export default {
-    props: {
-      value: {
-        type: String,
-        default: ''
-      }
+export default {
+  inject: ['form'],
+  props: {
+    value: {
+      type: String,
+      default: '',
     },
-    inject: ['form'],
-    data() {
-      return {
-        IPList: []
-      }
-    },
-    computed: {
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
+  },
+  data() {
+    return {
+      IPList: [],
+    }
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value
       },
-      requestId() {
-        return `getInstanceIpByHost_${this.form.hostId}`
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
       },
-      disabled() {
-        return this.$attrs?.disabled
-      }
     },
-    created() {
-      this.getBindIPList()
+    requestId() {
+      return `getInstanceIpByHost_${this.form.hostId}`
     },
-    beforeDestroy() {
-      this.$http.cancel(this.requestId)
+    disabled() {
+      return this.$attrs?.disabled
     },
-    methods: {
-      async getBindIPList() {
-        try {
-          const { options } = await this.$store.dispatch('serviceInstance/getInstanceIpByHost', {
+  },
+  created() {
+    this.getBindIPList()
+  },
+  beforeDestroy() {
+    this.$http.cancel(this.requestId)
+  },
+  methods: {
+    async getBindIPList() {
+      try {
+        const { options } = await this.$store.dispatch(
+          'serviceInstance/getInstanceIpByHost',
+          {
             hostId: this.form.hostId,
             config: {
               requestId: this.requestId,
-              fromCache: true
-            }
-          })
-          this.IPList = options.map(ip => ({ id: ip, name: ip }))
-        } catch (error) {
-          this.IPList = []
-          console.error(error)
-        }
+              fromCache: true,
+            },
+          }
+        )
+        this.IPList = options.map(ip => ({ id: ip, name: ip }))
+      } catch (error) {
+        this.IPList = []
+        console.error(error)
       }
-    }
-  }
+    },
+  },
+}
 </script>

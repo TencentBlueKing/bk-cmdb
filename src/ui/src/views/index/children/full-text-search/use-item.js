@@ -11,10 +11,12 @@
  */
 
 import { computed } from 'vue'
+
 import store from '@/store'
 import { t } from '@/i18n'
-import routerActions from '@/router/actions'
 import { $warn } from '@/magicbox/index.js'
+import { getPropertyText } from '@/utils/tools'
+import { escapeRegexChar } from '@/utils/util'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
@@ -23,22 +25,25 @@ import {
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_MODEL_DETAILS,
   MENU_BUSINESS_HOST_AND_SERVICE,
-  MENU_RESOURCE_PROJECT_DETAILS
+  MENU_RESOURCE_PROJECT_DETAILS,
 } from '@/dictionary/menu-symbol'
-import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
-import { getPropertyText } from '@/utils/tools'
-import { escapeRegexChar } from '@/utils/util'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+  BUILTIN_MODEL_ROUTEPARAMS_KEYS,
+} from '@/dictionary/model-constants'
+import routerActions from '@/router/actions'
 
 export default function useItem(list) {
   const getModelById = store.getters['objectModelClassify/getModelById']
-  const getModelName = (source) => {
+  const getModelName = source => {
     const model = getModelById(source.bk_obj_id) || {}
     return model.bk_obj_name || ''
   }
 
   const normalizationList = computed(() => {
     const normalizationList = []
-    list.value.forEach((item) => {
+    list.value.forEach(item => {
       const { key, kind, source } = item
       const newItem = { ...item }
       if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
@@ -54,13 +59,15 @@ export default function useItem(list) {
         newItem.linkTo = handleGoBusiness
       } else if (kind === 'instance' && key === BUILTIN_MODELS.PROJECT) {
         newItem.type = key
-        newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME]
+        newItem.title =
+          source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME]
         newItem.typeName = t('项目')
         newItem.comp = 'project'
         newItem.linkTo = handleGoProject
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS_SET) {
         newItem.type = key
-        newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
+        newItem.title =
+          source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
         newItem.typeName = t('业务集')
         newItem.comp = 'bizset'
         newItem.linkTo = handleGoBusinessSet
@@ -95,9 +102,9 @@ export default function useItem(list) {
     const to = {
       name: MENU_RESOURCE_HOST_DETAILS,
       params: {
-        id: host.bk_host_id
+        id: host.bk_host_id,
       },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -119,9 +126,9 @@ export default function useItem(list) {
       name: MENU_RESOURCE_INSTANCE_DETAILS,
       params: {
         objId: source.bk_obj_id,
-        instId: source.bk_inst_id
+        instId: source.bk_inst_id,
       },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -135,14 +142,14 @@ export default function useItem(list) {
     let to = {
       name: MENU_RESOURCE_BUSINESS_DETAILS,
       params: { bizId: source.bk_biz_id },
-      history: true
+      history: true,
     }
 
     if (source.bk_data_status === 'disabled') {
       to = {
         name: MENU_RESOURCE_BUSINESS_HISTORY,
         params: { bizName: source.bk_biz_name },
-        history: true
+        history: true,
       }
     }
 
@@ -155,11 +162,12 @@ export default function useItem(list) {
   }
   const handleGoProject = (source, newTab = true) => {
     const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]
-    const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID]
+    const paramVal =
+      source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID]
     const to = {
       name: MENU_RESOURCE_PROJECT_DETAILS,
       params: { [paramKey]: paramVal },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -171,11 +179,12 @@ export default function useItem(list) {
   }
   const handleGoBusinessSet = (source, newTab = true) => {
     const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
-    const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
+    const paramVal =
+      source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
     const to = {
       name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
       params: { [paramKey]: paramVal },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -189,9 +198,9 @@ export default function useItem(list) {
     const to = {
       name: MENU_MODEL_DETAILS,
       params: {
-        modelId: model.bk_obj_id
+        modelId: model.bk_obj_id,
       },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -210,12 +219,12 @@ export default function useItem(list) {
     const to = {
       name: MENU_BUSINESS_HOST_AND_SERVICE,
       params: {
-        bizId: source.bk_biz_id
+        bizId: source.bk_biz_id,
       },
       query: {
-        node: nodeMap[key]
+        node: nodeMap[key],
       },
-      history: true
+      history: true,
     }
 
     if (newTab) {
@@ -227,7 +236,7 @@ export default function useItem(list) {
   }
 
   return {
-    normalizationList
+    normalizationList,
   }
 }
 

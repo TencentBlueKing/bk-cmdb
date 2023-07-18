@@ -11,7 +11,11 @@
  */
 
 import http from '@/api'
-import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+} from '@/dictionary/model-constants.js'
+
 import { enableCount, onePageParams } from '../utils.js'
 
 const authorizedRequsetId = Symbol('getAuthorizedBusinessSet')
@@ -21,7 +25,7 @@ const find = async (params, config) => {
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post('findmany/biz_set', enableCount(params, false), config),
-      http.post('findmany/biz_set', enableCount(params, true), config)
+      http.post('findmany/biz_set', enableCount(params, true), config),
     ])
     return { count: count || 0, list: list || [] }
   } catch (error) {
@@ -32,17 +36,28 @@ const find = async (params, config) => {
 
 const findById = async (id, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post('findmany/biz_set', enableCount({
-      bk_biz_set_filter: {
-        condition: 'AND',
-        rules: [{
-          field: MODEL_ID_KEY,
-          operator: 'equal',
-          value: id
-        }]
-      },
-      page: onePageParams()
-    }, false), config)
+    const {
+      info: [instance = null],
+    } = await http.post(
+      'findmany/biz_set',
+      enableCount(
+        {
+          bk_biz_set_filter: {
+            condition: 'AND',
+            rules: [
+              {
+                field: MODEL_ID_KEY,
+                operator: 'equal',
+                value: id,
+              },
+            ],
+          },
+          page: onePageParams(),
+        },
+        false
+      ),
+      config
+    )
 
     return instance
   } catch (error) {
@@ -51,21 +66,31 @@ const findById = async (id, config = {}) => {
   }
 }
 
-const findOne = async (params, config = {}) => findById(params[MODEL_ID_KEY], config)
+const findOne = async (params, config = {}) =>
+  findById(params[MODEL_ID_KEY], config)
 
 const findByIds = async (ids, config = {}) => {
   try {
-    const { count = 0, info: list = [] } = await http.post('findmany/biz_set', enableCount({
-      bk_biz_set_filter: {
-        condition: 'AND',
-        rules: [{
-          field: MODEL_ID_KEY,
-          operator: 'in',
-          value: ids
-        }]
-      },
-      page: { start: 0, limit: ids.length }
-    }, false), config)
+    const { count = 0, info: list = [] } = await http.post(
+      'findmany/biz_set',
+      enableCount(
+        {
+          bk_biz_set_filter: {
+            condition: 'AND',
+            rules: [
+              {
+                field: MODEL_ID_KEY,
+                operator: 'in',
+                value: ids,
+              },
+            ],
+          },
+          page: { start: 0, limit: ids.length },
+        },
+        false
+      ),
+      config
+    )
 
     return { count, list }
   } catch (error) {
@@ -74,9 +99,12 @@ const findByIds = async (ids, config = {}) => {
   }
 }
 
-const getAuthorized = async (config) => {
+const getAuthorized = async config => {
   try {
-    const { info: list = [] } = await http.get('findmany/biz_set/with_reduced?sort=bk_biz_set_id', config)
+    const { info: list = [] } = await http.get(
+      'findmany/biz_set/with_reduced?sort=bk_biz_set_id',
+      config
+    )
     return list || []
   } catch (error) {
     console.error(error)
@@ -84,16 +112,17 @@ const getAuthorized = async (config) => {
   }
 }
 
-const getAuthorizedWithCache = async () => getAuthorized({
-  requestId: authorizedRequsetId,
-  fromCache: true
-})
+const getAuthorizedWithCache = async () =>
+  getAuthorized({
+    requestId: authorizedRequsetId,
+    fromCache: true,
+  })
 
 const previewOfBeforeCreate = async (params, config) => {
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post('find/biz_set/preview', enableCount(params, false), config),
-      http.post('find/biz_set/preview', enableCount(params, true), config)
+      http.post('find/biz_set/preview', enableCount(params, true), config),
     ])
     return { count: count || 0, list: list || [] }
   } catch (error) {
@@ -106,7 +135,7 @@ const previewOfAfterCreate = async (params, config) => {
   try {
     const [{ info: list }, { count = 0 }] = await Promise.all([
       http.post('find/biz_set/biz_list', enableCount(params, false), config),
-      http.post('find/biz_set/biz_list', enableCount(params, true), config)
+      http.post('find/biz_set/biz_list', enableCount(params, true), config),
     ])
     return { count: count || 0, list: list || [] }
   } catch (error) {
@@ -119,9 +148,14 @@ const create = (data, config) => http.post('create/biz_set', data, config)
 
 const update = (data, config) => http.put('updatemany/biz_set', data, config)
 
-const deleteById = (id, config) => http.post('deletemany/biz_set', {
-  bk_biz_set_ids: [id]
-}, config)
+const deleteById = (id, config) =>
+  http.post(
+    'deletemany/biz_set',
+    {
+      bk_biz_set_ids: [id],
+    },
+    config
+  )
 
 const getAll = config => http.get('findmany/biz_set/simplify', config)
 
@@ -137,5 +171,5 @@ export default {
   previewOfAfterCreate,
   getAuthorized,
   getAuthorizedWithCache,
-  findByIds
+  findByIds,
 }

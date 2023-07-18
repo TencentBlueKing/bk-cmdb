@@ -10,7 +10,6 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import {
   MENU_BUSINESS,
   MENU_BUSINESS_SERVICE,
@@ -18,8 +17,9 @@ import {
   MENU_BUSINESS_SET_TEMPLATE_CREATE,
   MENU_BUSINESS_SET_TEMPLATE_DETAILS,
   MENU_BUSINESS_SET_TEMPLATE_EDIT,
-  MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY
+  MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY,
 } from '@/dictionary/menu-symbol'
+import Meta from '@/router/meta'
 
 export default [
   {
@@ -30,9 +30,9 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '集群模板',
-        parent: MENU_BUSINESS_SERVICE
-      }
-    })
+        parent: MENU_BUSINESS_SERVICE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SET_TEMPLATE_CREATE,
@@ -42,9 +42,9 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '新建模板',
-        relative: MENU_BUSINESS_SET_TEMPLATE
-      }
-    })
+        relative: MENU_BUSINESS_SET_TEMPLATE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
@@ -54,9 +54,9 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '模板详情',
-        relative: MENU_BUSINESS_SET_TEMPLATE
-      }
-    })
+        relative: MENU_BUSINESS_SET_TEMPLATE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SET_TEMPLATE_EDIT,
@@ -66,9 +66,9 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '新建模板',
-        relative: MENU_BUSINESS_SET_TEMPLATE
-      }
-    })
+        relative: MENU_BUSINESS_SET_TEMPLATE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY,
@@ -78,8 +78,8 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '同步历史',
-        relative: MENU_BUSINESS_SET_TEMPLATE
-      }
-    })
-  }
+        relative: MENU_BUSINESS_SET_TEMPLATE,
+      },
+    }),
+  },
 ]

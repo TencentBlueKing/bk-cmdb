@@ -17,6 +17,6 @@ export const readonlyMixin = {
   computed: {
     readonly() {
       return this.$route.meta.readonly
-    }
+    },
   },
 }

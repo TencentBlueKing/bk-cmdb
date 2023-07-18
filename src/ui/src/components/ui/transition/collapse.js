@@ -72,7 +72,7 @@ const Transition = {
     el.style.overflow = el.dataset.oldOverflow
     el.style.paddingTop = el.dataset.oldPaddingTop
     el.style.paddingBottom = el.dataset.oldPaddingBottom
-  }
+  },
 }
 
 const toCamelCase = function (str) {
@@ -91,7 +91,7 @@ export default {
     }
     for (const event in Transition) {
       if (has(camelCaseEvents, event)) {
-        transitionEvents[event] = (el) => {
+        transitionEvents[event] = el => {
           Transition[event](el)
           camelCaseEvents[event]()
         }
@@ -100,8 +100,8 @@ export default {
       }
     }
     const data = {
-      on: transitionEvents
+      on: transitionEvents,
     }
     return h('transition', data, context.children)
-  }
+  },
 }

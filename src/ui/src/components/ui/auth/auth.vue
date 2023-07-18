@@ -11,106 +11,109 @@
 -->
 
 <template>
-  <component :class="['auth-box', { disabled, verified }]"
+  <component
     :is="tag"
     v-cursor="{
       active: !isAuthorized,
       auth: auth,
       authResults,
-      onclick
+      onclick,
     }"
+    :class="['auth-box', { disabled, verified }]"
     @click="handleClick">
     <slot :disabled="disabled"></slot>
   </component>
 </template>
 
 <script>
-  import AuthProxy from './auth-queue'
-  import deepEqual from 'deep-equal'
-  export default {
-    name: 'cmdb-auth',
-    props: {
-      ignore: Boolean,
-      auth: {
-        type: [Object, Array]
-      },
-      tag: {
-        type: String,
-        default: 'span'
-      },
-      onclick: Function
+import deepEqual from 'deep-equal'
+
+import AuthProxy from './auth-queue'
+export default {
+  name: 'cmdb-auth',
+  props: {
+    ignore: Boolean,
+    auth: {
+      type: [Object, Array],
     },
-    data() {
-      return {
-        authResults: null,
-        authMetas: null,
-        isAuthorized: false,
-        disabled: true,
-        verified: false,
-        useIAM: this.$Site.authscheme === 'iam'
-      }
+    tag: {
+      type: String,
+      default: 'span',
     },
-    watch: {
-      auth: {
-        deep: true,
-        handler(value, oldValue) {
-          !deepEqual(value, oldValue) && this.setAuthProxy()
-        }
+    onclick: Function,
+  },
+  data() {
+    return {
+      authResults: null,
+      authMetas: null,
+      isAuthorized: false,
+      disabled: true,
+      verified: false,
+      useIAM: this.$Site.authscheme === 'iam',
+    }
+  },
+  watch: {
+    auth: {
+      deep: true,
+      handler(value, oldValue) {
+        !deepEqual(value, oldValue) && this.setAuthProxy()
       },
-      ignore() {
-        this.setAuthProxy()
-      }
     },
-    mounted() {
+    ignore() {
       this.setAuthProxy()
     },
-    methods: {
-      setAuthProxy() {
-        if (this.useIAM && this.auth && !this.ignore) {
-          AuthProxy.add({
-            component: this,
-            data: this.auth
-          })
-        } else {
-          this.verified = true
-          this.disabled = false
-          this.isAuthorized = true
-          this.$emit('update-auth', true)
-        }
-      },
-      updateAuth(authResults, authMetas) {
-        let isPass
-        if (!authResults.length && authMetas.length) { // 鉴权失败
-          isPass = false
-        } else {
-          isPass = authResults.every(result => result.is_pass)
-        }
-
+  },
+  mounted() {
+    this.setAuthProxy()
+  },
+  methods: {
+    setAuthProxy() {
+      if (this.useIAM && this.auth && !this.ignore) {
+        AuthProxy.add({
+          component: this,
+          data: this.auth,
+        })
+      } else {
         this.verified = true
-
-        this.authResults = authResults
-        this.authMetas = authMetas
-        this.isAuthorized = isPass
-        this.disabled = !isPass
-        this.$emit('update-auth', isPass)
-      },
-      handleClick() {
-        if (this.disabled) {
-          return
-        }
-        this.$emit('click')
+        this.disabled = false
+        this.isAuthorized = true
+        this.$emit('update-auth', true)
       }
-    }
-  }
+    },
+    updateAuth(authResults, authMetas) {
+      let isPass
+      if (!authResults.length && authMetas.length) {
+        // 鉴权失败
+        isPass = false
+      } else {
+        isPass = authResults.every(result => result.is_pass)
+      }
+
+      this.verified = true
+
+      this.authResults = authResults
+      this.authMetas = authMetas
+      this.isAuthorized = isPass
+      this.disabled = !isPass
+      this.$emit('update-auth', isPass)
+    },
+    handleClick() {
+      if (this.disabled) {
+        return
+      }
+      this.$emit('click')
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .auth-box {
-        display: inline-block;
-        pointer-events: none;
+.auth-box {
+  display: inline-block;
+  pointer-events: none;
 
-        &.verified {
-          pointer-events: auto;
-        }
-    }
+  &.verified {
+    pointer-events: auto;
+  }
+}
 </style>

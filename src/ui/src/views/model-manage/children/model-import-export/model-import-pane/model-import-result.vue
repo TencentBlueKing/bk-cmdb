@@ -17,36 +17,41 @@
     </div>
     <p class="result-main-text" :class="{ [`is-${data.status}`]: data.status }">
       <i18n path="模型导入结果提示">
-        <template #modelCount><span class="succeed-item-count">{{data.modelCount}}</span></template>
+        <template #modelCount
+          ><span class="succeed-item-count">{{
+            data.modelCount
+          }}</span></template
+        >
       </i18n>
     </p>
   </div>
 </template>
 <script>
-  import { defineComponent } from 'vue'
-  import { t } from '@/i18n'
+import { defineComponent } from 'vue'
 
-  export default defineComponent({
-    nam: 'ModelImportResult',
-    props: {
-      data: {
-        type: Object,
-        default: () => ({
-          status: 'success',
-          modelCount: 0,
-          // 暂时不显示，之后这里可能还要加上关联关系数
-          relationTypeCount: 0
-        })
-      }
+import { t } from '@/i18n'
+
+export default defineComponent({
+  nam: 'ModelImportResult',
+  props: {
+    data: {
+      type: Object,
+      default: () => ({
+        status: 'success',
+        modelCount: 0,
+        // 暂时不显示，之后这里可能还要加上关联关系数
+        relationTypeCount: 0,
+      }),
     },
-    setup(props, { emit }) {
-      const retry = () => emit('retry')
-      return {
-        t,
-        retry
-      }
-    },
-  })
+  },
+  setup(props, { emit }) {
+    const retry = () => emit('retry')
+    return {
+      t,
+      retry,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
@@ -57,19 +62,23 @@
   justify-content: center;
   background-color: #fff;
 }
+
 .import-icon {
   width: 130px;
   margin-top: 50px;
 }
+
 .import-icon img {
   width: 100%;
   height: 100%;
 }
-.result-main-text{
+
+.result-main-text {
   font-size: 24px;
   margin-top: 20px;
 }
-.succeed-item-count{
+
+.succeed-item-count {
   color: $successColor;
   margin: 0 5px;
 }

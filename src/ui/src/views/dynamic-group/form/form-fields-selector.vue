@@ -12,38 +12,39 @@
 
 <template>
   <bk-select v-model="localValue" v-bind="$attrs">
-    <bk-option v-for="property in properties"
-      :key="property.bk_property_id"
+    <bk-option
+      v-for="property in properties"
       :id="property.bk_property_id"
+      :key="property.bk_property_id"
       :name="property.bk_property_name">
     </bk-option>
   </bk-select>
 </template>
 
 <script>
-  export default {
-    props: {
-      value: {
-        type: Array,
-        default: () => ([])
-      }
+export default {
+  inject: ['dynamicGroupForm'],
+  props: {
+    value: {
+      type: Array,
+      default: () => [],
     },
-    inject: ['dynamicGroupForm'],
-    computed: {
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(values) {
-          this.$emit('input', values)
-        }
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value
       },
-      target() {
-        return this.dynamicGroupForm.formData.bk_obj_id
+      set(values) {
+        this.$emit('input', values)
       },
-      properties() {
-        return this.dynamicGroupForm.propertyMap[this.target] || []
-      }
-    }
-  }
+    },
+    target() {
+      return this.dynamicGroupForm.formData.bk_obj_id
+    },
+    properties() {
+      return this.dynamicGroupForm.propertyMap[this.target] || []
+    },
+  },
+}
 </script>

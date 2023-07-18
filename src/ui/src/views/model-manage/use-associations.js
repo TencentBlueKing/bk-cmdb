@@ -11,6 +11,7 @@
  */
 
 import { ref } from 'vue'
+
 import { find } from '@/service/association/index.js'
 
 /**
@@ -34,6 +35,6 @@ export const useAssociations = () => {
 
   return {
     loading,
-    associations
+    associations,
   }
 }

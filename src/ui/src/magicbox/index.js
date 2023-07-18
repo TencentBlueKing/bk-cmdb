@@ -11,16 +11,17 @@
  */
 
 import Vue from 'vue'
-import i18n from '@/i18n'
 import magicbox from 'bk-magic-vue'
+
+import i18n from '@/i18n'
 import './magicbox.scss'
 
 const magicboxLanguageMap = {
   zh_CN: magicbox.locale.lang.zhCN,
-  en: magicbox.locale.lang.enUS
+  en: magicbox.locale.lang.enUS,
 }
 
-export const setLocale = (targetLocale) => {
+export const setLocale = targetLocale => {
   const locale = targetLocale || i18n.locale
   i18n.mergeLocaleMessage(locale, magicboxLanguageMap[locale])
   magicbox.locale.use(magicboxLanguageMap[locale])
@@ -30,7 +31,7 @@ setLocale()
 Vue.use(magicbox, {
   'bk-sideslider': {
     quickClose: true,
-    width: 800
+    width: 800,
   },
   // 'bk-input': {
   //   fontSize: 'medium'
@@ -39,35 +40,39 @@ Vue.use(magicbox, {
   //   fontSize: 'medium'
   // },
   'bk-big-tree': {
-    useDefaultEmpty: true
+    useDefaultEmpty: true,
   },
-  i18n: (key, value) => i18n.t(key, value)
+  i18n: (key, value) => i18n.t(key, value),
 })
 
-export const $error = (message, delay = 3000) => magicbox.bkMessage({
-  message,
-  delay,
-  theme: 'error'
-})
+export const $error = (message, delay = 3000) =>
+  magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'error',
+  })
 
-export const $success = (message, delay = 3000) => magicbox.bkMessage({
-  message,
-  delay,
-  theme: 'success'
-})
+export const $success = (message, delay = 3000) =>
+  magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'success',
+  })
 
-export const $info = (message, delay = 3000) => magicbox.bkMessage({
-  message,
-  delay,
-  theme: 'primary'
-})
+export const $info = (message, delay = 3000) =>
+  magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'primary',
+  })
 
-export const $warn = (message, delay = 3000) => magicbox.bkMessage({
-  message,
-  delay,
-  theme: 'warning',
-  hasCloseIcon: true
-})
+export const $warn = (message, delay = 3000) =>
+  magicbox.bkMessage({
+    message,
+    delay,
+    theme: 'warning',
+    hasCloseIcon: true,
+  })
 
 export const $bkInfo = magicbox.bkInfoBox
 

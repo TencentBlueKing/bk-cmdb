@@ -11,17 +11,23 @@
  */
 
 import has from 'has'
-import api from '@/api'
 import Vue from 'vue'
-import Utils from './utils'
-import store from '@/store'
-import i18n from '@/i18n'
 import QS from 'qs'
-import RouterQuery from '@/router/query'
 import throttle from 'lodash.throttle'
-import { CONTAINER_OBJECTS, TOPO_MODE_KEYS, MIX_SEARCH_MODES } from '@/dictionary/container.js'
+
+import i18n from '@/i18n'
+import store from '@/store'
+import api from '@/api'
+import {
+  CONTAINER_OBJECTS,
+  TOPO_MODE_KEYS,
+  MIX_SEARCH_MODES,
+} from '@/dictionary/container.js'
+import RouterQuery from '@/router/query'
 import containerPropertyService from '@/service/container/property.js'
 import { getContainerInstanceService } from '@/service/container/common'
+
+import Utils from './utils'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -29,8 +35,10 @@ function getStorageHeader(type, key, properties) {
   }
   const data = store.state.userCustom[type][key] || []
   const header = []
-  data.forEach((propertyId) => {
-    const property = properties?.find(property => property?.bk_property_id === propertyId)
+  data.forEach(propertyId => {
+    const property = properties?.find(
+      property => property?.bk_property_id === propertyId
+    )
     property && header.push(property)
   })
   return header
@@ -61,24 +69,24 @@ const FilterStore = new Vue({
           ['operator', 'host'],
           ['bk_bak_operator', 'host'],
           ['bk_cloud_id', 'host'],
-          ['name', 'node']
+          ['name', 'node'],
         ],
         [TOPO_MODE_KEYS.NORMAL]: [
           ['bk_set_name', 'set'],
           ['bk_module_name', 'module'],
           ['operator', 'host'],
           ['bk_bak_operator', 'host'],
-          ['bk_cloud_id', 'host']
+          ['bk_cloud_id', 'host'],
         ],
         [TOPO_MODE_KEYS.CONTAINER]: [
           ['operator', 'host'],
           ['bk_bak_operator', 'host'],
           ['bk_cloud_id', 'host'],
           ['name', 'node'],
-          ['roles', 'node']
-        ]
+          ['roles', 'node'],
+        ],
       },
-      containerPropertyMapValue: {}
+      containerPropertyMapValue: {},
     }
   },
   computed: {
@@ -96,9 +104,13 @@ const FilterStore = new Vue({
         return 'resource_assigned_host_common_filter'
       }
       if (this.isContainerMode) {
-        return this.bizId ? 'container_topology_host_common_filter' : 'container_resource_host_common_filter'
+        return this.bizId
+          ? 'container_topology_host_common_filter'
+          : 'container_resource_host_common_filter'
       }
-      return this.bizId ? 'topology_host_common_filter' : 'resource_host_common_filter'
+      return this.bizId
+        ? 'topology_host_common_filter'
+        : 'resource_host_common_filter'
     },
     collectable() {
       return !!this.bizId
@@ -110,7 +122,7 @@ const FilterStore = new Vue({
         collections: Symbol(this.bizId || 'collections'),
         deleteCollection: id => `delete_collection_${id}`,
         updateCollection: id => `update_collection_${id}`,
-        containerProperty: Symbol()
+        containerProperty: Symbol(),
       }
     },
     isContainerTopo() {
@@ -149,7 +161,11 @@ const FilterStore = new Vue({
     },
     globalHeader() {
       const key = this.config.header && this.config.header.global
-      return getStorageHeader('globalUsercustom', key, this.modelPropertyMap.host)
+      return getStorageHeader(
+        'globalUsercustom',
+        key,
+        this.modelPropertyMap.host
+      )
     },
     customHeader() {
       let key
@@ -164,10 +180,27 @@ const FilterStore = new Vue({
         properties = [...hostProperties, ...nodeProperties]
       } else {
         key = this.config.header && this.config.header.custom
-        const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
-        const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
-        const bizNameProperty = Utils.findPropertyByPropertyId('bk_biz_name', this.properties, 'biz')
-        properties = [...hostProperties, moduleNameProperty, setNameProperty, bizNameProperty]
+        const moduleNameProperty = Utils.findPropertyByPropertyId(
+          'bk_module_name',
+          this.properties,
+          'module'
+        )
+        const setNameProperty = Utils.findPropertyByPropertyId(
+          'bk_set_name',
+          this.properties,
+          'set'
+        )
+        const bizNameProperty = Utils.findPropertyByPropertyId(
+          'bk_biz_name',
+          this.properties,
+          'biz'
+        )
+        properties = [
+          ...hostProperties,
+          moduleNameProperty,
+          setNameProperty,
+          bizNameProperty,
+        ]
       }
 
       return getStorageHeader('usercustom', key, properties)
@@ -179,24 +212,39 @@ const FilterStore = new Vue({
       const headerProperties = Utils.getInitialProperties(hostProperties)
 
       // 固定在前的几个属性
-      const fixedProperties = this.fixedPropertyIds
-        .map(propertyId => Utils.findPropertyByPropertyId(propertyId, hostProperties))
+      const fixedProperties = this.fixedPropertyIds.map(propertyId =>
+        Utils.findPropertyByPropertyId(propertyId, hostProperties)
+      )
 
       // 资源-主机
       if (!this.bizId) {
-        const topologyProperty = Utils.findPropertyByPropertyId('__bk_host_topology__', hostProperties)
+        const topologyProperty = Utils.findPropertyByPropertyId(
+          '__bk_host_topology__',
+          hostProperties
+        )
         fixedProperties.push(topologyProperty)
       } else if (this.isContainerTopo) {
         // 容器节点
         const nodeProperties = this.getModelProperties(CONTAINER_OBJECTS.NODE)
         fixedProperties.push(...nodeProperties)
       } else {
-        const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
-        const setNameProperty = Utils.findPropertyByPropertyId('bk_set_name', this.properties, 'set')
+        const moduleNameProperty = Utils.findPropertyByPropertyId(
+          'bk_module_name',
+          this.properties,
+          'module'
+        )
+        const setNameProperty = Utils.findPropertyByPropertyId(
+          'bk_set_name',
+          this.properties,
+          'set'
+        )
         fixedProperties.push(moduleNameProperty, setNameProperty)
       }
 
-      return Utils.getUniqueProperties(fixedProperties, headerProperties).slice(0, 6)
+      return Utils.getUniqueProperties(fixedProperties, headerProperties).slice(
+        0,
+        6
+      )
     },
     defaultHeader() {
       if (this.customHeader.length) return this.customHeader
@@ -205,7 +253,7 @@ const FilterStore = new Vue({
     },
     modelPropertyMap() {
       const map = {}
-      this.properties.forEach((property) => {
+      this.properties.forEach(property => {
         const modelId = property.bk_obj_id
         const modelProperties = map[modelId] || []
         modelProperties.push(property)
@@ -218,9 +266,11 @@ const FilterStore = new Vue({
      * @returns {Boolean}
      */
     hasCondition() {
-      const existedSelectedCondition = this.selected?.some((property) => {
+      const existedSelectedCondition = this.selected?.some(property => {
         const { value } = this.condition[property.id]
-        return value !== null && value !== undefined && !!value.toString().length
+        return (
+          value !== null && value !== undefined && !!value.toString().length
+        )
       })
       const existedIP = Utils.splitIP(this.IP.text)?.length > 0
 
@@ -228,18 +278,21 @@ const FilterStore = new Vue({
     },
     columnConfigProperties() {
       if (this.isContainerMode) {
-        const properties = FilterStore.properties.filter(property => property.bk_obj_id === 'host'
-        || (property.bk_obj_id === CONTAINER_OBJECTS.NODE))
+        const properties = FilterStore.properties.filter(
+          property =>
+            property.bk_obj_id === 'host' ||
+            property.bk_obj_id === CONTAINER_OBJECTS.NODE
+        )
 
         return properties
       }
 
-      const properties = FilterStore.properties.filter((property) => {
+      const properties = FilterStore.properties.filter(property => {
         const { bk_obj_id: objId, bk_property_id: propId } = property
         const isHost = objId === 'host'
         const isModuleName = objId === 'module' && propId === 'bk_module_name'
         const isSetName = objId === 'set' && propId === 'bk_set_name'
-        const isBizName = objId === 'biz' && propId  === 'bk_biz_name'
+        const isBizName = objId === 'biz' && propId === 'bk_biz_name'
         if (!this.bizId) {
           return isHost || isModuleName || isSetName || isBizName
         }
@@ -247,7 +300,7 @@ const FilterStore = new Vue({
       })
 
       return properties
-    }
+    },
   },
   watch: {
     selected() {
@@ -260,7 +313,7 @@ const FilterStore = new Vue({
         FilterStore.updateSelected([])
         FilterStore.setupNormalProperty()
       }
-    }
+    },
   },
   methods: {
     setupPropertyQuery() {
@@ -268,7 +321,7 @@ const FilterStore = new Vue({
       const properties = []
       const condition = {}
       try {
-        Object.keys(query).forEach((key) => {
+        Object.keys(query).forEach(key => {
           const [id, operator] = key.split('.')
           const property = Utils.findProperty(id, this.properties)
           const value = query[key].toString().split(',')
@@ -276,7 +329,7 @@ const FilterStore = new Vue({
             properties.push(property)
             condition[property.id] = {
               operator: `$${operator}`,
-              value: Utils.convertValue(value, `$${operator}`, property)
+              value: Utils.convertValue(value, `$${operator}`, property),
             }
           }
         })
@@ -288,7 +341,8 @@ const FilterStore = new Vue({
     },
     setupNormalProperty() {
       // 用户选择后的保存结果
-      const userBehavior = store.state.userCustom.usercustom[this.userBehaviorKey] || []
+      const userBehavior =
+        store.state.userCustom.usercustom[this.userBehaviorKey] || []
 
       // 优先使用用户保存的，否则初始化为对应拓扑类型的初始值
       let normal = []
@@ -298,7 +352,10 @@ const FilterStore = new Vue({
         // 资源已分配视图，使用业务节点一致的默认值
         normal = this.defaultConditionProperties[TOPO_MODE_KEYS.BIZ_NODE]
       } else {
-        normal = this.defaultConditionProperties[this.topoMode || TOPO_MODE_KEYS.NORMAL]
+        normal =
+          this.defaultConditionProperties[
+            this.topoMode || TOPO_MODE_KEYS.NORMAL
+          ]
       }
 
       this.createOrUpdateCondition(
@@ -308,17 +365,22 @@ const FilterStore = new Vue({
     },
     setupIPQuery() {
       const query = QS.parse(RouterQuery.get('ip'))
-      const { text = '', exact = 'true', inner = 'true', outer = 'true' } = query
+      const {
+        text = '',
+        exact = 'true',
+        inner = 'true',
+        outer = 'true',
+      } = query
       this.IP = {
         text: text.replace(/,/g, '\n'),
         exact: exact.toString() === 'true',
         inner: inner.toString() === 'true',
-        outer: outer.toString() === 'true'
+        outer: outer.toString() === 'true',
       }
     },
     initCondition() {
       const newConditon = {}
-      this.selected.forEach((property) => {
+      this.selected.forEach(property => {
         if (has(this.condition, property.id)) {
           newConditon[property.id] = this.condition[property.id]
         } else {
@@ -341,7 +403,7 @@ const FilterStore = new Vue({
     updateCondition(property, operator, value) {
       this.condition[property.id] = {
         operator,
-        value
+        value,
       }
       this.throttleSearch()
     },
@@ -349,17 +411,22 @@ const FilterStore = new Vue({
       const { createOnly = false, useDefaultData = false } = options
 
       data.forEach(({ field, model, operator, value }) => {
-        const existProperty = this.selected
-          .find(property => property.bk_property_id === field && property.bk_obj_id === model)
+        const existProperty = this.selected.find(
+          property =>
+            property.bk_property_id === field && property.bk_obj_id === model
+        )
 
         if (!existProperty) {
-          const property = Utils.findPropertyByPropertyId(field, this.getModelProperties(model))
+          const property = Utils.findPropertyByPropertyId(
+            field,
+            this.getModelProperties(model)
+          )
           if (property) {
             const defaultData = Utils.getDefaultData(property)
             this.selected.push(property)
             this.$set(this.condition, property.id, {
               operator: useDefaultData ? defaultData.operator : operator,
-              value: useDefaultData ? defaultData.value : value
+              value: useDefaultData ? defaultData.value : value,
             })
           }
         } else if (!createOnly) {
@@ -380,13 +447,15 @@ const FilterStore = new Vue({
       this.selected = selected
     },
     removeSelected(property) {
-      const index = this.selected.findIndex(target => target.id.toString() === property.id.toString())
+      const index = this.selected.findIndex(
+        target => target.id.toString() === property.id.toString()
+      )
       index > -1 && this.selected.splice(index, 1)
       this.throttleSearch()
     },
     resetValue(property, silent = false) {
       const properties = Array.isArray(property) ? property : [property]
-      properties.forEach((target) => {
+      properties.forEach(target => {
         const { operator } = this.condition[target.id]
         const value = Utils.getOperatorSideEffect(target, operator, [])
         this.condition[target.id].value = value
@@ -410,17 +479,21 @@ const FilterStore = new Vue({
     },
     setQuery() {
       const query = {}
-      Object.keys(this.condition).forEach((id) => {
+      Object.keys(this.condition).forEach(id => {
         const { operator, value } = this.condition[id]
         if (String(value).length) {
-          query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
+          query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value)
+            ? value.join(',')
+            : value
         }
       })
 
       const allQuery = {
         filter: QS.stringify(query, { encode: false }),
-        ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
-        _t: Date.now()
+        ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, {
+          encode: false,
+        }),
+        _t: Date.now(),
       }
 
       // 在触发搜索的场景中会设置needResetPage为true，同时需要满足当前业务存在分页的场景
@@ -431,15 +504,20 @@ const FilterStore = new Vue({
       RouterQuery.set(allQuery)
     },
     setHeader() {
-      const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
-      const suffixProperties = this.properties.filter(property => suffixPropertyId.includes(String(property.id)))
+      const suffixPropertyId = Object.keys(this.condition).filter(
+        id => String(this.condition[id].value).trim().length
+      )
+      const suffixProperties = this.properties.filter(property =>
+        suffixPropertyId.includes(String(property.id))
+      )
 
       // 默认的配置加上条件属性
       const header = [...this.defaultHeader, ...suffixProperties]
 
       // 固定显示的属性
-      const presetProperty = this.fixedPropertyIds
-        .map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
+      const presetProperty = this.fixedPropertyIds.map(propertyId =>
+        this.properties.find(property => property.bk_property_id === propertyId)
+      )
 
       this.header = Utils.getUniqueProperties(presetProperty, header)
     },
@@ -451,7 +529,8 @@ const FilterStore = new Vue({
       }
       try {
         const IP = JSON.parse(collection.info)
-        if (has(IP, 'ip_list')) { // 因老数据的操作符不可兼容，应用收藏条件时直接提示错误并返回
+        if (has(IP, 'ip_list')) {
+          // 因老数据的操作符不可兼容，应用收藏条件时直接提示错误并返回
           this.$error(i18n.t('应用收藏条件失败提示'))
           return false
         }
@@ -459,14 +538,18 @@ const FilterStore = new Vue({
         const condition = {}
         const selected = []
         let hasMissedProperty = false
-        queryParams.forEach((query) => {
+        queryParams.forEach(query => {
           // eslint-disable-next-line max-len
-          const property = this.properties.find(property => property.bk_obj_id === query.bk_obj_id && property.bk_property_id === query.field)
+          const property = this.properties.find(
+            property =>
+              property.bk_obj_id === query.bk_obj_id &&
+              property.bk_property_id === query.field
+          )
           if (property) {
             selected.push(property)
             condition[property.id] = {
               operator: query.operator,
-              value: query.value
+              value: query.value,
             }
           } else {
             hasMissedProperty = true
@@ -500,13 +583,13 @@ const FilterStore = new Vue({
         ip: {
           data: [...transformedIP.data.ipv4, ...transformedIP.data.assetList],
           exact: this.IP.exact ? 1 : 0,
-          flag: flag.join('|')
+          flag: flag.join('|'),
         },
         ipv6: {
           data: transformedIP.data.ipv6,
           exact: this.IP.exact ? 1 : 0,
-          flag: flag.join('|')
-        }
+          flag: flag.join('|'),
+        },
       }
 
       if (this.isContainerMode) {
@@ -526,14 +609,20 @@ const FilterStore = new Vue({
         params.host_condition = Utils.transformContainerCondition(
           hostConds,
           this.selected,
-          header.filter(property => !property?.isInject && property.bk_obj_id === 'host')
+          header.filter(
+            property => !property?.isInject && property.bk_obj_id === 'host'
+          )
         )
 
         // 容器节点属性条件
         params.node_cond = Utils.transformContainerNodeCondition(
           nodeConds,
           this.selected,
-          header.filter(property => !property?.isInject && property.bk_obj_id === CONTAINER_OBJECTS.NODE)
+          header.filter(
+            property =>
+              !property?.isInject &&
+              property.bk_obj_id === CONTAINER_OBJECTS.NODE
+          )
         )
 
         // 资源已分配视图fields中注入业务id
@@ -551,7 +640,9 @@ const FilterStore = new Vue({
           header.filter(property => !property?.isInject)
         )
         if (transformedIP.condition) {
-          const { condition } = params.condition.find(condition => condition.bk_obj_id === 'host')
+          const { condition } = params.condition.find(
+            condition => condition.bk_obj_id === 'host'
+          )
           condition.push(transformedIP.condition)
         }
       }
@@ -559,10 +650,13 @@ const FilterStore = new Vue({
       return params
     },
     getModelProperties(modelId) {
-      return [...this.modelPropertyMap[modelId] || []]
+      return [...(this.modelPropertyMap[modelId] || [])]
     },
     getProperty(propertyId, modelId) {
-      return Utils.findPropertyByPropertyId(propertyId, this.getModelProperties(modelId))
+      return Utils.findPropertyByPropertyId(
+        propertyId,
+        this.getModelProperties(modelId)
+      )
     },
     setComponent(name, component) {
       this.components[name] = component
@@ -571,23 +665,32 @@ const FilterStore = new Vue({
       return this.components[name]
     },
     async getProperties() {
-      const properties = await api.post('find/objectattr/web', {
-        bk_biz_id: this.bizId,
-        bk_obj_id: {
-          $in: ['host', 'module', 'set', 'biz']
+      const properties = await api.post(
+        'find/objectattr/web',
+        {
+          bk_biz_id: this.bizId,
+          bk_obj_id: {
+            $in: ['host', 'module', 'set', 'biz'],
+          },
+        },
+        {
+          requestId: this.request.property,
+          fromCache: true,
         }
-      }, {
-        requestId: this.request.property,
-        fromCache: true
-      })
+      )
 
       // Node的属性
-      const nodeProperties = await containerPropertyService.getMany({
-        objId: CONTAINER_OBJECTS.NODE
-      }, {
-        requestId: this.request.containerProperty,
-        fromCache: true
-      }, true, true)
+      const nodeProperties = await containerPropertyService.getMany(
+        {
+          objId: CONTAINER_OBJECTS.NODE,
+        },
+        {
+          requestId: this.request.containerProperty,
+          fromCache: true,
+        },
+        true,
+        true
+      )
 
       const commonProperties = [...properties, ...nodeProperties]
 
@@ -597,7 +700,7 @@ const FilterStore = new Vue({
         bk_property_id: 'bk_host_id',
         bk_property_name: 'ID',
         bk_property_index: -Infinity,
-        bk_property_type: 'int'
+        bk_property_type: 'int',
       })
       const serviceTemplateProperty = Utils.defineProperty({
         id: 'service_template_id',
@@ -605,11 +708,15 @@ const FilterStore = new Vue({
         bk_property_id: 'service_template_id',
         bk_property_name: i18n.t('服务模板'),
         bk_property_index: Infinity,
-        bk_property_type: 'service-template'
+        bk_property_type: 'service-template',
       })
 
       if (this.bizId) {
-        this.properties = [...commonProperties, hostIdProperty, serviceTemplateProperty]
+        this.properties = [
+          ...commonProperties,
+          hostIdProperty,
+          serviceTemplateProperty,
+        ]
       } else {
         const topologyProperty = Utils.defineProperty({
           id: Date.now() + 2,
@@ -619,19 +726,28 @@ const FilterStore = new Vue({
           bk_property_name: i18n.t('业务拓扑'),
           bk_property_type: 'topology',
           required: true,
-          isInject: true // 表示属性为前端注入，仅在视图中使用，不需要传递给后台。
+          isInject: true, // 表示属性为前端注入，仅在视图中使用，不需要传递给后台。
         })
-        this.properties = [...commonProperties, hostIdProperty, serviceTemplateProperty, topologyProperty]
+        this.properties = [
+          ...commonProperties,
+          hostIdProperty,
+          serviceTemplateProperty,
+          topologyProperty,
+        ]
       }
 
       return this.properties
     },
     async getPropertyGroups() {
-      const groups = await api.post('find/objectattgroup/object/host', {
-        bk_biz_id: this.bizId
-      }, {
-        requestId: this.request.propertyGroup
-      })
+      const groups = await api.post(
+        'find/objectattgroup/object/host',
+        {
+          bk_biz_id: this.bizId,
+        },
+        {
+          requestId: this.request.propertyGroup,
+        }
+      )
       this.propertyGroups = groups
       return groups
     },
@@ -650,29 +766,36 @@ const FilterStore = new Vue({
 
         const service = getContainerInstanceService(objId)
         const total = await service.getCount({
-          bk_biz_id: this.bizId
+          bk_biz_id: this.bizId,
         })
 
         if (total && mapTypeFields?.length) {
-          const values = await containerPropertyService.getMapValue({
-            bk_biz_id: this.bizId,
-            kind: objId,
-            fields: mapTypeFields
-          }, total)
+          const values = await containerPropertyService.getMapValue(
+            {
+              bk_biz_id: this.bizId,
+              kind: objId,
+              fields: mapTypeFields,
+            },
+            total
+          )
 
           this.containerPropertyMapValue[objId] = values
         }
       }
     },
     async loadCollections() {
-      const { info: collections } = await api.post('hosts/favorites/search', {
-        condition: {
-          bk_biz_id: this.bizId,
-          type: this.isContainerMode ? 'container' : 'tradition'
+      const { info: collections } = await api.post(
+        'hosts/favorites/search',
+        {
+          condition: {
+            bk_biz_id: this.bizId,
+            type: this.isContainerMode ? 'container' : 'tradition',
+          },
+        },
+        {
+          requestId: this.request.collections,
         }
-      }, {
-        requestId: this.request.collections
-      })
+      )
       this.collections = collections
       return this.collections
     },
@@ -682,7 +805,7 @@ const FilterStore = new Vue({
       const response = await api.post('hosts/favorites', params, {
         requestId: this.request.createCollection,
         globalError: false,
-        transformData: false
+        transformData: false,
       })
       if (response.result) {
         const collection = { id: response.data.id, ...data }
@@ -695,7 +818,7 @@ const FilterStore = new Vue({
     },
     async removeCollection({ id }) {
       await api.delete(`hosts/favorites/${id}`, {
-        requestId: this.request.deleteCollection(id)
+        requestId: this.request.deleteCollection(id),
       })
       const index = this.collections.findIndex(target => target.id === id)
       index > -1 && this.collections.splice(index, 1)
@@ -703,7 +826,7 @@ const FilterStore = new Vue({
     },
     async updateCollection(collection) {
       await api.put(`hosts/favorites/${collection.id}`, collection, {
-        requestId: this.request.updateCollection(collection.id)
+        requestId: this.request.updateCollection(collection.id),
       })
       const raw = this.collections.find(raw => raw.id === collection.id)
       Object.assign(raw, collection)
@@ -711,22 +834,25 @@ const FilterStore = new Vue({
     },
     async updateUserBehavior(properties) {
       await store.dispatch('userCustom/saveUsercustom', {
-        [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
+        [this.userBehaviorKey]: properties.map(property => [
+          property.bk_property_id,
+          property.bk_obj_id,
+        ]),
       })
       return Promise.resolve()
     },
     resetPage(status = true) {
       this.needResetPage = status
-    }
-  }
+    },
+  },
 })
 
 /*
-* config.bk_biz_id 业务id，仅业务拓扑需要
-* config.searchHandler 触发搜索的方法
-* config.header.custom 存储用户自定义的表头字段key
-* config.header.global 存储全局默认表头字段key
-*/
+ * config.bk_biz_id 业务id，仅业务拓扑需要
+ * config.searchHandler 触发搜索的方法
+ * config.header.custom 存储用户自定义的表头字段key
+ * config.header.global 存储全局默认表头字段key
+ */
 
 export async function setupFilterStore(config = {}) {
   FilterStore.config = config

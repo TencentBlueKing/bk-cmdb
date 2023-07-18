@@ -10,13 +10,16 @@
  * limitations under the License.
  */
 
-const vendors = [{
-  id: '1',
-  name: '亚马逊云'
-}, {
-  id: '2',
-  name: '腾讯云'
-}]
+const vendors = [
+  {
+    id: '1',
+    name: '亚马逊云',
+  },
+  {
+    id: '2',
+    name: '腾讯云',
+  },
+]
 
 export default vendors
 

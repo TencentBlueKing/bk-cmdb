@@ -23,16 +23,15 @@ const state = {
   selectedNode: null,
   selectedNodeInstance: null,
   hostSelectorVisible: false,
-  selectedHost: []
+  selectedHost: [],
 }
 
-const getters = {
-}
+const getters = {}
 
 const actions = {
   getModelProperty(context) {
     console.log(context)
-  }
+  },
 }
 
 const mutations = {
@@ -81,7 +80,7 @@ const mutations = {
   },
   setInstanceIp(state, { hostId, res }) {
     Vue.set(state.instanceIpMap, hostId, res)
-  }
+  },
 }
 
 export default {
@@ -89,5 +88,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

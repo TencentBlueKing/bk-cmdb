@@ -19,15 +19,15 @@ const baseStyleLoaders = [
     loader: 'css-loader',
     options: {
       esModule: false,
-      sourceMap: !isProd
-    }
-  }
+      sourceMap: !isProd,
+    },
+  },
 ]
 
 module.exports = () => ({
   noParse: [
     /^(vue|vue-router|vuex)$/,
-    /^(axios|moment|plotly.js|cytoscape|bk-magic-vue)$/
+    /^(axios|moment|plotly.js|cytoscape|bk-magic-vue)$/,
   ],
   rules: [
     {
@@ -43,57 +43,57 @@ module.exports = () => ({
           options: {
             transpileOnly: true,
             appendTsSuffixTo: [/\.vue$/],
-          }
-        }
+          },
+        },
       ],
       include: [resolveBase('src')],
-      exclude: [resolveBase('node_modules')]
+      exclude: [resolveBase('node_modules')],
     },
 
     {
       test: /\.js$/,
       use: [
         {
-          loader: 'thread-loader'
+          loader: 'thread-loader',
         },
         {
           loader: 'babel-loader',
           options: {
-            cacheDirectory: true // node_modules/.cache/babel-loader
-          }
-        }
+            cacheDirectory: true, // node_modules/.cache/babel-loader
+          },
+        },
       ],
       include: [resolveBase('src')],
-      exclude: [resolveBase('node_modules')]
+      exclude: [resolveBase('node_modules')],
     },
 
     {
       test: /\.(png|jpe?g|gif|svg|webp)(\?.*)?$/,
       type: 'asset',
       generator: {
-        filename: 'img/[name].[hash:7].[ext]'
+        filename: 'img/[name].[hash:7].[ext]',
       },
       parser: {
         dataUrlCondition: {
-          maxSize: 8 * 1024 // 8kb, defaults
-        }
-      }
+          maxSize: 8 * 1024, // 8kb, defaults
+        },
+      },
     },
 
     {
       test: /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/,
       type: 'asset',
       generator: {
-        filename: 'media/[name].[hash:7].[ext]'
-      }
+        filename: 'media/[name].[hash:7].[ext]',
+      },
     },
 
     {
       test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
       type: 'asset',
       generator: {
-        filename: 'fonts/[name].[hash:7].[ext]'
-      }
+        filename: 'fonts/[name].[hash:7].[ext]',
+      },
     },
 
     {
@@ -101,9 +101,9 @@ module.exports = () => ({
       use: [
         ...baseStyleLoaders,
         {
-          loader: 'postcss-loader'
-        }
-      ]
+          loader: 'postcss-loader',
+        },
+      ],
     },
 
     {
@@ -116,13 +116,13 @@ module.exports = () => ({
             sassOptions: {
               includePaths: [
                 resolveBase('src/assets'),
-                resolveBase('src/magicbox')
+                resolveBase('src/magicbox'),
               ],
-            }
-          }
+            },
+          },
         },
         {
-          loader: 'postcss-loader'
+          loader: 'postcss-loader',
         },
         {
           loader: 'sass-resources-loader',
@@ -130,10 +130,10 @@ module.exports = () => ({
             resources: [
               resolveBase('src/assets/scss/_vars.scss'),
               resolveBase('src/assets/scss/_mixins.scss'),
-            ]
-          }
-        }
-      ]
-    }
-  ]
+            ],
+          },
+        },
+      ],
+    },
+  ],
 })

@@ -14,80 +14,91 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 创建模块
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 创建模块
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   createModule({ commit, state, dispatch }, { bizId, setId, params, config }) {
     return $http.post(`module/${bizId}/${setId}`, params, config)
   },
 
   /**
-     * 删除模块
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @param {Number} bkModuleId 模块id
-     * @return {promises} promises 对象
-     */
-  deleteModule({ commit, state, dispatch }, { bizId, setId, moduleId, config }) {
+   * 删除模块
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @param {Number} bkModuleId 模块id
+   * @return {promises} promises 对象
+   */
+  deleteModule(
+    { commit, state, dispatch },
+    { bizId, setId, moduleId, config }
+  ) {
     return $http.delete(`module/${bizId}/${setId}/${moduleId}`, config)
   },
 
   /**
-     * 更新模块
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @param {Number} bkModuleId 模块id
-     * @return {promises} promises 对象
-     */
-  updateModule({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
-    return $http.put(`${window.API_HOST}table/module/${bizId}/${setId}/${moduleId}`, params, config)
+   * 更新模块
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @param {Number} bkModuleId 模块id
+   * @return {promises} promises 对象
+   */
+  updateModule(
+    { commit, state, dispatch },
+    { bizId, setId, moduleId, params, config }
+  ) {
+    return $http.put(
+      `${window.API_HOST}table/module/${bizId}/${setId}/${moduleId}`,
+      params,
+      config
+    )
   },
 
   /**
-     * 查询模块
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 模块id
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @return {promises} promises 对象
-     */
-  searchModule({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
-    return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
-  }
+   * 查询模块
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 模块id
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @return {promises} promises 对象
+   */
+  searchModule(
+    { commit, state, dispatch, rootGetters },
+    { bizId, setId, params, config }
+  ) {
+    return $http.post(
+      `module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`,
+      params,
+      config
+    )
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

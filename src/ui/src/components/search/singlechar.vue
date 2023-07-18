@@ -11,18 +11,20 @@
 -->
 
 <template>
-  <bk-tag-input ref="tagInput"
+  <bk-tag-input
+    v-if="multiple"
+    ref="tagInput"
+    v-model="localValue"
     allow-create
     allow-auto-match
-    v-if="multiple"
-    v-model="localValue"
     v-bind="$attrs"
     :list="[]"
     @removeAll="() => $emit('clear')"
     @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">
   </bk-tag-input>
-  <bk-input v-else
+  <bk-input
+    v-else
     v-model.trim="localValue"
     v-bind="$attrs"
     @clear="() => $emit('clear')"
@@ -32,71 +34,73 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-singlechar',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: [Array, String],
-        default: () => ([])
-      },
-      /**
-       * value 为外部输入，用 value 的数据类型来控制匹配模式不可靠，所以增加 fuzzy 属性来确定匹配模式。如果传入 fuzzy 则优先使用 fuzzy 来进行模式的切换，否则使用 value
-       */
-      fuzzy: {
-        type: Boolean,
-        default: undefined
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-singlechar',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: [Array, String],
+      default: () => [],
     },
-    computed: {
-      multiple() {
-        if (typeof this.fuzzy === 'boolean') {
-          return !this.fuzzy
-        }
-        return Array.isArray(this.value)
-      },
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
-      }
+    /**
+     * value 为外部输入，用 value 的数据类型来控制匹配模式不可靠，所以增加 fuzzy 属性来确定匹配模式。如果传入 fuzzy 则优先使用 fuzzy 来进行模式的切换，否则使用 value
+     */
+    fuzzy: {
+      type: Boolean,
+      default: undefined,
     },
-    watch: {
-      multiple: {
-        immediate: true,
-        handler(multiple) {
-          multiple ? this.addPasteEvent() : this.removePasteEvent()
-        }
+  },
+  computed: {
+    multiple() {
+      if (typeof this.fuzzy === 'boolean') {
+        return !this.fuzzy
       }
+      return Array.isArray(this.value)
     },
-    beforeDestroy() {
-      this.removePasteEvent()
+    localValue: {
+      get() {
+        return this.value
+      },
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
+      },
     },
-    methods: {
-      async addPasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+  },
+  watch: {
+    multiple: {
+      immediate: true,
+      handler(multiple) {
+        multiple ? this.addPasteEvent() : this.removePasteEvent()
       },
-      async removePasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
-      },
-      handlePaste(event) {
-        const text = event.clipboardData.getData('text')
-        const values = text.split(/,|;|\n/).map(value => value.trim())
-          .filter(value => value.length)
-        const value = [...new Set([...this.localValue, ...values])]
-        this.localValue = value
-      }
-    }
-  }
+    },
+  },
+  beforeDestroy() {
+    this.removePasteEvent()
+  },
+  methods: {
+    async addPasteEvent() {
+      await this.$nextTick()
+      const { tagInput } = this.$refs
+      if (!tagInput) return
+      tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+    },
+    async removePasteEvent() {
+      await this.$nextTick()
+      const { tagInput } = this.$refs
+      if (!tagInput) return
+      tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
+    },
+    handlePaste(event) {
+      const text = event.clipboardData.getData('text')
+      const values = text
+        .split(/,|;|\n/)
+        .map(value => value.trim())
+        .filter(value => value.length)
+      const value = [...new Set([...this.localValue, ...values])]
+      this.localValue = value
+    },
+  },
+}
 </script>

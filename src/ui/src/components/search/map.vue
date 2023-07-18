@@ -11,7 +11,8 @@
 -->
 
 <template>
-  <bk-tag-input ref="tagInput"
+  <bk-tag-input
+    ref="tagInput"
     v-model="localValue"
     v-bind="$attrs"
     :trigger="trigger"
@@ -23,50 +24,49 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-map',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: Array,
-        default: () => ([])
-      },
-      options: {
-        type: Array,
-        default: () => ([])
-      },
-      idKey: {
-        type: String,
-        default: 'key'
-      },
-      nameKey: {
-        type: String,
-        default: 'val'
-      },
-      trigger: {
-        type: String,
-        default: 'focus'
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-map',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: Array,
+      default: () => [],
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
-      },
-      list() {
-        return this.options.map(opt => ({
-          id: `${opt[this.idKey]}=${opt[this.nameKey]}`,
-          name: `${opt[this.idKey]}=${opt[this.nameKey]}`
-        }))
-      }
+    options: {
+      type: Array,
+      default: () => [],
     },
-    methods: {
-    }
-  }
+    idKey: {
+      type: String,
+      default: 'key',
+    },
+    nameKey: {
+      type: String,
+      default: 'val',
+    },
+    trigger: {
+      type: String,
+      default: 'focus',
+    },
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value
+      },
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
+      },
+    },
+    list() {
+      return this.options.map(opt => ({
+        id: `${opt[this.idKey]}=${opt[this.nameKey]}`,
+        name: `${opt[this.idKey]}=${opt[this.nameKey]}`,
+      }))
+    },
+  },
+  methods: {},
+}
 </script>

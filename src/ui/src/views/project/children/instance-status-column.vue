@@ -14,43 +14,45 @@
   <div>
     <span v-if="value === 'enable'" class="project-status">
       <i class="status-circle enable"></i>
-      {{$t('启用中')}}
+      {{ $t('启用中') }}
     </span>
     <span v-else-if="value === 'disabled'" class="project-status">
       <i class="status-circle disabled"></i>
-      {{$t('已停用')}}
+      {{ $t('已停用') }}
     </span>
   </div>
 </template>
 
 <script>
-  export default {
-    name: 'InstanceStatusColumn',
-    props: {
-      value: {
-        type: String,
-        default: ''
-      }
-    }
-  }
+export default {
+  name: 'InstanceStatusColumn',
+  props: {
+    value: {
+      type: String,
+      default: '',
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
 .project-status {
-    .status-circle {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        margin-right: 4px;
-        border-radius: 50%;
-        &.disabled {
-          background-color: rgb(240, 241, 245);
-          border: 1px solid rgb(198,200,204);
-        }
-        &.enable {
-          border: 1px solid rgb(112,192,167);
-          background-color: rgb(232, 245, 235);
-        }
+  .status-circle {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-radius: 50%;
+
+    &.disabled {
+      background-color: rgb(240 241 245);
+      border: 1px solid rgb(198 200 204);
     }
+
+    &.enable {
+      border: 1px solid rgb(112 192 167);
+      background-color: rgb(232 245 235);
+    }
+  }
 }
 </style>

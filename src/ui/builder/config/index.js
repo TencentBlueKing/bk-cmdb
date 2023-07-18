@@ -16,18 +16,18 @@
 
 const path = require('path')
 const fs = require('fs')
+
 const parseArgs = require('minimist')
 const { fixRequestBody } = require('http-proxy-middleware')
 
-
 const config = {
   BUILD_TITLE: '',
-  BUILD_OUTPUT: '../bin/enterprise/cmdb'
+  BUILD_OUTPUT: '../bin/enterprise/cmdb',
 }
 
 const argv = parseArgs(process.argv.slice(2))
 
-process.argv.slice(2).forEach((str) => {
+process.argv.slice(2).forEach(str => {
   const arg = str.split('=')
   if (Object.prototype.hasOwnProperty.call(config, arg[0])) {
     config[arg[0]] = arg.slice(1).join('=')
@@ -51,7 +51,7 @@ const dev = {
     HELP_DOC_URL: JSON.stringify(''),
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
-    DESKTOP_URL: JSON.stringify('')
+    DESKTOP_URL: JSON.stringify(''),
   }),
 
   // Paths
@@ -63,15 +63,15 @@ const dev = {
       changeOrigin: true,
       target: 'http://{webserver地址}/',
       pathRewrite: {
-        '^/proxy': ''
-      }
-    }
+        '^/proxy': '',
+      },
+    },
   },
   // Various Dev Server settings
   host: 'localhost', // can be overwritten by process.env.HOST
   port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
   autoOpenBrowser: true,
-  errorOverlay: false,
+  errorOverlay: true,
   notifyOnErrors: true,
   poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
 
@@ -84,8 +84,8 @@ const dev = {
   showEslintErrorsInOverlay: true,
 
   /**
-     * Source Maps
-     */
+   * Source Maps
+   */
 
   // https://webpack.js.org/configuration/devtool/#development
   devtool: 'cheap-module-eval-source-map',
@@ -97,10 +97,13 @@ const dev = {
 
   cssSourceMap: true,
 
-  useMock: false
+  useMock: false,
 }
 
-const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)
+const customDevConfigPath = path.resolve(
+  __dirname,
+  `index.dev.${argv.env || 'ee'}.js`
+)
 const isCustomDevConfigExist = fs.existsSync(customDevConfigPath)
 if (isCustomDevConfigExist) {
   const customDevConfig = require(customDevConfigPath)
@@ -117,10 +120,10 @@ if (argv.mock) {
     ...dev.proxyTable['/proxy'],
     // 此时地址都是/mock前缀，同样需要重写为''
     pathRewrite: {
-      '^/mock': ''
+      '^/mock': '',
     },
     // fix proxied POST requests when bodyParser is applied before this middleware
-    onProxyReq: fixRequestBody
+    onProxyReq: fixRequestBody,
   }
 
   dev.useMock = true
@@ -146,7 +149,7 @@ module.exports = {
       HELP_DOC_URL: '{{.helpDocUrl}}',
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
       COOKIE_DOMAIN: '{{.cookieDomain}}',
-      DESKTOP_URL: '{{.bkDesktopUrl}}'
+      DESKTOP_URL: '{{.bkDesktopUrl}}',
     }),
 
     // Template for index.html
@@ -162,8 +165,8 @@ module.exports = {
     assetsPublicPath: '/static/',
 
     /**
-         * Source Maps
-         */
+     * Source Maps
+     */
 
     productionSourceMap: true,
     // https://webpack.js.org/configuration/devtool/#production
@@ -180,6 +183,6 @@ module.exports = {
     // View the bundle analyzer report after build finishes:
     // `npm run build --report`
     // Set to `true` or `false` to always turn it on or off
-    bundleAnalyzerReport: process.env.npm_config_report
-  }
+    bundleAnalyzerReport: process.env.npm_config_report,
+  },
 }

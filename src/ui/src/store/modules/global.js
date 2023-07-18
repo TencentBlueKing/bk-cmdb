@@ -21,13 +21,13 @@ const state = {
   globalLoading: true,
   nav: {
     stick: window.localStorage.getItem('navStick') !== 'false',
-    fold: window.localStorage.getItem('navStick') === 'false'
+    fold: window.localStorage.getItem('navStick') === 'false',
   },
   header: {
-    back: false
+    back: false,
   },
   layout: {
-    mainFullScreen: false
+    mainFullScreen: false,
   },
   userList: [],
   headerTitle: '',
@@ -38,15 +38,16 @@ const state = {
   businessSelectorPromise: null,
   businessSelectorResolver: null,
   scrollerState: {
-    scrollbar: false
-  }
+    scrollbar: false,
+  },
 }
 
 const getters = {
   user: state => state.user,
   userName: state => state.user.name,
   admin: state => state.user.admin === '1',
-  isBusinessSelected: (state, getters, rootState, rootGetters) => rootGetters['objectBiz/bizId'] !== null,
+  isBusinessSelected: (state, getters, rootState, rootGetters) =>
+    rootGetters['objectBiz/bizId'] !== null,
   language: state => state.language,
   supplier: state => state.supplier,
   supplierAccount: state => state.supplier.account,
@@ -60,19 +61,21 @@ const getters = {
   permission: state => state.permission,
   title: state => state.title,
   businessSelectorVisible: state => state.businessSelectorVisible,
-  scrollerState: state => state.scrollerState
+  scrollerState: state => state.scrollerState,
 }
 
 const actions = {
   getUserList({ commit }) {
-    return $http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
-      requestId: 'get_user_list',
-      fromCache: true,
-      cancelWhenRouteChange: false
-    }).then((list) => {
-      commit('setUserList', list)
-      return list
-    })
+    return $http
+      .get(`${window.API_HOST}user/list?_t=${new Date().getTime()}`, {
+        requestId: 'get_user_list',
+        fromCache: true,
+        cancelWhenRouteChange: false,
+      })
+      .then(list => {
+        commit('setUserList', list)
+        return list
+      })
   },
   getBlueKingEditStatus(context, { config }) {
     return $http.post('system/config/user_config/blueking_modify', {}, config)
@@ -109,7 +112,7 @@ const mutations = {
     state.businessSelectorVisible = visible
   },
   createBusinessSelectorPromise(state) {
-    state.businessSelectorPromise = new Promise((resolve) => {
+    state.businessSelectorPromise = new Promise(resolve => {
       state.businessSelectorResolver = resolve
     })
   },
@@ -126,5 +129,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

@@ -11,6 +11,8 @@
  */
 
 import Vue from 'vue'
+import clipboard from 'vue-clipboard2'
+
 import App from './App.vue'
 import router from './router/index.js'
 import store from './store'
@@ -24,7 +26,6 @@ import cmdbUI from './components/ui'
 import cmdbSearchComponent from './components/search/index'
 import routerActions from './router/actions'
 import tools from './utils/tools'
-import clipboard from 'vue-clipboard2'
 import './magicbox'
 import './directives'
 import api from './api'
@@ -53,7 +54,7 @@ window.CMDB_APP = new Vue({
   store,
   i18n,
   components: { App },
-  template: '<App/>'
+  template: '<App/>',
 })
 
 if (process.env.COMMIT_ID) {

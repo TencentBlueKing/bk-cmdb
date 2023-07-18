@@ -32,7 +32,7 @@ const state = {
   hostSelectorVisible: false,
   selectedHost: [],
   blueKingEditable: false,
-  failHostList: []
+  failHostList: [],
 }
 
 const getters = {
@@ -40,22 +40,27 @@ const getters = {
   getProperties: state => id => state.propertyMap[id] || [],
   topologyModels: state => state.topologyModels,
   columnsConfigProperties: (state, getters) => {
-    const setProperties = getters.getProperties('set').filter(property => ['bk_set_name'].includes(property.bk_property_id))
-    const moduleProperties = getters.getProperties('module').filter(property => ['bk_module_name'].includes(property.bk_property_id))
+    const setProperties = getters
+      .getProperties('set')
+      .filter(property => ['bk_set_name'].includes(property.bk_property_id))
+    const moduleProperties = getters
+      .getProperties('module')
+      .filter(property => ['bk_module_name'].includes(property.bk_property_id))
     const hostProperties = getters.getProperties('host')
     return [...setProperties, ...moduleProperties, ...hostProperties]
   },
   selectedNode: state => state.selectedNode,
-  getDefaultSearchCondition: state => () => ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
-    bk_obj_id: modelId,
-    condition: [],
-    fields: []
-  })),
+  getDefaultSearchCondition: state => () =>
+    ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
+      bk_obj_id: modelId,
+      condition: [],
+      fields: [],
+    })),
   /**
    * await 这个方法可以等待拓扑首页的通用请求加载完以后再进行其他操作。
    */
   commonRequest: state => state.commonRequest,
-  failHostList: state => state.failHostList
+  failHostList: state => state.failHostList,
 }
 
 const mutations = {
@@ -127,12 +132,11 @@ const mutations = {
     state.commonRequest = new Promise((resolve, reject) => {
       state.commonRequestResolver = resolve
     })
-  }
-
+  },
 }
 export default {
   namespaced: true,
   state,
   mutations,
-  getters
+  getters,
 }

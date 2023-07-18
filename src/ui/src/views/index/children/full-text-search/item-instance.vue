@@ -10,21 +10,39 @@
  * limitations under the License.
 -->
 
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="result-item">
     <div class="result-title" @click="data.linkTo(data.source)">
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
     <div class="result-desc" @click="data.linkTo(data.source)">
-      <div class="desc-item hl" v-html="`${$t('实例ID')}：${getHighlightValue(data.source.bk_inst_id, data)}`"></div>
-      <div class="desc-item" v-for="(property, childIndex) in properties" :key="childIndex">
-        <div class="hl" v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE"
-          v-html="`${getHighlightValue(property.bk_property_name, data)}：${getText(property, data)}`">
-        </div>
-        <div class="table-value" v-else>
-          <span>{{getHighlightValue(property.bk_property_name, data)}}：</span>
+      <div
+        class="desc-item hl"
+        v-html="
+          `${$t('实例ID')}：${getHighlightValue(data.source.bk_inst_id, data)}`
+        "></div>
+      <div
+        v-for="(property, childIndex) in properties"
+        :key="childIndex"
+        class="desc-item">
+        <div
+          v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE"
+          class="hl"
+          v-html="
+            `${getHighlightValue(property.bk_property_name, data)}：${getText(
+              property,
+              data
+            )}`
+          "></div>
+        <div v-else class="table-value">
+          <span
+            >{{ getHighlightValue(property.bk_property_name, data) }}：</span
+          >
           <i class="bk-cmdb-icon icon-cc-table" />
-          <span class="matched-tag" v-if="isMatchedTableValue(property)">命中</span>
+          <span v-if="isMatchedTableValue(property)" class="matched-tag"
+            >命中</span
+          >
         </div>
       </div>
     </div>
@@ -32,36 +50,41 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed } from 'vue'
-  import { getText, getHighlightValue } from './use-item.js'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { defineComponent, toRefs, computed } from 'vue'
 
-  export default defineComponent({
-    name: 'item-instance',
-    props: {
-      data: {
-        type: Object,
-        default: () => ({})
-      },
-      propertyMap: {
-        type: Object,
-        default: () => ({})
-      }
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
+import { getText, getHighlightValue } from './use-item.js'
+
+export default defineComponent({
+  name: 'item-instance',
+  props: {
+    data: {
+      type: Object,
+      default: () => ({}),
     },
-    setup(props) {
-      const { data, propertyMap } = toRefs(props)
+    propertyMap: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  setup(props) {
+    const { data, propertyMap } = toRefs(props)
 
-      const properties = computed(() => propertyMap.value[data.value.source.bk_obj_id])
+    const properties = computed(
+      () => propertyMap.value[data.value.source.bk_obj_id]
+    )
 
-      const isMatchedTableValue = property => data.value?.highlight?.tables?.includes(property.bk_property_id)
+    const isMatchedTableValue = property =>
+      data.value?.highlight?.tables?.includes(property.bk_property_id)
 
-      return {
-        PROPERTY_TYPES,
-        properties,
-        getText,
-        getHighlightValue,
-        isMatchedTableValue
-      }
+    return {
+      PROPERTY_TYPES,
+      properties,
+      getText,
+      getHighlightValue,
+      isMatchedTableValue,
     }
-  })
+  },
+})
 </script>

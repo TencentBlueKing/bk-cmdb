@@ -10,18 +10,19 @@
  * limitations under the License.
  */
 
-const hex2grb = (hex) => {
+const hex2grb = hex => {
   const rgb = []
   hex = hex.substr(1)
   if (hex.length === 3) {
     hex = hex.replace(/(.)/g, '$1$1')
   }
-  hex.replace(/../g, (color) => {
+  hex.replace(/../g, color => {
     rgb.push(parseInt(color, 0x10))
   })
   return rgb
 }
-const getFileExtension = fileName => fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2)
+const getFileExtension = fileName =>
+  fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2)
 
 const canvas = document.createElement('canvas')
 
@@ -71,10 +72,10 @@ export function generateObjIcon(image, options) {
 
 export function cached(fn) {
   const cache = Object.create(null)
-  return (function cachedFn(str, ...args) {
+  return function cachedFn(str, ...args) {
     const hit = cache[str]
     return hit || (cache[str] = fn.apply(null, [str, ...args]))
-  })
+  }
 }
 
 export const camelize = cached((str, separator = '-') => {
@@ -88,7 +89,7 @@ export const swapItem = (arr, fromIndex, toIndex) => {
   return arr
 }
 
-export const escapeRegexChar = (str) => {
+export const escapeRegexChar = str => {
   // eslint-disable-next-line no-useless-escape
   const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
   return str.replace(escapeCharRE, '\\$1')

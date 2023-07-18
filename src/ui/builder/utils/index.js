@@ -24,5 +24,5 @@ module.exports = {
   isProd,
   appDir,
   resolveBase,
-  modeValue
+  modeValue,
 }

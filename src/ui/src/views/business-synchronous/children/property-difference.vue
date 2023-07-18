@@ -11,40 +11,44 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, PropType } from 'vue'
-  import PropertyConfigDiffTable from '@/components/property-config/diff-table.vue'
+import type { PropType } from 'vue'
 
-  interface IPropertyDiff {
-    id: number,
-    'inst_value': unknown,
-    'template_value': unknown,
-    property: Record<string, unknown>
-  }
+import { defineComponent } from 'vue'
 
-  export default defineComponent({
-    components: {
-      PropertyConfigDiffTable
+import PropertyConfigDiffTable from '@/components/property-config/diff-table.vue'
+
+interface IPropertyDiff {
+  id: number
+  inst_value: unknown
+  template_value: unknown
+  property: Record<string, unknown>
+}
+
+export default defineComponent({
+  components: {
+    PropertyConfigDiffTable,
+  },
+  props: {
+    moduleId: {
+      type: Number,
+      required: true,
     },
-    props: {
-      moduleId: {
-        type: Number,
-        required: true
-      },
-      templateId: {
-        type: Number,
-        required: true
-      },
-      propertyDiff: {
-        type: Array as PropType<IPropertyDiff[]>,
-        default: () => ([]),
-        required: true
-      }
-    }
-  })
+    templateId: {
+      type: Number,
+      required: true,
+    },
+    propertyDiff: {
+      type: Array as PropType<IPropertyDiff[]>,
+      default: () => [],
+      required: true,
+    },
+  },
+})
 </script>
 
 <template>
   <div class="property-difference">
-    <property-config-diff-table :property-diff="propertyDiff"></property-config-diff-table>
+    <property-config-diff-table
+      :property-diff="propertyDiff"></property-config-diff-table>
   </div>
 </template>

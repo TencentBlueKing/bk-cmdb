@@ -14,120 +14,114 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 获取所有正在统计的图表
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 获取所有正在统计的图表
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   getCountedCharts({ commit, state, dispatch }, { params, config }) {
     return $http.get('findmany/operation/chart', config)
   },
 
   /**
-     * 获取所有正在统计的图表的对应数据
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 获取所有正在统计的图表的对应数据
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   getCountedChartsData({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/operation/chart/data', params, config)
   },
 
   /**
-     * 获取统计维度
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 获取统计维度
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   getStaticDimeObj({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/objectattr', params, config)
   },
 
   /**
-     * 获取统计对象
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 获取统计对象
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   getStaticObj({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/object', params, config)
   },
 
   /**
-     * 新增统计图表
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 新增统计图表
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   newStatisticalCharts({ commit, state, dispatch }, { params, config }) {
     return $http.post('create/operation/chart', params, config)
   },
 
   /**
-     * 编辑统计图表
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 编辑统计图表
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   updateStatisticalCharts({ commit, state, dispatch }, { params, config }) {
     return $http.post('update/operation/chart', params, config)
   },
 
   /**
-     * 删除统计图表
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 删除统计图表
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   deleteOperationChart({ commit, state, dispatch }, { id, config }) {
     return $http.delete(`delete/operation/chart/${id}`, config)
   },
 
   /**
-     * 更新图表位置
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 更新图表位置
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   updateChartPosition({ commit, state, dispatch }, { params, config }) {
     return $http.post('/update/operation/chart/position', params, config)
-  }
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

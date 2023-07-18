@@ -13,14 +13,14 @@
 export default {
   data() {
     return {
-      active: false
+      active: false,
     }
   },
   watch: {
     active(active) {
       this.$emit('active-change', active)
       this.hackEnterEvent()
-    }
+    },
   },
   methods: {
     handleToggle(active) {
@@ -41,6 +41,6 @@ export default {
     handleEnter(event) {
       if (event.key.toLowerCase() !== 'enter') return
       this.$emit('enter', event)
-    }
-  }
+    },
+  },
 }

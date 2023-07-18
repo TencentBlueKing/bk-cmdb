@@ -18,7 +18,7 @@ export default {
       tag: this.tag,
       index: this.index,
       keyword: this.keyword,
-      disabled: this.disabled
+      disabled: this.disabled,
     })
-  }
+  },
 }

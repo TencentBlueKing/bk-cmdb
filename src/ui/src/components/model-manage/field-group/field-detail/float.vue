@@ -13,97 +13,101 @@
 <template>
   <div>
     <div class="form-label">
-      <span class="label-text">{{$t('最小值')}}</span>
+      <span class="label-text">{{ $t('最小值') }}</span>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('min') }">
-        <bk-input type="text" class="cmdb-form-input"
+        <bk-input
           v-model="localValue.min"
-          @input="handleInput"
           v-validate="`float`"
+          type="text"
+          class="cmdb-form-input"
           :disabled="isReadOnly"
-          :name="'min'">
+          :name="'min'"
+          @input="handleInput">
         </bk-input>
-        <p class="form-error">{{errors.first('min')}}</p>
+        <p class="form-error">{{ errors.first('min') }}</p>
       </div>
     </div>
     <div class="form-label">
-      <span class="label-text">{{$t('最大值')}}</span>
+      <span class="label-text">{{ $t('最大值') }}</span>
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('max') }">
-        <bk-input type="text" class="cmdb-form-input"
+        <bk-input
           v-model="localValue.max"
+          v-validate="`float|isBigger:${localValue.min}`"
+          type="text"
+          class="cmdb-form-input"
           name="max"
-          @input="handleInput"
           :disabled="isReadOnly"
-          v-validate="`float|isBigger:${localValue.min}`">
+          @input="handleInput">
         </bk-input>
-        <p class="form-error">{{errors.first('max')}}</p>
+        <p class="form-error">{{ errors.first('max') }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  export default {
-    props: {
-      value: {
-        type: [Object, String],
-        default: {
-          min: '',
-          max: ''
-        }
+export default {
+  props: {
+    value: {
+      type: [Object, String],
+      default: () => ({
+        min: '',
+        max: '',
+      }),
+    },
+    isReadOnly: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  data() {
+    return {
+      localValue: {
+        min: '',
+        max: '',
       },
-      isReadOnly: {
-        type: Boolean,
-        default: false
-      }
-    },
-    data() {
-      return {
-        localValue: {
-          min: '',
-          max: ''
-        }
-      }
-    },
-    watch: {
-      value: {
-        handler() {
-          this.initValue()
-        },
-        deep: true
-      }
-    },
-    created() {
-      this.initValue()
-    },
-    methods: {
-      initValue() {
-        if (this.value === '' || this.value === null) {
-          this.localValue = {
-            min: '',
-            max: ''
-          }
-        } else {
-          this.localValue = this.value
-        }
-      },
-      async handleInput() {
-        const res = await this.$validator.validateAll()
-        if (res) {
-          this.$emit('input', this.localValue)
-        }
-      },
-      validate() {
-        return this.$validator.validateAll()
-      }
     }
-  }
+  },
+  watch: {
+    value: {
+      handler() {
+        this.initValue()
+      },
+      deep: true,
+    },
+  },
+  created() {
+    this.initValue()
+  },
+  methods: {
+    initValue() {
+      if (this.value === '' || this.value === null) {
+        this.localValue = {
+          min: '',
+          max: '',
+        }
+      } else {
+        this.localValue = this.value
+      }
+    },
+    async handleInput() {
+      const res = await this.$validator.validateAll()
+      if (res) {
+        this.$emit('input', this.localValue)
+      }
+    },
+    validate() {
+      return this.$validator.validateAll()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .form-label {
-        &:last-child {
-           margin: 0;
-           margin-bottom: 15px;
-        }
-    }
+.form-label {
+  &:last-child {
+    margin: 0;
+    margin-bottom: 15px;
+  }
+}
 </style>

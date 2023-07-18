@@ -13,15 +13,19 @@
 import http from '@/api'
 
 export const requestIds = {
-  findmanyTemplate: Symbol('findmanyTemplate')
+  findmanyTemplate: Symbol('findmanyTemplate'),
 }
 
 const find = async (params, config) => {
   try {
-    const { count = 0, info: list = [] } = await http.post('findmany/proc/service_template', params, {
-      requestId: requestIds.findmanyTemplate,
-      ...config
-    })
+    const { count = 0, info: list = [] } = await http.post(
+      'findmany/proc/service_template',
+      params,
+      {
+        requestId: requestIds.findmanyTemplate,
+        ...config,
+      }
+    )
     return { count, list }
   } catch (error) {
     console.error(error)
@@ -35,12 +39,21 @@ const findAll = async (params, config) => {
     const size = 1000
     const results = []
 
-    const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
+    const page = index => ({
+      ...(params.page || {}),
+      start: (index - 1) * size,
+      limit: size,
+    })
 
-    const req = index => http.post('findmany/proc/service_template', {
-      ...params,
-      page: page(index)
-    }, config)
+    const req = index =>
+      http.post(
+        'findmany/proc/service_template',
+        {
+          ...params,
+          page: page(index),
+        },
+        config
+      )
 
     const { count = 0, info: list = [] } = await req(index)
     results.push(...list)
@@ -70,11 +83,16 @@ const findAllByIds = async (ids, params, config) => {
     const size = 1000
     const max = Math.ceil(ids.length / size)
 
-    const req = segment => http.post('findmany/proc/service_template', {
-      ...params,
-      service_template_ids: segment,
-      page: { start: 0, limit: 999999999 } // NoLimit
-    }, config)
+    const req = segment =>
+      http.post(
+        'findmany/proc/service_template',
+        {
+          ...params,
+          service_template_ids: segment,
+          page: { start: 0, limit: 999999999 }, // NoLimit
+        },
+        config
+      )
 
     const reqs = []
     for (let index = 1; index <= max; index++) {
@@ -97,11 +115,15 @@ const findAllByIds = async (ids, params, config) => {
 
 const findById = async (id, params, config = {}) => {
   try {
-    const { info: list = [] } = await http.post('findmany/proc/service_template', {
-      ...params,
-      service_template_ids: [id],
-      page: { start: 0, limit: 1 }
-    }, config)
+    const { info: list = [] } = await http.post(
+      'findmany/proc/service_template',
+      {
+        ...params,
+        service_template_ids: [id],
+        page: { start: 0, limit: 1 },
+      },
+      config
+    )
 
     return list?.[0]
   } catch (error) {
@@ -111,26 +133,32 @@ const findById = async (id, params, config = {}) => {
 }
 
 // 创建服务模板（全量）
-const create = (data, config) => http.post('create/proc/service_template/all_info', data, config)
+const create = (data, config) =>
+  http.post('create/proc/service_template/all_info', data, config)
 
 // 更新服务模板（全量）
-const update = (data, config) => http.put('update/proc/service_template/all_info', data, config)
+const update = (data, config) =>
+  http.put('update/proc/service_template/all_info', data, config)
 
 // 获取服务模板完整信息（包括属性设置、进程信息）
-const getFullOne = (data, config) => http.post('find/proc/service_template/all_info', data, config)
+const getFullOne = (data, config) =>
+  http.post('find/proc/service_template/all_info', data, config)
 
 // 更新属性配置
-const updateProperty = (data, config) => http.put('update/proc/service_template/attribute', data, config)
+const updateProperty = (data, config) =>
+  http.put('update/proc/service_template/attribute', data, config)
 
 // 删除属性配置
-const deleteProperty = (data, config = {}) => http.delete('delete/proc/service_template/attribute', { ...config, data })
+const deleteProperty = (data, config = {}) =>
+  http.delete('delete/proc/service_template/attribute', { ...config, data })
 
 // 查询属性配置
-const findProperty = (data, config) => http.post('findmany/proc/service_template/attribute', data, config)
+const findProperty = (data, config) =>
+  http.post('findmany/proc/service_template/attribute', data, config)
 
 export const CONFIG_MODE = {
   MODULE: 'module',
-  TEMPLATE: 'template'
+  TEMPLATE: 'template',
 }
 
 export default {
@@ -143,5 +171,5 @@ export default {
   getFullOne,
   updateProperty,
   deleteProperty,
-  findProperty
+  findProperty,
 }

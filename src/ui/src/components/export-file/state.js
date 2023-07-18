@@ -11,6 +11,7 @@
  */
 
 import { reactive, toRefs, set, del } from 'vue'
+
 import useClone from '@/hooks/utils/clone'
 const defaultState = {
   visible: false,
@@ -28,27 +29,32 @@ const defaultState = {
   fields: [],
   relations: {},
   exportRelation: false,
-  object_unique_id: ''
+  object_unique_id: '',
 }
 
 const state = reactive(useClone(defaultState))
 
-const setState = (newState) => {
+const setState = newState => {
   Object.assign(state, newState)
 }
 
 const resetState = () => setState(useClone(defaultState))
-const resetPartial = () => setState({
-  step: 1,
-  status: null,
-  relations: {},
-  exportRelation: false,
-  object_unique_id: ''
-})
+const resetPartial = () =>
+  setState({
+    step: 1,
+    status: null,
+    relations: {},
+    exportRelation: false,
+    object_unique_id: '',
+  })
 
-const setRelation = (modelId, uniqueId) => set(state.relations, modelId, uniqueId)
+const setRelation = (modelId, uniqueId) =>
+  set(state.relations, modelId, uniqueId)
 const removeRelation = modelId => del(state.relations, modelId)
 
 export default function () {
-  return [toRefs(state), { setState, resetState, resetPartial, setRelation, removeRelation }]
+  return [
+    toRefs(state),
+    { setState, resetState, resetPartial, setRelation, removeRelation },
+  ]
 }

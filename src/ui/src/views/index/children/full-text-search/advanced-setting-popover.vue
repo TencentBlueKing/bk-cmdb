@@ -11,42 +11,64 @@
 -->
 
 <template>
-  <bk-popover class="search-dropdown" v-bind="popoverProps" ref="popover">
-    <bk-link theme="default" class="anchor"
+  <bk-popover v-bind="popoverProps" ref="popover" class="search-dropdown">
+    <bk-link
+      theme="default"
+      class="anchor"
       icon="bk-icon icon-angle-down"
       icon-placement="right"
-      @click="handleShow">{{$t('高级搜索')}}</bk-link>
+      @click="handleShow"
+      >{{ $t('高级搜索') }}</bk-link
+    >
     <template #content>
       <div class="advanced-search-form">
         <div class="setting-group">
-          <div class="title">{{$t('检索对象')}}</div>
+          <div class="title">{{ $t('检索对象') }}</div>
           <div class="content">
             <div class="bk-button-group">
               <bk-button
+                :class="{ 'is-selected': targets.includes('model') }"
                 @click="handleTargetClick('model')"
-                :class="{ 'is-selected': targets.includes('model') }">{{$t('模型')}}</bk-button>
+                >{{ $t('模型') }}</bk-button
+              >
               <bk-button
+                :class="{ 'is-selected': targets.includes('instance') }"
                 @click="handleTargetClick('instance')"
-                :class="{ 'is-selected': targets.includes('instance') }">{{$t('实例')}}</bk-button>
+                >{{ $t('实例') }}</bk-button
+              >
             </div>
           </div>
         </div>
         <div class="setting-group scope">
-          <div class="title">{{$t('模型范围')}}</div>
+          <div class="title">{{ $t('模型范围') }}</div>
           <div class="content">
-            <div class="setting-item" v-show="targets.includes('model')">
-              <label class="label">{{$t('模型')}}</label>
-              <model-selector multiple searchable class="form-el" :placeholder="$t('默认全部')" v-model="models" />
+            <div v-show="targets.includes('model')" class="setting-item">
+              <label class="label">{{ $t('模型') }}</label>
+              <model-selector
+                v-model="models"
+                multiple
+                searchable
+                class="form-el"
+                :placeholder="$t('默认全部')" />
             </div>
-            <div class="setting-item" v-show="targets.includes('instance')">
-              <label class="label">{{$t('实例')}}</label>
-              <model-selector multiple searchable class="form-el" :placeholder="$t('默认全部')" v-model="instances" />
+            <div v-show="targets.includes('instance')" class="setting-item">
+              <label class="label">{{ $t('实例') }}</label>
+              <model-selector
+                v-model="instances"
+                multiple
+                searchable
+                class="form-el"
+                :placeholder="$t('默认全部')" />
             </div>
           </div>
         </div>
         <div class="buttons">
-          <bk-button theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
-          <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+          <bk-button theme="primary" @click="handleConfirm">{{
+            $t('确定')
+          }}</bk-button>
+          <bk-button theme="default" @click="handleCancel">{{
+            $t('取消')
+          }}</bk-button>
         </div>
       </div>
     </template>
@@ -54,138 +76,143 @@
 </template>
 
 <script>
-  import { defineComponent, computed, toRefs, ref } from 'vue'
-  import routerActions from '@/router/actions'
-  import RouterQuery from '@/router/query'
-  import ModelSelector  from '@/components/ui/selector/model.vue'
-  import useAdvancedSetting from './use-advanced-setting.js'
-  import { pickQuery } from './use-route.js'
+import { defineComponent, computed, toRefs, ref } from 'vue'
 
-  export default defineComponent({
-    components: {
-      ModelSelector
-    },
-    setup() {
-      const popover = ref(null)
-      const route = computed(() => RouterQuery.route)
+import routerActions from '@/router/actions'
+import RouterQuery from '@/router/query'
+import ModelSelector from '@/components/ui/selector/model.vue'
 
-      const popoverProps = {
-        width: 500,
-        trigger: 'click',
-        distance: 12,
-        // sticky: true,
-        theme: 'light',
-        placement: 'bottom',
-        trigger: 'manual',
-        tippyOptions: {
-          hideOnClick: false
-        }
-      }
+import useAdvancedSetting from './use-advanced-setting.js'
+import { pickQuery } from './use-route.js'
 
-      const {
-        activeSetting,
-        handleShow,
-        handleConfirm,
-        handleCancel,
-        handleTargetClick
-      } = useAdvancedSetting({
-        onShow() {
-          popover.value.showHandler()
-        },
-        onConfirm() {
-          const query = pickQuery(route.value.query, ['tab', 'keyword'])
-          routerActions.redirect({
-            query: {
-              ...query,
-              t: Date.now()
-            }
-          })
-          popover.value.hideHandler()
-        },
-        onCancel() {
-          popover.value.hideHandler()
-        }
-      })
+export default defineComponent({
+  components: {
+    ModelSelector,
+  },
+  setup() {
+    const popover = ref(null)
+    const route = computed(() => RouterQuery.route)
 
-      return {
-        ...toRefs(activeSetting),
-        popover,
-        popoverProps,
-        handleShow,
-        handleTargetClick,
-        handleConfirm,
-        handleCancel
-      }
+    const popoverProps = {
+      width: 500,
+      distance: 12,
+      // sticky: true,
+      theme: 'light',
+      placement: 'bottom',
+      trigger: 'manual',
+      tippyOptions: {
+        hideOnClick: false,
+      },
     }
-  })
+
+    const {
+      activeSetting,
+      handleShow,
+      handleConfirm,
+      handleCancel,
+      handleTargetClick,
+    } = useAdvancedSetting({
+      onShow() {
+        popover.value.showHandler()
+      },
+      onConfirm() {
+        const query = pickQuery(route.value.query, ['tab', 'keyword'])
+        routerActions.redirect({
+          query: {
+            ...query,
+            t: Date.now(),
+          },
+        })
+        popover.value.hideHandler()
+      },
+      onCancel() {
+        popover.value.hideHandler()
+      },
+    })
+
+    return {
+      ...toRefs(activeSetting),
+      popover,
+      popoverProps,
+      handleShow,
+      handleTargetClick,
+      handleConfirm,
+      handleCancel,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
-  .advanced-search-form {
-    margin: 8px;
+.advanced-search-form {
+  margin: 8px;
 
-    .buttons {
-      .bk-button {
-        & + .bk-button {
-          margin-left: 4px;
-        }
-      }
-    }
-  }
-
-  .search-dropdown {
-    .anchor {
-      /deep/ .bk-link-text {
-        font-size: 12px;
-      }
-    }
-  }
-
-  .bk-button-group {
+  .buttons {
     .bk-button {
-      min-width: 70px;
-      border-radius: 2px;
       & + .bk-button {
-        margin-left: 6px;
+        margin-left: 4px;
       }
     }
   }
+}
 
-  .setting-group {
-    .title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #63656E;
+.search-dropdown {
+  .anchor {
+    /deep/ .bk-link-text {
+      font-size: 12px;
     }
-    .content {
-      margin: 14px 0 24px 0;
+  }
+}
+
+.bk-button-group {
+  .bk-button {
+    min-width: 70px;
+    border-radius: 2px;
+
+    & + .bk-button {
+      margin-left: 6px;
     }
-    &.scope {
-      .setting-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
+  }
+}
 
-        .label {
-          flex: none;
-          height: 32px;
-          width: 80px;
-          line-height: 32px;
-          text-align: center;
-          color: #63656E;
-          background: #f0f1f5;
-          border: 1px solid #c4c6cc;
-          border-radius: 2px 0px 0px 2px;
+.setting-group {
+  .title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #63656e;
+  }
 
-          & + .form-el {
-            margin-left: -1px;
-          }
+  .content {
+    margin: 14px 0 24px;
+  }
+
+  &.scope {
+    .setting-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .label {
+        flex: none;
+        height: 32px;
+        width: 80px;
+        line-height: 32px;
+        text-align: center;
+        color: #63656e;
+        background: #f0f1f5;
+        border: 1px solid #c4c6cc;
+        border-radius: 2px 0 0 2px;
+
+        & + .form-el {
+          margin-left: -1px;
         }
-        .form-el {
-          flex: 1;
-          width: calc(100% - 80px);
-        }
+      }
+
+      .form-el {
+        flex: 1;
+        width: calc(100% - 80px);
       }
     }
   }
+}
 </style>

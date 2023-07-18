@@ -32,10 +32,10 @@ const actions = {
   },
   assignHostsToBusiness(context, { params, config }) {
     return $http.post('hosts/modules/resource/idle', params, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

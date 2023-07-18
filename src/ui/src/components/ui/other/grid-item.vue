@@ -11,54 +11,61 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, inject } from 'vue'
+import { computed, defineComponent, inject } from 'vue'
 
-  export default defineComponent({
-    props: {
-      label: String,
-      labelWidth: {
-        type: [Number, String]
-      },
-      direction: {
-        type: String
-      },
-      required: {
-        type: Boolean,
-        default: false
-      },
-      gap: {
-        type: Number
-      }
+export default defineComponent({
+  props: {
+    label: String,
+    labelWidth: {
+      type: [Number, String],
     },
-    setup(props) {
-      const mode = inject('mode', 'detail')
+    direction: {
+      type: String,
+    },
+    required: {
+      type: Boolean,
+      default: false,
+    },
+    gap: {
+      type: Number,
+    },
+  },
+  setup(props) {
+    const mode = inject('mode', 'detail')
 
-      const labelContainerWidth = computed(() => {
-        let { labelWidth } = props
-        if (!labelWidth) {
-          labelWidth = mode === 'detail' ? '160' : '100%'
-        }
-
-        return isNaN(Number(labelWidth)) ? labelWidth : `${labelWidth}px`
-      })
-
-      const itemGap = computed(() => (isNaN(Number(props.gap)) ? props.gap : `${props.gap}px`))
-
-      return {
-        mode,
-        labelContainerWidth,
-        itemGap
+    const labelContainerWidth = computed(() => {
+      let { labelWidth } = props
+      if (!labelWidth) {
+        labelWidth = mode === 'detail' ? '160' : '100%'
       }
+
+      return isNaN(Number(labelWidth)) ? labelWidth : `${labelWidth}px`
+    })
+
+    const itemGap = computed(() =>
+      isNaN(Number(props.gap)) ? props.gap : `${props.gap}px`
+    )
+
+    return {
+      mode,
+      labelContainerWidth,
+      itemGap,
     }
-  })
+  },
+})
 </script>
 
 <template>
-  <div :class="['cmdb-grid-item', { required }, direction, mode, $i18n.locale]"
-    :style="{ '--label-width': `${labelContainerWidth}`, '--flex-direction': direction, '--item-gap': itemGap }">
+  <div
+    :class="['cmdb-grid-item', { required }, direction, mode, $i18n.locale]"
+    :style="{
+      '--label-width': `${labelContainerWidth}`,
+      '--flex-direction': direction,
+      '--item-gap': itemGap,
+    }">
     <div class="item-label">
       <slot name="label">
-        <div class="label-text" v-bk-overflow-tips>{{label}}</div>
+        <div v-bk-overflow-tips class="label-text">{{ label }}</div>
       </slot>
     </div>
     <div class="item-content">
@@ -69,88 +76,92 @@
 </template>
 
 <style lang="scss" scoped>
-  .cmdb-grid-item {
+.cmdb-grid-item {
+  display: flex;
+
+  .item-label {
     display: flex;
+    width: var(--label-width);
+    font-size: var(--grid-item-font-size, 12px);
+    color: #63656e;
+
+    .label-text {
+      @include ellipsis;
+    }
+  }
+
+  .item-content {
+    flex: 1;
+    position: relative;
+  }
+
+  &.detail {
+    align-items: center;
+    flex-direction: var(--flex-direction, row);
 
     .item-label {
-      display: flex;
-      width: var(--label-width);
-      font-size: var(--grid-item-font-size, 12px);
-      color: #63656E;
+      margin-right: calc(var(--item-gap, 8px) / 2);
 
       .label-text {
-        @include ellipsis;
+        flex: 1;
+        text-align: right;
+      }
+
+      &::after {
+        content: '：';
       }
     }
 
     .item-content {
-      flex: 1;
-      position: relative;
+      margin-left: calc(var(--item-gap, 8px) / 2);
     }
 
-    &.detail {
+    &.en {
+      .item-label {
+        &::after {
+          content: ':';
+        }
+      }
+    }
+  }
+
+  &.form {
+    flex-direction: var(--flex-direction, column);
+
+    &:not(.row) .item-label {
+      margin-bottom: calc(var(--item-gap, 8px) / 2);
+    }
+
+    &:not(.row) .item-content {
+      margin-top: calc(var(--item-gap, 8px) / 2);
+    }
+
+    &.row {
       align-items: center;
-      flex-direction: var(--flex-direction, row);
+
       .item-label {
         margin-right: calc(var(--item-gap, 8px) / 2);
+
         .label-text {
           flex: 1;
           text-align: right;
-        }
-
-        &::after {
-          content: "：";
         }
       }
 
       .item-content {
         margin-left: calc(var(--item-gap, 8px) / 2);
       }
-
-      &.en {
-        .item-label {
-          &::after {
-            content: ":";
-          }
-        }
-      }
     }
+  }
 
-    &.form {
-      flex-direction: var(--flex-direction, column);
-
-      &:not(.row) .item-label {
-        margin-bottom: calc(var(--item-gap, 8px) / 2);
-      }
-
-      &:not(.row) .item-content {
-        margin-top: calc(var(--item-gap, 8px) / 2);
-      }
-
-      &.row {
-        align-items: center;
-
-        .item-label {
-          margin-right: calc(var(--item-gap, 8px) / 2);
-          .label-text {
-            flex: 1;
-            text-align: right;
-          }
-        }
-        .item-content {
-          margin-left: calc(var(--item-gap, 8px) / 2);
-        }
-      }
-    }
-
-    &.required {
-      .label-text {
-        &::after {
-          content: "*";
-          color: #ff5656;
-          padding: 0 2px;
-        }
+  &.required {
+    .label-text {
+      &::after {
+        content: '*';
+        color: #ff5656;
+        padding: 0 2px;
       }
     }
   }
+}
 </style>

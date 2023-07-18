@@ -20,27 +20,41 @@ const getters = {}
 
 const actions = {
   /**
-     * 根据服务模板、模块查询进程实例与服务模板之间的差异
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchServiceInstanceDifferences({ commit, state, dispatch, rootGetters }, { params, config }) {
+   * 根据服务模板、模块查询进程实例与服务模板之间的差异
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchServiceInstanceDifferences(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
     return $http.post('find/proc/service_instance/difference', params, config)
   },
   /**
    * 获取进程模板 diff 状态
    */
-  getProcessTplDiffState({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post(`findmany/topo/service_template_sync_status/bk_biz_id/${params.bk_biz_id}`, params, config)
+  getProcessTplDiffState(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      `findmany/topo/service_template_sync_status/bk_biz_id/${params.bk_biz_id}`,
+      params,
+      config
+    )
   },
   /**
    * 获取服务模板diff信息
    */
   getTplDiffs({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('/find/proc/service_template/general_difference', params, config)
+    return $http.post(
+      '/find/proc/service_template/general_difference',
+      params,
+      config
+    )
   },
   /**
    * 获取进程下涉及到变更的实例
@@ -52,7 +66,10 @@ const actions = {
    * @param {boolean} [params.service_category] 是否是服务分类变更
    * @returns {Promise}
    */
-  getDiffInstances({ commit, state, dispatch, rootGetters }, { params, config }) {
+  getDiffInstances(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
     return $http.post('/find/proc/difference/service_instances', params, config)
   },
   /**
@@ -64,20 +81,30 @@ const actions = {
    * @param {number} params.service_instance_id 服务实例 ID
    * @returns {Promise}
    */
-  getInstanceDiff({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('/find/proc/service_instance/difference_detail', params, config)
+  getInstanceDiff(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      '/find/proc/service_instance/difference_detail',
+      params,
+      config
+    )
   },
   /**
-     * 批量更新服务实例中的进程信息，保持和服务模板一致
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  syncServiceInstanceByTemplate({ commit, state, dispatch, rootGetters }, { params, config }) {
+   * 批量更新服务实例中的进程信息，保持和服务模板一致
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  syncServiceInstanceByTemplate(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
     return $http.put('update/proc/service_instance/sync', params, config)
-  }
+  },
 }
 
 const mutations = {}
@@ -87,5 +114,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

@@ -1,5 +1,3 @@
-/build/
-/config/
-/dist/
+/builder/
 /*.js
 /src/assets/icon/bk-icon-cmdb/iconcool.js

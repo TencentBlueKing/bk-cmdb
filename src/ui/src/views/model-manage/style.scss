@@ -15,7 +15,8 @@ $topTipsHeight: 30px; // 顶部提示栏高度
 $topTipsMarginBottom: 10px; // 顶部提示栏下边距
 $modelOptionsHeight: 32px; // 模型选项栏高度
 // 模型管理固定定位头部高度
-$modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMarginBottom + 35px;
+$modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight +
+  $topTipsMarginBottom + 35px;
 
 .model-management {
   background-color: #fafbfd;
@@ -27,7 +28,8 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     background-color: #fafbfd;
 
     @at-root .is-tips-hidden & {
-      height: $modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom;
+      height: $modelManagementHeaderHeight - $topTipsHeight -
+        $topTipsMarginBottom;
     }
 
     .cmdb-tips {
@@ -44,15 +46,22 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     overflow: auto;
 
     @at-root .is-model-selectable & {
-      height: calc(100% - $modelManagementHeaderHeight - $exportActionBarHeight);
+      height: calc(
+        100% - $modelManagementHeaderHeight - $exportActionBarHeight
+      );
     }
 
     @at-root .is-tips-hidden & {
-      height: calc(100% - ($modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom));
+      height: calc(
+        100% -
+          ($modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom)
+      );
     }
 
-    @at-root .is-tips-hidden.is-model-selectable &{
-      $height: $modelManagementHeaderHeight - $topTipsHeight - $topTipsMarginBottom + $exportActionBarHeight;
+    @at-root .is-tips-hidden.is-model-selectable & {
+      $height: $modelManagementHeaderHeight - $topTipsHeight -
+        $topTipsMarginBottom + $exportActionBarHeight;
+
       height: calc(100% - $height);
     }
   }
@@ -127,25 +136,30 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     font-size: 12px;
     height: 32px;
     line-height: 30px;
+
     &.enable {
       border-radius: 2px 0 0 2px;
       border-right-color: #3a84ff;
       z-index: 2;
     }
+
     &.disabled {
       border-radius: 0 2px 2px 0;
       margin-left: -1px;
       z-index: 1;
     }
+
     &:hover {
       border-color: #3a84ff;
       z-index: 2;
     }
+
     &.is-active {
       border-color: #3a84ff;
       color: #3a84ff;
       z-index: 2;
     }
+
     & + .model-type-button {
       border-radius: 0 2px 2px 0;
       margin-left: -1px;
@@ -202,7 +216,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   $modelItemWidth: 256px;
   $modelItemRadius: 2px;
   $modelItemHeight: 60px;
-  
+
   .model-item {
     float: left;
     display: flex;
@@ -212,13 +226,14 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     height: $modelItemHeight;
     background-color: #fff;
     border-radius: $modelItemRadius;
-    box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
+    box-shadow: 0 2px 4px 0 rgb(25 25 41 / 5%);
     cursor: pointer;
 
     &:hover {
       transition: all 200ms ease;
-      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05),
-        0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+      box-shadow:
+        0 2px 4px 0 rgb(25 25 41 / 5%),
+        0 2px 4px 0 rgb(0 0 0 / 10%);
 
       .model-instance-count {
         display: flex;
@@ -226,7 +241,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     }
 
     @at-root .is-dragging &:hover {
-      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
+      box-shadow: 0 2px 4px 0 rgb(25 25 41 / 5%);
     }
 
     &.is-builtin {
@@ -239,7 +254,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
         }
       }
 
-      &:hover .model-icon{
+      &:hover .model-icon {
         background-color: #fff;
       }
     }
@@ -276,6 +291,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
       &:hover {
         background-color: #eff5ff;
+
         .drag-icon {
           visibility: visible;
         }
@@ -298,6 +314,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
         flex-shrink: 0;
         visibility: hidden;
         margin-left: 5px;
+
         @include dragIcon;
 
         @at-root .is-model-selectable & {
@@ -331,6 +348,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     .model-name {
       line-height: 19px;
       font-size: 14px;
+
       @include ellipsis;
     }
 
@@ -338,6 +356,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       line-height: 16px;
       font-size: 12px;
       color: #bfc7d2;
+
       @include ellipsis;
     }
 
@@ -383,20 +402,24 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   .dialog-content {
     padding: 20px 15px 20px 28px;
   }
+
   .title {
     font-size: 20px;
     color: #333948;
     line-height: 1;
     padding-bottom: 14px;
   }
+
   .label-item,
   label {
     display: block;
     margin-bottom: 10px;
     font-size: 0;
+
     &:last-child {
       margin: 0;
     }
+
     .color-danger {
       display: inline-block;
       font-size: 14px;
@@ -404,16 +427,20 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       text-align: center;
       vertical-align: middle;
     }
+
     .icon-info-circle {
       font-size: 18px;
       color: $cmdbBorderColor;
     }
+
     .label-title {
       font-size: 14px;
       line-height: 36px;
       vertical-align: middle;
+
       @include ellipsis;
     }
+
     .cmdb-form-item {
       display: inline-block;
       margin-right: 10px;
@@ -421,9 +448,11 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       vertical-align: middle;
     }
   }
+
   .footer {
     font-size: 0;
     text-align: right;
+
     .bk-primary {
       margin-right: 10px;
     }
@@ -434,11 +463,13 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 .success-content {
   text-align: center;
   padding-bottom: 46px;
+
   p {
-    color: #444444;
+    color: #444;
     font-size: 24px;
     padding: 10px 0 20px;
   }
+
   .icon-check-1 {
     width: 58px;
     height: 58px;
@@ -450,22 +481,24 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     background-color: #2dcb56;
     text-align: center;
   }
+
   .btn-box {
     font-size: 0;
+
     .bk-button {
       margin: 0 5px;
     }
   }
 }
 
- // 分组内容为空
- .group-empty-model {
+// 分组内容为空
+.group-empty-model {
   width: 100%;
   height: 60px;
   line-height: 60px;
-  background-color: #ffffff;
+  background-color: #fff;
   font-size: 14px;
-  border: 1px dashed #DCDEE5;
+  border: 1px dashed #dcdee5;
   text-align: center;
   vertical-align: middle;
   margin-top: 12px;

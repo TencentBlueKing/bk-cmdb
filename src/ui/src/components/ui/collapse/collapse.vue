@@ -13,9 +13,15 @@
 <template>
   <div :class="['collapse-layout', size]">
     <div class="collapse-trigger" @click="toggle">
-      <span :class="['collapse-arrow', 'bk-icon', arrowIconClass, { 'is-collapsed': hidden }]"></span>
+      <span
+        :class="[
+          'collapse-arrow',
+          'bk-icon',
+          arrowIconClass,
+          { 'is-collapsed': hidden },
+        ]"></span>
       <span class="collapse-text">
-        <slot name="title">{{label}}</slot>
+        <slot name="title">{{ label }}</slot>
       </span>
     </div>
     <cmdb-collapse-transition
@@ -27,7 +33,7 @@
       @leave="handleLeave"
       @after-leave="handleAfterLeave"
       @leave-cancelled="handleLeaveCancelled">
-      <div class="collapse-content" v-show="!hidden">
+      <div v-show="!hidden" class="collapse-content">
         <slot></slot>
       </div>
     </cmdb-collapse-transition>
@@ -35,114 +41,118 @@
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-collapse',
-    props: {
-      collapse: Boolean,
-      label: {
-        type: String
-      },
-      arrowType: {
-        type: String,
-        default: 'outlined', // filled
-      },
-      size: {
-        type: String
-      }
+export default {
+  name: 'cmdb-collapse',
+  props: {
+    collapse: Boolean,
+    label: {
+      type: String,
     },
-    data() {
-      return {
-        hidden: this.collapse
-      }
+    arrowType: {
+      type: String,
+      default: 'outlined', // filled
     },
-    computed: {
-      arrowIconClass() {
-        const classMap = {
-          outlined: 'icon-angle-down',
-          filled: 'icon-down-shape'
-        }
-        return `${classMap[this.arrowType]} ${this.arrowType}`
-      }
+    size: {
+      type: String,
     },
-    watch: {
-      collapse(collapse) {
-        this.hidden = collapse
-      },
-      hidden(hidden) {
-        this.$emit('update:collapse', hidden)
-        this.$emit('collapse-change', hidden)
-      }
-    },
-    methods: {
-      toggle() {
-        this.hidden = !this.hidden
-      },
-      handleBeforeEnter() {
-        this.$emit('before-enter')
-      },
-      handleEnter() {
-        this.$emit('enter')
-      },
-      handleAfterEnter() {
-        this.$emit('after-enter')
-      },
-      handleEnterCancelled() {
-        this.$emit('enter-cancelled')
-      },
-      handleBeforeLeave() {
-        this.$emit('before-leave')
-      },
-      handleLeave() {
-        this.$emit('leave')
-      },
-      handleAfterLeave() {
-        this.$emit('after-leave')
-      },
-      handleLeaveCancelled() {
-        this.$emit('leave-cancelled')
-      }
+  },
+  data() {
+    return {
+      hidden: this.collapse,
     }
-  }
+  },
+  computed: {
+    arrowIconClass() {
+      const classMap = {
+        outlined: 'icon-angle-down',
+        filled: 'icon-down-shape',
+      }
+      return `${classMap[this.arrowType]} ${this.arrowType}`
+    },
+  },
+  watch: {
+    collapse(collapse) {
+      this.hidden = collapse
+    },
+    hidden(hidden) {
+      this.$emit('update:collapse', hidden)
+      this.$emit('collapse-change', hidden)
+    },
+  },
+  methods: {
+    toggle() {
+      this.hidden = !this.hidden
+    },
+    handleBeforeEnter() {
+      this.$emit('before-enter')
+    },
+    handleEnter() {
+      this.$emit('enter')
+    },
+    handleAfterEnter() {
+      this.$emit('after-enter')
+    },
+    handleEnterCancelled() {
+      this.$emit('enter-cancelled')
+    },
+    handleBeforeLeave() {
+      this.$emit('before-leave')
+    },
+    handleLeave() {
+      this.$emit('leave')
+    },
+    handleAfterLeave() {
+      this.$emit('after-leave')
+    },
+    handleLeaveCancelled() {
+      this.$emit('leave-cancelled')
+    },
+  },
+}
 </script>
 
 <style lang="scss">
-    .collapse-layout {
-        .collapse-trigger {
-            display: flex;
-            color: #333948;
-            font-weight: bold;
-            align-items: center;
-            cursor: pointer;
-            .collapse-arrow {
-                font-size: 20px;
-                font-weight: 700;
-                margin: 0 2px 0 -4px;
-                transition: transform .2s ease-in-out;
-                &.is-collapsed {
-                    transform: rotate(-90deg);
-                }
+.collapse-layout {
+  .collapse-trigger {
+    display: flex;
+    color: #333948;
+    font-weight: bold;
+    align-items: center;
+    cursor: pointer;
 
-                &.filled {
-                  font-size: 12px;
-                  color: #63656E;
-                  margin: 0 4px 0 0;
-                }
-            }
-            .collapse-text {
-                flex: 1;
-                font-size: 14px;
-            }
-        }
+    .collapse-arrow {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 2px 0 -4px;
+      transition: transform 0.2s ease-in-out;
 
-        &.small {
-            .collapse-arrow {
-                &.filled {
-                  margin-top: -1px;
-                }
-            }
-            .collapse-text {
-                font-size: 12px;
-            }
-        }
+      &.is-collapsed {
+        transform: rotate(-90deg);
+      }
+
+      &.filled {
+        font-size: 12px;
+        color: #63656e;
+        margin: 0 4px 0 0;
+      }
     }
+
+    .collapse-text {
+      flex: 1;
+      font-size: 14px;
+    }
+  }
+
+  &.small {
+    .collapse-arrow {
+      &.filled {
+        margin-top: -1px;
+      }
+    }
+
+    .collapse-text {
+      font-size: 12px;
+    }
+  }
+}
 </style>

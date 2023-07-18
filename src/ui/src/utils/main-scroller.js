@@ -27,7 +27,7 @@ export function removeMainScrollListener(fn) {
 }
 
 export function execMainScrollListener(event) {
-  scrollListeners.forEach((fn) => {
+  scrollListeners.forEach(fn => {
     fn(event)
   })
 }
@@ -47,7 +47,7 @@ export function removeMainResizeListener(fn) {
 }
 
 export function execMainResizeListener(event) {
-  resizeListeners.forEach((fn) => {
+  resizeListeners.forEach(fn => {
     fn(event)
   })
 }

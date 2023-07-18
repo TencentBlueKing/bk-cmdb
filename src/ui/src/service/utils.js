@@ -11,6 +11,7 @@
  */
 
 import merge from 'lodash/merge'
+
 import http from '@/api'
 
 /**
@@ -20,7 +21,9 @@ import http from '@/api'
  * @returns 生成的新参数
  */
 export const enableCount = (params = {}, flag = false) => {
-  const page = Object.assign(flag ? { start: 0, limit: 0, sort: '' } : {}, { enable_count: flag })
+  const page = Object.assign(flag ? { start: 0, limit: 0, sort: '' } : {}, {
+    enable_count: flag,
+  })
   return merge({}, params, { page })
 }
 
@@ -36,23 +39,44 @@ export const rollReqUseCount = async (
   config = {},
   method = 'post'
 ) => {
-  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info' } = options
+  const {
+    start = 1,
+    limit = 1000,
+    countKey = 'count',
+    listKey = 'info',
+  } = options
 
   let index = start
   const size = limit
   const results = []
 
   // 先获取到总数
-  const { [countKey]: total = 0 } = await http[method](url, enableCount(params, true), config)
+  const { [countKey]: total = 0 } = await http[method](
+    url,
+    enableCount(params, true),
+    config
+  )
 
   // 分页方法
-  const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
+  const page = index => ({
+    ...(params.page || {}),
+    start: (index - 1) * size,
+    limit: size,
+  })
 
   // 请求列表的req
-  const req = index => http[method](url, enableCount({
-    ...params,
-    page: page(index)
-  }, false), config)
+  const req = index =>
+    http[method](
+      url,
+      enableCount(
+        {
+          ...params,
+          page: page(index),
+        },
+        false
+      ),
+      config
+    )
 
   // 列表一共要拉取多少次
   const max = Math.ceil(total / size)
@@ -80,18 +104,32 @@ export const rollReq = async (
   config = {},
   method = 'post'
 ) => {
-  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info' } = options
+  const {
+    start = 1,
+    limit = 1000,
+    countKey = 'count',
+    listKey = 'info',
+  } = options
 
   let index = start
   const size = limit
   const results = []
 
-  const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
+  const page = index => ({
+    ...(params.page || {}),
+    start: (index - 1) * size,
+    limit: size,
+  })
 
-  const req = index => http[method](url, {
-    ...params,
-    page: page(index)
-  }, config)
+  const req = index =>
+    http[method](
+      url,
+      {
+        ...params,
+        page: page(index),
+      },
+      config
+    )
 
   // 先拉起始页，通常是第1页，同时得到总数
   const { [countKey]: total = 0, [listKey]: list = [] } = await req(index)
@@ -130,13 +168,25 @@ export const rollReqUseTotalCount = async (
   const results = []
 
   // 分页方法
-  const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
+  const page = index => ({
+    ...(params.page || {}),
+    start: (index - 1) * size,
+    limit: size,
+  })
 
   // 请求列表的req
-  const req = index => http[method](url, enableCount({
-    ...params,
-    page: page(index)
-  }, false), config)
+  const req = index =>
+    http[method](
+      url,
+      enableCount(
+        {
+          ...params,
+          page: page(index),
+        },
+        false
+      ),
+      config
+    )
 
   // 列表一共要拉取多少次
   const max = Math.ceil(total / size)
@@ -151,7 +201,7 @@ export const rollReqUseTotalCount = async (
   const all = await Promise.all(reqs)
 
   if (getter) {
-    all.forEach((data) => {
+    all.forEach(data => {
       results.push(getter(data))
     })
   } else {
@@ -182,21 +232,27 @@ export const rollReqByDataKey = async (
   const reqs = []
 
   while (index < params?.[dataKey]?.length) {
-    reqs.push(http[method](url, {
-      ...params,
-      [dataKey]: params?.[dataKey]?.slice(index, index + limit)
-    }, config))
+    reqs.push(
+      http[method](
+        url,
+        {
+          ...params,
+          [dataKey]: params?.[dataKey]?.slice(index, index + limit),
+        },
+        config
+      )
+    )
     index = index + limit
   }
 
   const all = await Promise.all(reqs)
 
   if (getter) {
-    all.forEach((data) => {
+    all.forEach(data => {
       results.push(getter(data))
     })
   } else {
-    all.forEach((data) => {
+    all.forEach(data => {
       results.push(...data)
     })
   }

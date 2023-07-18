@@ -15,61 +15,70 @@
 import $http from '@/api'
 
 const state = {
-  mainLineModels: []
+  mainLineModels: [],
 }
 
 const getters = {
-  isMainLine: state => searchModel => state.mainLineModels.some(model => model.bk_obj_id === searchModel.bk_obj_id)
+  isMainLine: state => searchModel =>
+    state.mainLineModels.some(
+      model => model.bk_obj_id === searchModel.bk_obj_id
+    ),
 }
 
 const actions = {
   /**
-     * 添加模型主关联
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 添加模型主关联
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   createMainlineObject({ commit, state, dispatch }, { params }) {
     return $http.post('create/topomodelmainline', params)
   },
 
   /**
-     * 删除模型主关联
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkObjId 对象的模型id
-     * @return {promises} promises 对象
-     */
-  deleteMainlineObject({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
+   * 删除模型主关联
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {String} bkObjId 对象的模型id
+   * @return {promises} promises 对象
+   */
+  deleteMainlineObject(
+    { commit, state, dispatch, rootGetters },
+    { bkObjId, config }
+  ) {
     return $http.delete(`delete/topomodelmainline/object/${bkObjId}`, config)
   },
 
   /**
-     * 查询模型拓扑
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @return {promises} promises 对象
-     */
-  searchMainlineObject({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('find/topomodelmainline', params, config).then((data) => {
+   * 查询模型拓扑
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @return {promises} promises 对象
+   */
+  searchMainlineObject(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post('find/topomodelmainline', params, config).then(data => {
       commit('setMainLineModels', data)
       return data
     })
   },
 
   /**
-     * 获取实例拓扑
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkBizId 业务id
-     * @return {promises} promises 对象
-     */
+   * 获取实例拓扑
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkBizId 业务id
+   * @return {promises} promises 对象
+   */
   getInstTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
     return $http.post(`find/topoinst/biz/${bizId}`, config)
   },
@@ -82,36 +91,47 @@ const actions = {
    * @param {String} bizId 业务id
    * @return {promises} promises 对象
    */
-  getInstTopoInstanceNum({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+  getInstTopoInstanceNum(
+    { commit, state, dispatch, rootGetters },
+    { bizId, config }
+  ) {
     return $http.post(`/find/topoinst_with_statistics/biz/${bizId}`, {}, config)
   },
 
   /**
-     * 获取子节点实例
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkObjId 对象的模型id
-     * @param {String} bkBizId 业务id
-     * @param {String} bkInstId 实例id
-     * @return {promises} promises 对象
-     */
-  searchInstTopo({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
-    return $http.get(`topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`)
+   * 获取子节点实例
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {String} bkObjId 对象的模型id
+   * @param {String} bkBizId 业务id
+   * @param {String} bkInstId 实例id
+   * @return {promises} promises 对象
+   */
+  searchInstTopo(
+    { commit, state, dispatch },
+    { bkSupplierAccount, bkObjId, bkBizId, bkInstId }
+  ) {
+    return $http.get(
+      `topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`
+    )
   },
 
   /**
-     * 查询内置模块集
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkBizId 业务id
-     * @return {promises} promises 对象
-     */
+   * 查询内置模块集
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {String} bkBizId 业务id
+   * @return {promises} promises 对象
+   */
   getInternalTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`, config)
+    return $http.get(
+      `topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`,
+      config
+    )
   },
 
   getTopoPath(context, { bizId, params, config }) {
@@ -126,9 +146,11 @@ const actions = {
     const nodes = params.condition
     let index = 0
     while (index < nodes.length) {
-      queue.push($http.post(`find/topoinstnode/host_serviceinst_count/${bizId}`, {
-        condition: nodes.slice(index, index + limit)
-      }))
+      queue.push(
+        $http.post(`find/topoinstnode/host_serviceinst_count/${bizId}`, {
+          condition: nodes.slice(index, index + limit),
+        })
+      )
       index = index + limit
     }
     try {
@@ -140,13 +162,13 @@ const actions = {
     } catch (error) {
       return Promise.reject(error)
     }
-  }
+  },
 }
 
 const mutations = {
   setMainLineModels(state, models) {
     state.mainLineModels = models
-  }
+  },
 }
 
 export default {
@@ -154,5 +176,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

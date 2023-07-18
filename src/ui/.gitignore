@@ -17,6 +17,9 @@ yarn-error.log*
 # eslint
 eslint.html
 
+# stylelint
+stylelint.json
+
 # dev config
 /builder/config/index.dev*.js
 

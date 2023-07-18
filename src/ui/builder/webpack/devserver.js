@@ -11,6 +11,7 @@
  */
 
 const path = require('path')
+
 const MockJS = require('mockjs')
 const bodyParser = require('body-parser')
 const { pathToRegexp } = require('path-to-regexp')
@@ -87,7 +88,10 @@ module.exports = config => ({
 
   historyApiFallback: {
     rewrites: [
-      { from: /.*/, to: path.posix.join(config.dev.assetsPublicPath, 'index.html') },
+      {
+        from: /.*/,
+        to: path.posix.join(config.dev.assetsPublicPath, 'index.html'),
+      },
     ],
   },
 
@@ -105,5 +109,5 @@ module.exports = config => ({
 
   devMiddleware: {
     stats: 'errors-only', // 'errors-only' | 'minimal' | 'normal' | 'verbose'
-  }
+  },
 })

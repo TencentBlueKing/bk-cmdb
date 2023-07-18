@@ -12,17 +12,17 @@
 
 <template>
   <user-value
-    :value="value"
+    v-if="property.bk_property_type === PROPERTY_TYPES.OBJUSER"
     ref="complexTypeComp"
-    v-if="property.bk_property_type === PROPERTY_TYPES.OBJUSER">
+    :value="value">
   </user-value>
   <table-value
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.TABLE"
     ref="complexTypeComp"
     :value="value"
     :show-on="showOn"
     :format-cell-value="formatCellValue"
-    :property="property"
-    v-else-if="property.bk_property_type === PROPERTY_TYPES.TABLE">
+    :property="property">
   </table-value>
   <service-template-value
     v-else-if="property.bk_property_type === PROPERTY_TYPES.SERVICE_TEMPLATE"
@@ -59,155 +59,157 @@
     v-bind="$attrs">
   </inner-table-value>
   <component
-    class="value-container"
     :is="tag"
-    v-bind="attrs"
+    v-else-if="isShowOverflowTips"
     v-bk-overflow-tips
-    v-else-if="isShowOverflowTips">
-    {{displayValue}}
-  </component>
-  <component
     class="value-container"
-    :is="tag"
-    v-bind="attrs"
-    v-else>
-    {{displayValue}}
+    v-bind="attrs">
+    {{ displayValue }}
+  </component>
+  <component :is="tag" v-else class="value-container" v-bind="attrs">
+    {{ displayValue }}
   </component>
 </template>
 
 <script>
-  import UserValue from './user-value'
-  import TableValue from './table-value'
-  import ServiceTemplateValue from '@/components/search/service-template'
-  import MapstringValue from './mapstring-value.vue'
-  import EnumquoteValue from './enumquote-value.vue'
-  import OrgValue from './org-value.vue'
-  import InnerTableValue from './inner-table-value.vue'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import { isUseComplexValueType } from '@/utils/tools'
+import { isUseComplexValueType } from '@/utils/tools'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import ServiceTemplateValue from '@/components/search/service-template'
 
-  export default {
-    name: 'cmdb-property-value',
-    components: {
-      UserValue,
-      TableValue,
-      ServiceTemplateValue,
-      MapstringValue,
-      EnumquoteValue,
-      OrgValue,
-      InnerTableValue
-    },
-    props: {
-      value: {
-        type: [String, Number, Array, Boolean, Object],
-        default: ''
-      },
-      property: {
-        type: [Object, String],
-        default: () => ({})
-      },
-      options: {
-        type: [Array, String, Object],
-        default: () => ([])
-      },
-      showUnit: {
-        type: Boolean,
-        default: true
-      },
-      tag: {
-        type: String,
-        default: 'span'
-      },
-      className: {
-        type: String,
-        default: ''
-      },
-      theme: {
-        type: String,
-        default: 'default',
-        validator(value) {
-          return ['primary', 'default'].includes(value)
-        }
-      },
-      showOn: {
-        type: String,
-        default: 'default',
-        validator(value) {
-          return ['default', 'cell'].includes(value)
-        }
-      },
-      formatCellValue: Function,
-      multiple: Boolean,
-      isShowOverflowTips: Boolean,
-      instance: {
-        type: Object,
-        default: () => ({})
-      }
-    },
-    data() {
-      return {
-        displayValue: '',
-        PROPERTY_TYPES
-      }
-    },
-    computed: {
-      attrs() {
-        const attrs = {
-          class: `value-${this.theme}-theme`
-        }
-        return attrs
-      }
-    },
-    watch: {
-      value(value) {
-        this.setDisplayValue(value)
-      }
-    },
-    created() {
-      this.setDisplayValue(this.value)
-    },
-    methods: {
-      async setDisplayValue(value) {
-        if (isUseComplexValueType(this.property)) {
-          return
-        }
+import UserValue from './user-value'
+import TableValue from './table-value'
+import MapstringValue from './mapstring-value.vue'
+import EnumquoteValue from './enumquote-value.vue'
+import OrgValue from './org-value.vue'
+import InnerTableValue from './inner-table-value.vue'
 
-        let displayQueue
-        if (this.multiple && Array.isArray(value)) {
-          displayQueue = value.map(subValue => this.getDisplayValue(subValue))
-        } else {
-          displayQueue = [this.getDisplayValue(value)]
-        }
-        const result = await Promise.all(displayQueue)
-        this.displayValue = result.join(', ')
+export default {
+  name: 'cmdb-property-value',
+  components: {
+    UserValue,
+    TableValue,
+    ServiceTemplateValue,
+    MapstringValue,
+    EnumquoteValue,
+    OrgValue,
+    InnerTableValue,
+  },
+  props: {
+    value: {
+      type: [String, Number, Array, Boolean, Object],
+      default: '',
+    },
+    property: {
+      type: [Object, String],
+      default: () => ({}),
+    },
+    options: {
+      type: [Array, String, Object],
+      default: () => [],
+    },
+    showUnit: {
+      type: Boolean,
+      default: true,
+    },
+    tag: {
+      type: String,
+      default: 'span',
+    },
+    className: {
+      type: String,
+      default: '',
+    },
+    theme: {
+      type: String,
+      default: 'default',
+      validator(value) {
+        return ['primary', 'default'].includes(value)
       },
-      async getDisplayValue(value) {
-        const unit = this.property.unit || ''
-        const displayValue = this.$options.filters.formatter(value, this.property, this.options)
-
-        if ((this.showUnit && unit && displayValue !== '--')) {
-          return `${displayValue}${unit}`
-        }
-
-        return String(displayValue).length ? displayValue : '--'
+    },
+    showOn: {
+      type: String,
+      default: 'default',
+      validator(value) {
+        return ['default', 'cell'].includes(value)
       },
-      getCopyValue() {
-        if (this.$refs?.complexTypeComp) {
-          return this.$refs?.complexTypeComp?.getCopyValue?.()
-        }
-        return this.displayValue
-      }
+    },
+    formatCellValue: Function,
+    multiple: Boolean,
+    isShowOverflowTips: Boolean,
+    instance: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  data() {
+    return {
+      displayValue: '',
+      PROPERTY_TYPES,
     }
-  }
+  },
+  computed: {
+    attrs() {
+      const attrs = {
+        class: `value-${this.theme}-theme`,
+      }
+      return attrs
+    },
+  },
+  watch: {
+    value(value) {
+      this.setDisplayValue(value)
+    },
+  },
+  created() {
+    this.setDisplayValue(this.value)
+  },
+  methods: {
+    async setDisplayValue(value) {
+      if (isUseComplexValueType(this.property)) {
+        return
+      }
+
+      let displayQueue
+      if (this.multiple && Array.isArray(value)) {
+        displayQueue = value.map(subValue => this.getDisplayValue(subValue))
+      } else {
+        displayQueue = [this.getDisplayValue(value)]
+      }
+      const result = await Promise.all(displayQueue)
+      this.displayValue = result.join(', ')
+    },
+    async getDisplayValue(value) {
+      const unit = this.property.unit || ''
+      const displayValue = this.$options.filters.formatter(
+        value,
+        this.property,
+        this.options
+      )
+
+      if (this.showUnit && unit && displayValue !== '--') {
+        return `${displayValue}${unit}`
+      }
+
+      return String(displayValue).length ? displayValue : '--'
+    },
+    getCopyValue() {
+      if (this.$refs?.complexTypeComp) {
+        return this.$refs?.complexTypeComp?.getCopyValue?.()
+      }
+      return this.displayValue
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .value-container {
-    display: block;
-  }
-  .value-primary-theme {
-    color: $primaryColor;
-    cursor: pointer;
-    display: block;
-  }
+.value-container {
+  display: block;
+}
+
+.value-primary-theme {
+  color: $primaryColor;
+  cursor: pointer;
+  display: block;
+}
 </style>

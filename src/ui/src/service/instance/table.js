@@ -12,17 +12,21 @@
 
 import http from '@/api'
 
-const create = (params, config) => http.post('createmany/quoted/instance', params, config)
+const create = (params, config) =>
+  http.post('createmany/quoted/instance', params, config)
 
-const update = (params, config) => http.put('updatemany/quoted/instance', params, config)
+const update = (params, config) =>
+  http.put('updatemany/quoted/instance', params, config)
 
-const deletemany = (params, config) => http.delete('deletemany/quoted/instance', { ...config, data: params })
+const deletemany = (params, config) =>
+  http.delete('deletemany/quoted/instance', { ...config, data: params })
 
-const find = (params, config) => http.post('findmany/quoted/instance', params, config)
+const find = (params, config) =>
+  http.post('findmany/quoted/instance', params, config)
 
 export default {
   create,
   update,
   deletemany,
-  find
+  find,
 }

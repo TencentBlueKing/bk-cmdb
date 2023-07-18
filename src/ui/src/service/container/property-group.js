@@ -10,8 +10,8 @@
  * limitations under the License.
  */
 
-import i18n from '@/i18n/index.js'
 import { definePropertyGroup } from '@/components/filters/utils'
+import i18n from '@/i18n/index.js'
 
 export const getMany = async ({ objId }) => {
   try {
@@ -31,5 +31,5 @@ export const getMany = async ({ objId }) => {
 }
 
 export default {
-  getMany
+  getMany,
 }

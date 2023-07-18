@@ -12,60 +12,78 @@
 
 <template>
   <div :class="['table-stuff', type]">
-    <div class="content" v-if="type === 'search'">
+    <div v-if="type === 'search'" class="content">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
         <div class="table-tips">
           <i18n class="operation-text" path="搜索为空提示语">
-            <template #filter><span style="margin: 0 3px">{{$t('调整关键词')}}</span></template>
+            <template #filter
+              ><span style="margin: 0 3px">{{
+                $t('调整关键词')
+              }}</span></template
+            >
             <template #clear>
-              <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click.stop="$emit('clear')">
-                {{$t('清空筛选条件')}}
+              <bk-button
+                class="text-btn"
+                theme="primary"
+                text
+                style="margin-left: 3px"
+                @click.stop="$emit('clear')">
+                {{ $t('清空筛选条件') }}
               </bk-button>
             </template>
           </i18n>
         </div>
       </bk-exception>
-
     </div>
-    <div class="content" v-else-if="type === 'permission'">
+    <div v-else-if="type === 'permission'" class="content">
       <slot name="permission">
         <bk-exception type="403" scene="part">
           <i18n path="抱歉您没有查看权限">
             <template #link>
-              <bk-button class="text-btn"
+              <bk-button
+                class="text-btn"
                 text
                 theme="primary"
                 @click="handleApplyPermission">
-                {{$t('去申请')}}
+                {{ $t('去申请') }}
               </bk-button>
             </template>
           </i18n>
         </bk-exception>
       </slot>
     </div>
-    <div class="content" v-else>
+    <div v-else class="content">
       <div>
         <template v-if="$slots.default">
           <slot></slot>
         </template>
         <template v-else>
-          <div class="content" v-if="type === 'default'">
+          <div v-if="type === 'default'" class="content">
             <bk-exception type="empty" scene="part">
               <p>{{ $t('暂无数据') }}</p>
               <div class="table-tips"></div>
-              <i18n path="您还未XXX" tag="div" v-if="!emptyText">
-                <template #action><span>{{action}}</span></template>
-                <template #resource><span>{{resource}}</span></template>
+              <i18n v-if="!emptyText" path="您还未XXX" tag="div">
+                <template #action
+                  ><span>{{ action }}</span></template
+                >
+                <template #resource
+                  ><span>{{ resource }}</span></template
+                >
                 <template #link>
                   <cmdb-auth :auth="auth">
-                    <bk-button class="text-btn"
+                    <bk-button
+                      slot-scope="{ disabled }"
+                      class="text-btn"
                       text
                       theme="primary"
-                      slot-scope="{ disabled }"
                       :disabled="disabled"
                       @click="$emit('create')">
-                      {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
+                      {{
+                        $i18n.locale === 'en'
+                          ? `${action} now`
+                          : `立即${action}`
+                      }}
                     </bk-button>
                   </cmdb-auth>
                 </template>
@@ -73,7 +91,7 @@
             </bk-exception>
           </div>
           <span v-else>
-            {{emptyText}}
+            {{ emptyText }}
           </span>
         </template>
       </div>
@@ -82,73 +100,74 @@
 </template>
 
 <script>
-  import permissionMixins from '@/mixins/permission'
-  export default {
-    name: 'cmdb-table-empty',
-    mixins: [permissionMixins],
-    props: {
-      stuff: {
-        type: Object,
-        default: () => ({
-          type: 'default',
-          payload: {}
-        })
-      },
-      auth: {
-        type: Object,
-        default: null
-      }
+import permissionMixins from '@/mixins/permission'
+export default {
+  name: 'cmdb-table-empty',
+  mixins: [permissionMixins],
+  props: {
+    stuff: {
+      type: Object,
+      default: () => ({
+        type: 'default',
+        payload: {},
+      }),
     },
-    data() {
-      return {
-        permission: this.stuff.payload.permission
-      }
+    auth: {
+      type: Object,
+      default: null,
     },
-    computed: {
-      type() {
-        return this.stuff.type
-      },
-      action() {
-        return this.stuff.payload.action || this.$t('创建')
-      },
-      resource() {
-        return this.stuff.payload.resource
-      },
-      emptyText() {
-        return this.stuff.payload.emptyText
-      },
-      payload() {
-        return this.stuff.payload
-      }
-    },
-    watch: {
-      stuff: {
-        handler(value) {
-          this.permission = value.payload.permission
-        },
-        deep: true
-      }
-    },
-    mounted() {
-    },
-    methods: {
+  },
+  data() {
+    return {
+      permission: this.stuff.payload.permission,
     }
-  }
+  },
+  computed: {
+    type() {
+      return this.stuff.type
+    },
+    action() {
+      return this.stuff.payload.action || this.$t('创建')
+    },
+    resource() {
+      return this.stuff.payload.resource
+    },
+    emptyText() {
+      return this.stuff.payload.emptyText
+    },
+    payload() {
+      return this.stuff.payload
+    },
+  },
+  watch: {
+    stuff: {
+      handler(value) {
+        this.permission = value.payload.permission
+      },
+      deep: true,
+    },
+  },
+  mounted() {},
+  methods: {},
+}
 </script>
 
 <style lang="scss" scoped>
-    .table-stuff {
-        color: #63656e;
-        font-size: 14px;
-        .img-empty {
-            width: 90px;
-        }
-        .text-btn {
-            font-size: 14px;
-            height: auto;
-        }
-        .table-tips{
-          margin-top: 15px;
-        }
-    }
+.table-stuff {
+  color: #63656e;
+  font-size: 14px;
+
+  .img-empty {
+    width: 90px;
+  }
+
+  .text-btn {
+    font-size: 14px;
+    height: auto;
+  }
+
+  .table-tips {
+    margin-top: 15px;
+  }
+}
 </style>

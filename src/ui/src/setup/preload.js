@@ -10,24 +10,30 @@
  * limitations under the License.
  */
 
-import { getAuthorizedBusiness, getAuthorizedBusinessSet } from '@/router/business-interceptor.js'
-import { verifyAuth } from '@/service/auth.js'
 import store from '@/store'
 import $http from '@/api'
+import {
+  getAuthorizedBusiness,
+  getAuthorizedBusinessSet,
+} from '@/router/business-interceptor.js'
+import { verifyAuth } from '@/service/auth.js'
 
 const preloadConfig = {
   fromCache: false,
-  cancelWhenRouteChange: false
+  cancelWhenRouteChange: false,
 }
 
 export function getClassifications(app) {
-  return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
-    params: {},
-    config: {
-      ...preloadConfig,
-      requestId: 'post_searchClassificationsObjects'
+  return app.$store.dispatch(
+    'objectModelClassify/searchClassificationsObjects',
+    {
+      params: {},
+      config: {
+        ...preloadConfig,
+        requestId: 'post_searchClassificationsObjects',
+      },
     }
-  })
+  )
 }
 
 export function getUserCustom(app) {
@@ -35,19 +41,21 @@ export function getUserCustom(app) {
     config: {
       ...preloadConfig,
       fromCache: false,
-      requestId: 'post_searchUsercustom'
-    }
+      requestId: 'post_searchUsercustom',
+    },
   })
 }
 
 export function getGlobalUsercustom(app) {
-  return app.$store.dispatch('userCustom/getGlobalUsercustom', {
-    config: {
-      ...preloadConfig,
-      fromCache: false,
-      globalError: false
-    }
-  }).catch(() => ({}))
+  return app.$store
+    .dispatch('userCustom/getGlobalUsercustom', {
+      config: {
+        ...preloadConfig,
+        fromCache: false,
+        globalError: false,
+      },
+    })
+    .catch(() => ({}))
 }
 
 /**
@@ -60,8 +68,8 @@ export async function getGlobalConfig(app) {
     config: {
       ...preloadConfig,
       fromCache: false,
-      globalError: false
-    }
+      globalError: false,
+    },
   })
 }
 
@@ -69,10 +77,12 @@ export async function getGlobalConfig(app) {
  * 验证平台管理模块的权限
  */
 export const verifyPlatformManagementAuth = async () => {
-  const [{ is_pass: isPass }] = await verifyAuth([{
-    action: 'update',
-    resource_type: 'configAdmin'
-  }])
+  const [{ is_pass: isPass }] = await verifyAuth([
+    {
+      action: 'update',
+      resource_type: 'configAdmin',
+    },
+  ])
 
   if (isPass) {
     store.commit('globalConfig/setAuth', isPass)
@@ -86,8 +96,8 @@ const getMainLineModels = async () => {
   store.dispatch('objectMainLineModule/searchMainlineObject', {
     config: {
       ...preloadConfig,
-      requestId: 'getMainLineModels'
-    }
+      requestId: 'getMainLineModels',
+    },
   })
 }
 
@@ -114,6 +124,6 @@ export default async function (app) {
     getGlobalConfig(app),
     getClassifications(app),
     getUserCustom(app),
-    getGlobalUsercustom(app)
+    getGlobalUsercustom(app),
   ])
 }

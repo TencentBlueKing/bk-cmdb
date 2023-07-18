@@ -12,18 +12,20 @@
 
 <template>
   <div class="details-layout">
-    <div v-bkloading="{ isLoading: loading }" style="height: 100%;">
+    <div v-bkloading="{ isLoading: loading }" style="height: 100%">
       <cmdb-host-info
         ref="info"
         :is-container-host="isContainerHost"
         @info-toggle="setInfoHeight"
         @change="handleInfoChange">
       </cmdb-host-info>
-      <bk-tab class="details-tab" v-if="!loading"
+      <bk-tab
+        v-if="!loading"
+        class="details-tab"
         type="unborder-card"
         :active.sync="active"
         :style="{
-          '--infoHeight': infoHeight
+          '--infoHeight': infoHeight,
         }">
         <bk-tab-panel name="property" :label="$t('主机属性')">
           <cmdb-host-property
@@ -31,17 +33,22 @@
             :container-node-properties="containerNodeProperties">
           </cmdb-host-property>
         </bk-tab-panel>
-        <bk-tab-panel name="service" :label="$t('服务列表')" v-if="isBusinessHost">
+        <bk-tab-panel
+          v-if="isBusinessHost"
+          name="service"
+          :label="$t('服务列表')">
           <cmdb-host-service v-if="active === 'service'"></cmdb-host-service>
         </bk-tab-panel>
-        <bk-tab-panel name="pod" :label="$t('Pod列表')" v-if="isContainerHost">
+        <bk-tab-panel v-if="isContainerHost" name="pod" :label="$t('Pod列表')">
           <cmdb-pod-list v-if="active === 'pod'"></cmdb-pod-list>
         </bk-tab-panel>
         <bk-tab-panel name="association" :label="$t('关联')">
-          <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
+          <cmdb-host-association
+            v-if="active === 'association'"></cmdb-host-association>
         </bk-tab-panel>
         <bk-tab-panel name="history" :label="$t('变更记录')">
-          <cmdb-audit-history v-if="active === 'history'"
+          <cmdb-audit-history
+            v-if="active === 'history'"
             resource-type="host"
             obj-id="host"
             :biz-id="business"
@@ -54,223 +61,246 @@
 </template>
 
 <script>
-  import { mapState, mapGetters } from 'vuex'
-  import cmdbHostInfo from './children/info.vue'
-  import cmdbHostAssociation from './children/association.vue'
-  import cmdbHostProperty from './children/property.vue'
-  import cmdbAuditHistory from '@/components/model-instance/audit-history'
-  import cmdbHostService from './children/service-list.vue'
-  import cmdbPodList from './children/pod-list.vue'
-  import RouterQuery from '@/router/query'
-  import { hostInfoProxy } from './service-proxy.js'
-  import containerNodeService from '@/service/container/node'
-  import containerPropertyService from '@/service/container/property.js'
-  import { maxPageParams } from '@/service/utils'
-  import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
+import { mapState, mapGetters } from 'vuex'
 
-  export default {
-    components: {
-      cmdbHostInfo,
-      cmdbHostAssociation,
-      cmdbHostProperty,
-      cmdbAuditHistory,
-      cmdbHostService,
-      cmdbPodList
+import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
+import RouterQuery from '@/router/query'
+import containerNodeService from '@/service/container/node'
+import containerPropertyService from '@/service/container/property.js'
+import { maxPageParams } from '@/service/utils'
+import cmdbAuditHistory from '@/components/model-instance/audit-history'
+
+import cmdbHostInfo from './children/info.vue'
+import cmdbHostAssociation from './children/association.vue'
+import cmdbHostProperty from './children/property.vue'
+import cmdbHostService from './children/service-list.vue'
+import cmdbPodList from './children/pod-list.vue'
+import { hostInfoProxy } from './service-proxy.js'
+
+export default {
+  components: {
+    cmdbHostInfo,
+    cmdbHostAssociation,
+    cmdbHostProperty,
+    cmdbAuditHistory,
+    cmdbHostService,
+    cmdbPodList,
+  },
+  data() {
+    return {
+      active: RouterQuery.get('tab', 'property'),
+      infoHeight: '81px',
+      containerNodes: [],
+      containerNodeProperties: [],
+      loading: true,
+      requestIds: {
+        containerNodeProperty: Symbol(),
+      },
+    }
+  },
+  computed: {
+    ...mapGetters(['supplierAccount']),
+    ...mapState('hostDetails', ['info', 'isBusinessHost']),
+    ...mapGetters('hostDetails', ['isBusinessHost']),
+    id() {
+      return parseInt(this.$route.params.id, 10)
     },
-    data() {
-      return {
-        active: RouterQuery.get('tab', 'property'),
-        infoHeight: '81px',
-        containerNodes: [],
-        containerNodeProperties: [],
-        loading: true,
-        requestIds: {
-          containerNodeProperty: Symbol()
-        }
+    business() {
+      const business = parseInt(
+        this.$route.params.bizId || this.$route.params.business,
+        10
+      )
+      if (isNaN(business)) {
+        return -1
       }
+      return business
     },
-    computed: {
-      ...mapGetters(['supplierAccount']),
-      ...mapState('hostDetails', ['info', 'isBusinessHost']),
-      ...mapGetters('hostDetails', ['isBusinessHost']),
-      id() {
-        return parseInt(this.$route.params.id, 10)
-      },
-      business() {
-        const business = parseInt(this.$route.params.bizId || this.$route.params.business, 10)
-        if (isNaN(business)) {
-          return -1
-        }
-        return business
-      },
-      isContainerHost() {
-        return this.containerNodes.length > 0
-      }
+    isContainerHost() {
+      return this.containerNodes.length > 0
     },
-    watch: {
-      info(info) {
-        const hostList = info.host.bk_host_innerip ? info.host.bk_host_innerip.split(',') : info.host.bk_host_innerip_v6.split(',')
-        const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-        this.setBreadcrumbs(host)
-      },
-      id() {
-        this.getData()
-      },
-      business() {
-        this.getData()
-      },
-      active(active) {
-        if (active !== 'association') {
-          this.$store.commit('hostDetails/toggleExpandAll', false)
-        }
-        RouterQuery.set({
-          tab: active
-        })
-      }
+  },
+  watch: {
+    info(info) {
+      const hostList = info.host.bk_host_innerip
+        ? info.host.bk_host_innerip.split(',')
+        : info.host.bk_host_innerip_v6.split(',')
+      const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
+      this.setBreadcrumbs(host)
     },
-    created() {
+    id() {
       this.getData()
     },
-    methods: {
-      setBreadcrumbs(ip) {
-        this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
-      },
-      async getData() {
-        try {
-          this.loading = true
-          await Promise.all([
-            this.getProperties(),
-            this.getPropertyGroups(),
-            this.getHostInfo(),
-            this.getContainerNodeProperties(),
-            this.getContainerNodeInfo()
-          ])
-        } catch (error) {
-          console.error(error)
-        } finally {
-          this.loading = false
-        }
-      },
-      async getHostInfo() {
-        try {
-          const { info } = await hostInfoProxy(this.getSearchHostParams())
+    business() {
+      this.getData()
+    },
+    active(active) {
+      if (active !== 'association') {
+        this.$store.commit('hostDetails/toggleExpandAll', false)
+      }
+      RouterQuery.set({
+        tab: active,
+      })
+    },
+  },
+  created() {
+    this.getData()
+  },
+  methods: {
+    setBreadcrumbs(ip) {
+      this.$store.commit('setTitle', `${this.$t('主机详情')}【${ip}】`)
+    },
+    async getData() {
+      try {
+        this.loading = true
+        await Promise.all([
+          this.getProperties(),
+          this.getPropertyGroups(),
+          this.getHostInfo(),
+          this.getContainerNodeProperties(),
+          this.getContainerNodeInfo(),
+        ])
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.loading = false
+      }
+    },
+    async getHostInfo() {
+      try {
+        const { info } = await hostInfoProxy(this.getSearchHostParams())
 
-          if (info.length) {
-            this.$store.commit('hostDetails/setHostInfo', info[0])
-          } else {
-            this.$routerActions.redirect({ name: 404 })
-          }
-        } catch (e) {
-          console.error(e)
-          this.$store.commit('hostDetails/setHostInfo', null)
+        if (info.length) {
+          this.$store.commit('hostDetails/setHostInfo', info[0])
+        } else {
+          this.$routerActions.redirect({ name: 404 })
         }
-      },
-      async getContainerNodeInfo() {
-        if (this.business === -1) {
-          return
-        }
+      } catch (e) {
+        console.error(e)
+        this.$store.commit('hostDetails/setHostInfo', null)
+      }
+    },
+    async getContainerNodeInfo() {
+      if (this.business === -1) {
+        return
+      }
 
-        // 获取 Node 信息
-        const { list } = await containerNodeService.find({
-          bk_biz_id: this.business,
-          filter: {
-            condition: 'AND',
-            rules: [{
+      // 获取 Node 信息
+      const { list } = await containerNodeService.find({
+        bk_biz_id: this.business,
+        filter: {
+          condition: 'AND',
+          rules: [
+            {
               field: 'bk_host_id',
               operator: 'equal',
-              value: this.id
-            }]
-          },
-          page: maxPageParams()
-        })
+              value: this.id,
+            },
+          ],
+        },
+        page: maxPageParams(),
+      })
 
-        this.containerNodes = list || []
-      },
-      getSearchHostParams() {
-        const hostCondition = {
-          field: 'bk_host_id',
-          operator: '$eq',
-          value: this.id
-        }
-        return {
-          bk_biz_id: this.business,
-          condition: ['biz', 'set', 'module', 'host'].map(model => ({
-            bk_obj_id: model,
-            condition: model === 'host' ? [hostCondition] : [],
-            fields: []
-          })),
-          ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
-        }
-      },
-      async getProperties() {
-        try {
-          const params = {
-            bk_supplier_account: this.supplierAccount,
-            bk_obj_id: 'host'
-          }
-          if (this.business > 0) {
-            params.bk_biz_id = this.business
-          }
-          const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
-            params
-          })
-          this.$store.commit('hostDetails/setHostProperties', properties)
-        } catch (e) {
-          console.error(e)
-          this.$store.commit('hostDetails/setHostProperties', [])
-        }
-      },
-      async getPropertyGroups() {
-        try {
-          const propertyGroups = await this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-            objId: 'host',
-            params: this.business > 0 ? { bk_biz_id: this.business } : {}
-          })
-          this.$store.commit('hostDetails/setHostPropertyGroups', propertyGroups)
-        } catch (e) {
-          console.error(e)
-          this.$store.commit('hostDetails/setHostPropertyGroups', [])
-        }
-      },
-      async getContainerNodeProperties() {
-        const nodeProperties = await containerPropertyService.getMany({
-          objId: CONTAINER_OBJECTS.NODE
-        }, {
-          requestId: this.requestIds.containerNodeProperty,
-          fromCache: true
-        }, false)
-
-        this.containerNodeProperties = nodeProperties
-      },
-      setInfoHeight() {
-        this.infoTimer && clearTimeout(this.infoTimer)
-        this.infoTimer = setTimeout(() => {
-          this.infoHeight = `${this.$refs.info.$el.offsetHeight}px`
-        }, 250)
-      },
-      handleInfoChange() {
-        this.getHostInfo()
+      this.containerNodes = list || []
+    },
+    getSearchHostParams() {
+      const hostCondition = {
+        field: 'bk_host_id',
+        operator: '$eq',
+        value: this.id,
       }
-    }
-  }
+      return {
+        bk_biz_id: this.business,
+        condition: ['biz', 'set', 'module', 'host'].map(model => ({
+          bk_obj_id: model,
+          condition: model === 'host' ? [hostCondition] : [],
+          fields: [],
+        })),
+        ip: { flag: 'bk_host_innerip', exact: 1, data: [] },
+      }
+    },
+    async getProperties() {
+      try {
+        const params = {
+          bk_supplier_account: this.supplierAccount,
+          bk_obj_id: 'host',
+        }
+        if (this.business > 0) {
+          params.bk_biz_id = this.business
+        }
+        const properties = await this.$store.dispatch(
+          'objectModelProperty/searchObjectAttribute',
+          {
+            params,
+          }
+        )
+        this.$store.commit('hostDetails/setHostProperties', properties)
+      } catch (e) {
+        console.error(e)
+        this.$store.commit('hostDetails/setHostProperties', [])
+      }
+    },
+    async getPropertyGroups() {
+      try {
+        const propertyGroups = await this.$store.dispatch(
+          'objectModelFieldGroup/searchGroup',
+          {
+            objId: 'host',
+            params: this.business > 0 ? { bk_biz_id: this.business } : {},
+          }
+        )
+        this.$store.commit('hostDetails/setHostPropertyGroups', propertyGroups)
+      } catch (e) {
+        console.error(e)
+        this.$store.commit('hostDetails/setHostPropertyGroups', [])
+      }
+    },
+    async getContainerNodeProperties() {
+      const nodeProperties = await containerPropertyService.getMany(
+        {
+          objId: CONTAINER_OBJECTS.NODE,
+        },
+        {
+          requestId: this.requestIds.containerNodeProperty,
+          fromCache: true,
+        },
+        false
+      )
+
+      this.containerNodeProperties = nodeProperties
+    },
+    setInfoHeight() {
+      this.infoTimer && clearTimeout(this.infoTimer)
+      this.infoTimer = setTimeout(() => {
+        this.infoHeight = `${this.$refs.info.$el.offsetHeight}px`
+      }, 250)
+    },
+    handleInfoChange() {
+      this.getHostInfo()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .details-layout {
-        overflow: hidden;
-        .details-tab {
-            height: calc(100% - var(--infoHeight)) !important;
-            min-height: 400px;
-            /deep/ {
-                .bk-tab-header {
-                    padding: 0;
-                    margin: 0 20px;
-                }
-                .bk-tab-section {
-                    @include scrollbar-y;
-                    padding-bottom: 10px;
-                }
-            }
-        }
+.details-layout {
+  overflow: hidden;
+
+  .details-tab {
+    height: calc(100% - var(--infoHeight)) !important;
+    min-height: 400px;
+
+    /deep/ {
+      .bk-tab-header {
+        padding: 0;
+        margin: 0 20px;
+      }
+
+      .bk-tab-section {
+        @include scrollbar-y;
+
+        padding-bottom: 10px;
+      }
     }
+  }
+}
 </style>

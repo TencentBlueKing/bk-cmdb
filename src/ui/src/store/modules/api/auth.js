@@ -19,16 +19,16 @@ const actions = {
     }
     const result = await $http.post('auth/verify', {
       // eslint-disable-next-line new-cap
-      resources: TRANSFORM_TO_INTERNAL(viewAuthData)
+      resources: TRANSFORM_TO_INTERNAL(viewAuthData),
     })
     return Promise.resolve(result.every(data => data.is_pass))
   },
   async getSkipUrl(context, { params, config = {} }) {
     return $http.post('auth/skip_url', params, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

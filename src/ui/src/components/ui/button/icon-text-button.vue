@@ -11,49 +11,51 @@
 -->
 
 <script setup>
-  const props = defineProps({
-    icon: {
-      type: String,
-      default: 'plus'
-    },
-    text: String,
-    disabled: Boolean,
-    disabledTips: String
-  })
-  const emit = defineEmits(['click'])
+const props = defineProps({
+  icon: {
+    type: String,
+    default: 'plus',
+  },
+  text: String,
+  disabled: Boolean,
+  disabledTips: String,
+})
+const emit = defineEmits(['click'])
 
-  const handleClick = () => {
-    if (props.disabled) {
-      return false
-    }
-    emit('click')
+const handleClick = () => {
+  if (props.disabled) {
+    return false
   }
+  emit('click')
+}
 </script>
 
 <template>
-  <div :class="['icon-text-button', { 'disabled': props.disabled }]"
-    @click="handleClick"
+  <div
     v-bk-tooltips="{
       disabled: !props.disabled || !props.disabledTips,
       content: props.disabledTips,
-      allowHtml: true
-    }">
+      allowHtml: true,
+    }"
+    :class="['icon-text-button', { disabled: props.disabled }]"
+    @click="handleClick">
     <bk-icon :type="props.icon" />{{ props.text }}
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .icon-text-button {
-    cursor: pointer;
-    color: $primaryColor;
-    display: inline-flex;
-    align-items: center;
-    .icon-plus {
-      font-size: 20px !important;
-    }
+.icon-text-button {
+  cursor: pointer;
+  color: $primaryColor;
+  display: inline-flex;
+  align-items: center;
 
-    &.disabled {
-      color: $textDisabledColor;
-    }
+  .icon-plus {
+    font-size: 20px !important;
   }
+
+  &.disabled {
+    color: $textDisabledColor;
+  }
+}
 </style>

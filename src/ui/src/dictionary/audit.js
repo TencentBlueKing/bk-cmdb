@@ -23,12 +23,12 @@ export const actions = {
   recover: t('还原'),
   assign_host: t('分配到业务'),
   unassign_host: t('归还主机'),
-  transfer_host_module: t('转移模块')
+  transfer_host_module: t('转移模块'),
 }
 
 export const types = {
   business: {
-    business: t('业务')
+    business: t('业务'),
   },
   business_resource: {
     service_template: t('服务模板'),
@@ -38,33 +38,33 @@ export const types = {
     model_instance: t('模型实例'),
     set: t('集群'),
     module: t('模块'),
-    process: t('进程')
+    process: t('进程'),
   },
   host: {
-    host: t('主机')
+    host: t('主机'),
   },
   model: {
     model: t('模型'),
     model_association: t('模型关联'),
     model_group: t('模型分组'),
-    model_unique: t('模型唯一校验')
+    model_unique: t('模型唯一校验'),
   },
   model_instance: {
     model_instance: t('实例'),
-    instance_association: t('关联关系')
+    instance_association: t('关联关系'),
   },
   association_kind: {
-    association_kind: t('关联类型')
+    association_kind: t('关联类型'),
   },
   cloud_resource: {
     cloud_area: t('管控区域'),
     cloud_account: t('云账户'),
-    cloud_sync_task: t('云同步任务')
+    cloud_sync_task: t('云同步任务'),
   },
   biz_topology: {
-    biz_topology: t('业务拓扑')
+    biz_topology: t('业务拓扑'),
   },
   service_instance: {
-    service_instance: t('服务实例')
-  }
+    service_instance: t('服务实例'),
+  },
 }

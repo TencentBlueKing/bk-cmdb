@@ -11,8 +11,9 @@
 -->
 
 <template>
-  <bk-input class="filter-fast-search"
+  <bk-input
     v-model.trim="value"
+    class="filter-fast-search"
     :placeholder="$t('请输入IP或固资编号')"
     @enter="handleSearch"
     @paste="handlePaste">
@@ -20,50 +21,53 @@
 </template>
 
 <script>
-  import FilterStore from './store'
-  import { splitIP, parseIP, getDefaultIP } from '@/components/filters/utils'
+import { splitIP, parseIP, getDefaultIP } from '@/components/filters/utils'
 
-  export default {
-    data() {
-      return {
-        value: ''
-      }
+import FilterStore from './store'
+
+export default {
+  data() {
+    return {
+      value: '',
+    }
+  },
+  methods: {
+    async handleSearch() {
+      this.dispatchFilter(this.value)
     },
-    methods: {
-      async handleSearch() {
-        this.dispatchFilter(this.value)
-      },
-      handlePaste(value, event) {
-        event.preventDefault()
-        const text = event.clipboardData.getData('text').trim()
-        this.dispatchFilter(text)
-      },
-      dispatchFilter(currentValue) {
-        const IPs = parseIP(splitIP(currentValue))
-        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
-        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
-        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
-        const ip = Object.assign(getDefaultIP(), { text: currentValue })
+    handlePaste(value, event) {
+      event.preventDefault()
+      const text = event.clipboardData.getData('text').trim()
+      this.dispatchFilter(text)
+    },
+    dispatchFilter(currentValue) {
+      const IPs = parseIP(splitIP(currentValue))
+      const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+      IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
+      IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
+      const ip = Object.assign(getDefaultIP(), { text: currentValue })
 
-        FilterStore.resetPage(true)
-        if (IPList.length) {
-          FilterStore.updateIP(ip)
-        } else if (IPs.assetList.length) {
-          FilterStore.createOrUpdateCondition([{
+      FilterStore.resetPage(true)
+      if (IPList.length) {
+        FilterStore.updateIP(ip)
+      } else if (IPs.assetList.length) {
+        FilterStore.createOrUpdateCondition([
+          {
             field: 'bk_asset_id',
             model: 'host',
             operator: '$in',
-            value: IPs.assetList
-          }])
-        }
-        this.value = ''
+            value: IPs.assetList,
+          },
+        ])
       }
-    }
-  }
+      this.value = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .filter-fast-search {
-        display: inline-flex;
-    }
+.filter-fast-search {
+  display: inline-flex;
+}
 </style>

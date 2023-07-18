@@ -13,8 +13,9 @@
 <template>
   <div class="options-layout clearfix">
     <div class="options options-left fl">
-      <cmdb-clipboard-selector class="options-clipboard"
+      <cmdb-clipboard-selector
         v-test-id
+        class="options-clipboard"
         label-key="bk_property_name"
         :list="clipboardList"
         :disabled="!hasSelection"
@@ -22,10 +23,17 @@
       </cmdb-clipboard-selector>
     </div>
     <div class="options options-right">
-      <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
-      <filter-collection class="option-collection ml10" v-test-id></filter-collection>
-      <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
-        icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
+      <filter-fast-search
+        v-test-id
+        class="option-fast-search"></filter-fast-search>
+      <filter-collection
+        v-test-id
+        class="option-collection ml10"></filter-collection>
+      <icon-button
+        v-test-id="'advancedSearch'"
+        v-bk-tooltips.top="$t('高级筛选')"
+        class="option-filter ml10"
+        icon="icon-cc-funnel"
         @click="handleSetFilters">
       </icon-button>
     </div>
@@ -33,182 +41,215 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
-  import FilterForm from '@/components/filters/filter-form.js'
-  import FilterCollection from '@/components/filters/filter-collection'
-  import FilterFastSearch from '@/components/filters/filter-fast-search'
-  import FilterStore from '@/components/filters/store'
-  import FilterUtils from '@/components/filters/utils'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import { mapGetters, mapState } from 'vuex'
 
-  export default {
-    components: {
-      FilterCollection,
-      FilterFastSearch,
-    },
-    data() {
-      return {
-        IPWithCloudSymbol: Symbol('IPWithCloud')
-      }
-    },
-    computed: {
-      ...mapGetters('userCustom', ['usercustom']),
-      ...mapState('bizSet', ['bizId']),
-      ...mapGetters('businessHost', ['selectedNode']),
-      hostProperties() {
-        return FilterStore.getModelProperties(BUILTIN_MODELS.HOST)
-      },
-      count() {
-        return this.$parent.table.pagination.count
-      },
-      selection() {
-        return this.$parent.table.selection
-      },
-      hasSelection() {
-        return !!this.selection.length
-      },
-      clipboardList() {
-        const IPWithCloud = FilterUtils.defineProperty({
-          id: this.IPWithCloudSymbol,
-          bk_obj_id: BUILTIN_MODELS.HOST,
-          bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('管控区域')}ID:IP`,
-          bk_property_type: 'singlechar'
-        })
-        const clipboardList = this.$parent.tableHeader.slice()
-        clipboardList.splice(1, 0, IPWithCloud)
-        return clipboardList
-      },
-      tableHeaderPropertyIdList() {
-        return this.$parent.tableHeader.map(item => item.bk_property_id)
-      }
-    },
-    methods: {
-      handleCopy(property) {
-        const copyText = this.selection.map((data) => {
-          const modelId = property.bk_obj_id
-          const modelData = data[modelId]
-          if (property.id === this.IPWithCloudSymbol) {
-            const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
-            const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
-            return `${cloud}:${ip}`
-          }
-          const propertyId = property.bk_property_id
-          if (Array.isArray(modelData)) {
-            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
-            return value.join(',')
-          }
-          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
-        })
-        this.$copyText(copyText.join('\n')).then(() => {
-          this.$success(this.$t('复制成功'))
-        }, () => {
-          this.$error(this.$t('复制失败'))
-        })
-      },
-      handleSetFilters() {
-        FilterForm.show()
-      }
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import FilterForm from '@/components/filters/filter-form.js'
+import FilterCollection from '@/components/filters/filter-collection'
+import FilterFastSearch from '@/components/filters/filter-fast-search'
+import FilterStore from '@/components/filters/store'
+import FilterUtils from '@/components/filters/utils'
+
+export default {
+  components: {
+    FilterCollection,
+    FilterFastSearch,
+  },
+  data() {
+    return {
+      IPWithCloudSymbol: Symbol('IPWithCloud'),
     }
-  }
+  },
+  computed: {
+    ...mapGetters('userCustom', ['usercustom']),
+    ...mapState('bizSet', ['bizId']),
+    ...mapGetters('businessHost', ['selectedNode']),
+    hostProperties() {
+      return FilterStore.getModelProperties(BUILTIN_MODELS.HOST)
+    },
+    count() {
+      return this.$parent.table.pagination.count
+    },
+    selection() {
+      return this.$parent.table.selection
+    },
+    hasSelection() {
+      return !!this.selection.length
+    },
+    clipboardList() {
+      const IPWithCloud = FilterUtils.defineProperty({
+        id: this.IPWithCloudSymbol,
+        bk_obj_id: BUILTIN_MODELS.HOST,
+        bk_property_id: this.IPWithCloudSymbol,
+        bk_property_name: `${this.$t('管控区域')}ID:IP`,
+        bk_property_type: 'singlechar',
+      })
+      const clipboardList = this.$parent.tableHeader.slice()
+      clipboardList.splice(1, 0, IPWithCloud)
+      return clipboardList
+    },
+    tableHeaderPropertyIdList() {
+      return this.$parent.tableHeader.map(item => item.bk_property_id)
+    },
+  },
+  methods: {
+    handleCopy(property) {
+      const copyText = this.selection.map(data => {
+        const modelId = property.bk_obj_id
+        const modelData = data[modelId]
+        if (property.id === this.IPWithCloudSymbol) {
+          const cloud = this.$tools.getPropertyCopyValue(
+            modelData.bk_cloud_id,
+            'foreignkey'
+          )
+          const ip = this.$tools.getPropertyCopyValue(
+            modelData.bk_host_innerip,
+            'singlechar'
+          )
+          return `${cloud}:${ip}`
+        }
+        const propertyId = property.bk_property_id
+        if (Array.isArray(modelData)) {
+          const value = modelData.map(item =>
+            this.$tools.getPropertyCopyValue(item[propertyId], property)
+          )
+          return value.join(',')
+        }
+        return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
+      })
+      this.$copyText(copyText.join('\n')).then(
+        () => {
+          this.$success(this.$t('复制成功'))
+        },
+        () => {
+          this.$error(this.$t('复制失败'))
+        }
+      )
+    },
+    handleSetFilters() {
+      FilterForm.show()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .options-layout {
-        margin-top: 12px;
+.options-layout {
+  margin-top: 12px;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+
+  &.options-right {
+    overflow: hidden;
+    justify-content: flex-end;
+  }
+
+  .option {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .option-fast-search {
+    flex: 1;
+    max-width: 300px;
+    margin-left: 10px;
+  }
+
+  .option-collection,
+  .option-filter {
+    flex: 32px 0 0;
+
+    &:hover {
+      color: $primaryColor;
     }
-    .options {
-        display: flex;
-        align-items: center;
-        &.options-right {
-            overflow: hidden;
-            justify-content: flex-end;
-        }
-        .option {
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .option-fast-search {
-            flex: 1;
-            max-width: 300px;
-            margin-left: 10px;
-        }
-        .option-collection,
-        .option-filter {
-            flex: 32px 0 0;
-            &:hover {
-                color: $primaryColor;
-            }
-        }
-        .dropdown-icon {
-            margin: 0 -4px;
-            display: inline-block;
-            vertical-align: middle;
-            height: auto;
-            top: 0px;
-            font-size: 20px;
-            &.open {
-                top: -1px;
-                transform: rotate(180deg);
-            }
-        }
+  }
+
+  .dropdown-icon {
+    margin: 0 -4px;
+    display: inline-block;
+    vertical-align: middle;
+    height: auto;
+    top: 0;
+    font-size: 20px;
+
+    &.open {
+      top: -1px;
+      transform: rotate(180deg);
     }
-    .bk-dropdown-list {
-        font-size: 14px;
-        color: $textColor;
-        .bk-dropdown-item {
-            position: relative;
-            display: block;
-            padding: 0 20px;
-            margin: 0;
-            line-height: 32px;
-            cursor: pointer;
-            @include ellipsis;
-            &:not(.disabled):not(.with-auth):hover {
-                background-color: #EAF3FF;
-                color: $primaryColor;
-            }
-            &.disabled {
-                color: $textDisabledColor;
-                cursor: not-allowed;
-            }
-            &.with-auth {
-                padding: 0;
-                span {
-                    display: block;
-                    padding: 0 20px;
-                    &:not(.disabled):hover {
-                        background-color: #EAF3FF;
-                        color: $primaryColor;
-                    }
-                    &.disabled {
-                        color: $textDisabledColor;
-                        cursor: not-allowed;
-                    }
-                }
-            }
-        }
+  }
+}
+
+.bk-dropdown-list {
+  font-size: 14px;
+  color: $textColor;
+
+  .bk-dropdown-item {
+    position: relative;
+    display: block;
+    padding: 0 20px;
+    margin: 0;
+    line-height: 32px;
+    cursor: pointer;
+
+    @include ellipsis;
+
+    &:not(.disabled, .with-auth):hover {
+      background-color: #eaf3ff;
+      color: $primaryColor;
     }
-    /deep/ {
-        .collection-item {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            &:hover {
-                .icon-close {
-                    display: block;
-                }
-            }
-            .collection-name {
-                @include ellipsis;
-            }
-            .icon-close {
-                display: none;
-                color: #979BA5;
-                font-size: 20px;
-                margin-right: -4px;
-            }
-        }
+
+    &.disabled {
+      color: $textDisabledColor;
+      cursor: not-allowed;
     }
+
+    &.with-auth {
+      padding: 0;
+
+      span {
+        display: block;
+        padding: 0 20px;
+
+        &:not(.disabled):hover {
+          background-color: #eaf3ff;
+          color: $primaryColor;
+        }
+
+        &.disabled {
+          color: $textDisabledColor;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+}
+
+/deep/ {
+  .collection-item {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &:hover {
+      .icon-close {
+        display: block;
+      }
+    }
+
+    .collection-name {
+      @include ellipsis;
+    }
+
+    .icon-close {
+      display: none;
+      color: #979ba5;
+      font-size: 20px;
+      margin-right: -4px;
+    }
+  }
+}
 </style>

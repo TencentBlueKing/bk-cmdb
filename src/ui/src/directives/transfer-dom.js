@@ -35,7 +35,9 @@ function getTarget(node) {
 
 const directive = {
   inserted(el, { value }) {
-    el.className = el.className ? `${el.className} v-transfer-dom` : 'v-transfer-dom'
+    el.className = el.className
+      ? `${el.className} v-transfer-dom`
+      : 'v-transfer-dom'
     const { parentNode } = el
     if (!parentNode) {
       return
@@ -53,7 +55,7 @@ const directive = {
         parentNode,
         home,
         target: getTarget(value),
-        hasMovedOut
+        hasMovedOut,
       }
     }
   },
@@ -73,25 +75,17 @@ const directive = {
       parentNode.replaceChild(home, el)
       // append to target
       getTarget(value).appendChild(el)
-      el.__transferDomData = Object.assign(
-        {},
-        el.__transferDomData,
-        {
-          hasMovedOut: true,
-          target: getTarget(value)
-        }
-      )
+      el.__transferDomData = Object.assign({}, el.__transferDomData, {
+        hasMovedOut: true,
+        target: getTarget(value),
+      })
     } else if (hasMovedOut && value === false) {
       // previously moved, coming back home
       parentNode.replaceChild(el, home)
-      el.__transferDomData = Object.assign(
-        {},
-        el.__transferDomData,
-        {
-          hasMovedOut: false,
-          target: getTarget(value)
-        }
-      )
+      el.__transferDomData = Object.assign({}, el.__transferDomData, {
+        hasMovedOut: false,
+        target: getTarget(value),
+      })
     } else if (value) {
       // already moved, going somewhere else
       getTarget(value).appendChild(el)
@@ -107,10 +101,11 @@ const directive = {
       return
     }
     if (el.__transferDomData.hasMovedOut === true) {
-      el.__transferDomData.parentNode && el.__transferDomData.parentNode.appendChild(el)
+      el.__transferDomData.parentNode &&
+        el.__transferDomData.parentNode.appendChild(el)
     }
     el.__transferDomData = null
-  }
+  },
 }
 
 export default directive

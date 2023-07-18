@@ -12,11 +12,13 @@
 
 import http from '@/api'
 
-export const findAll = (data, config) => http.post('hosts/kube/search', data, config)
+export const findAll = (data, config) =>
+  http.post('hosts/kube/search', data, config)
 
-export const getNodePath = (data, config) => http.post('find/kube/host_node_path', data, config)
+export const getNodePath = (data, config) =>
+  http.post('find/kube/host_node_path', data, config)
 
 export default {
   findAll,
-  getNodePath
+  getNodePath,
 }

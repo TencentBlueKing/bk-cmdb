@@ -9,52 +9,61 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
 -->
-
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="result-item">
     <div class="result-title" @click="data.linkTo(data.source)">
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <span v-html="`${data.typeName} - ${data.title}`"></span>
     </div>
-    <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
+    <div
+      v-if="properties"
+      class="result-desc"
+      @click="data.linkTo(data.source)">
       <template v-for="(property, childIndex) in properties">
-        <div class="desc-item hl"
-          :key="childIndex"
+        <div
           v-if="data.source[property.bk_property_id]"
-          v-html="`${property.bk_property_name}：${getText(property, data)}`">
-        </div>
+          :key="childIndex"
+          class="desc-item hl"
+          v-html="
+            `${property.bk_property_name}：${getText(property, data)}`
+          "></div>
       </template>
     </div>
   </div>
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed } from 'vue'
-  import { getText, getHighlightValue } from './use-item.js'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+import { defineComponent, toRefs, computed } from 'vue'
 
+import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
-  export default defineComponent({
-    name: 'item-bizset',
-    props: {
-      data: {
-        type: Object,
-        default: () => ({})
-      },
-      propertyMap: {
-        type: Object,
-        default: () => ({})
-      }
+import { getText, getHighlightValue } from './use-item.js'
+
+export default defineComponent({
+  name: 'item-bizset',
+  props: {
+    data: {
+      type: Object,
+      default: () => ({}),
     },
-    setup(props) {
-      const { propertyMap } = toRefs(props)
+    propertyMap: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+  setup(props) {
+    const { propertyMap } = toRefs(props)
 
-      const properties = computed(() => propertyMap.value[BUILTIN_MODELS.BUSINESS_SET])
+    const properties = computed(
+      () => propertyMap.value[BUILTIN_MODELS.BUSINESS_SET]
+    )
 
-      return {
-        properties,
-        getText,
-        getHighlightValue
-      }
+    return {
+      properties,
+      getText,
+      getHighlightValue,
     }
-  })
+  },
+})
 </script>

@@ -44,8 +44,7 @@ export default class CombineRequest {
     this.timer = null
     this.data = []
     this.callback = callback
-    this.promise = null,
-    this.segment = segment
+    ;(this.promise = null), (this.segment = segment)
     this.concurrency = concurrency
   }
 
@@ -87,7 +86,9 @@ export default class CombineRequest {
   splitRun() {
     const res = []
     const data = this.flatten(this.data)
-    this.slice(this.segment, data).forEach(params => res.push(this.callback(params)))
+    this.slice(this.segment, data).forEach(params =>
+      res.push(this.callback(params))
+    )
     return res
   }
 
@@ -134,7 +135,8 @@ export default class CombineRequest {
 
   flatten(data) {
     const arr = data ?? []
-    const fn = arr => arr.reduce((p, c) => p.concat(Array.isArray(c) ? fn(c) : c), [])
+    const fn = arr =>
+      arr.reduce((p, c) => p.concat(Array.isArray(c) ? fn(c) : c), [])
     return fn(arr)
   }
 }

@@ -11,48 +11,55 @@
 -->
 
 <script lang="ts">
-  import { defineComponent, PropType } from 'vue'
-  import isEqual from 'lodash/isEqual'
+import type { PropType } from 'vue'
 
-  interface IPropertyDiff {
-    id: number,
-    'inst_value': unknown,
-    'template_value': unknown,
-    property: Record<string, unknown>
-  }
+import { defineComponent } from 'vue'
+import isEqual from 'lodash/isEqual'
 
-  export default defineComponent({
-    props: {
-      propertyDiff: {
-        type: Array as PropType<IPropertyDiff[]>,
-        default: () => ([]),
-        required: true
-      }
+interface IPropertyDiff {
+  id: number
+  inst_value: unknown
+  template_value: unknown
+  property: Record<string, unknown>
+}
+
+export default defineComponent({
+  props: {
+    propertyDiff: {
+      type: Array as PropType<IPropertyDiff[]>,
+      default: () => [],
+      required: true,
     },
-    setup() {
-      const getDiffType = (diff: IPropertyDiff) => {
-        if (!isEqual(diff.inst_value,  diff.template_value)) {
-          return 'changed'
-        }
-      }
-      return {
-        getDiffType
+  },
+  setup() {
+    const getDiffType = (diff: IPropertyDiff) => {
+      if (!isEqual(diff.inst_value, diff.template_value)) {
+        return 'changed'
       }
     }
-  })
+    return {
+      getDiffType,
+    }
+  },
+})
 </script>
 
 <template>
   <div class="property-config-difference">
     <div class="diff-table">
       <div class="table-head">
-        <div class="col before-col">{{$t('属性同步前')}}</div>
-        <div class="col after-col">{{$t('属性同步后')}}</div>
+        <div class="col before-col">{{ $t('属性同步前') }}</div>
+        <div class="col after-col">{{ $t('属性同步后') }}</div>
       </div>
       <div class="table-body">
         <div class="col before-col">
-          <div class="diff-item" v-for="(diff, index) in propertyDiff" :key="index">
-            <div class="property-name" v-bk-overflow-tips>{{diff.property.bk_property_name}}</div>
+          <div
+            v-for="(diff, index) in propertyDiff"
+            :key="index"
+            class="diff-item">
+            <div v-bk-overflow-tips class="property-name">
+              {{ diff.property.bk_property_name }}
+            </div>
             <cmdb-property-value
               :is-show-overflow-tips="true"
               class="property-value"
@@ -63,8 +70,13 @@
           </div>
         </div>
         <div class="col after-col">
-          <div class="diff-item" v-for="(diff, index) in propertyDiff" :key="index">
-            <div class="property-name">{{diff.property.bk_property_name}}</div>
+          <div
+            v-for="(diff, index) in propertyDiff"
+            :key="index"
+            class="diff-item">
+            <div class="property-name">
+              {{ diff.property.bk_property_name }}
+            </div>
             <cmdb-property-value
               :is-show-overflow-tips="true"
               :class="['property-value', getDiffType(diff)]"
@@ -85,24 +97,30 @@
     display: flex;
     height: 28px;
     line-height: 28px;
+
     .property-name {
       width: 110px;
       text-align: right;
+
       @include ellipsis;
+
       &::after {
-        content: "：";
+        content: '：';
       }
     }
 
     .property-value {
       width: calc(100% - 110px);
+
       @include ellipsis;
+
       &.changed {
-        color: #FF9C01;
+        color: #ff9c01;
       }
     }
   }
 }
+
 .diff-table {
   display: grid;
   grid-template-rows: 32px auto;
@@ -119,11 +137,13 @@
       padding-left: 24px;
       overflow: hidden;
     }
+
     .before-col {
-      background: #F0F1F5;
+      background: #f0f1f5;
     }
+
     .after-col {
-      background: #DCDEE5;
+      background: #dcdee5;
     }
   }
 
@@ -133,7 +153,7 @@
     grid-template-columns: 1fr 1fr;
     padding: 24px 0;
     font-size: 12px;
-    background: #FAFBFD;
+    background: #fafbfd;
 
     .col {
       padding: 0 24px 0 90px;

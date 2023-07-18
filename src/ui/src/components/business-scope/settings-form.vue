@@ -28,236 +28,279 @@
         display-key="bk_biz_name">
       </bk-select>
     </div>
-    <div class="condition-item" v-for="rule in condition" :key="rule.property.id">
-      <cmdb-property-selector class="condition-field" v-if="rule.property.id"
+    <div
+      v-for="rule in condition"
+      :key="rule.property.id"
+      class="condition-item">
+      <cmdb-property-selector
+        v-if="rule.property.id"
         v-model="rule.field"
+        class="condition-field"
         :disabled="disabled"
         :properties="getAvailableProperties(rule.property)"
         :searchable="unusedProperties.length > 1"
         :loading="loading.property"
         @change="handleFieldChange">
       </cmdb-property-selector>
-      <component :class="['condition-value', rule.property.bk_property_type]" v-if="rule.property.id"
+      <component
         :is="`cmdb-search-${rule.property.bk_property_type}`"
+        v-if="rule.property.id"
+        v-bind="getBindProps(rule.property)"
+        v-model="rule.value"
+        :class="['condition-value', rule.property.bk_property_type]"
         :placeholder="getPlaceholder(rule.property)"
         :clearable="true"
         :multiple="rule.property.ismultiple"
-        :disabled="disabled"
-        v-bind="getBindProps(rule.property)"
-        v-model="rule.value">
+        :disabled="disabled">
       </component>
       <i class="bk-icon icon-close" @click="handleRemove(rule)"></i>
     </div>
-    <bk-button class="condition-button"
+    <bk-button
+      class="condition-button"
       :disabled="!unusedProperties.length || disabled"
       icon="icon-plus-circle"
       :text="true"
       @click="handleAdd">
-      {{$t('添加其他条件')}}
+      {{ $t('添加其他条件') }}
     </bk-button>
   </div>
 </template>
 
 <script>
-  import { defineComponent, computed, watchEffect, reactive, watch, toRefs, ref } from 'vue'
-  import Utils from '@/components/filters/utils'
-  import cmdbPropertySelector from '@/components/property-selector'
-  import propertyService from '@/service/property/property.js'
-  import businessService from '@/service/business/search.js'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import {
+  defineComponent,
+  computed,
+  watchEffect,
+  reactive,
+  watch,
+  toRefs,
+  ref,
+} from 'vue'
 
-  export default defineComponent({
-    components: {
-      cmdbPropertySelector
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import propertyService from '@/service/property/property.js'
+import businessService from '@/service/business/search.js'
+import Utils from '@/components/filters/utils'
+import cmdbPropertySelector from '@/components/property-selector'
+
+export default defineComponent({
+  components: {
+    cmdbPropertySelector,
+  },
+  props: {
+    data: {
+      type: Object,
+      default: () => ({}),
     },
-    props: {
-      data: {
-        type: Object,
-        default: () => ({})
-      },
-      disabled: {
-        type: Boolean,
-        default: false
-      }
+    disabled: {
+      type: Boolean,
+      default: false,
     },
-    setup(props, { emit }) {
-      const { data: formData } = toRefs(props)
+  },
+  setup(props, { emit }) {
+    const { data: formData } = toRefs(props)
 
-      const loading = reactive({
-        property: false
+    const loading = reactive({
+      property: false,
+    })
+
+    // 业务属性列表
+    const properties = ref([])
+
+    // 所有业务列表
+    const allBusiness = ref([])
+
+    // 存放所有条件项
+    const condition = ref([])
+    // 已选择的业务
+    const selectedBusiness = ref([])
+
+    // 默认选择的业务
+    const localSelectedBusiness = ref([])
+
+    // 初始化表单项的值
+    watchEffect(() => {
+      const localCondition = formData.value?.condition || []
+      localSelectedBusiness.value = formData.value?.selectedBusiness || []
+
+      const newCondition = []
+      localCondition.forEach(item => {
+        const conditionCopy = { ...item }
+        conditionCopy.property =
+          Utils.findProperty(item.field, properties.value) || {}
+        newCondition.push(conditionCopy)
       })
 
-      // 业务属性列表
-      const properties = ref([])
+      condition.value = newCondition
+      selectedBusiness.value = localSelectedBusiness.value
+    })
 
-      // 所有业务列表
-      const allBusiness = ref([])
+    // 初始化业务属性和全量业务列表
+    watchEffect(async () => {
+      loading.property = true
+      const [businessProperties, businessList] = await Promise.all([
+        propertyService.findBiz(),
+        businessService.findAll(),
+      ])
+      loading.property = false
 
-      // 存放所有条件项
-      const condition = ref([])
-      // 已选择的业务
-      const selectedBusiness = ref([])
+      const allowedPropertyTypes = [
+        PROPERTY_TYPES.ORGANIZATION,
+        PROPERTY_TYPES.ENUM,
+      ]
+      properties.value = businessProperties.filter(item =>
+        allowedPropertyTypes.includes(item.bk_property_type)
+      )
+      allBusiness.value = businessList
+    })
 
-      // 默认选择的业务
-      const localSelectedBusiness = ref([])
+    // 得到一个所有条件用到的propertyMap
+    const conditionPropertyMap = computed(() => {
+      const propertyMap = new WeakMap()
+      condition.value.forEach(item =>
+        propertyMap.set(item.property, item.field)
+      )
+      return propertyMap
+    })
 
-      // 初始化表单项的值
-      watchEffect(() => {
-        const localCondition = formData.value?.condition || []
-        localSelectedBusiness.value = formData.value?.selectedBusiness || []
+    // 未被使用过的属性列表，用于限定属性下拉选项
+    const unusedProperties = computed(() =>
+      properties.value.filter(item => !conditionPropertyMap.value.has(item))
+    )
 
-        const newCondition = []
-        localCondition.forEach((item) => {
-          const conditionCopy = { ...item }
-          conditionCopy.property = Utils.findProperty(item.field, properties.value) || {}
-          newCondition.push(conditionCopy)
-        })
+    // 根据property动态获取当前可使用的属性列表
+    const getAvailableProperties = property => [
+      property,
+      ...unusedProperties.value,
+    ]
 
-        condition.value = newCondition
-        selectedBusiness.value = localSelectedBusiness.value
-      })
+    // 条件项的字段变更时更新对应的property
+    const handleFieldChange = value => {
+      const rule = condition.value.find(rule => rule.field === value)
+      rule.property = properties.value.find(
+        item => item.bk_property_id === value
+      )
+    }
 
-      // 初始化业务属性和全量业务列表
-      watchEffect(async () => {
-        loading.property = true
-        const [businessProperties, businessList] = await Promise.all([
-          propertyService.findBiz(),
-          businessService.findAll()
-        ])
-        loading.property = false
-
-        const allowedPropertyTypes = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUM]
-        properties.value = businessProperties.filter(item => allowedPropertyTypes.includes(item.bk_property_type))
-        allBusiness.value = businessList
-      })
-
-      // 得到一个所有条件用到的propertyMap
-      const conditionPropertyMap = computed(() => {
-        const propertyMap = new WeakMap()
-        condition.value.forEach(item => propertyMap.set(item.property, item.field))
-        return propertyMap
-      })
-
-      // 未被使用过的属性列表，用于限定属性下拉选项
-      const unusedProperties = computed(() => properties.value.filter(item => !conditionPropertyMap.value.has(item)))
-
-      // 根据property动态获取当前可使用的属性列表
-      const getAvailableProperties = property => [property, ...unusedProperties.value]
-
-      // 条件项的字段变更时更新对应的property
-      const handleFieldChange = (value) => {
-        const rule = condition.value.find(rule => rule.field === value)
-        rule.property = properties.value.find(item => item.bk_property_id === value)
-      }
-
-      watch([condition, selectedBusiness], ([newCondition, newSelectedBusiness]) => {
+    watch(
+      [condition, selectedBusiness],
+      ([newCondition, newSelectedBusiness]) => {
         emit('change', {
           condition: newCondition,
-          selectedBusiness: newSelectedBusiness
+          selectedBusiness: newSelectedBusiness,
         })
-      }, { immediate: true, deep: true })
+      },
+      { immediate: true, deep: true }
+    )
 
-      // 添加条件
-      const handleAdd = () => {
-        // 从未使用的属性中取第一个作为初始化选项
-        const [property] = unusedProperties.value
+    // 添加条件
+    const handleAdd = () => {
+      // 从未使用的属性中取第一个作为初始化选项
+      const [property] = unusedProperties.value
+      const { value } = Utils.getDefaultData(property)
+      const { bk_property_id: field } = property
 
-        const { value } = Utils.getDefaultData(property)
-        const { bk_property_id: field } = property
+      condition.value.push({ field, value, property })
+    }
 
-        condition.value.push({ field, value, property })
-      }
-
-      // 删除条件
-      const handleRemove = (rule) => {
-        const index = condition.value.indexOf(rule)
-        if (~index) {
-          condition.value.splice(index, 1)
-        }
-      }
-
-      // 条件项的值对应的组件所需的相关方法
-      const getPlaceholder = property => Utils.getPlaceholder(property)
-      const getBindProps = property => Utils.getBindProps(property)
-
-      return {
-        loading,
-        condition,
-        properties,
-        allBusiness,
-        selectedBusiness,
-        unusedProperties,
-        getAvailableProperties,
-        handleFieldChange,
-        handleAdd,
-        handleRemove,
-        getPlaceholder,
-        getBindProps,
-        localSelectedBusiness
+    // 删除条件
+    const handleRemove = rule => {
+      const index = condition.value.indexOf(rule)
+      if (~index) {
+        condition.value.splice(index, 1)
       }
     }
-  })
+
+    // 条件项的值对应的组件所需的相关方法
+    const getPlaceholder = property => Utils.getPlaceholder(property)
+    const getBindProps = property => Utils.getBindProps(property)
+
+    return {
+      loading,
+      condition,
+      properties,
+      allBusiness,
+      selectedBusiness,
+      unusedProperties,
+      getAvailableProperties,
+      handleFieldChange,
+      handleAdd,
+      handleRemove,
+      getPlaceholder,
+      getBindProps,
+      localSelectedBusiness,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
-  .business-scope-settings-form {
-    width: 100%;
-    .condition-item {
-      display: flex;
-      align-items: center;
-      position: relative;
-      padding: 8px 20px 8px 8px;
+.business-scope-settings-form {
+  width: 100%;
 
-      &:hover {
-        background: #f5f6fa;
-        .icon-close {
-          opacity: 1;
-        }
-      }
+  .condition-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 8px 20px 8px 8px;
 
-      .condition-field {
-        flex: 150px 0 0;
-        margin-right: 8px;
-      }
-      .condition-value {
-        flex: none;
-        width: calc(100% - 158px);
-        &.organization {
-          font-size: 14px;
-        }
-      }
+    &:hover {
+      background: #f5f6fa;
+
       .icon-close {
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        right: -2px;
-        top: 0;
-        font-size: 20px;
-        opacity: 0;
-        cursor: pointer;
-        color: $textColor;
-        &:hover {
-          color: $dangerColor;
-        }
-      }
-
-      .select-business {
-        flex: 1;
+        opacity: 1;
       }
     }
 
-    .condition-button {
-      margin: 8px 0 8px 8px;
-      ::v-deep > div {
-          display: flex;
-          align-items: center;
-          .bk-icon {
-              top: 0;
-          }
+    .condition-field {
+      flex: 150px 0 0;
+      margin-right: 8px;
+    }
+
+    .condition-value {
+      flex: none;
+      width: calc(100% - 158px);
+
+      &.organization {
+        font-size: 14px;
+      }
+    }
+
+    .icon-close {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      right: -2px;
+      top: 0;
+      font-size: 20px;
+      opacity: 0;
+      cursor: pointer;
+      color: $textColor;
+
+      &:hover {
+        color: $dangerColor;
+      }
+    }
+
+    .select-business {
+      flex: 1;
+    }
+  }
+
+  .condition-button {
+    margin: 8px 0 8px 8px;
+
+    ::v-deep > div {
+      display: flex;
+      align-items: center;
+
+      .bk-icon {
+        top: 0;
       }
     }
   }
+}
 </style>

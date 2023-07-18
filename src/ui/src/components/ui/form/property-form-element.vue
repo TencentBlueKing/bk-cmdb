@@ -11,14 +11,22 @@
 -->
 
 <template>
-  <div :class="['property-form-element', 'cmdb-form-item', {
-         'is-error': errors.has(property.bk_property_id),
-         'is-tooltips': errorDisplayType === 'tooltips'
-       }]"
-    v-bk-tooltips="{ disabled: !disabled, content: disabledTips }">
+  <div
+    v-bk-tooltips="{ disabled: !disabled, content: disabledTips }"
+    :class="[
+      'property-form-element',
+      'cmdb-form-item',
+      {
+        'is-error': errors.has(property.bk_property_id),
+        'is-tooltips': errorDisplayType === 'tooltips',
+      },
+    ]">
     <component
-      :ref="`component-${property.bk_property_id}`"
       :is="`cmdb-form-${property.bk_property_type}`"
+      :ref="`component-${property.bk_property_id}`"
+      v-bind="getMoreProps(property)"
+      v-model.trim="localValue"
+      v-validate="getValidateRules(property)"
       :class="['form-element-item', property.bk_property_type]"
       :unit="property.unit"
       :options="property.option || []"
@@ -31,133 +39,136 @@
       :size="size"
       :font-size="fontSize"
       :row="row"
-      v-bind="getMoreProps(property)"
-      v-validate="getValidateRules(property)"
-      v-on="events"
-      v-model.trim="localValue">
+      v-on="events">
     </component>
     <template v-if="errors.has(property.bk_property_id)">
       <i
+        v-if="errorDisplayType === 'tooltips'"
+        v-bk-tooltips.top-end="{
+          content: errors.first(property.bk_property_id),
+        }"
         class="bk-icon icon-exclamation-circle-shape tooltips-icon"
-        v-bk-tooltips.top-end="{ content: errors.first(property.bk_property_id) }"
-        :style="{ right: `${tipsIconOffset}px` }"
-        v-if="errorDisplayType === 'tooltips'">
+        :style="{ right: `${tipsIconOffset}px` }">
       </i>
-      <div class="form-error" v-else>
-        {{errors.first(property.bk_property_id)}}
+      <div v-else class="form-error">
+        {{ errors.first(property.bk_property_id) }}
       </div>
     </template>
   </div>
 </template>
 
 <script>
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  export default {
-    props: {
-      property: {
-        type: Object,
-        required: true,
-        default: () => ({})
-      },
-      value: {
-        type: [String, Array, Boolean, Number],
-        default: ''
-      },
-      autoCheck: {
-        type: Boolean,
-        default: true
-      },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      mustRequired: {
-        type: Boolean,
-        default: null
-      },
-      events: {
-        type: Object,
-        default: () => ({})
-      },
-      row: {
-        type: Number,
-        default: 3
-      },
-      size: String,
-      fontSize: String,
-      errorDisplayType: {
-        type: String,
-        default: 'normal'
-      },
-      tipsIconOffset: {
-        type: Number,
-        default: 8
-      },
-      disabledTips: {
-        type: String,
-        default: ''
-      }
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+export default {
+  props: {
+    property: {
+      type: Object,
+      required: true,
+      default: () => ({}),
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value
-        },
-        async set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value, this.property)
-        }
-      }
+    value: {
+      type: [String, Array, Boolean, Number],
+      default: '',
     },
-    methods: {
-      getValidateRules(property) {
-        const rules = this.$tools.getValidateRules(property)
-        if (this.mustRequired !== null) {
-          rules.required = this.mustRequired
-        }
-        return rules
+    autoCheck: {
+      type: Boolean,
+      default: true,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    mustRequired: {
+      type: Boolean,
+      default: null,
+    },
+    events: {
+      type: Object,
+      default: () => ({}),
+    },
+    row: {
+      type: Number,
+      default: 3,
+    },
+    size: String,
+    fontSize: String,
+    errorDisplayType: {
+      type: String,
+      default: 'normal',
+    },
+    tipsIconOffset: {
+      type: Number,
+      default: 8,
+    },
+    disabledTips: {
+      type: String,
+      default: '',
+    },
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value
       },
-      getMoreProps(property) {
-        const validateEvents = this.$tools.getValidateEvents(property)
-        const otherProps = {}
-        if ([PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(property.bk_property_type)) {
-          otherProps.inputType = 'number'
-        }
-        if (this.mustRequired === true) {
-          otherProps.clearable = false
-        }
-        return { ...validateEvents, ...otherProps, ...this.$attrs }
+      async set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value, this.property)
       },
-      focus() {
-        this.$refs[`component-${this.property.bk_property_id}`]?.focus()
+    },
+  },
+  methods: {
+    getValidateRules(property) {
+      const rules = this.$tools.getValidateRules(property)
+      if (this.mustRequired !== null) {
+        rules.required = this.mustRequired
       }
-    }
-  }
+      return rules
+    },
+    getMoreProps(property) {
+      const validateEvents = this.$tools.getValidateEvents(property)
+      const otherProps = {}
+      if (
+        [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(
+          property.bk_property_type
+        )
+      ) {
+        otherProps.inputType = 'number'
+      }
+      if (this.mustRequired === true) {
+        otherProps.clearable = false
+      }
+      return { ...validateEvents, ...otherProps, ...this.$attrs }
+    },
+    focus() {
+      this.$refs[`component-${this.property.bk_property_id}`]?.focus()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .property-form-element {
-    // 重置 .cmdb-form-item display
-    display: block;
-    position: relative;
+.property-form-element {
+  // 重置 .cmdb-form-item display
+  display: block;
+  position: relative;
 
-    .form-element-item {
-      &.cmdb-search-input {
-        /deep/ .search-input-wrapper {
-          position: relative;
-        }
+  .form-element-item {
+    &.cmdb-search-input {
+      /deep/ .search-input-wrapper {
+        position: relative;
       }
     }
-
-    .tooltips-icon {
-      position: absolute;
-      z-index: 10;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: $dangerColor;
-      cursor: pointer;
-      font-size: 16px;
-    }
   }
+
+  .tooltips-icon {
+    position: absolute;
+    z-index: 10;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $dangerColor;
+    cursor: pointer;
+    font-size: 16px;
+  }
+}
 </style>

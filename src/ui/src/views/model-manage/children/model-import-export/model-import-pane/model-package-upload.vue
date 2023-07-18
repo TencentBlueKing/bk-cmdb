@@ -21,26 +21,25 @@
           @dragenter.stop.prevent="handleFileDragenter"
           @dragover.stop.prevent
           @dragleave.prevent="handleFileDragleave"
-          @drop.stop.prevent="handleFileDrop"
-        >
+          @drop.stop.prevent="handleFileDrop">
           <input
+            ref="fileInputRef"
             class="upload-input"
             type="file"
-            ref="fileInputRef"
             accept="application/zip"
-            @change="handleFileChange"
-          />
+            @change="handleFileChange" />
           <i class="upload-icon">
             <bk-icon type="upload-cloud"></bk-icon>
           </i>
-          <p class="upload-text">{{ t("将文件拖到此处或点击上传") }}</p>
+          <p class="upload-text">{{ t('将文件拖到此处或点击上传') }}</p>
         </label>
 
         <div
-          class="after-upload"
-          :class="[{ [`is-${currentFile.result}`]: currentFile.result !== '' }]"
           v-show="currentFile.file"
-        >
+          class="after-upload"
+          :class="[
+            { [`is-${currentFile.result}`]: currentFile.result !== '' },
+          ]">
           <div class="file-icon">
             <img src="@/assets/images/zip-package.png" />
           </div>
@@ -49,44 +48,46 @@
             <p class="upload-result-desc">
               {{ currentFile.resultDesc }}
               <span
-                class="retry-decrypt-button"
                 v-show="isDecryptPasswordError"
-                @click="showDecryptDialog"
-              >
-                {{ t("重新输入密码") }}
+                class="retry-decrypt-button"
+                @click="showDecryptDialog">
+                {{ t('重新输入密码') }}
               </span>
             </p>
           </div>
           <div class="file-action">
-            <i @click="preProcessFile(currentFile.file)" class="icon-button retry-upload-button icon-cc-refresh"></i>
-            <i @click="clearFile" class="icon-button clear-file-button icon-cc-tips-close"></i>
+            <i
+              class="icon-button retry-upload-button icon-cc-refresh"
+              @click="preProcessFile(currentFile.file)"></i>
+            <i
+              class="icon-button clear-file-button icon-cc-tips-close"
+              @click="clearFile"></i>
           </div>
         </div>
       </div>
-      <p class="upload-tips">{{t('仅支持上传来自蓝鲸配置平台专属导出的模型压缩包')}}</p>
+      <p class="upload-tips">
+        {{ t('仅支持上传来自蓝鲸配置平台专属导出的模型压缩包') }}
+      </p>
     </div>
     <bk-dialog
+      v-model="decryptDialogVisible"
       :mask-close="false"
       header-position="left"
       :title="t('文件包解密确认')"
       :confirm-fn="confirmDecrypt"
-      @cancel="cancelDecrypt"
-      v-model="decryptDialogVisible"
-    >
+      @cancel="cancelDecrypt">
       <bk-form
-        form-type="vertical"
         ref="decryptPasswordFormRef"
+        form-type="vertical"
         :model="{ decryptPassword }"
-        :rules="{ decryptPassword: decryptPasswordRules }"
-      >
+        :rules="{ decryptPassword: decryptPasswordRules }">
         <bk-form-item property="decryptPassword" :label="t('文件包密码')">
           <bk-input
-            v-autofocus
-            @enter="confirmDecrypt"
-            type="password"
             v-model="decryptPassword"
+            v-autofocus
+            type="password"
             :placeholder="t('请输入上传的文件包密码，完成后点提交验证')"
-          ></bk-input>
+            @enter="confirmDecrypt"></bk-input>
         </bk-form-item>
       </bk-form>
     </bk-dialog>
@@ -94,197 +95,199 @@
 </template>
 
 <script>
-  import { defineComponent, ref, reactive, computed } from 'vue'
-  import unzip from 'unzip-js'
-  import { t } from '@/i18n'
-  import { batchImportFileAnalysis } from '@/service/model/import-export.js'
-  import { autofocus } from '@/directives/autofocus'
+import { defineComponent, ref, reactive, computed } from 'vue'
+import unzip from 'unzip-js'
 
-  export default defineComponent({
-    name: 'ModelPackageUpload',
-    directives: {
-      autofocus
-    },
-    setup(props, { emit }) {
-      const isUnzipping = ref(false)
-      const isDragging = ref(false)
-      const currentFile = reactive({
-        file: null,
-        result: '',
-        resultDesc: ''
-      })
-      const fileInputRef = ref(null)
-      const currentFileName = computed(() => currentFile?.file?.name || '')
-      const decryptDialogVisible = ref(false)
-      const decryptPasswordFormRef = ref(null)
-      const decryptPassword = ref('')
-      const isDecryptPasswordError = ref(false)
-      const decryptPasswordRules = [
-        {
-          required: true,
-          message: t('请输入文件包密码'),
-          trigger: 'blur'
+import { t } from '@/i18n'
+import { batchImportFileAnalysis } from '@/service/model/import-export.js'
+import { autofocus } from '@/directives/autofocus'
+
+export default defineComponent({
+  name: 'ModelPackageUpload',
+  directives: {
+    autofocus,
+  },
+  setup(props, { emit }) {
+    const isUnzipping = ref(false)
+    const isDragging = ref(false)
+    const currentFile = reactive({
+      file: null,
+      result: '',
+      resultDesc: '',
+    })
+    const fileInputRef = ref(null)
+    const currentFileName = computed(() => currentFile?.file?.name || '')
+    const decryptDialogVisible = ref(false)
+    const decryptPasswordFormRef = ref(null)
+    const decryptPassword = ref('')
+    const isDecryptPasswordError = ref(false)
+    const decryptPasswordRules = [
+      {
+        required: true,
+        message: t('请输入文件包密码'),
+        trigger: 'blur',
+      },
+      {
+        required: true,
+        message: t('密码输入错误'),
+        validator: value => {
+          const lenValid = value.length >= 6 && value.length <= 20
+          return lenValid
         },
-        {
-          required: true,
-          message: t('密码输入错误'),
-          validator: (value) => {
-            const lenValid = value.length >= 6 && value.length <= 20
-            return lenValid
-          },
-          trigger: 'blur'
+        trigger: 'blur',
+      },
+    ]
+
+    const confirmDecrypt = () => {
+      decryptPasswordFormRef.value.validate(isPass => {
+        if (isPass) {
+          isDecryptPasswordError.value = false
+          unzipFile(decryptPassword.value).then(() => {
+            closeDecryptDialog()
+          })
         }
-      ]
-
-      const confirmDecrypt = () => {
-        decryptPasswordFormRef.value.validate((isPass) => {
-          if (isPass) {
-            isDecryptPasswordError.value = false
-            unzipFile(decryptPassword.value)
-              .then(() => {
-                closeDecryptDialog()
-              })
-          }
-        })
-      }
-
-      const uploadFile = () => {
-        fileInputRef.value.click()
-      }
-
-      const clearFile = () => {
-        fileInputRef.value.value = null
-        currentFile.file = ''
-        currentFile.result = ''
-        currentFile.resultDesc = ''
-        emit('unzip', {})
-      }
-
-      const closeDecryptDialog = () => {
-        decryptPassword.value = ''
-        decryptDialogVisible.value = false
-      }
-
-      const cancelDecrypt = () => {
-        closeDecryptDialog()
-        currentFile.result = 'failed'
-        currentFile.resultDesc = t('您取消了输入密码')
-        isDecryptPasswordError.value = true
-      }
-
-      const unzipFile = (password = '') => {
-        isUnzipping.value = true
-
-        const data = {
-          file: currentFile.file
-        }
-
-        if (password) {
-          data.password = password
-        }
-
-        return batchImportFileAnalysis(data)
-          .then((data) => {
-            emit('unzip', data)
-            currentFile.result = 'succeed'
-            currentFile.resultDesc = t('上传成功')
-          })
-          .catch((err) => {
-            isDecryptPasswordError.value = err.bk_error_code === 1111023
-            currentFile.result = 'failed'
-            currentFile.resultDesc = `${t('上传失败')}：${err.bk_error_msg || err.message}`
-          })
-          .finally(() => {
-            isUnzipping.value = false
-          })
-      }
-
-      const showDecryptDialog = () => {
-        decryptDialogVisible.value = true
-      }
-
-      const preProcessFile = (file) => {
-        if (!file) return
-
-        isDecryptPasswordError.value = false
-
-        currentFile.file = file
-
-        isFileEncrypted(file, (isEncrypted) => {
-          if (isEncrypted) {
-            showDecryptDialog()
-          } else {
-            unzipFile()
-          }
-        })
-      }
-
-      const isFileEncrypted = (file, callback) => {
-        let isEncrypted = false
-
-        unzip(file, (err, zipFile) => {
-          zipFile.readEntries((err, entries) => {
-            if (err) {
-              return console.error(err)
-            }
-
-            isEncrypted = entries.some(entry => entry.encrypted)
-
-            callback(isEncrypted)
-          })
-        })
-      }
-
-      const handleFileDragenter = () => {
-        isDragging.value = true
-      }
-
-      const handleFileDragleave = () => {
-        isDragging.value = false
-      }
-
-      const handleFileDrop = (e) => {
-        const dt = e.dataTransfer
-        const {
-          files: [file]
-        } = dt
-
-        isDragging.value = false
-
-        preProcessFile(file)
-      }
-
-      const handleFileChange = (e) => {
-        const [file] = e.target.files
-
-        preProcessFile(file)
-      }
-
-      return {
-        t,
-        fileInputRef,
-        preProcessFile,
-        uploadFile,
-        clearFile,
-        currentFile,
-        currentFileName,
-        decryptDialogVisible,
-        decryptPasswordFormRef,
-        decryptPassword,
-        isDecryptPasswordError,
-        decryptPasswordRules,
-        handleFileChange,
-        isDragging,
-        handleFileDragenter,
-        handleFileDragleave,
-        handleFileDrop,
-        confirmDecrypt,
-        cancelDecrypt,
-        showDecryptDialog,
-        isUnzipping
-      }
+      })
     }
-  })
+
+    const uploadFile = () => {
+      fileInputRef.value.click()
+    }
+
+    const clearFile = () => {
+      fileInputRef.value.value = null
+      currentFile.file = ''
+      currentFile.result = ''
+      currentFile.resultDesc = ''
+      emit('unzip', {})
+    }
+
+    const closeDecryptDialog = () => {
+      decryptPassword.value = ''
+      decryptDialogVisible.value = false
+    }
+
+    const cancelDecrypt = () => {
+      closeDecryptDialog()
+      currentFile.result = 'failed'
+      currentFile.resultDesc = t('您取消了输入密码')
+      isDecryptPasswordError.value = true
+    }
+
+    const unzipFile = (password = '') => {
+      isUnzipping.value = true
+
+      const data = {
+        file: currentFile.file,
+      }
+
+      if (password) {
+        data.password = password
+      }
+
+      return batchImportFileAnalysis(data)
+        .then(data => {
+          emit('unzip', data)
+          currentFile.result = 'succeed'
+          currentFile.resultDesc = t('上传成功')
+        })
+        .catch(err => {
+          isDecryptPasswordError.value = err.bk_error_code === 1111023
+          currentFile.result = 'failed'
+          currentFile.resultDesc = `${t('上传失败')}：${
+            err.bk_error_msg || err.message
+          }`
+        })
+        .finally(() => {
+          isUnzipping.value = false
+        })
+    }
+
+    const showDecryptDialog = () => {
+      decryptDialogVisible.value = true
+    }
+
+    const preProcessFile = file => {
+      if (!file) return
+
+      isDecryptPasswordError.value = false
+
+      currentFile.file = file
+
+      isFileEncrypted(file, isEncrypted => {
+        if (isEncrypted) {
+          showDecryptDialog()
+        } else {
+          unzipFile()
+        }
+      })
+    }
+
+    const isFileEncrypted = (file, callback) => {
+      let isEncrypted = false
+
+      unzip(file, (err, zipFile) => {
+        zipFile.readEntries((err, entries) => {
+          if (err) {
+            return console.error(err)
+          }
+
+          isEncrypted = entries.some(entry => entry.encrypted)
+
+          callback(isEncrypted)
+        })
+      })
+    }
+
+    const handleFileDragenter = () => {
+      isDragging.value = true
+    }
+
+    const handleFileDragleave = () => {
+      isDragging.value = false
+    }
+
+    const handleFileDrop = e => {
+      const dt = e.dataTransfer
+      const {
+        files: [file],
+      } = dt
+
+      isDragging.value = false
+
+      preProcessFile(file)
+    }
+
+    const handleFileChange = e => {
+      const [file] = e.target.files
+
+      preProcessFile(file)
+    }
+
+    return {
+      t,
+      fileInputRef,
+      preProcessFile,
+      uploadFile,
+      clearFile,
+      currentFile,
+      currentFileName,
+      decryptDialogVisible,
+      decryptPasswordFormRef,
+      decryptPassword,
+      isDecryptPasswordError,
+      decryptPasswordRules,
+      handleFileChange,
+      isDragging,
+      handleFileDragenter,
+      handleFileDragleave,
+      handleFileDrop,
+      confirmDecrypt,
+      cancelDecrypt,
+      showDecryptDialog,
+      isUnzipping,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
@@ -299,7 +302,6 @@
 }
 
 .upload-area {
-  display: block;
   height: 100%;
   display: flex;
   align-items: center;

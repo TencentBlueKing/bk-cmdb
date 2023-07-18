@@ -19,11 +19,17 @@ import $http from '@/api'
  * @param {Object} config 请求配置
  * @returns {Promise}
  */
-export const findAll = (bizSetId, params, config) => $http.post(`findmany/proc/biz_set/${bizSetId}/proc_template`, params, config)
+export const findAll = (bizSetId, params, config) =>
+  $http.post(`findmany/proc/biz_set/${bizSetId}/proc_template`, params, config)
 
-export const findOne = ({ bizSetId, processTemplateId }, config) => $http.post(`find/proc/biz_set/${bizSetId}/proc_template/id/${processTemplateId}`, undefined, config)
+export const findOne = ({ bizSetId, processTemplateId }, config) =>
+  $http.post(
+    `find/proc/biz_set/${bizSetId}/proc_template/id/${processTemplateId}`,
+    undefined,
+    config
+  )
 
 export const ProcessTemplateService = {
   findAll,
-  findOne
+  findOne,
 }

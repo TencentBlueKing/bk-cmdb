@@ -18,7 +18,7 @@ export default {
       try {
         const result = await this.$http.get('biz/simplify?sort=bk_biz_id', {
           requestId: `fuzzy_search_${this.type}`,
-          cancelPrevious: true
+          cancelPrevious: true,
         })
         const list = result.info || []
         const matchRE = new RegExp(keyword, 'i')
@@ -30,11 +30,11 @@ export default {
         })
         return Promise.resolve({
           next: false,
-          results: matched
+          results: matched,
         })
       } catch (error) {
         return Promise.reject(error)
       }
-    }
-  }
+    },
+  },
 }

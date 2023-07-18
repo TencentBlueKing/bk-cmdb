@@ -14,64 +14,92 @@
 import $http from '@/api'
 
 const state = {
-  cloudName: null
+  cloudName: null,
 }
 
 const getters = {
-  cloudName: state => state.cloudName
+  cloudName: state => state.cloudName,
 }
 
 const actions = {
   /**
-     * 网络发现报告简要查询
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchNetcollect({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('collector/netcollect/summary/action/search', params, config)
+   * 网络发现报告简要查询
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchNetcollect(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      'collector/netcollect/summary/action/search',
+      params,
+      config
+    )
   },
   /**
-     * 网络发现报告详情列表查询
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchNetcollectList({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('collector/netcollect/report/action/search', params, config)
+   * 网络发现报告详情列表查询
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchNetcollectList(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      'collector/netcollect/report/action/search',
+      params,
+      config
+    )
   },
   /**
-     * 网络发现报告变更确认
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  confirmNetcollectChange({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('collector/netcollect/report/action/confirm', params, config)
+   * 网络发现报告变更确认
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  confirmNetcollectChange(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      'collector/netcollect/report/action/confirm',
+      params,
+      config
+    )
   },
   /**
-     * 网络发现完成历史
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchNetcollectHistory({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post('collector/netcollect/history/action/search', params, config)
-  }
+   * 网络发现完成历史
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchNetcollectHistory(
+    { commit, state, dispatch, rootGetters },
+    { params, config }
+  ) {
+    return $http.post(
+      'collector/netcollect/history/action/search',
+      params,
+      config
+    )
+  },
 }
 
 const mutations = {
   setCloudName(state, cloudName) {
     state.cloudName = cloudName
-  }
+  },
 }
 
 export default {
@@ -79,5 +107,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

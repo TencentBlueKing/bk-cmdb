@@ -11,16 +11,18 @@
  */
 
 import has from 'has'
-import router from './index'
 import throttle from 'lodash.throttle'
 import deepEqual from 'deep-equal'
+
 import { redirect } from './actions'
+
+import router from './index'
 
 // Vue.watch的options
 function createWatchOptions(key, options) {
   const watchOptions = {
     immediate: false,
-    deep: false
+    deep: false,
   }
   // eslint-disable-next-line no-restricted-syntax
   for (const key in watchOptions) {
@@ -38,11 +40,12 @@ function createWatchOptions(key, options) {
 function createCallback(keys, handler, options = {}) {
   let immediateCalled = false
   const callback = (values, oldValues = {}) => {
-    let execValue; let execOldValue
+    let execValue
+    let execOldValue
     if (Array.isArray(keys)) {
       execValue = {}
       execOldValue = {}
-      keys.forEach((key) => {
+      keys.forEach(key => {
         execValue[key] = values[key]
         execOldValue[key] = oldValues[key]
       })
@@ -50,8 +53,10 @@ function createCallback(keys, handler, options = {}) {
       execValue = { ...values }
       execOldValue = { ...oldValues }
       if (has(options, 'ignore')) {
-        const ignoreKeys = Array.isArray(options.ignore) ? options.ignore : [options.ignore]
-        ignoreKeys.forEach((key) => {
+        const ignoreKeys = Array.isArray(options.ignore)
+          ? options.ignore
+          : [options.ignore]
+        ignoreKeys.forEach(key => {
           delete execValue[key]
           delete execOldValue[key]
         })
@@ -70,7 +75,8 @@ function createCallback(keys, handler, options = {}) {
   }
 
   if (has(options, 'throttle')) {
-    const interval = typeof options.throttle === 'number' ? options.throttle : 100
+    const interval =
+      typeof options.throttle === 'number' ? options.throttle : 100
     return throttle(callback, interval, { leading: false, trailing: true })
   }
 
@@ -113,14 +119,14 @@ class RouterQuery {
     } else {
       query[key] = value
     }
-    Object.keys(query).forEach((queryKey) => {
+    Object.keys(query).forEach(queryKey => {
       if (isEmpty(query[queryKey])) {
         delete query[queryKey]
       }
     })
     redirect({
       ...this.route,
-      query
+      query,
     })
   }
 
@@ -128,19 +134,19 @@ class RouterQuery {
     redirect({
       ...this.route,
       query: {
-        ...value
-      }
+        ...value,
+      },
     })
   }
 
   delete(key) {
     const query = {
-      ...this.route.query
+      ...this.route.query,
     }
     delete query[key]
     redirect({
       ...this.route,
-      query
+      query,
     })
   }
 
@@ -151,7 +157,7 @@ class RouterQuery {
   clear() {
     redirect({
       ...this.route,
-      query: {}
+      query: {},
     })
   }
 

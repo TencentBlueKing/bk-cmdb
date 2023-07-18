@@ -11,6 +11,7 @@
  */
 
 import QS from 'qs'
+
 import RouterQuery from '@/router/query'
 import Utils from '@/components/filters/utils'
 
@@ -19,22 +20,25 @@ const defaultFastQuery = () => ({
   field: '',
   filter: '',
   operator: '',
-  fuzzy: ''
+  fuzzy: '',
 })
 
 // 通用的默认query
 const defaultBaseQuery = () => ({
   page: '',
-  _t: Date.now()
+  _t: Date.now(),
 })
 
 // 根据条件Map设置搜索query，空值视为删除
-export const setSearchQueryByCondition = (conditionMap = {}, properties = []) => {
+export const setSearchQueryByCondition = (
+  conditionMap = {},
+  properties = []
+) => {
   const query = QS.parse(RouterQuery.get('filter_adv'))
   const field = RouterQuery.get('field')
   let clearFastQuery = {}
 
-  Object.keys(conditionMap).forEach((id) => {
+  Object.keys(conditionMap).forEach(id => {
     const { operator, value } = conditionMap[id]
     const key = `${id}.${operator.replace('$', '')}`
 
@@ -51,7 +55,7 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
     }
   })
 
-  Object.keys(query).forEach((key) => {
+  Object.keys(query).forEach(key => {
     const [id] = key.split('.')
     if (!conditionMap[id]) {
       Reflect.deleteProperty(query, key)
@@ -62,7 +66,7 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
     filter_adv: QS.stringify(query, { encode: false }),
     s: 'adv',
     ...clearFastQuery,
-    ...defaultBaseQuery()
+    ...defaultBaseQuery(),
   })
 }
 
@@ -76,7 +80,7 @@ export const clearOneSearchQuery = (property, operator) => {
     RouterQuery.set({
       filter: '',
       s: 'fast',
-      ...defaultBaseQuery()
+      ...defaultBaseQuery(),
     })
     return
   }
@@ -88,7 +92,7 @@ export const clearOneSearchQuery = (property, operator) => {
     RouterQuery.set({
       filter_adv: QS.stringify(query, { encode: false }),
       s: 'adv',
-      ...defaultBaseQuery()
+      ...defaultBaseQuery(),
     })
   }
 }
@@ -100,19 +104,25 @@ export const clearSearchQuery = () => {
     _t: '',
     s: '',
     page: '',
-    ...defaultFastQuery()
+    ...defaultFastQuery(),
   })
 }
 
 // 重置所有条件项，用于query被清除后重新生成新的条件项
 export const resetConditionValue = (condition, selected) => {
   const newConditon = {}
-  Object.keys(condition).forEach((id) => {
+  Object.keys(condition).forEach(id => {
     const propertyCondititon = condition[id]
     newConditon[id] = { ...propertyCondititon }
 
-    const property = selected.find(property => property.id.toString() === id.toString())
-    const value = Utils.getOperatorSideEffect(property, newConditon[id].operator, [])
+    const property = selected.find(
+      property => property.id.toString() === id.toString()
+    )
+    const value = Utils.getOperatorSideEffect(
+      property,
+      newConditon[id].operator,
+      []
+    )
 
     newConditon[id].value = value
   })

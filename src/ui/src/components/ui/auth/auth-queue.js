@@ -12,6 +12,7 @@
 
 import Vue from 'vue'
 import debounce from 'lodash.debounce'
+
 import $http from '@/api'
 import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
 
@@ -21,31 +22,33 @@ function equal(source, target) {
     resource_id: SResourceId,
     resource_id_ex: SResourceIdEx,
     action: SAction,
-    bk_biz_id: SBizId
+    bk_biz_id: SBizId,
   } = source
   const {
     resource_type: TResourceType,
     resource_id: TResourceId,
     resource_id_ex: TResourceIdEx,
     action: TAction,
-    bk_biz_id: TBizId
+    bk_biz_id: TBizId,
   } = target
   const SParentLayers = source.parent_layers || []
   const TParentLayers = target.parent_layers || []
   if (
-    SResourceType !== TResourceType
-        || SResourceId !== TResourceId
-        || SResourceIdEx !== TResourceIdEx
-        || SAction !== TAction
-        || SBizId !== TBizId
-        || SParentLayers.length !== TParentLayers.length
+    SResourceType !== TResourceType ||
+    SResourceId !== TResourceId ||
+    SResourceIdEx !== TResourceIdEx ||
+    SAction !== TAction ||
+    SBizId !== TBizId ||
+    SParentLayers.length !== TParentLayers.length
   ) {
     return false
   }
   return SParentLayers.every((_, index) => {
     const SParentLayersMeta = SParentLayers[index]
     const TParentLayersMeta = TParentLayers[index]
-    return Object.keys(SParentLayersMeta).every(key => SParentLayersMeta[key] === TParentLayersMeta[key])
+    return Object.keys(SParentLayersMeta).every(
+      key => SParentLayersMeta[key] === TParentLayersMeta[key]
+    )
   })
 }
 
@@ -67,7 +70,7 @@ export function afterVerify(func, once = true) {
   if (authEnable) {
     afterVerifyQueue.push({
       handler: func,
-      once
+      once,
     })
   } else {
     func()
@@ -83,13 +86,13 @@ export default new Vue({
     return {
       queue: [],
       authComponents: [],
-      verify: debounce(this.getAuth, 20)
+      verify: debounce(this.getAuth, 20),
     }
   },
   watch: {
     queue() {
       this.verify()
-    }
+    },
   },
   methods: {
     add({ component, data }) {
@@ -104,19 +107,23 @@ export default new Vue({
       const authComponents = this.authComponents.splice(0)
       let authData = []
       try {
-        authData = await $http.post('auth/verify', { resources: queue }, { requestId: AuthRequestId })
+        authData = await $http.post(
+          'auth/verify',
+          { resources: queue },
+          { requestId: AuthRequestId }
+        )
       } catch (error) {
         console.error(error)
       } finally {
-        authComponents.forEach((component) => {
+        authComponents.forEach(component => {
           // eslint-disable-next-line new-cap
           const authMetas = TRANSFORM_TO_INTERNAL(component.auth)
           const authResults = []
-          authMetas.forEach((meta) => {
-            const result = authData.find((result) => {
+          authMetas.forEach(meta => {
+            const result = authData.find(result => {
               const source = {}
               const target = {}
-              Object.keys(meta).forEach((key) => {
+              Object.keys(meta).forEach(key => {
                 source[key] = meta[key]
                 target[key] = result[key]
               })
@@ -126,10 +133,13 @@ export default new Vue({
               authResults.push(result)
             }
           })
-          component.updateAuth(Object.freeze(authResults), Object.freeze(authMetas))
+          component.updateAuth(
+            Object.freeze(authResults),
+            Object.freeze(authMetas)
+          )
         })
         execAfterVerify(authData)
       }
-    }
-  }
+    },
+  },
 })

@@ -21,30 +21,37 @@
     @value-change="handleVisibleChange"
     @confirm="handleConfirm">
     <bk-input
+      v-model.trim="searchName"
       class="search"
       type="text"
       :placeholder="$t('请输入字段名称搜索')"
       clearable
       right-icon="bk-icon icon-search"
-      v-model.trim="searchName"
       @input="hanldeFilterProperty">
     </bk-input>
     <dl class="property-container">
-      <div class="property-group" v-for="(group, groupIndex) in sortedGroups" :key="groupIndex">
-        <dt class="group-title">{{group.bk_group_name}}</dt>
+      <div
+        v-for="(group, groupIndex) in sortedGroups"
+        :key="groupIndex"
+        class="property-group">
+        <dt class="group-title">{{ group.bk_group_name }}</dt>
         <dd class="group-content">
           <ul class="property-list">
             <li
-              class="property-item"
-              v-for="property in groupedPropertyList[groupIndex]" :key="property.bk_property_id">
+              v-for="property in groupedPropertyList[groupIndex]"
+              :key="property.bk_property_id"
+              class="property-item">
               <bk-checkbox
                 :checked="isChecked(property)"
                 :disabled="isDisabled(property)"
                 :value="property.id"
                 @change="handleChangeChecked(property, ...arguments)">
                 <div
-                  v-bk-tooltips.top-start="{ content: $t('该字段不支持配置'), disabled: !isDisabled(property) }">
-                  {{property.bk_property_name}}
+                  v-bk-tooltips.top-start="{
+                    content: $t('该字段不支持配置'),
+                    disabled: !isDisabled(property),
+                  }">
+                  {{ property.bk_property_name }}
                 </div>
               </bk-checkbox>
             </li>
@@ -56,133 +63,145 @@
 </template>
 
 <script>
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
-  export default {
-    props: {
-      visible: {
-        type: Boolean,
-        default: false
-      },
-      selectedList: {
-        type: Array,
-        default: () => ([])
-      },
-      sortedGroups: {
-        type: Array,
-        required: true,
-        default: () => ([])
-      },
-      groupedProperties: {
-        type: Array,
-        required: true,
-        default: () => ([])
-      }
+export default {
+  props: {
+    visible: {
+      type: Boolean,
+      default: false,
     },
-    data() {
-      return {
-        show: this.visible,
-        localSelected: [],
-        searchName: '',
-        propertyGroups: [],
-        groupedPropertyList: []
-      }
+    selectedList: {
+      type: Array,
+      default: () => [],
     },
-    watch: {
-      visible(val) {
-        this.show = val
-      },
-      selectedList: {
-        handler() {
-          this.localSelected = this.selectedList.slice()
-        },
-        immediate: true
-      },
-      groupedProperties: {
-        handler() {
-          this.groupedPropertyList = this.groupedProperties.slice()
-        },
-        immediate: true
-      }
+    sortedGroups: {
+      type: Array,
+      required: true,
+      default: () => [],
     },
-    methods: {
-      isChecked(property) {
-        return this.localSelected.some(target => target.id === property.id)
-      },
-      isDisabled(property) {
-        return !property?.editable || property.bk_property_type === PROPERTY_TYPES.INNER_TABLE
-      },
-      handleChangeChecked(property, checked) {
-        if (checked) {
-          this.localSelected.push(property)
-        } else {
-          const index = this.localSelected.findIndex(target => target.id === property.id)
-          index > -1 && this.localSelected.splice(index, 1)
-        }
-      },
-      handleVisibleChange(val) {
-        this.$emit('update:visible', val)
-        if (!val) {
-          this.groupedPropertyList = this.groupedProperties.slice()
-          this.localSelected = this.selectedList.slice()
-          this.searchName = ''
-        }
-      },
-      handleConfirm() {
-        this.$emit('update:selectedList', this.localSelected)
-      },
-      hanldeFilterProperty() {
-        const keyword = this.searchName.toLowerCase()
-        if (keyword) {
-          this.groupedPropertyList = this.groupedProperties
-            .map(properties => properties.filter(item => item.bk_property_name.toLowerCase().indexOf(keyword) > -1))
-        } else {
-          this.groupedPropertyList = this.groupedProperties.slice()
-        }
-      }
+    groupedProperties: {
+      type: Array,
+      required: true,
+      default: () => [],
+    },
+  },
+  data() {
+    return {
+      show: this.visible,
+      localSelected: [],
+      searchName: '',
+      propertyGroups: [],
+      groupedPropertyList: [],
     }
-  }
+  },
+  watch: {
+    visible(val) {
+      this.show = val
+    },
+    selectedList: {
+      handler() {
+        this.localSelected = this.selectedList.slice()
+      },
+      immediate: true,
+    },
+    groupedProperties: {
+      handler() {
+        this.groupedPropertyList = this.groupedProperties.slice()
+      },
+      immediate: true,
+    },
+  },
+  methods: {
+    isChecked(property) {
+      return this.localSelected.some(target => target.id === property.id)
+    },
+    isDisabled(property) {
+      return (
+        !property?.editable ||
+        property.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+      )
+    },
+    handleChangeChecked(property, checked) {
+      if (checked) {
+        this.localSelected.push(property)
+      } else {
+        const index = this.localSelected.findIndex(
+          target => target.id === property.id
+        )
+        index > -1 && this.localSelected.splice(index, 1)
+      }
+    },
+    handleVisibleChange(val) {
+      this.$emit('update:visible', val)
+      if (!val) {
+        this.groupedPropertyList = this.groupedProperties.slice()
+        this.localSelected = this.selectedList.slice()
+        this.searchName = ''
+      }
+    },
+    handleConfirm() {
+      this.$emit('update:selectedList', this.localSelected)
+    },
+    hanldeFilterProperty() {
+      const keyword = this.searchName.toLowerCase()
+      if (keyword) {
+        this.groupedPropertyList = this.groupedProperties.map(properties =>
+          properties.filter(
+            item => item.bk_property_name.toLowerCase().indexOf(keyword) > -1
+          )
+        )
+      } else {
+        this.groupedPropertyList = this.groupedProperties.slice()
+      }
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .search {
-      width: 280px;
-      margin-bottom: 10px;
-  }
-  .property-container {
-    height: 264px;
-    @include scrollbar-y;
-  }
+.search {
+  width: 280px;
+  margin-bottom: 10px;
+}
 
-  .property-group {
-    margin-top: 14px;
-    .group-title {
-      position: relative;
-      padding: 0 0 0 15px;
-      line-height: 20px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #63656E;
-      &:before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 3px;
-        width: 4px;
-        height: 14px;
-        background-color: #C4C6CC;
-      }
+.property-container {
+  height: 264px;
+
+  @include scrollbar-y;
+}
+
+.property-group {
+  margin-top: 14px;
+
+  .group-title {
+    position: relative;
+    padding: 0 0 0 15px;
+    line-height: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #63656e;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 3px;
+      width: 4px;
+      height: 14px;
+      background-color: #c4c6cc;
     }
   }
+}
 
-  .property-list {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+.property-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
 
-    .property-item {
-      flex: 0 0 33.3333%;
-      margin: 8px 0;
-    }
+  .property-item {
+    flex: 0 0 33.3333%;
+    margin: 8px 0;
   }
+}
 </style>

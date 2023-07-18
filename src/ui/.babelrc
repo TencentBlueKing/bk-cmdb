@@ -25,8 +25,11 @@
     "@babel/plugin-proposal-numeric-separator",
     "@babel/plugin-proposal-throw-expressions",
     "@babel/plugin-transform-async-to-generator",
-    ["import-bk-magic-vue", {
-      "baseLibName": "bk-magic-vue"
-    }]
+    [
+      "import-bk-magic-vue",
+      {
+        "baseLibName": "bk-magic-vue"
+      }
+    ]
   ]
 }

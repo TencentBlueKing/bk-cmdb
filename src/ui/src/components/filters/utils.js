@@ -10,12 +10,16 @@
  * limitations under the License.
  */
 
-import store from '@/store'
-import i18n from '@/i18n'
 import isIP from 'validator/es/lib/isIP'
 import isInt from 'validator/es/lib/isInt'
-import queryBuilderOperator, { QUERY_OPERATOR, QUERY_OPERATOR_SYMBOL } from '@/utils/query-builder-operator'
 import isEmpty from 'lodash/isEmpty'
+
+import store from '@/store'
+import i18n from '@/i18n'
+import queryBuilderOperator, {
+  QUERY_OPERATOR,
+  QUERY_OPERATOR_SYMBOL,
+} from '@/utils/query-builder-operator'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 import { CONTAINER_OBJECTS } from '@/dictionary/container'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
@@ -31,14 +35,21 @@ export function getBindProps(property) {
     return {}
   }
   const type = property.bk_property_type
-  if (['list', 'enum', PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE].includes(type)) {
+  if (
+    [
+      'list',
+      'enum',
+      PROPERTY_TYPES.ENUMMULTI,
+      PROPERTY_TYPES.ENUMQUOTE,
+    ].includes(type)
+  ) {
     return {
-      options: property.option || []
+      options: property.option || [],
     }
   }
   if (type === 'objuser') {
     return {
-      fastSelect: true
+      fastSelect: true,
     }
   }
   return {}
@@ -48,7 +59,14 @@ export function getPlaceholder(property) {
   if (!property) {
     return ''
   }
-  const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time']
+  const selectTypes = [
+    'list',
+    'enum',
+    'timezone',
+    'organization',
+    'date',
+    'time',
+  ]
   if (selectTypes.includes(property.bk_property_type)) {
     return i18n.t('请选择xx', { name: property.bk_property_name })
   }
@@ -64,7 +82,10 @@ export function getPlaceholder(property) {
  * @param {string} defaultData.value 默认值
  * @returns {object}
  */
-export function getDefaultData(property, defaultData = { operator: QUERY_OPERATOR.IN, value: [] }) {
+export function getDefaultData(
+  property,
+  defaultData = { operator: QUERY_OPERATOR.IN, value: [] }
+) {
   const { EQ, RANGE, IN } = QUERY_OPERATOR
   const defaultMap = {
     singlechar: { operator: IN, value: [] },
@@ -81,13 +102,13 @@ export function getDefaultData(property, defaultData = { operator: QUERY_OPERATO
     organization: { operator: IN, value: [] },
     array: { operator: IN, value: [] },
     map: { operator: IN, value: [] },
-    object: { operator: IN, value: [] }
+    object: { operator: IN, value: [] },
   }
 
   return {
     operator: defaultData.operator,
     value: defaultData.value,
-    ...defaultMap[property.bk_property_type]
+    ...defaultMap[property.bk_property_type],
   }
 }
 
@@ -96,10 +117,10 @@ export function getOperatorSideEffect(property, operator, value) {
   if (operator === '$range') {
     effectValue = []
   } else if (operator === '$regex') {
-    effectValue = Array.isArray(value) ? (value[0] || '') : value
+    effectValue = Array.isArray(value) ? value[0] || '' : value
   } else {
     const defaultValue = this.getDefaultData(property).value
-    const isTypeChanged = (Array.isArray(defaultValue)) !== (Array.isArray(value))
+    const isTypeChanged = Array.isArray(defaultValue) !== Array.isArray(value)
     effectValue = isTypeChanged ? defaultValue : value
   }
   return effectValue
@@ -108,14 +129,16 @@ export function getOperatorSideEffect(property, operator, value) {
 export function convertValue(value, operator, property) {
   const { bk_property_type: type } = property
   let convertedValue = Array.isArray(value) ? value : [value]
-  convertedValue = convertedValue.map((data) => {
-    if ([
-      'int',
-      'foreignkey',
-      'organization',
-      'service-template',
-      PROPERTY_TYPES.ENUMQUOTE
-    ].includes(type)) {
+  convertedValue = convertedValue.map(data => {
+    if (
+      [
+        'int',
+        'foreignkey',
+        'organization',
+        'service-template',
+        PROPERTY_TYPES.ENUMQUOTE,
+      ].includes(type)
+    ) {
       return parseInt(data, 10)
     }
     if (type === 'float') {
@@ -136,11 +159,15 @@ export function findProperty(id, properties, key) {
   const field = isInt(id) ? 'id' : 'bk_property_id'
 
   // 先按默认的规则找
-  let found = properties.find(property => property[field].toString() === id.toString())
+  let found = properties.find(
+    property => property[field].toString() === id.toString()
+  )
 
   // 找不到同时指定了key则再根据key再找一次，此处已无从考究是何时添加了key参数，固添加此逻辑
   if (!found && key) {
-    found = properties.find(property => property[key].toString() === id.toString())
+    found = properties.find(
+      property => property[key].toString() === id.toString()
+    )
   }
 
   return found
@@ -148,7 +175,10 @@ export function findProperty(id, properties, key) {
 
 export function findPropertyByPropertyId(propertyId, properties, modelId) {
   if (modelId) {
-    return properties.find(property => property.bk_obj_id === modelId && property.bk_property_id === propertyId)
+    return properties.find(
+      property =>
+        property.bk_obj_id === modelId && property.bk_property_id === propertyId
+    )
   }
   return properties.find(property => property.bk_property_id === propertyId)
 }
@@ -164,54 +194,61 @@ export function transformCondition(condition, properties, header) {
     module: [],
     set: [],
     biz: [],
-    object: []
+    object: [],
   }
   const timeCondition = {
     host: createTimeCondition(),
     module: createTimeCondition(),
     set: createTimeCondition(),
     biz: createTimeCondition(),
-    object: createTimeCondition()
+    object: createTimeCondition(),
   }
-  Object.keys(condition).forEach((id) => {
+  Object.keys(condition).forEach(id => {
     const property = findProperty(id, properties, 'id')
     const { operator, value } = condition[id]
-    if (value === null || value === undefined || !value.toString().length) return
+    if (value === null || value === undefined || !value.toString().length)
+      return
     // 时间类型的字段需要上升一层单独处理
     if (property.bk_property_type === 'time') {
       const [start, end] = value
       timeCondition[property.bk_obj_id].rules.push({
         field: property.bk_property_id,
         start,
-        end
+        end,
       })
       return
     }
     const submitCondition = conditionMap[property.bk_obj_id]
     if (operator === '$range') {
       const [start, end] = value
-      submitCondition.push({
-        field: property.bk_property_id,
-        operator: '$gte',
-        value: start
-      }, {
-        field: property.bk_property_id,
-        operator: '$lte',
-        value: end
-      })
+      submitCondition.push(
+        {
+          field: property.bk_property_id,
+          operator: '$gte',
+          value: start,
+        },
+        {
+          field: property.bk_property_id,
+          operator: '$lte',
+          value: end,
+        }
+      )
     } else {
       submitCondition.push({
         field: property.bk_property_id,
         operator,
-        value: operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value
+        value:
+          operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value,
       })
     }
   })
-  return Object.keys(conditionMap).map((modelId) => {
+  return Object.keys(conditionMap).map(modelId => {
     const condition = {
       bk_obj_id: modelId,
-      fields: header.filter(property => property.bk_obj_id === modelId).map(property => property.bk_property_id),
-      condition: conditionMap[modelId]
+      fields: header
+        .filter(property => property.bk_obj_id === modelId)
+        .map(property => property.bk_property_id),
+      condition: conditionMap[modelId],
     }
     if (timeCondition[modelId].rules.length) {
       condition.time_condition = timeCondition[modelId]
@@ -229,7 +266,7 @@ export function transformGeneralModelCondition(condition, properties) {
   const conditions = { condition: 'AND', rules: [] }
   const timeCondition = { oper: 'and', rules: [] }
 
-  for (let i = 0, id; id = conditionIds[i]; i++) {
+  for (let i = 0, id; (id = conditionIds[i]); i++) {
     const property = findProperty(id, properties, 'id')
     if (!property) {
       continue
@@ -248,7 +285,7 @@ export function transformGeneralModelCondition(condition, properties) {
       timeCondition.rules.push({
         field: property.bk_property_id,
         start,
-        end
+        end,
       })
       continue
     }
@@ -256,36 +293,42 @@ export function transformGeneralModelCondition(condition, properties) {
     // 日期类型参数格式特殊处理
     if (property.bk_property_type === 'date') {
       const [start, end] = value
-      conditions.rules.push({
-        field: property.bk_property_id,
-        operator: 'datetime_greater_or_equal',
-        value: start
-      }, {
-        field: property.bk_property_id,
-        operator: 'datetime_less_or_equal',
-        value: end
-      })
+      conditions.rules.push(
+        {
+          field: property.bk_property_id,
+          operator: 'datetime_greater_or_equal',
+          value: start,
+        },
+        {
+          field: property.bk_property_id,
+          operator: 'datetime_less_or_equal',
+          value: end,
+        }
+      )
       continue
     }
 
     // 操作符是区间的参数格式特殊处理
     if (operator === '$range') {
       const [start, end] = value
-      conditions.rules.push({
-        field: property.bk_property_id,
-        operator: queryBuilderOperator('$gte'),
-        value: start
-      }, {
-        field: property.bk_property_id,
-        operator: queryBuilderOperator('$lte'),
-        value: end
-      })
+      conditions.rules.push(
+        {
+          field: property.bk_property_id,
+          operator: queryBuilderOperator('$gte'),
+          value: start,
+        },
+        {
+          field: property.bk_property_id,
+          operator: queryBuilderOperator('$lte'),
+          value: end,
+        }
+      )
       continue
     }
 
     if (property.bk_property_type === 'map') {
       const tags = {}
-      value.forEach((val) => {
+      value.forEach(val => {
         const [k, v] = val.split('=')
         if (tags[k]) {
           tags[k].push(v)
@@ -299,7 +342,7 @@ export function transformGeneralModelCondition(condition, properties) {
         rules.push({
           field: key,
           operator: queryBuilderOperator(operator),
-          value: vals
+          value: vals,
         })
       }
 
@@ -308,8 +351,8 @@ export function transformGeneralModelCondition(condition, properties) {
         operator: 'filter_object',
         value: {
           condition: 'OR',
-          rules
-        }
+          rules,
+        },
       })
       continue
     }
@@ -317,13 +360,14 @@ export function transformGeneralModelCondition(condition, properties) {
     conditions.rules.push({
       field: property.bk_property_id,
       operator: queryBuilderOperator(operator),
-      value: operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value
+      value:
+        operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value,
     })
   }
 
   return {
     conditions: conditions.rules.length ? conditions : undefined, // 使用 undefined 以在传递时自动忽略
-    time_condition: timeCondition.rules.length ? timeCondition : undefined
+    time_condition: timeCondition.rules.length ? timeCondition : undefined,
   }
 }
 
@@ -332,7 +376,7 @@ export function transformContainerCondition(condition, properties, header) {
   return {
     fields: header.map(property => property.bk_property_id),
     condition: params?.conditions?.rules,
-    time_condition: params?.time_condition
+    time_condition: params?.time_condition,
   }
 }
 
@@ -342,14 +386,16 @@ export function transformContainerNodeCondition(condition, properties, header) {
   // 容器节点属性暂时不会存在time_condition，所以这里只取conditions，之后如果存在，实现也会有变化
   return {
     fields: header.map(property => property.bk_property_id),
-    filter: params?.conditions
+    filter: params?.conditions,
   }
 }
 
 export function splitIP(raw) {
   const list = []
-  raw.trim().split(/\n|;|；|,|，/)
-    .forEach((text) => {
+  raw
+    .trim()
+    .split(/\n|;|；|,|，/)
+    .forEach(text => {
       const ip = text.trim()
       ip.length && list.push(ip)
     })
@@ -365,7 +411,7 @@ export function parseIP(list) {
 
   const cloudIdSet = new Set()
 
-  list.forEach((text) => {
+  list.forEach(text => {
     if (isIP(text, 4)) {
       IPv4List.push(text)
       // 空表示省略没写的状态
@@ -376,7 +422,11 @@ export function parseIP(list) {
     } else {
       const matchedV4 = text.split(':')
       const matchedV6 = text.match(/^(\d+):\[([0-9a-fA-F:.]+)\]$/)
-      if (matchedV4.length === 2 && isInt(matchedV4[0]) && isIP(matchedV4[1], 4)) {
+      if (
+        matchedV4.length === 2 &&
+        isInt(matchedV4[0]) &&
+        isIP(matchedV4[1], 4)
+      ) {
         const cloudId = Number(matchedV4[0])
         IPv4WithCloudList.push([cloudId, matchedV4[1]])
         cloudIdSet.add(cloudId)
@@ -401,7 +451,7 @@ export function parseIP(list) {
     IPv4WithCloudList,
     IPv6WithCloudList,
     assetList,
-    cloudIdSet
+    cloudIdSet,
   }
 }
 
@@ -410,9 +460,9 @@ export function transformIP(raw) {
     data: {
       ipv4: [],
       ipv6: [],
-      assetList: []
+      assetList: [],
     },
-    condition: null
+    condition: null,
   }
   const IPs = parseIP(splitIP(raw))
 
@@ -429,7 +479,7 @@ export function transformIP(raw) {
     transformedIP.condition = {
       field: 'bk_cloud_id',
       operator: '$eq',
-      value: [...IPs.cloudIdSet][0]
+      value: [...IPs.cloudIdSet][0],
     }
   }
 
@@ -445,42 +495,50 @@ export function getDefaultIP() {
     text: '',
     inner: true,
     outer: true,
-    exact: true
+    exact: true,
   }
 }
 
 export function defineProperty(definition) {
-  return Object.assign({}, {
-    id: null,
-    bk_obj_id: null,
-    bk_property_id: null,
-    bk_property_name: null,
-    bk_property_index: -1,
-    bk_property_type: 'singlechar',
-    isonly: true,
-    ispre: true,
-    bk_isapi: true,
-    bk_issystem: true,
-    isreadonly: true,
-    editable: false,
-    bk_property_group: 'default',
-    is_custom: true
-  }, definition)
+  return Object.assign(
+    {},
+    {
+      id: null,
+      bk_obj_id: null,
+      bk_property_id: null,
+      bk_property_name: null,
+      bk_property_index: -1,
+      bk_property_type: 'singlechar',
+      isonly: true,
+      ispre: true,
+      bk_isapi: true,
+      bk_issystem: true,
+      isreadonly: true,
+      editable: false,
+      bk_property_group: 'default',
+      is_custom: true,
+    },
+    definition
+  )
 }
 
 export function definePropertyGroup(definition) {
-  return Object.assign({}, {
-    id: null,
-    bk_biz_id: 0,
-    bk_obj_id: null,
-    bk_group_id: 'default',
-    bk_group_index: -1,
-    bk_group_name: '基础信息',
-    bk_isdefault: true,
-    bk_supplier_account: '0',
-    is_collapse: false,
-    ispre: false
-  }, definition)
+  return Object.assign(
+    {},
+    {
+      id: null,
+      bk_biz_id: 0,
+      bk_obj_id: null,
+      bk_group_id: 'default',
+      bk_group_index: -1,
+      bk_group_name: '基础信息',
+      bk_isdefault: true,
+      bk_supplier_account: '0',
+      is_collapse: false,
+      ispre: false,
+    },
+    definition
+  )
 }
 
 export function getUniqueProperties(preset, dynamic) {
@@ -502,7 +560,12 @@ function getPropertyPriority(property) {
 }
 export function getInitialProperties(properties) {
   // eslint-disable-next-line max-len
-  return [...properties].sort((propertyA, propertyB) => getPropertyPriority(propertyA) - getPropertyPriority(propertyB)).slice(0, 6)
+  return [...properties]
+    .sort(
+      (propertyA, propertyB) =>
+        getPropertyPriority(propertyA) - getPropertyPriority(propertyB)
+    )
+    .slice(0, 6)
 }
 
 export function isEmptyCondition(value) {
@@ -510,16 +573,20 @@ export function isEmptyCondition(value) {
 }
 
 export function hasNormalTopoField(selected, condition) {
-  const hasNormalTopoField = selected.some((prop) => {
+  const hasNormalTopoField = selected.some(prop => {
     const hasValue = !isEmptyCondition(condition?.[prop.id]?.value)
-    const normalTopoObjIds = [BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.SET, BUILTIN_MODELS.MODULE]
+    const normalTopoObjIds = [
+      BUILTIN_MODELS.BUSINESS,
+      BUILTIN_MODELS.SET,
+      BUILTIN_MODELS.MODULE,
+    ]
     return normalTopoObjIds.includes(prop.bk_obj_id) && hasValue
   })
   return hasNormalTopoField
 }
 
 export function hasNodeField(selected, condition) {
-  const hasNodeField = selected.some((prop) => {
+  const hasNodeField = selected.some(prop => {
     const hasValue = !isEmptyCondition(condition?.[prop.id]?.value)
     return prop.bk_obj_id === CONTAINER_OBJECTS.NODE && hasValue
   })
@@ -555,5 +622,5 @@ export default {
   hasNormalTopoField,
   hasNodeField,
   getSelectedHostIds,
-  definePropertyGroup
+  definePropertyGroup,
 }

@@ -13,7 +13,7 @@
 import Vue from 'vue'
 
 const state = {
-  syncIdMap: {}
+  syncIdMap: {},
 }
 
 const getters = {
@@ -41,12 +41,12 @@ const mutations = {
   },
   resetSyncIdMap(state, data) {
     state.syncIdMap = data
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  mutations
+  mutations,
 }

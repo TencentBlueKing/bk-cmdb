@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import {
   MENU_BUSINESS,
   MENU_BUSINESS_SERVICE,
   MENU_BUSINESS_SERVICE_TEMPLATE,
   MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
   MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
-  MENU_BUSINESS_SERVICE_TEMPLATE_EDIT
+  MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
 } from '@/dictionary/menu-symbol'
+import Meta from '@/router/meta'
 
 export default [
   {
@@ -29,14 +29,14 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '服务模板',
-        parent: MENU_BUSINESS_SERVICE
-      }
-    })
+        parent: MENU_BUSINESS_SERVICE,
+      },
+    }),
   },
   {
     name: 'operationalTemplate',
     path: 'service/operational/template/:templateId?',
-    redirect: { name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS }
+    redirect: { name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS },
   },
   {
     name: MENU_BUSINESS_SERVICE_TEMPLATE_CREATE,
@@ -46,9 +46,9 @@ export default [
       owner: MENU_BUSINESS,
       menu: {
         i18n: '新建模板',
-        relative: MENU_BUSINESS_SERVICE_TEMPLATE
-      }
-    })
+        relative: MENU_BUSINESS_SERVICE_TEMPLATE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
@@ -57,9 +57,9 @@ export default [
     meta: new Meta({
       owner: MENU_BUSINESS,
       menu: {
-        relative: MENU_BUSINESS_SERVICE_TEMPLATE
-      }
-    })
+        relative: MENU_BUSINESS_SERVICE_TEMPLATE,
+      },
+    }),
   },
   {
     name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
@@ -68,8 +68,8 @@ export default [
     meta: new Meta({
       owner: MENU_BUSINESS,
       menu: {
-        relative: MENU_BUSINESS_SERVICE_TEMPLATE
-      }
-    })
-  }
+        relative: MENU_BUSINESS_SERVICE_TEMPLATE,
+      },
+    }),
+  },
 ]

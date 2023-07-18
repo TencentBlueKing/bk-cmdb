@@ -11,25 +11,27 @@
  */
 
 /* eslint-disable no-underscore-dangle */
-const requestFrame = window.requestAnimationFrame
-    || window.mozRequestAnimationFrame
-    || window.webkitRequestAnimationFrame
-    || function (fn) {
-      return window.setTimeout(fn, 20)
-    }
+const requestFrame =
+  window.requestAnimationFrame ||
+  window.mozRequestAnimationFrame ||
+  window.webkitRequestAnimationFrame ||
+  function (fn) {
+    return window.setTimeout(fn, 20)
+  }
 
-const cancelFrame = window.cancelAnimationFrame
-    || window.mozCancelAnimationFrame
-    || window.webkitCancelAnimationFrame
-    || window.clearTimeout
+const cancelFrame =
+  window.cancelAnimationFrame ||
+  window.mozCancelAnimationFrame ||
+  window.webkitCancelAnimationFrame ||
+  window.clearTimeout
 
-const addEventListener = (el) => {
+const addEventListener = el => {
   el.addEventListener('mouseenter', mouseenter)
   el.addEventListener('mousemove', mousemove)
   el.addEventListener('mouseleave', mouseleave)
   el.addEventListener('click', click)
 }
-const removeEventListener = (el) => {
+const removeEventListener = el => {
   el.removeEventListener('mouseenter', mouseenter)
   el.removeEventListener('mousemove', mousemove)
   el.removeEventListener('mouseleave', mouseleave)
@@ -44,10 +46,10 @@ const options = {
   zIndex: 100000,
   cursor: 'pointer',
   className: 'v-cursor',
-  activeClass: 'v-cursor-active'
+  activeClass: 'v-cursor-active',
 }
 
-const mouseenter = (event) => {
+const mouseenter = event => {
   const el = event.currentTarget
   const data = el.__cursor__
   if (data.active) {
@@ -58,7 +60,7 @@ const mouseenter = (event) => {
   }
 }
 
-const mousemove = (event) => {
+const mousemove = event => {
   const el = event.currentTarget
   const data = el.__cursor__
   if (data.active) {
@@ -66,7 +68,7 @@ const mousemove = (event) => {
   }
 }
 
-const mouseleave = (event) => {
+const mouseleave = event => {
   const el = event.currentTarget
   const data = el.__cursor__
   el.style.cursor = ''
@@ -74,7 +76,7 @@ const mouseleave = (event) => {
   el.classList.remove(data.activeClass)
 }
 
-const click = (event) => {
+const click = event => {
   const el = event.currentTarget
   const data = el.__cursor__
   if (!data.active) {
@@ -104,7 +106,7 @@ const createProxy = () => {
   document.body.append(proxy)
 }
 
-const updateProxyPosition = (event) => {
+const updateProxyPosition = event => {
   const el = event.currentTarget
   const data = el.__cursor__
   if (frameId) {
@@ -117,7 +119,7 @@ const updateProxyPosition = (event) => {
 }
 
 const setChildrenEvents = (target, pointerEvents) => {
-  Array.prototype.forEach.call(target.children, (child) => {
+  Array.prototype.forEach.call(target.children, child => {
     child.style.pointerEvents = pointerEvents
   })
 }
@@ -168,13 +170,13 @@ const cursor = {
   unbind(el) {
     const target = el.__cursor_target__
     removeEventListener(target)
-  }
+  },
 }
 
 export default {
   install: Vue => Vue.directive('cursor', cursor),
   directive: cursor,
-  setOptions: (customOptions) => {
+  setOptions: customOptions => {
     Object.assign(options, customOptions)
-  }
+  },
 }

@@ -14,19 +14,17 @@
 
 import Vue from 'vue'
 const state = {
-  instanceMap: {}
+  instanceMap: {},
 }
 
-const getters = {
-}
+const getters = {}
 
-const actions = {
-}
+const actions = {}
 
 const mutations = {
   setInstance(state, data) {
     Vue.set(state.instanceMap, data.id, data.instanceProperty)
-  }
+  },
 }
 
 export default {
@@ -34,5 +32,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

@@ -10,8 +10,11 @@
  * limitations under the License.
  */
 
+import {
+  MENU_MODEL_MANAGEMENT,
+  MENU_MODEL_DETAILS,
+} from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
-import { MENU_MODEL_MANAGEMENT, MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
 
 export default [
   {
@@ -20,9 +23,9 @@ export default [
     component: () => import('./index.vue'),
     meta: new Meta({
       menu: {
-        i18n: '模型管理'
-      }
-    })
+        i18n: '模型管理',
+      },
+    }),
   },
   {
     name: MENU_MODEL_DETAILS,
@@ -30,14 +33,15 @@ export default [
     component: () => import('./children/model-details/index.vue'),
     meta: new Meta({
       menu: {
-        i18n: '模型详情'
+        i18n: '模型详情',
       },
       layout: {},
       checkAvailable: (to, from, app) => {
         const { modelId } = to.params
-        const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+        const model =
+          app.$store.getters['objectModelClassify/getModelById'](modelId)
         return !!model
-      }
-    })
-  }
+      },
+    }),
+  },
 ]

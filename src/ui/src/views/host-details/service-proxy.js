@@ -17,11 +17,15 @@ import router from '@/router'
 import store from '@/store'
 import { MENU_BUSINESS_SET } from '@/dictionary/menu-symbol.js'
 import { findProcessByServiceInstance } from '@/service/business-set/process-instance'
-import { findAggregationLabels, findServiceInstanceWithHost } from '@/service/business-set/service-instance'
+import {
+  findAggregationLabels,
+  findServiceInstanceWithHost,
+} from '@/service/business-set/service-instance'
 import { HostService } from '@/service/business-set/host'
 import { findTopoPath } from '@/service/business-set/topology'
 
-const inBusinessSet = () => router.currentRoute.matched[0].name === MENU_BUSINESS_SET
+const inBusinessSet = () =>
+  router.currentRoute.matched[0].name === MENU_BUSINESS_SET
 
 export const serviceInstanceProcessesProxy = (params, config) => {
   if (inBusinessSet()) {
@@ -31,7 +35,7 @@ export const serviceInstanceProcessesProxy = (params, config) => {
 
   return store.dispatch('processInstance/getServiceInstanceProcesses', {
     params,
-    config
+    config,
   })
 }
 
@@ -43,7 +47,7 @@ export const historyLabelProxy = (params, config) => {
 
   return store.dispatch('instanceLabel/getHistoryLabel', {
     params,
-    config
+    config,
   })
 }
 
@@ -62,7 +66,11 @@ export const topoPathProxy = (bizId, params, config) => {
     return findTopoPath({ bizSetId, bizId }, params, config)
   }
 
-  return store.dispatch('objectMainLineModule/getTopoPath', { bizId, params, config })
+  return store.dispatch('objectMainLineModule/getTopoPath', {
+    bizId,
+    params,
+    config,
+  })
 }
 
 export const hostServiceInstancesProxy = (params, config) => {
@@ -70,5 +78,8 @@ export const hostServiceInstancesProxy = (params, config) => {
     const { bizSetId } = store.state.bizSet
     return findServiceInstanceWithHost(bizSetId, params, config)
   }
-  return store.dispatch('serviceInstance/getHostServiceInstances', { params, config })
+  return store.dispatch('serviceInstance/getHostServiceInstances', {
+    params,
+    config,
+  })
 }

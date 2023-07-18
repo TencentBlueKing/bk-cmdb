@@ -16,7 +16,11 @@ const findAllRequsetId = Symbol('findAllRequsetId')
 
 const find = async ({ params, config }) => {
   try {
-    const { count = 0, info: list = [] } = await http.post(`${window.API_HOST}biz/search/web`, params, config)
+    const { count = 0, info: list = [] } = await http.post(
+      `${window.API_HOST}biz/search/web`,
+      params,
+      config
+    )
     return { count, list }
   } catch (error) {
     console.error(error)
@@ -25,11 +29,15 @@ const find = async ({ params, config }) => {
 
 const findOne = async ({ bk_biz_id: bizId, config }) => {
   try {
-    const { info } = await http.post(`biz/search/${window.Supplier.account}`, {
-      condition: { bk_biz_id: { $eq: bizId } },
-      fields: [],
-      page: { start: 0, limit: 1 }
-    }, config)
+    const { info } = await http.post(
+      `biz/search/${window.Supplier.account}`,
+      {
+        condition: { bk_biz_id: { $eq: bizId } },
+        fields: [],
+        page: { start: 0, limit: 1 },
+      },
+      config
+    )
     const [instance] = info || [null]
     return instance
   } catch (error) {
@@ -40,11 +48,15 @@ const findOne = async ({ bk_biz_id: bizId, config }) => {
 
 const findByIds = async ({ ids, config }) => {
   try {
-    const { count = 0, info: list = [] } = await http.post(`biz/search/${window.Supplier.account}`, {
-      condition: { bk_biz_id: { $in: ids } },
-      fields: [],
-      page: { start: 0, limit: ids.length }
-    }, config)
+    const { count = 0, info: list = [] } = await http.post(
+      `biz/search/${window.Supplier.account}`,
+      {
+        condition: { bk_biz_id: { $in: ids } },
+        fields: [],
+        page: { start: 0, limit: ids.length },
+      },
+      config
+    )
     return { count, list }
   } catch (error) {
     console.error(error)
@@ -54,7 +66,7 @@ const findByIds = async ({ ids, config }) => {
 const findAll = async () => {
   const data = await http.get('biz/simplify?sort=bk_biz_id', {
     requestId: findAllRequsetId,
-    fromCache: true
+    fromCache: true,
   })
 
   return Object.freeze(data.info || [])
@@ -64,5 +76,5 @@ export default {
   find,
   findOne,
   findAll,
-  findByIds
+  findByIds,
 }

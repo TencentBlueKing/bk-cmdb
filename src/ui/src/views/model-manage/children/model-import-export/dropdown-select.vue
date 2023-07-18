@@ -15,20 +15,19 @@
     align="center"
     :disabled="disabled"
     trigger="click"
-    @click.native.stop
     class="dropdown-select"
-  >
-    <div class="dropdown-select-trigger" slot="dropdown-trigger">
+    @click.native.stop>
+    <div slot="dropdown-trigger" class="dropdown-select-trigger">
       <span>{{ selectedValue.label || selectedValue.value }}</span>
       <bk-icon type="down-shape" />
     </div>
-    <div class="bk-dropdown-list" slot="dropdown-content">
-      <li :key="optionIndex" v-for="(option, optionIndex) in options">
+    <div slot="dropdown-content" class="bk-dropdown-list">
+      <li v-for="(option, optionIndex) in options" :key="optionIndex">
         <dropdown-option-button
           :disabled="option.disabled"
           :active="option.value === selectedValue.value"
           @click="handleOptionClick(option)"
-        >{{ option.label || option.value }}</dropdown-option-button
+          >{{ option.label || option.value }}</dropdown-option-button
         >
       </li>
     </div>
@@ -36,59 +35,61 @@
 </template>
 
 <script>
-  import { defineComponent, ref, watch } from 'vue'
-  import DropdownOptionButton from '../dropdown-option-button.vue'
+import { defineComponent, ref, watch } from 'vue'
 
-  export default defineComponent({
-    name: 'DropdownSelect',
-    components: { DropdownOptionButton },
-    model: {
-      prop: 'value',
-      event: 'value-change'
+import DropdownOptionButton from '../dropdown-option-button.vue'
+
+export default defineComponent({
+  name: 'DropdownSelect',
+  components: { DropdownOptionButton },
+  model: {
+    prop: 'value',
+    event: 'value-change',
+  },
+  props: {
+    // 当前选中的值，支持 v-model
+    value: {
+      type: [String, Number, Boolean, Object],
+      default: '',
     },
-    props: {
-      // 当前选中的值，支持 v-model
-      value: {
-        type: [String, Number, Boolean, Object],
-        default: ''
-      },
-      // 选项列表
-      options: {
-        type: Array,
-        default: () => []
-      },
-      // 是否禁用
-      disabled: {
-        type: Boolean,
-        default: false
-      }
+    // 选项列表
+    options: {
+      type: Array,
+      default: () => [],
     },
-    setup({ value, options }, { emit }) {
-      const selectedValue = ref({})
-      const valueRef = ref(value)
+    // 是否禁用
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  setup({ value, options }, { emit }) {
+    const selectedValue = ref({})
+    const valueRef = ref(value)
 
-      watch(
-        valueRef,
-        () => {
-          selectedValue.value = options.find(opt => opt.value === valueRef.value) || {}
-        },
-        {
-          immediate: true,
-          deep: true
-        }
-      )
-
-      const handleOptionClick = (option) => {
-        selectedValue.value = option
-        emit('value-change', option.value)
+    watch(
+      valueRef,
+      () => {
+        selectedValue.value =
+          options.find(opt => opt.value === valueRef.value) || {}
+      },
+      {
+        immediate: true,
+        deep: true,
       }
+    )
 
-      return {
-        selectedValue,
-        handleOptionClick
-      }
+    const handleOptionClick = option => {
+      selectedValue.value = option
+      emit('value-change', option.value)
     }
-  })
+
+    return {
+      selectedValue,
+      handleOptionClick,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>

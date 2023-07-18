@@ -16,6 +16,6 @@ declare const NODE_ENV: string
 
 declare global {
   interface Window {
-    [key: string]: any;
+    [key: string]: any
   }
 }

@@ -21,11 +21,9 @@ import $http from '@/api'
  * @param {Object} config 请求配置
  * @returns {Promise}
  */
-export const findOne = ({
-  bizSetId,
-  bizId
-}, params, config) => $http.post(`findmany/set/biz_set/${bizSetId}/biz/${bizId}`, params, config)
+export const findOne = ({ bizSetId, bizId }, params, config) =>
+  $http.post(`findmany/set/biz_set/${bizSetId}/biz/${bizId}`, params, config)
 
 export const SetService = {
-  findOne
+  findOne,
 }

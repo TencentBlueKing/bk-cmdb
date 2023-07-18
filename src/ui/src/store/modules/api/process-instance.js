@@ -24,10 +24,10 @@ const actions = {
   },
   deleteServiceInstanceProcess(context, { config }) {
     return $http.delete('delete/proc/process_instance', config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

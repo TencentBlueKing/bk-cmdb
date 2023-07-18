@@ -12,45 +12,46 @@
 
 <template>
   <bk-select
-    searchable
     v-model="localValue"
+    searchable
     v-bind="$attrs"
     :multiple="true"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
-    <bk-option v-for="option in options"
-      :key="option.id"
+    <bk-option
+      v-for="option in options"
       :id="option.id"
+      :key="option.id"
       :name="option.name">
     </bk-option>
   </bk-select>
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-enummulti',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: [String, Array],
-        default: () => ([])
-      },
-      options: {
-        type: Array,
-        default: () => ([])
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-enummulti',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: [String, Array],
+      default: () => [],
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value || []
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
-      }
-    }
-  }
+    options: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value || []
+      },
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
+      },
+    },
+  },
+}
 </script>

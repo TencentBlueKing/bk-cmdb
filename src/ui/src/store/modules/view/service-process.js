@@ -11,13 +11,16 @@
  */
 
 const state = {
-  localProcessTemplate: []
+  localProcessTemplate: [],
 }
 
 const getters = {
   localProcessTemplate: state => state.localProcessTemplate,
   // eslint-disable-next-line max-len
-  hasProcessName: state => process => state.localProcessTemplate.find(template => template.bk_func_name.value === process.bk_func_name.value)
+  hasProcessName: state => process =>
+    state.localProcessTemplate.find(
+      template => template.bk_func_name.value === process.bk_func_name.value
+    ),
 }
 
 const actions = {}
@@ -37,7 +40,7 @@ const mutations = {
   },
   clearLocalProcessTemplate(state) {
     state.localProcessTemplate = []
-  }
+  },
 }
 
 export default {
@@ -45,5 +48,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

@@ -11,6 +11,7 @@
  */
 
 import { ref } from 'vue'
+
 import associationService from '@/service/association'
 export default function ({ immeidate = false } = {}) {
   const associations = ref([])

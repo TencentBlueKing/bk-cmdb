@@ -21,27 +21,29 @@ import $http from '@/api'
  * @param {Object} config 请求配置
  * @returns {Promise}
  */
-export const findOne = ({
-  bizSetId,
-  bizId,
-}, config) => $http.post('find/biz_set/biz_list', {
-  bk_biz_set_id: bizSetId,
-  filter: {
-    condition: 'AND',
-    rules: [
-      {
-        field: 'bk_biz_id',
-        operator: 'equal',
-        value: bizId
-      }
-    ]
-  },
-  page: {
-    start: 0,
-    limit: 1
-  }
-}, config)
+export const findOne = ({ bizSetId, bizId }, config) =>
+  $http.post(
+    'find/biz_set/biz_list',
+    {
+      bk_biz_set_id: bizSetId,
+      filter: {
+        condition: 'AND',
+        rules: [
+          {
+            field: 'bk_biz_id',
+            operator: 'equal',
+            value: bizId,
+          },
+        ],
+      },
+      page: {
+        start: 0,
+        limit: 1,
+      },
+    },
+    config
+  )
 
 export const BusinessService = {
-  findOne
+  findOne,
 }

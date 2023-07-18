@@ -15,8 +15,8 @@ export default {
   mixins: [activeMixin],
   props: {
     value: {
-      type: [String, Array]
-    }
+      type: [String, Array],
+    },
   },
   computed: {
     multiple() {
@@ -36,8 +36,8 @@ export default {
         const emitValue = this.multiple ? [...value] : value.toString()
         this.$emit('input', emitValue)
         this.$emit('change', emitValue)
-      }
-    }
+      },
+    },
   },
   methods: {
     exactSearchMethod(names) {
@@ -46,8 +46,8 @@ export default {
       }
       return Promise.resolve({
         text: names,
-        value: names
+        value: names,
       })
-    }
-  }
+    },
+  },
 }

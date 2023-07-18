@@ -11,6 +11,7 @@
  */
 
 import { ref, watch, reactive } from 'vue'
+
 import store from '@/store'
 import { t } from '@/i18n'
 
@@ -23,7 +24,7 @@ export const sizes = reactive({
   itemMarginRight: 20,
   itemMarginBottom: 12,
   itemHeight: 0,
-  containerHeight: 0
+  containerHeight: 0,
 })
 
 export default function useTab(aggregations) {
@@ -32,7 +33,9 @@ export default function useTab(aggregations) {
   const calculateSizes = () => {
     const $categories = document.querySelector('.categories')
     const $toggleAnchor = $categories.querySelector('.toggle-anchor')
-    const $categoryItems = $categories.querySelectorAll('.categories .category-item')
+    const $categoryItems = $categories.querySelectorAll(
+      '.categories .category-item'
+    )
     const containerWidth = $categories.offsetWidth
     const itemHeight = $categoryItems[0].offsetHeight + sizes.itemMarginBottom
     const anchorWidth = $toggleAnchor.offsetWidth
@@ -43,7 +46,8 @@ export default function useTab(aggregations) {
 
     const breakLineIndex = []
     for (let i = 0; i < maxlength; i++) {
-      const nextItemWidth = Math.ceil($categoryItems[i].offsetWidth) + sizes.itemMarginRight
+      const nextItemWidth =
+        Math.ceil($categoryItems[i].offsetWidth) + sizes.itemMarginRight
       oneRowMaxWidth += nextItemWidth
       if (oneRowMaxWidth > containerWidth) {
         breakLineIndex.push([i, oneRowMaxWidth])
@@ -62,7 +66,13 @@ export default function useTab(aggregations) {
     // 放置展开切换标签
     if (!sizes.expanded && breakLineIndex.length) {
       // eslint-disable-next-line max-len
-      if (breakLineIndex[0][1] - Math.ceil($categoryItems[maxWidthIndex].offsetWidth) + anchorWidth - sizes.itemMarginRight > containerWidth) {
+      if (
+        breakLineIndex[0][1] -
+          Math.ceil($categoryItems[maxWidthIndex].offsetWidth) +
+          anchorWidth -
+          sizes.itemMarginRight >
+        containerWidth
+      ) {
         maxWidthIndex -= 1
       }
       // 将显示更多放置在一行的末尾
@@ -74,15 +84,23 @@ export default function useTab(aggregations) {
     // 得出总行数
     let lastRowMaxWidth = 0
     if (breakLineIndex.length > 0) {
-      for (let i = breakLineIndex[breakLineIndex.length - 1][0]; i < maxlength; i++) {
-        const nextItemWidth = Math.ceil($categoryItems[i].offsetWidth) + sizes.itemMarginRight
+      for (
+        let i = breakLineIndex[breakLineIndex.length - 1][0];
+        i < maxlength;
+        i++
+      ) {
+        const nextItemWidth =
+          Math.ceil($categoryItems[i].offsetWidth) + sizes.itemMarginRight
         lastRowMaxWidth += nextItemWidth
       }
     }
-    sizes.rows = breakLineIndex.length + 1 + (lastRowMaxWidth + anchorWidth > containerWidth ? 1 : 0)
+    sizes.rows =
+      breakLineIndex.length +
+      1 +
+      (lastRowMaxWidth + anchorWidth > containerWidth ? 1 : 0)
   }
 
-  watch(aggregations, (list) => {
+  watch(aggregations, list => {
     const models = []
     const instances = []
 
@@ -92,7 +110,11 @@ export default function useTab(aggregations) {
       if (item.kind === 'model') {
         models.push(item)
       } else if (item.kind === 'instance') {
-        instances.push({ ...item, count: item.count > 999 ? '999+' : item.count, total: item.count })
+        instances.push({
+          ...item,
+          count: item.count > 999 ? '999+' : item.count,
+          total: item.count,
+        })
       }
     })
 
@@ -106,13 +128,13 @@ export default function useTab(aggregations) {
         name: t('模型'),
         kind: 'model',
         count: modelCount > 999 ? '999+' : modelCount,
-        total: modelCount
+        total: modelCount,
       })
     }
   })
 
   return {
     categories,
-    calculateSizes
+    calculateSizes,
   }
 }

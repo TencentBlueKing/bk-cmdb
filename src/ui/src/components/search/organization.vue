@@ -11,9 +11,12 @@
 -->
 
 <template>
-  <div class="search-value-container" v-if="displayType === 'info'">
+  <div v-if="displayType === 'info'" class="search-value-container">
     <div class="prepend"><slot name="info-prepend"></slot></div>
-    <org-value :property="property" :value="localValue" show-on="search"></org-value>
+    <org-value
+      :property="property"
+      :value="localValue"
+      show-on="search"></org-value>
   </div>
   <cmdb-form-organization
     v-else
@@ -26,64 +29,66 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  import orgValue from '@/components/ui/other/org-value.vue'
+import orgValue from '@/components/ui/other/org-value.vue'
 
-  export default {
-    name: 'cmdb-search-organization',
-    components: {
-      orgValue
+import activeMixin from './mixins/active'
+
+export default {
+  name: 'cmdb-search-organization',
+  components: {
+    orgValue,
+  },
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: [Array, String, Number],
+      default: () => [],
     },
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: [Array, String, Number],
-        default: () => []
-      },
-      property: {
-        type: Object,
-        default: () => ({})
-      },
-      multiple: {
-        type: Boolean,
-        default: true
-      },
-      displayType: {
-        type: String,
-        default: 'selector',
-        validator(type) {
-          return ['selector', 'info'].includes(type)
-        }
-      }
+    property: {
+      type: Object,
+      default: () => ({}),
     },
-    computed: {
-      localValue: {
-        get() {
-          if (this.multiple) {
-            if (this.value && !Array.isArray(this.value)) {
-              return [this.value]
-            }
-            return this.value || []
+    multiple: {
+      type: Boolean,
+      default: true,
+    },
+    displayType: {
+      type: String,
+      default: 'selector',
+      validator(type) {
+        return ['selector', 'info'].includes(type)
+      },
+    },
+  },
+  computed: {
+    localValue: {
+      get() {
+        if (this.multiple) {
+          if (this.value && !Array.isArray(this.value)) {
+            return [this.value]
           }
-          if (Array.isArray(this.value)) {
-            return this.value[0] || ''
-          }
-          return this.value || ''
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
+          return this.value || []
         }
-      }
-    }
-  }
+        if (Array.isArray(this.value)) {
+          return this.value[0] || ''
+        }
+        return this.value || ''
+      },
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
+      },
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .search-value-container {
-    display: flex;
-    .prepend {
-      margin-right: 4px;
-    }
+.search-value-container {
+  display: flex;
+
+  .prepend {
+    margin-right: 4px;
   }
+}
 </style>

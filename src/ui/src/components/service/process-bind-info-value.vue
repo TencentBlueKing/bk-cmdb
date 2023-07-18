@@ -21,114 +21,116 @@
         :property="property">
       </table-value>
       <ul slot="content">
-        <li v-for="(item, index) in popoverList" :key="index">{{item}}</li>
+        <li v-for="(item, index) in popoverList" :key="index">{{ item }}</li>
       </ul>
     </bk-popover>
   </div>
 </template>
 
 <script>
-  import TableValue from '@/components/ui/other/table-value'
-  import { PROCESS_BIND_IP_ALL_MAP } from '@/dictionary/process-bind-ip.js'
+import { PROCESS_BIND_IP_ALL_MAP } from '@/dictionary/process-bind-ip.js'
+import TableValue from '@/components/ui/other/table-value'
 
-  export default {
-    components: {
-      TableValue
+export default {
+  components: {
+    TableValue,
+  },
+  props: {
+    value: {
+      type: Array,
+      default: () => [],
     },
-    props: {
-      value: {
-        type: Array,
-        default: () => ([])
-      },
-      property: {
-        type: Object,
-        default: () => ({})
-      },
-      popoverOptoins: {
-        type: Object,
-        default: () => ({})
-      }
+    property: {
+      type: Object,
+      default: () => ({}),
     },
-    data() {
-      return {
-        popoverList: [],
-        localValue: []
-      }
+    popoverOptoins: {
+      type: Object,
+      default: () => ({}),
     },
-    watch: {
-      value: {
-        handler(value) {
-          this.localValue = value || []
-          this.setPopoverList()
-        },
-        immediate: true
-      }
-    },
-    methods: {
-      ipText(value) {
-        const map = PROCESS_BIND_IP_ALL_MAP
-        return map[value] || value || '--'
-      },
-      setPopoverList() {
-        this.$nextTick(() => {
-          const list = this.$refs.table.cellValue
-          this.popoverList = list.map(this.getRowValue)
-        })
-      },
-      getRowValue(row) {
-        const ip = this.ipText(row.ip)
-        return `${row.protocol} ${ip}:${row.port}`
-      },
-      formatCellValue(list) {
-        if (!list.length) {
-          return '--'
-        }
-        const newList = list.map(this.getRowValue)
-        const total = list.length
-        const showCount = total > 1
-        return (
-          <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
-            <span>{newList.join(', ')}</span>
-            {showCount ? <span class="count">{total}</span> : ''}
-          </div>
-        )
-      }
+  },
+  data() {
+    return {
+      popoverList: [],
+      localValue: [],
     }
-  }
+  },
+  watch: {
+    value: {
+      handler(value) {
+        this.localValue = value || []
+        this.setPopoverList()
+      },
+      immediate: true,
+    },
+  },
+  methods: {
+    ipText(value) {
+      const map = PROCESS_BIND_IP_ALL_MAP
+      return map[value] || value || '--'
+    },
+    setPopoverList() {
+      this.$nextTick(() => {
+        const list = this.$refs.table.cellValue
+        this.popoverList = list.map(this.getRowValue)
+      })
+    },
+    getRowValue(row) {
+      const ip = this.ipText(row.ip)
+      return `${row.protocol} ${ip}:${row.port}`
+    },
+    formatCellValue(list) {
+      if (!list.length) {
+        return '--'
+      }
+      const newList = list.map(this.getRowValue)
+      const total = list.length
+      const showCount = total > 1
+      return (
+        <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
+          <span>{newList.join(', ')}</span>
+          {showCount ? <span class="count">{total}</span> : ''}
+        </div>
+      )
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .process-bind-info-value {
-        /deep/ .bind-info-value {
-            position: relative;
-            display: inline-block;
-            vertical-align: middle;
-            padding-right: 0;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+.process-bind-info-value {
+  /deep/ .bind-info-value {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    padding-right: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
-            &.show-count {
-                padding-right: 26px;
-            }
-
-            .count {
-                position: absolute;
-                display: inline-block;
-                right: 2px;
-                top: 0;
-                color: #979ba5;
-                background-color: #f0f1f5;
-                border-radius: 3px;
-                padding: 0 2px;
-            }
-        }
-        /deep/ .bk-tooltip {
-            display: block;
-        }
-        /deep/ .bk-tooltip-ref {
-            display: block;
-        }
+    &.show-count {
+      padding-right: 26px;
     }
+
+    .count {
+      position: absolute;
+      display: inline-block;
+      right: 2px;
+      top: 0;
+      color: #979ba5;
+      background-color: #f0f1f5;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+  }
+
+  /deep/ .bk-tooltip {
+    display: block;
+  }
+
+  /deep/ .bk-tooltip-ref {
+    display: block;
+  }
+}
 </style>

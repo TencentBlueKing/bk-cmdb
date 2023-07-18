@@ -15,9 +15,9 @@ import debounce from 'lodash.debounce'
 
 export default function ({ list, keyword, target }) {
   const state = reactive({
-    result: []
+    result: [],
   })
-  const handler = (value) => {
+  const handler = value => {
     if (!value) {
       state.result = list.value
       return

@@ -16,7 +16,11 @@ import $http from '@/api'
 
 const actions = {
   getHostServiceInstances(context, { params, config }) {
-    return $http.post('findmany/proc/web/service_instance/with_host', params, config)
+    return $http.post(
+      'findmany/proc/web/service_instance/with_host',
+      params,
+      config
+    )
   },
   getModuleServiceInstances(context, { params, config }) {
     return $http.post('findmany/proc/web/service_instance', params, config)
@@ -37,31 +41,50 @@ const actions = {
     return $http.delete('delete/proc/template_binding_on_module', config)
   },
   getInstanceIpByHost(context, { hostId, config }) {
-    return $http.get(`${window.API_HOST}hosts/${hostId}/listen_ip_options`, config)
+    return $http.get(
+      `${window.API_HOST}hosts/${hostId}/listen_ip_options`,
+      config
+    )
   },
   previewDeleteServiceInstances(context, { params, config }) {
-    return $http.post('deletemany/proc/service_instance/preview', params, config)
+    return $http.post(
+      'deletemany/proc/service_instance/preview',
+      params,
+      config
+    )
   },
   getMoudleProcessList(context, { params, config }) {
     return $http.post('findmany/proc/process_instance/name_ids', params, config)
   },
   getProcessListById(context, { params, config }) {
-    return $http.post('findmany/proc/process_instance/detail/by_ids', params, config)
+    return $http.post(
+      'findmany/proc/process_instance/detail/by_ids',
+      params,
+      config
+    )
   },
   batchUpdateProcess(context, { params, config }) {
     return $http.put('update/proc/process_instance/by_ids', params, config)
   },
   updateServiceInstance(context, { bizId, params, config }) {
-    return $http.put(`updatemany/proc/service_instance/biz/${bizId}`, params, config)
+    return $http.put(
+      `updatemany/proc/service_instance/biz/${bizId}`,
+      params,
+      config
+    )
   },
 
   // 获取主机是否有服务实例
   getNoServiceInstanceHost(context, { params, config }) {
-    return $http.post('findmany/proc/host/with_no_service_instance', params, config)
-  }
+    return $http.post(
+      'findmany/proc/host/with_no_service_instance',
+      params,
+      config
+    )
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

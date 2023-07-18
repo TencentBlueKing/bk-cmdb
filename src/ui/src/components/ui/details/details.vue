@@ -16,43 +16,67 @@
     <div ref="detailsWrapper">
       <slot name="details-header"></slot>
       <template v-for="(group, groupIndex) in $sortedGroups">
-        <div class="property-group"
+        <div
+          v-if="$groupedProperties[groupIndex].length"
           :key="groupIndex"
-          v-if="$groupedProperties[groupIndex].length">
+          class="property-group">
           <cmdb-collapse
             :label="group['bk_group_name']"
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list clearfix">
               <template v-for="property in $groupedProperties[groupIndex]">
-                <li :class="['property-item fl', property.bk_property_type, {
-                      flex: flexProperties.includes(property['bk_property_id'])
-                    }]"
-                  v-if="!invisibleProperties.includes(property['bk_property_id'])"
-                  :key="`${property['bk_obj_id']}-${property['bk_property_id']}`">
-                  <span class="property-name"
-                    v-if="!invisibleNameProperties.includes(property['bk_property_id'])"
-                    :title="property['bk_property_name']">{{property['bk_property_name']}}
+                <li
+                  v-if="
+                    !invisibleProperties.includes(property['bk_property_id'])
+                  "
+                  :key="`${property['bk_obj_id']}-${property['bk_property_id']}`"
+                  :class="[
+                    'property-item fl',
+                    property.bk_property_type,
+                    {
+                      flex: flexProperties.includes(property['bk_property_id']),
+                    },
+                  ]">
+                  <span
+                    v-if="
+                      !invisibleNameProperties.includes(
+                        property['bk_property_id']
+                      )
+                    "
+                    class="property-name"
+                    :title="property['bk_property_name']"
+                    >{{ property['bk_property_name'] }}
                   </span>
                   <slot :name="property['bk_property_id']">
                     <cmdb-property-value
+                      :ref="`property-value-${property.id}`"
                       :is-show-overflow-tips="isShowOverflowTips(property)"
                       :class="'property-value'"
-                      :ref="`property-value-${property.id}`"
                       :value="inst[property.bk_property_id]"
                       :instance="inst"
                       :property="property">
                     </cmdb-property-value>
                   </slot>
-                  <template v-if="showCopy
-                    && !$tools.isEmptyPropertyValue(inst[property.bk_property_id])
-                    && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
+                  <template
+                    v-if="
+                      showCopy &&
+                      !$tools.isEmptyPropertyValue(
+                        inst[property.bk_property_id]
+                      ) &&
+                      property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE
+                    ">
                     <div class="copy-box">
-                      <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+                      <i
+                        class="property-copy icon-cc-details-copy"
+                        @click="handleCopy(property.id)"></i>
                       <transition name="fade">
-                        <span class="copy-tips"
-                          :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                          v-if="showCopyTips === property.id">
-                          {{$t('复制成功')}}
+                        <span
+                          v-if="showCopyTips === property.id"
+                          class="copy-tips"
+                          :style="{
+                            width: $i18n.locale === 'en' ? '100px' : '70px',
+                          }">
+                          {{ $t('复制成功') }}
                         </span>
                       </transition>
                     </div>
@@ -64,26 +88,34 @@
         </div>
       </template>
     </div>
-    <div class="details-options" slot="footer" slot-scope="{ sticky }"
+    <div
       v-if="showOptions"
+      slot="footer"
+      slot-scope="{ sticky }"
+      class="details-options"
       :class="{ sticky: sticky }">
       <slot name="details-options">
         <cmdb-auth v-if="showEdit" class="inline-block-middle" :auth="editAuth">
-          <bk-button slot-scope="{ disabled }"
+          <bk-button
+            slot-scope="{ disabled }"
             class="button-edit"
             theme="primary"
             :disabled="disabled"
             @click="handleEdit">
-            {{editText}}
+            {{ editText }}
           </bk-button>
         </cmdb-auth>
-        <cmdb-auth v-if="showDelete" class="inline-block-middle" :auth="deleteAuth">
-          <bk-button slot-scope="{ disabled }"
+        <cmdb-auth
+          v-if="showDelete"
+          class="inline-block-middle"
+          :auth="deleteAuth">
+          <bk-button
+            slot-scope="{ disabled }"
             hover-theme="danger"
             class="button-delete"
             :disabled="disabled"
             @click="handleDelete">
-            {{deleteText}}
+            {{ deleteText }}
           </bk-button>
         </cmdb-auth>
       </slot>
@@ -92,248 +124,278 @@
 </template>
 
 <script>
-  import formMixins from '@/mixins/form'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import formMixins from '@/mixins/form'
 
-  export default {
-    name: 'cmdb-details',
-    mixins: [formMixins],
-    props: {
-      inst: {
-        type: Object,
-        required: true
-      },
-      showOptions: {
-        type: Boolean,
-        default: true
-      },
-      editButtonText: {
-        type: String,
-        default: ''
-      },
-      deleteButtonText: {
-        type: String,
-        default: ''
-      },
-      showEdit: {
-        type: Boolean,
-        default: true
-      },
-      showDelete: {
-        type: Boolean,
-        default: true
-      },
-      showCopy: {
-        type: Boolean,
-        default: false
-      },
-      editAuth: {
-        type: Object,
-        default: null
-      },
-      deleteAuth: {
-        type: [Object, Array],
-        default: null
-      },
-      flexProperties: {
-        type: Array,
-        default: () => []
-      },
-      invisibleNameProperties: {
-        type: Array,
-        default: () => []
-      },
-      invisibleProperties: {
-        type: Array,
-        default: () => []
-      }
+export default {
+  name: 'cmdb-details',
+  mixins: [formMixins],
+  props: {
+    inst: {
+      type: Object,
+      required: true,
     },
-    data() {
-      return {
-        resizeEvent: null,
-        showCopyTips: false,
-        PROPERTY_TYPES
-      }
+    showOptions: {
+      type: Boolean,
+      default: true,
     },
-    computed: {
-      editText() {
-        return this.editButtonText || this.$t('编辑')
-      },
-      deleteText() {
-        return this.deleteButtonText || this.$t('删除')
-      }
+    editButtonText: {
+      type: String,
+      default: '',
     },
-    methods: {
-      isShowOverflowTips(property) {
-        const complexTypes = ['map']
-        return !complexTypes.includes(property.bk_property_type)
-      },
-      handleEdit() {
-        this.$emit('on-edit', this.inst)
-      },
-      handleDelete() {
-        this.$emit('on-delete', this.inst)
-      },
-      handleCopy(propertyId) {
-        const [component] = this.$refs[`property-value-${propertyId}`]
-        const copyText = component?.getCopyValue() ?? ''
-        this.$copyText(copyText).then(() => {
+    deleteButtonText: {
+      type: String,
+      default: '',
+    },
+    showEdit: {
+      type: Boolean,
+      default: true,
+    },
+    showDelete: {
+      type: Boolean,
+      default: true,
+    },
+    showCopy: {
+      type: Boolean,
+      default: false,
+    },
+    editAuth: {
+      type: Object,
+      default: null,
+    },
+    deleteAuth: {
+      type: [Object, Array],
+      default: null,
+    },
+    flexProperties: {
+      type: Array,
+      default: () => [],
+    },
+    invisibleNameProperties: {
+      type: Array,
+      default: () => [],
+    },
+    invisibleProperties: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  data() {
+    return {
+      resizeEvent: null,
+      showCopyTips: false,
+      PROPERTY_TYPES,
+    }
+  },
+  computed: {
+    editText() {
+      return this.editButtonText || this.$t('编辑')
+    },
+    deleteText() {
+      return this.deleteButtonText || this.$t('删除')
+    },
+  },
+  methods: {
+    isShowOverflowTips(property) {
+      const complexTypes = ['map']
+      return !complexTypes.includes(property.bk_property_type)
+    },
+    handleEdit() {
+      this.$emit('on-edit', this.inst)
+    },
+    handleDelete() {
+      this.$emit('on-delete', this.inst)
+    },
+    handleCopy(propertyId) {
+      const [component] = this.$refs[`property-value-${propertyId}`]
+      const copyText = component?.getCopyValue() ?? ''
+      this.$copyText(copyText).then(
+        () => {
           this.showCopyTips = propertyId
           const timer = setTimeout(() => {
             this.showCopyTips = false
             clearTimeout(timer)
           }, 200)
-        }, () => {
+        },
+        () => {
           this.$error(this.$t('复制失败'))
-        })
-      }
-    }
-  }
+        }
+      )
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .details-layout {
-        height: 100%;
-        padding: 0 0 0 32px;
-        @include scrollbar-y;
-    }
-    .property-group {
-        padding: 7px 0 10px 0;
-        &:first-child{
-            padding: 28px 0 10px 0;
-        }
-    }
-    .group-name {
-        font-size: 16px;
-        line-height: 16px;
-        color: #333948;
-        overflow: visible;
-        .group-toggle {
-            cursor: pointer;
-            &.collapse .bk-icon {
-                transform: rotate(-90deg);
-            }
-            .bk-icon {
-                vertical-align: baseline;
-                font-size: 12px;
-                font-weight: bold;
-                transition: transform .2s ease-in-out;
-            }
-        }
-    }
-    .property-list {
-        padding: 4px 0;
-        .property-item {
-            width: 50%;
-            max-width: 400px;
-            margin: 12px 0 0;
-            font-size: 14px;
-            line-height: 26px;
-            display: flex;
+.details-layout {
+  height: 100%;
+  padding: 0 0 0 32px;
 
-            &:hover {
-                .property-copy {
-                    display: inline-block;
-                }
-            }
+  @include scrollbar-y;
+}
 
-            .property-name {
-                position: relative;
-                flex: none;
-                width: 140px;
-                padding: 0 16px 0 0;
-                color: #63656e;
-                text-align: right;
-                @include ellipsis;
-                &:after {
-                    content: ":";
-                    position: absolute;
-                    right: 10px;
-                }
-            }
-            .property-value {
-                max-width: calc(100% - 140px - 24px);
-                padding: 0 15px 0 0;
-                color: #313238;
-                @include ellipsis;
-                &-text {
-                    display: block;
-                    max-width: calc(100% - 60px);
-                    @include ellipsis;
-                }
-                &-unit {
-                    display: block;
-                    width: 60px;
-                    padding: 0 0 0 5px;
-                    @include ellipsis;
-                }
-            }
+.property-group {
+  padding: 7px 0 10px;
 
-            .property-copy {
-                margin: 2px 0 0 2px;
-                color: #3c96ff;
-                cursor: pointer;
-                display: none;
-                font-size: 16px;
-            }
-            .copy-box {
-                position: relative;
-                font-size: 0;
-                .copy-tips {
-                    position: absolute;
-                    top: -22px;
-                    left: -18px;
-                    min-width: 70px;
-                    height: 26px;
-                    line-height: 26px;
-                    font-size: 12px;
-                    color: #ffffff;
-                    text-align: center;
-                    background-color: #9f9f9f;
-                    border-radius: 2px;
-                }
-                .fade-enter-active, .fade-leave-active {
-                    transition: all 0.5s;
-                }
-                .fade-enter {
-                    top: -14px;
-                    opacity: 0;
-                }
-                .fade-leave-to {
-                    top: -28px;
-                    opacity: 0;
-                }
-            }
+  &:first-child {
+    padding: 28px 0 10px;
+  }
+}
 
-            &.flex,
-            &.innertable {
-                display: flex;
-                width: 100%;
-                max-width: unset;
-                padding-right: 15px;
+.group-name {
+  font-size: 16px;
+  line-height: 16px;
+  color: #333948;
+  overflow: visible;
 
-                .property-value {
-                  width: calc(100% - 140px);
-                  max-width: 1200px;
-                }
-            }
-        }
+  .group-toggle {
+    cursor: pointer;
+
+    &.collapse .bk-icon {
+      transform: rotate(-90deg);
     }
-    .details-options {
-        padding: 10px 18px;
-        &.sticky {
-            width: calc(100% + 32px);
-            margin: 0 0 0 -40px;
-            padding: 10px 50px;
-            background-color: #fff;
-            border-top: 1px solid $cmdbBorderColor;
-        }
-        .button-edit {
-            min-width: 76px;
-            margin-right: 4px;
-        }
-        .button-delete {
-            min-width: 76px;
-        }
+
+    .bk-icon {
+      vertical-align: baseline;
+      font-size: 12px;
+      font-weight: bold;
+      transition: transform 0.2s ease-in-out;
     }
+  }
+}
+
+.property-list {
+  padding: 4px 0;
+
+  .property-item {
+    width: 50%;
+    max-width: 400px;
+    margin: 12px 0 0;
+    font-size: 14px;
+    line-height: 26px;
+    display: flex;
+
+    &:hover {
+      .property-copy {
+        display: inline-block;
+      }
+    }
+
+    .property-name {
+      position: relative;
+      flex: none;
+      width: 140px;
+      padding: 0 16px 0 0;
+      color: #63656e;
+      text-align: right;
+
+      @include ellipsis;
+
+      &::after {
+        content: ':';
+        position: absolute;
+        right: 10px;
+      }
+    }
+
+    .property-value {
+      max-width: calc(100% - 140px - 24px);
+      padding: 0 15px 0 0;
+      color: #313238;
+
+      @include ellipsis;
+
+      &-text {
+        display: block;
+        max-width: calc(100% - 60px);
+
+        @include ellipsis;
+      }
+
+      &-unit {
+        display: block;
+        width: 60px;
+        padding: 0 0 0 5px;
+
+        @include ellipsis;
+      }
+    }
+
+    .property-copy {
+      margin: 2px 0 0 2px;
+      color: #3c96ff;
+      cursor: pointer;
+      display: none;
+      font-size: 16px;
+    }
+
+    .copy-box {
+      position: relative;
+      font-size: 0;
+
+      .copy-tips {
+        position: absolute;
+        top: -22px;
+        left: -18px;
+        min-width: 70px;
+        height: 26px;
+        line-height: 26px;
+        font-size: 12px;
+        color: #fff;
+        text-align: center;
+        background-color: #9f9f9f;
+        border-radius: 2px;
+      }
+
+      .fade-enter-active,
+      .fade-leave-active {
+        transition: all 0.5s;
+      }
+
+      .fade-enter {
+        top: -14px;
+        opacity: 0;
+      }
+
+      .fade-leave-to {
+        top: -28px;
+        opacity: 0;
+      }
+    }
+
+    &.flex,
+    &.innertable {
+      display: flex;
+      width: 100%;
+      max-width: unset;
+      padding-right: 15px;
+
+      .property-value {
+        width: calc(100% - 140px);
+        max-width: 1200px;
+      }
+    }
+  }
+}
+
+.details-options {
+  padding: 10px 18px;
+
+  &.sticky {
+    width: calc(100% + 32px);
+    margin: 0 0 0 -40px;
+    padding: 10px 50px;
+    background-color: #fff;
+    border-top: 1px solid $cmdbBorderColor;
+  }
+
+  .button-edit {
+    min-width: 76px;
+    margin-right: 4px;
+  }
+
+  .button-delete {
+    min-width: 76px;
+  }
+}
 </style>

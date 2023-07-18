@@ -21,7 +21,7 @@ function load(dir) {
   const allDefs = {}
 
   const dirList = fs.readdirSync(dir, { withFileTypes: true })
-  dirList.forEach((dirent) => {
+  dirList.forEach(dirent => {
     if (dirent.isDirectory()) {
       const defs = load(path.join(dir, dirent.name))
       Object.assign(allDefs, defs)
@@ -43,9 +43,9 @@ function load(dir) {
         const def = require(filepath)
 
         // 解析处理def
-        Object.keys(def).forEach((key) => {
+        Object.keys(def).forEach(key => {
           if (def[key].path) {
-          // 限制path只能相对于入口文件
+            // 限制path只能相对于入口文件
             def[key].fullpath = path.resolve(dir, './', def[key].path)
           }
         })
@@ -67,5 +67,5 @@ function getDefs() {
 }
 
 module.exports = {
-  getDefs
+  getDefs,
 }

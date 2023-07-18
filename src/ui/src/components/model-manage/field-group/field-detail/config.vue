@@ -12,35 +12,38 @@
 
 <template>
   <div class="form-label">
-    <span class="label-text">{{$t('字段设置')}}</span>
+    <span class="label-text">{{ $t('字段设置') }}</span>
     <div class="checkbox-options">
       <label v-if="isEditableShow">
         <bk-checkbox
-          class="checkbox"
           v-model="localValue.editable"
+          class="checkbox"
           :disabled="isReadOnly || ispre">
-          <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
-            {{$t('可编辑')}}
+          <span
+            v-bk-tooltips="$t('字段设置可编辑提示语')"
+            class="g-has-dashed-tooltips">
+            {{ $t('可编辑') }}
           </span>
-          <i class="bk-cc-icon icon-cc-tips disabled-tips"
+          <i
             v-if="modelId === 'host'"
-            v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
+            v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"
+            class="bk-cc-icon icon-cc-tips disabled-tips"></i>
         </bk-checkbox>
       </label>
-      <label class="ml30" v-if="isRequiredShow && !isMainLineModel">
+      <label v-if="isRequiredShow && !isMainLineModel" class="ml30">
         <bk-checkbox
-          class="checkbox"
           v-model="localValue.isrequired"
+          class="checkbox"
           :disabled="isReadOnly || ispre">
-          <span>{{$t('必填')}}</span>
+          <span>{{ $t('必填') }}</span>
         </bk-checkbox>
       </label>
-      <label class="ml30" v-if="isMultipleShow">
+      <label v-if="isMultipleShow" class="ml30">
         <bk-checkbox
-          class="checkbox"
           v-model="localValue.multiple"
+          class="checkbox"
           :disabled="isReadOnly || ispre">
-          <span>{{$t('可多选')}}</span>
+          <span>{{ $t('可多选') }}</span>
         </bk-checkbox>
       </label>
     </div>
@@ -48,135 +51,137 @@
 </template>
 
 <script>
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
-  export default {
-    props: {
-      isReadOnly: {
-        type: Boolean,
-        default: false
-      },
-      type: {
-        type: String,
-        required: true
-      },
-      editable: {
-        type: Boolean,
-        default: true
-      },
-      isrequired: {
-        type: Boolean,
-        default: false
-      },
-      multiple: {
-        type: Boolean,
-        default: false
-      },
-      isMainLineModel: {
-        type: Boolean,
-        default: false
-      },
-      ispre: Boolean,
-      isEditField: {
-        type: Boolean,
-        default: false
-      }
+export default {
+  inject: ['customObjId'],
+  props: {
+    isReadOnly: {
+      type: Boolean,
+      default: false,
     },
-    data() {
-      return {
-        editableMap: [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.ENUM,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.TIME,
-          PROPERTY_TYPES.LONGCHAR,
-          PROPERTY_TYPES.OBJUSER,
-          PROPERTY_TYPES.TIMEZONE,
-          PROPERTY_TYPES.BOOL,
-          PROPERTY_TYPES.LIST,
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.INNER_TABLE
-        ],
-        isRequiredMap: [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.TIME,
-          PROPERTY_TYPES.LONGCHAR,
-          PROPERTY_TYPES.OBJUSER,
-          PROPERTY_TYPES.TIMEZONE,
-          PROPERTY_TYPES.LIST,
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.INNER_TABLE
-        ],
-        isMultipleMap: [
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.ENUMMULTI
-        ],
-        localValue: {
-          editable: this.editable,
-          isrequired: this.isrequired,
-          multiple: this.multiple
-        }
-      }
+    type: {
+      type: String,
+      required: true,
     },
-    inject: ['customObjId'], // 来源于自定义字段编辑
-    computed: {
-      isEditableShow() {
-        return this.editableMap.indexOf(this.type) !== -1
-      },
-      isRequiredShow() {
-        return this.isRequiredMap.indexOf(this.type) !== -1
-      },
-      isMultipleShow() {
-        return this.isMultipleMap.indexOf(this.type) !== -1
-      },
-      modelId() {
-        return this.$route.params.modelId ?? this.customObjId
-      }
+    editable: {
+      type: Boolean,
+      default: true,
     },
-    watch: {
-      editable(editable) {
-        this.localValue.editable = editable
+    isrequired: {
+      type: Boolean,
+      default: false,
+    },
+    multiple: {
+      type: Boolean,
+      default: false,
+    },
+    isMainLineModel: {
+      type: Boolean,
+      default: false,
+    },
+    ispre: Boolean,
+    isEditField: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  data() {
+    return {
+      editableMap: [
+        PROPERTY_TYPES.SINGLECHAR,
+        PROPERTY_TYPES.INT,
+        PROPERTY_TYPES.FLOAT,
+        PROPERTY_TYPES.ENUM,
+        PROPERTY_TYPES.DATE,
+        PROPERTY_TYPES.TIME,
+        PROPERTY_TYPES.LONGCHAR,
+        PROPERTY_TYPES.OBJUSER,
+        PROPERTY_TYPES.TIMEZONE,
+        PROPERTY_TYPES.BOOL,
+        PROPERTY_TYPES.LIST,
+        PROPERTY_TYPES.ORGANIZATION,
+        PROPERTY_TYPES.ENUMMULTI,
+        PROPERTY_TYPES.ENUMQUOTE,
+        PROPERTY_TYPES.INNER_TABLE,
+      ],
+      isRequiredMap: [
+        PROPERTY_TYPES.SINGLECHAR,
+        PROPERTY_TYPES.INT,
+        PROPERTY_TYPES.FLOAT,
+        PROPERTY_TYPES.DATE,
+        PROPERTY_TYPES.TIME,
+        PROPERTY_TYPES.LONGCHAR,
+        PROPERTY_TYPES.OBJUSER,
+        PROPERTY_TYPES.TIMEZONE,
+        PROPERTY_TYPES.LIST,
+        PROPERTY_TYPES.ORGANIZATION,
+        PROPERTY_TYPES.INNER_TABLE,
+      ],
+      isMultipleMap: [
+        PROPERTY_TYPES.ORGANIZATION,
+        PROPERTY_TYPES.ENUMQUOTE,
+        PROPERTY_TYPES.ENUMMULTI,
+      ],
+      localValue: {
+        editable: this.editable,
+        isrequired: this.isrequired,
+        multiple: this.multiple,
       },
-      isrequired(isrequired) {
-        this.localValue.isrequired = isrequired
-      },
-      multiple(multiple) {
-        this.localValue.multiple = multiple
-      },
-      'localValue.editable'(editable) {
-        this.$emit('update:editable', editable)
-      },
-      'localValue.isrequired'(isrequired) {
-        if (!isrequired && this.isOnlyShow) {
-          this.localValue.isonly = false
-        }
-        this.$emit('update:isrequired', isrequired)
-      },
-      'localValue.multiple'(multiple) {
-        this.$emit('update:multiple', multiple)
-      }
     }
-  }
+  }, // 来源于自定义字段编辑
+  computed: {
+    isEditableShow() {
+      return this.editableMap.indexOf(this.type) !== -1
+    },
+    isRequiredShow() {
+      return this.isRequiredMap.indexOf(this.type) !== -1
+    },
+    isMultipleShow() {
+      return this.isMultipleMap.indexOf(this.type) !== -1
+    },
+    modelId() {
+      return this.$route.params.modelId ?? this.customObjId
+    },
+  },
+  watch: {
+    editable(editable) {
+      this.localValue.editable = editable
+    },
+    isrequired(isrequired) {
+      this.localValue.isrequired = isrequired
+    },
+    multiple(multiple) {
+      this.localValue.multiple = multiple
+    },
+    'localValue.editable'(editable) {
+      this.$emit('update:editable', editable)
+    },
+    'localValue.isrequired'(isrequired) {
+      if (!isrequired && this.isOnlyShow) {
+        this.localValue.isonly = false
+      }
+      this.$emit('update:isrequired', isrequired)
+    },
+    'localValue.multiple'(multiple) {
+      this.$emit('update:multiple', multiple)
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .disabled-tips {
-    font-size: 12px;
-    margin-left: 6px;
+.disabled-tips {
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.checkbox-options {
+  margin-bottom: 10px;
+
+  .checkbox {
+    height: 24px;
+    line-height: 24px;
   }
-  .checkbox-options {
-    margin-bottom: 10px;
-    .checkbox {
-      height: 24px;
-      line-height: 24px;
-    }
-  }
+}
 </style>

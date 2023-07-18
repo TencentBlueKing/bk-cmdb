@@ -12,26 +12,22 @@
 
 <template>
   <div
-    class="model-management"
     v-bkloading="{ isLoading: $loading(requestIds.searchClassifications) }"
+    class="model-management"
     :class="{
       'is-model-selectable': isModelSelectable,
-      'is-tips-hidden': isTipsHidden
-    }"
-  >
-    <div
-      class="model-management-header clearfix"
-    >
+      'is-tips-hidden': isTipsHidden,
+    }">
+    <div class="model-management-header clearfix">
       <cmdb-tips
         tips-key="modelTips"
-        @input="isVisible => isTipsHidden = !isVisible"
         more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/Model.md"
-      >
-        {{ $t("模型顶部提示") }}
+        @input="isVisible => (isTipsHidden = !isVisible)">
+        {{ $t('模型顶部提示') }}
       </cmdb-tips>
 
       <div class="model-management-options">
-        <div class="model-export-label">{{$t('请选择需要导出的模型')}}</div>
+        <div class="model-export-label">{{ $t('请选择需要导出的模型') }}</div>
 
         <div class="model-operation-options">
           <cmdb-auth :auth="{ type: $OPERATION.C_MODEL }">
@@ -39,9 +35,8 @@
               <bk-button
                 theme="primary"
                 :disabled="disabled || modelType === 'disabled'"
-                @click="showModelDialog(UNCATEGORIZED_GROUP_ID)"
-              >
-                {{ $t("新建模型") }}
+                @click="showModelDialog(UNCATEGORIZED_GROUP_ID)">
+                {{ $t('新建模型') }}
               </bk-button>
             </template>
           </cmdb-auth>
@@ -50,32 +45,30 @@
               <bk-button
                 theme="default"
                 :disabled="disabled || modelType === 'disabled'"
-                @click="showGroupDialog(false)"
-              >
-                {{ $t("新建分组") }}
+                @click="showGroupDialog(false)">
+                {{ $t('新建分组') }}
               </bk-button>
             </template>
           </cmdb-auth>
-          <cmdb-auth :auth="[
-            { type: $OPERATION.C_MODEL_GROUP },
-            { type: $OPERATION.C_MODEL }
-          ]">
+          <cmdb-auth
+            :auth="[
+              { type: $OPERATION.C_MODEL_GROUP },
+              { type: $OPERATION.C_MODEL },
+            ]">
             <template #default="{ disabled }">
               <bk-button
                 theme="default"
                 :disabled="disabled || modelType === 'disabled'"
-                @click="importModel"
-              >
-                {{ $t("导入") }}
+                @click="importModel">
+                {{ $t('导入') }}
               </bk-button>
             </template>
           </cmdb-auth>
           <bk-button
             theme="default"
             :disabled="modelType === 'disabled'"
-            @click="exportModel"
-          >
-            {{ $t("导出") }}
+            @click="exportModel">
+            {{ $t('导出') }}
           </bk-button>
         </div>
 
@@ -84,33 +77,27 @@
             class="model-type-button"
             :class="[{ 'is-active': modelType === '' }]"
             size="small"
-            @click="modelType = ''"
-          >
-            {{ $t("全部") }}
+            @click="modelType = ''">
+            {{ $t('全部') }}
           </bk-button>
           <bk-button
             class="model-type-button"
             :class="[{ 'is-active': modelType === 'enable' }]"
             size="small"
-            @click="modelType = 'enable'"
-          >
-            {{ $t("启用中") }}
+            @click="modelType = 'enable'">
+            {{ $t('启用中') }}
           </bk-button>
           <span
-            class="inline-block-middle"
-            style="outline: 0"
             v-bk-tooltips="disabledModelBtnText"
-          >
+            class="inline-block-middle"
+            style="outline: 0">
             <bk-button
               class="model-type-button disabled"
-              :class="[
-                { 'is-active': modelType === 'disabled' }
-              ]"
+              :class="[{ 'is-active': modelType === 'disabled' }]"
               size="small"
               :disabled="!disabledClassifications.length"
-              @click="modelType = 'disabled'"
-            >
-              {{ $t("已停用") }}
+              @click="modelType = 'disabled'">
+              {{ $t('已停用') }}
             </bk-button>
           </span>
         </div>
@@ -124,8 +111,7 @@
             :value="modelSearchKey"
             @change="inputChange"
             @compositionstart.native="inputCompositionStart"
-            @compositionend.native="inputCompositionEnd"
-          >
+            @compositionend.native="inputCompositionEnd">
           </bk-input>
         </div>
       </div>
@@ -135,43 +121,47 @@
       <ul
         class="group-list"
         :class="{
-          'is-dragging': isDragging
-        }"
-      >
+          'is-dragging': isDragging,
+        }">
         <li
-          class="group-item clearfix"
-          ref="classification"
           v-for="(classification, classIndex) in currentClassifications"
+          ref="classification"
           :key="classIndex"
-        >
+          class="group-item clearfix">
           <div class="group-header clearfix">
             <collapse-group-title
-              :is-new-classify="classification.isNewClassify"
-              :dropdown-menu="!isModelSelectable"
-              :collapse=" classificationsCollapseState[classification.id]"
-              :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"
-              @click.native="toggleModelList(classification)"
-              :commands="groupCommands(classification)"
               v-bk-tooltips="{
                 disabled: !isBuiltinClass(classification),
                 content: $t('内置模型组不支持删除和修改'),
-                placement: 'right'
-              }">
+                placement: 'right',
+              }"
+              :is-new-classify="classification.isNewClassify"
+              :dropdown-menu="!isModelSelectable"
+              :collapse="classificationsCollapseState[classification.id]"
+              :title="`${classification.bk_classification_name} ( ${classification.bk_objects.length} )`"
+              :commands="groupCommands(classification)"
+              @click.native="toggleModelList(classification)">
             </collapse-group-title>
             <bk-checkbox
-              @change="handleModelGroupSelectionChange(classification, $event)"
-              v-model="classificationSelectionState[classification.bk_classification_id]"
+              v-model="
+                classificationSelectionState[
+                  classification.bk_classification_id
+                ]
+              "
               :disabled="isGroupEmpty(classification)"
               class="full-selection-checkbox"
-            >{{$t('全选')}}</bk-checkbox>
+              @change="handleModelGroupSelectionChange(classification, $event)"
+              >{{ $t('全选') }}</bk-checkbox
+            >
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
+              v-show="!classificationsCollapseState[classification.id]"
+              v-model="classification.bk_objects"
               class="model-list clearfix"
               :class="{
-                'is-empty': isGroupEmpty(classification)
+                'is-empty': isGroupEmpty(classification),
               }"
-              v-show="!classificationsCollapseState[classification.id]"
               tag="div"
               :sort="false"
               :animation="200"
@@ -180,66 +170,64 @@
               group="model-list"
               ghost-class="model-item-ghost"
               :data-group-id="classification.bk_classification_id"
-              v-model="classification.bk_objects"
-              @start="handleModelDragStart"
               :move="handleModelDragMove"
+              @start="handleModelDragStart"
               @end="handleModelDragEnd"
-              @add="handleModelDragAdd"
-            >
+              @add="handleModelDragAdd">
               <div
-                class="model-item bgc-white"
                 v-for="model in classification['bk_objects']"
                 :key="model.bk_obj_id"
+                class="model-item bgc-white"
                 :data-group-id="model.bk_classification_id"
                 :data-model-id="model.id"
                 :class="{
                   'is-paused': model['bk_ispaused'],
-                  'is-builtin': model.ispre
+                  'is-builtin': model.ispre,
                 }"
-                @mouseenter="handleModelMouseEnterDebounce(model)"
-              >
+                @mouseenter="handleModelMouseEnterDebounce(model)">
                 <div
                   class="model-info"
                   :class="{
-                    'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
+                    'no-instance-count':
+                      model.bk_ispaused || isNoInstanceModel(model.bk_obj_id),
                   }"
-                  @click="handleModelClick(model, classification)"
-                >
+                  @click="handleModelClick(model, classification)">
                   <div class="drag-icon"></div>
                   <div class="model-icon">
                     <i class="icon" :class="[model['bk_obj_icon']]"></i>
                   </div>
                   <div class="model-details">
                     <p class="model-name" :title="model['bk_obj_name']">
-                      {{ model["bk_obj_name"] }}
+                      {{ model['bk_obj_name'] }}
                     </p>
                     <p class="model-id" :title="model['bk_obj_id']">
-                      {{ model["bk_obj_id"] }}
+                      {{ model['bk_obj_id'] }}
                     </p>
                   </div>
                   <bk-checkbox
                     v-model="modelSelectionState[model.bk_obj_id]"
-                    @change="handleModelSelectionChange(classification)"
-                    :disabled="isBuiltinModel(model)"
                     v-bk-tooltips="{
                       content: $t('内置模型不允许导出'),
-                      disabled: !isBuiltinModel(model)
+                      disabled: !isBuiltinModel(model),
                     }"
-                    @click.stop.native
+                    :disabled="isBuiltinModel(model)"
                     class="model-checkbox"
-                  >
+                    @change="handleModelSelectionChange(classification)"
+                    @click.stop.native>
                   </bk-checkbox>
                 </div>
                 <div
-                  v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
+                  v-if="
+                    !model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)
+                  "
                   class="model-instance-count"
-                  @click="handleGoInstance(model)"
-                >
+                  @click="handleGoInstance(model)">
                   <span class="count-number">
                     <cmdb-loading
-                      :loading="!modelStatisticsSet[model.bk_obj_id] ||
-                        $loading(requestIds.statistics[model.bk_obj_id])"
-                    >
+                      :loading="
+                        !modelStatisticsSet[model.bk_obj_id] ||
+                        $loading(requestIds.statistics[model.bk_obj_id])
+                      ">
                       {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
                     </cmdb-loading>
                   </span>
@@ -247,15 +235,22 @@
               </div>
             </draggable>
           </bk-transition>
-          <bk-transition name="collapse" class="group-empty-model"
+          <bk-transition
             v-if="classification.bk_objects.length === 0"
-            v-show="!classificationsCollapseState[classification.id]">
+            v-show="!classificationsCollapseState[classification.id]"
+            name="collapse"
+            class="group-empty-model">
             <div>
               <i class="bk-icon icon-info-circle"></i>
               <i18n path="分组暂无模型提示">
                 <template #btn>
-                  <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
-                    {{$t('立即添加')}}
+                  <bk-button
+                    :text="true"
+                    title="primary"
+                    @click="
+                      showModelDialog(classification.bk_classification_id)
+                    ">
+                    {{ $t('立即添加') }}
                   </bk-button>
                 </template>
               </i18n>
@@ -272,81 +267,81 @@
       </cmdb-data-empty>
     </div>
 
-    <div class="model-management-footer" v-show="isModelSelectable">
+    <div v-show="isModelSelectable" class="model-management-footer">
       <div class="export-action-bar">
         <bk-checkbox
+          v-model="isAllSelected"
           class="full-selection"
           @change="toggleAllModelSelection"
-          v-model="isAllSelected"
-        >{{$t('全选')}}</bk-checkbox
+          >{{ $t('全选') }}</bk-checkbox
         >
         <span class="selected-count"
-        >{{$t('已选')}}：<em>{{ exportModelsLen }}</em></span
+          >{{ $t('已选') }}：<em>{{ exportModelsLen }}</em></span
         >
-        <bk-button @click="doubleCheckCancelExport" class="cancel-button">{{$t('取消')}}</bk-button>
+        <bk-button class="cancel-button" @click="doubleCheckCancelExport">{{
+          $t('取消')
+        }}</bk-button>
         <bk-button
-          @click="toNextExportStep"
           theme="primary"
-          :disabled="exportModelsLen === 0" class="next-step-button">{{$t('下一步')}}</bk-button>
+          :disabled="exportModelsLen === 0"
+          class="next-step-button"
+          @click="toNextExportStep"
+          >{{ $t('下一步') }}</bk-button
+        >
       </div>
     </div>
 
     <bk-dialog
+      v-model="groupDialog.isShow"
       class="bk-dialog-no-padding bk-dialog-no-tools group-dialog dialog"
       :close-icon="false"
       :width="600"
-      :mask-close="false"
-      v-model="groupDialog.isShow"
-    >
+      :mask-close="false">
       <div class="dialog-content">
         <p class="title">{{ groupDialog.title }}</p>
         <div class="content">
           <label>
             <div class="label-title">
-              {{ $t("唯一标识") }}<span class="color-danger">*</span>
+              {{ $t('唯一标识') }}<span class="color-danger">*</span>
             </div>
             <div
               class="cmdb-form-item"
-              :class="{ 'is-error': errors.has('classifyId') }"
-            >
+              :class="{ 'is-error': errors.has('classifyId') }">
               <bk-input
+                v-model.trim="groupDialog.data['bk_classification_id']"
+                v-validate="'required|classifyId|length:128|reservedWord'"
                 type="text"
                 class="cmdb-form-input"
                 name="classifyId"
                 :placeholder="$t('请填写英文开头，下划线，数字，英文的组合')"
-                :disabled="groupDialog.isEdit"
-                v-model.trim="groupDialog.data['bk_classification_id']"
-                v-validate="'required|classifyId|length:128|reservedWord'">
+                :disabled="groupDialog.isEdit">
               </bk-input>
               <p class="form-error" :title="errors.first('classifyId')">
-                {{ errors.first("classifyId") }}
+                {{ errors.first('classifyId') }}
               </p>
             </div>
             <i
-              class="bk-icon icon-info-circle"
               v-bk-tooltips="$t('请填写英文开头，下划线，数字，英文的组合')"
-            ></i>
+              class="bk-icon icon-info-circle"></i>
           </label>
           <label>
             <span class="label-title">
-              {{ $t("名称") }}
+              {{ $t('名称') }}
             </span>
             <span class="color-danger">*</span>
             <div
               class="cmdb-form-item"
-              :class="{ 'is-error': errors.has('classifyName') }"
-            >
+              :class="{ 'is-error': errors.has('classifyName') }">
               <bk-input
+                v-model.trim="groupDialog.data['bk_classification_name']"
+                v-validate="'required|length:128'"
                 type="text"
                 class="cmdb-form-input"
                 name="classifyName"
-                :placeholder="$t('请输入名称')"
-                v-model.trim="groupDialog.data['bk_classification_name']"
-                v-validate="'required|length:128'"
-              >
+                :placeholder="$t('请输入名称')">
               </bk-input>
               <p class="form-error" :title="errors.first('classifyName')">
-                {{ errors.first("classifyName") }}
+                {{ errors.first('classifyName') }}
               </p>
             </div>
           </label>
@@ -356,12 +351,11 @@
         <bk-button
           theme="primary"
           :loading="$loading(['updateClassification', 'createClassification'])"
-          @click="saveGroup"
-        >
-          {{ groupDialog.isEdit ? $t("保存") : $t("提交") }}
+          @click="saveGroup">
+          {{ groupDialog.isEdit ? $t('保存') : $t('提交') }}
         </bk-button>
         <bk-button theme="default" @click="hideGroupDialog">{{
-          $t("取消")
+          $t('取消')
         }}</bk-button>
       </div>
     </bk-dialog>
@@ -375,23 +369,22 @@
     </the-create-model>
 
     <bk-dialog
+      v-model="modelCreatedDialogVisible"
       class="bk-dialog-no-padding"
       :width="400"
       :show-footer="false"
-      :mask-close="true"
-      v-model="modelCreatedDialogVisible"
-    >
+      :mask-close="true">
       <div class="success-content">
         <i class="bk-icon icon-check-1"></i>
-        <p>{{ $t("模型创建成功") }}</p>
+        <p>{{ $t('模型创建成功') }}</p>
         <div class="btn-box">
           <bk-button
             theme="primary"
             @click="checkModelDetails(curCreateModel)"
-          >{{ $t("配置字段") }}</bk-button
+            >{{ $t('配置字段') }}</bk-button
           >
           <bk-button @click="modelCreatedDialogVisible = false">{{
-            $t("返回列表")
+            $t('返回列表')
           }}</bk-button>
         </div>
       </div>
@@ -399,10 +392,10 @@
 
     <!-- 模型导出 -->
     <model-export-pane
-      @cancel="doubleCheckCancelExport"
-      @done="doneExport"
+      v-if="exportPaneVisible"
       :data="exportModels"
-      v-if="exportPaneVisible">
+      @cancel="doubleCheckCancelExport"
+      @done="doneExport">
     </model-export-pane>
 
     <!-- 模型导入 -->
@@ -415,695 +408,760 @@
 </template>
 
 <script>
-  import has from 'has'
-  import theCreateModel from '@/components/model-manage/_create-model'
-  import cmdbLoading from '@/components/loading/index.vue'
-  import CollapseGroupTitle from './children/collapse-group-title.vue'
-  import { mapGetters, mapMutations, mapActions } from 'vuex'
-  import debounce from 'lodash.debounce'
-  import Draggable from 'vuedraggable'
-  import ModelExportPane from './children/model-import-export/model-export-pane/index.vue'
-  import ModelImportPane from './children/model-import-export//model-import-pane/index.vue'
-  import {
-    MENU_RESOURCE_INSTANCE,
-    MENU_MODEL_DETAILS,
-  } from '@/dictionary/menu-symbol'
-  import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
-  import Bus from '@/utils/bus'
+import has from 'has'
+import { mapGetters, mapMutations, mapActions } from 'vuex'
+import debounce from 'lodash.debounce'
+import Draggable from 'vuedraggable'
 
-  export default {
-    name: 'ModelManagement',
-    filters: {
-      instanceCount(value) {
-        if (!value) return
-        if (value?.error) {
-          return '--'
-        }
-        return value.inst_count > 999 ? '999+' : value.inst_count
-      },
-    },
-    components: {
-      theCreateModel,
-      cmdbLoading,
-      CollapseGroupTitle,
-      Draggable,
-      ModelExportPane,
-      ModelImportPane
-    },
-    data() {
-      return {
-        UNCATEGORIZED_GROUP_ID,
-        modelType: '', // 模型启用、停用状态
-        modelSearchKey: '', // 模型搜索关键字
-        filterClassifications: [], // 过滤后的分组
-        modelStatisticsSet: {}, // 模型实例数量统计
-        curCreateModel: {}, // 当前创建的模型
-        modelCreatedDialogVisible: false,
-        otherInputVal: '', // 针对某些输入法中文输入失焦后自动清空输入框情况 如：搜狗输入法
+import Bus from '@/utils/bus'
+import {
+  MENU_RESOURCE_INSTANCE,
+  MENU_MODEL_DETAILS,
+} from '@/dictionary/menu-symbol'
+import {
+  BUILTIN_MODEL_RESOURCE_MENUS,
+  UNCATEGORIZED_GROUP_ID,
+} from '@/dictionary/model-constants.js'
+import theCreateModel from '@/components/model-manage/_create-model'
+import cmdbLoading from '@/components/loading/index.vue'
 
-        // 分组表单弹窗
-        groupDialog: {
-          isShow: false,
-          isEdit: false,
-          title: this.$t('新建分组'),
-          data: {
-            bk_classification_id: '',
-            bk_classification_name: '',
-            id: '',
-          },
-        },
+import CollapseGroupTitle from './children/collapse-group-title.vue'
+import ModelExportPane from './children/model-import-export/model-export-pane/index.vue'
+import ModelImportPane from './children/model-import-export//model-import-pane/index.vue'
 
-        // 新建模型弹窗
-        modelDialog: {
-          isShow: false,
-          groupId: '',
-        },
-        requestIds: {
-          statistics: [], // 模型实例数据加载请求 id
-          searchClassifications: Symbol('searchClassifications') // 模型分组数据加载请求 id
-        },
-        isDragging: false, // 是否处于拖拽状态
-        classificationsCollapseState: {}, // 分类折叠状态
-
-        /**
-         * 导出模型
-         */
-        exportModels: [], // 已选择的需要的导出模型
-        isModelSelectable: false, // 是否在导出选择中
-        exportPaneVisible: false, // 导出面板是否显示
-        isAllSelected: false, // 是否全选所有模型
-        classificationSelectionState: {}, // 导出模型组的选中状态
-        modelSelectionState: {}, // 导出模型的选中状态
-
-        /**
-         * 导入模型
-         */
-        importPaneVisible: false, // 导入面板是否显示
-
-        isTipsHidden: false, // 模型管理提示是否隐藏
-
-        dataEmpty: {
-          type: 'default',
-          payload: {
-            defaultText: this.$t('暂无模型'),
-            path: '暂无相关xxx',
-            resource: this.$t('模型'),
-          }
-        }
+export default {
+  name: 'ModelManagement',
+  filters: {
+    instanceCount(value) {
+      if (!value) return
+      if (value?.error) {
+        return '--'
       }
+      return value.inst_count > 999 ? '999+' : value.inst_count
     },
-    computed: {
-      ...mapGetters(['supplierAccount', 'userName']),
-      ...mapGetters('objectModelClassify', ['classifications']),
-      allClassifications() {
-        const allClassifications = []
-        this.classifications
-          .filter(classification => !classification?.bk_ishidden)
-          .forEach((classification) => {
-            allClassifications.push({
-              ...classification,
-              bk_objects: classification.bk_objects
-                .filter(model => !model.bk_ishidden)
-                .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
-            })
-          })
-        return allClassifications
+  },
+  components: {
+    theCreateModel,
+    cmdbLoading,
+    CollapseGroupTitle,
+    Draggable,
+    ModelExportPane,
+    ModelImportPane,
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.needLeaveConfirm) {
+      this.$bkInfo({
+        title: this.$t('确定离开页面？'),
+        subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
+        confirmFn: () => {
+          next()
+        },
+        cancelFn: () => {
+          next(false)
+        },
+      })
+    } else {
+      next()
+    }
+  },
+  data() {
+    return {
+      UNCATEGORIZED_GROUP_ID,
+      modelType: '', // 模型启用、停用状态
+      modelSearchKey: '', // 模型搜索关键字
+      filterClassifications: [], // 过滤后的分组
+      modelStatisticsSet: {}, // 模型实例数量统计
+      curCreateModel: {}, // 当前创建的模型
+      modelCreatedDialogVisible: false,
+      otherInputVal: '', // 针对某些输入法中文输入失焦后自动清空输入框情况 如：搜狗输入法
+
+      // 分组表单弹窗
+      groupDialog: {
+        isShow: false,
+        isEdit: false,
+        title: this.$t('新建分组'),
+        data: {
+          bk_classification_id: '',
+          bk_classification_name: '',
+          id: '',
+        },
       },
-      enableClassifications() {
-        const enableClassifications = []
-        this.allClassifications.forEach((classification) => {
-          enableClassifications.push({
+
+      // 新建模型弹窗
+      modelDialog: {
+        isShow: false,
+        groupId: '',
+      },
+      requestIds: {
+        statistics: [], // 模型实例数据加载请求 id
+        searchClassifications: Symbol('searchClassifications'), // 模型分组数据加载请求 id
+      },
+      isDragging: false, // 是否处于拖拽状态
+      classificationsCollapseState: {}, // 分类折叠状态
+
+      /**
+       * 导出模型
+       */
+      exportModels: [], // 已选择的需要的导出模型
+      isModelSelectable: false, // 是否在导出选择中
+      exportPaneVisible: false, // 导出面板是否显示
+      isAllSelected: false, // 是否全选所有模型
+      classificationSelectionState: {}, // 导出模型组的选中状态
+      modelSelectionState: {}, // 导出模型的选中状态
+
+      /**
+       * 导入模型
+       */
+      importPaneVisible: false, // 导入面板是否显示
+
+      isTipsHidden: false, // 模型管理提示是否隐藏
+
+      dataEmpty: {
+        type: 'default',
+        payload: {
+          defaultText: this.$t('暂无模型'),
+          path: '暂无相关xxx',
+          resource: this.$t('模型'),
+        },
+      },
+    }
+  },
+  computed: {
+    ...mapGetters(['supplierAccount', 'userName']),
+    ...mapGetters('objectModelClassify', ['classifications']),
+    allClassifications() {
+      const allClassifications = []
+      this.classifications
+        .filter(classification => !classification?.bk_ishidden)
+        .forEach(classification => {
+          allClassifications.push({
             ...classification,
-            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused),
+            bk_objects: classification.bk_objects
+              .filter(model => !model.bk_ishidden)
+              .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
           })
         })
-        return enableClassifications.filter(item => item.bk_objects.length)
-      },
-      disabledClassifications() {
-        const disabledClassifications = []
+      return allClassifications
+    },
+    enableClassifications() {
+      const enableClassifications = []
+      this.allClassifications.forEach(classification => {
+        enableClassifications.push({
+          ...classification,
+          bk_objects: classification.bk_objects.filter(
+            model => !model.bk_ispaused
+          ),
+        })
+      })
+      return enableClassifications.filter(item => item.bk_objects.length)
+    },
+    disabledClassifications() {
+      const disabledClassifications = []
 
-        this.allClassifications.forEach((classification) => {
-          disabledClassifications.push({
-            ...classification,
-            bk_objects: classification.bk_objects.filter(model => model.bk_ispaused),
-          })
+      this.allClassifications.forEach(classification => {
+        disabledClassifications.push({
+          ...classification,
+          bk_objects: classification.bk_objects.filter(
+            model => model.bk_ispaused
+          ),
+        })
+      })
+
+      return disabledClassifications.filter(item => item.bk_objects.length)
+    },
+    currentClassifications() {
+      let currentClassifications = []
+
+      if (!this.modelSearchKey && !this.modelType) {
+        currentClassifications = this.allClassifications
+      }
+
+      if (this.modelType) {
+        currentClassifications =
+          this.modelType === 'enable'
+            ? this.enableClassifications
+            : this.disabledClassifications
+      }
+
+      if (this.modelSearchKey) {
+        currentClassifications = this.filterClassifications
+      }
+
+      return currentClassifications.sort((a, b) =>
+        b.bk_classification_id === UNCATEGORIZED_GROUP_ID ? -1 : 0
+      )
+    },
+    disabledModelBtnText() {
+      return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
+    },
+    exportModelsLen() {
+      return Object.values(this.modelSelectionState).filter(
+        isSelected => isSelected
+      ).length
+    },
+    needLeaveConfirm() {
+      return (
+        this.exportPaneVisible ||
+        this.isModelSelectable ||
+        this.importPaneVisible
+      )
+    },
+  },
+  watch: {
+    currentClassifications: {
+      deep: true,
+      handler(val) {
+        const classificationsCollapseState = {}
+
+        val.forEach(({ id }) => {
+          classificationsCollapseState[id] =
+            this.classificationsCollapseState?.[id] || false
         })
 
-        return disabledClassifications.filter(item => item.bk_objects.length)
+        this.classificationsCollapseState = classificationsCollapseState
       },
-      currentClassifications() {
-        let currentClassifications = []
-
-        if (!this.modelSearchKey && !this.modelType) {
-          currentClassifications = this.allClassifications
-        }
-
-        if (this.modelType) {
-          currentClassifications = this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
-        }
-
-        if (this.modelSearchKey) {
-          currentClassifications = this.filterClassifications
-        }
-
-        return currentClassifications.sort((a, b) => (b.bk_classification_id === UNCATEGORIZED_GROUP_ID ? -1 : 0))
-      },
-      disabledModelBtnText() {
-        return this.disabledClassifications.length ? '' : this.$t('停用模型提示')
-      },
-      exportModelsLen() {
-        return Object.values(this.modelSelectionState).filter(isSelected => isSelected).length
-      },
-      needLeaveConfirm() {
-        return this.exportPaneVisible || this.isModelSelectable || this.importPaneVisible
-      }
     },
-    watch: {
-      currentClassifications: {
-        deep: true,
-        handler(val) {
-          const classificationsCollapseState = {}
+    modelSearchKey(value) {
+      if (!value) {
+        return
+      }
+      const searchResult = []
+      let currentClassifications = null
 
-          val.forEach(({ id }) => {
-            classificationsCollapseState[id] = this.classificationsCollapseState?.[id] || false
-          })
+      if (!this.modelType) {
+        currentClassifications = this.allClassifications
+      } else if (this.modelType === 'enable') {
+        currentClassifications = this.enableClassifications
+      } else {
+        currentClassifications = this.disabledClassifications
+      }
+      const classifications = this.$tools.clone(currentClassifications)
+      const lowerCaseValue = value.toLowerCase()
 
-          this.classificationsCollapseState = classificationsCollapseState
-        },
-      },
-      modelSearchKey(value) {
-        if (!value) {
-          return
-        }
-        const searchResult = []
-        let currentClassifications = null
-
-        if (!this.modelType) {
-          currentClassifications = this.allClassifications
-        } else if (this.modelType === 'enable') {
-          currentClassifications = this.enableClassifications
-        } else {
-          currentClassifications = this.disabledClassifications
-        }
-        const classifications = this.$tools.clone(currentClassifications)
-        const lowerCaseValue = value.toLowerCase()
-
-        for (let i = 0; i < classifications.length; i++) {
-          classifications[i].bk_objects = classifications[i].bk_objects.filter((model) => {
+      for (let i = 0; i < classifications.length; i++) {
+        classifications[i].bk_objects = classifications[i].bk_objects.filter(
+          model => {
             const modelName = model.bk_obj_name.toLowerCase()
             const modelId = model.bk_obj_id.toLowerCase()
             return (
-              modelName?.includes(lowerCaseValue)
-              || modelId?.includes(lowerCaseValue)
+              modelName?.includes(lowerCaseValue) ||
+              modelId?.includes(lowerCaseValue)
             )
-          })
-          searchResult.push(classifications[i])
-        }
+          }
+        )
+        searchResult.push(classifications[i])
+      }
 
-        this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
+      this.filterClassifications = searchResult.filter(
+        item => item.bk_objects.length
+      )
 
-        this.dataEmpty.type = this.modelSearchKey ? 'search' : 'default'
-      },
-      modelType() {
-        this.modelSearchKey = ''
-      },
+      this.dataEmpty.type = this.modelSearchKey ? 'search' : 'default'
     },
-    async created() {
-      window.onbeforeunload = () => {
-        if (this.needLeaveConfirm) {
-          return this.$t('系统不会保存您所做的修改，确认要离开？')
-        }
+    modelType() {
+      this.modelSearchKey = ''
+    },
+  },
+  async created() {
+    window.onbeforeunload = () => {
+      if (this.needLeaveConfirm) {
+        return this.$t('系统不会保存您所做的修改，确认要离开？')
       }
+    }
 
-      this.handleModelMouseEnterDebounce = debounce(this.handleModelItemMouseEnter, 200)
+    this.handleModelMouseEnterDebounce = debounce(
+      this.handleModelItemMouseEnter,
+      200
+    )
 
-      try {
-        await this.loadAllModels()
-      } catch (e) {
-        this.$route.meta.view = 'error'
+    try {
+      await this.loadAllModels()
+    } catch (e) {
+      this.$route.meta.view = 'error'
+    }
+
+    if (this.$route.query.modelSearchKey) {
+      const { hash } = window.location
+      this.modelSearchKey = this.$route.query.modelSearchKey
+      window.location.hash = hash.substring(0, hash.indexOf('?'))
+    }
+
+    this.$on('model-selection-change', (model, classification) => {
+      this.handleModelSelectionChange(classification)
+    })
+  },
+  beforeDestroy() {
+    this.$http.cancelRequest(this.requestIds.statistics)
+  },
+  methods: {
+    ...mapMutations('objectModelClassify', [
+      'updateClassify',
+      'deleteClassify',
+    ]),
+    ...mapActions('objectModelClassify', [
+      'searchClassificationsObjects',
+      'getClassificationsObjectStatistics',
+      'createClassification',
+      'updateClassification',
+      'deleteClassification',
+    ]),
+    ...mapActions('objectModel', ['createObject', 'updateObject']),
+    inputChange(val) {
+      // 在输入过程中如果是中文输入法 不让modelSearchKey变化
+      if (this.isComposition) {
+        this.modelSearchKey = this.otherInputVal
+        return
       }
-
-      if (this.$route.query.modelSearchKey) {
-        const { hash } = window.location
-        this.modelSearchKey = this.$route.query.modelSearchKey
-        window.location.hash = hash.substring(0, hash.indexOf('?'))
-      }
-
-      this.$on('model-selection-change', (model, classification) => {
-        this.handleModelSelectionChange(classification)
+      this.modelSearchKey = val
+    },
+    inputCompositionStart() {
+      // 当前为中文输入法
+      this.isComposition = true
+      this.otherInputVal = this.modelSearchKey
+    },
+    inputCompositionEnd(event) {
+      // 兼容输入框输入中文突然变英文的情况
+      setTimeout(() => {
+        this.isComposition = false
+        this.modelSearchKey = event.target.value
+      }, 100)
+    },
+    loadAllModels() {
+      return this.searchClassificationsObjects({
+        params: {},
+        config: {
+          requestId: this.requestIds.searchClassifications,
+        },
       })
     },
-    beforeDestroy() {
-      this.$http.cancelRequest(this.requestIds.statistics)
+    groupCommands(classification) {
+      return [
+        {
+          text: this.$t('新建模型'),
+          auth: {
+            type: this.$OPERATION.C_MODEL,
+            relation: [classification.id],
+          },
+          handler: () =>
+            this.showModelDialog(classification.bk_classification_id),
+        },
+        {
+          text: this.$t('编辑分组'),
+          visible: !this.isBuiltinClass(classification),
+          auth: {
+            type: this.$OPERATION.U_MODEL_GROUP,
+            relation: [classification.id],
+          },
+          handler: () => this.showGroupDialog(true, classification),
+        },
+        {
+          text: this.$t('删除分组'),
+          visible: !this.isBuiltinClass(classification),
+          disabled: Boolean(classification.bk_objects.length),
+          disabledTooltips: this.$t('分组下有模型，不能删除'),
+          auth: {
+            type: this.$OPERATION.D_MODEL_GROUP,
+            relation: [classification.id],
+          },
+          handler: () => this.deleteGroup(classification),
+        },
+      ]
     },
-    beforeRouteLeave(to, from, next) {
-      if (this.needLeaveConfirm) {
+    toggleModelList(classification) {
+      this.classificationsCollapseState[classification.id] =
+        !this.classificationsCollapseState[classification.id]
+    },
+    handleModelDragStart() {
+      this.isDragging = true
+    },
+    handleModelDragEnd() {
+      this.isDragging = false
+    },
+    handleModelDragMove(event) {
+      const draggedModel = event.draggedContext.element
+      const targetGroupModels = event.relatedContext.list
+      const { willInsertAfter } = event
+      const isSameGroup = targetGroupModels.some(
+        model =>
+          model.bk_classification_id === draggedModel?.bk_classification_id
+      )
+      if (isSameGroup && willInsertAfter) {
+        return true
+      }
+      return !isSameGroup
+    },
+    handleModelDragAdd(event) {
+      const { modelId } = event.item.dataset
+      const newGroupId = event.to.dataset.groupId
+
+      this.updateModelGroup({ modelId, newGroupId })
+    },
+    getExportModels() {
+      return this.currentClassifications
+        .map(classification => ({
+          ...classification,
+          bk_objects: classification.bk_objects.filter(
+            model => this.modelSelectionState[model.bk_obj_id]
+          ),
+        }))
+        .filter(classification => classification.bk_objects.length !== 0)
+    },
+    handleModelGroupSelectionChange(classification, value) {
+      this.$set(
+        this.classificationSelectionState,
+        classification.bk_classification_id,
+        value
+      )
+      classification.bk_objects.forEach(model => {
+        const isChecked = value && !this.isBuiltinModel(model)
+        this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
+      })
+
+      this.generateAllModelSelection()
+    },
+    /**
+     * 检查模型分组下的模型是否为空
+     * @param {Object} classification 模型分组数据
+     */
+    isGroupEmpty(classification) {
+      return classification.bk_objects.length === 0
+    },
+    handleModelSelectionChange(classification) {
+      const isGroupChecked = classification.bk_objects.every(
+        model => this.modelSelectionState[model.bk_obj_id]
+      )
+
+      this.$set(
+        this.classificationSelectionState,
+        classification.bk_classification_id,
+        isGroupChecked
+      )
+
+      this.generateAllModelSelection()
+    },
+    // 根据当前模型的选择状态生成全选所有 checkbox 的选择状态。
+    generateAllModelSelection() {
+      const isAllModelChecked = this.currentClassifications.every(
+        classification =>
+          this.classificationSelectionState[classification.bk_classification_id]
+      )
+
+      this.isAllSelected = isAllModelChecked
+    },
+    toggleAllModelSelection(value) {
+      this.currentClassifications.forEach(classification => {
+        const isGroupChecked = !this.isGroupEmpty(classification) && value
+        this.$set(
+          this.classificationSelectionState,
+          classification.bk_classification_id,
+          isGroupChecked
+        )
+
+        classification.bk_objects.forEach(model => {
+          const isModelChecked = !this.isBuiltinModel(model) && value
+
+          this.$set(this.modelSelectionState, model.bk_obj_id, isModelChecked)
+        })
+      })
+    },
+    exportModel() {
+      this.isModelSelectable = true
+    },
+    doubleCheckCancelExport() {
+      if (this.exportModelsLen > 0) {
         this.$bkInfo({
           title: this.$t('确定离开页面？'),
           subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
-          confirmFn: () => {
-            next()
-          },
-          cancelFn: () => {
-            next(false)
-          }
+          confirmFn: this.cancelExport,
         })
       } else {
-        next()
+        this.cancelExport()
       }
     },
-    methods: {
-      ...mapMutations('objectModelClassify', [
-        'updateClassify',
-        'deleteClassify',
-      ]),
-      ...mapActions('objectModelClassify', [
-        'searchClassificationsObjects',
-        'getClassificationsObjectStatistics',
-        'createClassification',
-        'updateClassification',
-        'deleteClassification',
-      ]),
-      ...mapActions('objectModel', ['createObject', 'updateObject']),
-      inputChange(val) {
-        // 在输入过程中如果是中文输入法 不让modelSearchKey变化
-        if (this.isComposition) {
-          this.modelSearchKey = this.otherInputVal
-          return
-        }
-        this.modelSearchKey = val
-      },
-      inputCompositionStart() {
-        // 当前为中文输入法
-        this.isComposition = true
-        this.otherInputVal = this.modelSearchKey
-      },
-      inputCompositionEnd(event) {
-        // 兼容输入框输入中文突然变英文的情况
-        setTimeout(() => {
-          this.isComposition = false
-          this.modelSearchKey = event.target.value
-        }, 100)
-      },
-      loadAllModels() {
-        return this.searchClassificationsObjects({
-          params: {},
-          config: {
-            requestId: this.requestIds.searchClassifications
-          }
-        })
-      },
-      groupCommands(classification) {
-        return [
-          {
-            text: this.$t('新建模型'),
-            auth: {
-              type: this.$OPERATION.C_MODEL,
-              relation: [classification.id]
-            },
-            handler: () => this.showModelDialog(classification.bk_classification_id)
-          },
-          {
-            text: this.$t('编辑分组'),
-            visible: !this.isBuiltinClass(classification),
-            auth: {
-              type: this.$OPERATION.U_MODEL_GROUP,
-              relation: [classification.id]
-            },
-            handler: () => this.showGroupDialog(true, classification)
-          },
-          {
-            text: this.$t('删除分组'),
-            visible: !this.isBuiltinClass(classification),
-            disabled: Boolean(classification.bk_objects.length),
-            disabledTooltips: this.$t('分组下有模型，不能删除'),
-            auth: {
-              type: this.$OPERATION.D_MODEL_GROUP,
-              relation: [classification.id]
-            },
-            handler: () => this.deleteGroup(classification)
-          }
-        ]
-      },
-      toggleModelList(classification) {
-        this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
-      },
-      handleModelDragStart() {
-        this.isDragging = true
-      },
-      handleModelDragEnd() {
-        this.isDragging = false
-      },
-      handleModelDragMove(event) {
-        const draggedModel = event.draggedContext.element
-        const targetGroupModels = event.relatedContext.list
-        const { willInsertAfter } = event
-        const isSameGroup = targetGroupModels
-          .some(model => model.bk_classification_id === draggedModel?.bk_classification_id)
-        if (isSameGroup && willInsertAfter) {
-          return true
-        }
-        return !isSameGroup
-      },
-      handleModelDragAdd(event) {
-        const { modelId } = event.item.dataset
-        const newGroupId = event.to.dataset.groupId
-
-        this.updateModelGroup({ modelId, newGroupId })
-      },
-      getExportModels() {
-        return this.currentClassifications
-          .map(classification => ({
-            ...classification,
-            bk_objects: classification.bk_objects
-              .filter(model => this.modelSelectionState[model.bk_obj_id])
-          }))
-          .filter(classification => classification.bk_objects.length !== 0)
-      },
-      handleModelGroupSelectionChange(classification, value) {
-        this.$set(this.classificationSelectionState, classification.bk_classification_id, value)
-        classification.bk_objects.forEach((model) => {
-          const isChecked = value && !this.isBuiltinModel(model)
-          this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
-        })
-
-        this.generateAllModelSelection()
-      },
-      /**
-       * 检查模型分组下的模型是否为空
-       * @param {Object} classification 模型分组数据
-       */
-      isGroupEmpty(classification) {
-        return classification.bk_objects.length === 0
-      },
-      handleModelSelectionChange(classification) {
-        const isGroupChecked = classification.bk_objects.every(model => this.modelSelectionState[model.bk_obj_id])
-
-        this.$set(this.classificationSelectionState, classification.bk_classification_id, isGroupChecked)
-
-        this.generateAllModelSelection()
-      },
-      // 根据当前模型的选择状态生成全选所有 checkbox 的选择状态。
-      generateAllModelSelection() {
-        const isAllModelChecked = this.currentClassifications
-          .every(classification => this.classificationSelectionState[classification.bk_classification_id])
-
-        this.isAllSelected = isAllModelChecked
-      },
-      toggleAllModelSelection(value) {
-        this.currentClassifications.forEach((classification) => {
-          const isGroupChecked = !this.isGroupEmpty(classification) && value
-          this.$set(this.classificationSelectionState, classification.bk_classification_id, isGroupChecked)
-
-          classification.bk_objects.forEach((model) => {
-            const isModelChecked = !this.isBuiltinModel(model) && value
-
-            this.$set(this.modelSelectionState, model.bk_obj_id, isModelChecked)
-          })
-        })
-      },
-      exportModel() {
-        this.isModelSelectable = true
-      },
-      doubleCheckCancelExport() {
-        if (this.exportModelsLen > 0) {
-          this.$bkInfo({
-            title: this.$t('确定离开页面？'),
-            subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
-            confirmFn: this.cancelExport
-          })
-        } else {
-          this.cancelExport()
-        }
-      },
-      cancelExport() {
-        this.isModelSelectable = false
-        this.exportPaneVisible = false
-        this.modelSelectionState = {}
-        this.classificationSelectionState = {}
-        this.isAllSelected = false
+    cancelExport() {
+      this.isModelSelectable = false
+      this.exportPaneVisible = false
+      this.modelSelectionState = {}
+      this.classificationSelectionState = {}
+      this.isAllSelected = false
+      this.exportModels = this.getExportModels()
+      Bus.$emit('disable-customize-breadcrumbs')
+    },
+    doneExport() {
+      this.cancelExport()
+      this.loadAllModels()
+    },
+    toNextExportStep() {
+      if (this.exportModelsLen > 0) {
         this.exportModels = this.getExportModels()
-        Bus.$emit('disable-customize-breadcrumbs')
-      },
-      doneExport() {
-        this.cancelExport()
-        this.loadAllModels()
-      },
-      toNextExportStep() {
-        if (this.exportModelsLen > 0) {
-          this.exportModels = this.getExportModels()
-          this.exportPaneVisible = true
-          Bus.$emit('enable-customize-breadcrumbs', {
-            title: this.$t('导出模型'),
-            backward: () => {
-              this.doubleCheckCancelExport()
-            }
-          })
-        }
-      },
-      importModel() {
-        this.importPaneVisible = true
+        this.exportPaneVisible = true
         Bus.$emit('enable-customize-breadcrumbs', {
-          title: this.$t('导入模型'),
+          title: this.$t('导出模型'),
           backward: () => {
-            this.doubleCheckCancelImport()
-          }
-        })
-      },
-      cancelImport() {
-        this.importPaneVisible = false
-        Bus.$emit('disable-customize-breadcrumbs')
-      },
-      doneImport() {
-        this.importPaneVisible = false
-        this.loadAllModels()
-      },
-      doubleCheckCancelImport() {
-        this.$bkInfo({
-          title: this.$t('确定离开页面？'),
-          subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
-          confirmFn: this.cancelImport
-        })
-      },
-      isBuiltinClass(classification) {
-        return classification.bk_classification_type === 'inner'
-      },
-      isBuiltinModel(model) {
-        return model.ispre
-      },
-      showGroupDialog(isEdit, group) {
-        if (isEdit) {
-          this.groupDialog.data.id = group.id
-          this.groupDialog.title = this.$t('编辑分组')
-          this.groupDialog.data.bk_classification_id = group.bk_classification_id
-          this.groupDialog.data.bk_classification_name = group.bk_classification_name
-          this.groupDialog.data.id = group.id
-        } else {
-          this.groupDialog.title = this.$t('新建分组')
-          this.groupDialog.data.bk_classification_id = ''
-          this.groupDialog.data.bk_classification_name = ''
-          this.groupDialog.data.id = ''
-        }
-        this.groupDialog.isEdit = isEdit
-        this.groupDialog.isShow = true
-      },
-      hideGroupDialog() {
-        this.groupDialog.isShow = false
-        this.$validator.reset()
-      },
-      // 处理模型点击事件。在导出时改变模型选择状态；在非导出时跳转到模型详情。
-      handleModelClick(model, classification) {
-        if (this.isModelSelectable) {
-          const isChecked = !this.modelSelectionState[model.bk_obj_id] && !this.isBuiltinModel(model)
-          this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
-          this.$emit('model-selection-change', model, classification)
-        } else {
-          this.checkModelDetails(model)
-        }
-      },
-      checkModelDetails(model) {
-        this.$store.commit('objectModel/setActiveModel', model)
-        this.$routerActions.redirect({
-          name: MENU_MODEL_DETAILS,
-          params: {
-            modelId: model.bk_obj_id,
+            this.doubleCheckCancelExport()
           },
-          history: true,
         })
-      },
-      handleGoInstance(model) {
-        this.modelCreatedDialogVisible = false
-        if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
-          const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
-          this.$routerActions.redirect({
-            name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
-            query
-          })
-        } else {
-          this.$routerActions.redirect({
-            name: MENU_RESOURCE_INSTANCE,
+      }
+    },
+    importModel() {
+      this.importPaneVisible = true
+      Bus.$emit('enable-customize-breadcrumbs', {
+        title: this.$t('导入模型'),
+        backward: () => {
+          this.doubleCheckCancelImport()
+        },
+      })
+    },
+    cancelImport() {
+      this.importPaneVisible = false
+      Bus.$emit('disable-customize-breadcrumbs')
+    },
+    doneImport() {
+      this.importPaneVisible = false
+      this.loadAllModels()
+    },
+    doubleCheckCancelImport() {
+      this.$bkInfo({
+        title: this.$t('确定离开页面？'),
+        subTitle: this.$t('系统不会保存您所做的修改，确认要离开？'),
+        confirmFn: this.cancelImport,
+      })
+    },
+    isBuiltinClass(classification) {
+      return classification.bk_classification_type === 'inner'
+    },
+    isBuiltinModel(model) {
+      return model.ispre
+    },
+    showGroupDialog(isEdit, group) {
+      if (isEdit) {
+        this.groupDialog.data.id = group.id
+        this.groupDialog.title = this.$t('编辑分组')
+        this.groupDialog.data.bk_classification_id = group.bk_classification_id
+        this.groupDialog.data.bk_classification_name =
+          group.bk_classification_name
+        this.groupDialog.data.id = group.id
+      } else {
+        this.groupDialog.title = this.$t('新建分组')
+        this.groupDialog.data.bk_classification_id = ''
+        this.groupDialog.data.bk_classification_name = ''
+        this.groupDialog.data.id = ''
+      }
+      this.groupDialog.isEdit = isEdit
+      this.groupDialog.isShow = true
+    },
+    hideGroupDialog() {
+      this.groupDialog.isShow = false
+      this.$validator.reset()
+    },
+    // 处理模型点击事件。在导出时改变模型选择状态；在非导出时跳转到模型详情。
+    handleModelClick(model, classification) {
+      if (this.isModelSelectable) {
+        const isChecked =
+          !this.modelSelectionState[model.bk_obj_id] &&
+          !this.isBuiltinModel(model)
+        this.$set(this.modelSelectionState, model.bk_obj_id, isChecked)
+        this.$emit('model-selection-change', model, classification)
+      } else {
+        this.checkModelDetails(model)
+      }
+    },
+    checkModelDetails(model) {
+      this.$store.commit('objectModel/setActiveModel', model)
+      this.$routerActions.redirect({
+        name: MENU_MODEL_DETAILS,
+        params: {
+          modelId: model.bk_obj_id,
+        },
+        history: true,
+      })
+    },
+    handleGoInstance(model) {
+      this.modelCreatedDialogVisible = false
+      if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
+        const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
+        this.$routerActions.redirect({
+          name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
+          query,
+        })
+      } else {
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_INSTANCE,
+          params: {
+            objId: model.bk_obj_id,
+          },
+        })
+      }
+    },
+    isNoInstanceModel(modelId) {
+      // 不能直接查看实例的模型
+      const noInstanceModelIds = ['set', 'module']
+      return noInstanceModelIds.includes(modelId)
+    },
+    handleModelItemMouseEnter(model) {
+      if (!model) return
+
+      const isDisabledModel = model.bk_ispaused && !model.bk_ishidden
+
+      if (isDisabledModel || this.isNoInstanceModel(model.bk_obj_id)) return
+
+      this.getModelInstanceCount(model.bk_obj_id)
+    },
+    async getModelInstanceCount(modelId) {
+      // 存在则不再请求
+      if (has(this.modelStatisticsSet, modelId)) {
+        return
+      }
+
+      const requestId = `getModelInstanceCount_${modelId}`
+      this.requestIds.statistics.push(requestId)
+
+      // 取消上一个请求
+      const currentIndex = this.requestIds.statistics.findIndex(
+        rid => rid === requestId
+      )
+      const prevIndex = this.requestIds.statistics[currentIndex - 1]
+      if (prevIndex) {
+        this.$http.cancelRequest(prevIndex)
+      }
+
+      try {
+        const result = await this.$store.dispatch(
+          'objectCommonInst/searchInstanceCount',
+          {
             params: {
-              objId: model.bk_obj_id,
+              condition: { obj_ids: [modelId] },
             },
-          })
-        }
-      },
-      isNoInstanceModel(modelId) {
-        // 不能直接查看实例的模型
-        const noInstanceModelIds = ['set', 'module']
-        return noInstanceModelIds.includes(modelId)
-      },
-      handleModelItemMouseEnter(model) {
-        if (!model) return
+            config: {
+              requestId,
+              globalError: false,
+            },
+          }
+        )
 
-        const isDisabledModel = model.bk_ispaused && !model.bk_ishidden
+        const [data] = result
 
-        if (isDisabledModel || this.isNoInstanceModel(model.bk_obj_id)) return
-
-        this.getModelInstanceCount(model.bk_obj_id)
-      },
-      async getModelInstanceCount(modelId) {
-        // 存在则不再请求
-        if (has(this.modelStatisticsSet, modelId)) {
+        this.$set(this.modelStatisticsSet, data.bk_obj_id, {
+          error: data.error,
+          inst_count: data.inst_count,
+        })
+      } catch (err) {
+        console.error(err)
+      }
+    },
+    async saveGroup() {
+      try {
+        const res = await Promise.all([
+          this.$validator.validate('classifyId'),
+          this.$validator.validate('classifyName'),
+        ])
+        if (res.includes(false)) {
           return
         }
-
-        const requestId = `getModelInstanceCount_${modelId}`
-        this.requestIds.statistics.push(requestId)
-
-        // 取消上一个请求
-        const currentIndex = this.requestIds.statistics.findIndex(rid => rid === requestId)
-        const prevIndex = this.requestIds.statistics[currentIndex - 1]
-        if (prevIndex) {
-          this.$http.cancelRequest(prevIndex)
-        }
-
-        try {
-          const result = await this.$store.dispatch(
-            'objectCommonInst/searchInstanceCount',
-            {
-              params: {
-                condition: { obj_ids: [modelId] },
-              },
-              config: {
-                requestId,
-                globalError: false,
-              },
-            }
-          )
-
-          const [data] = result
-
-          this.$set(this.modelStatisticsSet, data.bk_obj_id, {
-            error: data.error,
-            inst_count: data.inst_count,
-          })
-        } catch (err) {
-          console.error(err)
-        }
-      },
-      async saveGroup() {
-        try {
-          const res = await Promise.all([
-            this.$validator.validate('classifyId'),
-            this.$validator.validate('classifyName')
-          ])
-          if (res.includes(false)) {
-            return
-          }
-          const params = {
-            bk_supplier_account: this.supplierAccount,
-            bk_classification_id: this.groupDialog.data.bk_classification_id,
-            bk_classification_name: this.groupDialog.data.bk_classification_name
-          }
-          if (this.groupDialog.isEdit) {
-            // eslint-disable-next-line no-unused-vars
-            const res = await this.updateClassification({
-              id: this.groupDialog.data.id,
-              params,
-              config: {
-                requestId: 'updateClassification'
-              }
-            })
-            this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id, isNewClassify: false } })
-          } else {
-            const res = await this.createClassification({
-              params,
-              config: { requestId: 'createClassification' }
-            })
-            this.updateClassify({ ...params, ...{ id: res.id, isNewClassify: true } })
-            this.$success(this.$t('新建成功'))
-          }
-          this.hideGroupDialog()
-          this.modelSearchKey = ''
-          const classificationDomList = this.$refs.classification.at(-2)
-          classificationDomList.scrollIntoView()
-        } catch (error) {
-          console.log(error)
-        }
-      },
-      deleteGroup(group) {
-        this.$bkInfo({
-          title: this.$t('确认要删除此分组'),
-          confirmFn: async () => {
-            try {
-              await this.deleteClassification({
-                id: group.id
-              })
-              this.$store.commit('objectModelClassify/deleteClassify', group.bk_classification_id)
-              this.modelSearchKey = ''
-              this.$success(this.$t('删除成功'))
-            } catch (error) {
-              console.log(error)
-            }
-          }
-        })
-      },
-      showModelDialog(groupId) {
-        this.modelDialog.groupId = groupId || ''
-        this.modelDialog.isShow = true
-      },
-      updateModelGroup({ modelId, newGroupId }) {
-        return this.updateObject({
-          id: modelId,
-          params: {
-            modifier: this.userName,
-            bk_classification_id: newGroupId
-          }
-        })
-          .then(() => {
-            this.$success(this.$t('修改成功'))
-            this.loadAllModels()
-          })
-      },
-      async saveModel(data) {
         const params = {
           bk_supplier_account: this.supplierAccount,
-          bk_obj_name: data.bk_obj_name,
-          bk_obj_icon: data.bk_obj_icon,
-          bk_classification_id: data.bk_classification_id,
-          bk_obj_id: data.bk_obj_id,
-          userName: this.userName,
+          bk_classification_id: this.groupDialog.data.bk_classification_id,
+          bk_classification_name: this.groupDialog.data.bk_classification_name,
         }
-        try {
-          const createModel = await this.createObject({ params, config: { requestId: 'createModel' } })
-          this.curCreateModel = createModel
-          this.modelCreatedDialogVisible = true
-          this.$http.cancel('post_searchClassificationsObjects')
-          this.getModelInstanceCount(params.bk_obj_id)
-          this.loadAllModels()
-          this.modelDialog.isShow = false
-          this.modelDialog.groupId = ''
-          this.modelSearchKey = ''
-        } catch (error) {
-          console.log(error)
+        if (this.groupDialog.isEdit) {
+          // eslint-disable-next-line no-unused-vars
+          const res = await this.updateClassification({
+            id: this.groupDialog.data.id,
+            params,
+            config: {
+              requestId: 'updateClassification',
+            },
+          })
+          this.updateClassify({
+            ...params,
+            ...{ id: this.groupDialog.data.id, isNewClassify: false },
+          })
+        } else {
+          const res = await this.createClassification({
+            params,
+            config: { requestId: 'createClassification' },
+          })
+          this.updateClassify({
+            ...params,
+            ...{ id: res.id, isNewClassify: true },
+          })
+          this.$success(this.$t('新建成功'))
         }
-      },
-      handleClearFilter() {
+        this.hideGroupDialog()
         this.modelSearchKey = ''
+        const classificationDomList = this.$refs.classification.at(-2)
+        classificationDomList.scrollIntoView()
+      } catch (error) {
+        console.log(error)
       }
     },
-  }
+    deleteGroup(group) {
+      this.$bkInfo({
+        title: this.$t('确认要删除此分组'),
+        confirmFn: async () => {
+          try {
+            await this.deleteClassification({
+              id: group.id,
+            })
+            this.$store.commit(
+              'objectModelClassify/deleteClassify',
+              group.bk_classification_id
+            )
+            this.modelSearchKey = ''
+            this.$success(this.$t('删除成功'))
+          } catch (error) {
+            console.log(error)
+          }
+        },
+      })
+    },
+    showModelDialog(groupId) {
+      this.modelDialog.groupId = groupId || ''
+      this.modelDialog.isShow = true
+    },
+    updateModelGroup({ modelId, newGroupId }) {
+      return this.updateObject({
+        id: modelId,
+        params: {
+          modifier: this.userName,
+          bk_classification_id: newGroupId,
+        },
+      }).then(() => {
+        this.$success(this.$t('修改成功'))
+        this.loadAllModels()
+      })
+    },
+    async saveModel(data) {
+      const params = {
+        bk_supplier_account: this.supplierAccount,
+        bk_obj_name: data.bk_obj_name,
+        bk_obj_icon: data.bk_obj_icon,
+        bk_classification_id: data.bk_classification_id,
+        bk_obj_id: data.bk_obj_id,
+        userName: this.userName,
+      }
+      try {
+        const createModel = await this.createObject({
+          params,
+          config: { requestId: 'createModel' },
+        })
+        this.curCreateModel = createModel
+        this.modelCreatedDialogVisible = true
+        this.$http.cancel('post_searchClassificationsObjects')
+        this.getModelInstanceCount(params.bk_obj_id)
+        this.loadAllModels()
+        this.modelDialog.isShow = false
+        this.modelDialog.groupId = ''
+        this.modelSearchKey = ''
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    handleClearFilter() {
+      this.modelSearchKey = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped src="./style.scss"></style>

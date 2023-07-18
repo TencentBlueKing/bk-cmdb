@@ -12,6 +12,7 @@
 
 /* eslint-disable no-unused-vars */
 import Vue from 'vue'
+
 import $http from '@/api'
 
 const state = {
@@ -22,12 +23,12 @@ const state = {
   edgeOptions: [],
   association: {
     show: false,
-    edge: null
+    edge: null,
   },
   addEdgePromise: {
     resolve: null,
-    reject: null
-  }
+    reject: null,
+  },
 }
 
 const getters = {
@@ -37,42 +38,48 @@ const getters = {
   options: state => state.options,
   edgeOptions: state => state.edgeOptions,
   association: state => state.association,
-  addEdgePromise: state => state.addEdgePromise
+  addEdgePromise: state => state.addEdgePromise,
 }
 
 const actions = {
   /**
-     * 查询模型拓扑
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 查询模型拓扑
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   searchModelAction({ commit, state, dispatch, rootGetters }, params) {
-    return $http.post('find/objecttopo/scope_type/global/scope_id/0', params).then(data => data.filter((node) => {
-      const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
-      return model && !model.bk_ispaused && !model.bk_ishidden
-    }))
+    return $http
+      .post('find/objecttopo/scope_type/global/scope_id/0', params)
+      .then(data =>
+        data.filter(node => {
+          const model = rootGetters['objectModelClassify/getModelById'](
+            node.bk_obj_id
+          )
+          return model && !model.bk_ispaused && !model.bk_ishidden
+        })
+      )
   },
 
   /**
-     * 批量更新节点位置信息
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 批量更新节点位置信息
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   updateModelAction({ commit, state, dispatch }, { params }) {
     return $http.post('update/objecttopo/scope_type/global/scope_id/0', params)
-  }
+  },
 }
 
 const mutations = {
   setTopologyData(state, topologyData) {
     const topologyMap = {}
-    topologyData.forEach((data) => {
+    topologyData.forEach(data => {
       topologyMap[data.bk_obj_id] = data
     })
     state.topologyData = topologyData
@@ -81,7 +88,7 @@ const mutations = {
   updateTopologyData(state, queue) {
     const updateQueue = Array.isArray(queue) ? queue : [queue]
     const { topologyMap } = state
-    updateQueue.forEach((data) => {
+    updateQueue.forEach(data => {
       const modelId = data.bk_obj_id
       Object.assign(topologyMap[modelId], data)
     })
@@ -99,7 +106,9 @@ const mutations = {
     const { topologyData } = state
     for (let i = 0; i < topologyData.length; i++) {
       const associations = topologyData[i].assts || []
-      const index = associations.findIndex(association => association.bk_inst_id === associationId)
+      const index = associations.findIndex(
+        association => association.bk_inst_id === associationId
+      )
       if (index > -1) {
         associations.splice(index, 1)
         break
@@ -120,7 +129,7 @@ const mutations = {
   },
   setAddEdgePromise(state, promise) {
     state.addEdgePromise = promise
-  }
+  },
 }
 
 export default {
@@ -128,5 +137,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

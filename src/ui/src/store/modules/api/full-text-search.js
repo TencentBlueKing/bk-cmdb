@@ -14,23 +14,23 @@
 import $http from '@/api'
 
 const state = {
-  searchHistory: []
+  searchHistory: [],
 }
 
 const getters = {}
 
 const actions = {
   /**
-     * 全文检索
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
+   * 全文检索
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Object} params 参数
+   * @return {Promise} promise 对象
+   */
   search({ commit, state, dispatch }, { params, config }) {
     return $http.post('find/full_text', params, config)
-  }
+  },
 }
 
 const mutations = {
@@ -54,7 +54,7 @@ const mutations = {
   clearSearchHistory(state) {
     localStorage.setItem('searchHistory', JSON.stringify([]))
     state.searchHistory = []
-  }
+  },
 }
 
 export default {
@@ -62,5 +62,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

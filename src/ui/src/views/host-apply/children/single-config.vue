@@ -15,26 +15,34 @@
     <template #header="{ sticky }">
       <top-steps :class="{ 'is-sticky': sticky }" :current="1" />
     </template>
-    <div :class="['single-config', { 'is-loading': $loading(requestIds.rules) }]"
-      v-bkloading="{ isLoading: $loading(requestIds.rules) }">
-
-      <service-template-tips class="config-tips" v-if="isTemplateMode" :service-template-ids="ids" />
+    <div
+      v-bkloading="{ isLoading: $loading(requestIds.rules) }"
+      :class="['single-config', { 'is-loading': $loading(requestIds.rules) }]">
+      <service-template-tips
+        v-if="isTemplateMode"
+        class="config-tips"
+        :service-template-ids="ids" />
 
       <div class="config-body">
-        <div :class="['choose-field', { 'not-choose': !checkedPropertyIdList.length }]">
+        <div
+          :class="[
+            'choose-field',
+            { 'not-choose': !checkedPropertyIdList.length },
+          ]">
           <div class="choose-hd">
-            <span class="label">{{$t('自动应用字段')}}</span>
-            <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
+            <span class="label">{{ $t('自动应用字段') }}</span>
+            <cmdb-auth
+              :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
               <bk-button
-                icon="plus"
                 slot-scope="{ disabled }"
+                icon="plus"
                 :disabled="disabled"
                 @click="handleChooseField">
-                {{$t('选择字段')}}
+                {{ $t('选择字段') }}
               </bk-button>
             </cmdb-auth>
           </div>
-          <div class="choose-bd" v-show="checkedPropertyIdList.length">
+          <div v-show="checkedPropertyIdList.length" class="choose-bd">
             <property-config-table
               ref="propertyConfigTable"
               :mode="mode"
@@ -50,14 +58,16 @@
       <div :class="['wrapper-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.U_HOST_APPLY, relation: [bizId] }">
           <bk-button
-            theme="primary"
             slot-scope="{ disabled }"
+            theme="primary"
             :disabled="nextButtonDisabled || disabled"
             @click="handleNextStep">
-            {{$t('下一步')}}
+            {{ $t('下一步') }}
           </bk-button>
         </cmdb-auth>
-        <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
+        <bk-button theme="default" @click="handleCancel">{{
+          $t('取消')
+        }}</bk-button>
       </div>
     </template>
     <host-property-modal
@@ -65,8 +75,8 @@
       :checked-list.sync="checkedPropertyIdList">
     </host-property-modal>
     <leave-confirm
-      reverse
       :id="leaveConfirmConfig.id"
+      reverse
       :active="leaveConfirmConfig.active"
       :title="$t('是否退出配置')"
       :content="$t('启用步骤未完成，退出将撤销当前操作')"
@@ -77,262 +87,279 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
-  import leaveConfirm from '@/components/ui/dialog/leave-confirm'
-  import topSteps from './top-steps.vue'
-  import hostPropertyModal from './host-property-modal'
-  import propertyConfigTable from './property-config-table'
-  import serviceTemplateTips from './service-template-tips.vue'
-  import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
-  import { CONFIG_MODE } from '@/service/service-template/index.js'
+import { mapGetters, mapState } from 'vuex'
 
-  export default {
-    name: 'single-config',
-    components: {
-      leaveConfirm,
-      topSteps,
-      hostPropertyModal,
-      propertyConfigTable,
-      serviceTemplateTips
-    },
-    props: {
-      mode: {
-        type: String,
-        required: true
-      },
-      // 模块或模板id
-      ids: {
-        type: Array,
-        default: () => ([])
-      }
-    },
-    data() {
-      return {
-        initRuleList: [],
-        checkedPropertyIdList: [],
-        nextButtonDisabled: true,
-        propertyModalVisible: false,
-        leaveConfirmConfig: {
-          id: 'singleConfig',
-          active: true
-        },
-        requestIds: {
-          rules: Symbol('rules')
-        }
-      }
-    },
-    computed: {
-      ...mapGetters('objectBiz', ['bizId']),
-      ...mapState('hostApply', ['ruleDraft']),
-      isModuleMode() {
-        return this.mode === CONFIG_MODE.MODULE
-      },
-      isTemplateMode() {
-        return this.mode === CONFIG_MODE.TEMPLATE
-      },
-      targetId() {
-        return this.ids[0]
-      },
-      hasRuleDraft() {
-        return Object.keys(this.ruleDraft).length > 0
-      },
-      targetIdsKey() {
-        const targetIdsKeys = {
-          [CONFIG_MODE.MODULE]: 'bk_module_ids',
-          [CONFIG_MODE.TEMPLATE]: 'service_template_ids'
-        }
-        return targetIdsKeys[this.mode]
-      },
-      targetIdKey() {
-        const targetIdKeys = {
-          [CONFIG_MODE.MODULE]: 'bk_module_id',
-          [CONFIG_MODE.TEMPLATE]: 'service_template_id'
-        }
-        return targetIdKeys[this.mode]
-      },
-      requestConfigs() {
-        return {
-          [this.requestIds.rules]: {
-            [CONFIG_MODE.MODULE]: {
-              action: 'hostApply/getRules',
-              payload: {
-                bizId: this.bizId,
-                params: {
-                  bk_module_ids: [this.targetId]
-                }
-              }
-            },
-            [CONFIG_MODE.TEMPLATE]: {
-              action: 'hostApply/getTemplateRules',
-              payload: {
-                params: {
-                  bk_biz_id: this.bizId,
-                  service_template_ids: [this.targetId]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    watch: {
-      checkedPropertyIdList() {
-        this.toggleNextButtonDisabled()
-      }
-    },
-    created() {
-      this.initData()
-    },
-    methods: {
-      async initData() {
-        try {
-          const ruleData = await this.getRules()
-          this.initRuleList = ruleData.info || []
-          const checkedPropertyIdList = this.initRuleList.map(item => item.bk_attribute_id)
-          this.checkedPropertyIdList = this.hasRuleDraft ? [...this.checkedPropertyIdList] : checkedPropertyIdList
-        } catch (e) {
-          console.log(e)
-        }
-      },
-      getRules() {
-        const requestConfig = this.requestConfigs[this.requestIds.rules][this.mode]
-        return this.$store.dispatch(requestConfig.action, {
-          config: {
-            requestId: this.requestIds.rules
-          },
-          ...requestConfig.payload
-        })
-      },
-      toggleNextButtonDisabled() {
-        this.$nextTick(() => {
-          if (this.$refs.propertyConfigTable) {
-            const { propertyRuleList } = this.$refs.propertyConfigTable
-            const everyTruthy = propertyRuleList.every((property) => {
-              // eslint-disable-next-line no-underscore-dangle
-              const validTruthy = property.__extra__.valid !== false
-              // eslint-disable-next-line no-underscore-dangle
-              let valueTruthy = property.__extra__.value
-              if (property.bk_property_type === 'bool') {
-                valueTruthy = true
-              } else if (property.bk_property_type === 'int') {
-                valueTruthy = valueTruthy !== null && String(valueTruthy)
-              }
-              return valueTruthy && validTruthy
-            })
-            this.nextButtonDisabled = !this.checkedPropertyIdList.length || !everyTruthy
-          }
-        })
-      },
-      async handleNextStep() {
-        const { propertyRuleList, removeRuleIds } = this.$refs.propertyConfigTable
-        const additionalRules = propertyRuleList.map(property => ({
-          bk_attribute_id: property.id,
-          [this.targetIdKey]: this.targetId,
-          // eslint-disable-next-line no-underscore-dangle
-          bk_property_value: property.__extra__.value
-        }))
+import { MENU_BUSINESS_HOST_APPLY_CONFIRM } from '@/dictionary/menu-symbol'
+import { CONFIG_MODE } from '@/service/service-template/index.js'
+import leaveConfirm from '@/components/ui/dialog/leave-confirm'
 
-        const savePropertyConfig = {
-          // 配置对象列表
-          [this.targetIdsKey]: [this.targetId],
-          // 附加的规则
-          additional_rules: additionalRules,
-          // 删除的规则，来源于编辑表格删除
-          remove_rule_ids: removeRuleIds
-        }
+import topSteps from './top-steps.vue'
+import hostPropertyModal from './host-property-modal'
+import propertyConfigTable from './property-config-table'
+import serviceTemplateTips from './service-template-tips.vue'
 
-        this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
-        this.$store.commit('hostApply/setRuleDraft', {
-          rules: propertyRuleList
-        })
-
-        // 使离开确认失活
-        this.leaveConfirmConfig.active = false
-        this.$nextTick(function () {
-          this.$routerActions.redirect({
-            name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
-            history: true
-          })
-        })
+export default {
+  name: 'single-config',
+  components: {
+    leaveConfirm,
+    topSteps,
+    hostPropertyModal,
+    propertyConfigTable,
+    serviceTemplateTips,
+  },
+  props: {
+    mode: {
+      type: String,
+      required: true,
+    },
+    // 模块或模板id
+    ids: {
+      type: Array,
+      default: () => [],
+    },
+  },
+  data() {
+    return {
+      initRuleList: [],
+      checkedPropertyIdList: [],
+      nextButtonDisabled: true,
+      propertyModalVisible: false,
+      leaveConfirmConfig: {
+        id: 'singleConfig',
+        active: true,
       },
-      handlePropertyValueChange() {
-        this.toggleNextButtonDisabled()
+      requestIds: {
+        rules: Symbol('rules'),
       },
-      handleChooseField() {
-        this.propertyModalVisible = true
-      },
-      handleCancel() {
-        this.$routerActions.back()
-      }
     }
-  }
+  },
+  computed: {
+    ...mapGetters('objectBiz', ['bizId']),
+    ...mapState('hostApply', ['ruleDraft']),
+    isModuleMode() {
+      return this.mode === CONFIG_MODE.MODULE
+    },
+    isTemplateMode() {
+      return this.mode === CONFIG_MODE.TEMPLATE
+    },
+    targetId() {
+      return this.ids[0]
+    },
+    hasRuleDraft() {
+      return Object.keys(this.ruleDraft).length > 0
+    },
+    targetIdsKey() {
+      const targetIdsKeys = {
+        [CONFIG_MODE.MODULE]: 'bk_module_ids',
+        [CONFIG_MODE.TEMPLATE]: 'service_template_ids',
+      }
+      return targetIdsKeys[this.mode]
+    },
+    targetIdKey() {
+      const targetIdKeys = {
+        [CONFIG_MODE.MODULE]: 'bk_module_id',
+        [CONFIG_MODE.TEMPLATE]: 'service_template_id',
+      }
+      return targetIdKeys[this.mode]
+    },
+    requestConfigs() {
+      return {
+        [this.requestIds.rules]: {
+          [CONFIG_MODE.MODULE]: {
+            action: 'hostApply/getRules',
+            payload: {
+              bizId: this.bizId,
+              params: {
+                bk_module_ids: [this.targetId],
+              },
+            },
+          },
+          [CONFIG_MODE.TEMPLATE]: {
+            action: 'hostApply/getTemplateRules',
+            payload: {
+              params: {
+                bk_biz_id: this.bizId,
+                service_template_ids: [this.targetId],
+              },
+            },
+          },
+        },
+      }
+    },
+  },
+  watch: {
+    checkedPropertyIdList() {
+      this.toggleNextButtonDisabled()
+    },
+  },
+  created() {
+    this.initData()
+  },
+  methods: {
+    async initData() {
+      try {
+        const ruleData = await this.getRules()
+        this.initRuleList = ruleData.info || []
+        const checkedPropertyIdList = this.initRuleList.map(
+          item => item.bk_attribute_id
+        )
+        this.checkedPropertyIdList = this.hasRuleDraft
+          ? [...this.checkedPropertyIdList]
+          : checkedPropertyIdList
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    getRules() {
+      const requestConfig =
+        this.requestConfigs[this.requestIds.rules][this.mode]
+      return this.$store.dispatch(requestConfig.action, {
+        config: {
+          requestId: this.requestIds.rules,
+        },
+        ...requestConfig.payload,
+      })
+    },
+    toggleNextButtonDisabled() {
+      this.$nextTick(() => {
+        if (this.$refs.propertyConfigTable) {
+          const { propertyRuleList } = this.$refs.propertyConfigTable
+          const everyTruthy = propertyRuleList.every(property => {
+            // eslint-disable-next-line no-underscore-dangle
+            const validTruthy = property.__extra__.valid !== false
+            // eslint-disable-next-line no-underscore-dangle
+            let valueTruthy = property.__extra__.value
+            if (property.bk_property_type === 'bool') {
+              valueTruthy = true
+            } else if (property.bk_property_type === 'int') {
+              valueTruthy = valueTruthy !== null && String(valueTruthy)
+            }
+            return valueTruthy && validTruthy
+          })
+          this.nextButtonDisabled =
+            !this.checkedPropertyIdList.length || !everyTruthy
+        }
+      })
+    },
+    async handleNextStep() {
+      const { propertyRuleList, removeRuleIds } = this.$refs.propertyConfigTable
+      const additionalRules = propertyRuleList.map(property => ({
+        bk_attribute_id: property.id,
+        [this.targetIdKey]: this.targetId,
+        // eslint-disable-next-line no-underscore-dangle
+        bk_property_value: property.__extra__.value,
+      }))
+
+      const savePropertyConfig = {
+        // 配置对象列表
+        [this.targetIdsKey]: [this.targetId],
+        // 附加的规则
+        additional_rules: additionalRules,
+        // 删除的规则，来源于编辑表格删除
+        remove_rule_ids: removeRuleIds,
+      }
+
+      this.$store.commit('hostApply/setPropertyConfig', savePropertyConfig)
+      this.$store.commit('hostApply/setRuleDraft', {
+        rules: propertyRuleList,
+      })
+
+      // 使离开确认失活
+      this.leaveConfirmConfig.active = false
+      this.$nextTick(function () {
+        this.$routerActions.redirect({
+          name: MENU_BUSINESS_HOST_APPLY_CONFIRM,
+          history: true,
+        })
+      })
+    },
+    handlePropertyValueChange() {
+      this.toggleNextButtonDisabled()
+    },
+    handleChooseField() {
+      this.propertyModalVisible = true
+    },
+    handleCancel() {
+      this.$routerActions.back()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-  .config-wrapper {
-    max-height: 100%;
-    @include scrollbar-y;
-    .wrapper-footer {
-      display: flex;
-      align-items: center;
-      height: 52px;
-      padding: 0 20px;
-      .bk-button {
-        min-width: 86px;
+.config-wrapper {
+  max-height: 100%;
 
-        & + .bk-button {
-          margin-left: 8px;
-        }
-      }
-      .auth-box + .bk-button {
-        margin-left: 8px;
-      }
-      &.is-sticky {
-        background-color: #fff;
-        border-top: 1px solid $borderColor;
-      }
-    }
-  }
-  .single-config {
+  @include scrollbar-y;
+
+  .wrapper-footer {
     display: flex;
-    flex-direction: column;
-    height: 100%;
+    align-items: center;
+    height: 52px;
     padding: 0 20px;
 
-    &.is-loading {
-      min-height: 160px;
-      width: 100%;
+    .bk-button {
+      min-width: 86px;
+
+      & + .bk-button {
+        margin-left: 8px;
+      }
     }
 
-    .config-tips {
-      margin-top: 12px;
+    .auth-box + .bk-button {
+      margin-left: 8px;
     }
 
-    .config-head,
-    .config-foot {
-      flex: none;
+    &.is-sticky {
+      background-color: #fff;
+      border-top: 1px solid $borderColor;
     }
-    .config-body {
-      width: 1066px;
-      flex: auto;
+  }
+}
+
+.single-config {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 20px;
+
+  &.is-loading {
+    min-height: 160px;
+    width: 100%;
+  }
+
+  .config-tips {
+    margin-top: 12px;
+  }
+
+  .config-head,
+  .config-foot {
+    flex: none;
+  }
+
+  .config-body {
+    width: 1066px;
+    flex: auto;
+  }
+}
+
+.choose-field {
+  padding: 16px 2px;
+
+  .choose-hd {
+    .label {
+      font-size: 14px;
+      color: #63656e;
+      margin-right: 8px;
     }
   }
 
-  .choose-field {
-    padding: 16px 2px;
-    .choose-hd {
-      .label {
-        font-size: 14px;
-        color: #63656e;
-        margin-right: 8px;
-      }
-    }
-    .choose-bd {
-      margin-top: 20px;
+  .choose-bd {
+    margin-top: 20px;
 
-      .form-element-content {
-        padding: 4px 0;
-      }
+    .form-element-content {
+      padding: 4px 0;
     }
   }
+}
 </style>

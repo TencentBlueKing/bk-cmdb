@@ -17,5 +17,5 @@ export default {
   },
   render(h) {
     return this.tagInput.defaultAlternate(h)
-  }
+  },
 }

@@ -11,95 +11,99 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, PropType, ref } from 'vue'
-  import GridLayout from '@/components/ui/other/grid-layout.vue'
-  import GridItem from '@/components/ui/other/grid-item.vue'
-  import EditableProperty from '@/components/ui/details/editable-property.vue'
+import type { PropType } from 'vue'
 
-  interface IProperty {
-    id: number,
-    'bk_property_id': string,
-    'bk_property_name': string,
-    'bk_isapi': boolean,
-    'bk_property_group': string
-  }
+import { computed, defineComponent, ref } from 'vue'
 
-  export default defineComponent({
-    components: {
-      GridLayout,
-      GridItem,
-      EditableProperty
+import GridItem from '@/components/ui/other/grid-item.vue'
+import GridLayout from '@/components/ui/other/grid-layout.vue'
+import EditableProperty from '@/components/ui/details/editable-property.vue'
+
+interface IProperty {
+  id: number
+  bk_property_id: string
+  bk_property_name: string
+  bk_isapi: boolean
+  bk_property_group: string
+}
+
+export default defineComponent({
+  components: {
+    GridLayout,
+    GridItem,
+    EditableProperty,
+  },
+  props: {
+    properties: {
+      type: Array as PropType<IProperty[]>,
+      default: () => [],
+      required: true,
     },
-    props: {
-      properties: {
-        type: Array as PropType<IProperty[]>,
-        default: [],
-        required: true
-      },
-      propertyIdKey: {
-        type: String,
-        default: 'bk_attribute_id'
-      },
-      instance: {
-        type: Object,
-        default: () => ({})
-      },
-      auth: Object,
-      loadingState: {
-        type: Array,
-        default: () => ([])
-      },
-      formElementSize: String,
-      maxColumns: Number
+    propertyIdKey: {
+      type: String,
+      default: 'bk_attribute_id',
     },
-    setup(props, { emit }) {
-      const editState = ref({
-        property: {},
-        value: ''
-      })
+    instance: {
+      type: Object,
+      default: () => ({}),
+    },
+    auth: Object,
+    loadingState: {
+      type: Array,
+      default: () => [],
+    },
+    formElementSize: String,
+    maxColumns: Number,
+  },
+  setup(props, { emit }) {
+    const editState = ref({
+      property: {},
+      value: '',
+    })
 
-      const configList = computed(() => {
-        const propertyIds = Object.keys(props.instance)
-        return propertyIds.map(id => ({
-          property: props.properties.find((item: IProperty) => item.id === Number(id)),
-          value: props.instance[id]
-        }))
-      })
+    const configList = computed(() => {
+      const propertyIds = Object.keys(props.instance)
+      return propertyIds.map(id => ({
+        property: props.properties.find(
+          (item: IProperty) => item.id === Number(id)
+        ),
+        value: props.instance[id],
+      }))
+    })
 
+    const isLoading = property => props.loadingState.includes(property)
 
-      const isLoading = property => props.loadingState.includes(property)
-
-      const exitEdit = () => {
-        editState.value.property = {}
-        editState.value.value = ''
-      }
-
-      const handleConfirmEdit = (changed: boolean) => {
-        if (changed) {
-          emit('save', editState.value)
-        }
-        exitEdit()
-      }
-
-      const handleConfirmDel = (property: IProperty) => {
-        emit('del', property)
-      }
-
-      const isRequired = (property) => {
-        const excludeType = ['bool']
-        return !excludeType.includes(property.bk_property_type)
-      }
-
-      return {
-        configList,
-        editState,
-        isLoading,
-        handleConfirmEdit,
-        handleConfirmDel,
-        isRequired
-      }
+    const exitEdit = () => {
+      editState.value.property = {}
+      editState.value.value = ''
     }
-  })
+
+    const handleConfirmEdit = (changed: boolean) => {
+      if (changed) {
+        emit('save', editState.value)
+      }
+      exitEdit()
+    }
+
+    const handleConfirmDel = (property: IProperty) => {
+      emit('del', property)
+    }
+
+    const isRequired = property => {
+      const excludeType = ['bool']
+      return !excludeType.includes(property.bk_property_type)
+    }
+
+    return {
+      configList,
+      editState,
+      isLoading,
+      handleConfirmEdit,
+      handleConfirmDel,
+      isRequired,
+    }
+  },
+})
 </script>
 
 <template>
@@ -111,9 +115,10 @@
       :min-height="28"
       :gap="12"
       :max-columns="maxColumns">
-      <grid-item class="form-item"
-        v-for="({ property, value }) in configList"
+      <grid-item
+        v-for="{ property, value } in configList"
         :key="property.id"
+        class="form-item"
         :label="property.bk_property_name"
         :label-width="160">
         <editable-property
@@ -128,14 +133,18 @@
           <template #more-action>
             <cmdb-auth :auth="auth" class="del-auth">
               <template #default="{ disabled }">
-                <bk-popconfirm v-if="!disabled"
+                <bk-popconfirm
+                  v-if="!disabled"
                   trigger="click"
                   :title="$t('确认删除该字段设置？')"
                   :content="$t('确认删除模板字段提示')"
                   @confirm="handleConfirmDel(property)">
                   <bk-icon type="delete" class="property-del-button"></bk-icon>
                 </bk-popconfirm>
-                <bk-icon v-else type="delete" class="property-del-button"></bk-icon>
+                <bk-icon
+                  v-else
+                  type="delete"
+                  class="property-del-button"></bk-icon>
               </template>
             </cmdb-auth>
           </template>
@@ -146,16 +155,17 @@
 </template>
 
 <style lang="scss" scoped>
-  .property-del-button {
-    cursor: pointer;
-    font-size: 16px !important;
-    margin-left: 8px;
+.property-del-button {
+  cursor: pointer;
+  font-size: 16px !important;
+  margin-left: 8px;
 
-    &:hover {
-      color: $primaryColor;
-    }
+  &:hover {
+    color: $primaryColor;
   }
-  .del-auth {
-    font-size: 0; // 迫使对齐
-  }
+}
+
+.del-auth {
+  font-size: 0; // 迫使对齐
+}
 </style>

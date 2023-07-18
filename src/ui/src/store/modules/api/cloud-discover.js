@@ -14,13 +14,9 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   searchCloudTask({ commit, state, dispatch }, { params, config }) {
@@ -61,12 +57,12 @@ const actions = {
 
   searchConfirmHistory({ commit, state, dispatch }, { params, config }) {
     return $http.post('/hosts/cloud/confirmHistory/search', params, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  actions
+  actions,
 }

@@ -11,7 +11,11 @@
  */
 
 import http from '@/api'
-import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
+import {
+  CONTAINER_OBJECTS,
+  CONTAINER_OBJECT_INST_KEYS,
+} from '@/dictionary/container.js'
+
 import { enableCount, onePageParams } from '../utils.js'
 
 const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NODE].ID
@@ -21,7 +25,7 @@ const find = async (params, config) => {
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post(api, enableCount(params, false), config),
-      http.post(api, enableCount(params, true), config)
+      http.post(api, enableCount(params, true), config),
     ])
     return { count, list }
   } catch (error) {
@@ -32,17 +36,28 @@ const find = async (params, config) => {
 
 const findById = async (id, bizId, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post(`findmany/kube/node/bk_biz_id/${bizId}`, enableCount({
-      filter: {
-        condition: 'AND',
-        rules: [{
-          field: ID_KEY,
-          operator: 'equal',
-          value: id
-        }]
-      },
-      page: onePageParams()
-    }, false), config)
+    const {
+      info: [instance = null],
+    } = await http.post(
+      `findmany/kube/node/bk_biz_id/${bizId}`,
+      enableCount(
+        {
+          filter: {
+            condition: 'AND',
+            rules: [
+              {
+                field: ID_KEY,
+                operator: 'equal',
+                value: id,
+              },
+            ],
+          },
+          page: onePageParams(),
+        },
+        false
+      ),
+      config
+    )
 
     return instance
   } catch (error) {
@@ -51,10 +66,15 @@ const findById = async (id, bizId, config = {}) => {
   }
 }
 
-const getOne = async (params, config = {}) => findById(params[ID_KEY], params.bizId, config)
+const getOne = async (params, config = {}) =>
+  findById(params[ID_KEY], params.bizId, config)
 
 const getCount = async (params, config = {}) => {
-  const { count } = await http.post(`findmany/kube/node/bk_biz_id/${params.bk_biz_id}`, enableCount(params, true), config)
+  const { count } = await http.post(
+    `findmany/kube/node/bk_biz_id/${params.bk_biz_id}`,
+    enableCount(params, true),
+    config
+  )
   return count
 }
 
@@ -62,5 +82,5 @@ export default {
   find,
   findById,
   getOne,
-  getCount
+  getCount,
 }

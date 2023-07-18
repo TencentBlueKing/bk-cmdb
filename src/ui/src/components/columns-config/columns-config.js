@@ -11,10 +11,12 @@
  */
 
 import Vue from 'vue'
+
 import i18n from '@/i18n'
 import store from '@/store'
-import ColumnsConfig from './columns-config.vue'
 import useSideslider from '@/hooks/use-sideslider'
+
+import ColumnsConfig from './columns-config.vue'
 export default {
   open({ props = {}, handler = {} }) {
     const vm = new Vue({
@@ -23,7 +25,7 @@ export default {
       data() {
         return {
           isShow: false,
-          localSelected: []
+          localSelected: [],
         }
       },
       created() {
@@ -32,56 +34,64 @@ export default {
         this.setChanged = setChanged
       },
       render(h) {
-        return h('bk-sideslider', {
-          ref: 'sideslider',
-          props: {
-            title: i18n.t('列表显示属性配置'),
-            width: 600,
-            isShow: this.isShow,
-            beforeClose: () => {
-              const refColumns = this.$refs.cmdbColumnsConfig
-              const { columnsChangedValues } = refColumns
-              if (columnsChangedValues()) {
-                this.setChanged(true)
-                return this.beforeClose(() => {
-                  this.isShow = false
-                })
-              }
-              this.isShow = false
-            }
+        return h(
+          'bk-sideslider',
+          {
+            ref: 'sideslider',
+            props: {
+              title: i18n.t('列表显示属性配置'),
+              width: 600,
+              isShow: this.isShow,
+              beforeClose: () => {
+                const refColumns = this.$refs.cmdbColumnsConfig
+                const { columnsChangedValues } = refColumns
+                if (columnsChangedValues()) {
+                  this.setChanged(true)
+                  return this.beforeClose(() => {
+                    this.isShow = false
+                  })
+                }
+                this.isShow = false
+              },
+            },
+            on: {
+              'update:isShow': isShow => {
+                this.isShow = isShow
+              },
+              'animation-end': () => {
+                this.$el &&
+                  this.$el.parentElement &&
+                  this.$el.parentElement.removeChild(this.$el)
+                this.$destroy()
+              },
+            },
           },
-          on: {
-            'update:isShow': (isShow) => {
-              this.isShow = isShow
-            },
-            'animation-end': () => {
-              this.$el && this.$el.parentElement && this.$el.parentElement.removeChild(this.$el)
-              this.$destroy()
-            }
-          }
-        }, [h(ColumnsConfig, {
-          props,
-          ref: 'cmdbColumnsConfig',
-          slot: 'content',
-          on: {
-            cancel: () => {
-              this.isShow = false
-            },
-            apply: (properties) => {
-              this.isShow = false
-              handler.apply && handler.apply(properties)
-            },
-            reset: () => {
-              this.isShow = false
-              handler.reset && handler.reset()
-            }
-          }
-        })])
-      }
+          [
+            h(ColumnsConfig, {
+              props,
+              ref: 'cmdbColumnsConfig',
+              slot: 'content',
+              on: {
+                cancel: () => {
+                  this.isShow = false
+                },
+                apply: properties => {
+                  this.isShow = false
+                  handler.apply && handler.apply(properties)
+                },
+                reset: () => {
+                  this.isShow = false
+                  handler.reset && handler.reset()
+                },
+              },
+            }),
+          ]
+        )
+      },
     })
     vm.$mount()
     document.body.appendChild(vm.$el)
     vm.isShow = true
     return vm
-  }
+  },
 }

@@ -22,7 +22,7 @@ export const changeDocumentTitle = (appendTitles = []) => {
   const { name, separator } = store.state.globalConfig.config.site
   const { matched } = router.currentRoute
   let matchedNames = [name]
-  matched.forEach((match) => {
+  matched.forEach(match => {
     if (match?.meta?.menu?.i18n) {
       matchedNames.push(t(match.meta.menu.i18n))
     }

@@ -14,11 +14,20 @@
  * 全局配置数据模型，提供获取全局配置、更新全局配置的能力
  * 接口数据在这里做了适配 UI 的处理，后续服务接口有更新，直接在这里更新模型即可。
  */
-import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule } from '@/service/global-config'
 import to from 'await-to-js'
 import { Base64 } from 'js-base64'
-import { language } from '@/i18n'
 import cloneDeep from 'lodash/cloneDeep'
+
+import { language } from '@/i18n'
+import {
+  getCurrentConfig,
+  getDefaultConfig,
+  updateConfig,
+  updateIdleSet,
+  createIdleModule,
+  updateIdleModule,
+  deleteIdleModule,
+} from '@/service/global-config'
 
 const initialConfig = {
   backend: {
@@ -26,11 +35,11 @@ const initialConfig = {
   },
   site: {
     name: '蓝鲸配置平台', // 网站名
-    separator: '|' // 网站名称路由分隔符
+    separator: '|', // 网站名称路由分隔符
   },
   footer: {
     contact: '', // 联系方式
-    copyright: '' // 脚部版权
+    copyright: '', // 脚部版权
   },
   validationRules: [], // 用户自定义验证规则
   set: '', // 集群名称
@@ -38,8 +47,8 @@ const initialConfig = {
     idle: '', // 空闲机
     fault: '', // 故障机
     recycle: '', // 待回收
-    userModules: [] // 用户自定义模块
-  }
+    userModules: [], // 用户自定义模块
+  },
 }
 
 // 备份的远程数据，在国际化处理时用来拼装出全量数据。
@@ -51,7 +60,7 @@ const state = () => ({
   loading: false, // 加载中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
   config: cloneDeep(initialConfig), // 用户自定义配置，
-  defaultConfig: cloneDeep(initialConfig) // 默认配置，用于恢复初始化
+  defaultConfig: cloneDeep(initialConfig), // 默认配置，用于恢复初始化
 })
 
 /**
@@ -64,24 +73,28 @@ const unserializeConfig = (remoteData, lang) => {
   const newState = {
     backend: {
       maxBizTopoLevel: remoteData.backend.max_biz_topo_level,
-      snapshotBizName: remoteData.backend.snapshot_biz_name
+      snapshotBizName: remoteData.backend.snapshot_biz_name,
     },
     site: {
       name: remoteData.site.name.i18n[lang],
-      separator: remoteData.site.separator
+      separator: remoteData.site.separator,
     },
     footer: {
       contact: remoteData.footer.contact.i18n[lang],
-      copyright: remoteData.footer.copyright.i18n[lang]
+      copyright: remoteData.footer.copyright.i18n[lang],
     },
-    validationRules: unserializeValidationRules(remoteData.validation_rules, lang),
+    validationRules: unserializeValidationRules(
+      remoteData.validation_rules,
+      lang
+    ),
     set: remoteData.set,
     idlePool: {
       idle: remoteData.idle_pool.idle,
       fault: remoteData.idle_pool.fault,
       recycle: remoteData.idle_pool.recycle,
-      userModules: unserializeUserModules(remoteData.idle_pool.user_modules) || []
-    }
+      userModules:
+        unserializeUserModules(remoteData.idle_pool.user_modules) || [],
+    },
   }
 
   return newState
@@ -103,26 +116,26 @@ const serializeState = (newConfig, lang) => {
         ...currentConfigBackup.site.name,
         i18n: {
           ...currentConfigBackup.site.name.i18n,
-          [lang]: newConfig.site.name
-        }
+          [lang]: newConfig.site.name,
+        },
       },
-      separator: newConfig.site.separator
+      separator: newConfig.site.separator,
     },
     footer: {
       contact: {
         ...currentConfigBackup.footer.contact,
         i18n: {
           ...currentConfigBackup.footer.contact.i18n,
-          [lang]: newConfig.footer.contact
-        }
+          [lang]: newConfig.footer.contact,
+        },
       },
       copyright: {
         ...currentConfigBackup.footer.copyright,
         i18n: {
           ...currentConfigBackup.footer.copyright.i18n,
-          [lang]: newConfig.footer.copyright
-        }
-      }
+          [lang]: newConfig.footer.copyright,
+        },
+      },
     },
     validation_rules: serializeValidationRules(newConfig.validationRules, lang),
     set: newConfig.set,
@@ -130,8 +143,9 @@ const serializeState = (newConfig, lang) => {
       idle: newConfig.idlePool.idle,
       fault: newConfig.idlePool.fault,
       recycle: newConfig.idlePool.recycle,
-      user_modules: serializeUserModules(newConfig.idlePool.userModules, lang) || null
-    }
+      user_modules:
+        serializeUserModules(newConfig.idlePool.userModules, lang) || null,
+    },
   }
 
   return data
@@ -145,7 +159,7 @@ const serializeState = (newConfig, lang) => {
  */
 const unserializeValidationRules = (validationRules, lang) => {
   const newRules = {}
-  Object.keys(validationRules).forEach((key) => {
+  Object.keys(validationRules).forEach(key => {
     newRules[key] = validationRules[key]
     try {
       newRules[key].value = Base64.decode(newRules[key].value)
@@ -165,7 +179,7 @@ const unserializeValidationRules = (validationRules, lang) => {
  */
 const serializeValidationRules = (rules, lang) => {
   const newRules = {}
-  Object.keys(rules).forEach((key) => {
+  Object.keys(rules).forEach(key => {
     newRules[key] = rules[key]
     try {
       newRules[key].value = Base64.encode(newRules[key].value)
@@ -182,20 +196,21 @@ const serializeValidationRules = (rules, lang) => {
  * 反序列化用户自定义模块数据为前端 UI 可用数据
  * @param {Array} userModules 用户自定义模块数组
  */
-const unserializeUserModules = (userModules = []) => userModules?.map(userModule => ({
-  moduleKey: userModule.module_key,
-  moduleName: userModule.module_name
-}))
+const unserializeUserModules = (userModules = []) =>
+  userModules?.map(userModule => ({
+    moduleKey: userModule.module_key,
+    moduleName: userModule.module_name,
+  }))
 
 /**
  * 序列化用户自定义模块数组
  * @param {Array} userModules 用户自定义模块数组
  */
-const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey, moduleName }) => ({
-  module_key: moduleKey,
-  module_name: moduleName
-}))
-
+const serializeUserModules = (userModules = []) =>
+  userModules?.map(({ moduleKey, moduleName }) => ({
+    module_key: moduleKey,
+    module_name: moduleName,
+  }))
 
 const mutations = {
   setConfig(state, config) {
@@ -225,10 +240,10 @@ const actions = {
    */
   fetchDefaultConfig({ commit, state }) {
     return getDefaultConfig()
-      .then((config) => {
+      .then(config => {
         commit('setDefaultConfig', unserializeConfig(config, state.language))
       })
-      .catch((err) => {
+      .catch(err => {
         throw Error(`获取默认全局设置出现错误：${err.message}`)
       })
   },
@@ -239,11 +254,11 @@ const actions = {
   fetchConfig({ dispatch, commit, state }) {
     commit('setLoading', true)
     return getCurrentConfig()
-      .then((config) => {
+      .then(config => {
         currentConfigBackup = Object.freeze(cloneDeep(config))
         commit('setConfig', unserializeConfig(config, state.language))
       })
-      .catch((err) => {
+      .catch(err => {
         dispatch('clearConfig')
         throw Error(`获取全局设置出现错误：${err.message}`)
       })
@@ -261,10 +276,12 @@ const actions = {
     return new Promise(async (resolve, reject) => {
       const newConfig = {
         ...cloneDeep(state.config),
-        ...cloneDeep(config)
+        ...cloneDeep(config),
       }
       commit('setUpdating', true)
-      const [updateErr] = await to(updateConfig(serializeState(newConfig, state.language)))
+      const [updateErr] = await to(
+        updateConfig(serializeState(newConfig, state.language))
+      )
 
       if (updateErr) {
         reject(updateErr)
@@ -293,10 +310,12 @@ const actions = {
    */
   updateIdleSet({ dispatch }, { setKey, setName }) {
     return new Promise(async (resolve, reject) => {
-      const [updateErr] = await to(updateIdleSet({
-        setKey,
-        setName
-      }))
+      const [updateErr] = await to(
+        updateIdleSet({
+          setKey,
+          setName,
+        })
+      )
 
       if (updateErr) {
         reject(updateErr)
@@ -321,14 +340,18 @@ const actions = {
    */
   createIdleModule({ dispatch }, { moduleKey, moduleName }) {
     return new Promise(async (resolve, reject) => {
-      const [updateErr] = await to(createIdleModule({
-        moduleKey,
-        moduleName
-      }))
+      const [updateErr] = await to(
+        createIdleModule({
+          moduleKey,
+          moduleName,
+        })
+      )
 
       if (updateErr) {
         reject(updateErr)
-        throw Error(`创建空闲机模块「${moduleKey}」出现错误：${updateErr.message}`)
+        throw Error(
+          `创建空闲机模块「${moduleKey}」出现错误：${updateErr.message}`
+        )
       }
 
       const [fetchErr] = await to(dispatch('fetchConfig'))
@@ -348,14 +371,18 @@ const actions = {
    */
   deleteIdleModule({ dispatch }, { moduleKey, moduleName }) {
     return new Promise(async (resolve, reject) => {
-      const [deleteErr] = await to(deleteIdleModule({
-        moduleKey,
-        moduleName
-      }))
+      const [deleteErr] = await to(
+        deleteIdleModule({
+          moduleKey,
+          moduleName,
+        })
+      )
 
       if (deleteErr) {
         reject(deleteErr)
-        throw Error(`删除空闲机模块「${moduleKey}」出现错误：${deleteErr.message}`)
+        throw Error(
+          `删除空闲机模块「${moduleKey}」出现错误：${deleteErr.message}`
+        )
       }
 
       const [fetchErr] = await to(dispatch('fetchConfig'))
@@ -376,14 +403,18 @@ const actions = {
    */
   updateIdleModule({ dispatch }, { moduleKey, moduleName }) {
     return new Promise(async (resolve, reject) => {
-      const [updateErr] = await to(updateIdleModule({
-        moduleKey,
-        moduleName
-      }))
+      const [updateErr] = await to(
+        updateIdleModule({
+          moduleKey,
+          moduleName,
+        })
+      )
 
       if (updateErr) {
         reject(updateErr)
-        throw Error(`更新空闲机模块「${moduleKey}」出现错误：${updateErr.message}`)
+        throw Error(
+          `更新空闲机模块「${moduleKey}」出现错误：${updateErr.message}`
+        )
       }
 
       const [fetchErr] = await to(dispatch('fetchConfig'))
@@ -402,5 +433,5 @@ export default {
   namespaced: true,
   state,
   actions,
-  mutations
+  mutations,
 }

@@ -10,8 +10,11 @@
  * limitations under the License.
  */
 
+import {
+  MENU_BUSINESS,
+  MENU_BUSINESS_SERVICE_CATEGORY,
+} from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_SERVICE_CATEGORY } from '@/dictionary/menu-symbol'
 
 export default {
   name: MENU_BUSINESS_SERVICE_CATEGORY,
@@ -20,7 +23,7 @@ export default {
   meta: new Meta({
     owner: MENU_BUSINESS,
     menu: {
-      i18n: '服务分类'
-    }
-  })
+      i18n: '服务分类',
+    },
+  }),
 }

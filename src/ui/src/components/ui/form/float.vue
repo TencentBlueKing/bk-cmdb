@@ -11,93 +11,98 @@
 -->
 
 <template>
-  <bk-input class="cmdb-form-float" :type="inputType" ref="input"
+  <bk-input
+    ref="input"
+    v-model.number="localValue"
+    class="cmdb-form-float"
+    :type="inputType"
     :placeholder="placeholder || $t('请输入浮点数')"
     :value="value"
     :disabled="disabled"
     :precision="precision"
-    v-model.number="localValue"
     v-bind="$attrs"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">
-    <template slot="append" v-if="unit">
-      <div class="unit" :title="unit">{{unit}}</div>
+    <template v-if="unit" slot="append">
+      <div class="unit" :title="unit">{{ unit }}</div>
     </template>
   </bk-input>
 </template>
 
 <script>
-  export default {
-    name: 'cmdb-form-float',
-    props: {
-      value: {
-        default: null,
-        validator(val) {
-          return ['string', 'number'].includes(typeof val) || val === null
-        }
+export default {
+  name: 'cmdb-form-float',
+  props: {
+    value: {
+      default: null,
+      validator(val) {
+        return ['string', 'number'].includes(typeof val) || val === null
       },
-      disabled: {
-        type: Boolean,
-        default: false
-      },
-      placeholder: {
-        type: String,
-        default: ''
-      },
-      unit: {
-        type: String,
-        default: ''
-      },
-      autoCheck: {
-        type: Boolean,
-        default: true
-      },
-      inputType: {
-        type: String,
-        default: 'text'
-      },
-      precision: {
-        type: Number,
-        default: 5
-      }
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value === null ? '' : this.value
-        },
-        set(value) {
-          const emitValue = value === '' ? null : value
-          this.$emit('input', emitValue)
-          this.$emit('change', emitValue)
-          this.$emit('on-change', emitValue)
-        }
-      }
+    disabled: {
+      type: Boolean,
+      default: false,
     },
-    methods: {
-      handleInput(value, event) {
-        const originalValue = String(event.target.value).trim()
-        const floatValue = originalValue.length ? Number(event.target.value.trim()) : null
-        if (isNaN(floatValue)) {
-          value = this.autoCheck ? null : value
-        } else {
-          value = floatValue
-        }
-        this.$refs.input.curValue = value
-        this.localValue = value
+    placeholder: {
+      type: String,
+      default: '',
+    },
+    unit: {
+      type: String,
+      default: '',
+    },
+    autoCheck: {
+      type: Boolean,
+      default: true,
+    },
+    inputType: {
+      type: String,
+      default: 'text',
+    },
+    precision: {
+      type: Number,
+      default: 5,
+    },
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value === null ? '' : this.value
       },
-      handleChange() {
-        this.$emit('on-change', this.localValue)
+      set(value) {
+        const emitValue = value === '' ? null : value
+        this.$emit('input', emitValue)
+        this.$emit('change', emitValue)
+        this.$emit('on-change', emitValue)
       },
-      handleEnter() {
-        this.$emit('enter', this.localValue)
-      },
-      focus() {
-        this.$el.querySelector('input').focus()
+    },
+  },
+  methods: {
+    handleInput(value, event) {
+      const originalValue = String(event.target.value).trim()
+      const floatValue = originalValue.length
+        ? Number(event.target.value.trim())
+        : null
+      if (isNaN(floatValue)) {
+        value = this.autoCheck ? null : value
+      } else {
+        value = floatValue
       }
-    }
-  }
+      this.$refs.input.curValue = value
+      this.localValue = value
+    },
+    handleChange() {
+      this.$emit('on-change', this.localValue)
+    },
+    handleEnter() {
+      this.$emit('enter', this.localValue)
+    },
+    focus() {
+      this.$el.querySelector('input').focus()
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
@@ -105,7 +110,9 @@
   .unit {
     max-width: 120px;
     font-size: 12px;
+
     @include ellipsis;
+
     padding: 0 10px;
     height: 30px;
     line-height: 30px;
@@ -113,7 +120,7 @@
     color: #63656e;
   }
 
-  &[size="small"] {
+  &[size='small'] {
     .unit {
       height: 24px;
       line-height: 24px;

@@ -33,6 +33,6 @@ export default {
     },
     search(context, { bizId, params, config }) {
       return $http.post(`dynamicgroup/search/${bizId}`, params, config)
-    }
-  }
+    },
+  },
 }

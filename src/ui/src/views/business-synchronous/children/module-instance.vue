@@ -11,61 +11,64 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent } from 'vue'
-  import ProcessDifference from './process-difference.vue'
-  import PropertyDifference from './property-difference.vue'
+import { computed, defineComponent } from 'vue'
 
-  export default defineComponent({
-    components: {
-      ProcessDifference,
-      PropertyDifference
-    },
-    props: {
-      moduleId: {
-        type: Number,
-        required: true
-      },
-      templateId: {
-        type: Number,
-        required: true
-      },
-      topoPath: {
-        type: String,
-        default: '',
-        required: true
-      },
-      propertyDiff: {
-        type: Array,
-        required: true
-      },
-      processDiff: {
-        type: Array,
-        required: true
-      },
-      modelProperty: {
-        type: Object,
-        default: () => ({}),
-        required: true
-      },
-      collapseSize: {
-        type: String
-      }
-    },
-    setup(props) {
-      const hasPropertyDiff = computed(() => props.propertyDiff?.length > 0)
-      const hasProcessDiff = computed(() => props.processDiff?.length > 0)
+import ProcessDifference from './process-difference.vue'
+import PropertyDifference from './property-difference.vue'
 
-      return {
-        hasPropertyDiff,
-        hasProcessDiff
-      }
+export default defineComponent({
+  components: {
+    ProcessDifference,
+    PropertyDifference,
+  },
+  props: {
+    moduleId: {
+      type: Number,
+      required: true,
+    },
+    templateId: {
+      type: Number,
+      required: true,
+    },
+    topoPath: {
+      type: String,
+      default: '',
+      required: true,
+    },
+    propertyDiff: {
+      type: Array,
+      required: true,
+    },
+    processDiff: {
+      type: Array,
+      required: true,
+    },
+    modelProperty: {
+      type: Object,
+      default: () => ({}),
+      required: true,
+    },
+    collapseSize: {
+      type: String,
+    },
+  },
+  setup(props) {
+    const hasPropertyDiff = computed(() => props.propertyDiff?.length > 0)
+    const hasProcessDiff = computed(() => props.processDiff?.length > 0)
+
+    return {
+      hasPropertyDiff,
+      hasProcessDiff,
     }
-  })
+  },
+})
 </script>
 
 <template>
   <div class="module-instance">
-    <cmdb-collapse class="property-container" v-if="hasPropertyDiff"
+    <cmdb-collapse
+      v-if="hasPropertyDiff"
+      class="property-container"
       :label="$t('属性变更')"
       :size="collapseSize"
       arrow-type="filled">
@@ -76,7 +79,9 @@
       </property-difference>
     </cmdb-collapse>
 
-    <cmdb-collapse class="process-container" v-if="hasProcessDiff"
+    <cmdb-collapse
+      v-if="hasProcessDiff"
+      class="process-container"
       :label="$t('进程信息变更')"
       :size="collapseSize"
       arrow-type="filled">
@@ -92,6 +97,8 @@
 </template>
 
 <style lang="scss" scoped>
+/* stylelint-disable no-duplicate-selectors */
+
 .module-instance {
   .property-container {
     .property-difference {

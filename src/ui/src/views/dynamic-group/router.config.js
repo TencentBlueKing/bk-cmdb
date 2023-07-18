@@ -10,9 +10,12 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_CUSTOM_QUERY } from '@/dictionary/menu-symbol'
+import {
+  MENU_BUSINESS,
+  MENU_BUSINESS_CUSTOM_QUERY,
+} from '@/dictionary/menu-symbol'
 import { OPERATION } from '@/dictionary/iam-auth'
+import Meta from '@/router/meta'
 
 export default {
   name: MENU_BUSINESS_CUSTOM_QUERY,
@@ -21,10 +24,13 @@ export default {
   meta: new Meta({
     owner: MENU_BUSINESS,
     menu: {
-      i18n: '动态分组'
+      i18n: '动态分组',
     },
     auth: {
-      view: to => ({ type: OPERATION.R_CUSTOM_QUERY, relation: [to.params.bizId] })
-    }
-  })
+      view: to => ({
+        type: OPERATION.R_CUSTOM_QUERY,
+        relation: [to.params.bizId],
+      }),
+    },
+  }),
 }

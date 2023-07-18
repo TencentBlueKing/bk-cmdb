@@ -13,48 +13,59 @@
 <template>
   <div class="verification-layout">
     <div class="options">
-      <cmdb-auth class="inline-block-middle"
+      <cmdb-auth
         v-if="!isTopoModel && isShowOptionBtn"
+        class="inline-block-middle"
         :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
         @update-auth="handleReceiveAuth">
-        <bk-button slot-scope="{ disabled }"
+        <bk-button
+          slot-scope="{ disabled }"
           class="create-btn"
           theme="primary"
           :disabled="isReadOnly || disabled"
           @click="createVerification">
-          {{$t('新建校验')}}
+          {{ $t('新建校验') }}
         </bk-button>
       </cmdb-auth>
     </div>
     <bk-table
-      class="verification-table"
       v-bkloading="{
-        isLoading: $loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])
+        isLoading: $loading([
+          'searchObjectUniqueConstraints',
+          'deleteObjectUniqueConstraints',
+        ]),
       }"
+      class="verification-table"
       :data="table.list"
       :max-height="$APP.height - 320"
       :row-style="{
-        cursor: 'pointer'
+        cursor: 'pointer',
       }"
       @cell-click="handleShowDetails">
-      <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
+      <bk-table-column
+        :label="$t('校验规则')"
+        class-name="is-highlight"
+        show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{getRuleName(row.keys)}}
+          {{ getRuleName(row.keys) }}
         </template>
       </bk-table-column>
-      <bk-table-column prop="operation"
+      <bk-table-column
         v-if="updateAuth && !isTopoModel"
+        prop="operation"
         :label="$t('操作')">
         <template slot-scope="{ row }">
-          <button class="text-primary mr10 operation-btn"
+          <button
+            class="text-primary mr10 operation-btn"
             :disabled="!isEditable(row)"
             @click.stop="editVerification(row)">
-            {{$t('编辑')}}
+            {{ $t('编辑') }}
           </button>
-          <button class="text-primary operation-btn"
+          <button
+            class="text-primary operation-btn"
             :disabled="!isEditable(row)"
             @click.stop="deleteVerification(row)">
-            {{$t('删除')}}
+            {{ $t('删除') }}
           </button>
         </template>
       </bk-table-column>
@@ -67,12 +78,12 @@
       :is-show.sync="slider.isShow"
       :before-close="handleSliderBeforeClose">
       <the-verification-detail
+        v-if="slider.isShow"
+        :id="slider.id"
         ref="verificationForm"
         slot="content"
-        v-if="slider.isShow"
         :attribute-list="attributeList"
         :rule-list="table.list"
-        :id="slider.id"
         :readonly="slider.readonly"
         @save="saveVerification"
         @cancel="handleSliderBeforeClose"
@@ -83,191 +94,201 @@
 </template>
 
 <script>
-  import theVerificationDetail from './verification-detail'
-  import { mapActions, mapGetters } from 'vuex'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import { mapActions, mapGetters } from 'vuex'
 
-  export default {
-    components: {
-      theVerificationDetail
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
+import theVerificationDetail from './verification-detail'
+
+export default {
+  components: {
+    theVerificationDetail,
+  },
+  props: {
+    modelId: {
+      type: Number,
+      default: null,
     },
-    props: {
-      modelId: {
-        type: Number,
-        default: null
-      }
-    },
-    data() {
-      return {
-        slider: {
-          isShow: false,
-          id: null,
-          readonly: false
-        },
-        table: {
-          list: [],
-          stuff: {
-            type: 'default',
-            payload: {
-              emptyText: this.$t('bk.table.emptyText')
-            }
-          }
-        },
-        attributeList: [],
-        updateAuth: false
-      }
-    },
-    computed: {
-      ...mapGetters('objectModel', [
-        'activeModel'
-      ]),
-      ...mapGetters('objectMainLineModule', ['isMainLine']),
-      isTopoModel() {
-        // 主线模型除主机外
-        return this.isMainLine(this.activeModel) && this.activeModel.bk_obj_id !== BUILTIN_MODELS.HOST
+  },
+  data() {
+    return {
+      slider: {
+        isShow: false,
+        id: null,
+        readonly: false,
       },
-      isReadOnly() {
-        if (this.activeModel) {
-          return this.activeModel.bk_ispaused
-        }
-        return false
-      },
-      isShowOptionBtn() {
-        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
-      }
-    },
-    watch: {
-      activeModel: {
-        immediate: true,
-        async handler(activeModel) {
-          if (activeModel.bk_obj_id) {
-            await this.initAttrList()
-            this.searchVerification()
-          }
-        }
-      }
-    },
-    methods: {
-      ...mapActions('objectModelProperty', [
-        'searchObjectAttribute'
-      ]),
-      ...mapActions('objectUnique', [
-        'searchObjectUniqueConstraints',
-        'deleteObjectUniqueConstraints'
-      ]),
-      isEditable(item) {
-        if (item.ispre || this.isReadOnly) {
-          return false
-        }
-        return true
-      },
-      getRuleName(keys) {
-        const name = []
-        keys.forEach((key) => {
-          if (key.key_kind === 'property') {
-            const attr = this.attributeList.find(({ id }) => id === key.key_id)
-            if (attr) {
-              name.push(attr.bk_property_name)
-            }
-          }
-        })
-        return name.join('+')
-      },
-      async initAttrList() {
-        this.attributeList = await this.searchObjectAttribute({
-          params: {
-            bk_obj_id: this.activeModel.bk_obj_id
+      table: {
+        list: [],
+        stuff: {
+          type: 'default',
+          payload: {
+            emptyText: this.$t('bk.table.emptyText'),
           },
-          config: {
-            requestId: `post_searchObjectAttribute_${this.activeModel.bk_obj_id}`
+        },
+      },
+      attributeList: [],
+      updateAuth: false,
+    }
+  },
+  computed: {
+    ...mapGetters('objectModel', ['activeModel']),
+    ...mapGetters('objectMainLineModule', ['isMainLine']),
+    isTopoModel() {
+      // 主线模型除主机外
+      return (
+        this.isMainLine(this.activeModel) &&
+        this.activeModel.bk_obj_id !== BUILTIN_MODELS.HOST
+      )
+    },
+    isReadOnly() {
+      if (this.activeModel) {
+        return this.activeModel.bk_ispaused
+      }
+      return false
+    },
+    isShowOptionBtn() {
+      return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
+    },
+  },
+  watch: {
+    activeModel: {
+      immediate: true,
+      async handler(activeModel) {
+        if (activeModel.bk_obj_id) {
+          await this.initAttrList()
+          this.searchVerification()
+        }
+      },
+    },
+  },
+  methods: {
+    ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+    ...mapActions('objectUnique', [
+      'searchObjectUniqueConstraints',
+      'deleteObjectUniqueConstraints',
+    ]),
+    isEditable(item) {
+      if (item.ispre || this.isReadOnly) {
+        return false
+      }
+      return true
+    },
+    getRuleName(keys) {
+      const name = []
+      keys.forEach(key => {
+        if (key.key_kind === 'property') {
+          const attr = this.attributeList.find(({ id }) => id === key.key_id)
+          if (attr) {
+            name.push(attr.bk_property_name)
           }
-        })
-      },
-      createVerification() {
-        this.slider.title = this.$t('新建校验')
-        this.slider.id = null
-        this.slider.readonly = false
-        this.slider.isShow = true
-      },
-      editVerification({ id }) {
-        this.slider.title = this.$t('编辑校验')
-        this.slider.id = id
-        this.slider.readonly = false
-        this.slider.isShow = true
-      },
-      saveVerification() {
+        }
+      })
+      return name.join('+')
+    },
+    async initAttrList() {
+      this.attributeList = await this.searchObjectAttribute({
+        params: {
+          bk_obj_id: this.activeModel.bk_obj_id,
+        },
+        config: {
+          requestId: `post_searchObjectAttribute_${this.activeModel.bk_obj_id}`,
+        },
+      })
+    },
+    createVerification() {
+      this.slider.title = this.$t('新建校验')
+      this.slider.id = null
+      this.slider.readonly = false
+      this.slider.isShow = true
+    },
+    editVerification({ id }) {
+      this.slider.title = this.$t('编辑校验')
+      this.slider.id = id
+      this.slider.readonly = false
+      this.slider.isShow = true
+    },
+    saveVerification() {
+      this.slider.isShow = false
+      this.slider.id = null
+      this.slider.readonly = false
+      this.searchVerification()
+    },
+    deleteVerification(verification) {
+      this.$bkInfo({
+        title: this.$tc(
+          '确定删除唯一校验',
+          this.getRuleName(verification.keys),
+          { name: this.getRuleName(verification.keys) }
+        ),
+        confirmFn: async () => {
+          await this.deleteObjectUniqueConstraints({
+            objId: verification.bk_obj_id,
+            id: verification.id,
+            params: {},
+            config: {
+              requestId: 'deleteObjectUniqueConstraints',
+            },
+          })
+          this.searchVerification()
+        },
+      })
+    },
+    async searchVerification() {
+      const uniqueList = await this.searchObjectUniqueConstraints({
+        objId: this.activeModel.bk_obj_id,
+        params: {},
+        config: {
+          requestId: 'searchObjectUniqueConstraints',
+        },
+      })
+
+      // 只保留在对象属性列表中能找到的规则字段，如果某条记录一个字段都找不到则不会显示
+      const list = uniqueList.filter(item =>
+        item.keys.every(key =>
+          this.attributeList.find(({ id }) => id === key.key_id)
+        )
+      )
+
+      this.table.list = list
+    },
+    handleShowDetails(row, column) {
+      if (column.property === 'operation') return
+      this.slider.title = this.$t('查看校验')
+      this.slider.id = row.id
+      this.slider.readonly = true
+      this.slider.isShow = true
+    },
+    handleReceiveAuth(auth) {
+      this.updateAuth = auth
+    },
+    handleSliderBeforeClose() {
+      const isChanged = this.$refs.verificationForm.isChanged()
+      const confirmFn = () => {
         this.slider.isShow = false
         this.slider.id = null
-        this.slider.readonly = false
-        this.searchVerification()
-      },
-      deleteVerification(verification) {
-        this.$bkInfo({
-          title: this.$tc('确定删除唯一校验', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
-          confirmFn: async () => {
-            await this.deleteObjectUniqueConstraints({
-              objId: verification.bk_obj_id,
-              id: verification.id,
-              params: {},
-              config: {
-                requestId: 'deleteObjectUniqueConstraints'
-              }
-            })
-            this.searchVerification()
-          }
-        })
-      },
-      async searchVerification() {
-        const uniqueList = await this.searchObjectUniqueConstraints({
-          objId: this.activeModel.bk_obj_id,
-          params: {},
-          config: {
-            requestId: 'searchObjectUniqueConstraints'
-          }
-        })
-
-        // 只保留在对象属性列表中能找到的规则字段，如果某条记录一个字段都找不到则不会显示
-        const list = uniqueList
-          .filter(item => item.keys.every(key => this.attributeList.find(({ id }) => id === key.key_id)))
-
-        this.table.list = list
-      },
-      handleShowDetails(row, column) {
-        if (column.property === 'operation') return
-        this.slider.title = this.$t('查看校验')
-        this.slider.id = row.id
-        this.slider.readonly = true
-        this.slider.isShow = true
-      },
-      handleReceiveAuth(auth) {
-        this.updateAuth = auth
-      },
-      handleSliderBeforeClose() {
-        const isChanged = this.$refs.verificationForm.isChanged()
-        const confirmFn = () => {
-          this.slider.isShow = false
-          this.slider.id = null
-        }
-        if (!isChanged) {
-          confirmFn()
-          return true
-        }
-        // this.$refs.verificationForm.setChanged(true)
-        return this.$refs.verificationForm.beforeClose(confirmFn)
       }
-    }
-  }
+      if (!isChanged) {
+        confirmFn()
+        return true
+      }
+      // this.$refs.verificationForm.setChanged(true)
+      return this.$refs.verificationForm.beforeClose(confirmFn)
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .verification-layout {
-        padding: 20px;
-    }
-    .verification-table {
-        margin: 14px 0 0 0;
-    }
-    .operation-btn[disabled] {
-        color: #dcdee5 !important;
-        opacity: 1 !important;
-    }
+.verification-layout {
+  padding: 20px;
+}
+
+.verification-table {
+  margin: 14px 0 0;
+}
+
+.operation-btn[disabled] {
+  color: #dcdee5 !important;
+  opacity: 1 !important;
+}
 </style>

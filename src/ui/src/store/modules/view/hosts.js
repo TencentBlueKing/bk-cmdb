@@ -15,7 +15,7 @@ function getDefaultCondition() {
   return ['biz', 'set', 'module', 'host', 'object'].map(modelId => ({
     bk_obj_id: modelId,
     fields: [],
-    condition: []
+    condition: [],
   }))
 }
 const state = {
@@ -24,25 +24,25 @@ const state = {
   collectionList: [],
   propertyList: [],
   condition: getDefaultCondition(),
-  shouldInjectAsset: true // 控制是否注入固资编号
+  shouldInjectAsset: true, // 控制是否注入固资编号
 }
 
 const getters = {
   isCollection: state => !!state.collection,
-  configPropertyList: (state) => {
+  configPropertyList: state => {
     const disableList = ['bk_cpu']
-    state.propertyList.forEach((property) => {
+    state.propertyList.forEach(property => {
       property.options = property.option
       // eslint-disable-next-line no-underscore-dangle
       property.__extra__ = {
-        disabled: disableList.includes(property.bk_property_id)
+        disabled: disableList.includes(property.bk_property_id),
       }
     })
 
     return state.propertyList
   },
   condition: state => state.condition,
-  shouldInjectAsset: state => state.shouldInjectAsset
+  shouldInjectAsset: state => state.shouldInjectAsset,
 }
 
 const mutations = {
@@ -62,7 +62,9 @@ const mutations = {
     Object.assign(state.collection, updatedData)
   },
   deleteCollection(state, id) {
-    state.collectionList = state.collectionList.filter(collection => collection.id !== id)
+    state.collectionList = state.collectionList.filter(
+      collection => collection.id !== id
+    )
   },
   clearFilter(state) {
     state.filterList = []
@@ -77,12 +79,12 @@ const mutations = {
   },
   setShouldInjectAsset(state, shouldInjectAsset) {
     state.shouldInjectAsset = !!shouldInjectAsset
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  mutations
+  mutations,
 }

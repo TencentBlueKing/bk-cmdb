@@ -17,11 +17,15 @@ export default class RequestQueue {
 
   get(id) {
     if (typeof id === 'undefined') return this.queue
-    return this.queue.find(request => request.requestId === id || request.requestGroup.includes(id))
+    return this.queue.find(
+      request => request.requestId === id || request.requestGroup.includes(id)
+    )
   }
 
   set(newRequest) {
-    if (!this.queue.some(request => request.requestId === newRequest.requestId)) {
+    if (
+      !this.queue.some(request => request.requestId === newRequest.requestId)
+    ) {
       this.queue.push(newRequest)
     }
   }
@@ -44,7 +48,7 @@ export default class RequestQueue {
     if (typeof requestIds === 'undefined') {
       cancelQueue = [...this.queue]
     } else if (requestIds instanceof Array) {
-      requestIds.forEach((requestId) => {
+      requestIds.forEach(requestId => {
         const cancelRequest = this.get(requestId)
         if (cancelRequest) {
           cancelQueue.push(cancelRequest)
@@ -57,7 +61,7 @@ export default class RequestQueue {
       }
     }
     try {
-      cancelQueue.forEach((request) => {
+      cancelQueue.forEach(request => {
         request.cancelExcutor(request)
         this.delete(request.requestId)
       })

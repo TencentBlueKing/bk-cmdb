@@ -10,11 +10,12 @@
  * limitations under the License.
  */
 
-import cursor from '@/directives/cursor'
-import { IAM_ACTIONS } from '@/dictionary/iam-auth'
-import { $error } from '@/magicbox'
 import isEqual from 'lodash/isEqual'
 import uniqBy from 'lodash/uniqBy'
+
+import { $error } from '@/magicbox'
+import { IAM_ACTIONS } from '@/dictionary/iam-auth'
+import cursor from '@/directives/cursor'
 
 const SYSTEM_ID = 'bk_cmdb'
 
@@ -30,7 +31,8 @@ function convertRelation(relation = [], type) {
   if (!relation.length) return relation
   try {
     const [levelOne] = relation
-    if (!Array.isArray(levelOne)) { // [1, 2, ...]的场景
+    if (!Array.isArray(levelOne)) {
+      // [1, 2, ...]的场景
       return [[relation]]
     }
     const [levelTwo] = levelOne
@@ -50,7 +52,7 @@ function convertRelation(relation = [], type) {
 function mergeSameActions(actions) {
   const actionMap = new Map()
 
-  actions.forEach((action) => {
+  actions.forEach(action => {
     const viewMap = actionMap.get(action.id) || new Map()
     action.related_resource_types.forEach(({ type, instances }) => {
       const viewInstances = viewMap.get(type) || []
@@ -62,58 +64,68 @@ function mergeSameActions(actions) {
 
   const permission = {
     system_id: SYSTEM_ID,
-    actions: []
+    actions: [],
   }
 
   actionMap.forEach((viewMap, actionId) => {
     const relatedResourceTypes = []
     viewMap.forEach((viewInstances, viewType) => {
       // 将每个view下的实例去重，viewInstances中每一条实例的结构可能是 [inst] 或者 [inst, inst, ...]，所以必须要合并所有实例以确定其唯一性
-      const instances = uniqBy(viewInstances, insts => insts?.reduce((acc, cur) => `${acc}/${cur?.id}_${cur?.type}`, ''))
+      const instances = uniqBy(viewInstances, insts =>
+        insts?.reduce((acc, cur) => `${acc}/${cur?.id}_${cur?.type}`, '')
+      )
       relatedResourceTypes.push({
         type: viewType,
         system_id: SYSTEM_ID,
-        instances
+        instances,
       })
     })
     permission.actions.push({
       id: actionId,
-      related_resource_types: relatedResourceTypes
+      related_resource_types: relatedResourceTypes,
     })
   })
   return permission
 }
 
-export const translateAuth = (auth) => {
+export const translateAuth = auth => {
   const authList = Array.isArray(auth) ? auth : [auth]
   const actions = authList.map(({ type, relation = [] }) => {
     relation = convertRelation(relation, type)
     const definition = IAM_ACTIONS[type]
     const action = {
-      id: typeof definition.id === 'function' ? definition.id(relation) : definition.id,
-      related_resource_types: []
+      id:
+        typeof definition.id === 'function'
+          ? definition.id(relation)
+          : definition.id,
+      related_resource_types: [],
     }
     if (!definition.relation) {
       return action
     }
 
     // 计算出完整的关联路径用于申请权限展示，如：模型-实例
-    definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
+    definition.relation.forEach((viewDefinition, viewDefinitionIndex) => {
+      // 第m个视图的定义n
       const { view, instances } = viewDefinition
       const relatedResource = {
         type: typeof view === 'function' ? view(relation) : view,
-        instances: []
+        instances: [],
       }
-      relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
+      relation.forEach(resourceViewPaths => {
+        // 第x个资源对应的视图数组
         const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
         if (typeof instances === 'function') {
           relatedResource.instances.push(instances(relation))
         } else {
-          const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
+          const viewFullPath = viewPathData.map((path, pathIndex) => ({
+            // 资源x的第m个视图对应的全路径拓扑对象
             type: instances[pathIndex],
-            id: String(path)
+            id: String(path),
           }))
-          if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
+          if (
+            !relatedResource.instances.some(path => isEqual(path, viewFullPath))
+          ) {
             relatedResource.instances.push(viewFullPath)
           }
         }
@@ -127,11 +139,11 @@ export const translateAuth = (auth) => {
 }
 
 cursor.setOptions({
-  globalCallback: (options) => {
+  globalCallback: options => {
     const permission = translateAuth(options.auth)
     const { permissionModal } = window
     permissionModal && permissionModal.show(permission, options.authResults)
   },
   x: 16,
-  y: 8
+  y: 8,
 })

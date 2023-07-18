@@ -11,63 +11,74 @@
 -->
 
 <script setup>
-  import { computed, nextTick, ref, watch, watchEffect, inject } from 'vue'
-  import { t } from '@/i18n'
-  import router from '@/router/index.js'
-  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import GridLayout from '@/components/ui/other/grid-layout.vue'
-  import GridItem from '@/components/ui/other/grid-item.vue'
-  import ModelSelector from '@/components/model-instance/model-selector.vue'
-  import ModelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
+import { computed, nextTick, ref, watch, watchEffect, inject } from 'vue'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String],
-      default: ''
-    },
-    multiple: {
-      type: Boolean,
-      default: true
-    }
+import { t } from '@/i18n'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import router from '@/router/index.js'
+import GridLayout from '@/components/ui/other/grid-layout.vue'
+import GridItem from '@/components/ui/other/grid-item.vue'
+import ModelSelector from '@/components/model-instance/model-selector.vue'
+import ModelInstanceSelector from '@/components/model-instance/model-instance-selector.vue'
+
+const props = defineProps({
+  value: {
+    type: [Array, String],
+    default: '',
+  },
+  multiple: {
+    type: Boolean,
+    default: true,
+  },
+})
+
+const emit = defineEmits(['input'])
+
+const customObjId = inject('customObjId')
+
+const defaultValueSelectEl = ref(null)
+
+const refModelId = ref('')
+const refModelInstIds = ref(props.multiple ? [] : '')
+
+const searchPlaceholder = computed(() =>
+  t('请输入xx', {
+    name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称'),
   })
+)
+const excludeModelIds = computed(() => [
+  BUILTIN_MODELS.SET,
+  BUILTIN_MODELS.MODULE,
+  router.app.$route.params.modelId ?? customObjId,
+])
 
-  const emit = defineEmits(['input'])
-
-  const customObjId = inject('customObjId')
-
-  const defaultValueSelectEl = ref(null)
-
-  const refModelId = ref('')
-  const refModelInstIds = ref(props.multiple ? [] : '')
-
-  const searchPlaceholder = computed(() => t('请输入xx', { name: t(refModelId.value === BUILTIN_MODELS.HOST ? 'IP' : '名称') }))
-  const excludeModelIds = computed(() => ([
-    BUILTIN_MODELS.SET,
-    BUILTIN_MODELS.MODULE,
-    router.app.$route.params.modelId ?? customObjId
-  ]))
-
-  watchEffect(() => {
-    if (props.value?.length) {
-      refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
-      refModelInstIds.value = props.value.map(item => item.bk_inst_id)
-    } else {
-      refModelInstIds.value = []
-    }
-  })
-
-  watch(() => props.multiple, () => nextTick(async () => defaultValueSelectEl.value.$validator.validate('refModelInst')))
-
-  const handleModelInstChange = (modelInstIds) => {
-    const instIds = Array.isArray(modelInstIds) ? modelInstIds : [modelInstIds]
-    const option = instIds.map(instId => ({
-      bk_obj_id: refModelId.value,
-      bk_inst_id: instId,
-      type: 'int'
-    }))
-
-    emit('input', option)
+watchEffect(() => {
+  if (props.value?.length) {
+    refModelId.value = props.value.map(item => item.bk_obj_id)?.[0]
+    refModelInstIds.value = props.value.map(item => item.bk_inst_id)
+  } else {
+    refModelInstIds.value = []
   }
+})
+
+watch(
+  () => props.multiple,
+  () =>
+    nextTick(async () =>
+      defaultValueSelectEl.value.$validator.validate('refModelInst')
+    )
+)
+
+const handleModelInstChange = modelInstIds => {
+  const instIds = Array.isArray(modelInstIds) ? modelInstIds : [modelInstIds]
+  const option = instIds.map(instId => ({
+    bk_obj_id: refModelId.value,
+    bk_inst_id: instId,
+    type: 'int',
+  }))
+
+  emit('input', option)
+}
 </script>
 
 <template>
@@ -76,43 +87,55 @@
       <grid-item
         direction="column"
         required
-        :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModel') }]"
+        :class="[
+          'cmdb-form-item',
+          'form-item',
+          { 'is-error': errors.has('refModel') },
+        ]"
         :label="$t('引用模型')">
         <model-selector
+          v-model="refModelId"
+          v-validate="'required'"
           class="model-selector"
           searchable
           name="refModel"
-          v-validate="'required'"
           :exclude="excludeModelIds"
-          :placeholder="$t('请选择xx', { name: $t('模型') })"
-          v-model="refModelId">
+          :placeholder="$t('请选择xx', { name: $t('模型') })">
         </model-selector>
         <template #append>
-          <div class="form-error" v-if="errors.has('refModel')">{{errors.first('refModel')}}</div>
-          <div class="tips" v-else>{{$t('默认以实例名称作为枚举选项')}}</div>
+          <div v-if="errors.has('refModel')" class="form-error">
+            {{ errors.first('refModel') }}
+          </div>
+          <div v-else class="tips">{{ $t('默认以实例名称作为枚举选项') }}</div>
         </template>
       </grid-item>
       <grid-item
         direction="column"
         required
-        :class="['cmdb-form-item', 'form-item', { 'is-error': errors.has('refModelInst') }]"
+        :class="[
+          'cmdb-form-item',
+          'form-item',
+          { 'is-error': errors.has('refModelInst') },
+        ]"
         :label="$t('默认值')">
         <model-instance-selector
           ref="defaultValueSelectEl"
+          v-model="refModelInstIds"
+          v-validate="`required|maxSelectLength:${multiple ? -1 : 1}`"
           class="model-instance-selector"
           name="refModelInst"
           data-vv-validate-on="change"
-          v-validate="`required|maxSelectLength:${ multiple ? -1 : 1 }`"
           :obj-id="refModelId"
           :placeholder="$t('请选择xx', { name: $t('模型实例') })"
           :search-placeholder="searchPlaceholder"
           :display-tag="true"
           :multiple="true"
-          v-model="refModelInstIds"
           @change="handleModelInstChange">
         </model-instance-selector>
         <template #append>
-          <div class="form-error" v-if="errors.has('refModelInst')">{{errors.first('refModelInst')}}</div>
+          <div v-if="errors.has('refModelInst')" class="form-error">
+            {{ errors.first('refModelInst') }}
+          </div>
         </template>
       </grid-item>
     </grid-layout>
@@ -120,19 +143,20 @@
 </template>
 
 <style lang="scss" scoped>
-  .model-selector,
-  .model-instance-selector {
-    width: 100%;
-  }
+.model-selector,
+.model-instance-selector {
+  width: 100%;
+}
 
-  .form-item {
-    position: relative;
-    .tips {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      font-size: 12px;
-      margin-top: 4px;
-    }
+.form-item {
+  position: relative;
+
+  .tips {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    font-size: 12px;
+    margin-top: 4px;
   }
+}
 </style>

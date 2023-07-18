@@ -23,7 +23,5 @@
     "src/**/*.vue",
     "src/**/*.d.ts"
   ],
-  "exclude": [
-    "dist",
-  ]
+  "exclude": ["dist"]
 }

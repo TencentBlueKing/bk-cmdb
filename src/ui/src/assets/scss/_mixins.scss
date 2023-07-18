@@ -11,55 +11,60 @@
  */
 
 @mixin ellipsis {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @mixin space-between {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-@mixin scrollbar ($width: 6px) {
-    overflow: auto;
-    &::-webkit-scrollbar {
-        width: $width;
-        height: $width;
-        background: rgba(165, 165, 165, .1);
-        &-thumb {
-            min-height: 24px;
-            border-radius: 20px;
-            background-color: #dcdee5;
-        }
+@mixin scrollbar($width: 6px) {
+  overflow: auto;
+
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+    background: rgb(165 165 165 / 10%);
+
+    &-thumb {
+      min-height: 24px;
+      border-radius: 20px;
+      background-color: #dcdee5;
     }
+  }
 }
 
-@mixin scrollbar-x ($width: 6px) {
-    @include scrollbar;
-    overflow-x: auto;
-    overflow-y: hidden;
+@mixin scrollbar-x($width: 6px) {
+  @include scrollbar;
+
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-@mixin scrollbar-y ($width: 6px) {
-    @include scrollbar($width);
-    overflow-x: hidden;
-    overflow-y: auto;
+@mixin scrollbar-y($width: 6px) {
+  @include scrollbar($width);
+
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-@mixin inlineBlock ($align: middle) {
-    display: inline-block;
-    vertical-align: $align;
+@mixin inlineBlock($align: middle) {
+  display: inline-block;
+  vertical-align: $align;
 }
 
 @mixin middleBlockHack {
-    &:before {
-        @include inlineBlock;
-        content: "";
-        width: 0;
-        height: 100%;
-    }
+  &::before {
+    @include inlineBlock;
+
+    content: '';
+    width: 0;
+    height: 100%;
+  }
 }
 
 /**
@@ -69,25 +74,29 @@
  * $dotColor 图标的颜色
  * $dotSize 图标的点的大小
  */
-@mixin dragIcon ($width: 8px, $height: 18px, $dotColor:#979ba5, $dotSize: 3px){
-    width: 8px;
-    height: 18px;
-    cursor: move;
+@mixin dragIcon($width: 8px, $height: 18px, $dotColor: #979ba5, $dotSize: 3px) {
+  width: 8px;
+  height: 18px;
+  cursor: move;
 
-    &::before {
-        content: "";
-        display: block;
-        margin: 0 auto;
-        border-radius: 50%;
-        $col1DotPosition: 4px;
-        $col2DotPosition: 5px;
-        transform: translate(calc(-#{$col2DotPosition}/2), $col1DotPosition);
-        width: $dotSize;
-        height: $dotSize;
-        background-color: $dotColor;
-        box-shadow: 0 $col1DotPosition 0 0 $dotColor,
-        0 $col1DotPosition * 2 0 0 $dotColor, $col2DotPosition 0 0 0 $dotColor,
-        $col2DotPosition $col1DotPosition 0 0 $dotColor,
-        $col2DotPosition $col1DotPosition * 2 0 0 $dotColor;
-    }
+  &::before {
+    content: '';
+    display: block;
+    margin: 0 auto;
+    border-radius: 50%;
+
+    $col1DotPosition: 4px;
+    $col2DotPosition: 5px;
+
+    transform: translate(calc(-#{$col2DotPosition}/ 2), $col1DotPosition);
+    width: $dotSize;
+    height: $dotSize;
+    background-color: $dotColor;
+    box-shadow:
+      0 $col1DotPosition 0 0 $dotColor,
+      0 $col1DotPosition * 2 0 0 $dotColor,
+      $col2DotPosition 0 0 0 $dotColor,
+      $col2DotPosition $col1DotPosition 0 0 $dotColor,
+      $col2DotPosition $col1DotPosition * 2 0 0 $dotColor;
+  }
 }

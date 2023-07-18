@@ -11,538 +11,625 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from 'vue'
-  import { t } from '@/i18n'
-  import router from '@/router/index.js'
-  import store from '@/store'
-  import routerActions from '@/router/actions'
-  import { $bkInfo, $success } from '@/magicbox/index.js'
-  import { formatValue } from '@/utils/tools'
-  import { OPERATION } from '@/dictionary/iam-auth'
-  import GridLayout from '@/components/ui/other/grid-layout.vue'
-  import GridItem from '@/components/ui/other/grid-item.vue'
-  import ProcessForm from './process-form.vue'
-  import ProcessTable from './process.vue'
-  import PropertyConfigDetails from '@/components/property-config/details.vue'
-  import useTemplateData, { templateDetailRequestId } from './use-template-data'
-  import serviceTemplateService from '@/service/service-template'
-  import { MENU_BUSINESS_SERVICE_TEMPLATE_EDIT } from '@/dictionary/menu-symbol'
+import {
+  computed,
+  defineComponent,
+  del,
+  reactive,
+  ref,
+  toRefs,
+  watchEffect,
+  getCurrentInstance,
+  nextTick,
+  h,
+} from 'vue'
 
-  export default defineComponent({
-    components: {
-      GridLayout,
-      GridItem,
-      ProcessForm,
-      ProcessTable,
-      PropertyConfigDetails
-    },
-    setup(props, { emit }) {
-      const instanceSelf = getCurrentInstance()
-      const processFormEl = ref(null)
-      const templateNameEl = ref(null)
-      const secCategoryEl = ref(null)
-      const loading = ref(true)
+import { t } from '@/i18n'
+import store from '@/store'
+import { $bkInfo, $success } from '@/magicbox/index.js'
+import { formatValue } from '@/utils/tools'
+import { OPERATION } from '@/dictionary/iam-auth'
+import { MENU_BUSINESS_SERVICE_TEMPLATE_EDIT } from '@/dictionary/menu-symbol'
+import router from '@/router/index.js'
+import routerActions from '@/router/actions'
+import serviceTemplateService from '@/service/service-template'
+import GridLayout from '@/components/ui/other/grid-layout.vue'
+import GridItem from '@/components/ui/other/grid-item.vue'
+import PropertyConfigDetails from '@/components/property-config/details.vue'
 
-      const bizId = computed(() => store.getters['objectBiz/bizId'])
+import ProcessForm from './process-form.vue'
+import ProcessTable from './process.vue'
+import useTemplateData, { templateDetailRequestId } from './use-template-data'
 
-      const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
+export default defineComponent({
+  components: {
+    GridLayout,
+    GridItem,
+    ProcessForm,
+    ProcessTable,
+    PropertyConfigDetails,
+  },
+  setup(props, { emit }) {
+    const instanceSelf = getCurrentInstance()
+    const processFormEl = ref(null)
+    const templateNameEl = ref(null)
+    const secCategoryEl = ref(null)
+    const loading = ref(true)
 
-      const tipsLink = h('bk-link', {
+    const bizId = computed(() => store.getters['objectBiz/bizId'])
+
+    const templateId = computed(() =>
+      parseInt(router.app.$route.params.templateId, 10)
+    )
+
+    const tipsLink = h(
+      'bk-link',
+      {
         slot: 'link',
         props: { theme: 'primary' },
         on: {
           click() {
             emit('active-change', 'instance')
-          }
-        }
-      }, t('同步功能'))
-      const tipsProcessMessage = h('i18n', {
+          },
+        },
+      },
+      t('同步功能')
+    )
+    const tipsProcessMessage = h(
+      'i18n',
+      {
         class: 'process-success-message',
         props: {
           path: '成功更新模板进程，您可以通过XXX',
           tag: 'div',
-        }
-      }, [tipsLink])
-      const tipsConfigMessage = h('i18n', {
+        },
+      },
+      [tipsLink]
+    )
+    const tipsConfigMessage = h(
+      'i18n',
+      {
         class: 'process-success-message',
         props: {
           path: '成功更新模板，您可以通过XXX',
           tag: 'div',
-        }
-      }, [tipsLink])
-
-      const state = reactive({
-        moduleProperties: [],
-        modulePropertyGroup: [],
-        processProperties: [],
-        processPropertyGroup: [],
-        fullCategories: [],
-        primaryCategories: [],
-        secCategories: [],
-        currentSecCategories: [],
-        basic: {} as any,
-        propertyConfig: {},
-        processList: [],
-        processSlider: {
-          show: false,
-          title: '',
-          form: {
-            inst: {},
-            dataIndex: null,
-            type: ''
-          }
         },
-        requestIds: {
-          processList: Symbol()
-        }
-      })
+      },
+      [tipsLink]
+    )
 
-      // 服务模板编辑权限定义
-      const auth = computed(() => ({
-        type: OPERATION.U_SERVICE_TEMPLATE,
-        relation: [bizId.value, templateId.value]
-      }))
+    const state = reactive({
+      moduleProperties: [],
+      modulePropertyGroup: [],
+      processProperties: [],
+      processPropertyGroup: [],
+      fullCategories: [],
+      primaryCategories: [],
+      secCategories: [],
+      currentSecCategories: [],
+      basic: {} as any,
+      propertyConfig: {},
+      processList: [],
+      processSlider: {
+        show: false,
+        title: '',
+        form: {
+          inst: {},
+          dataIndex: null,
+          type: '',
+        },
+      },
+      requestIds: {
+        processList: Symbol(),
+      },
+    })
 
-      watchEffect(async () => {
-        const {
-          moduleProperties,
-          modulePropertyGroup,
-          processProperties,
-          processPropertyGroup,
-          basic,
-          propertyConfig,
-          processList,
-          primaryCategories,
-          secCategories
-        } = await useTemplateData(bizId.value, templateId.value, true)
+    // 服务模板编辑权限定义
+    const auth = computed(() => ({
+      type: OPERATION.U_SERVICE_TEMPLATE,
+      relation: [bizId.value, templateId.value],
+    }))
 
-        loading.value = false
+    watchEffect(async () => {
+      const {
+        moduleProperties,
+        modulePropertyGroup,
+        processProperties,
+        processPropertyGroup,
+        basic,
+        propertyConfig,
+        processList,
+        primaryCategories,
+        secCategories,
+      } = await useTemplateData(bizId.value, templateId.value, true)
 
-        state.moduleProperties = moduleProperties
-        state.modulePropertyGroup = modulePropertyGroup
-        state.processProperties = processProperties
-        state.processPropertyGroup = processPropertyGroup
+      loading.value = false
 
-        state.primaryCategories = primaryCategories
-        state.secCategories = secCategories
-        state.currentSecCategories = state.secCategories
-          .filter(category => category.bk_parent_id === basic.primaryCategory)
+      state.moduleProperties = moduleProperties
+      state.modulePropertyGroup = modulePropertyGroup
+      state.processProperties = processProperties
+      state.processPropertyGroup = processPropertyGroup
 
-        state.basic = basic
-        state.basic.primaryCategoryCopy = basic.primaryCategory
-        state.propertyConfig = propertyConfig
-        state.processList = processList
+      state.primaryCategories = primaryCategories
+      state.secCategories = secCategories
+      state.currentSecCategories = state.secCategories.filter(
+        category => category.bk_parent_id === basic.primaryCategory
+      )
 
-        store.commit('setTitle', `${t('模板详情')}【${state.basic.templateName}】`)
-      })
+      state.basic = basic
+      state.basic.primaryCategoryCopy = basic.primaryCategory
+      state.propertyConfig = propertyConfig
+      state.processList = processList
 
-      // 获取进程列表
-      const getProcessList = async () => {
-        const data = await store.dispatch('processTemplate/getBatchProcessTemplate', {
+      store.commit(
+        'setTitle',
+        `${t('模板详情')}【${state.basic.templateName}】`
+      )
+    })
+
+    // 获取进程列表
+    const getProcessList = async () => {
+      const data = await store.dispatch(
+        'processTemplate/getBatchProcessTemplate',
+        {
           params: {
             bk_biz_id: bizId.value,
-            service_template_id: templateId.value
+            service_template_id: templateId.value,
           },
           config: {
-            requestId: state.requestIds.processList
-          }
-        })
-        state.processList = data.info.map(template => ({
+            requestId: state.requestIds.processList,
+          },
+        }
+      )
+      state.processList = data.info
+        .map(template => ({
           process_id: template.id,
-          ...template.property
-        })).sort((prev, next) => prev.process_id - next.process_id)
-      }
+          ...template.property,
+        }))
+        .sort((prev, next) => prev.process_id - next.process_id)
+    }
 
-      const serviceCategory = computed(() => {
-        const primary = state.primaryCategories.find(category => category.id === state.basic.primaryCategory) || {}
-        const second = state.secCategories.find(category => category.id === state.basic.secCategory) || {}
-        return `${primary.name || '--'} / ${second.name || '--'}`
-      })
+    const serviceCategory = computed(() => {
+      const primary =
+        state.primaryCategories.find(
+          category => category.id === state.basic.primaryCategory
+        ) || {}
+      const second =
+        state.secCategories.find(
+          category => category.id === state.basic.secCategory
+        ) || {}
+      return `${primary.name || '--'} / ${second.name || '--'}`
+    })
 
-      const hasPropertyConfig = computed(() => Object.keys(state.propertyConfig).length > 0)
+    const hasPropertyConfig = computed(
+      () => Object.keys(state.propertyConfig).length > 0
+    )
 
-      const handleChangePrimaryCategory = (id: number) => {
-        state.currentSecCategories = state.secCategories.filter(category => category.bk_parent_id === id)
-        if (editState.value.property === basicProperties.categorty) {
-          editState.value.value = ''
-        }
-      }
-
-      // 点击空白处取消分类编辑
-      const handleCategoryClickOutside = () => {
-        if (editState.value.property === basicProperties.categorty) {
-          // 还原分类数据
-          state.basic.primaryCategory = state.basic.primaryCategoryCopy
-          state.currentSecCategories = state.secCategories
-            .filter(category => category.bk_parent_id === state.basic.primaryCategoryCopy)
-
-          resetEditState()
-        }
-      }
-      // 防止点击分类下拉框时退出编辑
-      const categoryClickOutsideMiddleware = event => (!event.target.closest('.bk-select-dropdown-content'))
-
-      // 当前编辑属性
-      const editState = ref({
-        property: null,
-        value: ''
-      })
-
-      // 在处理中的属性列表
-      const loadingState = ref([])
-
-      // 保存信息确认中状态
-      const saveNameConfirming = ref(false)
-
-      // 定义基础属性，用于标准化编辑状态展示
-      const basicProperties = {
-        templateName: { bk_property_id: 'templateName' },
-        categorty: { bk_property_id: 'categorty' }
-      }
-
-      // 设置编辑状态数据
-      const setEditState = (property) => {
-        let $component = null
-        if (property === basicProperties.templateName) {
-          editState.value.value = state.basic.templateName
-          $component = templateNameEl
-        }
-        if (property === basicProperties.categorty) {
-          editState.value.value = state.basic.secCategory
-          $component = secCategoryEl
-        }
-        editState.value.property = property
-
-        nextTick(() => {
-          $component?.value?.focus?.()
-        })
-      }
-
-      // 重置编辑状态数据，用于取消编辑态
-      const resetEditState = () => {
-        editState.value.property = null
+    const handleChangePrimaryCategory = (id: number) => {
+      state.currentSecCategories = state.secCategories.filter(
+        category => category.bk_parent_id === id
+      )
+      if (editState.value.property === basicProperties.categorty) {
         editState.value.value = ''
       }
+    }
 
-      // 名称回车或失焦事件回调，触发保存
-      const handleSaveName = () => {
-        if (editState.value.property && !saveNameConfirming.value) {
-          confirmSaveName()
-        }
+    // 点击空白处取消分类编辑
+    const handleCategoryClickOutside = () => {
+      if (editState.value.property === basicProperties.categorty) {
+        // 还原分类数据
+        state.basic.primaryCategory = state.basic.primaryCategoryCopy
+        state.currentSecCategories = state.secCategories.filter(
+          category => category.bk_parent_id === state.basic.primaryCategoryCopy
+        )
+
+        resetEditState()
+      }
+    }
+    // 防止点击分类下拉框时退出编辑
+    const categoryClickOutsideMiddleware = event =>
+      !event.target.closest('.bk-select-dropdown-content')
+
+    // 当前编辑属性
+    const editState = ref({
+      property: null,
+      value: '',
+    })
+
+    // 在处理中的属性列表
+    const loadingState = ref([])
+
+    // 保存信息确认中状态
+    const saveNameConfirming = ref(false)
+
+    // 定义基础属性，用于标准化编辑状态展示
+    const basicProperties = {
+      templateName: { bk_property_id: 'templateName' },
+      categorty: { bk_property_id: 'categorty' },
+    }
+
+    // 设置编辑状态数据
+    const setEditState = property => {
+      let $component = null
+      if (property === basicProperties.templateName) {
+        editState.value.value = state.basic.templateName
+        $component = templateNameEl
+      }
+      if (property === basicProperties.categorty) {
+        editState.value.value = state.basic.secCategory
+        $component = secCategoryEl
+      }
+      editState.value.property = property
+
+      nextTick(() => {
+        $component?.value?.focus?.()
+      })
+    }
+
+    // 重置编辑状态数据，用于取消编辑态
+    const resetEditState = () => {
+      editState.value.property = null
+      editState.value.value = ''
+    }
+
+    // 名称回车或失焦事件回调，触发保存
+    const handleSaveName = () => {
+      if (editState.value.property && !saveNameConfirming.value) {
+        confirmSaveName()
+      }
+    }
+
+    const handleChangeSecCategory = () => {
+      // 使用nextTick等待validate后执行，确保校验状态正确性
+      nextTick(saveCategory)
+    }
+
+    const confirmSaveName = async () => {
+      const valid = await instanceSelf?.proxy?.$validator.validate(
+        'templateName'
+      )
+      if (!valid) {
+        return
       }
 
-      const handleChangeSecCategory = () => {
-        // 使用nextTick等待validate后执行，确保校验状态正确性
-        nextTick(saveCategory)
+      if (state.basic.templateName === editState.value.value) {
+        resetEditState()
+        return
       }
 
-      const confirmSaveName = async () => {
-        const valid = await instanceSelf?.proxy?.$validator.validate('templateName')
+      $bkInfo({
+        title: t('确认修改名称'),
+        subTitle: t('确认修改名称提示'),
+        width: 520,
+        extCls: 'confirm-edit-service-template-name-infobox',
+        async confirmFn() {
+          saveName()
+        },
+        cancelFn() {
+          resetEditState()
+        },
+        stateChangeFn(isShow) {
+          saveNameConfirming.value = isShow
+        },
+        confirmLoading: true,
+      })
+    }
+    const saveName = async () => {
+      try {
+        const valid = await instanceSelf?.proxy?.$validator.validate(
+          'templateName'
+        )
         if (!valid) {
           return
         }
 
-        if (state.basic.templateName === editState.value.value) {
+        // 先取出编辑后的值
+        const { value: templateName } = editState.value
+
+        // 重置编辑态，回到详情状态
+        resetEditState()
+
+        // 设置loading状态
+        loadingState.value.push(basicProperties.templateName)
+
+        await store.dispatch('serviceTemplate/updateServiceTemplate', {
+          params: {
+            bk_biz_id: bizId.value,
+            id: templateId.value,
+            name: templateName,
+          },
+        })
+
+        // 回显为保存后的值
+        state.basic.templateName = templateName
+      } finally {
+        loadingState.value = loadingState.value.filter(
+          item => item !== basicProperties.templateName
+        )
+      }
+    }
+    const saveCategory = async () => {
+      try {
+        const valid = await instanceSelf?.proxy?.$validator.validate(
+          'secCategory'
+        )
+        if (!valid) {
+          return
+        }
+
+        const { value: categoryId } = editState.value
+
+        if (state.basic.secCategory === categoryId) {
           resetEditState()
           return
         }
 
-        $bkInfo({
-          title: t('确认修改名称'),
-          subTitle: t('确认修改名称提示'),
-          width: 520,
-          extCls: 'confirm-edit-service-template-name-infobox',
-          async confirmFn() {
-            saveName()
-          },
-          cancelFn() {
-            resetEditState()
-          },
-          stateChangeFn(isShow) {
-            saveNameConfirming.value = isShow
-          },
-          confirmLoading: true
-        })
-      }
-      const saveName = async () => {
-        try {
-          const valid = await instanceSelf?.proxy?.$validator.validate('templateName')
-          if (!valid) {
-            return
-          }
+        resetEditState()
 
-          // 先取出编辑后的值
-          const { value: templateName } = editState.value
+        loadingState.value.push(basicProperties.categorty)
 
-          // 重置编辑态，回到详情状态
-          resetEditState()
-
-          // 设置loading状态
-          loadingState.value.push(basicProperties.templateName)
-
-          await store.dispatch('serviceTemplate/updateServiceTemplate', {
-            params: {
-              bk_biz_id: bizId.value,
-              id: templateId.value,
-              name: templateName
-            }
-          })
-
-          // 回显为保存后的值
-          state.basic.templateName = templateName
-        } finally {
-          loadingState.value = loadingState.value.filter(item => item !== basicProperties.templateName)
-        }
-      }
-      const saveCategory = async () => {
-        try {
-          const valid = await instanceSelf?.proxy?.$validator.validate('secCategory')
-          if (!valid) {
-            return
-          }
-
-          const { value: categoryId } = editState.value
-
-          if (state.basic.secCategory === categoryId) {
-            resetEditState()
-            return
-          }
-
-          resetEditState()
-
-          loadingState.value.push(basicProperties.categorty)
-
-          await store.dispatch('serviceTemplate/updateServiceTemplate', {
-            params: {
-              bk_biz_id: bizId.value,
-              id: templateId.value,
-              service_category_id: categoryId
-            }
-          })
-
-          state.basic.secCategory = categoryId
-          state.basic.primaryCategoryCopy = state.basic.primaryCategory
-
-          $success(t('修改服务分类成功提示'))
-        } finally {
-          loadingState.value = loadingState.value.filter(item => item !== basicProperties.categorty)
-        }
-      }
-
-      // 显示同步提示的方法
-      const showSyncInstanceTips = (from = 'process') => {
-        const messages = {
-          config: tipsConfigMessage,
-          process: tipsProcessMessage
-        }
-        $success(messages[from])
-        emit('sync-change')
-      }
-
-      const saveProcessAfter = () => {
-        state.processSlider.show = false
-        showSyncInstanceTips()
-      }
-
-      // 属性设置loaidng队列，元素为属性对象
-      const propertyConfigLoadingState = ref([])
-
-      // 属性设置-保存
-      const handleSavePropertyConfig = async ({ property, value }) => {
-        try {
-          propertyConfigLoadingState.value.push(property)
-          const data = {
-            id: templateId.value,
+        await store.dispatch('serviceTemplate/updateServiceTemplate', {
+          params: {
             bk_biz_id: bizId.value,
-            attributes: [{
-              bk_attribute_id: property.id,
-              bk_property_value: formatValue(value, property)
-            }]
-          }
-          await serviceTemplateService.updateProperty(data)
+            id: templateId.value,
+            service_category_id: categoryId,
+          },
+        })
 
-          state.propertyConfig[property.id] = value
+        state.basic.secCategory = categoryId
+        state.basic.primaryCategoryCopy = state.basic.primaryCategory
 
-          showSyncInstanceTips('config')
-        } finally {
-          propertyConfigLoadingState.value = propertyConfigLoadingState.value.filter(item => item !== property)
-        }
+        $success(t('修改服务分类成功提示'))
+      } finally {
+        loadingState.value = loadingState.value.filter(
+          item => item !== basicProperties.categorty
+        )
       }
+    }
 
-      // 属性设置-删除
-      const handleDelPropertyConfig = async (property) => {
+    // 显示同步提示的方法
+    const showSyncInstanceTips = (from = 'process') => {
+      const messages = {
+        config: tipsConfigMessage,
+        process: tipsProcessMessage,
+      }
+      $success(messages[from])
+      emit('sync-change')
+    }
+
+    const saveProcessAfter = () => {
+      state.processSlider.show = false
+      showSyncInstanceTips()
+    }
+
+    // 属性设置loaidng队列，元素为属性对象
+    const propertyConfigLoadingState = ref([])
+
+    // 属性设置-保存
+    const handleSavePropertyConfig = async ({ property, value }) => {
+      try {
+        propertyConfigLoadingState.value.push(property)
         const data = {
           id: templateId.value,
           bk_biz_id: bizId.value,
-          bk_attribute_ids: [property.id]
+          attributes: [
+            {
+              bk_attribute_id: property.id,
+              bk_property_value: formatValue(value, property),
+            },
+          ],
         }
-        await serviceTemplateService.deleteProperty(data)
+        await serviceTemplateService.updateProperty(data)
 
-        del(state.propertyConfig, property.id)
+        state.propertyConfig[property.id] = value
 
         showSyncInstanceTips('config')
-      }
-
-      const handleCreateProcess = () => {
-        state.processSlider.show = true
-        state.processSlider.title = t('添加进程')
-        state.processSlider.form.type = 'create'
-        state.processSlider.form.inst = {}
-      }
-
-      const handleSaveProcess = async (values, changedValues, type) => {
-        const data = type === 'create' ? values : changedValues
-        const processValues = formatProcessSubmitData(data)
-        if (type === 'create') {
-          await store.dispatch('processTemplate/createProcessTemplate', {
-            params: {
-              bk_biz_id: bizId.value,
-              service_template_id: templateId.value,
-              processes: [{
-                spec: processValues
-              }]
-            }
-          })
-        } else {
-          await store.dispatch('processTemplate/updateProcessTemplate', {
-            params: {
-              bk_biz_id: bizId.value,
-              process_template_id: values.process_id,
-              process_property: processValues
-            }
-          })
-        }
-
-        getProcessList()
-        saveProcessAfter()
-      }
-
-      const handleCancelProcess = () => {
-        state.processSlider.show = false
-      }
-
-      const handleUpdateProcess = (template, index) => {
-        state.processSlider.show = true
-        state.processSlider.title = template.bk_func_name.value
-        state.processSlider.form.type = 'update'
-        state.processSlider.form.inst = template
-        state.processSlider.form.dataIndex = index
-      }
-
-      const handleDeleteProcess = (template) => {
-        $bkInfo({
-          title: t('确认删除模板进程'),
-          confirmFn: async () => {
-            await store.dispatch('processTemplate/deleteProcessTemplate', {
-              params: {
-                data: {
-                  bk_biz_id: bizId.value,
-                  process_templates: [template.process_id]
-                }
-              }
-            })
-
-            getProcessList()
-            showSyncInstanceTips()
-          },
-          confirmLoading: true
-        })
-      }
-
-      const formatProcessSubmitData = (data = {}) => {
-        Object.keys(data).forEach((key) => {
-          const property = state.processProperties.find(property => property.bk_property_id === key)
-          if (property && property.bk_property_type === 'table') {
-            (data[key].value || []).forEach((row) => {
-              Object.keys(row).forEach((rowKey) => {
-                if (typeof row[rowKey] === 'object') {
-                  const option = property.option || []
-                  const columnProperty = option.find(columnProperty => columnProperty.bk_property_id === rowKey) || {}
-                  row[rowKey].value = formatValue(row[rowKey].value, columnProperty)
-                }
-              })
-            })
-          } else if (typeof data[key] === 'object') {
-            data[key].value = formatValue(data[key].value, property)
-          }
-        })
-        return data
-      }
-
-      const handleProcessSliderBeforeClose = () => {
-        const hasChanged = processFormEl.value && processFormEl.value.hasChange()
-        if (hasChanged) {
-          processFormEl.value.setChanged(true)
-          processFormEl.value.beforeClose(handleCancelProcess)
-        } else {
-          return true
-        }
-      }
-
-      const handleGoToEdit = () => {
-        routerActions.redirect({
-          name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
-          params: {
-            templateId: templateId.value
-          },
-          history: true
-        })
-      }
-
-      return {
-        ...toRefs(state),
-        bizId,
-        templateId,
-        auth,
-        loading,
-        editState,
-        loadingState,
-        basicProperties,
-        templateDetailRequestId,
-        serviceCategory,
-        propertyConfigLoadingState,
-        templateNameEl,
-        secCategoryEl,
-        processFormEl,
-        hasPropertyConfig,
-        setEditState,
-        categoryClickOutsideMiddleware,
-        formatProcessSubmitData,
-        handleChangeSecCategory,
-        handleChangePrimaryCategory,
-        handleCategoryClickOutside,
-        handleSavePropertyConfig,
-        handleDelPropertyConfig,
-        handleCreateProcess,
-        handleSaveProcess,
-        handleCancelProcess,
-        handleUpdateProcess,
-        handleDeleteProcess,
-        handleProcessSliderBeforeClose,
-        handleSaveName,
-        handleGoToEdit
+      } finally {
+        propertyConfigLoadingState.value =
+          propertyConfigLoadingState.value.filter(item => item !== property)
       }
     }
-  })
+
+    // 属性设置-删除
+    const handleDelPropertyConfig = async property => {
+      const data = {
+        id: templateId.value,
+        bk_biz_id: bizId.value,
+        bk_attribute_ids: [property.id],
+      }
+      await serviceTemplateService.deleteProperty(data)
+
+      del(state.propertyConfig, property.id)
+
+      showSyncInstanceTips('config')
+    }
+
+    const handleCreateProcess = () => {
+      state.processSlider.show = true
+      state.processSlider.title = t('添加进程')
+      state.processSlider.form.type = 'create'
+      state.processSlider.form.inst = {}
+    }
+
+    const handleSaveProcess = async (values, changedValues, type) => {
+      const data = type === 'create' ? values : changedValues
+      const processValues = formatProcessSubmitData(data)
+      if (type === 'create') {
+        await store.dispatch('processTemplate/createProcessTemplate', {
+          params: {
+            bk_biz_id: bizId.value,
+            service_template_id: templateId.value,
+            processes: [
+              {
+                spec: processValues,
+              },
+            ],
+          },
+        })
+      } else {
+        await store.dispatch('processTemplate/updateProcessTemplate', {
+          params: {
+            bk_biz_id: bizId.value,
+            process_template_id: values.process_id,
+            process_property: processValues,
+          },
+        })
+      }
+
+      getProcessList()
+      saveProcessAfter()
+    }
+
+    const handleCancelProcess = () => {
+      state.processSlider.show = false
+    }
+
+    const handleUpdateProcess = (template, index) => {
+      state.processSlider.show = true
+      state.processSlider.title = template.bk_func_name.value
+      state.processSlider.form.type = 'update'
+      state.processSlider.form.inst = template
+      state.processSlider.form.dataIndex = index
+    }
+
+    const handleDeleteProcess = template => {
+      $bkInfo({
+        title: t('确认删除模板进程'),
+        confirmFn: async () => {
+          await store.dispatch('processTemplate/deleteProcessTemplate', {
+            params: {
+              data: {
+                bk_biz_id: bizId.value,
+                process_templates: [template.process_id],
+              },
+            },
+          })
+
+          getProcessList()
+          showSyncInstanceTips()
+        },
+        confirmLoading: true,
+      })
+    }
+
+    const formatProcessSubmitData = (data = {}) => {
+      Object.keys(data).forEach(key => {
+        const property = state.processProperties.find(
+          property => property.bk_property_id === key
+        )
+        if (property && property.bk_property_type === 'table') {
+          ;(data[key].value || []).forEach(row => {
+            Object.keys(row).forEach(rowKey => {
+              if (typeof row[rowKey] === 'object') {
+                const option = property.option || []
+                const columnProperty =
+                  option.find(
+                    columnProperty => columnProperty.bk_property_id === rowKey
+                  ) || {}
+                row[rowKey].value = formatValue(
+                  row[rowKey].value,
+                  columnProperty
+                )
+              }
+            })
+          })
+        } else if (typeof data[key] === 'object') {
+          data[key].value = formatValue(data[key].value, property)
+        }
+      })
+      return data
+    }
+
+    const handleProcessSliderBeforeClose = () => {
+      const hasChanged = processFormEl.value && processFormEl.value.hasChange()
+      if (hasChanged) {
+        processFormEl.value.setChanged(true)
+        processFormEl.value.beforeClose(handleCancelProcess)
+      } else {
+        return true
+      }
+    }
+
+    const handleGoToEdit = () => {
+      routerActions.redirect({
+        name: MENU_BUSINESS_SERVICE_TEMPLATE_EDIT,
+        params: {
+          templateId: templateId.value,
+        },
+        history: true,
+      })
+    }
+
+    return {
+      ...toRefs(state),
+      bizId,
+      templateId,
+      auth,
+      loading,
+      editState,
+      loadingState,
+      basicProperties,
+      templateDetailRequestId,
+      serviceCategory,
+      propertyConfigLoadingState,
+      templateNameEl,
+      secCategoryEl,
+      processFormEl,
+      hasPropertyConfig,
+      setEditState,
+      categoryClickOutsideMiddleware,
+      formatProcessSubmitData,
+      handleChangeSecCategory,
+      handleChangePrimaryCategory,
+      handleCategoryClickOutside,
+      handleSavePropertyConfig,
+      handleDelPropertyConfig,
+      handleCreateProcess,
+      handleSaveProcess,
+      handleCancelProcess,
+      handleUpdateProcess,
+      handleDeleteProcess,
+      handleProcessSliderBeforeClose,
+      handleSaveName,
+      handleGoToEdit,
+    }
+  },
+})
 </script>
 
 <template>
   <cmdb-sticky-layout class="details-sticky-layout">
-    <div class="template-config" v-bkloading="{ isLoading: loading }">
+    <div v-bkloading="{ isLoading: loading }" class="template-config">
       <div class="form-group">
         <cmdb-collapse :label="$t('基础信息')" arrow-type="filled">
-          <grid-layout mode="detail" :min-width="360" :max-width="560" :gap="0" class="form-content">
+          <grid-layout
+            mode="detail"
+            :min-width="360"
+            :max-width="560"
+            :gap="0"
+            class="form-content">
             <grid-item
               :label="$t('模板名称')"
               :label-width="160"
-              :class="['cmdb-form-item', { 'is-error': errors.has('templateName') }]">
+              :class="[
+                'cmdb-form-item',
+                { 'is-error': errors.has('templateName') },
+              ]">
               <div class="editable-content">
                 <div
-                  :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.templateName) }]"
-                  v-if="basicProperties.templateName !== editState.property">
-                  {{basic.templateName}}
+                  v-if="basicProperties.templateName !== editState.property"
+                  :class="[
+                    'basic-value',
+                    {
+                      'is-loading': loadingState.includes(
+                        basicProperties.templateName
+                      ),
+                    },
+                  ]">
+                  {{ basic.templateName }}
                 </div>
-                <template v-if="!loadingState.includes(basicProperties.templateName)">
+                <template
+                  v-if="!loadingState.includes(basicProperties.templateName)">
                   <cmdb-auth
                     v-show="basicProperties.templateName !== editState.property"
                     tag="i"
@@ -550,20 +637,23 @@
                     :auth="auth"
                     @click="setEditState(basicProperties.templateName)">
                   </cmdb-auth>
-                  <div class="property-form" v-if="basicProperties.templateName === editState.property">
-                    <bk-input type="text"
+                  <div
+                    v-if="basicProperties.templateName === editState.property"
+                    class="property-form">
+                    <bk-input
                       ref="templateNameEl"
+                      v-model.trim="editState.value"
+                      v-validate="'required|businessTopoInstNames|length:256'"
+                      type="text"
                       name="templateName"
                       size="small"
                       font-size="normal"
                       :placeholder="$t('模板名称将作为实例化后的模块名')"
-                      v-model.trim="editState.value"
                       :data-vv-name="'templateName'"
-                      v-validate="'required|businessTopoInstNames|length:256'"
                       @enter="handleSaveName"
                       @blur="handleSaveName">
                     </bk-input>
-                    <p class="form-error">{{errors.first('templateName')}}</p>
+                    <p class="form-error">{{ errors.first('templateName') }}</p>
                   </div>
                 </template>
               </div>
@@ -574,11 +664,19 @@
               :label-width="160">
               <div class="editable-content">
                 <div
-                  :class="['basic-value', { 'is-loading': loadingState.includes(basicProperties.categorty) }]"
-                  v-if="basicProperties.categorty !== editState.property">
-                  {{serviceCategory}}
+                  v-if="basicProperties.categorty !== editState.property"
+                  :class="[
+                    'basic-value',
+                    {
+                      'is-loading': loadingState.includes(
+                        basicProperties.categorty
+                      ),
+                    },
+                  ]">
+                  {{ serviceCategory }}
                 </div>
-                <template v-if="!loadingState.includes(basicProperties.categorty)">
+                <template
+                  v-if="!loadingState.includes(basicProperties.categorty)">
                   <cmdb-auth
                     v-show="basicProperties.categorty !== editState.property"
                     tag="i"
@@ -586,14 +684,22 @@
                     :auth="auth"
                     @click="setEditState(basicProperties.categorty)">
                   </cmdb-auth>
-                  <div class="category-container"
+                  <div
                     v-if="basicProperties.categorty === editState.property"
                     v-click-outside="{
                       handler: handleCategoryClickOutside,
-                      middleware: categoryClickOutsideMiddleware
-                    }">
-                    <div :class="['category-item', 'cmdb-form-item', { 'is-error': errors.has('primaryCategory') }]">
+                      middleware: categoryClickOutsideMiddleware,
+                    }"
+                    class="category-container">
+                    <div
+                      :class="[
+                        'category-item',
+                        'cmdb-form-item',
+                        { 'is-error': errors.has('primaryCategory') },
+                      ]">
                       <cmdb-selector
+                        v-model="basic.primaryCategory"
+                        v-validate="'required'"
                         display-key="displayName"
                         size="small"
                         font-size="normal"
@@ -602,25 +708,35 @@
                         :auto-select="false"
                         :list="primaryCategories"
                         :popover-options="{
-                          boundary: 'window'
+                          boundary: 'window',
                         }"
                         name="primaryCategory"
-                        v-validate="'required'"
-                        v-model="basic.primaryCategory"
                         @change="handleChangePrimaryCategory">
                         <template #default="{ name, id }">
-                          <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                          <div
+                            class="bk-option-content-default"
+                            :title="`${name}（#${id}）`">
                             <div class="bk-option-name">
-                              {{name}}<span class="category-id">（#{{id}}）</span>
+                              {{ name
+                              }}<span class="category-id">（#{{ id }}）</span>
                             </div>
                           </div>
                         </template>
                       </cmdb-selector>
-                      <p class="form-error">{{errors.first('primaryCategory')}}</p>
+                      <p class="form-error">
+                        {{ errors.first('primaryCategory') }}
+                      </p>
                     </div>
-                    <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
+                    <div
+                      class="category-item"
+                      :class="[
+                        'cmdb-form-item',
+                        { 'is-error': errors.has('secCategory') },
+                      ]">
                       <cmdb-selector
                         ref="secCategoryEl"
+                        v-model="editState.value"
+                        v-validate="'required'"
                         display-key="displayName"
                         size="small"
                         font-size="normal"
@@ -629,18 +745,21 @@
                         :auto-select="false"
                         :list="currentSecCategories"
                         name="secCategory"
-                        v-validate="'required'"
-                        v-model="editState.value"
                         @change="handleChangeSecCategory">
                         <template #default="{ name, id }">
-                          <div class="bk-option-content-default" :title="`${name}（#${id}）`">
+                          <div
+                            class="bk-option-content-default"
+                            :title="`${name}（#${id}）`">
                             <div class="bk-option-name">
-                              {{name}}<span class="category-id">（#{{id}}）</span>
+                              {{ name
+                              }}<span class="category-id">（#{{ id }}）</span>
                             </div>
                           </div>
                         </template>
                       </cmdb-selector>
-                      <p class="form-error">{{errors.first('secCategory')}}</p>
+                      <p class="form-error">
+                        {{ errors.first('secCategory') }}
+                      </p>
                     </div>
                   </div>
                 </template>
@@ -652,7 +771,8 @@
       <div class="form-group">
         <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
           <div class="form-content">
-            <property-config-details v-if="hasPropertyConfig"
+            <property-config-details
+              v-if="hasPropertyConfig"
               :instance="propertyConfig"
               :properties="moduleProperties"
               :auth="auth"
@@ -662,7 +782,7 @@
               @save="handleSavePropertyConfig"
               @del="handleDelPropertyConfig">
             </property-config-details>
-            <div class="property-config-empty" v-else-if="!loading">
+            <div v-else-if="!loading" class="property-config-empty">
               <i class="icon icon-cc-tips"></i>
               <cmdb-auth :auth="auth">
                 <template #default="{ disabled }">
@@ -673,7 +793,7 @@
                         :disabled="disabled"
                         class="link"
                         @click="handleGoToEdit">
-                        {{$t('立即配置')}}
+                        {{ $t('立即配置') }}
                       </bk-link>
                     </template>
                   </i18n>
@@ -688,26 +808,30 @@
           <div class="form-content">
             <div class="process-create-container">
               <cmdb-auth :auth="auth">
-                <bk-button slot-scope="{ disabled }" v-test-id="'createProcess'"
+                <bk-button
+                  slot-scope="{ disabled }"
+                  v-test-id="'createProcess'"
                   class="create-btn"
                   theme="default"
                   :disabled="disabled"
                   @click="handleCreateProcess">
                   <i class="bk-icon icon-plus"></i>
-                  <span>{{$t('新建进程')}}</span>
+                  <span>{{ $t('新建进程') }}</span>
                 </bk-button>
               </cmdb-auth>
-              <span class="create-tips">{{$t('新建进程提示')}}</span>
+              <span class="create-tips">{{ $t('新建进程提示') }}</span>
             </div>
             <process-table
               v-if="processList.length"
-              :loading="$loading([templateDetailRequestId, requestIds.processList])"
+              :loading="
+                $loading([templateDetailRequestId, requestIds.processList])
+              "
               :properties="processProperties"
               :auth="auth"
               :show-operation="true"
+              :list="processList"
               @on-edit="handleUpdateProcess"
-              @on-delete="handleDeleteProcess"
-              :list="processList">
+              @on-delete="handleDeleteProcess">
             </process-table>
           </div>
         </cmdb-collapse>
@@ -715,13 +839,17 @@
     </div>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
-        <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_TEMPLATE, relation: [bizId, templateId] }">
+        <cmdb-auth
+          :auth="{
+            type: $OPERATION.U_SERVICE_TEMPLATE,
+            relation: [bizId, templateId],
+          }">
           <bk-button
-            theme="primary"
             slot-scope="{ disabled }"
+            theme="primary"
             :disabled="disabled"
             @click="handleGoToEdit">
-            {{$t('编辑')}}
+            {{ $t('编辑') }}
           </bk-button>
         </cmdb-auth>
       </div>
@@ -733,9 +861,10 @@
       :title="processSlider.title"
       :width="800"
       :before-close="handleProcessSliderBeforeClose">
-      <template slot="content" v-if="processSlider.show">
-        <process-form v-test-id.businessServiceTemplate="'processForm'"
+      <template v-if="processSlider.show" slot="content">
+        <process-form
           ref="processFormEl"
+          v-test-id.businessServiceTemplate="'processForm'"
           :auth="auth"
           :properties="processProperties"
           :property-groups="processPropertyGroup"
@@ -755,11 +884,11 @@
 
 <style lang="scss" scoped>
 .template-config {
-  padding: 15px 20px 0 20px;
+  padding: 15px 20px 0;
 
   .form-group {
     background: #fff;
-    box-shadow: 0 2px 4px 0 rgba(25, 25, 41, 0.05);
+    box-shadow: 0 2px 4px 0 rgb(25 25 41 / 5%);
     border-radius: 2px;
     padding: 16px 24px;
 
@@ -769,7 +898,7 @@
   }
 
   .form-content {
-    padding: 24px 90px 12px 90px;
+    padding: 24px 90px 12px;
 
     .property-form {
       width: 100%;
@@ -803,13 +932,14 @@
 
     &.is-loading {
       font-size: 0;
-      &:before {
-        content: "";
+
+      &::before {
+        content: '';
         display: inline-block;
         width: 16px;
         height: 16px;
         margin: 2px 0;
-        background-image: url("@/assets/images/icon/loading.svg");
+        background-image: url('@/assets/images/icon/loading.svg');
       }
     }
   }
@@ -817,6 +947,7 @@
   .category-container {
     display: flex;
     width: 100%;
+
     .category-item {
       flex: 1;
 
@@ -836,14 +967,14 @@
     padding-bottom: 14px;
 
     .create-tips {
-      color: #63656E;
+      color: #63656e;
       font-size: 12px;
       padding-left: 8px;
     }
   }
 
   .property-config-tips {
-    color: #63656E;
+    color: #63656e;
     font-size: 12px;
     padding-left: 8px;
   }
@@ -852,20 +983,23 @@
     font-size: 12px;
     display: flex;
     align-items: center;
+
     .icon {
       font-size: 14px;
       margin-right: 4px;
     }
+
     .link {
       line-height: normal;
       vertical-align: unset;
+
       ::v-deep .bk-link-text {
         font-size: 12px;
       }
     }
   }
-
 }
+
 .process-success-message {
   .bk-link {
     vertical-align: baseline;
@@ -882,6 +1016,7 @@
     height: 52px;
     padding: 0 20px;
     margin-top: 8px;
+
     .bk-button {
       min-width: 86px;
 
@@ -889,9 +1024,11 @@
         margin-left: 8px;
       }
     }
+
     .auth-box + .bk-button {
       margin-left: 8px;
     }
+
     &.is-sticky {
       background-color: #fff;
       border-top: 1px solid $borderColor;
@@ -900,11 +1037,11 @@
 }
 </style>
 <style lang="scss">
-  .confirm-edit-service-template-name-infobox {
-    .bk-dialog-sub-header {
-      .bk-dialog-header-inner {
-        text-align: left !important;
-      }
+.confirm-edit-service-template-name-infobox {
+  .bk-dialog-sub-header {
+    .bk-dialog-header-inner {
+      text-align: left !important;
     }
   }
+}
 </style>

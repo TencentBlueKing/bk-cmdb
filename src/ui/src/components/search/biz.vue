@@ -23,14 +23,14 @@
 </template>
 
 <script>
-  import autocomplete from './mixins/autocomplete-biz'
-  export default {
-    name: 'cmdb-search-biz',
-    mixins: [autocomplete],
-    data() {
-      return {
-        type: 'biz'
-      }
+import autocomplete from './mixins/autocomplete-biz'
+export default {
+  name: 'cmdb-search-biz',
+  mixins: [autocomplete],
+  data() {
+    return {
+      type: 'biz',
     }
-  }
+  },
+}
 </script>

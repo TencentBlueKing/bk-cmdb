@@ -18,12 +18,12 @@ export default {
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '资源目录'
+      i18n: '资源目录',
     },
     custom: {
       resourceCollection: 'resourceCollection',
       hostCollected: 'hostCollected',
-      businessCollected: 'businessCollected'
-    }
-  })
+      businessCollected: 'businessCollected',
+    },
+  }),
 }

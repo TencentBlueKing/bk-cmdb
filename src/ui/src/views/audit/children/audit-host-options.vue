@@ -13,52 +13,76 @@
 <template>
   <table class="audit-host-options">
     <colgroup>
-      <col width="4%">
-      <col width="28%">
-      <col width="6%">
-      <col width="28%">
-      <col width="6%">
-      <col width="28%">
+      <col width="4%" />
+      <col width="28%" />
+      <col width="6%" />
+      <col width="28%" />
+      <col width="6%" />
+      <col width="28%" />
     </colgroup>
     <tr>
-      <td align="right"><label class="option-label">{{$t('业务')}}</label></td>
+      <td align="right">
+        <label class="option-label">{{ $t('业务') }}</label>
+      </td>
       <td>
-        <audit-business-selector class="option-value"
+        <audit-business-selector
+          v-model="condition.bk_biz_id"
+          class="option-value"
           searchable
-          :placeholder="$t('请选择xx', { name: $t('业务') })"
-          v-model="condition.bk_biz_id">
+          :placeholder="$t('请选择xx', { name: $t('业务') })">
         </audit-business-selector>
       </td>
-      <td align="right"><label class="option-label">{{$t('动作')}}</label></td>
+      <td align="right">
+        <label class="option-label">{{ $t('动作') }}</label>
+      </td>
       <td>
-        <audit-action-selector class="option-value"
+        <audit-action-selector
+          v-model="condition.action"
+          class="option-value"
           :target="condition.resource_type"
           :placeholder="$t('请选择xx', { name: $t('动作') })"
-          :empty-text="$t('请先选择操作对象')"
-          v-model="condition.action">
+          :empty-text="$t('请先选择操作对象')">
         </audit-action-selector>
       </td>
-      <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
+      <td align="right">
+        <label class="option-label">{{ $t('时间') }}</label>
+      </td>
       <td>
-        <cmdb-form-date-range class="option-value"
+        <cmdb-form-date-range
+          v-model="condition.operation_time"
+          class="option-value"
           font-size="medium"
           :placeholder="$t('请选择xx', { name: $t('时间') })"
-          :clearable="false"
-          v-model="condition.operation_time">
+          :clearable="false">
         </cmdb-form-date-range>
       </td>
     </tr>
     <tr>
-      <td align="right"><label class="option-label">{{$t('账号')}}</label></td>
-      <td><audit-user-selector class="option-value" v-model="condition.condition.user" /></td>
-      <td align="right"><label class="option-label">{{$t('主机')}}</label></td>
+      <td align="right">
+        <label class="option-label">{{ $t('账号') }}</label>
+      </td>
       <td>
-        <bk-input class="option-value"
+        <audit-user-selector
+          v-model="condition.condition.user"
+          class="option-value" />
+      </td>
+      <td align="right">
+        <label class="option-label">{{ $t('主机') }}</label>
+      </td>
+      <td>
+        <bk-input
           v-model.trim="instanceFilter"
-          :placeholder="$t('请输入xx', { name: instanceType === 'resource_id' ? 'ID' : 'IP' })">
-          <bk-select class="option-type" slot="prepend"
-            :clearable="false"
-            v-model="instanceType">
+          class="option-value"
+          :placeholder="
+            $t('请输入xx', {
+              name: instanceType === 'resource_id' ? 'ID' : 'IP',
+            })
+          ">
+          <bk-select
+            slot="prepend"
+            v-model="instanceType"
+            class="option-type"
+            :clearable="false">
             <bk-option id="resource_name" :name="$t('IP')"></bk-option>
             <bk-option id="extend_resource_name" :name="$t('IPv6')"></bk-option>
             <bk-option id="resource_id" name="ID"></bk-option>
@@ -68,8 +92,12 @@
       <td></td>
       <td>
         <div class="options-button">
-          <bk-button class="mr10" theme="primary" @click="handleSearch(1)">{{$t('查询')}}</bk-button>
-          <bk-button theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
+          <bk-button class="mr10" theme="primary" @click="handleSearch(1)">{{
+            $t('查询')
+          }}</bk-button>
+          <bk-button theme="default" @click="handleReset">{{
+            $t('清空')
+          }}</bk-button>
         </div>
       </td>
     </tr>
@@ -77,108 +105,115 @@
 </template>
 
 <script>
-  import AuditActionSelector from './audit-action-selector'
-  import AuditUserSelector from './audit-user-selector'
-  import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
-  import RouterQuery from '@/router/query'
-  import tools from '@/utils/tools'
+import tools from '@/utils/tools'
+import RouterQuery from '@/router/query'
+import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
 
-  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
-  const defaultCondition = () => ({
-    bk_biz_id: '',
-    resource_type: 'host',
-    action: [],
-    operation_time: [today, today],
-    resource_id: '',
-    resource_name: '',
-    extend_resource_name: '',
-    category: 'host',
-    fuzzy_query: false,
-    condition: {
-      user: ['in', '']
+import AuditActionSelector from './audit-action-selector'
+import AuditUserSelector from './audit-user-selector'
+
+const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
+const defaultCondition = () => ({
+  bk_biz_id: '',
+  resource_type: 'host',
+  action: [],
+  operation_time: [today, today],
+  resource_id: '',
+  resource_name: '',
+  extend_resource_name: '',
+  category: 'host',
+  fuzzy_query: false,
+  condition: {
+    user: ['in', ''],
+  },
+})
+
+export default {
+  name: 'audit-host-options',
+  components: {
+    AuditActionSelector,
+    AuditUserSelector,
+    AuditBusinessSelector,
+  },
+  data() {
+    return {
+      instanceType: 'resource_name',
+      condition: {
+        ...defaultCondition(),
+      },
     }
-  })
-
-  export default {
-    name: 'audit-host-options',
-    components: {
-      AuditActionSelector,
-      AuditUserSelector,
-      AuditBusinessSelector
+  },
+  computed: {
+    instanceFilter: {
+      get() {
+        return this.condition[this.instanceType]
+      },
+      set(value) {
+        this.condition[this.instanceType] = value
+      },
     },
-    data() {
-      return {
-        instanceType: 'resource_name',
-        condition: {
-          ...defaultCondition()
-        }
-      }
+  },
+  watch: {
+    instanceType() {
+      this.condition.resource_id = ''
+      this.condition.resource_name = ''
+      this.condition.extend_resource_name = ''
     },
-    computed: {
-      instanceFilter: {
-        get() {
-          return this.condition[this.instanceType]
-        },
-        set(value) {
-          this.condition[this.instanceType] = value
-        }
-      }
+  },
+  created() {
+    this.handleSearch()
+  },
+  methods: {
+    handleSearch(isEvent) {
+      this.$emit('condition-change', this.condition)
+      RouterQuery.set({
+        tab: 'host',
+        page: 1,
+        _t: Date.now(),
+        _e: isEvent,
+      })
     },
-    watch: {
-      instanceType() {
-        this.condition.resource_id = ''
-        this.condition.resource_name = ''
-        this.condition.extend_resource_name = ''
-      }
-    },
-    created() {
+    handleReset() {
+      this.condition = defaultCondition()
       this.handleSearch()
     },
-    methods: {
-      handleSearch(isEvent) {
-        this.$emit('condition-change', this.condition)
-        RouterQuery.set({
-          tab: 'host',
-          page: 1,
-          _t: Date.now(),
-          _e: isEvent
-        })
-      },
-      handleReset() {
-        this.condition = defaultCondition()
-        this.handleSearch()
-      }
-    }
-  }
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .audit-host-options {
-        width: 100%;
-        padding: 5px 0;
-        tr {
-            td {
-                padding: 5px 0;
-            }
-        }
-        .option-label {
-            font-size: 14px;
-            padding: 0 10px;
-            @include ellipsis;
-        }
-        .option-value {
-            width: 100%;
-            min-width: 230px;
-        }
-        .option-type {
-            width: 80px;
-            margin-top: -1px;
-            border-color: #c4c6cc transparent;
-            box-shadow: none;
-        }
-        .options-button {
-            display: flex;
-            align-items: center;
-        }
+.audit-host-options {
+  width: 100%;
+  padding: 5px 0;
+
+  tr {
+    td {
+      padding: 5px 0;
     }
+  }
+
+  .option-label {
+    font-size: 14px;
+    padding: 0 10px;
+
+    @include ellipsis;
+  }
+
+  .option-value {
+    width: 100%;
+    min-width: 230px;
+  }
+
+  .option-type {
+    width: 80px;
+    margin-top: -1px;
+    border-color: #c4c6cc transparent;
+    box-shadow: none;
+  }
+
+  .options-button {
+    display: flex;
+    align-items: center;
+  }
+}
 </style>

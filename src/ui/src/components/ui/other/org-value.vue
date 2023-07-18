@@ -11,67 +11,75 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
-  import store from '@/store'
-  import Loading from '@/components/loading/index.vue'
-  import FlexTag from '@/components/ui/flex-tag'
-  import { isEmptyPropertyValue } from '@/utils/tools'
+import { computed, ref, watchEffect } from 'vue'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String, Number],
-      default: () => ([])
+import store from '@/store'
+import { isEmptyPropertyValue } from '@/utils/tools'
+import Loading from '@/components/loading/index.vue'
+import FlexTag from '@/components/ui/flex-tag'
+
+const props = defineProps({
+  value: {
+    type: [Array, String, Number],
+    default: () => [],
+  },
+  property: {
+    type: Object,
+    default: () => ({}),
+  },
+  showOn: String,
+})
+
+defineExpose({
+  getCopyValue: () => tagList.value.join('\n') || '--',
+})
+
+const list = ref([])
+
+const tagList = computed(() =>
+  list.value.map(item => item.full_name.split('/').join(' / '))
+)
+
+const requestId = computed(
+  () =>
+    `get_department_id_${
+      Array.isArray(props.value) ? props.value.join('_') : String(props.value)
+    }`
+)
+
+const isTextStyle = computed(() => props.showOn === 'search')
+
+const getOrganization = async value => {
+  const res = await store.dispatch('organization/getDepartment', {
+    params: {
+      lookup_field: 'id',
+      exact_lookups: Array.isArray(value) ? value.join(',') : value,
     },
-    property: {
-      type: Object,
-      default: () => ({})
-    },
-    showOn: String
+    fromCache: true,
+    requestId: requestId.value,
   })
 
-  defineExpose({
-    getCopyValue: () => tagList.value.join('\n') || '--'
-  })
+  return res?.results ?? []
+}
 
-  const list = ref([])
-
-  const tagList = computed(() => list.value.map(item => item.full_name.split('/').join(' / ')))
-
-  const requestId = computed(() => `get_department_id_${Array.isArray(props.value) ? props.value.join('_') : String(props.value)}`)
-
-  const isTextStyle = computed(() => props.showOn === 'search')
-
-  const getOrganization = async (value) => {
-    const res = await store.dispatch('organization/getDepartment', {
-      params: {
-        lookup_field: 'id',
-        exact_lookups: Array.isArray(value) ? value.join(',') : value
-      },
-      fromCache: true,
-      requestId: requestId.value
-    })
-
-    return res?.results ?? []
+watchEffect(async () => {
+  if (isEmptyPropertyValue(props.value)) {
+    list.value = []
+    return
   }
-
-  watchEffect(async () => {
-    if (isEmptyPropertyValue(props.value)) {
-      list.value = []
-      return
-    }
-    try {
-      const result = await getOrganization(props.value)
-      list.value = result
-    } catch (error) {
-      list.value = []
-    }
-  })
+  try {
+    const result = await getOrganization(props.value)
+    list.value = result
+  } catch (error) {
+    list.value = []
+  }
+})
 </script>
 
 <template>
   <div class="org-value">
     <loading :loading="$loading(requestId)">
-      <div class="empty" v-if="!list.length">--</div>
+      <div v-if="!list.length" class="empty">--</div>
       <flex-tag v-else :list="tagList" :is-text-style="isTextStyle"></flex-tag>
     </loading>
   </div>

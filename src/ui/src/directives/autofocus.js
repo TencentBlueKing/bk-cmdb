@@ -14,7 +14,7 @@
  * @directive 自动聚焦指令，目前只支持 input
  */
 export const autofocus = {
-  update: (el) => {
+  update: el => {
     const input = el.querySelector('input')
 
     if (input) {
@@ -23,5 +23,5 @@ export const autofocus = {
         input.focus()
       }, 0)
     }
-  }
+  },
 }

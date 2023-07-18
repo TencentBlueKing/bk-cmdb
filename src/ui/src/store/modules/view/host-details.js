@@ -17,27 +17,31 @@ const state = {
   propertyGroups: [],
   association: {
     source: [],
-    target: []
+    target: [],
   },
   mainLine: [],
   instances: [],
   associationTypes: [],
-  expandAll: false
+  expandAll: false,
 }
 
 function isBizCustomData(data) {
   return has(data, 'bk_biz_id') && data.bk_biz_id > 0
 }
 const getters = {
-  groupedProperties: (state) => {
+  groupedProperties: state => {
     const groupedProperties = []
-    state.propertyGroups.forEach((group) => {
-      const properties = state.properties.filter(property => property.bk_property_group === group.bk_group_id)
+    state.propertyGroups.forEach(group => {
+      const properties = state.properties.filter(
+        property => property.bk_property_group === group.bk_group_id
+      )
       if (properties.length) {
-        properties.sort((prev, next) => prev.bk_property_index - next.bk_property_index)
+        properties.sort(
+          (prev, next) => prev.bk_property_index - next.bk_property_index
+        )
         groupedProperties.push({
           ...group,
-          properties
+          properties,
         })
       }
     })
@@ -45,11 +49,12 @@ const getters = {
       const bizCustomPrev = isBizCustomData(prev)
       const bizCustomNext = isBizCustomData(next)
       if (
-        (bizCustomPrev && bizCustomNext)
-              || (!bizCustomPrev && !bizCustomNext)
+        (bizCustomPrev && bizCustomNext) ||
+        (!bizCustomPrev && !bizCustomNext)
       ) {
         return prev.bk_group_index - next.bk_group_index
-      } if (bizCustomPrev) {
+      }
+      if (bizCustomPrev) {
         return 1
       }
       return -1
@@ -60,8 +65,9 @@ const getters = {
   source: state => state.association.source,
   target: state => state.association.target,
   allInstances: state => state.instances,
-  isBusinessHost: state => (state.info.biz || []).some(business => business.default === 0),
-  properties: state => state.properties
+  isBusinessHost: state =>
+    (state.info.biz || []).some(business => business.default === 0),
+  properties: state => state.properties,
 }
 
 const mutations = {
@@ -95,12 +101,12 @@ const mutations = {
   },
   toggleExpandAll(state, expandAll) {
     state.expandAll = expandAll
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  mutations
+  mutations,
 }

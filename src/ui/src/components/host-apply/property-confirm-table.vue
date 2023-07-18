@@ -15,40 +15,64 @@
     <bk-table
       :data="table.list"
       :pagination="table.pagination"
-      :max-height="maxHeight || ($APP.height - 220 - 119)"
+      :max-height="maxHeight || $APP.height - 220 - 119"
       @page-change="handlePageChange"
       @page-limit-change="handleSizeChange">
-      <bk-table-column :label="$t('内网IP')" min-width="150" show-overflow-tooltip>
+      <bk-table-column
+        :label="$t('内网IP')"
+        min-width="150"
+        show-overflow-tooltip>
         <template slot-scope="{ row }">
           <bk-button
             v-if="row.expect_host.bk_host_innerip"
-            class="ip-value" theme="primary" text @click="handleShowDetails(row)">
-            {{row.expect_host.bk_host_innerip }}
+            class="ip-value"
+            theme="primary"
+            text
+            @click="handleShowDetails(row)">
+            {{ row.expect_host.bk_host_innerip }}
           </bk-button>
-          <span v-else>{{'--'}}</span>
+          <span v-else>{{ '--' }}</span>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('内网IPv6')" min-width="150" show-overflow-tooltip>
+      <bk-table-column
+        :label="$t('内网IPv6')"
+        min-width="150"
+        show-overflow-tooltip>
         <template slot-scope="{ row }">
           <bk-button
             v-if="row.expect_host.bk_host_innerip_v6"
-            class="ip-value" theme="primary" text @click="handleShowDetails(row)">
-            {{row.expect_host.bk_host_innerip_v6 }}
+            class="ip-value"
+            theme="primary"
+            text
+            @click="handleShowDetails(row)">
+            {{ row.expect_host.bk_host_innerip_v6 }}
           </bk-button>
-          <span v-else>{{'--'}}</span>
+          <span v-else>{{ '--' }}</span>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('主机名称')" min-width="160" prop="expect_host.bk_host_name">
-        <template slot-scope="{ row }">{{row.expect_host.bk_host_name || '--'}}</template>
+      <bk-table-column
+        :label="$t('主机名称')"
+        min-width="160"
+        prop="expect_host.bk_host_name">
+        <template slot-scope="{ row }">{{
+          row.expect_host.bk_host_name || '--'
+        }}</template>
       </bk-table-column>
       <bk-table-column
         :label="$t('当前值')"
         min-width="500"
         class-name="table-cell-change-value"
         show-overflow-tooltip
-        :render-header="(h, data) => renderTableHeader(h, data, $t('主机属性当前值'), { placement: 'right' })">
+        :render-header="
+          (h, data) =>
+            renderTableHeader(h, data, $t('主机属性当前值'), {
+              placement: 'right',
+            })
+        ">
         <template slot-scope="{ row }">
-          <div class="cell-change-value"><vnodes :vnode="getCurrentValue(row)"></vnodes></div>
+          <div class="cell-change-value">
+            <vnodes :vnode="getCurrentValue(row)"></vnodes>
+          </div>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -56,13 +80,20 @@
         min-width="500"
         class-name="table-cell-change-value"
         show-overflow-tooltip
-        :render-header="(h, data) => renderTableHeader(h, data, $t('属性自动应用配置值'), { placement: 'right' })">
+        :render-header="
+          (h, data) =>
+            renderTableHeader(h, data, $t('属性自动应用配置值'), {
+              placement: 'right',
+            })
+        ">
         <template slot-scope="{ row }">
-          <div class="cell-change-value"><vnodes :vnode="getTargetValue(row)"></vnodes></div>
+          <div class="cell-change-value">
+            <vnodes :vnode="getTargetValue(row)"></vnodes>
+          </div>
         </template>
       </bk-table-column>
       <cmdb-table-empty slot="empty">
-        <div>{{$t('暂无主机新转入的主机将会自动应用模块的主机属性')}}</div>
+        <div>{{ $t('暂无主机新转入的主机将会自动应用模块的主机属性') }}</div>
       </cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -84,223 +115,257 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
-  export default {
-    components: {
-      vnodes: {
-        functional: true,
-        render: (h, ctx) => ctx.props.vnode
-      }
+import { mapGetters, mapState } from 'vuex'
+export default {
+  components: {
+    vnodes: {
+      functional: true,
+      render: (h, ctx) => ctx.props.vnode,
     },
-    props: {
-      list: {
-        type: Array,
-        default: () => ([])
-      },
-      total: {
-        type: Number
-      },
-      maxHeight: {
-        type: [Number, String],
-        default: 0
-      }
+  },
+  props: {
+    list: {
+      type: Array,
+      default: () => [],
     },
-    data() {
-      return {
-        table: {
-          list: [],
-          pagination: {
-            current: 1,
-            count: 0,
-            ...this.$tools.getDefaultPaginationConfig()
-          }
+    total: {
+      type: Number,
+    },
+    maxHeight: {
+      type: [Number, String],
+      default: 0,
+    },
+  },
+  data() {
+    return {
+      table: {
+        list: [],
+        pagination: {
+          current: 1,
+          count: 0,
+          ...this.$tools.getDefaultPaginationConfig(),
         },
-        details: {
-          show: false,
-          title: '',
-          inst: {},
-          properties: [],
-          propertyGroups: []
-        },
-        slider: {
-          width: 514,
-          isShow: false,
-          title: ''
-        }
-      }
-    },
-    computed: {
-      ...mapGetters('objectModelClassify', [
-        'getModelById'
-      ]),
-      ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('hostApply', ['configPropertyList']),
-      ...mapState('hostApply', ['propertyList'])
-    },
-    watch: {
-      list() {
-        this.setTableList()
       },
-      total(value) {
-        this.table.pagination.count = value
-      }
-    },
-    async created() {
-      await this.getHostPropertyList()
+      details: {
+        show: false,
+        title: '',
+        inst: {},
+        properties: [],
+        propertyGroups: [],
+      },
+      slider: {
+        width: 514,
+        isShow: false,
+        title: '',
+      },
+    }
+  },
+  computed: {
+    ...mapGetters('objectModelClassify', ['getModelById']),
+    ...mapGetters('objectBiz', ['bizId']),
+    ...mapGetters('hostApply', ['configPropertyList']),
+    ...mapState('hostApply', ['propertyList']),
+  },
+  watch: {
+    list() {
       this.setTableList()
     },
-    methods: {
-      async getHostPropertyList() {
-        try {
-          const data = await this.$store.dispatch('hostApply/getProperties', {
-            params: { bk_biz_id: this.bizId },
-            config: {
-              requestId: 'getHostPropertyList',
-              fromCache: true
-            }
-          })
+    total(value) {
+      this.table.pagination.count = value
+    },
+  },
+  async created() {
+    await this.getHostPropertyList()
+    this.setTableList()
+  },
+  methods: {
+    async getHostPropertyList() {
+      try {
+        const data = await this.$store.dispatch('hostApply/getProperties', {
+          params: { bk_biz_id: this.bizId },
+          config: {
+            requestId: 'getHostPropertyList',
+            fromCache: true,
+          },
+        })
 
-          this.$store.commit('hostApply/setPropertyList', data)
-        } catch (e) {
-          console.error(e)
-        }
-      },
-      setTableList() {
-        const { start, limit } = this.$tools.getPageParams(this.table.pagination)
-        this.table.list = this.list.slice(start, start + limit)
-      },
-      getCurrentValue(row) {
-        const { conflicts } = row
-        const resultConflicts = conflicts.map((item) => {
-          const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          return (
-            <span>
-              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
-            </span>
-          )
-        })
+        this.$store.commit('hostApply/setPropertyList', data)
+      } catch (e) {
+        console.error(e)
+      }
+    },
+    setTableList() {
+      const { start, limit } = this.$tools.getPageParams(this.table.pagination)
+      this.table.list = this.list.slice(start, start + limit)
+    },
+    getCurrentValue(row) {
+      const { conflicts } = row
+      const resultConflicts = conflicts.map(item => {
+        const property =
+          this.configPropertyList.find(
+            propertyItem => propertyItem.id === item.bk_attribute_id
+          ) || {}
         return (
-          <div>
-            { resultConflicts.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-          </div>
+          <span>
+            {property.bk_property_name}：
+            <cmdb-property-value
+              value={item.bk_property_value}
+              property={property}
+            />
+          </span>
         )
-      },
-      getTargetValue(row) {
-        const { update_fields: updateFields } = row
-        const resultUpdates = updateFields.map((item) => {
-          const property = this.configPropertyList.find(propertyItem => propertyItem.id === item.bk_attribute_id) || {}
-          return (
-            <span>
-              {property.bk_property_name}：<cmdb-property-value value={item.bk_property_value} property={property} />
-            </span>
-          )
-        })
+      })
+      return (
+        <div>
+          {resultConflicts.reduce(
+            (acc, x) => (acc === null ? [x] : [acc, '；', x]),
+            null
+          )}
+        </div>
+      )
+    },
+    getTargetValue(row) {
+      const { update_fields: updateFields } = row
+      const resultUpdates = updateFields.map(item => {
+        const property =
+          this.configPropertyList.find(
+            propertyItem => propertyItem.id === item.bk_attribute_id
+          ) || {}
         return (
-          <div>
-            { resultUpdates.reduce((acc, x) => (acc === null ? [x] : [acc, '；', x]), null) }
-          </div>
+          <span>
+            {property.bk_property_name}：
+            <cmdb-property-value
+              value={item.bk_property_value}
+              property={property}
+            />
+          </span>
         )
-      },
-      getPropertyGroups() {
-        return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
-          objId: 'host',
-          params: { bk_biz_id: this.bizId }
-        })
-      },
-      renderTableHeader(h, data, tips, options = {}) {
-        const directive = {
-          content: tips,
-          placement: options.placement || 'top-end'
-        }
-        if (options.width) {
-          directive.width = options.width
-        }
-        return <span>{ data.column.label } <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={ directive }></i></span>
-      },
-      handlePageChange(page) {
-        this.table.pagination.current = page
-        this.setTableList()
-      },
-      handleSizeChange(size) {
-        this.table.pagination.limit = size
-        this.table.pagination.current = 1
-        this.setTableList()
-      },
-      async handleShowDetails(row) {
-        this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
-        const properties = this.propertyList
-        // 管控区域数据
-        row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
-        row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
-        try {
-          const [inst, propertyGroups] = await Promise.all([
-            this.getHostInfo(row),
-            this.getPropertyGroups()
-          ])
-          inst.bk_cloud_id = [row.cloud_area]
-          this.details.inst = inst
-          this.details.properties = properties
-          this.details.propertyGroups = propertyGroups
-          this.slider.isShow = true
-        } catch (e) {
-          console.log(e)
-          this.details.inst = {}
-          this.details.properties = []
-          this.details.propertyGroups = []
-          this.slider.isShow = false
-        }
-      },
-      async getHostInfo(row) {
-        try {
-          const { info } = this.$store.dispatch('hostSearch/searchHost', {
-            params: {
-              bk_biz_id: this.bizId,
-              condition: ['biz', 'set', 'module'].map(model => ({
-                bk_obj_id: model,
-                condition: [],
-                fields: [`bk_${model}_id`]
-              })).concat({
-                bk_obj_id: 'host',
-                condition: [{ field: 'bk_host_id', operator: '$eq', value: row.expect_host.bk_host_id }],
-                fields: []
-              }),
-              ip: { flag: 'bk_host_innerip', exact: 1, data: [] },
-              page: { start: 0, limit: 1 }
-            }
-          })
-          const host = info ? info.host : {}
-          return { ...host, ...row.expect_host }
-        } catch (error) {
-          console.error(error)
-          return { ...row.expect_host }
-        }
-      },
-      handleSliderCancel() {
+      })
+      return (
+        <div>
+          {resultUpdates.reduce(
+            (acc, x) => (acc === null ? [x] : [acc, '；', x]),
+            null
+          )}
+        </div>
+      )
+    },
+    getPropertyGroups() {
+      return this.$store.dispatch('objectModelFieldGroup/searchGroup', {
+        objId: 'host',
+        params: { bk_biz_id: this.bizId },
+      })
+    },
+    renderTableHeader(h, data, tips, options = {}) {
+      const directive = {
+        content: tips,
+        placement: options.placement || 'top-end',
+      }
+      if (options.width) {
+        directive.width = options.width
+      }
+      return (
+        <span>
+          {data.column.label}{' '}
+          <i class="bk-cc-icon icon-cc-tips" v-bk-tooltips={directive}></i>
+        </span>
+      )
+    },
+    handlePageChange(page) {
+      this.table.pagination.current = page
+      this.setTableList()
+    },
+    handleSizeChange(size) {
+      this.table.pagination.limit = size
+      this.table.pagination.current = 1
+      this.setTableList()
+    },
+    async handleShowDetails(row) {
+      this.slider.title = `${this.$t('属性详情')}【${
+        row.expect_host.bk_host_innerip
+      }】`
+      const properties = this.propertyList
+      // 管控区域数据
+      row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
+      row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
+      try {
+        const [inst, propertyGroups] = await Promise.all([
+          this.getHostInfo(row),
+          this.getPropertyGroups(),
+        ])
+        inst.bk_cloud_id = [row.cloud_area]
+        this.details.inst = inst
+        this.details.properties = properties
+        this.details.propertyGroups = propertyGroups
+        this.slider.isShow = true
+      } catch (e) {
+        console.log(e)
+        this.details.inst = {}
+        this.details.properties = []
+        this.details.propertyGroups = []
         this.slider.isShow = false
       }
-    }
-  }
+    },
+    async getHostInfo(row) {
+      try {
+        const { info } = this.$store.dispatch('hostSearch/searchHost', {
+          params: {
+            bk_biz_id: this.bizId,
+            condition: ['biz', 'set', 'module']
+              .map(model => ({
+                bk_obj_id: model,
+                condition: [],
+                fields: [`bk_${model}_id`],
+              }))
+              .concat({
+                bk_obj_id: 'host',
+                condition: [
+                  {
+                    field: 'bk_host_id',
+                    operator: '$eq',
+                    value: row.expect_host.bk_host_id,
+                  },
+                ],
+                fields: [],
+              }),
+            ip: { flag: 'bk_host_innerip', exact: 1, data: [] },
+            page: { start: 0, limit: 1 },
+          },
+        })
+        const host = info ? info.host : {}
+        return { ...host, ...row.expect_host }
+      } catch (error) {
+        console.error(error)
+        return { ...row.expect_host }
+      }
+    },
+    handleSliderCancel() {
+      this.slider.isShow = false
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .cell-change-value {
-        padding: 8px 0;
-        line-height: 1.6;
-        word-break: break-word;
-    }
-    .ip-value {
-      white-space: nowrap;
-    }
+.cell-change-value {
+  padding: 8px 0;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.ip-value {
+  white-space: nowrap;
+}
 </style>
 <style lang="scss">
-  .table-cell-change-value {
-    .cell {
-      -webkit-line-clamp: unset !important;
-      display: block !important;
+.table-cell-change-value {
+  .cell {
+    -webkit-line-clamp: unset !important;
+    display: block !important;
 
-      .icon-cc-tips {
-        margin-top: -2px;
-      }
+    .icon-cc-tips {
+      margin-top: -2px;
     }
-    }
+  }
+}
 </style>

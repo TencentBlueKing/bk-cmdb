@@ -25,5 +25,5 @@ export const findAll = () => find()
 
 export default {
   find,
-  findAll
+  findAll,
 }

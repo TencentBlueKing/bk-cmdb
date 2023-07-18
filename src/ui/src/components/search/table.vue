@@ -11,18 +11,20 @@
 -->
 
 <template>
-  <bk-tag-input ref="tagInput"
+  <bk-tag-input
+    v-if="multiple"
+    ref="tagInput"
+    v-model="localValue"
     allow-create
     allow-auto-match
-    v-if="multiple"
-    v-model="localValue"
     v-bind="$attrs"
     :list="[]"
     @removeAll="() => $emit('clear')"
     @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">
   </bk-tag-input>
-  <bk-input v-else
+  <bk-input
+    v-else
     v-model="localValue"
     v-bind="$attrs"
     @clear="() => $emit('clear')"
@@ -32,50 +34,58 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-table',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: [String, Array],
-        default: ''
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-table',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: [String, Array],
+      default: '',
     },
-    computed: {
-      multiple() {
-        return Array.isArray(this.value)
+  },
+  computed: {
+    multiple() {
+      return Array.isArray(this.value)
+    },
+    localValue: {
+      get() {
+        return this.value
       },
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
-      }
-    },
-    mounted() {
-      this.addPasteEvent()
-    },
-    beforeDestroy() {
-      this.removePasteEvent()
-    },
-    methods: {
-      addPasteEvent() {
-        this.$refs.tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
       },
-      removePasteEvent() {
-        this.$refs.tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
-      },
-      handlePaste(event) {
-        const text = event.clipboardData.getData('text')
-        const values = text.split(/,|;|\n/).map(value => value.trim())
-          .filter(value => value.length)
-        const value = [...new Set([...this.localValue, ...values])]
-        this.localValue = value
-      }
-    }
-  }
+    },
+  },
+  mounted() {
+    this.addPasteEvent()
+  },
+  beforeDestroy() {
+    this.removePasteEvent()
+  },
+  methods: {
+    addPasteEvent() {
+      this.$refs.tagInput.$refs.input.addEventListener(
+        'paste',
+        this.handlePaste
+      )
+    },
+    removePasteEvent() {
+      this.$refs.tagInput.$refs.input.removeEventListener(
+        'paste',
+        this.handlePaste
+      )
+    },
+    handlePaste(event) {
+      const text = event.clipboardData.getData('text')
+      const values = text
+        .split(/,|;|\n/)
+        .map(value => value.trim())
+        .filter(value => value.length)
+      const value = [...new Set([...this.localValue, ...values])]
+      this.localValue = value
+    },
+  },
+}
 </script>

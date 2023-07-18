@@ -16,194 +16,228 @@
     :is-show.sync="isShow"
     :title="$t('添加查询条件')"
     @hidden="hanldeHidden">
-    <div class="property-selector-content" slot="content">
+    <div slot="content" class="property-selector-content">
       <div class="property-selector-options">
-        <bk-input class="options-filter"
+        <bk-input
           v-model.trim="filter"
+          class="options-filter"
           right-icon="icon-search"
           clearable>
         </bk-input>
       </div>
-      <div class="property-selector-group"
+      <div
         v-for="model in models"
         v-show="isShowGroup(model)"
-        :key="model.id">
-        <label class="group-label">{{model.bk_obj_name}}</label>
+        :key="model.id"
+        class="property-selector-group">
+        <label class="group-label">{{ model.bk_obj_name }}</label>
         <div class="group-property-list">
-          <bk-checkbox class="group-property-item"
+          <bk-checkbox
             v-for="property in matchedPropertyMap[model.bk_obj_id]"
             v-show="isShowProperty(property)"
             :key="property.id"
+            class="group-property-item"
             :title="property.bk_property_name"
             :checked="isChecked(property)"
-            :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
+            :disabled="
+              disabledPropertyMap[model.bk_obj_id].includes(
+                property.bk_property_id
+              )
+            "
             @change="handleChange(property, ...arguments)">
-            <span v-bk-tooltips.top-start="{
-              disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
-              content: $t('该字段不支持配置')
-            }">
-              {{property.bk_property_name}}
+            <span
+              v-bk-tooltips.top-start="{
+                disabled: !disabledPropertyMap[model.bk_obj_id].includes(
+                  property.bk_property_id
+                ),
+                content: $t('该字段不支持配置'),
+              }">
+              {{ property.bk_property_name }}
             </span>
           </bk-checkbox>
         </div>
       </div>
-      <cmdb-data-empty v-if="isShowEmpty" slot="empty"
+      <cmdb-data-empty
+        v-if="isShowEmpty"
+        slot="empty"
         :stuff="dataEmpty"
         @clear="handleClearFilter"></cmdb-data-empty>
     </div>
-    <div class="property-selector-footer" slot="footer">
-      <bk-button class="mr10" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
-      <bk-button theme="default" @click="handleConfirm">{{$t('取消')}}</bk-button>
+    <div slot="footer" class="property-selector-footer">
+      <bk-button class="mr10" theme="primary" @click="handleConfirm">{{
+        $t('确定')
+      }}</bk-button>
+      <bk-button theme="default" @click="handleConfirm">{{
+        $t('取消')
+      }}</bk-button>
     </div>
   </bk-sideslider>
 </template>
 
 <script>
-  export default {
-    props: {
-      selected: {
-        type: Array,
-        default: () => ([])
-      },
-      handler: Function
+export default {
+  inject: ['dynamicGroupForm'],
+  props: {
+    selected: {
+      type: Array,
+      default: () => [],
     },
-    inject: ['dynamicGroupForm'],
-    data() {
-      return {
-        isShow: false,
-        filter: '',
-        localSelected: [...this.selected],
-        matchedPropertyMap: this.dynamicGroupForm.propertyMap,
-        disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap,
-        dataEmpty: {
-          type: 'empty',
-          payload: {
-            defaultText: this.$t('暂无数据')
-          }
-        }
+    handler: Function,
+  },
+  data() {
+    return {
+      isShow: false,
+      filter: '',
+      localSelected: [...this.selected],
+      matchedPropertyMap: this.dynamicGroupForm.propertyMap,
+      disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap,
+      dataEmpty: {
+        type: 'empty',
+        payload: {
+          defaultText: this.$t('暂无数据'),
+        },
+      },
+    }
+  },
+  computed: {
+    target() {
+      return this.dynamicGroupForm.formData.bk_obj_id
+    },
+    models() {
+      if (this.target === 'host') {
+        return this.dynamicGroupForm.availableModels
       }
+      return this.dynamicGroupForm.availableModels.filter(
+        model => model.bk_obj_id === this.target
+      )
     },
-    computed: {
-      target() {
-        return this.dynamicGroupForm.formData.bk_obj_id
-      },
-      models() {
-        if (this.target === 'host') {
-          return this.dynamicGroupForm.availableModels
-        }
-        return this.dynamicGroupForm.availableModels.filter(model => model.bk_obj_id === this.target)
-      },
-      propertyMap() {
-        return this.dynamicGroupForm.propertyMap
-      },
-      isShowEmpty() {
-        return this.matchedPropertyMap.host.length === 0
-          && this.matchedPropertyMap.module.length === 0
-          && this.matchedPropertyMap.set.length === 0
-      }
+    propertyMap() {
+      return this.dynamicGroupForm.propertyMap
     },
-    watch: {
-      filter(filter) {
-        this.filterTimer && clearTimeout(this.filterTimer)
-        this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
-        this.dataEmpty.type = filter ? 'search' : 'empty'
-      }
+    isShowEmpty() {
+      return (
+        this.matchedPropertyMap.host.length === 0 &&
+        this.matchedPropertyMap.module.length === 0 &&
+        this.matchedPropertyMap.set.length === 0
+      )
     },
-    methods: {
-      handleFilter(filter) {
-        if (!filter.length) {
-          this.matchedPropertyMap = this.propertyMap
-        } else {
-          const matchedPropertyMap = {}
-          const lowerCaseFilter = filter.toLowerCase()
-          Object.keys(this.propertyMap).forEach((modelId) => {
-            matchedPropertyMap[modelId] = this.propertyMap[modelId].filter((property) => {
+  },
+  watch: {
+    filter(filter) {
+      this.filterTimer && clearTimeout(this.filterTimer)
+      this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
+      this.dataEmpty.type = filter ? 'search' : 'empty'
+    },
+  },
+  methods: {
+    handleFilter(filter) {
+      if (!filter.length) {
+        this.matchedPropertyMap = this.propertyMap
+      } else {
+        const matchedPropertyMap = {}
+        const lowerCaseFilter = filter.toLowerCase()
+        Object.keys(this.propertyMap).forEach(modelId => {
+          matchedPropertyMap[modelId] = this.propertyMap[modelId].filter(
+            property => {
               const lowerCaseName = property.bk_property_name.toLowerCase()
               return lowerCaseName.indexOf(lowerCaseFilter) > -1
-            })
-          })
-          this.matchedPropertyMap = matchedPropertyMap
-        }
-      },
-      isShowGroup(model) {
-        return !!this.matchedPropertyMap?.[model.bk_obj_id]?.length
-      },
-      isShowProperty(property) {
-        const modelId = property.bk_obj_id
-        return this.matchedPropertyMap?.[modelId]?.some(target => target === property)
-      },
-      isChecked(property) {
-        return this.localSelected.some(target => target.id === property.id)
-      },
-      handleChange(property, checked) {
-        if (checked) {
-          this.localSelected.push(property)
-        } else {
-          const index = this.localSelected.findIndex(target => target.id === property.id)
-          index > -1 && this.localSelected.splice(index, 1)
-        }
-      },
-      handleConfirm() {
-        this.handler && this.handler([...this.localSelected])
-        this.isShow = false
-      },
-      handleCancel() {
-        this.isShow = false
-      },
-      show() {
-        this.isShow = true
-      },
-      hanldeHidden() {
-        this.$emit('close')
-      },
-      handleClearFilter() {
-        this.filter = ''
+            }
+          )
+        })
+        this.matchedPropertyMap = matchedPropertyMap
       }
-    }
-  }
+    },
+    isShowGroup(model) {
+      return !!this.matchedPropertyMap?.[model.bk_obj_id]?.length
+    },
+    isShowProperty(property) {
+      const modelId = property.bk_obj_id
+      return this.matchedPropertyMap?.[modelId]?.some(
+        target => target === property
+      )
+    },
+    isChecked(property) {
+      return this.localSelected.some(target => target.id === property.id)
+    },
+    handleChange(property, checked) {
+      if (checked) {
+        this.localSelected.push(property)
+      } else {
+        const index = this.localSelected.findIndex(
+          target => target.id === property.id
+        )
+        index > -1 && this.localSelected.splice(index, 1)
+      }
+    },
+    handleConfirm() {
+      this.handler && this.handler([...this.localSelected])
+      this.isShow = false
+    },
+    handleCancel() {
+      this.isShow = false
+    },
+    show() {
+      this.isShow = true
+    },
+    hanldeHidden() {
+      this.$emit('close')
+    },
+    handleClearFilter() {
+      this.filter = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .property-selector-content {
-        height: 100%;
-        padding: 10px 20px;
-        @include scrollbar-y;
-    }
-    .property-selector-group {
-        margin-top: 15px;
-        .group-label {
-            display: block;
-            font-weight: bold;
-            font-size: 14px;
-            color: #313237;
+.property-selector-content {
+  height: 100%;
+  padding: 10px 20px;
+
+  @include scrollbar-y;
+}
+
+.property-selector-group {
+  margin-top: 15px;
+
+  .group-label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    color: #313237;
+  }
+
+  .group-property-list {
+    display: flex;
+    flex-flow: row wrap;
+
+    .group-property-item {
+      display: inline-flex;
+      align-items: center;
+      flex: 50%;
+      margin: 20px 0 0;
+
+      /deep/ {
+        .bk-checkbox {
+          flex: 16px 0 0;
         }
-        .group-property-list {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            .group-property-item {
-                display: inline-flex;
-                align-items: center;
-                flex: 50%;
-                margin: 20px 0 0 0;
-                /deep/ {
-                    .bk-checkbox {
-                        flex: 16px 0 0;
-                    }
-                    .bk-checkbox-text {
-                        padding-right: 15px;
-                        @include ellipsis;
-                    }
-                }
-            }
+
+        .bk-checkbox-text {
+          padding-right: 15px;
+
+          @include ellipsis;
         }
+      }
     }
-    .property-selector-footer {
-        display: flex;
-        height: 100%;
-        width: 100%;
-        align-items: center;
-        border-top: 1px solid $borderColor;
-        padding: 0 20px;
-    }
+  }
+}
+
+.property-selector-footer {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  border-top: 1px solid $borderColor;
+  padding: 0 20px;
+}
 </style>

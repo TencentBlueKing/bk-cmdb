@@ -10,18 +10,18 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import { MENU_RESOURCE_CLOUD_AREA } from '@/dictionary/menu-symbol'
+import Meta from '@/router/meta'
 export default {
   name: MENU_RESOURCE_CLOUD_AREA,
   path: 'cloud-area',
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '管控区域'
+      i18n: '管控区域',
     },
     auth: {
-      view: null
-    }
-  })
+      view: null,
+    },
+  }),
 }

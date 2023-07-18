@@ -14,24 +14,20 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   /**
-     * 创建集群
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 创建集群
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   createSet({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`set/${bizId}`, params, config)
   },
@@ -41,55 +37,64 @@ const actions = {
   },
 
   /**
-     * 删除集群
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @return {promises} promises 对象
-     */
+   * 删除集群
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @return {promises} promises 对象
+   */
   deleteSet({ commit, state, dispatch }, { bizId, setId, config }) {
     return $http.delete(`set/${bizId}/${setId}`, config)
   },
 
   /**
-     * 更新集群
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务id
-     * @param {Number} bkSetId 集群id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
+   * 更新集群
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {Number} bkBizId 业务id
+   * @param {Number} bkSetId 集群id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
   updateSet({ commit, state, dispatch }, { bizId, setId, params, config }) {
-    return $http.put(`${window.API_HOST}table/set/${bizId}/${setId}`, params, config)
+    return $http.put(
+      `${window.API_HOST}table/set/${bizId}/${setId}`,
+      params,
+      config
+    )
   },
 
   /**
-     * 查询集群
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {Number} bkBizId 业务id
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-  searchSet({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
-    return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
-  }
+   * 查询集群
+   * @param {Function} commit store commit mutation hander
+   * @param {Object} state store state
+   * @param {String} dispatch store dispatch action hander
+   * @param {String} bkSupplierAccount 开发商账号
+   * @param {Number} bkBizId 业务id
+   * @param {Object} params 参数
+   * @return {promises} promises 对象
+   */
+  searchSet(
+    { commit, state, dispatch, rootGetters },
+    { bizId, params, config }
+  ) {
+    return $http.post(
+      `set/search/${rootGetters.supplierAccount}/${bizId}`,
+      params,
+      config
+    )
+  },
 }
 
-const mutations = {
-
-}
+const mutations = {}
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

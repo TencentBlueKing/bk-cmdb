@@ -38,23 +38,31 @@ export const MENU_BUSINESS_HOST_AND_SERVICE = 'menu_business_host_and_service'
 
 // 服务模板
 export const MENU_BUSINESS_SERVICE_TEMPLATE = 'menu_business_service_template'
-export const MENU_BUSINESS_SERVICE_TEMPLATE_CREATE = 'menu_business_service_template_create'
-export const MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS = 'menu_business_service_template_details'
-export const MENU_BUSINESS_SERVICE_TEMPLATE_EDIT = 'menu_business_service_template_edit'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_CREATE =
+  'menu_business_service_template_create'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS =
+  'menu_business_service_template_details'
+export const MENU_BUSINESS_SERVICE_TEMPLATE_EDIT =
+  'menu_business_service_template_edit'
 
 // 集群模板
 export const MENU_BUSINESS_SET_TEMPLATE = 'menu_business_set_template'
-export const MENU_BUSINESS_SET_TEMPLATE_CREATE = 'menu_business_set_template_create'
-export const MENU_BUSINESS_SET_TEMPLATE_DETAILS = 'menu_business_set_template_details'
+export const MENU_BUSINESS_SET_TEMPLATE_CREATE =
+  'menu_business_set_template_create'
+export const MENU_BUSINESS_SET_TEMPLATE_DETAILS =
+  'menu_business_set_template_details'
 export const MENU_BUSINESS_SET_TEMPLATE_EDIT = 'menu_business_set_template_edit'
-export const MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY = 'menu_business_set_template_sync_history'
+export const MENU_BUSINESS_SET_TEMPLATE_SYNC_HISTORY =
+  'menu_business_set_template_sync_history'
 
 // 主机属性自动应用
 export const MENU_BUSINESS_HOST_APPLY = 'menu_business_host_apply'
 export const MENU_BUSINESS_HOST_APPLY_EDIT = 'menu_business_host_apply_edit'
-export const MENU_BUSINESS_HOST_APPLY_CONFIRM = 'menu_business_host_apply_confirm'
+export const MENU_BUSINESS_HOST_APPLY_CONFIRM =
+  'menu_business_host_apply_confirm'
 export const MENU_BUSINESS_HOST_APPLY_RUN = 'menu_business_host_apply_run'
-export const MENU_BUSINESS_HOST_APPLY_CONFLICT = 'menu_business_host_apply_conflict'
+export const MENU_BUSINESS_HOST_APPLY_CONFLICT =
+  'menu_business_host_apply_conflict'
 export const MENU_BUSINESS_HOST_APPLY_FAILED = 'menu_business_host_apply_failed'
 
 export const MENU_BUSINESS_SERVICE_CATEGORY = 'menu_business_service_category'
@@ -99,18 +107,23 @@ export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
 /**
  * 平台管理
  */
-export const MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG = 'menu_platform_management_global_config'
+export const MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG =
+  'menu_platform_management_global_config'
 
 // 判断收藏的目录id
 export const MENU_RESOURCE_COLLECTION = 'menu_resource_collection'
 export const MENU_RESOURCE_HOST_COLLECTION = 'menu_resource_host_collection'
-export const MENU_RESOURCE_BUSINESS_COLLECTION = 'menu_resource_business_collection'
-export const MENU_RESOURCE_BUSINESS_SET_COLLECTION = 'menu_resource_business_set_collection'
-export const MENU_RESOURCE_PROJECT_COLLECTION = 'menu_resource_project_collection'
+export const MENU_RESOURCE_BUSINESS_COLLECTION =
+  'menu_resource_business_collection'
+export const MENU_RESOURCE_BUSINESS_SET_COLLECTION =
+  'menu_resource_business_set_collection'
+export const MENU_RESOURCE_PROJECT_COLLECTION =
+  'menu_resource_project_collection'
 
 // 不同模式下不同资源的主机详情的id
 export const MENU_RESOURCE_HOST_DETAILS = 'menu_resource_host_details'
-export const MENU_RESOURCE_BUSINESS_HOST_DETAILS = 'menu_resource_business_host_details'
+export const MENU_RESOURCE_BUSINESS_HOST_DETAILS =
+  'menu_resource_business_host_details'
 export const MENU_BUSINESS_HOST_DETAILS = 'menu_business_host_details'
 export const MENU_BUSINESS_SET_HOST_DETAILS = 'menu_business_set_host_details'
 
@@ -129,7 +142,8 @@ export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 
 // 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'
-export const MENU_RESOURCE_BUSINESS_SET_DETAILS = 'menu_resource_set_business_details'
+export const MENU_RESOURCE_BUSINESS_SET_DETAILS =
+  'menu_resource_set_business_details'
 
 // 业务(集)选择器中收藏key
 export const BUSINESS_SELECTOR_COLLECTION = 'business_selector_collection'

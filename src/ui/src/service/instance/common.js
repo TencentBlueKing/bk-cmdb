@@ -10,42 +10,55 @@
  * limitations under the License.
  */
 
-import hostSearchService from '@/service/host/search'
-import businessSearchService from '@/service/business/search'
-import instanceSearchService from '@/service/instance/search'
-import businessSetService from '@/service/business-set/index.js'
-import projectSetService from '@/service/project/index.js'
-import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants.js'
+import {
+  BUILTIN_MODELS,
+  BUILTIN_MODEL_PROPERTY_KEYS,
+  BUILTIN_MODEL_ROUTEPARAMS_KEYS,
+} from '@/dictionary/model-constants.js'
 import {
   MENU_RESOURCE_INSTANCE_DETAILS,
   MENU_RESOURCE_BUSINESS_DETAILS,
   MENU_RESOURCE_BUSINESS_SET_DETAILS,
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_PROJECT_DETAILS,
-  MENU_RESOURCE_BUSINESS_HISTORY
+  MENU_RESOURCE_BUSINESS_HISTORY,
 } from '@/dictionary/menu-symbol'
+import hostSearchService from '@/service/host/search'
+import businessSearchService from '@/service/business/search'
+import instanceSearchService from '@/service/instance/search'
+import businessSetService from '@/service/business-set/index.js'
+import projectSetService from '@/service/project/index.js'
 import { foreignkey as foreignkeyFormatter } from '@/filters/formatter.js'
 
-const getService = modelId => ({
-  [BUILTIN_MODELS.HOST]: hostSearchService,
-  [BUILTIN_MODELS.BUSINESS]: businessSearchService,
-  [BUILTIN_MODELS.BUSINESS_SET]: businessSetService,
-  [BUILTIN_MODELS.PROJECT]: projectSetService
-}[modelId] || instanceSearchService)
+const getService = modelId =>
+  ({
+    [BUILTIN_MODELS.HOST]: hostSearchService,
+    [BUILTIN_MODELS.BUSINESS]: businessSearchService,
+    [BUILTIN_MODELS.BUSINESS_SET]: businessSetService,
+    [BUILTIN_MODELS.PROJECT]: projectSetService,
+  })[modelId] || instanceSearchService
 
-export const getIdKey = modelId => ({
-  [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
-  [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
-  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
-  [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID
-}[modelId] || 'bk_inst_id')
+export const getIdKey = modelId =>
+  ({
+    [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
+    [BUILTIN_MODELS.BUSINESS]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
+    [BUILTIN_MODELS.BUSINESS_SET]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
+    [BUILTIN_MODELS.PROJECT]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID,
+  })[modelId] || 'bk_inst_id'
 
-export const getNameKey = modelId => ({
-  [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
-  [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME,
-  [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
-  [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME
-}[modelId] || 'bk_inst_name')
+export const getNameKey = modelId =>
+  ({
+    [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
+    [BUILTIN_MODELS.BUSINESS]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].NAME,
+    [BUILTIN_MODELS.BUSINESS_SET]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
+    [BUILTIN_MODELS.PROJECT]:
+      BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME,
+  })[modelId] || 'bk_inst_name'
 
 export const getSearchByNameParams = (modelId, value, options = {}) => {
   const nameKey = getNameKey(modelId)
@@ -56,7 +69,7 @@ export const getSearchByNameParams = (modelId, value, options = {}) => {
     start: 0,
     limit: 10,
     sort: idKey,
-    ...page
+    ...page,
   }
 
   const fieldParams = [idKey, nameKey, ...fileds]
@@ -64,14 +77,18 @@ export const getSearchByNameParams = (modelId, value, options = {}) => {
   const generalParams = {
     fields: fieldParams,
     page: pageParams,
-    conditions: value ? {
-      condition: 'AND',
-      rules: [{
-        field: nameKey,
-        operator: 'contains',
-        value
-      }]
-    } : undefined
+    conditions: value
+      ? {
+          condition: 'AND',
+          rules: [
+            {
+              field: nameKey,
+              operator: 'contains',
+              value,
+            },
+          ],
+        }
+      : undefined,
   }
 
   const params = {
@@ -79,48 +96,61 @@ export const getSearchByNameParams = (modelId, value, options = {}) => {
       ip: {
         data: value ? [value] : [],
         exact: 0,
-        flag: 'bk_host_innerip|bk_host_outerip'
+        flag: 'bk_host_innerip|bk_host_outerip',
       },
       condition: [
         {
           bk_obj_id: BUILTIN_MODELS.HOST,
-          fields: [...fieldParams, 'bk_cloud_id', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
-        }
+          fields: [
+            ...fieldParams,
+            'bk_cloud_id',
+            'bk_host_innerip_v6',
+            'bk_host_outerip_v6',
+          ],
+        },
       ],
-      page: pageParams
+      page: pageParams,
     },
     [BUILTIN_MODELS.BUSINESS]: {
       fields: fieldParams,
       page: pageParams,
       condition: {
         bk_data_status: { $ne: 'disabled' },
-        [nameKey]: value
-      }
+        [nameKey]: value,
+      },
     },
     [BUILTIN_MODELS.BUSINESS_SET]: {
       fields: fieldParams,
       page: pageParams,
-      bk_biz_set_filter: value ? {
-        condition: 'AND',
-        rules: [{
-          field: nameKey,
-          operator: 'contains',
-          value
-        }]
-      } : undefined
+      bk_biz_set_filter: value
+        ? {
+            condition: 'AND',
+            rules: [
+              {
+                field: nameKey,
+                operator: 'contains',
+                value,
+              },
+            ],
+          }
+        : undefined,
     },
     [BUILTIN_MODELS.PROJECT]: {
       fields: fieldParams,
       page: pageParams,
-      filter: value ? {
-        condition: 'AND',
-        rules: [{
-          field: nameKey,
-          operator: 'contains',
-          value
-        }]
-      } : undefined
-    }
+      filter: value
+        ? {
+            condition: 'AND',
+            rules: [
+              {
+                field: nameKey,
+                operator: 'contains',
+                value,
+              },
+            ],
+          }
+        : undefined,
+    },
   }
 
   return params[modelId] || generalParams
@@ -149,9 +179,11 @@ export const searchInstanceByIds = async (modelId, instIds, config) => {
   const service = getService(modelId)
 
   if (service.find) {
-    const request = (modelId === BUILTIN_MODELS.BUSINESS_SET || modelId === BUILTIN_MODELS.PROJECT)
-      ? service.findByIds(instIds, config)
-      : service.findByIds({ bk_obj_id: modelId, ids: instIds, config })
+    const request =
+      modelId === BUILTIN_MODELS.BUSINESS_SET ||
+      modelId === BUILTIN_MODELS.PROJECT
+        ? service.findByIds(instIds, config)
+        : service.findByIds({ bk_obj_id: modelId, ids: instIds, config })
     const result = await request
     return result
   }
@@ -177,7 +209,13 @@ const getNameValue = (modelId, nameKey) => {
   return getName
 }
 
-export const getModelInstanceOptions = async (modelId, instName, instIds, options, config) => {
+export const getModelInstanceOptions = async (
+  modelId,
+  instName,
+  instIds,
+  options,
+  config
+) => {
   const results = await searchInstanceByName(modelId, instName, options, config)
   const list = results.list ?? results.info
 
@@ -186,7 +224,7 @@ export const getModelInstanceOptions = async (modelId, instName, instIds, option
 
   const optionGeter = item => ({
     id: getIdValue(modelId, idKey)(item),
-    name: getNameValue(modelId, nameKey)(item)
+    name: getNameValue(modelId, nameKey)(item),
   })
   const instOptions = list.map(optionGeter)
 
@@ -196,7 +234,8 @@ export const getModelInstanceOptions = async (modelId, instName, instIds, option
   if (!instName && instIds?.length) {
     const diffIds = instIds.filter(id => !idList.includes(id))
     if (diffIds.length) {
-      const { list: diffList } = await searchInstanceByIds(modelId, diffIds, config) || {}
+      const { list: diffList } =
+        (await searchInstanceByIds(modelId, diffIds, config)) || {}
       instOptions.push(...(diffList || []).map(optionGeter))
     }
   }
@@ -205,57 +244,66 @@ export const getModelInstanceOptions = async (modelId, instName, instIds, option
 }
 
 export const getModelInstanceByIds = async (modelId, instIds, config) => {
-  const { list } = await searchInstanceByIds(modelId, instIds, config) || {}
+  const { list } = (await searchInstanceByIds(modelId, instIds, config)) || {}
   const idKey = getIdKey(modelId)
   const nameKey = getNameKey(modelId)
   const newList = list.map(item => ({
     modelId,
     id: getIdValue(modelId, idKey)(item),
     name: getNameValue(modelId, nameKey)(item),
-    inst: item
+    inst: item,
   }))
 
   return newList
 }
 
-export const getModelInstanceDetailRoute = (modelId, instId, extra = {}, options = {}) => {
+export const getModelInstanceDetailRoute = (
+  modelId,
+  instId,
+  extra = {},
+  options = {}
+) => {
   const { history = false } = options
 
   const generalRoute = (modelId, instId) => ({
     name: MENU_RESOURCE_INSTANCE_DETAILS,
     params: {
       objId: modelId,
-      instId
+      instId,
     },
-    history
+    history,
   })
 
   const routes = {
     [BUILTIN_MODELS.HOST]: (modelId, instId) => ({
       name: MENU_RESOURCE_HOST_DETAILS,
       params: {
-        id: instId
+        id: instId,
       },
-      history
+      history,
     }),
-    [BUILTIN_MODELS.BUSINESS]: (modelId, instId, extra) => (extra.bk_data_status === 'disabled' ? {
-      name: MENU_RESOURCE_BUSINESS_HISTORY,
-      params: {
-        bizName: extra.bk_biz_name
-      },
-      history
-    } : {
-      name: MENU_RESOURCE_BUSINESS_DETAILS,
-      params: { bizId: instId },
-      history
-    }),
+    [BUILTIN_MODELS.BUSINESS]: (modelId, instId, extra) =>
+      extra.bk_data_status === 'disabled'
+        ? {
+            name: MENU_RESOURCE_BUSINESS_HISTORY,
+            params: {
+              bizName: extra.bk_biz_name,
+            },
+            history,
+          }
+        : {
+            name: MENU_RESOURCE_BUSINESS_DETAILS,
+            params: { bizId: instId },
+            history,
+          },
     [BUILTIN_MODELS.BUSINESS_SET]: (modelId, instId) => {
-      const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
+      const paramKey =
+        BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
 
       return {
         name: MENU_RESOURCE_BUSINESS_SET_DETAILS,
         params: { [paramKey]: instId },
-        history
+        history,
       }
     },
     [BUILTIN_MODELS.PROJECT]: (modelId, instId) => {
@@ -264,9 +312,9 @@ export const getModelInstanceDetailRoute = (modelId, instId, extra = {}, options
       return {
         name: MENU_RESOURCE_PROJECT_DETAILS,
         params: { [paramKey]: instId },
-        history
+        history,
       }
-    }
+    },
   }
 
   const routeGeter = routes[modelId] || generalRoute

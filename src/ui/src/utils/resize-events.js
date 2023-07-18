@@ -15,26 +15,28 @@
  */
 /* eslint-disable no-underscore-dangle */
 const requestFrame = (function () {
-  const raf = window.requestAnimationFrame
-    || window.mozRequestAnimationFrame
-    || window.webkitRequestAnimationFrame
-    || function (fn) {
+  const raf =
+    window.requestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    function (fn) {
       return window.setTimeout(fn, 20)
     }
   return function (fn) {
     return raf(fn)
   }
-}())
+})()
 
 const cancelFrame = (function () {
-  const cancel = window.cancelAnimationFrame
-    || window.mozCancelAnimationFrame
-    || window.webkitCancelAnimationFrame
-    || window.clearTimeout
+  const cancel =
+    window.cancelAnimationFrame ||
+    window.mozCancelAnimationFrame ||
+    window.webkitCancelAnimationFrame ||
+    window.clearTimeout
   return function (id) {
     return cancel(id)
   }
-}())
+})()
 
 const resetTrigger = function (element) {
   const trigger = element.__resizeTrigger__
@@ -51,7 +53,10 @@ const resetTrigger = function (element) {
 }
 
 const checkTriggers = function (element) {
-  return element.offsetWidth !== element.__resizeLast__.width || element.offsetHeight !== element.__resizeLast__.height
+  return (
+    element.offsetWidth !== element.__resizeLast__.width ||
+    element.offsetHeight !== element.__resizeLast__.height
+  )
 }
 
 const scrollListener = function (event) {
@@ -61,7 +66,7 @@ const scrollListener = function (event) {
     if (checkTriggers(this)) {
       this.__resizeLast__.width = this.offsetWidth
       this.__resizeLast__.height = this.offsetHeight
-      this.__resizeListeners__.forEach((fn) => {
+      this.__resizeListeners__.forEach(fn => {
         fn.call(this, event)
       })
     }
@@ -71,7 +76,10 @@ const scrollListener = function (event) {
 /* Detect CSS Animations support to detect element display/re-attach */
 const { attachEvent } = document
 const DOM_PREFIXES = 'Webkit Moz O ms'.split(' ')
-const START_EVENTS = 'webkitAnimationStart animationstart oAnimationStart MSAnimationStart'.split(' ')
+const START_EVENTS =
+  'webkitAnimationStart animationstart oAnimationStart MSAnimationStart'.split(
+    ' '
+  )
 const RESIZE_ANIMATION_NAME = 'resizeanim'
 let animation = false
 let keyFramePrefix = ''
@@ -140,7 +148,8 @@ export const addResizeListener = function (element, fn) {
       element.__resizeTrigger__ = document.createElement('div')
       const resizeTrigger = element.__resizeTrigger__
       resizeTrigger.className = 'resize-triggers'
-      resizeTrigger.innerHTML = '<div class="expand-trigger"><div></div></div><div class="contract-trigger"></div>'
+      resizeTrigger.innerHTML =
+        '<div class="expand-trigger"><div></div></div><div class="contract-trigger"></div>'
       element.appendChild(resizeTrigger)
 
       resetTrigger(element)
@@ -148,7 +157,7 @@ export const addResizeListener = function (element, fn) {
 
       /* Listen for a css animation to detect element display/re-attach */
       if (animationStartEvent) {
-        resizeTrigger.addEventListener(animationStartEvent, (event) => {
+        resizeTrigger.addEventListener(animationStartEvent, event => {
           if (event.animationName === RESIZE_ANIMATION_NAME) {
             resetTrigger(element)
           }
@@ -164,15 +173,20 @@ export const removeResizeListener = function (element, fn) {
   if (attachEvent) {
     element.detachEvent('onresize', fn)
   } else {
-    element.__resizeListeners__.splice(element.__resizeListeners__.indexOf(fn), 1)
+    element.__resizeListeners__.splice(
+      element.__resizeListeners__.indexOf(fn),
+      1
+    )
     if (!element.__resizeListeners__.length) {
       element.removeEventListener('scroll', scrollListener)
-      element.__resizeTrigger__ = !element.removeChild(element.__resizeTrigger__)
+      element.__resizeTrigger__ = !element.removeChild(
+        element.__resizeTrigger__
+      )
     }
   }
 }
 
 export default {
   addResizeListener,
-  removeResizeListener
+  removeResizeListener,
 }

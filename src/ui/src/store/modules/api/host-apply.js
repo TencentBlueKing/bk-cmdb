@@ -17,32 +17,44 @@ import CombineRequest from '@/api/combine-request'
 const state = {
   propertyConfig: {},
   ruleDraft: {},
-  propertyList: []
+  propertyList: [],
 }
 
 const getters = {
-  configPropertyList: (state) => {
-    state.propertyList.forEach((property) => {
+  configPropertyList: state => {
+    state.propertyList.forEach(property => {
       // 兼容通用方法
       property.options = property.option
       // 自定义字段空间
       // eslint-disable-next-line no-underscore-dangle
       property.__extra__ = {
-        visible: true
+        visible: true,
       }
     })
-    const enabledList = state.propertyList.filter(item => item.host_apply_enabled)
-    const disabledList = state.propertyList.filter(item => !item.host_apply_enabled)
+    const enabledList = state.propertyList.filter(
+      item => item.host_apply_enabled
+    )
+    const disabledList = state.propertyList.filter(
+      item => !item.host_apply_enabled
+    )
     return [...enabledList, ...disabledList]
-  }
+  },
 }
 
 const actions = {
   async getRules({ commit, state, dispatch }, { bizId, params, config }) {
-    const reqs = await CombineRequest.setup(Symbol(), (ids) => {
-      const subParams = { ...params, bk_module_ids: ids }
-      return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}`, subParams, config)
-    }, { segment: 500 }).add(params.bk_module_ids)
+    const reqs = await CombineRequest.setup(
+      Symbol(),
+      ids => {
+        const subParams = { ...params, bk_module_ids: ids }
+        return $http.post(
+          `findmany/host_apply_rule/bk_biz_id/${bizId}`,
+          subParams,
+          config
+        )
+      },
+      { segment: 500 }
+    ).add(params.bk_module_ids)
 
     const results = []
     const res = await Promise.all(reqs)
@@ -52,14 +64,25 @@ const actions = {
 
     return {
       count: results.length,
-      info: results
+      info: results,
     }
   },
-  async getTemplateRules({ commit, state, dispatch }, { bizId, params, config }) {
-    const reqs = await CombineRequest.setup(Symbol(), (ids) => {
-      const subParams = { ...params, service_template_ids: ids }
-      return $http.post('host/findmany/service_template/host_apply_rule', subParams, config)
-    }, { segment: 500 }).add(params.service_template_ids)
+  async getTemplateRules(
+    { commit, state, dispatch },
+    { bizId, params, config }
+  ) {
+    const reqs = await CombineRequest.setup(
+      Symbol(),
+      ids => {
+        const subParams = { ...params, service_template_ids: ids }
+        return $http.post(
+          'host/findmany/service_template/host_apply_rule',
+          subParams,
+          config
+        )
+      },
+      { segment: 500 }
+    ).add(params.service_template_ids)
 
     const results = []
     const res = await Promise.all(reqs)
@@ -69,69 +92,142 @@ const actions = {
 
     return {
       count: results.length,
-      info: results
+      info: results,
     }
   },
   getApplyPreview({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/createmany/module/host_apply_plan/preview', params, config)
+    return $http.post(
+      'host/createmany/module/host_apply_plan/preview',
+      params,
+      config
+    )
   },
   getTemplateApplyPreview({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/createmany/service_template/host_apply_plan/preview', params, config)
+    return $http.post(
+      'host/createmany/service_template/host_apply_plan/preview',
+      params,
+      config
+    )
   },
   runApply({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/updatemany/module/host_apply_plan/run', params, config)
+    return $http.post(
+      'host/updatemany/module/host_apply_plan/run',
+      params,
+      config
+    )
   },
   runTemplateApply({ commit, state, dispatch }, { params, config }) {
-    return $http.post('updatemany/proc/service_template/host_apply_plan/run', params, config)
+    return $http.post(
+      'updatemany/proc/service_template/host_apply_plan/run',
+      params,
+      config
+    )
   },
   getApplyTaskStatus({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/findmany/module/host_apply_plan/status', params, config)
+    return $http.post(
+      'host/findmany/module/host_apply_plan/status',
+      params,
+      config
+    )
   },
   getTemplateApplyTaskStatus({ commit, state, dispatch }, { params, config }) {
-    return $http.post('findmany/proc/service_template/host_apply_plan/status', params, config)
+    return $http.post(
+      'findmany/proc/service_template/host_apply_plan/status',
+      params,
+      config
+    )
   },
   getTopopath({ commit, state, dispatch }, { bizId, params, config }) {
     return $http.post(`find/topopath/biz/${bizId}`, params, config)
   },
   setEnableStatus({ commit, state, dispatch }, { bizId, params, config }) {
-    return $http.put(`module/host_apply_enable_status/bk_biz_id/${bizId}`, params, config)
+    return $http.put(
+      `module/host_apply_enable_status/bk_biz_id/${bizId}`,
+      params,
+      config
+    )
   },
-  setTemplateEnableStatus({ commit, state, dispatch }, { bizId, params, config }) {
-    return $http.put(`updatemany/proc/service_template/host_apply_enable_status/biz/${bizId}`, params, config)
+  setTemplateEnableStatus(
+    { commit, state, dispatch },
+    { bizId, params, config }
+  ) {
+    return $http.put(
+      `updatemany/proc/service_template/host_apply_enable_status/biz/${bizId}`,
+      params,
+      config
+    )
   },
   getConflictCount({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/findmany/module/host_apply_plan/invalid_host_count', params, config)
+    return $http.post(
+      'host/findmany/module/host_apply_plan/invalid_host_count',
+      params,
+      config
+    )
   },
   getTemplateConflictCount({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/findmany/service_template/host_apply_plan/invalid_host_count', params, config)
+    return $http.post(
+      'host/findmany/service_template/host_apply_plan/invalid_host_count',
+      params,
+      config
+    )
   },
   deleteRules({ commit, state, dispatch }, { bizId, params }) {
-    return $http.delete(`host/deletemany/module/host_apply_rule/bk_biz_id/${bizId}`, params)
+    return $http.delete(
+      `host/deletemany/module/host_apply_rule/bk_biz_id/${bizId}`,
+      params
+    )
   },
   deleteTemplateRules({ commit, state, dispatch }, { bizId, params }) {
-    return $http.delete(`deletemany/proc/service_template/host_apply_rule/biz/${bizId}`, params)
+    return $http.delete(
+      `deletemany/proc/service_template/host_apply_rule/biz/${bizId}`,
+      params
+    )
   },
   getProperties(context, { params, config }) {
     return $http.post('find/objectattr/host', params, config)
   },
   getHostRelatedRules(context, { bizId, params, config }) {
-    return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)
+    return $http.post(
+      `findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`,
+      params,
+      config
+    )
   },
   searchNode(context, { bizId, params, config }) {
-    return $http.post(`find/topoinst/bk_biz_id/${bizId}/host_apply_rule_related`, params, config)
+    return $http.post(
+      `find/topoinst/bk_biz_id/${bizId}/host_apply_rule_related`,
+      params,
+      config
+    )
   },
   getModuleApplyStatusByTemplate(context, { params, config }) {
-    return $http.post('host/find/service_template/host_apply_status', params, config)
+    return $http.post(
+      'host/find/service_template/host_apply_status',
+      params,
+      config
+    )
   },
   searchTemplateNode(context, { params, config }) {
-    return $http.post('find/proc/service_template/host_apply_rule_related', params, config)
+    return $http.post(
+      'find/proc/service_template/host_apply_rule_related',
+      params,
+      config
+    )
   },
   getTemplateRuleCount(context, { params, config }) {
-    return $http.post('host/findmany/service_template/host_apply_rule_count', params, config)
+    return $http.post(
+      'host/findmany/service_template/host_apply_rule_count',
+      params,
+      config
+    )
   },
   getModuleFinalRules({ commit, state, dispatch }, { params, config }) {
-    return $http.post('host/findmany/module/get_module_final_rules', params, config)
-  }
+    return $http.post(
+      'host/findmany/module/get_module_final_rules',
+      params,
+      config
+    )
+  },
 }
 
 const mutations = {
@@ -146,7 +242,7 @@ const mutations = {
   },
   setPropertyList(state, list) {
     state.propertyList = list
-  }
+  },
 }
 
 export default {
@@ -154,5 +250,5 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
 }

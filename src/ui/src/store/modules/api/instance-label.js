@@ -22,14 +22,18 @@ const actions = {
     return $http.delete('deletemany/proc/service_instance/labels', config)
   },
   getHistoryLabel(context, { params, config }) {
-    return $http.post('findmany/proc/service_instance/labels/aggregation', params, config)
+    return $http.post(
+      'findmany/proc/service_instance/labels/aggregation',
+      params,
+      config
+    )
   },
   updateInstanceLabel(context, { params, config }) {
     return $http.post('updatemany/proc/service_instance/labels', params, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
-  actions
+  actions,
 }

@@ -15,7 +15,7 @@ const store = new Vue({
   data() {
     return {
       hosts: [],
-      businessList: []
+      businessList: [],
     }
   },
   computed: {
@@ -25,7 +25,7 @@ const store = new Vue({
 
     bizSet() {
       const bizSet = new Set()
-      this.hosts.forEach((host) => {
+      this.hosts.forEach(host => {
         const [biz] = host.biz
         bizSet.add(biz.bk_biz_id)
       })
@@ -54,11 +54,11 @@ const store = new Vue({
     },
 
     isAllResourceHost() {
-      return this.hosts.every((host) => {
+      return this.hosts.every(host => {
         const [biz] = host.biz
         return biz.default === 1
       })
-    }
+    },
   },
   methods: {
     clear() {
@@ -75,8 +75,8 @@ const store = new Vue({
 
     setBusinessList(businessList) {
       this.businessList = businessList
-    }
-  }
+    },
+  },
 })
 
 export default store

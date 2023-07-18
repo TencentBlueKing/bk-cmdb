@@ -10,17 +10,22 @@
  * limitations under the License.
  */
 
+import {
+  MENU_BUSINESS,
+  MENU_BUSINESS_SET_TEMPLATE,
+} from '@/dictionary/menu-symbol'
 import Meta from '@/router/meta'
-import { MENU_BUSINESS, MENU_BUSINESS_SET_TEMPLATE } from '@/dictionary/menu-symbol'
-export default [{
-  name: 'setSync',
-  path: 'set/sync/:setTemplateId',
-  component: () => import('./sync-index.vue'),
-  meta: new Meta({
-    owner: MENU_BUSINESS,
-    menu: {
-      i18n: '同步集群模板',
-      relative: MENU_BUSINESS_SET_TEMPLATE
-    }
-  })
-}]
+export default [
+  {
+    name: 'setSync',
+    path: 'set/sync/:setTemplateId',
+    component: () => import('./sync-index.vue'),
+    meta: new Meta({
+      owner: MENU_BUSINESS,
+      menu: {
+        i18n: '同步集群模板',
+        relative: MENU_BUSINESS_SET_TEMPLATE,
+      },
+    }),
+  },
+]

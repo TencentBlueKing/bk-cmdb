@@ -22,7 +22,7 @@ webpack(webpackConfig, (err, stats) => {
   }
 
   if (stats.hasErrors()) {
-    stats.compilation.errors.forEach((e) => {
+    stats.compilation.errors.forEach(e => {
       console.error(e.message)
     })
     return

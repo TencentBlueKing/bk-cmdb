@@ -13,17 +13,20 @@
 import Axios from 'axios'
 import md5 from 'md5'
 import xid from 'xid-js'
+import has from 'has'
+
+import { t, language } from '@/i18n'
+
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 // eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
-import i18n, { language } from '@/i18n'
-import has from 'has'
 
 const TRACE_CHARS = 'abcdef0123456789'
 const randomString = (length, chars) => {
   let result = ''
-  for (let i = length; i > 0; --i) result += chars[Math.random() * chars.length | 0]
+  for (let i = length; i > 0; --i)
+    result += chars[(Math.random() * chars.length) | 0]
   return result
 }
 
@@ -32,18 +35,21 @@ const axiosInstance = Axios.create({
   baseURL: window.API_PREFIX,
   xsrfCookieName: 'data_csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
-  withCredentials: true
+  withCredentials: true,
 })
 
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
-  (config) => {
+  config => {
     config.headers.common = {
       ...config.headers.common,
       // opentelementry TraceID
-      traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
+      traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(
+        16,
+        TRACE_CHARS
+      )}-01`,
       // 请求ID
-      Cc_Request_Id: `cc0000${xid.next()}`
+      Cc_Request_Id: `cc0000${xid.next()}`,
     }
     return config
   },
@@ -60,14 +66,15 @@ const $http = {
   cache: new CachedPromise(),
   cancelRequest: requestId => $http.queue.cancel(requestId),
   cancelCache: requestId => $http.cache.delete(requestId),
-  cancel: requestId => Promise.all([$http.cancelRequest(requestId), $http.cancelCache(requestId)]),
+  cancel: requestId =>
+    Promise.all([$http.cancelRequest(requestId), $http.cancelCache(requestId)]),
   setHeader: (key, value) => {
     axiosInstance.defaults.headers[key] = value
   },
-  deleteHeader: (key) => {
+  deleteHeader: key => {
     delete axiosInstance.defaults.headers[key]
   },
-  download
+  download,
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -75,11 +82,11 @@ const methodsWithData = ['post', 'put', 'patch']
 const allMethods = [...methodsWithoutData, ...methodsWithData]
 
 // 在自定义对象$http上添加各请求方法
-allMethods.forEach((method) => {
+allMethods.forEach(method => {
   Object.defineProperty($http, method, {
     get() {
       return getRequest(method)
-    }
+    },
   })
 })
 
@@ -121,14 +128,17 @@ async function getPromise(method, url, data, userConfig = {}) {
     const axiosRequest = methodsWithData.includes(method)
       ? axiosInstance[method](url, data, config)
       : axiosInstance[method](url, config)
-    axiosRequest.then((response) => {
-      Object.assign(config, response.config)
-      handleResponse({ config, response, resolve, reject })
-    }).catch((error) => {
-      Object.assign(config, error.config)
-      reject(error)
-    })
-  }).catch(error => handleReject(error, config))
+    axiosRequest
+      .then(response => {
+        Object.assign(config, response.config)
+        handleResponse({ config, response, resolve, reject })
+      })
+      .catch(error => {
+        Object.assign(config, error.config)
+        reject(error)
+      })
+  })
+    .catch(error => handleReject(error, config))
     .finally(() => {
       $http.queue.delete(config.requestId, config.requestSymbol)
     })
@@ -152,7 +162,8 @@ function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
   const { bk_error_msg: message, permission } = transformedResponse
   if (transformedResponse.bk_error_code === PermissionCode) {
-    config.globalPermission && popupPermissionModal(transformedResponse.permission)
+    config.globalPermission &&
+      popupPermissionModal(transformedResponse.permission)
     return reject({ message, permission, code: PermissionCode })
   }
   if (!transformedResponse.result && config.globalError) {
@@ -196,14 +207,19 @@ function handleReject(error, config) {
     } else if (data && data.bk_error_msg) {
       nextError.message = data.bk_error_msg
     } else if (status === 403) {
-      nextError.message = language === 'en' ? 'You don\'t have permission.' : '无权限操作'
+      nextError.message =
+        language === 'en' ? "You don't have permission." : '无权限操作'
     } else if (status === 500) {
-      nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+      nextError.message =
+        language === 'en'
+          ? 'System error, please contact developers.'
+          : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
     }
     config.globalError && status !== 401 && $error(nextError.message)
     return Promise.reject(nextError)
-  } if (error.message === 'Network Error') {
-    $error(i18n.t('资源请求失败提示'))
+  }
+  if (error.message === 'Network Error') {
+    $error(t('资源请求失败提示'))
   } else {
     config.globalError && $error(error.message)
   }
@@ -224,9 +240,10 @@ function popupPermissionModal(permission = []) {
 
 function initConfig(method, url, userConfig) {
   if (has(userConfig, 'requestGroup')) {
-    userConfig.requestGroup = userConfig.requestGroup instanceof Array
-      ? userConfig.requestGroup
-      : [userConfig.requestGroup]
+    userConfig.requestGroup =
+      userConfig.requestGroup instanceof Array
+        ? userConfig.requestGroup
+        : [userConfig.requestGroup]
   }
   const defaultConfig = {
     ...getCancelToken(),
@@ -249,7 +266,7 @@ function initConfig(method, url, userConfig) {
     // 取消上次请求
     cancelPrevious: false,
     // 是否全局捕获权限异常
-    globalPermission: true
+    globalPermission: true,
   }
   return Object.assign(defaultConfig, userConfig)
 }
@@ -262,22 +279,25 @@ function initConfig(method, url, userConfig) {
  */
 function getCancelToken() {
   let cancelExcutor
-  const cancelToken = new Axios.CancelToken((excutor) => {
+  const cancelToken = new Axios.CancelToken(excutor => {
     cancelExcutor = excutor
   })
   return {
     cancelToken,
-    cancelExcutor
+    cancelExcutor,
   }
 }
 
 async function download(options = {}) {
   const { url, method = 'post', data, name } = options
-  const config = Object.assign({
-    globalError: false,
-    originalResponse: true,
-    responseType: 'blob'
-  }, options.config)
+  const config = Object.assign(
+    {
+      globalError: false,
+      originalResponse: true,
+      responseType: 'blob',
+    },
+    options.config
+  )
   if (!url) {
     const error = new Error('Empty download url')
     $error(error.message)
@@ -296,10 +316,13 @@ async function download(options = {}) {
       throw new Error(JSON.parse(text).bk_error_msg)
     }
     const disposition = response.headers['content-disposition']
-    const fileName = name || disposition.substring(disposition.indexOf('filename') + 9)
-    const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
-      type: response.headers['content-type']
-    }))
+    const fileName =
+      name || disposition.substring(disposition.indexOf('filename') + 9)
+    const downloadUrl = window.URL.createObjectURL(
+      new Blob([response.data], {
+        type: response.headers['content-type'],
+      })
+    )
     const link = document.createElement('a')
     link.style.display = 'none'
     link.href = downloadUrl

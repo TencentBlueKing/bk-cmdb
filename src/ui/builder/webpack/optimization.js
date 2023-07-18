@@ -21,12 +21,12 @@ module.exports = () => ({
   minimizer: [
     '...',
     new CssMinimizerPlugin({
-      parallel: true
+      parallel: true,
     }),
     new TerserPlugin({
       exclude: /\.min\.js$/,
-      parallel: true
-    })
+      parallel: true,
+    }),
   ],
   runtimeChunk: 'single', // shared for all generated chunks
   splitChunks: {
@@ -37,7 +37,7 @@ module.exports = () => ({
         name: 'bk-magicbox',
         chunks: 'all',
         priority: 20,
-        reuseExistingChunk: true,  // default
+        reuseExistingChunk: true, // default
       },
       vendors: {
         test: /[\\/]node_modules[\\/]/,
@@ -48,8 +48,8 @@ module.exports = () => ({
       commons: {
         chunks: 'initial',
         name: 'commons',
-        minChunks: 2
-      }
-    }
-  }
+        minChunks: 2,
+      },
+    },
+  },
 })

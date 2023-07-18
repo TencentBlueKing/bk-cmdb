@@ -10,8 +10,8 @@
  * limitations under the License.
  */
 
-import Meta from '@/router/meta'
 import { MENU_MODEL_ASSOCIATION } from '@/dictionary/menu-symbol'
+import Meta from '@/router/meta'
 
 export default {
   name: MENU_MODEL_ASSOCIATION,
@@ -19,7 +19,7 @@ export default {
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '关联类型'
-    }
-  })
+      i18n: '关联类型',
+    },
+  }),
 }

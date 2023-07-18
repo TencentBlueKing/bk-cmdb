@@ -12,69 +12,86 @@
 
 <template>
   <div :class="['data-stuff', type]">
-    <div class="content" v-if="type === 'search'">
+    <div v-if="type === 'search'" class="content">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
         <div class="data-tips">
           <i18n class="operation-text" path="搜索为空提示语">
-            <template #filter><span class="search-text">{{$t('调整关键词')}}</span></template>
+            <template #filter>
+              <span class="search-text">{{ $t('调整关键词') }}</span>
+            </template>
             <template #clear>
-              <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click="$emit('clear')">
-                {{$t('清空筛选条件')}}
+              <bk-button
+                class="text-btn"
+                theme="primary"
+                text
+                style="margin-left: 3px"
+                @click="$emit('clear')">
+                {{ $t('清空筛选条件') }}
               </bk-button>
             </template>
           </i18n>
         </div>
       </bk-exception>
-
     </div>
-    <div class="content" v-else-if="type === 'permission'">
+    <div v-else-if="type === 'permission'" class="content">
       <slot name="permission">
         <bk-exception type="403" scene="part">
           <i18n path="抱歉您没有查看权限">
             <template #link>
-              <bk-button class="text-btn"
+              <bk-button
+                class="text-btn"
                 text
                 theme="primary"
                 @click="handleApplyPermission">
-                {{$t('去申请')}}
+                {{ $t('去申请') }}
               </bk-button>
             </template>
           </i18n>
         </bk-exception>
       </slot>
     </div>
-    <div class="content" v-else>
+    <div v-else class="content">
       <div>
         <template v-if="$slots.default">
           <slot></slot>
         </template>
         <template v-else>
-          <div class="content" v-if="type === 'default'">
+          <div v-if="type === 'default'" class="content">
             <bk-exception type="empty" scene="part">
               <div class="data-tips"></div>
-              <i18n :path="path" tag="div" v-if="!emptyText">
-                <template #action><span>{{action}}</span></template>
-                <template #resource><span>{{resource}}</span></template>
+              <i18n v-if="!emptyText" :path="path" tag="div">
+                <template #action
+                  ><span>{{ action }}</span></template
+                >
+                <template #resource
+                  ><span>{{ resource }}</span></template
+                >
                 <template #link>
                   <cmdb-auth :auth="auth">
-                    <bk-button class="text-btn"
+                    <bk-button
+                      slot-scope="{ disabled }"
+                      class="text-btn"
                       text
                       theme="primary"
-                      slot-scope="{ disabled }"
                       :disabled="disabled"
                       @click="$emit('create')">
-                      {{action}}
+                      {{ action }}
                     </bk-button>
                   </cmdb-auth>
                 </template>
                 <template #empty-link>
-                  <a class="empty-link" href="javascript:void(0)" @click="$emit('empty-link')">{{emptyLinkText}}</a>
+                  <a
+                    class="empty-link"
+                    href="javascript:void(0)"
+                    @click="$emit('empty-link')"
+                    >{{ emptyLinkText }}</a
+                  >
                 </template>
               </i18n>
             </bk-exception>
           </div>
-          <div class="content" v-else>
+          <div v-else class="content">
             <slot name="permission">
               <bk-exception type="empty" scene="part">
                 {{ defaultText }}
@@ -88,84 +105,93 @@
 </template>
 
 <script>
-  import permissionMixins from '@/mixins/permission'
-  export default {
-    name: 'cmdb-data-empty',
-    mixins: [permissionMixins],
-    props: {
-      stuff: {
-        type: Object,
-        default: () => ({
-          type: 'default',
-          payload: {}
-        })
-      },
-      auth: {
-        type: Object,
-        default: null
-      }
+import permissionMixins from '@/mixins/permission'
+export default {
+  name: 'cmdb-data-empty',
+  mixins: [permissionMixins],
+  props: {
+    stuff: {
+      type: Object,
+      default: () => ({
+        type: 'default',
+        payload: {},
+      }),
     },
-    data() {
-      return {
-        permission: this.stuff.payload?.permission || ''
-      }
+    auth: {
+      type: Object,
+      default: null,
     },
-    computed: {
-      type() {
-        return this.stuff?.type || ''
-      },
-      action() {
-        return this.stuff.payload.action || this.$t('创建')
-      },
-      resource() {
-        return this.stuff.payload?.resource || ''
-      },
-      emptyText() {
-        return this.stuff.payload?.emptyText || ''
-      },
-      payload() {
-        return this.stuff?.payload || ''
-      },
-      defaultText() {
-        return this.stuff.payload?.defaultText || ''
-      },
-      path() {
-        return this.stuff.payload?.path || ''
-      },
-      emptyLinkText() {
-        return this.stuff.payload?.emptyLinkText || ''
-      }
-    },
-    watch: {
-      stuff: {
-        handler(value) {
-          this.permission = value.payload.permission
-        },
-        deep: true
-      }
+  },
+  data() {
+    return {
+      permission: this.stuff.payload?.permission || '',
     }
-  }
+  },
+  computed: {
+    type() {
+      return this.stuff?.type || ''
+    },
+    action() {
+      return this.stuff.payload.action || this.$t('创建')
+    },
+    resource() {
+      return this.stuff.payload?.resource || ''
+    },
+    emptyText() {
+      return this.stuff.payload?.emptyText || ''
+    },
+    payload() {
+      return this.stuff?.payload || ''
+    },
+    defaultText() {
+      return this.stuff.payload?.defaultText || ''
+    },
+    path() {
+      return this.stuff.payload?.path || ''
+    },
+    emptyLinkText() {
+      return this.stuff.payload?.emptyLinkText || ''
+    },
+  },
+  watch: {
+    stuff: {
+      handler(value) {
+        this.permission = value.payload.permission
+      },
+      deep: true,
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .data-stuff {
-        color: #63656e;
-        font-size: 14px;
-        .img-empty {
-            width: 90px;
-        }
-        .text-btn {
-            font-size: 14px;
-            height: auto;
-        }
-        .search-text{
-          margin: 0 3px;
-        }
-        .data-tips{
-          margin-top: 15px;
-        }
+.data-stuff {
+  color: #63656e;
+  font-size: 14px;
+
+  .img-empty {
+    width: 90px;
+  }
+
+  .text-btn {
+    font-size: 14px;
+    height: auto;
+  }
+
+  .search-text {
+    margin: 0 3px;
+  }
+
+  .data-tips {
+    margin-top: 15px;
+
+    .aa {
+      color: #ccc;
     }
-    .empty-link {
-         color: #3A84FF;
-     }
+  }
+}
+
+.empty-link {
+  color: #3a84ff;
+}
 </style>

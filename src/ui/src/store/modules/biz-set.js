@@ -37,13 +37,15 @@ export default {
   mutations: {
     setBizSetId(state, bizSetId) {
       state.bizSetId = Number(bizSetId)
-      state.bizSetName = state.bizSetList.find(item => item.bk_biz_set_id === state.bizSetId)?.bk_biz_set_name
+      state.bizSetName = state.bizSetList.find(
+        item => item.bk_biz_set_id === state.bizSetId
+      )?.bk_biz_set_name
     },
     setBizSetList(state, bizSetList) {
       state.bizSetList = bizSetList
     },
     setBizId(state, bizId) {
       state.bizId = Number(bizId)
-    }
-  }
+    },
+  },
 }

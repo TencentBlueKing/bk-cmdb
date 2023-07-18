@@ -12,44 +12,52 @@
 
 <template>
   <div
-    class="editable-field clearfix"
-    @click.stop
     v-click-outside="{
       handler: handleClickOutSide,
       middleware: clickOutSideMiddleware,
-      isActive: isEditing
+      isActive: isEditing,
     }"
-    :class="{ 'is-error': isError, 'is-editing': isEditing, 'is-readonly': !editable }">
+    class="editable-field clearfix"
+    :class="{
+      'is-error': isError,
+      'is-editing': isEditing,
+      'is-readonly': !editable,
+    }"
+    @click.stop>
     <template v-if="!editable">{{ label || value }}</template>
     <div v-else class="editable-field-container">
-      <div class="editable-field-content" v-bk-overflow-tips="{ content: label || value }">
-        <span class="editable-field-text" v-show="!isEditing">{{ label || value }}</span>
-        <div class="editable-field-control" v-show="isEditing">
+      <div
+        v-bk-overflow-tips="{ content: label || value }"
+        class="editable-field-content">
+        <span v-show="!isEditing" class="editable-field-text">{{
+          label || value
+        }}</span>
+        <div v-show="isEditing" class="editable-field-control">
           <cmdb-singlechar
             v-if="type === 'singlechar'"
-            v-autofocus
-            @change="handleInputChange"
-            @enter="confirmEdit"
-            :disabled="isConfirming"
             v-bind="$attrs"
-            v-model="innerValue">
+            v-model="innerValue"
+            v-autofocus
+            :disabled="isConfirming"
+            @change="handleInputChange"
+            @enter="confirmEdit">
             <slot></slot>
           </cmdb-singlechar>
           <!-- 切换编辑状态会初始化组件，目的是为了触发 show-on-init 的效果 -->
           <cmdb-enum
             v-if="type === 'enum' && isEditing"
-            :show-on-init="true"
-            @on-selected="confirmEdit"
-            v-autofocus
-            :disabled="isConfirming"
             v-bind="$attrs"
-            v-model="innerValue">
+            v-model="innerValue"
+            v-autofocus
+            :show-on-init="true"
+            :disabled="isConfirming"
+            @on-selected="confirmEdit">
           </cmdb-enum>
           <div class="tips-icon">
             <bk-icon
               v-show="isError"
               v-bk-tooltips="{
-                content: errorText
+                content: errorText,
               }"
               class="error-tips-icon"
               type="exclamation-circle-shape">
@@ -71,144 +79,151 @@
 </template>
 
 <script>
-  import { defineComponent, ref, watch } from 'vue'
-  import { Validator } from 'vee-validate'
-  import { autofocus } from '@/directives/autofocus'
-  import CmdbSinglechar from '@/components/ui/form/singlechar.vue'
-  import CmdbEnum from '@/components/ui/form/enum.vue'
+import { defineComponent, ref, watch } from 'vue'
+import { Validator } from 'vee-validate'
 
-  export default defineComponent({
-    name: 'EditableField',
-    directives: {
-      autofocus
+import CmdbSinglechar from '@/components/ui/form/singlechar.vue'
+import CmdbEnum from '@/components/ui/form/enum.vue'
+import { autofocus } from '@/directives/autofocus'
+
+export default defineComponent({
+  name: 'EditableField',
+  directives: {
+    autofocus,
+  },
+  components: {
+    CmdbSinglechar,
+    CmdbEnum,
+  },
+  model: {
+    prop: 'value',
+    event: 'value-confirm',
+  },
+  props: {
+    // 传入的值，支持 v-model
+    value: {
+      type: [String, Number, Boolean],
+      default: '',
     },
-    components: {
-      CmdbSinglechar,
-      CmdbEnum
+    // 展示的内容，有时候需要展示的不是 value 而是 value 对应的 name，此时可以格式化后用 label 展示
+    label: {
+      type: String,
+      default: '',
     },
-    model: {
-      prop: 'value',
-      event: 'value-confirm'
+    // 控件类型，默认为 singlechar
+    type: {
+      type: String,
+      default: 'singlechar',
+      validator: val => ['singlechar', 'enum'].includes(val),
     },
-    props: {
-      // 传入的值，支持 v-model
-      value: {
-        type: [String, Number, Boolean],
-        default: ''
+    // 权限数据，仅使用在编辑按钮上
+    auth: {
+      type: Object,
+      default: () => ({}),
+    },
+    // 是否支持编辑
+    editable: {
+      type: Boolean,
+      default: true,
+    },
+    // 是否在编辑状态中，支持 .sync 修饰符，便于从外部获得编辑状态
+    editing: {
+      type: Boolean,
+      default: true,
+    },
+    // vee-validate 验证规则，参考：https://vee-validate.logaretm.com/v2/guide/syntax.html#rules-parameters
+    validate: {
+      type: String,
+      default: '',
+    },
+  },
+  setup(props, { emit }) {
+    const isEditing = ref(false)
+    const isError = ref(false)
+    const innerValue = ref('')
+    const errorText = ref('')
+    const valueRef = ref(props.value)
+    const validator = new Validator()
+    const isConfirming = ref(false)
+
+    watch(
+      valueRef,
+      val => {
+        innerValue.value = val
       },
-      // 展示的内容，有时候需要展示的不是 value 而是 value 对应的 name，此时可以格式化后用 label 展示
-      label: {
-        type: String,
-        default: ''
-      },
-      // 控件类型，默认为 singlechar
-      type: {
-        type: String,
-        default: 'singlechar',
-        validator: val => ['singlechar', 'enum'].includes(val)
-      },
-      // 权限数据，仅使用在编辑按钮上
-      auth: {
-        type: Object,
-        default: () => ({})
-      },
-      // 是否支持编辑
-      editable: {
-        type: Boolean,
-        default: true
-      },
-      // 是否在编辑状态中，支持 .sync 修饰符，便于从外部获得编辑状态
-      editing: {
-        type: Boolean,
-        default: true
-      },
-      // vee-validate 验证规则，参考：https://vee-validate.logaretm.com/v2/guide/syntax.html#rules-parameters
-      validate: {
-        type: String,
-        default: ''
+      {
+        immediate: true,
       }
-    },
-    setup(props, { emit }) {
-      const isEditing = ref(false)
-      const isError = ref(false)
-      const innerValue = ref('')
-      const errorText = ref('')
-      const valueRef = ref(props.value)
-      const validator = new Validator()
-      const isConfirming = ref(false)
+    )
 
-      watch(
-        valueRef, (val) => {
-          innerValue.value = val
-        },
-        {
-          immediate: true
-        }
+    const edit = () => {
+      isEditing.value = true
+      emit('update:editing', true)
+    }
+
+    const confirmEdit = async () => {
+      const { valid, errors } = await validator.verify(
+        innerValue.value,
+        props.validate
       )
 
-      const edit = () => {
-        isEditing.value = true
-        emit('update:editing', true)
+      const stop = () => {
+        isConfirming.value = false
       }
 
-      const confirmEdit = async () => {
-        const { valid, errors } = await validator.verify(innerValue.value, props.validate)
+      const confirm = () => {
+        isEditing.value = false
+        stop()
+        emit('value-confirm', innerValue.value)
+        emit('update:editing', false)
+      }
 
-        const stop = () => {
-          isConfirming.value = false
-        }
-
-        const confirm = () => {
-          isEditing.value = false
-          stop()
-          emit('value-confirm', innerValue.value)
-          emit('update:editing', false)
-        }
-
-        if (valid) {
-          if (innerValue.value !== props.value) {
-            isConfirming.value = true
-            emit('confirm', { value: innerValue.value, confirm, stop })
-          } else {
-            confirm()
-          }
+      if (valid) {
+        if (innerValue.value !== props.value) {
+          isConfirming.value = true
+          emit('confirm', { value: innerValue.value, confirm, stop })
         } else {
-          [errorText.value] = errors
-          isError.value = true
+          confirm()
         }
+      } else {
+        ;[errorText.value] = errors
+        isError.value = true
       }
+    }
 
-      const handleInputChange = () => {
-        errorText.value = ''
-        isError.value = false
-      }
+    const handleInputChange = () => {
+      errorText.value = ''
+      isError.value = false
+    }
 
-      // 针对 bk-select 的特殊处理，避免点击下拉区域时触发失焦退出编辑
-      const clickOutSideMiddleware = (event) => {
-        const path = event.composedPath ? event.composedPath() : event.path
-        return !path?.some?.(node => node.className === 'bk-select-dropdown-content')
-      }
+    // 针对 bk-select 的特殊处理，避免点击下拉区域时触发失焦退出编辑
+    const clickOutSideMiddleware = event => {
+      const path = event.composedPath ? event.composedPath() : event.path
+      return !path?.some?.(
+        node => node.className === 'bk-select-dropdown-content'
+      )
+    }
 
-      const handleClickOutSide = () => {
-        if (isEditing.value) {
-          confirmEdit()
-        }
+    const handleClickOutSide = () => {
+      if (isEditing.value) {
+        confirmEdit()
       }
+    }
 
-      return {
-        isError,
-        isEditing,
-        isConfirming,
-        innerValue,
-        errorText,
-        edit,
-        confirmEdit,
-        handleInputChange,
-        handleClickOutSide,
-        clickOutSideMiddleware
-      }
-    },
-  })
+    return {
+      isError,
+      isEditing,
+      isConfirming,
+      innerValue,
+      errorText,
+      edit,
+      confirmEdit,
+      handleInputChange,
+      handleClickOutSide,
+      clickOutSideMiddleware,
+    }
+  },
+})
 </script>
 
 <style lang="scss" scoped>
@@ -229,12 +244,13 @@ $restWidth: 10px;
 
   &.is-error {
     /deep/ .bk-form-input {
-      border-color: #EA3636;
+      border-color: #ea3636;
     }
   }
 
   &-content {
     max-width: calc(100% - #{$editBtnSize + $editBtnMarginLeft + $restWidth});
+
     @include ellipsis;
   }
 
@@ -251,7 +267,6 @@ $restWidth: 10px;
     width: 100%;
   }
 
-
   .tips-icon {
     position: absolute;
     top: 0;
@@ -263,7 +278,7 @@ $restWidth: 10px;
   }
 
   .error-tips-icon {
-    color:#EA3636;
+    color: #ea3636;
   }
 
   &-edit-button {

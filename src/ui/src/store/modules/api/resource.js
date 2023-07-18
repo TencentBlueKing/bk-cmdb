@@ -27,8 +27,8 @@ const directory = {
     },
     findMany(context, { params, config }) {
       return $http.post('findmany/resource/directory', params, config)
-    }
-  }
+    },
+  },
 }
 
 const host = {
@@ -42,16 +42,16 @@ const host = {
         },
         idle(context, { params, config }) {
           return $http.post('hosts/modules/resource/idle', params, config)
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 }
 
 export default {
   namespaced: true,
   modules: {
     directory,
-    host
-  }
+    host,
+  },
 }

@@ -11,10 +11,13 @@
  */
 
 'use strict'
-function getCommitId () {
+function getCommitId() {
   let commitId = null
   try {
-    commitId = require('child_process').execSync('git rev-parse HEAD').toString().trim()
+    commitId = require('child_process')
+      .execSync('git rev-parse HEAD')
+      .toString()
+      .trim()
   } catch (error) {
     console.log('Ignore: Get commit id failed')
   }
@@ -22,5 +25,5 @@ function getCommitId () {
 }
 module.exports = {
   NODE_ENV: '"production"',
-  COMMIT_ID: getCommitId()
+  COMMIT_ID: getCommitId(),
 }

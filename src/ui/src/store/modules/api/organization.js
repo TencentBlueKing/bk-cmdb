@@ -14,23 +14,19 @@
 
 import $http from '@/api'
 
-const state = {
+const state = {}
 
-}
-
-const getters = {
-
-}
+const getters = {}
 
 const actions = {
   getDepartment({ commit, state, dispatch }, config) {
     return $http.get(`${window.API_HOST}organization/department`, config)
-  }
+  },
 }
 
 export default {
   namespaced: true,
   state,
   getters,
-  actions
+  actions,
 }

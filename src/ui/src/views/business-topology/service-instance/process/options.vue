@@ -13,30 +13,43 @@
 <template>
   <div class="options">
     <div class="left">
-      <cmdb-auth :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }" theme="primary" v-test-id="'batchEdit'"
+      <cmdb-auth
+        :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
+        <bk-button
+          slot-scope="{ disabled }"
+          v-test-id="'batchEdit'"
+          theme="primary"
           :disabled="disabled || !selection.value.length"
           @click="handleBatchEdit">
-          {{$t('编辑')}}
+          {{ $t('编辑') }}
         </bk-button>
       </cmdb-auth>
-      <cmdb-auth class="ml10" v-if="!serviceTemplateId"
+      <cmdb-auth
+        v-if="!serviceTemplateId"
+        class="ml10"
         :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
-        <bk-button slot-scope="{ disabled }" theme="default" v-test-id="'batchDel'"
+        <bk-button
+          slot-scope="{ disabled }"
+          v-test-id="'batchDel'"
+          theme="default"
           :disabled="disabled || !selection.value.length"
           :loading="$loading(selection.requestId)"
           @click="handleBatchtDelete">
-          {{$t('删除')}}
+          {{ $t('删除') }}
         </bk-button>
       </cmdb-auth>
     </div>
     <div class="right">
-      <bk-checkbox class="options-expand-all" v-model="expandAll" @change="handleExpandAllChange">
-        {{$t('全部展开')}}
+      <bk-checkbox
+        v-model="expandAll"
+        class="options-expand-all"
+        @change="handleExpandAllChange">
+        {{ $t('全部展开') }}
       </bk-checkbox>
-      <bk-input class="options-search ml10"
+      <bk-input
         ref="searchSelect"
         v-model.trim="searchValue"
+        class="options-search ml10"
         right-icon="bk-icon icon-search"
         clearable
         :max-width="200"
@@ -50,135 +63,145 @@
 </template>
 
 <script>
-  import ViewSwitcher from '../common/view-switcher'
-  import Bus from '../common/bus'
-  import FormMultiple from '@/components/service/form/form-multiple.js'
-  import { mapGetters } from 'vuex'
-  import RouterQuery from '@/router/query'
-  export default {
-    components: {
-      ViewSwitcher
-    },
-    data() {
-      return {
-        withTemplate: true,
-        searchData: [],
-        searchValue: '',
-        expandAll: false,
-        selection: {
-          process: null,
-          value: [],
-          requestId: null
-        }
-      }
-    },
-    computed: {
-      ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('businessHost', ['selectedNode']),
-      serviceTemplateId() {
-        return this.selectedNode && this.selectedNode.data.service_template_id
-      }
-    },
-    watch: {
-      selectedNode() {
-        this.searchValue = ''
-        RouterQuery.set({
-          node: this.selectedNode.id,
-          instanceName: ''
-        })
-        Bus.$emit('filter-change', this.searchValue)
-      }
-    },
-    created() {
-      Bus.$on('process-selection-change', this.handleProcessSelectionChange)
-      Bus.$on('process-list-change', this.handleProcessListChange)
-      Bus.$on('filter-clear', this.filterClear)
-    },
-    beforeDestroy() {
-      Bus.$off('process-selection-change', this.handleProcessSelectionChange)
-      Bus.$off('process-list-change', this.handleProcessListChange)
-      Bus.$off('filter-clear', this.filterClear)
-    },
-    methods: {
-      handleBatchEdit() {
-        const props = {
-          submitHandler: this.batchEditSubmitHandler
-        }
-        if (this.serviceTemplateId) {
-          props.serviceTemplateId = this.serviceTemplateId
-          // 按服务模板创建的服务实例聚合出来的进程，其对应的服务模板都是同一个，因此取第一个的id即可
-          props.processTemplateId = this.selection.value[0].relation.process_template_id
-        }
-        FormMultiple.show(props)
+import { mapGetters } from 'vuex'
+
+import RouterQuery from '@/router/query'
+import FormMultiple from '@/components/service/form/form-multiple.js'
+
+import ViewSwitcher from '../common/view-switcher'
+import Bus from '../common/bus'
+
+export default {
+  components: {
+    ViewSwitcher,
+  },
+  data() {
+    return {
+      withTemplate: true,
+      searchData: [],
+      searchValue: '',
+      expandAll: false,
+      selection: {
+        process: null,
+        value: [],
+        requestId: null,
       },
-      async batchEditSubmitHandler(values) {
-        try {
-          await this.$store.dispatch('serviceInstance/batchUpdateProcess', {
-            params: {
-              bk_biz_id: this.bizId,
-              process_ids: this.selection.value.map(process => process.process_id),
-              update_data: values
-            }
-          })
-          Bus.$emit('refresh-expand-list', this.selection.process)
-          this.$success(this.$t('修改成功'))
-        } catch (error) {
-          console.error(error)
-        }
-      },
-      handleBatchtDelete() {
-        this.$bkInfo({
-          title: this.$t('确定删除N个进程', { count: this.selection.value.length }),
-          confirmFn: () => {
-            Bus.$emit('batch-delete', this.selection.process.bk_process_name)
-          }
-        })
-      },
-      handleProcessSelectionChange(process, selection, requestId) {
-        if (selection.length) {
-          this.selection.process = process
-          this.selection.value = selection
-          this.selection.requestId = requestId
-        } else if (process === this.selection.process) {
-          this.selection.process = null
-          this.selection.value = []
-          this.selection.requestId = null
-        }
-      },
-      handleSearch() {
-        Bus.$emit('filter-list', this.searchValue)
-      },
-      handleExpandAllChange(expand) {
-        Bus.$emit('expand-all-change', expand)
-      },
-      handleProcessListChange() {
-        this.expandAll = false
-        this.selection = {
-          process: null,
-          value: [],
-          requestId: null
-        }
-      },
-      filterClear() {
-        this.searchValue = ''
-      }
     }
-  }
+  },
+  computed: {
+    ...mapGetters('objectBiz', ['bizId']),
+    ...mapGetters('businessHost', ['selectedNode']),
+    serviceTemplateId() {
+      return this.selectedNode && this.selectedNode.data.service_template_id
+    },
+  },
+  watch: {
+    selectedNode() {
+      this.searchValue = ''
+      RouterQuery.set({
+        node: this.selectedNode.id,
+        instanceName: '',
+      })
+      Bus.$emit('filter-change', this.searchValue)
+    },
+  },
+  created() {
+    Bus.$on('process-selection-change', this.handleProcessSelectionChange)
+    Bus.$on('process-list-change', this.handleProcessListChange)
+    Bus.$on('filter-clear', this.filterClear)
+  },
+  beforeDestroy() {
+    Bus.$off('process-selection-change', this.handleProcessSelectionChange)
+    Bus.$off('process-list-change', this.handleProcessListChange)
+    Bus.$off('filter-clear', this.filterClear)
+  },
+  methods: {
+    handleBatchEdit() {
+      const props = {
+        submitHandler: this.batchEditSubmitHandler,
+      }
+      if (this.serviceTemplateId) {
+        props.serviceTemplateId = this.serviceTemplateId
+        // 按服务模板创建的服务实例聚合出来的进程，其对应的服务模板都是同一个，因此取第一个的id即可
+        props.processTemplateId =
+          this.selection.value[0].relation.process_template_id
+      }
+      FormMultiple.show(props)
+    },
+    async batchEditSubmitHandler(values) {
+      try {
+        await this.$store.dispatch('serviceInstance/batchUpdateProcess', {
+          params: {
+            bk_biz_id: this.bizId,
+            process_ids: this.selection.value.map(
+              process => process.process_id
+            ),
+            update_data: values,
+          },
+        })
+        Bus.$emit('refresh-expand-list', this.selection.process)
+        this.$success(this.$t('修改成功'))
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    handleBatchtDelete() {
+      this.$bkInfo({
+        title: this.$t('确定删除N个进程', {
+          count: this.selection.value.length,
+        }),
+        confirmFn: () => {
+          Bus.$emit('batch-delete', this.selection.process.bk_process_name)
+        },
+      })
+    },
+    handleProcessSelectionChange(process, selection, requestId) {
+      if (selection.length) {
+        this.selection.process = process
+        this.selection.value = selection
+        this.selection.requestId = requestId
+      } else if (process === this.selection.process) {
+        this.selection.process = null
+        this.selection.value = []
+        this.selection.requestId = null
+      }
+    },
+    handleSearch() {
+      Bus.$emit('filter-list', this.searchValue)
+    },
+    handleExpandAllChange(expand) {
+      Bus.$emit('expand-all-change', expand)
+    },
+    handleProcessListChange() {
+      this.expandAll = false
+      this.selection = {
+        process: null,
+        value: [],
+        requestId: null,
+      }
+    },
+    filterClear() {
+      this.searchValue = ''
+    },
+  },
+}
 </script>
 
 <style lang="scss" scoped>
-    .options {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        .left,
-        .right {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-    }
-    .options-search {
-        width: 300px;
-    }
+.options {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+
+  .left,
+  .right {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+}
+
+.options-search {
+  width: 300px;
+}
 </style>

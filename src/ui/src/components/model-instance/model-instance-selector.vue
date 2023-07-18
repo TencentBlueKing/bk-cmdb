@@ -11,86 +11,96 @@
 -->
 
 <script setup>
-  import { computed, ref, watch, onMounted } from 'vue'
-  import debounce from 'lodash.debounce'
-  import { getModelInstanceOptions } from '@/service/instance/common'
+import { computed, ref, watch, onMounted } from 'vue'
+import debounce from 'lodash.debounce'
 
-  const props = defineProps({
-    value: {
-      type: [Array, String, Number],
-      default: ''
-    },
-    objId: String,
-    multiple: {
-      type: Boolean,
-      default: true
-    }
-  })
-  const emit = defineEmits(['input', 'toggle'])
+import { getModelInstanceOptions } from '@/service/instance/common'
 
-  const getInitValue = () => (props.multiple ? (props.value || []) : (props.value || ''))
-  const resetValue = () => (props.multiple ? [] : '')
+const props = defineProps({
+  value: {
+    type: [Array, String, Number],
+    default: '',
+  },
+  objId: String,
+  multiple: {
+    type: Boolean,
+    default: true,
+  },
+})
+const emit = defineEmits(['input', 'toggle'])
 
-  const list = ref([])
-  const loading = ref(false)
-  const selector = ref(null)
+const getInitValue = () =>
+  props.multiple ? props.value || [] : props.value || ''
+const resetValue = () => (props.multiple ? [] : '')
 
-  const search = async (keyword) => {
-    loading.value = true
-    const results = await getModelInstanceOptions(props.objId, keyword, props.value, { page: { limit: 50 } })
-    list.value = results
-    loading.value = false
-  }
+const list = ref([])
+const loading = ref(false)
+const selector = ref(null)
 
-  const remoteSearch = debounce(search, 200)
+const search = async keyword => {
+  loading.value = true
+  const results = await getModelInstanceOptions(
+    props.objId,
+    keyword,
+    props.value,
+    { page: { limit: 50 } }
+  )
+  list.value = results
+  loading.value = false
+}
 
-  const localValue = computed({
-    get() {
-      return getInitValue()
-    },
-    set(values) {
-      emit('input', values)
-      emit('change', values)
-    }
-  })
+const remoteSearch = debounce(search, 200)
 
-  const isActive = ref(false)
+const localValue = computed({
+  get() {
+    return getInitValue()
+  },
+  set(values) {
+    emit('input', values)
+    emit('change', values)
+  },
+})
 
-  onMounted(() => {
-    setTimeout(() => {
-      selector?.value?.$refs.bkSelectTag?.calcOverflow()
-    }, 100)
-  })
+const isActive = ref(false)
 
-  watch(() => props.objId, (cur, prev) => {
+onMounted(() => {
+  setTimeout(() => {
+    selector?.value?.$refs.bkSelectTag?.calcOverflow()
+  }, 100)
+})
+
+watch(
+  () => props.objId,
+  (cur, prev) => {
     if (cur && cur !== prev) {
       search()
     }
 
     localValue.value = resetValue()
-  })
-
-  if (props.objId) {
-    search()
   }
+)
 
-  const handleToggle = (active) => {
-    isActive.value = active
-    emit('toggle', active)
-  }
+if (props.objId) {
+  search()
+}
 
-  defineExpose({
-    focus: () => selector?.value?.show?.()
-  })
+const handleToggle = active => {
+  isActive.value = active
+  emit('toggle', active)
+}
+
+defineExpose({
+  focus: () => selector?.value?.show?.(),
+})
 </script>
 
 <template>
   <div class="model-instance-selector">
     <bk-select
-      :class="['selector', { 'active': isActive }]"
       ref="selector"
       v-bind="$attrs"
       v-model="localValue"
+      :class="['selector', { active: isActive }]"
       searchable
       :multiple="multiple"
       font-size="normal"
@@ -98,27 +108,29 @@
       :is-tag-width-limit="true"
       :remote-method="remoteSearch"
       @toggle="handleToggle">
-      <bk-option v-for="option in list"
-        :key="option.id"
+      <bk-option
+        v-for="option in list"
         :id="option.id"
+        :key="option.id"
         :name="option.name">
       </bk-option>
     </bk-select>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
-    .model-instance-selector {
-        position: relative;
-        width: 100%;
-        height: 32px;
-        .selector {
-            width: 100%;
-            &.active {
-                position: absolute;
-                z-index: 2;
-            }
-          }
+.model-instance-selector {
+  position: relative;
+  width: 100%;
+  height: 32px;
+
+  .selector {
+    width: 100%;
+
+    &.active {
+      position: absolute;
+      z-index: 2;
     }
+  }
+}
 </style>

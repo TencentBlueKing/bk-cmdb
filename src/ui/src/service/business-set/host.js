@@ -10,8 +10,9 @@
  * limitations under the License.
  */
 
-import $http from '@/api'
 import has from 'has'
+
+import $http from '@/api'
 import { transformHostSearchParams, localSort } from '@/utils/tools'
 
 /**
@@ -21,16 +22,22 @@ import { transformHostSearchParams, localSort } from '@/utils/tools'
  * @param {Obejct} config 请求配置
  * @returns {Promise}
  */
-export const findAll = (bizSetId, params, config) => $http.post(`findmany/hosts/biz_set/${bizSetId}`, transformHostSearchParams(params), config).then((data) => {
-  if (has(data, 'info')) {
-    data.info.forEach((host) => {
-      localSort(host.module, 'bk_module_name')
-      localSort(host.set, 'bk_set_name')
+export const findAll = (bizSetId, params, config) =>
+  $http
+    .post(
+      `findmany/hosts/biz_set/${bizSetId}`,
+      transformHostSearchParams(params),
+      config
+    )
+    .then(data => {
+      if (has(data, 'info')) {
+        data.info.forEach(host => {
+          localSort(host.module, 'bk_module_name')
+          localSort(host.set, 'bk_set_name')
+        })
+      }
+      return data
     })
-  }
-  return data
-})
-
 
 /**
  * 查询单个主机
@@ -39,13 +46,10 @@ export const findAll = (bizSetId, params, config) => $http.post(`findmany/hosts/
  * @param {Obejct} config 请求配置
  * @returns {Promise}
  */
-export const findOne = (bizSetId, params, config) => $http.post(
-  `findmany/hosts/biz_set/${bizSetId}`,
-  params,
-  config
-)
+export const findOne = (bizSetId, params, config) =>
+  $http.post(`findmany/hosts/biz_set/${bizSetId}`, params, config)
 
 export const HostService = {
   findAll,
-  findOne
+  findOne,
 }

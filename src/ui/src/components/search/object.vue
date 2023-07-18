@@ -21,27 +21,26 @@
 </template>
 
 <script>
-  import activeMixin from './mixins/active'
-  export default {
-    name: 'cmdb-search-map',
-    mixins: [activeMixin],
-    props: {
-      value: {
-        type: String
-      }
+import activeMixin from './mixins/active'
+export default {
+  name: 'cmdb-search-map',
+  mixins: [activeMixin],
+  props: {
+    value: {
+      type: String,
     },
-    computed: {
-      localValue: {
-        get() {
-          return this.value
-        },
-        set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
-        }
-      }
+  },
+  computed: {
+    localValue: {
+      get() {
+        return this.value
+      },
+      set(value) {
+        this.$emit('input', value)
+        this.$emit('change', value)
+      },
     },
-    methods: {
-    }
-  }
+  },
+  methods: {},
+}
 </script>

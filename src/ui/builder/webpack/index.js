@@ -11,12 +11,11 @@
  */
 
 const config = require('../config')
+const { appDir, resolveBase, modeValue } = require('../utils')
 
 const moduleConfig = require('./module')
 const pluginsConfig = require('./plugins')
 const optimizationConfig = require('./optimization')
-
-const { appDir, resolveBase, modeValue } = require('../utils')
 
 module.exports = {
   mode: modeValue('production', 'development'),
@@ -27,15 +26,18 @@ module.exports = {
 
   entry: {
     app: './src/main.js',
-    login: './src/login/index.js'
+    login: './src/login/index.js',
   },
 
   output: {
     path: config.build.assetsRoot,
     filename: 'js/[name].[chunkhash].js',
     chunkFilename: modeValue('js/[name].[chunkhash].js', 'js/[name].js'),
-    publicPath: modeValue(config.build.assetsPublicPath, config.dev.assetsPublicPath),
-    clean: true // 5.20.0+
+    publicPath: modeValue(
+      config.build.assetsPublicPath,
+      config.dev.assetsPublicPath
+    ),
+    clean: true, // 5.20.0+
   },
 
   resolve: {
@@ -43,7 +45,7 @@ module.exports = {
     extensions: ['.js', '.vue', '.json', '.tsx', '.ts'],
     alias: {
       vue$: 'vue/dist/vue.esm.js',
-      '@': resolveBase('src')
+      '@': resolveBase('src'),
     },
     fallback: {
       fs: false,
@@ -54,12 +56,12 @@ module.exports = {
       os: require.resolve('os-browserify/browser'),
       stream: require.resolve('stream-browserify'),
       zlib: require.resolve('browserify-zlib'), // for unzip
-      util: require.resolve('util/') // for unzip
-    }
+      util: require.resolve('util/'), // for unzip
+    },
   },
 
   module: {
-    ...moduleConfig(config)
+    ...moduleConfig(config),
   },
 
   devtool: modeValue(false, 'eval-cheap-module-source-map'),
@@ -67,15 +69,13 @@ module.exports = {
   cache: {
     type: 'filesystem',
     buildDependencies: {
-      config: [__filename]
-    }
+      config: [__filename],
+    },
   },
 
   optimization: {
-    ...optimizationConfig(config)
+    ...optimizationConfig(config),
   },
 
-  plugins: [
-    ...pluginsConfig(config)
-  ]
+  plugins: [...pluginsConfig(config)],
 }
