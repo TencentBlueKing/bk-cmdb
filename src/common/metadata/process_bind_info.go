@@ -159,8 +159,11 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKProtocol), err
 		}
 
-		if err := ValidateBindIPMatchProtocol(*property.Std.IP.Value, *property.Std.Protocol.Value); err != nil {
-			return fmt.Sprintf("%s[%d].(%s and %s)", common.BKProcBindInfo, idx, common.BKIP, common.BKProtocol), err
+		if property.Std.IP.Value != nil && property.Std.Protocol.Value != nil {
+			if err := ValidateBindIPMatchProtocol(*property.Std.IP.Value, *property.Std.Protocol.Value); err != nil {
+				return fmt.Sprintf("%s[%d].(%s and %s)", common.BKProcBindInfo, idx, common.BKIP,
+					common.BKProtocol), err
+			}
 		}
 
 		if err := property.Std.Enable.Validate(); err != nil {
