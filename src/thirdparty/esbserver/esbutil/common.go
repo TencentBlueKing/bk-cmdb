@@ -51,3 +51,12 @@ func GetEsbQueryParameters(esbConfig EsbConfig, header http.Header) map[string]s
 		"bk_username":   util.GetUser(header),
 	}
 }
+
+// GetEsbParameterWithToken get esb parameter with bk_token
+func GetEsbParameterWithToken(esbConfig EsbConfig, header http.Header) map[string]string {
+	return map[string]string{
+		"bk_app_code":   esbConfig.AppCode,
+		"bk_app_secret": esbConfig.AppSecret,
+		"bk_token":      util.GetBkToken(header),
+	}
+}

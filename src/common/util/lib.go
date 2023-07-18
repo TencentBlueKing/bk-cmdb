@@ -48,6 +48,11 @@ func GetUser(header http.Header) string {
 	return header.Get(common.BKHTTPHeaderUser)
 }
 
+// GetBkToken get bk_token
+func GetBkToken(header http.Header) string {
+	return header.Get(common.HTTPCookieBKToken)
+}
+
 // GetOwnerID TODO
 func GetOwnerID(header http.Header) string {
 	return header.Get(common.BKHTTPOwnerID)
@@ -299,7 +304,8 @@ func SetDBReadPreference(ctx context.Context, mode common.ReadPreferenceMode) co
 }
 
 // SetReadPreference  再context， header 设置设置mongodb read preference，给dal 使用
-func SetReadPreference(ctx context.Context, header http.Header, mode common.ReadPreferenceMode) (context.Context, http.Header) {
+func SetReadPreference(ctx context.Context, header http.Header, mode common.ReadPreferenceMode) (context.Context,
+	http.Header) {
 	ctx = SetDBReadPreference(ctx, mode)
 	header = SetHTTPReadPreference(header, mode)
 	return ctx, header
