@@ -396,7 +396,7 @@
           return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
         }
         // eslint-disable-next-line max-len
-        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
         return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       },
       availableFieldTypeList() {
