@@ -13,6 +13,8 @@
 package middleware
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 
 	"configcenter/src/apimachinery/discovery"
@@ -20,6 +22,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
@@ -35,6 +38,11 @@ var Engine *backbone.Engine
 
 // CacheCli TODO
 var CacheCli redis.Client
+
+const (
+	message          string = "message"
+	inaccessibleCode int    = 1302403
+)
 
 // ValidLogin valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
@@ -58,10 +66,31 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+			bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
 			language := webCommon.GetLanguageByHTTPRequest(c)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+			c.Request.Header.Add(common.HTTPCookieBKToken, bkToken)
+
+			if config.LoginVersion == common.BKBluekingLoginPluginVersion {
+				resp, err := esb.EsbClient().LoginSrv().GetUser(c.Request.Context(), c.Request.Header)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError,
+						gin.H{"status": fmt.Sprintf("get user from bk-login failed, err: %v", err)})
+					c.Abort()
+					return
+				}
+
+				if resp.Code == inaccessibleCode {
+					data := gin.H{
+						message: resp.Message,
+					}
+					c.HTML(http.StatusOK, webCommon.InaccessibleHtml, data)
+					c.Abort()
+					return
+				}
+			}
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()

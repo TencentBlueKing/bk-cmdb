@@ -48,6 +48,11 @@ func GetUser(header http.Header) string {
 	return header.Get(common.BKHTTPHeaderUser)
 }
 
+// GetBkToken get bk_token
+func GetBkToken(header http.Header) string {
+	return header.Get(common.HTTPCookieBKToken)
+}
+
 // GetOwnerID TODO
 func GetOwnerID(header http.Header) string {
 	return header.Get(common.BKHTTPOwnerID)
