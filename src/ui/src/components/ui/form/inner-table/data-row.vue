@@ -29,6 +29,7 @@
           :size="'small'"
           :font-size="'normal'"
           :row="1"
+          @keyup.native="(event) => keyupCallMethod(event, () => handleSaveRow($index))"
           error-display-type="tooltips"
           v-model="editState.row[$index][prop.bk_property_id]" />
       </template>
@@ -119,6 +120,7 @@
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import { $success } from '@/magicbox/index.js'
   import instanceTableService from '@/service/instance/table'
+  import { keyupCallMethod } from '@/utils/util'
 
   const props = defineProps({
     type: {

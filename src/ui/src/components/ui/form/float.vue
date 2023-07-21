@@ -60,6 +60,10 @@
       precision: {
         type: Number,
         default: 5
+      },
+      options: {
+        type: Object,
+        default: {}
       }
     },
     computed: {
@@ -87,7 +91,15 @@
         this.$refs.input.curValue = value
         this.localValue = value
       },
-      handleChange() {
+      handleChange(val) {
+        const { min = -9999999999, max = 99999999999 } = this.options
+        if (min > +val) {
+          this.localValue = min
+        }
+        if (max < +val) {
+          this.localValue = max
+        }
+        this.$refs.input.curValue = this.localValue
         this.$emit('on-change', this.localValue)
       },
       handleEnter() {

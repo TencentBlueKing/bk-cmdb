@@ -183,9 +183,10 @@
         return changed || !this.verifyResult.connected
       },
       vendors() {
+        const onlyShow = ['亚马逊云', '腾讯云']
         const vendorProperty = this.properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
         if (vendorProperty) {
-          return vendorProperty.option || []
+          return (vendorProperty.option || [])?.filter(cloud => onlyShow.includes(cloud.name))
         }
         return []
       },

@@ -121,6 +121,7 @@
     }
 
     if (isUpdate(field)) {
+      getUpdateFields(field, ['bk_property_name', 'isrequired'])
       return DIFF_TYPES.UPDATE
     }
 
@@ -137,6 +138,12 @@
     if (isUnchanged(field)) {
       return DIFF_TYPES.UNCHANGED
     }
+  }
+
+  const getUpdateFields = (field = {}, fields = []) => {
+    const updateField = props.templateFieldList
+      .find(item => item.bk_property_id === field.bk_property_id) ?? {}
+    fields.forEach(item => field[item] = updateField[item] ?? field[item])
   }
 
   const getFieldCardClassName = field => getFieldDiffType(field)

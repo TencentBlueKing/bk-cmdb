@@ -22,12 +22,12 @@
     align-items: center;
 }
 
-@mixin scrollbar ($width: 6px) {
+@mixin scrollbar ($width: 6px, $bgColor: rgba(165, 165, 165, .1)) {
     overflow: auto;
     &::-webkit-scrollbar {
         width: $width;
         height: $width;
-        background: rgba(165, 165, 165, .1);
+        background: $bgColor;
         &-thumb {
             min-height: 24px;
             border-radius: 20px;
@@ -42,8 +42,8 @@
     overflow-y: hidden;
 }
 
-@mixin scrollbar-y ($width: 6px) {
-    @include scrollbar($width);
+@mixin scrollbar-y ($width: 6px, $bgColor: rgba(165, 165, 165, .1)) {
+    @include scrollbar($width, $bgColor);
     overflow-x: hidden;
     overflow-y: auto;
 }

@@ -170,7 +170,7 @@
         return true
       },
       handleCreateModule() {
-        this.$refs.topologyTree.showCreateDialog(this.selectedNode)
+        this.$refs.topologyTree.handleShowCreateDialog(this.selectedNode)
       },
       getTopologyModels() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
