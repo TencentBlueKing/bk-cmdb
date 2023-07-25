@@ -257,7 +257,7 @@ func (r *Request) WrapURL() *url.URL {
 	return finalUrl
 }
 
-func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string) {
+func (r *Request) checkToleranceLatency(start *time.Time, url, subPath, rid string) {
 	if time.Since(*start) < r.capability.ToleranceLatencyTime {
 		return
 	}
@@ -271,7 +271,7 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 	// request time larger than the maxToleranceLatencyTime time, then log the request
 	blog.InfofDepthf(3, "[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, "+
 		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
-		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
+		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, commonUtil.FormatHttpBody(subPath, r.body), rid)
 }
 
 // Do TODO
@@ -340,8 +340,9 @@ func (r *Request) Do() *Result {
 				// Which means that we can retry it. And so does the GET operation.
 				// While the other "write" operation can not simply retry it again, because they are not idempotent.
 
-				blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
-				r.checkToleranceLatency(&start, url, rid)
+				blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url,
+					commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
+				r.checkToleranceLatency(&start, url, r.subPath, rid)
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					result.Rid = rid
@@ -366,7 +367,7 @@ func (r *Request) Do() *Result {
 			}
 
 			// record latency if needed
-			r.checkToleranceLatency(&start, url, rid)
+			r.checkToleranceLatency(&start, url, r.subPath, rid)
 
 			var body []byte
 			if resp.Body != nil {
@@ -379,8 +380,8 @@ func (r *Request) Do() *Result {
 					}
 					result.Err = err
 					result.Rid = rid
-					blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url, r.body,
-						err, rid)
+					blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url,
+						commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
 					return result
 				}
 				body = data
@@ -388,8 +389,9 @@ func (r *Request) Do() *Result {
 
 			if blog.V(4) {
 				blog.V(4).InfoDepthf(2, "[apimachinery] cost: %dms, %s %s with body %s, response status: %s, "+
-					"response body: %s, rid: %s", time.Since(start)/time.Millisecond,
-					string(r.verb), url, r.body, resp.Status, body, rid)
+					"response body: %s, rid: %s", time.Since(start)/time.Millisecond, string(r.verb), url,
+					commonUtil.FormatHttpBody(r.subPath, r.body), resp.Status,
+					commonUtil.FormatHttpBody(r.subPath, body), rid)
 			}
 
 			result.Body = body

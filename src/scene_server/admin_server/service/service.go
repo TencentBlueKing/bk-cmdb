@@ -111,6 +111,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/old/dataid").To(s.migrateOldDataID))
 	api.Route(api.POST("/delete/auditlog").To(s.DeleteAuditLog))
 	api.Route(api.POST("/migrate/sync/db/index").To(s.RunSyncDBIndex))
+	api.Route(api.POST("/migrate/cloud/account/crypto").To(s.migrateCloudAccountCrypto))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 	api.Route(api.GET("/monitor_healthz").To(s.MonitorHealth))
 

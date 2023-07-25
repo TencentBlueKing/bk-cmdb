@@ -25,6 +25,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
@@ -450,6 +451,62 @@ func Kafka(prefix string) (kafka.Config, error) {
 		User:      parser.getString(prefix + ".user"),
 		Password:  parser.getString(prefix + ".password"),
 	}, nil
+}
+
+// Crypto return kafka configuration information according to the prefix.
+func Crypto(prefix string) (*cryptor.Config, error) {
+	confLock.RLock()
+	defer confLock.RUnlock()
+
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		blog.Errorf("can't find crypto configuration")
+		return nil, err.New("can't find crypto configuration")
+	}
+
+	conf := &cryptor.Config{
+		Enabled: parser.getBool(prefix + ".enabled"),
+	}
+
+	if !conf.Enabled {
+		return conf, nil
+	}
+
+	conf.Algorithm = cryptor.Algorithm(parser.getString(prefix + ".algorithm"))
+
+	switch conf.Algorithm {
+	case cryptor.Sm4:
+		if !parser.isSet(prefix + ".sm4") {
+			return nil, err.New("sm4 config is not set")
+		}
+
+		conf.Sm4 = &cryptor.Sm4Conf{
+			Key: parser.getString(prefix + ".sm4.key"),
+			Iv:  parser.getString(prefix + ".sm4.iv"),
+		}
+	case cryptor.AesGcm:
+		if !parser.isSet(prefix + ".aesGcm") {
+			return nil, err.New("aes-gcm config is not set")
+		}
+
+		conf.AesGcm = &cryptor.AesGcmConf{
+			Key:   parser.getString(prefix + ".aesGcm.key"),
+			Nonce: parser.getString(prefix + ".aesGcm.nonce"),
+		}
+	default:
+		return nil, fmt.Errorf("crypto algorithm %s is invalid", conf.Algorithm)
+	}
+
+	return conf, nil
 }
 
 // String return the string value of the configuration information according to the key.

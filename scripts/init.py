@@ -257,6 +257,15 @@ elasticsearch-replica-num = "$es_replica_num"
 #    secretsToken:
 #    secretsProject:
 #    secretsEnv:
+#  crypto:
+#    enabled: false
+#    algorithm:
+#    sm4:
+#      key:
+#      iv:
+#    aesGcm:
+#      key:
+#      nonce:
 
 #elasticsearch配置
 es:
@@ -367,6 +376,24 @@ cloudServer:
     secretsToken: ${secrets_token}
     secretsProject: ${secrets_project}
     secretsEnv: ${secrets_env}
+  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则使用该配置而非cryptor配置进行加解密
+  crypto:
+    # 是否开启加密
+    enabled: false
+    # 加密算法类型，枚举值：SM4、AES-GCM
+    algorithm:
+    # 使用SM4算法时所需的配置
+    sm4:
+      # 密钥
+      key:
+      # 初始向量
+      iv:
+    # 使用AES-GCM算法时所需的配置
+    aesGcm:
+      # 密钥
+      key:
+      # 临时数值
+      nonce:
   # 云同步任务
   syncTask:
     # 同步周期,最小为5分钟

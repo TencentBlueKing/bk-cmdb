@@ -10,14 +10,49 @@
  * limitations under the License.
  */
 
-// Package cryptor TODO
+// Package cryptor defines a package that supports crypto related operations
 package cryptor
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/TencentBlueKing/crypto-golang-sdk"
+)
 
 // Cryptor 密码器
 type Cryptor interface {
 	// Encrypt 加密方法
-	Encrypt(plainText string) (string, error)
+	Encrypt(plaintext string) (string, error)
 
 	// Decrypt 解密方法
-	Decrypt(cryptedText string) (string, error)
+	Decrypt(ciphertext string) (string, error)
+}
+
+// NewCrypto new crypto by config
+func NewCrypto(conf *Config) (Cryptor, error) {
+	if conf == nil {
+		return nil, errors.New("crypto config is nil")
+	}
+
+	err := conf.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("validate crypto config failed, err: %v", err)
+	}
+
+	var bkCrypto bkcrypto.Crypto
+	switch conf.Algorithm {
+	case Sm4:
+		bkCrypto, err = bkcrypto.NewSm4([]byte(conf.Sm4.Key), []byte(conf.Sm4.Iv))
+	case AesGcm:
+		bkCrypto, err = bkcrypto.NewAesGcm([]byte(conf.AesGcm.Key), []byte(conf.AesGcm.Nonce))
+	default:
+		return nil, fmt.Errorf("crypto algorithm %s is invalid", conf.Algorithm)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("init %s crypto failed, err: %v", conf.Algorithm, err)
+	}
+
+	return NewBkCrypto(bkCrypto)
 }

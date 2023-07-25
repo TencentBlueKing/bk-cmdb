@@ -258,7 +258,7 @@ func (lgc *Logics) getInstancesInfoByVpc(kit *rest.Kit, client cloudvendor.Vendo
 		blog.Errorf("add destroyed vpcID: %s, AccountID: %d, vpcInfo.VpcSet: %#v, vpc: %#v, conf: %#v, rid: %s",
 			vpc.VpcID, conf.AccountID, vpcInfo.VpcSet, vpc, conf, kit.Rid)
 		destroyedVpcsChan <- vpc.VpcID
-		return nil, err
+		return new(metadata.InstancesInfo), nil
 	}
 
 	instancesInfo, err := client.GetInstances(vpc.Region, &ccom.InstanceOpt{

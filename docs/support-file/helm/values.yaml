@@ -1165,6 +1165,24 @@ common:
       secretsProject:
       # 密码服务的环境名称
       secretsEnv:
+    # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则使用该配置而非cryptor配置进行加解密
+    crypto:
+      # 是否开启加密
+      enabled: false
+      # 加密算法类型，枚举值：SM4、AES-GCM
+      algorithm:
+      # 使用SM4算法时所需的配置
+      sm4:
+        # 密钥
+        key:
+        # 初始向量
+        iv:
+      # 使用AES-GCM算法时所需的配置
+      aesGcm:
+        # 密钥
+        key:
+        # 临时数值
+        nonce:
     syncTask:
       syncPeriodMinutes: 5
   #datacollection专属配置

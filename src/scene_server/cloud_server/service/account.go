@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 )
 
 // VerifyConnectivity 云账户连通测试
@@ -253,6 +254,18 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
+	}
+
+	// 加密云账户密钥
+	secretKey, exists := option["bk_secret_key"]
+	if exists && s.cryptor != nil {
+		secretKey, err = s.cryptor.Encrypt(util.GetStrByInterface(secretKey))
+		if err != nil {
+			blog.Errorf("encrypt secret key failed, err: %v, rid: %d", err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCloudValidAccountParamFail, "bk_secret_key"))
+			return
+		}
+		option["bk_secret_key"] = secretKey
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
