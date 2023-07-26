@@ -24,11 +24,11 @@
         </bk-radio-group>
       </bk-form-item>
       <template v-if="isEncrypt">
-        <bk-form-item :label="t('密码设置')" required property="password" icon-offset="-20">
+        <bk-form-item :label="t('密码设置')" required property="password" :icon-offset="-20">
           <bk-input class="setting-form-input"
             v-model="settingForm.password" type="password" :placeholder="t('长度 6-20 个字符，必须包含英文字母、数字和特殊符号')"></bk-input>
         </bk-form-item>
-        <bk-form-item :label="t('二次确认')" required property="confirmedPassword" icon-offset="-20">
+        <bk-form-item :label="t('二次确认')" required property="confirmedPassword" :icon-offset="-20">
           <bk-input class="setting-form-input" v-model="settingForm.confirmedPassword" type="password"
             :placeholder="t('请输入同样的密码，以确认密码准确')"></bk-input>
         </bk-form-item>
@@ -173,7 +173,7 @@
   margin-top: 48px;
 
   &-input{
-    width: 427px;
+    width: 100%;
   }
 }
 

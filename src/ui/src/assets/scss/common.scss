@@ -381,3 +381,13 @@ input.cmdb-form-input {
         }
     }
   }
+  .property-name-text {
+    &.required:after{
+        position: absolute;
+        left: calc(100% + 2px) !important;
+        top: 0;
+        margin: 0 0 0 -10px;
+        content: "*";
+        color: #ff5656;
+    }
+  }

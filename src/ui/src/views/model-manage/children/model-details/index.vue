@@ -1012,6 +1012,7 @@
       .bk-tab-header {
         padding: 0 18px;
         background: #fff;
+        box-shadow: 0 2px 4px 0 #1919290d;
       }
       .bk-tab-section {
         padding: 0;
