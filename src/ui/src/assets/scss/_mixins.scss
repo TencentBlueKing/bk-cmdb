@@ -92,10 +92,8 @@
     width: $dotSize;
     height: $dotSize;
     background-color: $dotColor;
-    box-shadow:
-      0 $col1DotPosition 0 0 $dotColor,
-      0 $col1DotPosition * 2 0 0 $dotColor,
-      $col2DotPosition 0 0 0 $dotColor,
+    box-shadow: 0 $col1DotPosition 0 0 $dotColor,
+      0 $col1DotPosition * 2 0 0 $dotColor, $col2DotPosition 0 0 0 $dotColor,
       $col2DotPosition $col1DotPosition 0 0 $dotColor,
       $col2DotPosition $col1DotPosition * 2 0 0 $dotColor;
   }

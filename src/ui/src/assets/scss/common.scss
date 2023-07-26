@@ -255,9 +255,7 @@ input.cmdb-form-input {
   width: 4px;
   height: 4px;
   background-color: #bec6de;
-  box-shadow:
-    0 5px 0 #bec6de,
-    0 -5px 0 #bec6de;
+  box-shadow: 0 5px 0 #bec6de, 0 -5px 0 #bec6de;
 }
 
 .text-primary {
@@ -311,9 +309,7 @@ input.cmdb-form-input {
 }
 
 .collapse-transition {
-  transition:
-    0.2s height ease-in-out,
-    0.2s padding-top ease-in-out,
+  transition: 0.2s height ease-in-out, 0.2s padding-top ease-in-out,
     0.2s padding-bottom ease-in-out;
 }
 

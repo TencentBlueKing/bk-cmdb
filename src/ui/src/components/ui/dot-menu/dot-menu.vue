@@ -98,9 +98,7 @@ export default {
 
     .menu-trigger::before {
       background-color: var(--hoverColor);
-      box-shadow:
-        0 -5px 0 0 var(--hoverColor),
-        0 5px 0 0 var(--hoverColor);
+      box-shadow: 0 -5px 0 0 var(--hoverColor), 0 5px 0 0 var(--hoverColor);
     }
   }
 
@@ -123,9 +121,7 @@ export default {
       height: 3px;
       border-radius: 50%;
       background-color: var(--color);
-      box-shadow:
-        0 -5px 0 0 var(--color),
-        0 5px 0 0 var(--color);
+      box-shadow: 0 -5px 0 0 var(--color), 0 5px 0 0 var(--color);
     }
   }
 }

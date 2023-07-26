@@ -38,6 +38,7 @@ const getCommonPlugins = config => [
     files: ['src'],
     threads: true,
     failOnWarning: true,
+    allowEmptyInput: true,
   }),
 
   new webpack.DefinePlugin({

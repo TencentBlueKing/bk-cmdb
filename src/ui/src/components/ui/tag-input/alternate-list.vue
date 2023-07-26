@@ -159,10 +159,7 @@ export default {
 
       // transform: translate3d(-50%, -50%, 0);
       background-color: transparent;
-      box-shadow:
-        12px 0 0 0 #fd6154,
-        24px 0 0 0 #ffb726,
-        36px 0 0 0 #4cd084,
+      box-shadow: 12px 0 0 0 #fd6154, 24px 0 0 0 #ffb726, 36px 0 0 0 #4cd084,
         48px 0 0 0 #57a3f1;
       animation: tag-input-loading 1s linear infinite;
     }
@@ -207,58 +204,37 @@ export default {
 
 @keyframes tag-input-loading {
   0% {
-    box-shadow:
-      12px 0 0 0 #fd6154,
-      24px 0 0 0 #ffb726,
-      36px 0 0 0 #4cd084,
+    box-shadow: 12px 0 0 0 #fd6154, 24px 0 0 0 #ffb726, 36px 0 0 0 #4cd084,
       48px 0 0 0 #57a3f1;
   }
 
   14% {
-    box-shadow:
-      12px 0 0 1px #fd6154,
-      24px 0 0 0 #ffb726,
-      36px 0 0 0 #4cd084,
+    box-shadow: 12px 0 0 1px #fd6154, 24px 0 0 0 #ffb726, 36px 0 0 0 #4cd084,
       48px 0 0 0 #57a3f1;
   }
 
   28% {
-    box-shadow:
-      12px 0 0 2px #fd6154,
-      24px 0 0 1px #ffb726,
-      36px 0 0 0 #4cd084,
+    box-shadow: 12px 0 0 2px #fd6154, 24px 0 0 1px #ffb726, 36px 0 0 0 #4cd084,
       48px 0 0 0 #57a3f1;
   }
 
   42% {
-    box-shadow:
-      12px 0 0 1px #fd6154,
-      24px 0 0 2px #ffb726,
-      36px 0 0 1px #4cd084,
+    box-shadow: 12px 0 0 1px #fd6154, 24px 0 0 2px #ffb726, 36px 0 0 1px #4cd084,
       48px 0 0 0 #57a3f1;
   }
 
   56% {
-    box-shadow:
-      12px 0 0 0 #fd6154,
-      24px 0 0 1px #ffb726,
-      36px 0 0 2px #4cd084,
+    box-shadow: 12px 0 0 0 #fd6154, 24px 0 0 1px #ffb726, 36px 0 0 2px #4cd084,
       48px 0 0 1px #57a3f1;
   }
 
   70% {
-    box-shadow:
-      12px 0 0 0 #fd6154,
-      24px 0 0 0 #ffb726,
-      36px 0 0 1px #4cd084,
+    box-shadow: 12px 0 0 0 #fd6154, 24px 0 0 0 #ffb726, 36px 0 0 1px #4cd084,
       48px 0 0 2px #57a3f1;
   }
 
   84% {
-    box-shadow:
-      12px 0 0 0 #fd6154,
-      24px 0 0 0 #ffb726,
-      36px 0 0 0 #4cd084,
+    box-shadow: 12px 0 0 0 #fd6154, 24px 0 0 0 #ffb726, 36px 0 0 0 #4cd084,
       48px 0 0 1px #57a3f1;
   }
 }

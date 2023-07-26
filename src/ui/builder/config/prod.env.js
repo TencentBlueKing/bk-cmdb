@@ -10,7 +10,6 @@
  * limitations under the License.
  */
 
-'use strict'
 function getCommitId() {
   let commitId = null
   try {

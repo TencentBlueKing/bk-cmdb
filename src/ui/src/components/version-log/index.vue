@@ -115,14 +115,8 @@ export default {
   h5 {
     height: auto;
     margin: 10px 0;
-    font:
-      normal 14px/1.5 'Helvetica Neue',
-      Helvetica,
-      Arial,
-      'Lantinghei SC',
-      'Hiragino Sans GB',
-      'Microsoft Yahei',
-      sans-serif;
+    font: normal 14px/1.5 'Helvetica Neue', Helvetica, Arial, 'Lantinghei SC',
+      'Hiragino Sans GB', 'Microsoft Yahei', sans-serif;
     font-weight: bold;
     color: #34383e;
   }

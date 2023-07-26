@@ -1,5 +1,7 @@
 {
   "prettier.configPath": "./src/ui/.prettierrc.js",
+  "prettier.prettierPath": "./src/ui/node_modules/prettier",
+  "prettier.resolveGlobalModules": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "[vue]": {
@@ -10,6 +12,7 @@
   "scss.validate": false,
   "stylelint.configFile": "./src/ui/.stylelintrc.js",
   "eslint.workingDirectories": [{ "mode": "auto" }],
+  "eslint.codeActionsOnSave.rules": null,
   "editor.codeActionsOnSave": {
     "source.fixAll": true
   }

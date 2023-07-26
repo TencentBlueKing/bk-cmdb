@@ -28,7 +28,7 @@ const getIdKey = modelId =>
     [BUILTIN_MODELS.BUSINESS_SET]: [
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
     ],
-  })[modelId] || 'bk_inst_id'
+  }[modelId] || 'bk_inst_id')
 const getNameKey = modelId =>
   ({
     [BUILTIN_MODELS.HOST]: 'bk_host_innerip',
@@ -38,7 +38,7 @@ const getNameKey = modelId =>
     [BUILTIN_MODELS.BUSINESS_SET]: [
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
     ],
-  })[modelId] || 'bk_inst_name'
+  }[modelId] || 'bk_inst_name')
 const findInstance = (instances, objId, instId) => {
   const idKey = getIdKey(objId)
   return (instances || []).find(instance => instance[idKey] === instId)

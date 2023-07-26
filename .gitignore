@@ -12,4 +12,8 @@ src/web*/cmdb_*
 
 .DS_Store
 
+.vscode/**/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
 .pre-commit-config.yaml

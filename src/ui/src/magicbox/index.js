@@ -16,18 +16,6 @@ import magicbox from 'bk-magic-vue'
 import i18n from '@/i18n'
 import './magicbox.scss'
 
-const magicboxLanguageMap = {
-  zh_CN: magicbox.locale.lang.zhCN,
-  en: magicbox.locale.lang.enUS,
-}
-
-export const setLocale = targetLocale => {
-  const locale = targetLocale || i18n.locale
-  i18n.mergeLocaleMessage(locale, magicboxLanguageMap[locale])
-  magicbox.locale.use(magicboxLanguageMap[locale])
-}
-setLocale()
-
 Vue.use(magicbox, {
   'bk-sideslider': {
     quickClose: true,

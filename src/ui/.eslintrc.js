@@ -15,6 +15,7 @@ module.exports = {
     'eslint:recommended',
     'plugin:vue/recommended',
     'plugin:import/recommended',
+    // 覆盖禁用冲突的规则
     'prettier',
   ],
   parser: 'vue-eslint-parser',

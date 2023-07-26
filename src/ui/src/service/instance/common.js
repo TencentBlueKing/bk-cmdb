@@ -36,7 +36,7 @@ const getService = modelId =>
     [BUILTIN_MODELS.BUSINESS]: businessSearchService,
     [BUILTIN_MODELS.BUSINESS_SET]: businessSetService,
     [BUILTIN_MODELS.PROJECT]: projectSetService,
-  })[modelId] || instanceSearchService
+  }[modelId] || instanceSearchService)
 
 export const getIdKey = modelId =>
   ({
@@ -47,7 +47,7 @@ export const getIdKey = modelId =>
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
     [BUILTIN_MODELS.PROJECT]:
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID,
-  })[modelId] || 'bk_inst_id'
+  }[modelId] || 'bk_inst_id')
 
 export const getNameKey = modelId =>
   ({
@@ -58,7 +58,7 @@ export const getNameKey = modelId =>
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME,
     [BUILTIN_MODELS.PROJECT]:
       BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME,
-  })[modelId] || 'bk_inst_name'
+  }[modelId] || 'bk_inst_name')
 
 export const getSearchByNameParams = (modelId, value, options = {}) => {
   const nameKey = getNameKey(modelId)

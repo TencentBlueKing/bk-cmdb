@@ -349,14 +349,8 @@ export default {
       url('../../../assets/images/box.png'),
       url('../../../assets/images/box-light.png');
     background-repeat: no-repeat;
-    background-position:
-      center -10px,
-      center,
-      center;
-    background-size:
-      75px 75px,
-      127px 100%,
-      127px 100%;
+    background-position: center -10px, center, center;
+    background-size: 75px 75px, 127px 100%, 127px 100%;
   }
 
   .offline-text {

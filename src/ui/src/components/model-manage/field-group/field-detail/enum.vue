@@ -357,12 +357,8 @@ export default {
       height: 3px;
       border-radius: 50%;
       background-color: #979ba5;
-      box-shadow:
-        0 5px 0 0 #979ba5,
-        0 10px 0 0 #979ba5,
-        5px 0 0 0 #979ba5,
-        5px 5px 0 0 #979ba5,
-        5px 10px 0 0 #979ba5;
+      box-shadow: 0 5px 0 0 #979ba5, 0 10px 0 0 #979ba5, 5px 0 0 0 #979ba5,
+        5px 5px 0 0 #979ba5, 5px 10px 0 0 #979ba5;
     }
 
     .enum-id {

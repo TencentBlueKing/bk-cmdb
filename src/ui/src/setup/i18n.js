@@ -1,4 +1,4 @@
-<!--
+/*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
@@ -8,34 +8,17 @@
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
--->
+ */
 
-<template>
-  <bk-exception class="exception-wrap-item" type="404">
-    <p>{{ $t('页面不存在') }}</p>
-    <div class="text-wrap">
-      <bk-link theme="primary" @click="handleRedirect">
-        {{ $t('返回首页') }}
-      </bk-link>
-    </div>
-  </bk-exception>
-</template>
+import magicbox from 'bk-magic-vue'
 
-<script>
-import { MENU_INDEX } from '@/dictionary/menu-symbol'
-export default {
-  methods: {
-    handleRedirect() {
-      this.$routerActions.redirect({
-        name: MENU_INDEX,
-      })
-    },
-  },
+import i18n from '@/i18n'
+
+const magicboxLanguageMap = {
+  zh_CN: magicbox.locale.lang.zhCN,
+  en: magicbox.locale.lang.enUS,
 }
-</script>
 
-<style lang="scss" scoped>
-.exception-wrap-item {
-  justify-content: center;
-}
-</style>
+i18n.mergeLocaleMessage(i18n.locale, magicboxLanguageMap[i18n.locale])
+
+magicbox.locale.use(magicboxLanguageMap[i18n.locale])
