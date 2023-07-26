@@ -25,8 +25,9 @@ import { $error, $warn } from '@/magicbox'
 const TRACE_CHARS = 'abcdef0123456789'
 const randomString = (length, chars) => {
   let result = ''
-  for (let i = length; i > 0; --i)
+  for (let i = length; i > 0; --i) {
     result += chars[(Math.random() * chars.length) | 0]
+  }
   return result
 }
 

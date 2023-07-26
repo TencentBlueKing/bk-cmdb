@@ -206,8 +206,9 @@ export function transformCondition(condition, properties, header) {
   Object.keys(condition).forEach(id => {
     const property = findProperty(id, properties, 'id')
     const { operator, value } = condition[id]
-    if (value === null || value === undefined || !value.toString().length)
+    if (value === null || value === undefined || !value.toString().length) {
       return
+    }
     // 时间类型的字段需要上升一层单独处理
     if (property.bk_property_type === 'time') {
       const [start, end] = value
