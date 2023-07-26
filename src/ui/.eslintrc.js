@@ -47,6 +47,21 @@ module.exports = {
     'no-empty': ['error', { allowEmptyCatch: true }],
     'prefer-const': ['error'],
     'no-var': ['error'],
+    'spaced-comment': [
+      'error',
+      'always',
+      {
+        line: {
+          exceptions: ['-', '+'],
+          markers: ['=', '!', '/'],
+        },
+        block: {
+          exceptions: ['-', '+'],
+          markers: ['=', '!', ':', '::'],
+          balanced: true,
+        },
+      },
+    ],
 
     'vue/component-definition-name-casing': 'off',
     'vue/no-mutating-props': 'off',

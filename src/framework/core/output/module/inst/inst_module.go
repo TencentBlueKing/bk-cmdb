@@ -152,7 +152,8 @@ func (cli *module) Create() error {
 		cli.datas.Set(BusinessID, cli.bizID)
 	}
 
-	moduleID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().CreateModule(cli.bizID, cli.setID, cli.datas)
+	moduleID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().CreateModule(cli.bizID,
+		cli.setID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -195,7 +196,8 @@ func (cli *module) Update() error {
 
 		cli.datas.Remove(ModuleID)
 
-		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().UpdateModule(cli.bizID, cli.setID, instID, cli.datas)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Module().UpdateModule(cli.bizID,
+			cli.setID, instID, cli.datas)
 		if nil != err {
 			log.Infof("failed to  update the module (%#v), error info is %s", existItem, err.Error())
 			return err

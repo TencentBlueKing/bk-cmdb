@@ -50,7 +50,8 @@ func TestValidPropertyOption(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidPropertyOption(tt.args.propertyType, tt.args.option, tt.args.errProxy); (err != nil) != tt.wantErr {
+			if err := ValidPropertyOption(tt.args.propertyType, tt.args.option,
+				tt.args.errProxy); (err != nil) != tt.wantErr {
 				t.Errorf("ValidPropertyOption() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

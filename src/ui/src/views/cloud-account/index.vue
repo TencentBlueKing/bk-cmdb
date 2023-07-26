@@ -130,7 +130,7 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_CLOUD_ACCOUNT, relation: [bizId] }"
+        :auth="{ type: $OPERATION.C_CLOUD_ACCOUNT }"
         @create="handleCreate"
         @clear="handleClearFilter">
       </cmdb-table-empty>

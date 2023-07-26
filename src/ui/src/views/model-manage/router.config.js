@@ -34,6 +34,7 @@ export default [
     meta: new Meta({
       menu: {
         i18n: '模型详情',
+        relative: MENU_MODEL_MANAGEMENT,
       },
       layout: {},
       checkAvailable: (to, from, app) => {

@@ -117,6 +117,7 @@ type Attribute struct {
 	Default           interface{} `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
 	IsMultiple        *bool       `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
 	Description       string      `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	TemplateID        int64       `field:"bk_template_id" json:"bk_template_id" bson:"bk_template_id" mapstructure:"bk_template_id"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
 	CreateTime        *Time       `json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime          *Time       `json:"last_time" bson:"last_time" mapstructure:"last_time"`
@@ -1454,7 +1455,8 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 
 		listOption, ok := attribute.Option.([]interface{})
 		if false == ok {
-			return "", fmt.Errorf("parse options for list type failed, option not slice type, option: %+v", attribute.Option)
+			return "", fmt.Errorf("parse options for list type failed, option not slice type, option: %+v",
+				attribute.Option)
 		}
 		for _, inVal := range listOption {
 			inValStr, ok := inVal.(string)

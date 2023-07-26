@@ -75,6 +75,7 @@ import dynamicGroup from './modules/api/dynamic-group'
 import versionLog from './modules/api/version-log'
 import globalConfig from './modules/global-config.js'
 import bizSet from './modules/biz-set.js'
+import fieldTemplate from './modules/view/field-template.js'
 
 Vue.use(Vuex)
 
@@ -142,6 +143,7 @@ const store = new Vuex.Store({
     audit,
     dynamicGroup,
     versionLog,
+    fieldTemplate,
   },
 })
 

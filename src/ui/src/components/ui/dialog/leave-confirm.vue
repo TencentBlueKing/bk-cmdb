@@ -76,9 +76,11 @@ export default {
           closeIcon: false,
           confirmFn: () => {
             this.confirmResolve(this.reverse)
+            this.$emit('leave')
             this.destroy()
           },
           cancelFn: () => {
+            this.$emit('stay')
             this.confirmResolve(!this.reverse)
           },
         })
@@ -104,7 +106,6 @@ export default {
     },
     unloadHandler(e) {
       if (this.active) {
-        /* eslint-disable-next-line */
         return ((e || window.event).returnValue = this.title)
       }
     },

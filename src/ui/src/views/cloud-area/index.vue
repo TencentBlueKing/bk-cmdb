@@ -174,7 +174,6 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
         @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>

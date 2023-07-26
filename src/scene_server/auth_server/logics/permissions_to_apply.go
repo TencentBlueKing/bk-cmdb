@@ -32,9 +32,64 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 	permission := new(metadata.IamPermission)
 	permission.SystemID = iam.SystemIDCMDB
 	permission.SystemName = iam.SystemNameCMDB
-	instTypeIDsMap := make(map[iam.TypeID][]int64)
-	actionIDRscTypeMap := make(map[iam.ActionID]iam.TypeID)
+
+	data, err := lgc.getPermissionData(kit, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	instIDNameMap, err := lgc.getInstIDNameMap(kit, data.instTypeIDsMap)
+	if err != nil {
+		blog.Errorf("getInstIDNameMap failed, err: %s, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	for actionID, permissionTypeMap := range data.permissionMap {
+		action := metadata.IamAction{
+			ID: string(actionID),
+			Name: getActionName(actionID, data.actionIDRscTypeMap[actionID],
+				data.sysInstModelIDNameMap),
+			RelatedResourceTypes: make([]metadata.IamResourceType, 0),
+		}
+		for rscType := range permissionTypeMap {
+			// set instance name
+			for idx := range permissionTypeMap[rscType] {
+				for idx2 := range permissionTypeMap[rscType][idx] {
+					instID, err := strconv.ParseInt(permissionTypeMap[rscType][idx][idx2].ID, 10, 64)
+					if err != nil {
+						blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s",
+							permissionTypeMap[rscType][idx][idx2].ID, err, kit.Rid)
+						return nil, err
+					}
+					permissionTypeMap[rscType][idx][idx2].Name = instIDNameMap[instID]
+				}
+			}
+
+			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
+				SystemID:   iam.SystemIDCMDB,
+				SystemName: iam.SystemNameCMDB,
+				Type:       rscType,
+				TypeName:   getTypeName(iam.TypeID(rscType), data.sysInstModelIDNameMap),
+				Instances:  permissionTypeMap[rscType],
+			})
+		}
+		permission.Actions = append(permission.Actions, action)
+	}
+
+	return permission, nil
+}
+
+type permissionData struct {
+	permissionMap         map[iam.ActionID]map[string][][]metadata.IamResourceInstance
+	actionIDRscTypeMap    map[iam.ActionID]iam.TypeID
+	sysInstModelIDNameMap map[int64]string
+	instTypeIDsMap        map[iam.TypeID][]int64
+}
+
+func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute) (*permissionData, error) {
 	sysInstModelIDNameMap := make(map[int64]string)
+	actionIDRscTypeMap := make(map[iam.ActionID]iam.TypeID)
+	instTypeIDsMap := make(map[iam.TypeID][]int64)
 
 	// permissionMap maps ResourceActionID and ResourceTypeID to ResourceInstances
 	permissionMap := make(map[iam.ActionID]map[string][][]metadata.IamResourceInstance, 0)
@@ -89,10 +144,12 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 				for _, ancestor := range ancestors {
 					ancestorID, err := strconv.ParseInt(ancestor.ID, 10, 64)
 					if err != nil {
-						blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", ancestor.ID, err, kit.Rid)
+						blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", ancestor.ID, err,
+							kit.Rid)
 						return nil, err
 					}
-					instTypeIDsMap[iam.TypeID(ancestor.Type)] = append(instTypeIDsMap[iam.TypeID(ancestor.Type)], ancestorID)
+					instTypeIDsMap[iam.TypeID(ancestor.Type)] = append(instTypeIDsMap[iam.TypeID(ancestor.Type)],
+						ancestorID)
 				}
 			}
 
@@ -114,44 +171,9 @@ func (lgc *Logics) GetPermissionToApply(kit *rest.Kit, rs []meta.ResourceAttribu
 		}
 	}
 
-	instIDNameMap, err := lgc.getInstIDNameMap(kit, instTypeIDsMap)
-	if err != nil {
-		blog.Errorf("getInstIDNameMap failed, err: %s, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	for actionID, permissionTypeMap := range permissionMap {
-		action := metadata.IamAction{
-			ID:                   string(actionID),
-			Name:                 getActionName(actionID, actionIDRscTypeMap[actionID], sysInstModelIDNameMap),
-			RelatedResourceTypes: make([]metadata.IamResourceType, 0),
-		}
-		for rscType := range permissionTypeMap {
-			// set instance name
-			for idx := range permissionTypeMap[rscType] {
-				for idx2 := range permissionTypeMap[rscType][idx] {
-					instID, err := strconv.ParseInt(permissionTypeMap[rscType][idx][idx2].ID, 10, 64)
-					if err != nil {
-						blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s",
-							permissionTypeMap[rscType][idx][idx2].ID, err, kit.Rid)
-						return nil, err
-					}
-					permissionTypeMap[rscType][idx][idx2].Name = instIDNameMap[instID]
-				}
-			}
-
-			action.RelatedResourceTypes = append(action.RelatedResourceTypes, metadata.IamResourceType{
-				SystemID:   iam.SystemIDCMDB,
-				SystemName: iam.SystemNameCMDB,
-				Type:       rscType,
-				TypeName:   getTypeName(iam.TypeID(rscType), sysInstModelIDNameMap),
-				Instances:  permissionTypeMap[rscType],
-			})
-		}
-		permission.Actions = append(permission.Actions, action)
-	}
-
-	return permission, nil
+	return &permissionData{permissionMap: permissionMap, actionIDRscTypeMap: actionIDRscTypeMap,
+		sysInstModelIDNameMap: sysInstModelIDNameMap, instTypeIDsMap: instTypeIDsMap,
+	}, nil
 }
 
 func (lgc *Logics) getInstIDNameMap(kit *rest.Kit, instTypeIDsMap map[iam.TypeID][]int64) (map[int64]string, error) {
@@ -183,7 +205,8 @@ func (lgc *Logics) getInstIDNameMap(kit *rest.Kit, instTypeIDsMap map[iam.TypeID
 		for _, instance := range data.Info {
 			instID, err := util.GetInt64ByInterface(instance[idField])
 			if err != nil {
-				blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", instance[idField], err, kit.Rid)
+				blog.Errorf("parse instance id to int failed, instID:%#v, err: %s, rid: %s", instance[idField], err,
+					kit.Rid)
 				return nil, err
 			}
 			instIDNameMap[instID] = util.GetStrByInterface(instance[nameField])

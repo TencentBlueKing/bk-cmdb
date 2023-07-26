@@ -92,28 +92,37 @@
       <div
         class="cmdb-form-item"
         :class="{ 'is-error': errors.has('defaultValueSelect') }">
-        <bk-select
-          :key="defaultCompKey"
-          v-model="defaultValue"
-          v-validate="`maxSelectLength:${multiple ? -1 : 1}`"
-          style="width: 100%"
-          :scroll-height="150"
-          :clearable="false"
-          :disabled="isReadOnly"
-          :multiple="isDefaultCompMultiple"
-          name="defaultValueSelect"
-          data-vv-validate-on="change"
-          :popover-options="{
-            appendTo: 'parent',
-          }"
-          @change="handleSettingDefault">
-          <bk-option
-            v-for="option in settingList"
-            :id="option.id"
-            :key="option.id"
-            :name="option.name">
-          </bk-option>
-        </bk-select>
+        <div class="form-item-row">
+          <bk-select
+            :key="defaultCompKey"
+            v-model="defaultValue"
+            v-validate="`maxSelectLength:${multiple ? -1 : 1}`"
+            style="width: 100%"
+            :scroll-height="150"
+            :clearable="false"
+            :disabled="isReadOnly"
+            :multiple="isDefaultCompMultiple"
+            name="defaultValueSelect"
+            data-vv-validate-on="change"
+            :popover-options="{
+              appendTo: 'parent',
+            }"
+            @change="handleSettingDefault">
+            <bk-option
+              v-for="option in settingList"
+              :id="option.id"
+              :key="option.id"
+              :name="option.name">
+            </bk-option>
+          </bk-select>
+          <bk-checkbox
+            v-if="isDefaultCompMultiple"
+            v-model="isMultiple"
+            class="checkbox"
+            :disabled="isReadOnly">
+            <span>{{ $t('可多选') }}</span>
+          </bk-checkbox>
+        </div>
         <p class="form-error">{{ errors.first('defaultValueSelect') }}</p>
       </div>
     </div>
@@ -165,6 +174,14 @@ export default {
     isDefaultCompMultiple() {
       // 通过类型指定默认值组件是否可多选，用于与可多选配置区分开
       return this.type === PROPERTY_TYPES.ENUMMULTI
+    },
+    isMultiple: {
+      get() {
+        return this.multiple
+      },
+      set(val) {
+        this.$emit('update:multiple', val)
+      },
     },
   },
   watch: {
@@ -429,5 +446,15 @@ export default {
 
 .ghost {
   border: 1px dashed $cmdbBorderFocusColor;
+}
+
+.form-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .checkbox {
+    flex: none;
+  }
 }
 </style>

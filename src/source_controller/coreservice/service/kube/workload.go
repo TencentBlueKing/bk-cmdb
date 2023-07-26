@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"errors"
@@ -34,7 +34,7 @@ import (
 )
 
 // CreateWorkload create workload
-func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
+func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *coreService) CreateWorkload(ctx *rest.Contexts) {
 }
 
 // GetNamespaceInfo get namespace spec
-func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64) (map[int64]types.NamespaceSpec,
+func (s *service) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64) (map[int64]types.NamespaceSpec,
 	error) {
 
 	if bizID == 0 {
@@ -160,7 +160,7 @@ func (s *coreService) GetNamespaceSpec(kit *rest.Kit, bizID int64, nsIDs []int64
 }
 
 // UpdateWorkload update workload
-func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
+func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -210,7 +210,7 @@ func (s *coreService) UpdateWorkload(ctx *rest.Contexts) {
 }
 
 // DeleteWorkload delete workload
-func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
+func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
@@ -251,7 +251,7 @@ func (s *coreService) DeleteWorkload(ctx *rest.Contexts) {
 }
 
 // ListWorkload list container
-func (s *coreService) ListWorkload(ctx *rest.Contexts) {
+func (s *service) ListWorkload(ctx *rest.Contexts) {
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)

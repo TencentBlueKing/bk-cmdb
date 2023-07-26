@@ -136,7 +136,8 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
+	meta.Items = append(meta.Items,
+		metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(context.Background()).Err()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

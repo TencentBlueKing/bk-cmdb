@@ -24,8 +24,10 @@ import (
 
 // MainlineClientInterface TODO
 type MainlineClientInterface interface {
-	SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder)
-	SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err errors.CCErrorCoder)
+	SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (*metadata.TopoModelNode,
+		errors.CCErrorCoder)
+	SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64,
+		withDetail bool) (resp *metadata.TopoInstanceNode, err errors.CCErrorCoder)
 }
 
 // NewMainlineClientInterface TODO

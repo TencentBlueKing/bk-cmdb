@@ -711,7 +711,8 @@ func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 		if o.ProcessPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules", querybuilder.MaxDeep)},
+				Args: []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules",
+					querybuilder.MaxDeep)},
 			}
 		}
 	}
@@ -1807,7 +1808,8 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		// check implements interface
 		fieldValType := fieldVal.Addr().Type()
 		if !fieldValType.Implements(propertyInterfaceType) {
-			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(), propertyInterfaceType.Name())
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(),
+				propertyInterfaceType.Name())
 			panic(msg)
 		}
 

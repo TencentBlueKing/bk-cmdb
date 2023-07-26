@@ -418,57 +418,45 @@ func genModelManageActionGroups() []ActionGroup {
 					Name:   "模型分组",
 					NameEn: "Model Group",
 					Actions: []ActionWithID{
-						{
-							ID: CreateModelGroup,
-						},
-						{
-							ID: EditModelGroup,
-						},
-						{
-							ID: DeleteModelGroup,
-						},
+						{ID: CreateModelGroup},
+						{ID: EditModelGroup},
+						{ID: DeleteModelGroup},
 					},
 				},
 				{
 					Name:   "模型关系",
 					NameEn: "Model Relation",
 					Actions: []ActionWithID{
-						{
-							ID: EditBusinessLayer,
-						},
-						{
-							ID: EditModelTopologyView,
-						},
+						{ID: EditBusinessLayer},
+						{ID: EditModelTopologyView},
 					},
 				},
 				{
 					Name:   "模型",
 					NameEn: "Model",
 					Actions: []ActionWithID{
-						{
-							ID: CreateSysModel,
-						},
-						{
-							ID: EditSysModel,
-						},
-						{
-							ID: DeleteSysModel,
-						},
+						{ID: CreateSysModel},
+						{ID: EditSysModel},
+						{ID: DeleteSysModel},
 					},
 				},
 				{
 					Name:   "关联类型",
 					NameEn: "Association Type",
 					Actions: []ActionWithID{
-						{
-							ID: CreateAssociationType,
-						},
-						{
-							ID: EditAssociationType,
-						},
-						{
-							ID: DeleteAssociationType,
-						},
+						{ID: CreateAssociationType},
+						{ID: EditAssociationType},
+						{ID: DeleteAssociationType},
+					},
+				},
+				{
+					Name:   "字段组合模板",
+					NameEn: "Field Grouping Template",
+					Actions: []ActionWithID{
+						{ID: CreateFieldGroupingTemplate},
+						{ID: ViewFieldGroupingTemplate},
+						{ID: EditFieldGroupingTemplate},
+						{ID: DeleteFieldGroupingTemplate},
 					},
 				},
 			},

@@ -30,9 +30,13 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  isReadOnly: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['input'])
+const emit = defineEmits(['input', 'update:multiple'])
 
 const customObjId = inject('customObjId')
 
@@ -51,6 +55,15 @@ const excludeModelIds = computed(() => [
   BUILTIN_MODELS.MODULE,
   router.app.$route.params.modelId ?? customObjId,
 ])
+
+const isMultiple = computed({
+  get() {
+    return props.multiple
+  },
+  set(val) {
+    emit('update:multiple', val)
+  },
+})
 
 watchEffect(() => {
   if (props.value?.length) {
@@ -118,20 +131,28 @@ const handleModelInstChange = modelInstIds => {
           { 'is-error': errors.has('refModelInst') },
         ]"
         :label="$t('默认值')">
-        <model-instance-selector
-          ref="defaultValueSelectEl"
-          v-model="refModelInstIds"
-          v-validate="`required|maxSelectLength:${multiple ? -1 : 1}`"
-          class="model-instance-selector"
-          name="refModelInst"
-          data-vv-validate-on="change"
-          :obj-id="refModelId"
-          :placeholder="$t('请选择xx', { name: $t('模型实例') })"
-          :search-placeholder="searchPlaceholder"
-          :display-tag="true"
-          :multiple="true"
-          @change="handleModelInstChange">
-        </model-instance-selector>
+        <div class="form-item-row">
+          <model-instance-selector
+            ref="defaultValueSelectEl"
+            v-model="refModelInstIds"
+            v-validate="`required|maxSelectLength:${multiple ? -1 : 1}`"
+            class="model-instance-selector"
+            name="refModelInst"
+            data-vv-validate-on="change"
+            :obj-id="refModelId"
+            :placeholder="$t('请选择xx', { name: $t('模型实例') })"
+            :search-placeholder="searchPlaceholder"
+            :display-tag="true"
+            :multiple="true"
+            @change="handleModelInstChange">
+          </model-instance-selector>
+          <bk-checkbox
+            v-model="isMultiple"
+            class="checkbox"
+            :disabled="isReadOnly">
+            <span>{{ $t('可多选') }}</span>
+          </bk-checkbox>
+        </div>
         <template #append>
           <div v-if="errors.has('refModelInst')" class="form-error">
             {{ errors.first('refModelInst') }}
@@ -157,6 +178,16 @@ const handleModelInstChange = modelInstIds => {
     left: 0;
     font-size: 12px;
     margin-top: 4px;
+  }
+}
+
+.form-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .checkbox {
+    flex: none;
   }
 }
 </style>

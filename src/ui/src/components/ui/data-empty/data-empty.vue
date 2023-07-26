@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div :class="['data-stuff', type]">
+  <div :class="['data-empty', type]">
     <div v-if="type === 'search'" class="content">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
@@ -61,12 +61,12 @@
             <bk-exception type="empty" scene="part">
               <div class="data-tips"></div>
               <i18n v-if="!emptyText" :path="path" tag="div">
-                <template #action
-                  ><span>{{ action }}</span></template
-                >
-                <template #resource
-                  ><span>{{ resource }}</span></template
-                >
+                <template #action>
+                  <span>{{ action }}</span>
+                </template>
+                <template #resource>
+                  <span>{{ resource }}</span>
+                </template>
                 <template #link>
                   <cmdb-auth :auth="auth">
                     <bk-button
@@ -84,9 +84,9 @@
                   <a
                     class="empty-link"
                     href="javascript:void(0)"
-                    @click="$emit('empty-link')"
-                    >{{ emptyLinkText }}</a
-                  >
+                    @click="$emit('empty-link')">
+                    {{ emptyLinkText }}
+                  </a>
                 </template>
               </i18n>
             </bk-exception>
@@ -156,7 +156,7 @@ export default {
   watch: {
     stuff: {
       handler(value) {
-        this.permission = value.payload.permission
+        this.permission = value.payload?.permission
       },
       deep: true,
     },
@@ -165,7 +165,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.data-stuff {
+.data-empty {
   color: #63656e;
   font-size: 14px;
 
@@ -184,10 +184,6 @@ export default {
 
   .data-tips {
     margin-top: 15px;
-
-    .aa {
-      color: #ccc;
-    }
   }
 }
 

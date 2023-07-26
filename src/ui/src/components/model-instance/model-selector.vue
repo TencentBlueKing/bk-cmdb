@@ -11,10 +11,11 @@
 -->
 
 <template>
-  <bk-select v-bind="$attrs" v-model="localValue">
+  <bk-select v-bind="$attrs" v-model="localValue" :scroll-height="420">
     <bk-option-group
       v-for="(group, index) in displayModelList"
       :key="index"
+      class="model-option-group"
       :name="group.bk_classification_name">
       <bk-option
         v-for="option in group.bk_objects"
@@ -118,6 +119,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.model-option-group {
+  /deep/.bk-option-group-name {
+    @include ellipsis;
+  }
+}
+
 .option-item-content {
   color: #63656e;
   font-size: 14px;

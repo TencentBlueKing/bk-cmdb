@@ -25,7 +25,8 @@ import (
 // LabelInterface TODO
 type LabelInterface interface {
 	AddLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
-	RemoveLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
+	RemoveLabel(ctx context.Context, h http.Header, tableName string,
+		option selector.LabelRemoveOption) errors.CCErrorCoder
 	UpdateLabel(ctx context.Context, h http.Header, tableName string,
 		option *selector.LabelUpdateOption) errors.CCErrorCoder
 }

@@ -428,7 +428,6 @@ import cmdbLoading from '@/components/loading/index.vue'
 import CollapseGroupTitle from './children/collapse-group-title.vue'
 import ModelExportPane from './children/model-import-export/model-export-pane/index.vue'
 import ModelImportPane from './children/model-import-export//model-import-pane/index.vue'
-
 export default {
   name: 'ModelManagement',
   filters: {

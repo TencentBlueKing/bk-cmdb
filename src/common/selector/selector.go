@@ -112,7 +112,8 @@ type Selector struct {
 // Validate TODO
 func (s *Selector) Validate() (string, error) {
 	if util.InArray(s.Operator, AvailableOperators) == false {
-		return "operator", fmt.Errorf("operator %s not available, available operators: %+v", s.Operator, AvailableOperators)
+		return "operator", fmt.Errorf("operator %s not available, available operators: %+v", s.Operator,
+			AvailableOperators)
 	}
 
 	if (s.Operator == In || s.Operator == NotIn) && len(s.Values) == 0 {

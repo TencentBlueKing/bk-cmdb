@@ -15,7 +15,7 @@ import md5 from 'md5'
 import xid from 'xid-js'
 import has from 'has'
 
-import { t, language } from '@/i18n'
+import i18n, { language } from '@/i18n'
 
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
@@ -160,11 +160,14 @@ async function getPromise(method, url, data, userConfig = {}) {
 const PermissionCode = 9900403
 function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
-  const { bk_error_msg: message, permission } = transformedResponse
-  if (transformedResponse.bk_error_code === PermissionCode) {
-    config.globalPermission &&
-      popupPermissionModal(transformedResponse.permission)
-    return reject({ message, permission, code: PermissionCode })
+  const {
+    bk_error_msg: message,
+    bk_error_code: code,
+    permission,
+  } = transformedResponse
+  if (code === PermissionCode) {
+    config.globalPermission && popupPermissionModal(permission)
+    return reject({ message, permission, code })
   }
   if (!transformedResponse.result && config.globalError) {
     reject({ message })
@@ -219,7 +222,7 @@ function handleReject(error, config) {
     return Promise.reject(nextError)
   }
   if (error.message === 'Network Error') {
-    $error(t('资源请求失败提示'))
+    $error(i18n.t('资源请求失败提示'))
   } else {
     config.globalError && $error(error.message)
   }
@@ -341,5 +344,7 @@ async function download(options = {}) {
 }
 
 export * from './jsonp'
+
+export const useHttp = () => $http
 
 export default $http

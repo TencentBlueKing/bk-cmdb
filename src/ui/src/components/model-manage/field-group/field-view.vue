@@ -173,11 +173,11 @@
           $t('编辑')
         }}</bk-button>
         <bk-button
-          v-if="!field.ispre"
+          v-if="!field.ispre && !isTemplateField"
           class="delete-btn"
-          @click="handleDelete"
-          >{{ $t('删除') }}</bk-button
-        >
+          @click="handleDelete">
+          {{ $t('删除') }}
+        </bk-button>
       </div>
     </template>
   </cmdb-sticky-layout>
@@ -247,6 +247,9 @@ export default {
     },
     isTableType() {
       return this.type === PROPERTY_TYPES.INNER_TABLE
+    },
+    isTemplateField() {
+      return this.field.bk_template_id > 0
     },
     defaultValue() {
       if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {

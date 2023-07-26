@@ -17,11 +17,11 @@
         <p>{{ $t('搜索结果为空') }}</p>
         <div class="table-tips">
           <i18n class="operation-text" path="搜索为空提示语">
-            <template #filter
-              ><span style="margin: 0 3px">{{
-                $t('调整关键词')
-              }}</span></template
-            >
+            <template #filter>
+              <span style="margin: 0 3px">
+                {{ $t('调整关键词') }}
+              </span>
+            </template>
             <template #clear>
               <bk-button
                 class="text-btn"
@@ -64,12 +64,12 @@
               <p>{{ $t('暂无数据') }}</p>
               <div class="table-tips"></div>
               <i18n v-if="!emptyText" path="您还未XXX" tag="div">
-                <template #action
-                  ><span>{{ action }}</span></template
-                >
-                <template #resource
-                  ><span>{{ resource }}</span></template
-                >
+                <template #action>
+                  <span>{{ action }}</span>
+                </template>
+                <template #resource>
+                  <span>{{ resource }}</span>
+                </template>
                 <template #link>
                   <cmdb-auth :auth="auth">
                     <bk-button

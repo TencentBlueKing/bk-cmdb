@@ -47,7 +47,10 @@
         class-name="is-highlight"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{ getRuleName(row.keys) }}
+          <div class="keys-cell">
+            {{ getRuleName(row.keys) }}
+            <mini-tag v-if="row.bk_template_id" :text="$t('模板')" />
+          </div>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -97,12 +100,14 @@
 import { mapActions, mapGetters } from 'vuex'
 
 import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+import MiniTag from '@/components/ui/other/mini-tag.vue'
 
 import theVerificationDetail from './verification-detail'
 
 export default {
   components: {
     theVerificationDetail,
+    MiniTag,
   },
   props: {
     modelId: {
@@ -168,7 +173,7 @@ export default {
       'deleteObjectUniqueConstraints',
     ]),
     isEditable(item) {
-      if (item.ispre || this.isReadOnly) {
+      if (item.ispre || this.isReadOnly || item.bk_template_id) {
         return false
       }
       return true
@@ -285,6 +290,12 @@ export default {
 
 .verification-table {
   margin: 14px 0 0;
+
+  .keys-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
 }
 
 .operation-btn[disabled] {

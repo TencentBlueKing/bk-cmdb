@@ -197,7 +197,8 @@ func (zkRD *ZkRegDiscv) loopDiscover(discvCtx context.Context, path string, env 
 			fmt.Printf("discover path(%s) done\n", path)
 			return
 		case e := <-watchEnv:
-			fmt.Printf("watch found the children of path(%s) change. event type:%s, event err:%v\n", path, e.Type.String(), e.Err)
+			fmt.Printf("watch found the children of path(%s) change. event type:%s, event err:%v\n", path,
+				e.Type.String(), e.Err)
 			if e.State == gozk.StateDisconnected {
 				zkRD.reconnectZk()
 			}

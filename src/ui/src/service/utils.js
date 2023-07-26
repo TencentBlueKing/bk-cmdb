@@ -44,6 +44,7 @@ export const rollReqUseCount = async (
     limit = 1000,
     countKey = 'count',
     listKey = 'info',
+    generator = false,
   } = options
 
   let index = start
@@ -65,7 +66,7 @@ export const rollReqUseCount = async (
   })
 
   // 请求列表的req
-  const req = index =>
+  const req = index => () =>
     http[method](
       url,
       enableCount(
@@ -88,7 +89,16 @@ export const rollReqUseCount = async (
     index += 1
   }
 
-  const all = await Promise.all(reqs)
+  if (generator) {
+    const genCall = function* () {
+      for (let i = 0; i < reqs.length; i++) {
+        yield reqs[i]
+      }
+    }
+    return genCall()
+  }
+
+  const all = await Promise.all(reqs.map(req => req()))
   all.forEach(({ [listKey]: list = [] }) => {
     results.push(...list)
   })
@@ -109,6 +119,7 @@ export const rollReq = async (
     limit = 1000,
     countKey = 'count',
     listKey = 'info',
+    generator = false,
   } = options
 
   let index = start
@@ -121,7 +132,7 @@ export const rollReq = async (
     limit: size,
   })
 
-  const req = index =>
+  const req = index => () =>
     http[method](
       url,
       {
@@ -132,7 +143,7 @@ export const rollReq = async (
     )
 
   // 先拉起始页，通常是第1页，同时得到总数
-  const { [countKey]: total = 0, [listKey]: list = [] } = await req(index)
+  const { [countKey]: total = 0, [listKey]: list = [] } = await req(index)()
   results.push(...list)
 
   // 一共要拉取多少次
@@ -142,6 +153,15 @@ export const rollReq = async (
   while (index < max) {
     index += 1
     reqs.push(req(index))
+  }
+
+  if (generator) {
+    const genCall = function* () {
+      for (let i = 0; i < reqs.length; i++) {
+        yield reqs[i]
+      }
+    }
+    return [results, genCall()]
   }
 
   const rest = await Promise.all(reqs)
