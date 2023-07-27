@@ -60,8 +60,11 @@
             </div>
           </div>
           <div class="model-group-name">
-            <span class="model-group-name-label">{{$t('所属分组')}}</span>
+            <span :class="['model-group-name-label', { 'model-group-name-label-editing': modelGroupIsEditing }]">
+              {{$t('所属分组')}}
+            </span>
             <editable-field
+              :editing.sync="modelGroupIsEditing"
               class="model-group-name-edit"
               v-model="activeModel.bk_classification_id"
               :label="modelClassificationName"
@@ -322,6 +325,7 @@
           instanceCount: Symbol('instanceCount')
         },
         modelNameIsEditing: false,
+        modelGroupIsEditing: false,
         templateList: [],
         templateDiffStatus: {}
       }
@@ -892,6 +896,9 @@
             flex: 0 0 auto;
             line-height: 26px;
             color: #979BA5;
+          }
+          &-label-editing {
+            margin-top: 13px;
           }
         }
 
