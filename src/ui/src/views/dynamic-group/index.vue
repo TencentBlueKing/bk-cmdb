@@ -100,7 +100,7 @@
           slot="empty"
           :stuff="table.stuff"
           :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
-          @create="handleCreate"
+          @create="() => handleCreate('create')"
           @clear="handleClearFilter">
         </cmdb-table-empty>
       </bk-table>

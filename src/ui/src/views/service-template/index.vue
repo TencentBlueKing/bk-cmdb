@@ -35,7 +35,7 @@
           :allow-clear="true"
           :searchable="true"
           v-model="filter.mainClassification"
-          @selected="(id) => handleSelect(id)"
+          @selected="handleSelect"
           @clear="() => handleSelect()">
           <bk-option v-for="category in mainList"
             :key="category.id"
@@ -248,7 +248,9 @@
     async created() {
       try {
         await this.getServiceClassification()
-        this.getQueryList('init')
+        // 初始化回显选择框数据
+        this.initSelect()
+        this.getQueryList()
       } catch (e) {
         console.log(e)
       }
@@ -260,30 +262,24 @@
         'getServiceTemplateSyncStatus'
       ]),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
-      getQueryList(type = 'default') {
-        const routeParams = this.query
-        const { current = 1, limit = 20, sort = '-id', mainClassification = '', secondaryClassification = '', templateName = '' } = routeParams
+      getQueryList() {
+        const { current = 1, limit = 20, sort = '-id', mainClassification = '', secondaryClassification = '', name = '' } = this.query
         this.table.pagination.current = parseInt(current, 10)
         this.table.pagination.limit = parseInt(limit, 10)
         this.table.sort = sort
         this.filter = {
           mainClassification,
           secondaryClassification,
-          templateName
+          templateName: name
         }
-        if (type === 'init') {
-          // 刚进来回显选择框数据
-          this.handleSelect(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
-        } else {
-          this.getTableData()
-        }
+        this.getTableData()
       },
       setRoute() {
         const { sort, pagination } = this.table
         const { current, limit } = pagination
         const { mainClassification, secondaryClassification, templateName } = this.filter
         RouterQuery.set({ sort, current, limit,
-                          mainClassification, secondaryClassification, templateName,
+                          mainClassification, secondaryClassification, name: templateName,
                           _t: Date.now() })
       },
       async getTableData() {
@@ -391,10 +387,20 @@
           })
         }
       },
-      handleSelect(id = '', secondId = '') {
+      initSelect() {
+        const { mainClassification = '', secondaryClassification = '' } = this.query
+        this.setSelectId(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
+      },
+      setSelectId(id = '', secondId = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         this.maincategoryId = id
-        this.handleSelectSecondary(secondId)
+        if (secondId) {
+          this.categoryId = secondId
+        }
+      },
+      handleSelect(id = '') {
+        this.setSelectId(id)
+        this.handleSelectSecondary()
       },
       handleSelectSecondary(id = '') {
         this.categoryId = id
