@@ -100,10 +100,14 @@
 
       displayFieldGroups.push(data)
     })
-
     displayFieldGroups.forEach((group) => {
       group.properties = group.properties
         .filter(field => (isOnlyShowTemplateRelated.value ? isTemplateRelated(field) : true))
+      group.properties.forEach((field) => {
+        if (isUpdate(field)) {
+          setUpdateFields(field, ['bk_property_name', 'isrequired'])
+        }
+      })
     })
     const finalFieldGroups = displayFieldGroups.filter(group => group.properties.length > 0)
 
@@ -121,7 +125,6 @@
     }
 
     if (isUpdate(field)) {
-      getUpdateFields(field, ['bk_property_name', 'isrequired'])
       return DIFF_TYPES.UPDATE
     }
 
@@ -140,10 +143,10 @@
     }
   }
 
-  const getUpdateFields = (field = {}, fields = []) => {
+  const setUpdateFields = (field = {}, fields = []) => {
     const updateField = props.templateFieldList
       .find(item => item.bk_property_id === field.bk_property_id) ?? {}
-    fields.forEach(item => field[item] = updateField[item] ?? field[item])
+    fields.forEach(item => field[`update_${item}`] = updateField[item] ?? field[item])
   }
 
   const getFieldCardClassName = field => getFieldDiffType(field)
