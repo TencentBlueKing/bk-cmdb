@@ -43,7 +43,7 @@ export const getPropertyType = type => typeMapping[type] || type
 
 export const getPropertyName = (id, objId, locale) => {
   const lang = locale === 'en' ? 'en' : 'zh'
-  return propertyNameI18n[objId]?.[id]?.[lang] ?? id
+  return propertyNameI18n[objId]?.[id]?.[lang]
 }
 
 export const isContainerObject = objId => Object.values(CONTAINER_OBJECTS).includes(objId)
