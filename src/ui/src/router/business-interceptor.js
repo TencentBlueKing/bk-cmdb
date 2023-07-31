@@ -144,8 +144,8 @@ export const before = async function (to, from, next) {
 
   // 业务不存在或无权限
   if (!business || !isAuthorized) {
-    // 优先使用二级路由（内页）展示无权限
-    const targetRoute = to.matched?.[1] ?? to.matched?.[0]
+    // 优先使用二级路由（内页）展示无权限，并且需要取最后一个路由因dynamic-router-view组件中的view值为最后一个路由
+    const targetRoute = to.matched?.[2] ?? to.matched?.[1] ?? to.matched?.[0]
     targetRoute.meta.view = 'permission'
   }
 
