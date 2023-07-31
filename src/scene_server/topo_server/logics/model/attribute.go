@@ -1090,7 +1090,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
 	}
 
-	if err := a.canAttrsUpdate(kit, data, attrID, false); err != nil {
+	if err := a.canAttrsUpdate(kit, data, attrID, false, modelBizID); err != nil {
 		return err
 	}
 
@@ -1268,14 +1268,15 @@ func (a *attribute) getTemplateIDByObjectAttrID(kit *rest.Kit, attrID int64, fie
 	return &res.Info[0], nil
 }
 
-func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64) (*metadata.Attribute, error) {
+func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64, bizID int64) (*metadata.Attribute, error) {
 	queryCond := &metadata.QueryCondition{
 		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
 		DisableCounter: true,
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		Fields:         []string{common.BKTemplateID},
 	}
-	resp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, bizID,
+		queryCond)
 	if err != nil {
 		blog.Errorf("get object attr failed, cond: %+v, err: %v, rid: %s", queryCond, err, kit.Rid)
 		return nil, err
@@ -1324,7 +1325,7 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields
 // canAttrsUpdate coreservice has a similar logical judgment. If the logic here needs to be adjusted,
 // it needs to be judged whether the logic of coreservice needs to be adjusted synchronously.
 // the function name is: checkAttrTemplateInfo
-func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool) error {
+func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool, bizID int64) error {
 	// 1. 来自字段组合模版同步操作，都可以进行修改，直接正常返回
 	if isSync {
 		return nil
@@ -1341,7 +1342,7 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 	}
 
 	// 3. 不是同步操作，更新模型自己的属性，正常返回
-	attr, err := a.getModelAttrByID(kit, attrID)
+	attr, err := a.getModelAttrByID(kit, attrID, bizID)
 	if err != nil {
 		return err
 	}
@@ -1435,7 +1436,7 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	if err := a.canAttrsUpdate(kit, data, attID, isSync); err != nil {
+	if err := a.canAttrsUpdate(kit, data, attID, isSync, modelBizID); err != nil {
 		return err
 	}
 
