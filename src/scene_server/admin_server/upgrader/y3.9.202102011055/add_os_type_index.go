@@ -33,7 +33,7 @@ func addOsTypeIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	err := db.Table(common.BKTableNameBaseHost).CreateIndex(ctx, index)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, common.BKTableNameBaseHost, err)
 		return err
 	}

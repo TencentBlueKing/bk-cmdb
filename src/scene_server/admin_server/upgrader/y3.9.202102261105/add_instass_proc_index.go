@@ -38,7 +38,7 @@ func addInstassProcIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	}
 
 	err := db.Table(common.BKTableNameInstAsst).CreateIndex(ctx, index)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, common.BKTableNameInstAsst, err)
 		return err
 	}
@@ -54,7 +54,7 @@ func addInstassProcIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	}
 
 	err = db.Table(common.BKTableNameProcessTemplate).CreateIndex(ctx, index)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		blog.ErrorJSON("add index %s for table %s failed, err:%s", index, common.BKTableNameProcessTemplate, err)
 		return err
 	}
