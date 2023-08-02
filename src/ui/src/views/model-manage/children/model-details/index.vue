@@ -932,6 +932,7 @@
 
             :deep(.tag-item-text) {
               position: relative;
+              @include ellipsis;
               .reddot {
                 position: absolute;
                 right: -4px;

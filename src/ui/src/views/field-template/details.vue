@@ -170,6 +170,8 @@
 
   const handleSliderHidden = () => {
     tabActive.value = tabIds.field
+    isDescEditing.value = false
+    isNameEditing.value = false
     emit('close')
   }
 

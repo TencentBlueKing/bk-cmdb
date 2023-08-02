@@ -45,6 +45,7 @@
 
   const bindModelList = ref([])
   const searchName = ref('')
+  const stuff = ref({ type: 'default', payload: { emptyText: t('bk.table.emptyText') } })
 
   const TABLE_ROW_HEIGHT = 43
   const tableMaxHeight = computed(() => store.state.appHeight - 272 - 50)
@@ -69,6 +70,7 @@
     }
 
     if (searchName.value?.length) {
+      stuff.value.type = 'search'
       params.filter = {
         condition: 'AND',
         rules: [{
@@ -77,6 +79,8 @@
           value: searchName.value
         }]
       }
+    } else {
+      stuff.value.type = 'default'
     }
 
     return params
@@ -166,6 +170,10 @@
         modelId: model.bk_obj_id
       }
     })
+  }
+  const handleClearFilter = () => {
+    searchName.value = ''
+    stuff.value.type = 'default'
   }
 
   onUnmounted(() => {
@@ -263,6 +271,11 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="stuff"
+        @clear="handleClearFilter"
+      ></cmdb-table-empty>
     </bk-table>
   </div>
 </template>

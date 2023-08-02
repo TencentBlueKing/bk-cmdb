@@ -156,9 +156,12 @@
       font-size: 12px;
       @include ellipsis;
     }
+    .field-id-area {
+      @include ellipsis;
+      color: #C4C6CC;
+    }
     .field-id {
       font-size: 12px;
-      color: #C4C6CC;
     }
     .field-required {
       font-size: 12px;
