@@ -93,7 +93,7 @@
             <flex-tag
               v-if="templateList.length"
               class="field-template-tag"
-              :max-width="'500px'"
+              :max-width="'355px'"
               :list="templateList"
               :is-link-style="true"
               :popover-options="{

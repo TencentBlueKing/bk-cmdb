@@ -289,7 +289,6 @@
         border-radius: 0;
         padding: 0;
         cursor: pointer;
-        max-width: 350px;
 
         &::after {
           content: ',';
