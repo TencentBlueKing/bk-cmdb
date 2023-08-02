@@ -102,7 +102,7 @@
           newConfig[property.id] = getPropertyDefaultValue(property, propertyConfig.value[property.id])
         })
         propertyConfig.value = newConfig
-      })
+      }, { deep: true })
 
       const handleSelectField = () => {
         propertyModalVisible.value = true

@@ -253,7 +253,7 @@
           width: 520,
           extCls: 'confirm-edit-service-template-name-infobox',
           async confirmFn() {
-            saveName()
+            await saveName()
           },
           cancelFn() {
             resetEditState()
