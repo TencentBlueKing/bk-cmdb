@@ -145,6 +145,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.ConfigCenter = process.ConfigCenter
 	process.Service = service
 	var iamCli *iamcli.IAM
+	var redisCli redis.Client
 
 	for {
 		if process.Config == nil {
@@ -171,6 +172,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
 		}
 		process.Service.SetCache(cache)
+		redisCli = cache
 
 		if auth.EnableAuthorize() {
 			blog.Info("enable auth center access.")
@@ -208,7 +210,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	syncor := iam.NewSyncor()
 	syncor.SetDB(mongodb.Client())
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
-	go syncor.SyncIAM(iamCli, service.Logics)
+	go syncor.SyncIAM(iamCli, redisCli, service.Logics)
 
 	select {
 	case <-ctx.Done():

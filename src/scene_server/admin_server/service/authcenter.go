@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	aciam "configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -68,7 +69,11 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := s.iam.Register(s.ctx, param.Host, models, rid); err != nil {
+	opt := &aciam.RegisterIamOptions{
+		Host:    param.Host,
+		Objects: models,
+	}
+	if err := s.iam.Register(s.ctx, s.cache, opt, rid); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),

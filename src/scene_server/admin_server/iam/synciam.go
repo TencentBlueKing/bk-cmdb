@@ -28,6 +28,7 @@ import (
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 )
 
 const (
@@ -98,7 +99,7 @@ func newKit() *rest.Kit {
 }
 
 // SyncIAM sync the system instances resource between CMDB and IAM
-func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
+func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.Logics) {
 	if !auth.EnableAuthorize() {
 		return
 	}
@@ -141,7 +142,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, lgc *logics.Logics) {
 			continue
 		}
 
-		if err := iamCli.SyncIAMSysInstances(kit.Ctx, objects); err != nil {
+		if err := iamCli.SyncIAMSysInstances(kit.Ctx, redisCli, objects); err != nil {
 			blog.Errorf("sync iam failed, sync iam system instances err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
 			continue
