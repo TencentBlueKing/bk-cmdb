@@ -539,7 +539,7 @@
         }
         const defaultGroupld = this.isGlobalView ? 'default' : 'bizdefault'
         const groupId =  this.fieldInfo.bk_property_group || defaultGroupld
-        const activeObjId = this.activeModel.bk_obj_id
+        const activeObjId = this.$route.params.modelId || this.customObjId
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
           let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
@@ -568,15 +568,18 @@
               this.$success(this.$t('修改成功'))
             })
           }
-
+          // 每次都查询出最后一个元素的index
+          const toLastIndex = this.properties.
+            filter(property => property.bk_property_group === groupId)?.at(-1)?.bk_property_index
+            ?? -1
           // 修改分组
           await this.updatePropertySort({
             objId: activeObjId,
             propertyId: this.field.id,
             params: {
+              bk_biz_id: params.bk_biz_id,
               bk_property_group: groupId,
-              bk_property_index: this.properties
-                .filter(property => property.bk_property_group === groupId)?.length ?? 0
+              bk_property_index: toLastIndex + 1
             },
             config: {
               requestId: `updatePropertySort_${activeObjId}`

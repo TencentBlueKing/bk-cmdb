@@ -157,7 +157,7 @@ function createTimeCondition() {
   return { oper: 'and', rules: [] }
 }
 // eslint-disable-next-line no-useless-escape
-const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
+export const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
 export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],

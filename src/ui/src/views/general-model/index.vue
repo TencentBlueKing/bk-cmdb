@@ -737,7 +737,7 @@
             })
           }
           const { filter, filter_adv: filterAdv } = this.$route.query
-          this.table.stuff.type = (filter && filter.length > 0) || filterAdv ? 'search' : 'default'
+          this.table.stuff.type = (filter && String(filter).length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
         } catch (err) {
