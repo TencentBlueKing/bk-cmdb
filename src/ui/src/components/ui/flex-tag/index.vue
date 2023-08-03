@@ -154,6 +154,7 @@
 
       for (const item of tagWidthList) {
         accWidth = accWidth + item.width + gapWidth.value
+        if (item.index === 0) continue
         if (accWidth > containerClientWidth) {
           posItem = item
           ellipsisCount.value = tags.value.length - item.index

@@ -26,7 +26,7 @@
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name">
-                    <span class="property-name-text" :class="{ required: property['isrequired'] }">
+                    <span class="property-name-text" :class="{ required: property['isrequired'] }" v-bk-overflow-tips>
                       {{property['bk_property_name']}}
                     </span>
                     <i class="property-name-tooltips icon-cc-tips"
@@ -205,6 +205,7 @@
             flex: 0 0 48%;
             margin: 8px 0 16px 0;
             font-size: 12px;
+            width: 100%;
             .property-name {
                 display: block;
                 margin: 6px 0 9px;
@@ -219,6 +220,9 @@
                 padding: 0 10px 0 0;
                 vertical-align: middle;
                 font-size: 14px;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                word-break: break-all;
                 @include ellipsis;
                 &.required:after {
                     position: absolute;

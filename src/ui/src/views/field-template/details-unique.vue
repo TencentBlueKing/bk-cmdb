@@ -15,6 +15,7 @@
   import { getUniqueName } from './children/use-unique'
   import fieldTemplateService from '@/service/field-template'
   import { DETAILS_FIELDLIST_REQUEST_ID } from './children/use-field'
+  import { t } from '@/i18n'
 
   const props = defineProps({
     templateId: {
@@ -29,6 +30,7 @@
   const filterWord = ref('')
 
   const fieldList = ref([])
+  const stuff = ref({ type: 'default', payload: { emptyText: t('bk.table.emptyText') } })
 
   watchEffect(async () => {
     const fieldData = await fieldTemplateService.getFieldList({
@@ -43,11 +45,18 @@
       name: getUniqueName(unique, fieldList.value, true, 'id')
     }))
     if (filterWord.value) {
+      stuff.value.type = 'search'
       const reg = new RegExp(filterWord.value, 'i')
       return list.filter(unique => reg.test(unique.name))
     }
+    stuff.value.type = 'default'
     return list
   })
+
+  const handleClearFilter = () => {
+    filterWord.value = ''
+    stuff.value.type = 'default'
+  }
 </script>
 
 <template>
@@ -70,6 +79,11 @@
         prop="create_time"
         show-overflow-tooltip>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="stuff"
+        @clear="handleClearFilter"
+      ></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
