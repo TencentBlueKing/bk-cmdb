@@ -29,6 +29,7 @@
   import UniqueManageDrawer from './unique-manage-drawer.vue'
   import useField, { unwrapData, excludeFieldType, isFieldExist } from './use-field'
   import useUnique, { singleRuleTypes, unionRuleTypes } from './use-unique'
+  import RouterQuery from '@/router/query'
 
   const props = defineProps({
     fieldList: {
@@ -99,7 +100,13 @@
     const fieldList = cloneDeep(props.fieldList || [])
     fieldLocalList.value = fieldList.map(unwrapData)
     uniqueLocalList.value = cloneDeep(props.uniqueList || [])
+    const { action } = query?.value ?? {}
+    if (action === 'openUnqiueDrawer') {
+      handleOpenUnqiueDrawer()
+    }
   })
+
+  const query = computed(() => RouterQuery.getAll())
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))

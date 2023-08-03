@@ -140,11 +140,16 @@
       [tabIds.unique]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.model]: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
     }
+    const query = {}
+    if (!routeKey && tabActive.value === tabIds.unique) {
+      query.action = 'openUnqiueDrawer'
+    }
     routerActions.redirect({
       name: editRoutes[routeKey || tabActive.value],
       params: {
         id: id ?? templateId.value
-      }
+      },
+      query
     })
 
     emit('close')

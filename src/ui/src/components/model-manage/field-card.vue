@@ -75,8 +75,11 @@
     </div>
     <div class="field-info">
       <div class="field-name-area">
-        <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
-        <span class="field-required" v-if="field.isrequired?.value ?? field.isrequired">*</span>
+        <span class="field-name" :title="field.bk_property_name">
+          {{ field.update_bk_property_name ?? field.bk_property_name }}
+        </span>
+        <span class="field-required"
+          v-if="field.update_isrequired?.value ?? (field.isrequired?.value ?? field.isrequired)">*</span>
         <slot name="flag-append"></slot>
       </div>
       <div class="field-id-area">

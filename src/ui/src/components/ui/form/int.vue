@@ -59,6 +59,10 @@
       inputType: {
         type: String,
         default: 'text'
+      },
+      options: {
+        type: Object,
+        default: {}
       }
     },
     computed: {
@@ -86,7 +90,15 @@
         this.localValue = value
         this.$refs.input.curValue = this.localValue
       },
-      handleChange() {
+      handleChange(val) {
+        const { min = -9999999999, max = 99999999999 } = this.options
+        if (min > +val) {
+          this.localValue = min
+        }
+        if (max < +val) {
+          this.localValue = max
+        }
+        this.$refs.input.curValue = this.localValue
         this.$emit('on-change', this.localValue)
       },
       handleEnter() {
