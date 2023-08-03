@@ -377,6 +377,7 @@
         .editable-field-name,
         .editable-field-desc {
           width: 100%;
+          vertical-align: initial;
         }
       }
 
