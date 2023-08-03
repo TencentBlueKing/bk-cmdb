@@ -299,7 +299,7 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
 }
 
 export function getHeaderPropertyName(property) {
-  if (!property.bk_property_name.endsWith(`(${property.unit})`) && property.unit) {
+  if (!property?.bk_property_name?.endsWith(`(${property.unit})`) && property.unit) {
     return `${property.bk_property_name}(${property.unit})`
   }
   return property.bk_property_name
