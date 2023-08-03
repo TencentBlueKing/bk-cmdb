@@ -27,7 +27,7 @@
   } from '@/dictionary/menu-symbol'
   import ModelSyncStatus from './children/model-sync-status.vue'
   import useModelSyncStatus, { isSyncing, isSynced } from './children/use-model-sync-status'
-  import { escapeCharRE } from '@/components/filters/utils'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     templateId: {
@@ -75,7 +75,7 @@
         rules: [{
           field: 'bk_obj_name',
           operator: queryBuilderOperator(QUERY_OPERATOR.LIKE),
-          value: searchName.value.replace(escapeCharRE, '\\$1')
+          value: escapeRegexChar(searchName.value)
         }]
       }
     }

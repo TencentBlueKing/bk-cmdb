@@ -18,7 +18,7 @@
   import fieldTemplateService from '@/service/field-template'
   import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
-  import { escapeCharRE } from '@/components/filters/utils'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     defaultFilter: {
@@ -95,7 +95,7 @@
       template_filter: {
         field: 'name',
         operator: queryBuilderOperator(QUERY_OPERATOR.LIKE),
-        value: val.replace(escapeCharRE, '\\$1')
+        value: escapeRegexChar(val)
       },
       fields: ['id', 'name'],
       page: {
