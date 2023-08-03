@@ -243,7 +243,7 @@
   }
 
   const handleFieldSave = async (id, fieldData) => {
-    if (!id && isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value])) {
+    if (isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value], id)) {
       $error(t('字段已在模板中存在，无法添加'))
       return
     }
