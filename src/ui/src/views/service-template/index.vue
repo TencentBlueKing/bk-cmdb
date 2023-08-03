@@ -65,7 +65,7 @@
           clearable
           font-size="medium"
           v-model.trim="filter.templateName"
-          @enter="getTableData(true)"
+          @enter="setRoute()"
           @clear="handlePageChange(1)">
         </bk-input>
       </div>
@@ -170,6 +170,7 @@
     MENU_BUSINESS_SERVICE_TEMPLATE_EDIT
   } from '@/dictionary/menu-symbol'
   import CmdbLoading from '@/components/loading/loading'
+  import RouterQuery from '@/router/query'
   export default {
     components: {
       CmdbLoading
@@ -213,6 +214,9 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
+      query() {
+        return RouterQuery.getAll()
+      },
       params() {
         const maincategoryId = this.maincategoryId ? this.maincategoryId : 0
         const id = this.categoryId
@@ -236,10 +240,17 @@
         return Object.values(this.filter).some(value => !!value)
       }
     },
+    watch: {
+      query() {
+        this.getQueryList()
+      }
+    },
     async created() {
       try {
         await this.getServiceClassification()
-        await this.getTableData()
+        // 初始化回显选择框数据
+        this.initSelect()
+        this.getQueryList()
       } catch (e) {
         console.log(e)
       }
@@ -251,12 +262,32 @@
         'getServiceTemplateSyncStatus'
       ]),
       ...mapActions('serviceClassification', ['searchServiceCategoryWithoutAmout']),
+      getQueryList() {
+        const { current = 1, limit = 20, sort = '-id', mainClassification = '', secondaryClassification = '', name = '' } = this.query
+        this.table.pagination.current = parseInt(current, 10)
+        this.table.pagination.limit = parseInt(limit, 10)
+        this.table.sort = sort
+        this.filter = {
+          mainClassification,
+          secondaryClassification,
+          templateName: name
+        }
+        this.getTableData()
+      },
+      setRoute() {
+        const { sort, pagination } = this.table
+        const { current, limit } = pagination
+        const { mainClassification, secondaryClassification, templateName } = this.filter
+        RouterQuery.set({ sort, current, limit,
+                          mainClassification, secondaryClassification, name: templateName,
+                          _t: Date.now() })
+      },
       async getTableData() {
         try {
           const templateData = await this.getTemplateData()
           if (templateData.count && !templateData.info.length) {
             this.table.pagination.current -= 1
-            this.getTableData()
+            this.setRoute()
           }
           this.table.pagination.count = templateData.count
           this.table.list = templateData.info.map((template) => {
@@ -356,15 +387,25 @@
           })
         }
       },
-      handleSelect(id = '') {
+      initSelect() {
+        const { mainClassification = '', secondaryClassification = '' } = this.query
+        this.setSelectId(parseInt(mainClassification, 10) || '', parseInt(secondaryClassification, 10) || '')
+      },
+      setSelectId(id = '', secondId = '') {
         this.secondaryList = this.allSecondaryList.filter(classification => classification.bk_parent_id === id)
         this.maincategoryId = id
+        if (secondId) {
+          this.categoryId = secondId
+        }
+      },
+      handleSelect(id = '') {
+        this.setSelectId(id)
         this.handleSelectSecondary()
       },
       handleSelectSecondary(id = '') {
         this.categoryId = id
         this.filter.secondaryClassification = id
-        this.getTableData(true)
+        this.setRoute()
       },
       cloneTemplate(sourceTemplateId) {
         this.$routerActions.redirect({
@@ -422,7 +463,7 @@
       },
       handlePageChange(page) {
         this.table.pagination.current = page
-        this.getTableData()
+        this.setRoute()
       },
       handleRowClick(row, event, column) {
         if (column.property === 'operation') return
@@ -447,7 +488,7 @@
         this.categoryId = null
         this.secondaryList = []
         await this.getServiceClassification()
-        await this.getTableData()
+        this.setRoute()
       }
     }
   }
