@@ -376,8 +376,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	}
 	var disk uint64
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
-		disk += disktotal.Uint() >> 10 >> 10 >> 10
+		disk += disktotal.Uint()
 	}
+	disk = disk >> 10 >> 10 >> 10
 	var mem = val.Get("data.mem.meminfo.total").Uint()
 	var hostname = val.Get("data.system.info.hostname").String()
 	hostname = strings.TrimSpace(hostname)
