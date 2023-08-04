@@ -225,7 +225,7 @@ func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
 }
 
 func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,
-	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+	fields []string) (*metadata.InstDataInfo, errors.CCErrorCoder) {
 
 	filter := &metadata.QueryCondition{
 		Fields: fields,
@@ -233,8 +233,7 @@ func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.List
 			common.BKSetTemplateIDField: option.SetTemplateID,
 			common.BKAppIDField:         option.BizID,
 		},
-		Page:           option.Page,
-		DisableCounter: true,
+		Page: option.Page,
 	}
 
 	if len(option.SetIDs) > 0 {
@@ -255,7 +254,7 @@ func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.List
 		return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed, err.Error())
 	}
 
-	return set.Info, nil
+	return set, nil
 }
 
 // ListSetTemplateSyncStatus batch search set template sync status
@@ -287,20 +286,21 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		fields = append(fields, propertyIDs...)
 	}
 
-	sets, err := st.getSetMapStrByOption(kit, option, fields)
+	setResult, err := st.getSetMapStrByOption(kit, option, fields)
 	if err != nil {
 		blog.Errorf("list set failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 
-	if len(sets) == 0 {
-		return &metadata.ListAPITaskSyncStatusResult{Count: 0, Info: make([]metadata.APITaskSyncStatus, 0)}, nil
+	if len(setResult.Info) == 0 {
+		return &metadata.ListAPITaskSyncStatusResult{Count: int64(setResult.Count),
+			Info: make([]metadata.APITaskSyncStatus, 0)}, nil
 	}
 
 	setIDs := make([]int64, 0)
 	setMap := make(map[int64]mapstr.MapStr)
 
-	for _, set := range sets {
+	for _, set := range setResult.Info {
 		setID, err := util.GetInt64ByInterface(set[common.BKSetIDField])
 		if err != nil {
 			return nil, kit.CCError.CCErrorf(common.CCErrTopoSetSelectFailed)
@@ -342,7 +342,7 @@ func (st *setTemplate) ListSetTemplateSyncStatus(kit *rest.Kit, option *metadata
 		return &metadata.ListAPITaskSyncStatusResult{}, err
 	}
 
-	return &metadata.ListAPITaskSyncStatusResult{Count: int64(len(sets)), Info: reformatStatuses}, nil
+	return &metadata.ListAPITaskSyncStatusResult{Count: int64(setResult.Count), Info: reformatStatuses}, nil
 }
 
 // rearrangeSetTempSyncStatus set status by actual status and do another round of filter by status
