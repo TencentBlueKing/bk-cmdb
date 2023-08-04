@@ -223,7 +223,6 @@ func setExcelCellIgnored(sheet *xlsx.Sheet, style *xlsx.Style, row int, col int)
 // replaceDepartmentFullName replace attribute organization's id by fullname in export excel
 func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.DepartmentItem, propertyList []string,
 	defLang language.DefaultCCLanguageIf) (mapstr.MapStr, error) {
-
 	orgMap := make(map[int64]string)
 	for _, item := range org {
 		orgMap[item.ID] = item.FullName
@@ -246,13 +245,13 @@ func replaceDepartmentFullName(rid string, rowMap mapstr.MapStr, org []metadata.
 		for _, orgID := range orgIDList {
 			id, err := util.GetInt64ByInterface(orgID)
 			if err != nil {
-				blog.Errorf("convert orgID[%v] to int64 failed, type: %T, err: %v, rid: %s", orgID, orgID, err, rid)
+				blog.Errorf("convert orgID to int64 failed, type: %T, err: %v, rid: %s", orgID, err, rid)
 				return nil, fmt.Errorf("convert variable orgID[%v] type to int64 failed", orgID)
 			}
 
 			name, exist := orgMap[id]
 			if !exist {
-				blog.Errorf("orgnization[%d] does no exist, rid: %s", id, rid)
+				blog.Errorf("organization[%d] does no exist, rid: %s", id, rid)
 				orgName = append(orgName, fmt.Sprintf("[%d]%s", id, defLang.Language("nonexistent_org")))
 				continue
 			}

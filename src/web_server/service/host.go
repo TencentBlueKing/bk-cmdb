@@ -209,7 +209,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	org, orgPropertyList, err := s.getDepartment(c, objID)
+	org, orgPropertyList, err := s.getDepartment(c, objID, hostInfo)
 	if err != nil {
 		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail,
