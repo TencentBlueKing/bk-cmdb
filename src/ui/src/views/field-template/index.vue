@@ -37,6 +37,7 @@
   import CloneDialog from './children/clone-dialog.vue'
   import useModelSyncStatus from './children/use-model-sync-status'
   import useTemplate from './children/use-template'
+  import { escapeRegexChar } from '@/utils/util'
 
   const requestIds = {
     list: Symbol('list'),
@@ -100,7 +101,7 @@
       }
     }
     filter.value.forEach((item) => {
-      const itemValue = item.value?.split(',')
+      const itemValue = item.value?.split(',').map(escapeRegexChar)
       const operator = queryBuilderOperator(itemValue?.length > 1 ? QUERY_OPERATOR.IN : QUERY_OPERATOR.LIKE)
       const value = itemValue?.length > 1 ? itemValue : itemValue[0]
       if (item.id === 'templateName') {

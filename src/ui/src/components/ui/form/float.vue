@@ -16,6 +16,8 @@
     :value="value"
     :disabled="disabled"
     :precision="precision"
+    :max="max"
+    :min="min"
     v-model.number="localValue"
     v-bind="$attrs"
     @blur="handleInput"
@@ -66,6 +68,12 @@
         default: {}
       }
     },
+    data() {
+      return {
+        max: 99999999999,
+        min: -999999999
+      }
+    },
     computed: {
       localValue: {
         get() {
@@ -79,6 +87,11 @@
         }
       }
     },
+    mounted() {
+      const { min = -999999999, max = 99999999999 } = this.options
+      this.max = max === '' ? 99999999999 : max
+      this.min = min  === '' ? -999999999 : min
+    },
     methods: {
       handleInput(value, event) {
         const originalValue = String(event.target.value).trim()
@@ -91,15 +104,7 @@
         this.$refs.input.curValue = value
         this.localValue = value
       },
-      handleChange(val) {
-        const { min = -9999999999, max = 99999999999 } = this.options
-        if (min > +val) {
-          this.localValue = min
-        }
-        if (max < +val) {
-          this.localValue = max
-        }
-        this.$refs.input.curValue = this.localValue
+      handleChange() {
         this.$emit('on-change', this.localValue)
       },
       handleEnter() {

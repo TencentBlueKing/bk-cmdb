@@ -16,14 +16,13 @@
   import { v4 as uuidv4 } from 'uuid'
   import { t } from '@/i18n'
   import { $bkInfo, $error } from '@/magicbox'
-  import { swapItem } from '@/utils/util'
+  import { swapItem, escapeRegexChar } from '@/utils/util'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
-  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'
@@ -115,7 +114,7 @@
   const displayFieldLocalList = computed(() => {
     if (filterWord.value) {
       stuff.value.type = 'search'
-      const reg = new RegExp(filterWord.value, 'i')
+      const reg = new RegExp(escapeRegexChar(filterWord.value), 'i')
       return fieldLocalList.value.filter(item => reg.test(item.field.bk_property_name))
     }
     stuff.value.type = 'default'

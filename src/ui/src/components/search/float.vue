@@ -12,14 +12,18 @@
 
 <template>
   <span class="search-input-wrapper" v-if="multiple">
-    <bk-input class="search-input" type="number" v-model="start" :precision="precision" v-on="listeners">
+    <bk-input :min="min" :max="max"
+      class="search-input" type="number" v-model="start" :precision="precision" v-on="listeners">
     </bk-input>
     <span class="search-input-grep">-</span>
-    <bk-input class="search-input" type="number" v-model="end" :precision="precision" v-on="listeners"></bk-input>
+    <bk-input :min="min" :max="max"
+      class="search-input" type="number" v-model="end" :precision="precision" v-on="listeners"></bk-input>
   </span>
   <bk-input v-else
     class="search-input"
     type="number"
+    :min="min"
+    :max="max"
     v-model="localValue"
     :precision="precision"
     v-on="listeners">
@@ -39,10 +43,16 @@
       precision: {
         type: Number,
         default: 5
+      },
+      options: {
+        type: Object,
+        default: () => {}
       }
     },
     data() {
       return {
+        max: 99999999999,
+        min: -999999999,
         listeners: {
           focus: () => this.handleToggle(true),
           blur: () => this.handleToggle(false),
@@ -89,7 +99,12 @@
           this.localValue = [start, end]
         }
       }
-    }
+    },
+    mounted() {
+      const { min = -999999999, max = 99999999999 } = this.options
+      this.max = max === '' ? 99999999999 : max
+      this.min = min  === '' ? -999999999 : min
+    },
   }
 </script>
 

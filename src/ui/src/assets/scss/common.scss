@@ -383,7 +383,7 @@ input.cmdb-form-input {
   }
 
 // siderslider抽屉组件标题文案过长样式
-.bk-sideslider {
+.bk-sideslider:not(.filter-form-sideslider) {
     .bk-sideslider-title {
         padding-left: 20px !important;
         cursor: pointer;
