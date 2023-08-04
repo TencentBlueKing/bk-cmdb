@@ -1420,3 +1420,43 @@
   comp_codename: generic.v2.cc.cc_component
   dest_path: /api/v3/hosts/modules/across/biz
   dest_http_method: POST
+
+- path: /v2/cc/batch_create_quoted_inst/
+  name: batch_create_quoted_inst
+  label: 批量创建被引用的模型的实例
+  label_en: batch create quoted model instance
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/createmany/quoted/instance
+  dest_http_method: POST
+
+- path: /v2/cc/list_quoted_inst/
+  name: list_quoted_inst
+  label: 查询被引用的模型的实例列表
+  label_en: list quoted model instances by condition
+  suggest_method: POST
+  api_type: query
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/quoted/instance
+  dest_http_method: POST
+
+- path: /v2/cc/batch_update_quoted_inst/
+  name: batch_update_quoted_inst
+  label: 批量更新被引用的模型的实例
+  label_en: batch update quoted model instance
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/updatemany/quoted/instance
+  dest_http_method: PUT
+
+- path: /v2/cc/batch_delete_quoted_inst/
+  name: batch_delete_quoted_inst
+  label: 批量删除被引用的模型的实例
+  label_en: batch delete quoted model instance
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/deletemany/quoted/instance
+  dest_http_method: DELETE
