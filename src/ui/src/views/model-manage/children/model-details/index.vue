@@ -941,13 +941,14 @@
               position: relative;
               @include ellipsis;
               .reddot {
-                position: absolute;
-                right: -4px;
-                top: 0;
+                position: relative;
+                right: 0px;
+                top: -6px;
                 width: 6px;
                 height: 6px;
                 background: #EA3636;
                 border-radius: 50%;
+                display: inline-block;
               }
             }
           }
