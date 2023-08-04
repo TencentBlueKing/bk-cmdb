@@ -222,11 +222,11 @@
           <div class="col before-col">
             <div class="diff-item">
               <div class="field-key">{{$t('唯一标识')}}</div>
-              <div class="field-value">{{ modelBeforeField.bk_property_id || '--' }}</div>
+              <div class="field-value" v-bk-overflow-tips>{{ modelBeforeField.bk_property_id || '--' }}</div>
             </div>
             <div class="diff-item">
               <div class="field-key">{{$t('名称')}}</div>
-              <div class="field-value">{{ modelBeforeField.bk_property_name || '--' }}</div>
+              <div class="field-value" v-bk-overflow-tips>{{ modelBeforeField.bk_property_name || '--' }}</div>
             </div>
             <div class="diff-item">
               <div class="field-key">{{$t('字段类型')}}</div>
@@ -309,11 +309,11 @@
             <template v-else>
               <div :class="getAfterDiffItemClass('bk_property_id')">
                 <div class="field-key">{{$t('唯一标识')}}</div>
-                <div class="field-value">{{afterField.bk_property_id}}</div>
+                <div class="field-value" v-bk-overflow-tips>{{afterField.bk_property_id}}</div>
               </div>
               <div :class="getAfterDiffItemClass('bk_property_name')">
                 <div class="field-key">{{ $t('名称') }}</div>
-                <div class="field-value">{{afterField.bk_property_name}}</div>
+                <div class="field-value" v-bk-overflow-tips>{{afterField.bk_property_name}}</div>
               </div>
               <div :class="getAfterDiffItemClass('bk_property_type')">
                 <div class="field-key">{{ $t('字段类型') }}</div>
@@ -539,6 +539,7 @@
     }
 
     .field-value {
+      max-width: calc(100% - 70px);
       @include ellipsis;
     }
 

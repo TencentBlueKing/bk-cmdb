@@ -135,11 +135,12 @@
 
       const isEncrypt = ref(false)
 
-      watch(settingForm, () => {
+      watch([settingForm, isEncrypt], () => {
         emit('value-change', {
           fileName: settingForm.fileName,
           password: settingForm.password,
           expirationTime: settingForm.expirationTime || customExpirationTime.value,
+          isEncrypt: isEncrypt.value
         })
       }, {
         immediate: true,

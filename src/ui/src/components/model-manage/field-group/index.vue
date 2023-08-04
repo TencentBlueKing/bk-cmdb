@@ -746,7 +746,7 @@
       },
       getVerification() {
         return this.searchObjectUniqueConstraints({
-          objId: this.activeModel.bk_obj_id,
+          objId: this.objId,
           params: {},
           config: {
             requestId: 'searchObjectUniqueConstraints'
@@ -761,10 +761,12 @@
           }))
           const { getUniqueByField } =  useUnique([], uniqueList)
           const { list: fieldUniqueList, type: fieldUniqueType } = getUniqueByField(property)
-          const fieldUniqueWithNameList = fieldUniqueList.map(item => ({
-            ...item,
-            names: item.keys.map(key => this.properties.find(field => field.id === key)?.bk_property_name)
-          }))
+          const fieldUniqueWithNameList = fieldUniqueList
+            .filter(item => item.keys.every(key => this.properties.find(({ id }) => id === key)))
+            .map(item => ({
+              ...item,
+              names: item.keys.map(key => this.properties.find(field => field.id === key)?.bk_property_name)
+            }))
           return {
             list: fieldUniqueWithNameList,
             type: fieldUniqueType

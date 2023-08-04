@@ -183,9 +183,10 @@
         return changed || !this.verifyResult.connected
       },
       vendors() {
+        const onlyShowId = ['1', '2'] // 1和2分别对应亚马逊云和腾讯云的ID
         const vendorProperty = this.properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
         if (vendorProperty) {
-          return vendorProperty.option || []
+          return (vendorProperty.option || [])?.filter(cloud => onlyShowId.includes(cloud.id))
         }
         return []
       },

@@ -366,10 +366,12 @@ func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map
 	// value according to the attributes of the header.
 	for _, value := range defaultValue {
 		for k, v := range value {
+			isRequired := attr[k].IsRequired
 			attr[k].IsRequired = false
 			if err := attr[k].ValidTableDefaultAttr(kit.Ctx, v); err.ErrCode != 0 {
 				return err.ToCCError(kit.CCError)
 			}
+			attr[k].IsRequired = isRequired
 		}
 	}
 	return nil
@@ -1136,7 +1138,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	// updated this part is to be updated
-	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
+	if err = a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
 		blog.Errorf("valid table attr default failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

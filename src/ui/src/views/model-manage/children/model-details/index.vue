@@ -96,7 +96,7 @@
             <flex-tag
               v-if="templateList.length"
               class="field-template-tag"
-              :max-width="'500px'"
+              :max-width="'355px'"
               :list="templateList"
               :is-link-style="true"
               :popover-options="{
@@ -939,6 +939,7 @@
 
             :deep(.tag-item-text) {
               position: relative;
+              @include ellipsis;
               .reddot {
                 position: absolute;
                 right: -4px;

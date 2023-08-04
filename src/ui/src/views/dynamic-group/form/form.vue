@@ -445,7 +445,8 @@
         this.isShow = false
         if (type !== 'normal') {
           RouterQuery.set({
-            _t: Date.now()
+            _t: Date.now(),
+            action: ''
           })
         }
       },
