@@ -174,7 +174,7 @@
   margin-top: 48px;
 
   &-input{
-    width: 427px;
+    width: 100%;
   }
 }
 

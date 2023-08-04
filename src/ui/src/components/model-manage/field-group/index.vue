@@ -63,13 +63,9 @@
         v-model.trim="keyword"
       >
       </bk-input>
-      <bk-button
-        text
-        class="setting-btn"
-        icon="cog"
-        v-if="canEditSort"
-        @click="configProperty.show = true"
-      ></bk-button>
+      <div class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
+        <img src="@/assets/images/icon/icon-model-setting.png">
+      </div>
     </div>
     <div class="group-wrapper">
       <draggable
@@ -1258,16 +1254,18 @@ $modelHighlightColor: #3c96ff;
   .setting-btn {
     margin-left: 10px;
     height: 32px;
-    line-height: 32px;
     color: #979ba5;
     border: 1px solid #c4c6cc;
     border-radius: 2px;
     width: 32px;
     display: flex;
     justify-content: center;
-    /deep/ .icon-cog {
-      font-size: 16px;
-      vertical-align: 2px;
+    align-items: center;
+    background: white;
+    cursor: pointer;
+    img {
+      width: 16px;
+      height: 16px;
     }
   }
 }

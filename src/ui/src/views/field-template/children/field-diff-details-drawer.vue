@@ -192,7 +192,7 @@
     ref="sidesliderComp"
     v-transfer-dom
     :width="880"
-    :title="`【${modelBeforeField.bk_property_name}】${$t('更新差异')}`"
+    :title="`【${modelBeforeField?.bk_property_name ?? afterField.bk_property_name}】${$t('更新差异')}`"
     :is-show.sync="isShow">
     <div :class="['diff-details', diffType, { 'is-template-conflict': isTemplateBindConflict }]" slot="content">
       <div class="diff-top">

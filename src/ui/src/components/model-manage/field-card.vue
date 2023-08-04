@@ -137,7 +137,7 @@
       color: #989CA8;
       width: 24px;
       height: 24px;
-      font-size: 22px;
+      font-size: 18px;
       text-align: center;
       line-height: 24px;
     }

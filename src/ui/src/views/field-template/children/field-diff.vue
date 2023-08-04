@@ -281,7 +281,9 @@
       }
     }
     .filter-checkbox {
-      font-size: 12px;
+      :deep(.bk-checkbox-text) {
+        font-size: 12px !important;
+      }
     }
   }
 
