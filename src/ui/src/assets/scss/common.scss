@@ -382,7 +382,7 @@ input.cmdb-form-input {
     }
   }
 
-  // siderslider抽屉组件标题文案过长样式
+// siderslider抽屉组件标题文案过长样式
 .bk-sideslider {
     .bk-sideslider-title {
       padding-left: 20px !important;
@@ -390,14 +390,14 @@ input.cmdb-form-input {
       @include ellipsis;
     }
   }
-  
-  .property-name-text {
-    &.required:after{
-        position: absolute;
-        left: calc(100% + 2px) !important;
-        top: 0;
-        margin: 0 0 0 -10px;
-        content: "*";
-        color: #ff5656;
-    }
+
+.property-name-text {
+  &.required:after{
+      position: absolute;
+      left: calc(100% + 2px) !important;
+      top: 0;
+      margin: 0 0 0 -10px;
+      content: "*";
+      color: #ff5656;
   }
+}
