@@ -382,7 +382,7 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostIDs})
 }
 
-// SearchServiceInstancesInModuleWeb TODO
+// SearchServiceInstancesInModuleWeb search service instances in module for web
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -398,15 +398,20 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	bizID := input.BizID
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
 		HostIDs:    input.HostIDs,
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if input.ModuleID != 0 {
+		option.ModuleIDs = []int64{input.ModuleID}
+	}
+
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d "+
+			"failed, err: %v", input.ModuleID, err)
 		return
 	}
 
@@ -421,9 +426,11 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listRelationOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, 
+		ctx.Kit.Header, listRelationOption)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, list option: %+v, err: %v", listRelationOption, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed,"+
+			" list option: %+v, err: %v", listRelationOption, err)
 		return
 	}
 
@@ -441,7 +448,8 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	for _, instance := range serviceInstanceResult.Info {
 		item, err := mapstr.Struct2Map(instance)
 		if err != nil {
-			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
+			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed,"+
+				" serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
 			ccErr := ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
 			ctx.RespAutoError(ccErr)
 			return
@@ -459,11 +467,12 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// SearchServiceInstancesBySetTemplate TODO
+// SearchServiceInstancesBySetTemplate search service instances by set template
 func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("SearchServiceInstancesBySetTemplate failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, parse bk_biz_id error,"+
+			" err: %s, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
@@ -497,9 +506,11 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		},
 		Condition: cond,
 	}
-	moduleInsts, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	moduleInsts, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, 
+		ctx.Kit.Header, common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("SearchServiceInstancesBySetTemplate failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed,"+
+			" http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -509,7 +520,8 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	for _, moduleInst := range moduleInsts.Info {
 		moduleID, err := util.GetInt64ByInterface(moduleInst[common.BKModuleIDField])
 		if err != nil {
-			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
+			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed,"+
+				" moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -526,15 +538,17 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	}
 	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ListServiceInstance failed, filter: %s, err: %s, rid: %s", option, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in set_template_id: %d failed, err: %v", input.SetTemplateID, err)
+		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ListServiceInstance failed,"+
+			" filter: %s, err: %s, rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in set_template_id:"+
+			" %d failed, err: %v", input.SetTemplateID, err)
 		return
 	}
 
 	ctx.RespEntity(serviceInstanceResult)
 }
 
-// SearchServiceInstancesInModule TODO
+// SearchServiceInstancesInModule search service instances in module
 func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -555,15 +569,18 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: input.BizID,
-		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
 		HostIDs:    input.HostIDs,
 	}
+	if input.ModuleID != 0 {
+		option.ModuleIDs = []int64{input.ModuleID}
+	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module:"+
+			"%d failed, err: %v", input.ModuleID, err)
 		return
 	}
 
