@@ -244,6 +244,7 @@
             this.setFileState('error')
             const importError = response.data?.error ? response.data : { error: [response.bk_error_msg] }
             this.setFileError(importError)
+	    this.importState?.error?.()
           } else {
             this.setFileState('success')
             this.importState.success && this.importState.success()
