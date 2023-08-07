@@ -256,30 +256,24 @@ func (s *Service) DeleteObjectAttribute(ctx *rest.Contexts) {
 
 // UpdateObjectAttributeIndex update object attribute index
 func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
-	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); err != nil {
+	data := new(metadata.UpdateAttrIndexInput)
+	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	idStr := ctx.Request.PathParameter("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		blog.Errorf("failed to parse the id from path params, id: %s, err: %s , rid: %s",
-			ctx.Request.PathParameter("id"), err, ctx.Kit.Rid)
+		blog.Errorf("parse id from path params failed, err: %v, id: %s, rid: %s", err, idStr, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed))
 		return
 	}
 
-	var result *metadata.UpdateAttrIndexData
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		input := metadata.UpdateOption{
-			Condition: mapstr.MapStr{common.BKFieldID: id},
-			Data:      data,
-		}
-		result, err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrsIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
-			&input)
+		err = s.Engine.CoreAPI.CoreService().Model().UpdateModelAttrIndex(ctx.Kit.Ctx, ctx.Kit.Header, objID,
+			id, data)
 		if err != nil {
 			blog.Errorf("update object attribute index failed, err: %v , rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -291,7 +285,7 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }
 
 // ListHostModelAttribute list host model's attributes
