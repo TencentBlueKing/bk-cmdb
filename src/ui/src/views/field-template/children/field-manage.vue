@@ -23,6 +23,7 @@
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'

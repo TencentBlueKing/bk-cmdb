@@ -54,7 +54,7 @@
       },
       localValue: {
         get() {
-          return this.value
+          return String(this.value) === 'NaN' ? '' : this.value
         },
         set(value) {
           let newValue
@@ -89,7 +89,7 @@
       }
     },
     mounted() {
-      const { min = -999999999, max = 99999999999 } = this.options
+      const { min = -999999999, max = 99999999999 } = this.options || {}
       this.max = max === '' ? 99999999999 : max
       this.min = min  === '' ? -999999999 : min
     },
