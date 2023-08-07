@@ -399,6 +399,7 @@
   import useUnique from '@/views/field-template/children/use-unique.js'
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
+  import { escapeRegexChar } from '@/utils/util'
 
   export default {
     name: 'FieldGroup',
@@ -694,7 +695,7 @@
       },
       filterField() {
         if (this.keyword) {
-          const reg = new RegExp(this.keyword, 'i')
+          const reg = new RegExp(escapeRegexChar(this.keyword), 'i')
           const displayGroupedProperties = []
           this.groupedProperties.forEach((group) => {
             const matchedProperties = []

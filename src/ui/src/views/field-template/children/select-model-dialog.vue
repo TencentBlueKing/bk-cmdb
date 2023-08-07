@@ -14,6 +14,7 @@
   import { computed, reactive, ref, watchEffect } from 'vue'
   import { useStore } from '@/store'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     selected: {
@@ -79,7 +80,7 @@
 
   const displayModelGroupList = computed(() => {
     if (filterWord.value) {
-      const reg = new RegExp(filterWord.value, 'i')
+      const reg = new RegExp(escapeRegexChar(filterWord.value), 'i')
       const list = []
       modelGroupList.value.forEach((group) => {
         list.push({
