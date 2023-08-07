@@ -83,6 +83,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	instOperation.SetProxy(instAssociationOperation)
 	instAssociationOperation.SetProxy(instOperation)
 	associationOperation.SetProxy(objectOperation, instOperation, instAssociationOperation)
+	importAssociationOperation.SetProxy(instAssociationOperation)
 	groupOperation.SetProxy(objectOperation)
 	setOperation.SetProxy(instOperation, moduleOperation)
 	moduleOperation.SetProxy(instOperation)

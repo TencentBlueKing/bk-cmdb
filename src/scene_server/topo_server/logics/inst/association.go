@@ -47,7 +47,8 @@ type AssociationOperationInterface interface {
 	// TopoNodeHostAndSerInstCount get topo node host and service instance count
 	TopoNodeHostAndSerInstCount(kit *rest.Kit, input *metadata.HostAndSerInstCountOption) (
 		[]*metadata.TopoNodeHostAndSerInstCount, errors.CCError)
-
+	CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+		input *metadata.CreateAssociationInstRequest) error
 	// SetProxy proxy the interface
 	SetProxy(inst InstOperationInterface)
 }
@@ -190,8 +191,8 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	return result, rsp.Count, nil
 }
 
-// checkInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
-func (assoc *association) checkInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
+// CheckInstAsstMapping use to check if instance association mapping correct, used by CreateInstanceAssociation
+func (assoc *association) CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
 
 	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
@@ -253,7 +254,7 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		Condition: mapstr.MapStr{
 			common.AssociationObjAsstIDField: request.ObjectAsstID,
 		},
-		Fields: []string{common.AssociationKindIDField},
+		Fields:         []string{common.AssociationKindIDField},
 		DisableCounter: true,
 	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
@@ -272,7 +273,7 @@ func (assoc *association) CreateInstanceAssociation(kit *rest.Kit, request *meta
 		return nil, kit.CCError.Error(common.CCErrorTopoObjectAssociationNotUnique)
 	}
 
-	if err := assoc.checkInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
+	if err := assoc.CheckInstAsstMapping(kit, result.Info[0].ObjectID, result.Info[0].Mapping, request); err != nil {
 		blog.Errorf("check mapping failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
@@ -329,7 +330,7 @@ func (assoc *association) CreateManyInstAssociation(kit *rest.Kit, request *meta
 		Condition: mapstr.MapStr{
 			common.AssociationObjAsstIDField: request.ObjectAsstID,
 		},
-		Fields: []string{common.AssociationKindIDField},
+		Fields:         []string{common.AssociationKindIDField},
 		DisableCounter: true,
 	}
 	result, err := assoc.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, cond)
