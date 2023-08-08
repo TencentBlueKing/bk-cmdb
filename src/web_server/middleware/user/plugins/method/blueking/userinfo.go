@@ -62,20 +62,23 @@ type loginResult struct {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
+func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
+	loginSucc bool) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
-	bkToken, err := c.Cookie(common.HTTPCookieBKToken)
-	if err != nil || len(bkToken) == 0 {
+	bkTokens := getBkTokens(c)
+	if len(bkTokens) == 0 {
 		blog.Infof("LoginUser failed, bk_token empty, rid: %s", rid)
 		return nil, false
 	}
+
 	checkUrl, err := cc.String("webServer.site.checkUrl")
 	if err != nil {
 		blog.Errorf("get login url config item not found, rid: %s", rid)
 		return nil, false
 	}
-	loginURL := checkUrl + bkToken
+
+	var resultData loginResult
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
 
@@ -90,29 +93,57 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		return nil, false
 	}
 
-	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
-	if err != nil {
-		blog.Errorf("get user info return error: %v, rid: %s", err, rid)
+	for _, bkToken := range bkTokens {
+		loginURL := checkUrl + bkToken
+		loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
+		if err != nil {
+			blog.Errorf("get user info return error: %v, rid: %s", err, rid)
+			continue
+		}
+		blog.V(3).Infof("get user info url: %s, result: %s, rid: %s", loginURL, string(loginResultByteArr), rid)
+
+		err = json.Unmarshal(loginResultByteArr, &resultData)
+		if err != nil {
+			blog.Errorf("fail to unmarshal data: %s, error: %v, rid: %s", string(loginResultByteArr), err, rid)
+			return nil, false
+		}
+
+		if !resultData.Result {
+			blog.Errorf("get user info return error, error code: %s, error message: %s, rid: %s", resultData.Code,
+				resultData.Message, rid)
+			continue
+		}
+
+		user = setUser(resultData, bkToken)
+		break
+	}
+	if user == nil {
 		return nil, false
 	}
-	blog.V(3).Infof("get user info cond %v, return: %s, rid: %s", string(loginURL), string(loginResultByteArr), rid)
+	return user, true
+}
 
-	var resultData loginResult
-	err = json.Unmarshal(loginResultByteArr, &resultData)
-	if nil != err {
-		blog.Errorf("get user info json error: %v, rawData:%s, rid: %s", err, string(loginResultByteArr), rid)
-		return nil, false
+// getBkTokens get the values of the bk_token in the cookie
+func getBkTokens(c *gin.Context) (bkTokens []string) {
+	cookies := c.Request.Cookies()
+	if len(cookies) == 0 {
+		return bkTokens
 	}
-
-	if !resultData.Result {
-		blog.Errorf("get user info return error , error code: %s, error message: %s, rid: %s", resultData.Code, resultData.Message, rid)
-		return nil, false
+	for i := len(cookies) - 1; i >= 0; i-- {
+		if cookies[i].Name == common.HTTPCookieBKToken {
+			bkTokens = append(bkTokens, cookies[i].Value)
+		}
 	}
+	return bkTokens
+}
 
+// setUser get userInfo from resultData
+func setUser(resultData loginResult, bkToken string) (user *metadata.LoginUserInfo) {
 	userDetail := resultData.Data
 	if len(userDetail.OwnerUin) == 0 {
 		userDetail.OwnerUin = common.BKDefaultOwnerID
 	}
+
 	user = &metadata.LoginUserInfo{
 		UserName: userDetail.UserName,
 		ChName:   userDetail.ChName,
@@ -124,7 +155,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		IsOwner:  false,
 		Language: userDetail.Language,
 	}
-	return user, true
+	return user
 }
 
 // GetLoginUrl get login url
@@ -162,7 +193,8 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo,
+	*errors.RawErrorInfo) {
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	query := c.Request.URL.Query()
 	for key, values := range query {
