@@ -194,6 +194,16 @@ func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.Ra
 	return cErr.RawErrorInfo{}
 }
 
+// SyncServiceTemplateOption sync service template to some hosts in a module.
+type SyncServiceTemplateOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+	ModuleID          int64   `json:"bk_module_id"`
+	HostIDs           []int64 `json:"bk_host_ids,omitempty"`
+	// IsSyncModule defines if module attributes needs to be synced, or if hosts needs to be synced
+	IsSyncModule bool `json:"is_sync_module"`
+}
+
 // ListDiffServiceInstancesOption list service instances request.
 type ListDiffServiceInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
