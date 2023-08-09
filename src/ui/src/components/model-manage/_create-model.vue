@@ -37,8 +37,8 @@
                 name="modelGroup"
                 :value="modelDialog.data.bk_classification_id"
                 :scroll-height="200">
-                <bk-option v-for="(option, index) in getClassifications"
-                  :key="index"
+                <bk-option v-for="(option) in classifications"
+                  :key="option.bk_classification_id"
                   :id="option.bk_classification_id"
                   :name="option.bk_classification_name">
                   <cmdb-auth class="group-auth" tag="div" style="display: block;"

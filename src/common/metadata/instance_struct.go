@@ -51,3 +51,15 @@ type BizSetInstanceData struct {
 	Count int          `json:"count"`
 	Info  []BizSetInst `json:"info"`
 }
+
+// ProcInstanceResponse process instance response
+type ProcInstanceResponse struct {
+	BaseResp `json:",inline"`
+	Data     ProcInstanceData `json:"data"`
+}
+
+// ProcInstanceData 进程查询接口响应数据
+type ProcInstanceData struct {
+	Count int       `json:"count"`
+	Info  []Process `json:"info"`
+}
