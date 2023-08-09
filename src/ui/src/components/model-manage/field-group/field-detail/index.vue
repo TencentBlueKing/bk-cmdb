@@ -197,7 +197,7 @@
       <div class="btn-group" :class="{ 'is-sticky': sticky }">
         <bk-button theme="primary"
           :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
-          :disabled="canSave"
+          :disabled="saveDisabled"
           @click="saveField">
           <span v-if="!isSettingScene">{{isEditField ? $t('保存') : $t('提交')}}</span>
           <span v-else>{{ $t('确定') }}</span>
@@ -335,7 +335,7 @@
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
       },
-      canSave() {
+      saveDisabled() {
         return !this.isSettingScene && this.isEditField && !this.isChanged?.value
       },
       fieldType() {
