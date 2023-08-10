@@ -46,6 +46,10 @@
     popoverOptions: {
       type: Object,
       default: () => ({})
+    },
+    forceShowOne: {
+      type: Boolean,
+      default: false
     }
   })
 
@@ -154,7 +158,9 @@
 
       for (const item of tagWidthList) {
         accWidth = accWidth + item.width + gapWidth.value
-        if (item.index === 0) continue
+        if (props.forceShowOne && item.index === 0) {
+          continue
+        }
         if (accWidth > containerClientWidth) {
           posItem = item
           ellipsisCount.value = tags.value.length - item.index
@@ -250,7 +256,7 @@
       v-for="(tag, index) in tags"
       :key="tag.id || index"
       @click="handleClick(index)">
-      <div class="tag-item-text">
+      <div class="tag-item-text" v-bk-overflow-tips>
         <span @click="handleClickText(tag)">{{tag.name || tag}}</span>
         <slot name="text-append" v-bind="tag"></slot>
       </div>
@@ -271,15 +277,19 @@
       background: #F0F1F5;
       border-radius: 2px;
       padding: 0 .6em;
-      white-space: nowrap;
       flex: none;
-      overflow: hidden;
-      text-overflow: ellipsis;
       height: var(--height);
       line-height: var(--height);
       max-width: var(--maxWidth);
       display: flex;
       align-items: center;
+
+      .tag-item-text {
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
     }
 
     &.is-link-style {
