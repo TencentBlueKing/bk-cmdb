@@ -1079,6 +1079,40 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 			blog.Errorf("delete service template: %d failed", input.ServiceTemplateID)
 			return ctx.Kit.CCError.CCError(common.CCErrProcDeleteServiceTemplateFailed)
 		}
+
+		//根据服务模板id查询该服务模板的主机应用规则
+		listRuleOption := metadata.ListHostApplyRuleOption{
+			ServiceTemplateIDs: []int64{input.ServiceTemplateID},
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		listRuleResult, ccErr := ps.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+			ctx.Kit.Header, input.BizID, listRuleOption)
+		if ccErr != nil {
+			blog.Errorf("get service template host apply rule failed, bizID: %d,listRuleOption: %#v, rid: %s",
+				input.BizID, listRuleOption, ctx.Kit.Rid)
+			return ccErr
+		}
+
+		//根据服务模板id删除该服务模板的主机应用规则
+		ruleIDs := make([]int64, 0)
+		for _, item := range listRuleResult.Info {
+			ruleIDs = append(ruleIDs, item.ID)
+		}
+		if len(ruleIDs) > 0 {
+			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+				RuleIDs:            ruleIDs,
+				ServiceTemplateIDs: []int64{input.ServiceTemplateID},
+			}
+			if ccErr := ps.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
+				ctx.Kit.Header, input.BizID, deleteRuleOption); ccErr != nil {
+				blog.Errorf("delete service template host apply rule failed, bizID: %d, listRuleOption: %#v, rid: %s",
+					input.BizID, listRuleOption, ctx.Kit.Rid)
+				return ccErr
+			}
+		}
+
 		return nil
 	})
 

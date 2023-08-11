@@ -86,7 +86,7 @@ redis的配置文件默认在/etc/redis.conf，找到如下行：
 
 如果Redis已经配置为service服务，可以通过以下方式重启：
 
-```json
+```shell
 service redis restart
 ```
 
@@ -94,7 +94,7 @@ service redis restart
 
 设置Redis认证密码后，客户端登录时需要使用-a参数输入认证密码,举例如下：
 
-```json
+```shell
 $ ./redis-cli -h 127.0.0.1 -p 6379 -a myPassword
 127.0.0.1:6379> config get requirepass
 1) "requirepass"

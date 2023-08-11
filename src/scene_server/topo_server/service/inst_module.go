@@ -203,6 +203,39 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 			blog.Errorf("delete module failed, delete operation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
+
+		//根据模型id查询该模型的主机应用规则
+		listRuleOption := metadata.ListHostApplyRuleOption{
+			ModuleIDs: []int64{moduleID},
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		listRuleResult, ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, listRuleOption)
+		if ccErr != nil {
+			blog.Errorf("get list host apply rule failed, bizID: %d,listRuleOption: %#v, rid: %s", bizID,
+				listRuleOption, ctx.Kit.Rid)
+			return ccErr
+		}
+
+		//根据模型id删除该模型的主机应用规则
+		ruleIDs := make([]int64, 0)
+		for _, item := range listRuleResult.Info {
+			ruleIDs = append(ruleIDs, item.ID)
+		}
+		if len(ruleIDs) > 0 {
+			deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+				RuleIDs:   ruleIDs,
+				ModuleIDs: []int64{moduleID},
+			}
+			if ccErr := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
+				ctx.Kit.Header, bizID, deleteRuleOption); ccErr != nil {
+				blog.Errorf("delete host apply rule failed, bizID: %d, listRuleOption: %#v, rid: %s",
+					bizID, listRuleOption, ctx.Kit.Rid)
+				return ccErr
+			}
+		}
 		return nil
 	})
 
