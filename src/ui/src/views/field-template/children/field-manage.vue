@@ -183,7 +183,7 @@
       extra: slider.curFieldSetting
     }
     fieldLocalList.value.push(data)
-
+    syncField()
     return data
   }
   const updateField = (id, fieldData) => {
