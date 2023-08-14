@@ -165,13 +165,15 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, modelBizID i
 		},
 		common.BKAppIDField: modelBizID,
 	}
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
+	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID,
+		condition)
 	if nil != err {
 		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, rid)
 		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
 	}
 	if !result.Result {
-		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, rid)
+		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code,
+			result.ErrMsg, rid)
 		return nil, fmt.Errorf("get attribute group result false, result: %+v", result)
 	}
 	fields := result.Data
@@ -364,5 +366,4 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		idProperty.Name = defLang.Languagef("common_property_bk_inst_id")
 		fields[idProperty.ID] = idProperty
 	}
-
 }
