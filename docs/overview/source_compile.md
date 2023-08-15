@@ -12,7 +12,7 @@
 
 - nodejs >= 4.0.0（编译过程中需要可以连公网下载依赖包）
 
-  注：最好使用nodejs14 LTS版本，尽量选择14.13.1、14.18.1、14.21.3已测可编译
+  注：最好使用nodejs14 LTS版本，如14.13.1、14.18.1、14.21.3
 
 #### 将go mod设置为auto
 ```
@@ -130,7 +130,7 @@ make package
 
 **示例：**
 
-``` shell
+```shell
 ./image.sh -i linux:latest
 ```
 
@@ -142,7 +142,7 @@ make package
 
 clone 速度较慢或超时建议配置代理：
 
-```
+```shell
 git config --global http.proxy IP:PORT
 git config --global https.proxy IP:PORT
 git config --global --list//查看全局代理配置
@@ -157,7 +157,7 @@ git config --global --list//查看全局代理配置
 1. 确认Python 2.x已经安装：首先请确保已经在Ubuntu中安装了Python 2.x版本。
 2. 使用`update-alternatives`设置优先级：Ubuntu提供了`update-alternatives`命令，可以用于管理系统中的可选命令。使用该命令来设置Python版本优先级：
 
-```
+```shell
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python2 1
 ```
 
@@ -167,7 +167,7 @@ sudo update-alternatives --install /usr/bin/python python /usr/bin/python2 1
 
 `go env`命令检查go环境
 
-```
+```shell
 //开启包管理工具
 go env -w GO111MODULE="on"
 //配置代理
@@ -178,13 +178,40 @@ go env -w GOPROXY=https://goproxy.cn,direct
 
 #### nodejs 版本问题：
 
-最好使用nodejs14 LTS版本，尽量选择14.13.1、14.18.1、14.21.3已测可编译
+最好使用nodejs14 LTS版本，如：14.13.1、14.18.1、14.21.3
 
 #### 编译前端 `make ui`时可能报错如下：
 
-![ui_err1](../resource/img/ui_err1.png)
+```shell
+npm ERR! code ELIFECYCLE
+npm ERR! syscall spawn
+npm ERR! file sh
+npm ERR! errno ENOENT
+npm ERR! fibers@5.0.3 install: 'node build.js || nodejs build.js'
+npm ERR! spawn ENOENT
+npm ERR!
+npm ERR! Failed at the fibers@5.0.3 install script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above
+npm ERR! A complete log of this run can be found in:/root/.npm/_logs/2023-07-31T12_06_25_972Z-debug.log
+```
+或
+```shell
+> fibers@5. 0.3 install /root/configcenter/src/ui/node_modules/fibers
+> node build.js || nodejs build.js 
 
-![ui_err2](../resource/img/ui_err2.png)
+internal/modules/cjs/loader.js:883
+  throw err;
+  
+Error: Cannot find module '/root/configcenter/src/ui/node_modules/fibers/build.js'
+  at Function.Module.resolveFilename (internal/modules/cjs/loader.js:880:15)
+  at Function.Module._load (internal/ modules/cjs/loader.js:725:27)
+  at Function . executeUserEntryPoint [as runMain] ( internal/ modules/run_ main. js:72:12)
+  at internal/main/run_main module.js:17:47 {
+ code: 'MODULE_ NOT_ FOUND',
+ requireStack: []
+}
+sh: 1: nodejs: Permission denied
+```
 
 **解决办法：**
 ```
@@ -195,20 +222,20 @@ go env -w GOPROXY=https://goproxy.cn,direct
 
 1. 终端执行 git
 
-```
+```shell
 git clone https://github.com/creationix/nvm.git ~/.nvm && cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`
 ```
 
 2. 回到root目录执行，编辑环境变量配置文件
 
-```
+```shell
 cd ~
 vim .bashrc
 ```
 
 将
 
-```
+```shell
 source ~/.nvm/nvm.sh
 ```
 
@@ -216,7 +243,7 @@ source ~/.nvm/nvm.sh
 
 3. 执行
 
-```
+```shell
 source  .bashrc
 和
 nvm -v  //查看nvm版本号
@@ -226,20 +253,21 @@ nvm -v  //查看nvm版本号
 
 ##### 通过 nvm 工具安装 nodejs
 
-1. ```
+1. 
+```shell
    nvm ls-remote //查看能够使用的node版本号  
    ```
 
 2. 这里选择了 v14.21.3，使用 nvm 命令来安装，而且将其设置为默认版本号。 分别执行：
 
-```
+```shell
 nvm install 14.21.3
 nvm alias default 14.21.3
 ```
 
 3. 安装好的 nodejs 中是默认安装 npm 的，接着 `vim .bashrc` 打开环境变量配置文件查看是否有以下两句
 
-```
+```shell
 export NVM_DIR="/Users/YOURUSERNAME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 ```
@@ -248,13 +276,19 @@ export NVM_DIR="/Users/YOURUSERNAME/.nvm"
 
 4. 重新打开一个终端分别执行：成功输出版本号即可
 
-![node_result](../resource/img/node_result.png)
+```shell
+root@LAPTOP-0RIAHE03:~# nvm -v
+0.39.4
+root@LAPTOP-ORIAHE03:~# node -v
+V14.21.3
+root@LAPTOP-ORIAHE03:~# npm -V
+6.14.18
+```
 
 5. 再次进入项目src目录执行`make ui`进行编译，编译成功查看相应输出目录
 
-![ui_build_success](../resource/img/ui_build_success.png)
 
 ### 其他问题
-
-- 创建issue, 带上版本号+错误日志文件+配置文件等信息，我们看到后，会第一时间为您解答；
+- 查看 [cmdb项目issues地址](https://github.com/TencentBlueKing/bk-cmdb/issues) ,寻找相同或类似问题的解决办法
+- 您也可以创建issue, 带上版本号+错误日志文件+配置文件等信息，我们看到后，会第一时间为您解答；
 - 同时我们也鼓励，有问题互相解答，提PR参与开源贡献，共建开源社区。

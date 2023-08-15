@@ -64,33 +64,11 @@
 
 ### 5. 配置数据库
 
-#### 1. Redis需要打开auth认证的功能，并为其配置密码和绑定监听IP
+#### 1. Redis需要打开auth认证的功能
 
 ##### a. 修改配置文件
 
-redis的配置文件默认在/etc/redis.conf，找到如下行：
-
-``` json
-#requirepass foobared
-#bind 0.0.0.0
-```
-
-去掉前面的注释，并修改为所需要的密码和要监听IP：
-
-``` json
- requirepass myPassword //其中myPassword就是要设置的密码
- bind 0.0.0.0 //0.0.0.0 代表监听所有IP的连接
-```
-
-##### b. 重启Redis
-
-如果Redis已经配置为service服务，可以通过以下方式重启：
-
-```shell
-service redis restart
-```
-
-##### c. 登录验证
+##### 登录验证
 
 设置Redis认证密码后，客户端登录时需要使用-a参数输入认证密码,举例如下：
 
@@ -110,7 +88,7 @@ $ ./redis-cli -h 127.0.0.1 -p 6379 -a myPassword
 1. 创建数据存放目录
 
 ```shell
-mkdir -p ~/data/mongodb/{cmdb,slave,arbiter}
+mkdir -p ~/data/mongodb/cmdb
 ```
 
 2. 创建配置文件
@@ -136,51 +114,7 @@ mkdir -p ~/data/mongodb/{cmdb,slave,arbiter}
    #maxConns=4000
    ```
 
-   副本节点（Slave）
-
-   ```
-   vim /etc/mongodb_slave.conf //写入：
-   
-   #mongodb_slave.conf
-   dbpath=/root/app/data/mongodb/slave
-   logpath=/root/app/data/mongodb/slave.log
-   pidfilepath=/root/app/data/mongodb/slave.pid
-   #keyFile=/root/app/data/mongodb.key
-   directoryperdb=true
-   logappend=true
-   replSet=rs0
-   bind_ip=0.0.0.0
-   port=27018
-   #auth=true
-   oplogSize=100
-   fork=true
-   #noprealloc=true
-   #maxConns=4000
-   ```
-
-   仲裁者节点（Arbiter）
-
-   ```
-   vim /etc/mongodb_arbiter.conf //写入：
-   
-   #mongodb_arbiter.conf
-   dbpath=/root/app/data/mongodb/arbiter
-   logpath=/root/app/data/mongodb/arbiter.log
-   pidfilepath=/root/app/data/mongodb/arbiter.pid
-   #keyFile=/root/app/data/mongodb.key
-   directoryperdb=true
-   logappend=true
-   replSet=rs0
-   bind_ip=0.0.0.0
-   port=27019
-   #auth=true
-   fork=true
-   #noprealloc=true
-   #maxConns=4000
-   ```
-
    备注：以上配置信息仅供参考
-   keyFile 和 auth 选项要在集群配置好后，并且添加了验证用户后在启用
    参数说明：
 
    ```
@@ -203,8 +137,6 @@ mkdir -p ~/data/mongodb/{cmdb,slave,arbiter}
 
    ```
    mongod -f /etc/mongodb_cmdb.conf
-   mongod -f /etc/mongodb_slave.conf
-   mongod -f /etc/mongodb_arbiter.conf
    ```
 
    ps：启动失败请查看对应日志文件排查问题
@@ -212,12 +144,14 @@ mkdir -p ~/data/mongodb/{cmdb,slave,arbiter}
 4. 配置集群后，执行`mongo`命令连接mongodb服务
 
    ```
-   > cfg={ _id:"rs0", members:[ {_id:0,host:'IP:27017',priority:2}, {_id:1,host:'IP:27018',priority:1},{_id:2,host:'IP:27019',arbiterOnly:true}] };
+   > cfg={ _id:"rs0", members:[ {_id:0,host:'IP:27017',priority:2}] };
    > rs.initiate(cfg)
    ```
 
    说明：
-   cfg 名字可选，只要跟mongodb参数不冲突，rs0为集群名字，仅作展示，用户使用中可以根据实际情况自行配置，_id 为 Replica Set 名字，members 里面的优先级 priority 值高的为主节点，对于仲裁点一定要加上`arbiterOnly:true`，否则主备模式不生效，priority 表示优先级别，数值越大，表示是主节点，`arbiterOnly:true`表示仲裁节点。
+   cfg 名字可选，只要跟mongodb参数不冲突，rs0为集群名字，仅作展示，用户使用中可以根据实际情况自行配置，_id 为 Replica Set 名字，
+   members 里面的优先级 priority 值高的为主节点，对于仲裁点一定要加上`arbiterOnly:true`，否则主备模式不生效，
+   priority 表示优先级别，数值越大，表示是主节点，`arbiterOnly:true`表示仲裁节点。
    使集群cfg配置生效：`rs.initiate(cfg)`
    查看集群状态：`rs.status()`
 
@@ -447,7 +381,15 @@ mechanism=SCRAM-SHA-1
 
 ### 1. 启动服务
 
-启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，如图：尤其检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。 ![ip](../resource/img/ip.png)
+启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，如下：尤其检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。 
+```yaml
+site :
+   #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+   domainUrl: http://192.168.0.1:8082
+   #登录地址
+   bkLoginUr: http://192.168.0.1/login/?app_id=%s&c_url=%s
+   appCode: cc
+```
 
 还有`mongodb.yaml 和 redis.yaml`等配置也要确保与实际部署的 mongodb 和 redis 服务配置相同，不同处手动修改
 
@@ -485,7 +427,7 @@ process count should be: 11 , now: 11
 
 ### 2. 服务启动之后初始化数据库
 
-``` shell
+```shell
 [root@SWEBVM000229 /data/cmdb]# bash ./init_db.sh
 {"result":true,"bk_error_code":0,"bk_error_msg":"success","data":"migrate success"}
 ```
@@ -504,7 +446,7 @@ process count should be: 11 , now: 11
 
 ### 4. 停止服务
 
-``` shell
+```shell
 [root@SWEBVM000229 /data/cmdb]# ./stop.sh
 Running process count: 0
 ```
@@ -526,9 +468,10 @@ Running process count: 0
 
 ### 4. 服务启动成功，但无法访问
 
-- 启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，如图：尤其检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。 ![ip](../resource/img/ip.png)
+- 启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。
 
 ### 其他问题
 
+- 查看 [cmdb项目issues地址](https://github.com/TencentBlueKing/bk-cmdb/issues) ,寻找相同或类似问题的解决办法
 - 创建issue, 带上版本号+错误日志文件+配置文件等信息，我们看到后，会第一时间为您解答；
 - 同时我们也鼓励，有问题互相解答，提PR参与开源贡献，共建开源社区。
