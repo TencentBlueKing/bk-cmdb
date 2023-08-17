@@ -537,7 +537,8 @@ func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
 		registeredAction.Name != action.Name ||
 		registeredAction.NameEn != action.NameEn ||
 		registeredAction.Type != action.Type ||
-		registeredAction.Version < action.Version {
+		registeredAction.Version < action.Version ||
+		registeredAction.Hidden != action.Hidden {
 		return false
 	}
 

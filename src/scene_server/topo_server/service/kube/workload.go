@@ -20,6 +20,7 @@ package kube
 import (
 	"errors"
 
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -46,6 +47,14 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeWorkload, Action: acmeta.Create},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -105,6 +114,14 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeWorkload, Action: acmeta.Update},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -198,6 +215,14 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeWorkload, Action: acmeta.Delete},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
@@ -288,6 +313,14 @@ func (s *service) ListWorkload(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(kind); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeWorkload, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

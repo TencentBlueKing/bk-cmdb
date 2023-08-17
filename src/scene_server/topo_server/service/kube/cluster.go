@@ -20,6 +20,7 @@ package kube
 import (
 	"errors"
 
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -41,6 +42,14 @@ func (s *service) SearchClusters(ctx *rest.Contexts) {
 	if cErr := searchCond.Validate(); cErr.ErrCode != 0 {
 		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeCluster, Action: acmeta.Find},
+		BusinessID: searchCond.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -117,6 +126,14 @@ func (s *service) UpdateClusterFields(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeCluster, Action: acmeta.Update},
+		BusinessID: data.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	clusters, err := s.getUpdateClustersInfo(ctx.Kit, data.BizID, data.IDs)
 	if err != nil {
 		ctx.RespAutoError(err)
@@ -181,6 +198,14 @@ func (s *service) UpdateClusterType(ctx *rest.Contexts) {
 
 	if err := opt.Validate(); err.ErrCode != 0 {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeCluster, Action: acmeta.Update},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -299,6 +324,14 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeCluster, Action: acmeta.Create},
+		BusinessID: data.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	var id int64
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		// create cluster
@@ -345,6 +378,14 @@ func (s *service) DeleteCluster(ctx *rest.Contexts) {
 
 	if err := option.Validate(); err.ErrCode != 0 {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeCluster, Action: acmeta.Delete},
+		BusinessID: option.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

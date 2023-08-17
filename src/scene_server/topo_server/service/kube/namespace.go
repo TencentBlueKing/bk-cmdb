@@ -18,6 +18,7 @@
 package kube
 
 import (
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -37,6 +38,14 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNamespace, Action: acmeta.Create},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -86,6 +95,14 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNamespace, Action: acmeta.Update},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -162,7 +179,6 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 
 // DeleteNamespace delete namespace
 func (s *service) DeleteNamespace(ctx *rest.Contexts) {
-
 	req := new(types.NsDeleteOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
@@ -171,6 +187,14 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNamespace, Action: acmeta.Delete},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -248,7 +272,6 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 
 // ListNamespace list namespace
 func (s *service) ListNamespace(ctx *rest.Contexts) {
-
 	req := new(types.NsQueryOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
@@ -257,6 +280,14 @@ func (s *service) ListNamespace(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNamespace, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

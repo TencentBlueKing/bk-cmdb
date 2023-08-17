@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strconv"
 
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -55,6 +56,17 @@ func (s *service) FindNodePathForHost(ctx *rest.Contexts) {
 		ctx.RespEntity(types.HostPathData{
 			Info: []types.HostNodePath{},
 		})
+		return
+	}
+
+	// authorize
+	authRes := make([]acmeta.ResourceAttribute, len(relation.BizIDs))
+	for i, bizID := range relation.BizIDs {
+		authRes[i] = acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNode, Action: acmeta.Find},
+			BusinessID: bizID}
+	}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes...); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -226,6 +238,14 @@ func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNode, Action: acmeta.Delete},
+		BusinessID: option.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		err = s.Logics.KubeOperation().BatchDeleteNode(ctx.Kit, option.BizID, option)
@@ -255,6 +275,14 @@ func (s *service) BatchCreateNode(ctx *rest.Contexts) {
 	if err := data.ValidateCreate(); err.ErrCode != 0 {
 		blog.Errorf("batch create nodes param verification failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNode, Action: acmeta.Create},
+		BusinessID: data.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -289,6 +317,14 @@ func (s *service) SearchNodes(ctx *rest.Contexts) {
 	if cErr := searchCond.Validate(); cErr.ErrCode != 0 {
 		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNode, Action: acmeta.Find},
+		BusinessID: searchCond.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -380,6 +416,14 @@ func (s *service) UpdateNodeFields(ctx *rest.Contexts) {
 
 	if err := data.UpdateValidate(); err.ErrCode != 0 {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeNode, Action: acmeta.Update},
+		BusinessID: data.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

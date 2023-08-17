@@ -22,6 +22,7 @@ import (
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -41,6 +42,14 @@ func (s *service) FindPodPath(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -211,6 +220,14 @@ func (s *service) ListPod(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	// compatible for shared cluster scenario
 	cond, err := s.Logics.KubeOperation().GenSharedNsListCond(ctx.Kit, types.KubePod, req.BizID, req.Filter)
 	if err != nil {
@@ -263,6 +280,17 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := make([]acmeta.ResourceAttribute, len(data.Data))
+	for i, data := range data.Data {
+		authRes[i] = acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Create},
+			BusinessID: data.BizID}
+	}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes...); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	var ids []int64
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -291,6 +319,17 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 
 	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := make([]acmeta.ResourceAttribute, len(opt.Data))
+	for i, data := range opt.Data {
+		authRes[i] = acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Delete},
+			BusinessID: data.BizID}
+	}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes...); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -383,6 +422,14 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 
 	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeContainer, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

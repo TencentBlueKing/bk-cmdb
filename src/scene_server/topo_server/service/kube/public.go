@@ -23,6 +23,7 @@ import (
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -233,6 +234,14 @@ func (s *service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 	if cErr := option.Validate(); cErr.ErrCode != 0 {
 		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource},
+		BusinessID: option.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -455,6 +464,14 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	if cErr := option.Validate(); cErr.ErrCode != 0 {
 		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource},
+		BusinessID: option.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
