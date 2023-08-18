@@ -15,11 +15,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"errors"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -31,14 +30,7 @@ import (
 )
 
 // CreateWorkload create workload
-func (s *Service) CreateWorkload(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
 	if err := kind.Validate(); err != nil {
 		blog.Errorf("workload kind is invalid, kind: %v, err: %v, rid: %s", kind, err, ctx.Kit.Rid)
@@ -58,19 +50,20 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	var data *metadata.RspIDs
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		data, err = s.Engine.CoreAPI.CoreService().Kube().CreateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
+	var err error
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		data, err = s.ClientSet.CoreService().Kube().CreateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, kind, req.Data)
 		if err != nil {
 			blog.Errorf("create workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
 
 		// audit log.
-		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
 		for idx := range req.Data {
 			wlBase := req.Data[idx].GetWorkloadBase()
-			wlBase.BizID = bizID
+			wlBase.BizID = req.BizID
 			wlBase.ID = data.IDs[idx]
 			wlBase.SupplierAccount = ctx.Kit.SupplierAccount
 			req.Data[idx].SetWorkloadBase(wlBase)
@@ -80,7 +73,7 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 			blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
 			return err
 		}
-		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+		if err = audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
 			blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
 			return err
 		}
@@ -96,22 +89,16 @@ func (s *Service) CreateWorkload(ctx *rest.Contexts) {
 }
 
 // UpdateWorkload update workload
-func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
 	if err := kind.Validate(); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	req := types.WlUpdateOption{Kind: kind}
-	if err := ctx.DecodeInto(&req); err != nil {
+	req := new(types.WlUpdateOption)
+	req.Kind = kind
+	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -124,39 +111,46 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 	query := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
+
+	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", req.BizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if len(resp.Info) == 0 {
-		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", bizID, req, ctx.Kit.Rid)
+		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", req.BizID, req, ctx.Kit.Rid)
 		ctx.RespAutoError(errors.New("no workload founded"))
 		return
 	}
-	for _, workload := range resp.Info {
-		ids := make([]int64, 0)
-		if workload.GetWorkloadBase().BizID != bizID {
-			ids = append(ids, workload.GetWorkloadBase().ID)
-		}
 
-		if len(ids) != 0 {
-			blog.Errorf("workload does not belong to this business, kind: %v, ids: %v, bizID: %s, rid: %s", kind, ids,
-				bizID, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, ids))
+	// checks if workload's namespace is a shared namespace and if its biz id is not the same with the input biz id
+	mismatchNsIDs := make([]int64, 0)
+	for _, workload := range resp.Info {
+		wl := workload.GetWorkloadBase()
+		if wl.BizID != req.BizID {
+			mismatchNsIDs = append(mismatchNsIDs, wl.NamespaceID)
+		}
+	}
+
+	if len(mismatchNsIDs) > 0 {
+		mismatchNsMap := map[int64][]int64{req.BizID: mismatchNsIDs}
+		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
+			ctx.RespAutoError(err)
 			return
 		}
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().UpdateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, &req)
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.ClientSet.CoreService().Kube().UpdateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, kind,
+			&req.WlUpdateByIDsOption)
 		if err != nil {
 			blog.Errorf("update workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
 
-		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate)
 		updateFields, goErr := mapstr.Struct2Map(req.Data)
 		if goErr != nil {
@@ -186,13 +180,7 @@ func (s *Service) UpdateWorkload(ctx *rest.Contexts) {
 }
 
 // DeleteWorkload delete workload
-func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
 	if err := kind.Validate(); err != nil {
 		ctx.RespAutoError(err)
@@ -213,34 +201,39 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
+	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, req: %v, err: %v, rid: %s", bizID, req, err, ctx.Kit.Rid)
+		blog.Errorf("list workload failed, bizID: %s, req: %v, err: %v, rid: %s", req.BizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// if all workloads are already deleted, return
 	if len(resp.Info) == 0 {
-		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", bizID, req, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New("no workload founded"))
+		ctx.RespEntity(nil)
 		return
 	}
-	for _, workload := range resp.Info {
-		ids := make([]int64, 0)
-		if workload.GetWorkloadBase().BizID != bizID {
-			ids = append(ids, workload.GetWorkloadBase().ID)
-		}
 
-		if len(ids) != 0 {
-			blog.Errorf("workload does not belong to this business, kind: %v, ids: %v, bizID: %s, rid: %s", kind, ids,
-				bizID, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFieldID))
+	// checks if workload's namespace is a shared namespace and if its biz id is not the same with the input biz id
+	mismatchNsIDs := make([]int64, 0)
+	for _, workload := range resp.Info {
+		wl := workload.GetWorkloadBase()
+		if wl.BizID != req.BizID {
+			mismatchNsIDs = append(mismatchNsIDs, wl.NamespaceID)
+		}
+	}
+
+	if len(mismatchNsIDs) > 0 {
+		mismatchNsMap := map[int64][]int64{req.BizID: mismatchNsIDs}
+		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
+			ctx.RespAutoError(err)
 			return
 		}
 	}
 
-	hasRes, err := s.hasNextLevelResource(ctx.Kit, string(kind), bizID, req.IDs)
-	if err != nil {
-		ctx.RespAutoError(err)
+	hasRes, rawErr := s.hasNextLevelResource(ctx.Kit, string(kind), req.IDs)
+	if rawErr != nil {
+		ctx.RespAutoError(rawErr)
 		return
 	}
 	if hasRes {
@@ -248,14 +241,15 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().DeleteWorkload(ctx.Kit.Ctx, ctx.Kit.Header, bizID, kind, req)
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err = s.ClientSet.CoreService().Kube().DeleteWorkload(ctx.Kit.Ctx, ctx.Kit.Header, kind,
+			&req.WlDeleteByIDsOption)
 		if err != nil {
 			blog.Errorf("delete workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
 
-		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
 		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, resp.Info, kind)
 		if err != nil {
@@ -278,14 +272,7 @@ func (s *Service) DeleteWorkload(ctx *rest.Contexts) {
 }
 
 // ListWorkload list workload
-func (s *Service) ListWorkload(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) ListWorkload(ctx *rest.Contexts) {
 	kind := types.WorkloadType(ctx.Request.PathParameter(types.KindField))
 	table, err := kind.Table()
 	if err != nil {
@@ -304,15 +291,15 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID)
+	// compatible for shared cluster scenario
+	cond, err := s.Logics.KubeOperation().GenSharedNsListCond(ctx.Kit, types.KubeWorkload, req.BizID, req.Filter)
 	if err != nil {
-		blog.Errorf("build query workload condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	if req.Page.EnableCount {
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, table,
+		counts, err := s.ClientSet.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, table,
 			[]map[string]interface{}{cond})
 		if err != nil {
 			blog.Errorf("count workload failed, table: %s, cond: %v, err: %v, rid: %s", table, cond, err, ctx.Kit.Rid)
@@ -333,9 +320,10 @@ func (s *Service) ListWorkload(ctx *rest.Contexts) {
 		Fields:    req.Fields,
 	}
 
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
+	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, cond: %v, err: %v, rid: %s", bizID, query, err, ctx.Kit.Rid)
+		blog.Errorf("list workload failed, bizID: %s, cond: %v, err: %v, rid: %s", req.BizID, query, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

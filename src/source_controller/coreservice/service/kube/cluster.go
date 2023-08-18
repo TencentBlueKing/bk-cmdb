@@ -18,7 +18,7 @@
 package kube
 
 import (
-	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,12 +27,12 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
+	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // SearchClusters search clusters
 func (s *service) SearchClusters(ctx *rest.Contexts) {
-
 	input := new(metadata.QueryCondition)
 	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)
@@ -58,24 +58,18 @@ func (s *service) SearchClusters(ctx *rest.Contexts) {
 
 // BatchUpdateCluster update cluster.
 func (s *service) BatchUpdateCluster(ctx *rest.Contexts) {
-
-	input := new(types.UpdateClusterOption)
-
+	input := new(types.UpdateClusterByIDsOption)
 	if err := ctx.DecodeInto(input); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, err: %v, rid: %s",
-			ctx.Request.PathParameter("bk_biz_id"), err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+	if err := input.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
 	filter := map[string]interface{}{
-		types.BKBizIDField: bizID,
 		types.BKIDField: map[string]interface{}{
 			common.BKDBIN: input.IDs,
 		},
@@ -103,51 +97,65 @@ func (s *service) BatchUpdateCluster(ctx *rest.Contexts) {
 
 // CreateCluster create kube cluster.
 func (s *service) CreateCluster(ctx *rest.Contexts) {
-
-	inputData := new(types.Cluster)
-	if err := ctx.DecodeInto(inputData); nil != err {
+	cluster := new(types.Cluster)
+	if err := ctx.DecodeInto(cluster); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
-	bizStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizStr, 10, 64)
-	if err != nil {
-		blog.Error("url param bk_biz_id not integer, bizID: %s, rid: %s", bizStr, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+
+	if err := cluster.ValidateCreate(); err.ErrCode != 0 {
+		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", cluster, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	cluster, err := s.core.KubeOperation().CreateCluster(ctx.Kit, bizID, inputData)
-	ctx.RespEntityWithError(cluster, err)
+	id, err := mongodb.Client().NextSequence(ctx.Kit.Ctx, types.BKTableNameBaseCluster)
+	if err != nil {
+		blog.Errorf("create cluster failed, generate id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed))
+		return
+	}
+	cluster.ID = int64(id)
+
+	now := time.Now().Unix()
+	cluster.Revision = table.Revision{
+		Creator:    ctx.Kit.User,
+		Modifier:   ctx.Kit.User,
+		CreateTime: now,
+		LastTime:   now,
+	}
+	cluster.SupplierAccount = ctx.Kit.SupplierAccount
+
+	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
+	if err != nil {
+		blog.Errorf("create cluster failed, db insert failed, doc: %+v, err: %+v, rid: %s", cluster, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed))
+		return
+	}
+
+	ctx.RespEntity(cluster)
 }
 
 // BatchDeleteCluster delete clusters.
 func (s *service) BatchDeleteCluster(ctx *rest.Contexts) {
-
-	option := new(types.DeleteClusterOption)
+	option := new(types.DeleteClusterByIDsOption)
 	if err := ctx.DecodeInto(option); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", ctx.Request.PathParameter("bk_biz_id"),
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
+	if err := option.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
 		return
 	}
 
-	filter := make(map[string]interface{}, 0)
-	if len(option.IDs) > 0 {
-		filter = map[string]interface{}{
-			common.BKAppIDField:   bizID,
-			common.BKOwnerIDField: ctx.Kit.SupplierAccount,
-			types.BKIDField: map[string]interface{}{
-				common.BKDBIN: option.IDs,
-			},
-		}
+	filter := map[string]interface{}{
+		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+		types.BKIDField: map[string]interface{}{
+			common.BKDBIN: option.IDs,
+		},
 	}
+
 	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

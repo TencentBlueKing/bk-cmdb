@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ import (
 )
 
 // FindNodePathForHost find node path for host
-func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
+func (s *service) FindNodePathForHost(ctx *rest.Contexts) {
 	req := new(types.HostPathOption)
 	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
@@ -101,7 +101,7 @@ func (s *Service) FindNodePathForHost(ctx *rest.Contexts) {
 
 // getHostNodeRelation To obtain the relationship between the host and node, it should be noted
 // that returning nil means that there is no node on the host, which is legal.
-func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.HostNodeRelation, error) {
+func (s *service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.HostNodeRelation, error) {
 	cond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 	fields := []string{
 		common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, common.BKHostIDField,
@@ -112,7 +112,7 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 		DisableCounter: true,
 	}
 
-	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	resp, ccErr := s.ClientSet.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if ccErr != nil {
 		blog.Errorf("find node failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
@@ -143,7 +143,7 @@ func (s *Service) getHostNodeRelation(kit *rest.Kit, hostIDs []int64) (*types.Ho
 	}, nil
 }
 
-func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[int64]string, error) {
+func (s *service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[int64]string, error) {
 	cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs}}
 	fields := []string{common.BKFieldID, common.BKFieldName}
 	query := &metadata.QueryCondition{
@@ -152,7 +152,7 @@ func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[i
 		DisableCounter: true,
 	}
 
-	resp, ccErr := s.Engine.CoreAPI.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
+	resp, ccErr := s.ClientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 	if ccErr != nil {
 		blog.Errorf("find cluster failed, cond: %v, err: %v, rid: %s", query, ccErr, kit.Rid)
 		return nil, ccErr
@@ -176,7 +176,7 @@ func (s *Service) getClusterIDWithName(kit *rest.Kit, clusterIDs []int64) (map[i
 	return idWithName, nil
 }
 
-func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]string, error) {
+func (s *service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]string, error) {
 	query := &metadata.QueryCondition{
 		Fields: []string{
 			common.BKAppIDField,
@@ -214,7 +214,7 @@ func (s *Service) getBizIDWithName(kit *rest.Kit, bizIDs []int64) (map[int64]str
 }
 
 // BatchDeleteNode delete nodes.
-func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
+func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 	option := new(types.BatchDeleteNodeOption)
 	if err := ctx.DecodeInto(option); err != nil {
 		ctx.RespAutoError(err)
@@ -226,18 +226,11 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		err = s.Logics.KubeOperation().BatchDeleteNode(ctx.Kit, bizID, option)
+		err = s.Logics.KubeOperation().BatchDeleteNode(ctx.Kit, option.BizID, option)
 		if err != nil {
-			blog.Errorf("delete node failed, biz: %d, option: %+v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("delete node failed, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -252,8 +245,7 @@ func (s *Service) BatchDeleteNode(ctx *rest.Contexts) {
 }
 
 // BatchCreateNode batch create nodes.
-func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
-
+func (s *service) BatchCreateNode(ctx *rest.Contexts) {
 	data := new(types.CreateNodesOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
@@ -266,17 +258,10 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
 	var ids []int64
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ids, err = s.Logics.KubeOperation().BatchCreateNode(ctx.Kit, data, bizID)
+		ids, err = s.Logics.KubeOperation().BatchCreateNode(ctx.Kit, data, data.BizID)
 		if err != nil {
 			blog.Errorf("create node failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
@@ -293,8 +278,7 @@ func (s *Service) BatchCreateNode(ctx *rest.Contexts) {
 }
 
 // SearchNodes query nodes based on user-specified criteria
-func (s *Service) SearchNodes(ctx *rest.Contexts) {
-
+func (s *service) SearchNodes(ctx *rest.Contexts) {
 	searchCond := new(types.QueryNodeOption)
 	if err := ctx.DecodeInto(searchCond); err != nil {
 		blog.Errorf("failed to parse the params, error: %v, rid: %s", err, ctx.Kit.Rid)
@@ -305,13 +289,6 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	if cErr := searchCond.Validate(); cErr.ErrCode != 0 {
 		blog.Errorf("validate request failed, err: %v, rid: %s", cErr, ctx.Kit.Rid)
 		ctx.RespAutoError(cErr.ToCCError(ctx.Kit.CCError))
-		return
-	}
-
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
 		return
 	}
 
@@ -328,12 +305,12 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 
 	// regardless of whether there is bk_biz_id or supplier_account in the condition,
 	// it is uniformly replaced with bk_biz_id in url and supplier_account in kit.
-	filter[types.BKBizIDField] = bizID
+	filter[types.BKBizIDField] = searchCond.BizID
 
 	// count biz in cluster enable count is set
 	if searchCond.Page.EnableCount {
 		filter := []map[string]interface{}{filter}
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		counts, err := s.ClientSet.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBaseNode, filter)
 		if err != nil {
 			blog.Errorf("count node failed, cond: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
@@ -350,7 +327,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 		Fields:         searchCond.Fields,
 		DisableCounter: true,
 	}
-	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	result, err := s.ClientSet.CoreService().Kube().SearchNode(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		return
@@ -358,8 +335,7 @@ func (s *Service) SearchNodes(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(0, result.Data)
 }
 
-func (s *Service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64) ([]types.Node, error) {
-
+func (s *service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64) ([]types.Node, error) {
 	// duplicate nodeIDs are not allowed
 	nodeIDMap := make(map[int64]struct{})
 	for _, nodeID := range nodeIDs {
@@ -380,12 +356,12 @@ func (s *Service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64)
 		DisableCounter: true,
 	}
 
-	result, err := s.Engine.CoreAPI.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	result, err := s.ClientSet.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
-		//ctx.RespAutoError(err)
 		return nil, err
 	}
+
 	if len(nodeIDs) != len(result.Data) {
 		blog.Errorf("the number of node obtained is inconsistent with the param, bizID: %d, ids: %#v, err: %v, "+
 			"rid: %s", bizID, nodeIDs, err, kit.Rid)
@@ -395,8 +371,7 @@ func (s *Service) getUpdateNodeInfo(kit *rest.Kit, bizID int64, nodeIDs []int64)
 }
 
 // UpdateNodeFields update the node field.
-func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
-
+func (s *service) UpdateNodeFields(ctx *rest.Contexts) {
 	data := new(types.UpdateNodeOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
@@ -408,22 +383,15 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		return
 	}
 
-	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
-	if err != nil {
-		blog.Errorf("failed to parse the biz id, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	nodes, err := s.getUpdateNodeInfo(ctx.Kit, bizID, data.IDs)
+	nodes, err := s.getUpdateNodeInfo(ctx.Kit, data.BizID, data.IDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.Engine.CoreAPI.CoreService().Kube().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
-			data); err != nil {
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		if err = s.ClientSet.CoreService().Kube().UpdateNodeFields(ctx.Kit.Ctx, ctx.Kit.Header,
+			&data.UpdateNodeByIDsOption); err != nil {
 			blog.Errorf("update node failed, data: %+v, err: %v, rid: %s", data, err, ctx.Kit.Rid)
 			return err
 		}
@@ -436,7 +404,7 @@ func (s *Service) UpdateNodeFields(ctx *rest.Contexts) {
 		}
 
 		generateAuditParameter.WithUpdateFields(updateFields)
-		audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, nodes)
 		if err != nil {
 			blog.Errorf("generate audit log failed, err: %v, rid: %s", err, ctx.Kit.Rid)

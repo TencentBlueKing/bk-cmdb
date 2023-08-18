@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/table"
 )
@@ -84,6 +83,7 @@ const (
 
 // PodQueryOption pod query request
 type PodQueryOption struct {
+	BizID  int64              `json:"bk_biz_id"`
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields,omitempty"`
 	Page   metadata.BasePage  `json:"page,omitempty"`
@@ -91,6 +91,13 @@ type PodQueryOption struct {
 
 // Validate validate PodQueryOption
 func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
+	if p.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if err := p.Page.ValidateWithEnableCount(false, podQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -108,22 +115,6 @@ func (p *PodQueryOption) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
-}
-
-// BuildCond build query pod condition
-func (p *PodQueryOption) BuildCond(bizID int64) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-
-	if p.Filter != nil {
-		filterCond, err := p.Filter.ToMgo()
-		if err != nil {
-			return nil, err
-		}
-		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
-	}
-	return cond, nil
 }
 
 // Pod pod details
@@ -224,7 +215,7 @@ func (option *Container) validateCreate() ccErr.RawErrorInfo {
 // SysSpec the relationship information related to the container
 // that stores the cc, all types share this structure.
 type SysSpec struct {
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 	WorkloadSpec    `json:",inline" bson:",inline"`
 	HostID          int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	NodeID          int64 `json:"bk_node_id,omitempty" bson:"bk_node_id"`
@@ -269,7 +260,6 @@ type CreatePodsOption struct {
 
 // Validate validate the CreatePodsOption
 func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
-
 	if len(option.Data) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -318,6 +308,8 @@ func (option *CreatePodsOption) Validate() ccErr.RawErrorInfo {
 
 // ContainerQueryOption container query request
 type ContainerQueryOption struct {
+	BizID  int64              `json:"bk_biz_id"`
+	PodID  int64              `json:"bk_pod_id"`
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields,omitempty"`
 	Page   metadata.BasePage  `json:"page,omitempty"`
@@ -325,6 +317,20 @@ type ContainerQueryOption struct {
 
 // Validate validate ContainerQueryOption
 func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
+	if p.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if p.PodID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{BKPodIDField},
+		}
+	}
+
 	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -341,20 +347,6 @@ func (p *ContainerQueryOption) Validate() ccErr.RawErrorInfo {
 		}
 	}
 	return ccErr.RawErrorInfo{}
-}
-
-// BuildCond build query container condition
-func (p *ContainerQueryOption) BuildCond() (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{}
-
-	if p.Filter != nil {
-		filterCond, err := p.Filter.ToMgo()
-		if err != nil {
-			return nil, err
-		}
-		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
-	}
-	return cond, nil
 }
 
 // CreatePodsResult create pods results in batches.

@@ -18,13 +18,14 @@
 package kube
 
 import (
-	"errors"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/source_controller/coreservice/core"
@@ -41,229 +42,311 @@ func New() core.KubeOperation {
 	return kube
 }
 
-func validateNodeData(kit *rest.Kit, bizID int64, node types.OneNodeCreateOption) ccErr.CCErrorCoder {
-
-	clusterFilter := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		types.BKIDField:     node.ClusterID,
-	}
-	util.SetModOwner(clusterFilter, kit.SupplierAccount)
-
-	cnt, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("query database failed, filter: %v, err: %v, rid: %s", clusterFilter, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if cnt != 1 {
-		blog.Errorf("query database num error, filter: %v, error: %v, rid: %s", clusterFilter, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	filter := map[string]interface{}{
-		common.BKAppIDField:  bizID,
-		common.BKHostIDField: node.HostID,
-	}
-	util.SetModOwner(filter, kit.SupplierAccount)
-
-	cnt, err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Count(kit.Ctx)
-	if err != nil {
-		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if cnt <= 0 {
-		blog.Errorf("query host module config count error, err: %s, rid:%s", err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	return nil
-}
-
 // GetSysSpecInfoByCond get the spec redundancy information required by the pod.
-func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64,
-	hostID int64) (*types.SysSpec, bool, ccErr.CCErrorCoder) {
-	// 通过workload kind 获取表名
-	tableName, err := spec.Ref.Kind.Table()
-	if err != nil {
-		blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s", spec.Ref.Kind, err, kit.Rid)
-		return nil, false, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, podsInfos []types.PodsInfoArray) ([]types.SysSpec, []int64,
+	ccErr.CCErrorCoder) {
+
+	if len(podsInfos) == 0 {
+		return make([]types.SysSpec, 0), make([]int64, 0), nil
 	}
+
+	wlIDMap := make(map[types.WorkloadType][]int64)
+	nodeIDs := make([]int64, 0)
+	for _, info := range podsInfos {
+		for _, pod := range info.Pods {
+			spec := pod.Spec
+			wlIDMap[spec.Ref.Kind] = append(wlIDMap[spec.Ref.Kind], spec.Ref.ID)
+			nodeIDs = append(nodeIDs, spec.NodeID)
+		}
+	}
+
+	wlMap, err := p.getWlInfo(kit, wlIDMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	clusterPlatBizMap, err := p.getSharedClusterInfo(kit, podsInfos, wlMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	nodeMap, noPodNodeIDs, err := p.getNodeInfo(kit, nodeIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// combine all pod related info to system spec array
+	sysSpecArr := make([]types.SysSpec, 0)
+	for _, info := range podsInfos {
+		for _, pod := range info.Pods {
+			spec := pod.Spec
+			workload := wlMap[spec.Ref.Kind][spec.Ref.ID]
+
+			node, exists := nodeMap[spec.NodeID]
+			if !exists {
+				blog.Errorf("pod related node(id: %d) not exists, rid: %s", spec.NodeID, kit.Rid)
+				return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNode)
+			}
+
+			if spec.ClusterID != node.ClusterID || clusterPlatBizMap[node.ClusterID] != node.BizID {
+				blog.Errorf("pod related node(%+v) is invalid, rid: %s", node, kit.Rid)
+				return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNode)
+			}
+
+			if node.Name == nil {
+				blog.Errorf("node(id: %d) name is nil, rid: %s", spec.NodeID, kit.Rid)
+				return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNode)
+			}
+
+			sysSpecArr = append(sysSpecArr, types.SysSpec{
+				WorkloadSpec: types.WorkloadSpec{
+					NamespaceSpec: types.NamespaceSpec{
+						ClusterSpec: types.ClusterSpec{
+							BizID:      workload.BizID,
+							ClusterUID: workload.ClusterUID,
+							ClusterID:  spec.ClusterID,
+						},
+						Namespace:   workload.Namespace,
+						NamespaceID: spec.NamespaceID,
+					},
+					Ref: &types.Reference{Kind: spec.Ref.Kind, Name: workload.Name, ID: spec.Ref.ID},
+				},
+				SupplierAccount: kit.SupplierAccount,
+				HostID:          pod.HostID,
+				NodeID:          spec.NodeID,
+				Node:            *node.Name,
+			})
+		}
+	}
+
+	return sysSpecArr, noPodNodeIDs, nil
+}
+
+// getWlInfo get workload id to workload info map
+func (p *kubeOperation) getWlInfo(kit *rest.Kit, wlIDMap map[types.WorkloadType][]int64) (
+	map[types.WorkloadType]map[int64]types.WorkloadBase, ccErr.CCErrorCoder) {
+
+	wlMap := make(map[types.WorkloadType]map[int64]types.WorkloadBase)
+
+	for kind, ids := range wlIDMap {
+		// 通过workload kind 获取表名
+		tableName, err := kind.Table()
+		if err != nil {
+			blog.Errorf("get collection failed, kind: %s, err: %v, rid: %s", kind, err, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeWorkload)
+		}
+
+		filter := map[string]interface{}{
+			types.BKIDField: mapstr.MapStr{common.BKDBIN: ids},
+		}
+		util.SetQueryOwner(filter, kit.SupplierAccount)
+
+		kubeField := []string{types.BKIDField, types.KubeNameField, types.BKBizIDField, types.BKClusterIDFiled,
+			types.ClusterUIDField, types.BKNamespaceIDField, types.NamespaceField}
+
+		workloads := make([]types.WorkloadBase, 0)
+		err = mongodb.Client().Table(tableName).Find(filter).Fields(kubeField...).All(kit.Ctx, &workloads)
+		if err != nil {
+			blog.Errorf("get workload failed, err: %v, filter: %v, rid:%s", err, filter, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		}
+
+		wlMap[kind] = make(map[int64]types.WorkloadBase)
+
+		for _, workload := range workloads {
+			wlMap[kind][workload.ID] = workload
+		}
+	}
+
+	return wlMap, nil
+}
+
+func (p *kubeOperation) getSharedClusterInfo(kit *rest.Kit, podsInfos []types.PodsInfoArray,
+	wlMap map[types.WorkloadType]map[int64]types.WorkloadBase) (map[int64]int64, ccErr.CCErrorCoder) {
+
+	if len(podsInfos) == 0 {
+		return make(map[int64]int64), nil
+	}
+
+	// check if workload info matches pod info, and check if namespace biz id is the same with input biz id
+	matchingNsIDMap := make(map[int64][]int64)
+	mismatchNsIDMap := make(map[int64][]int64)
+	matchingNsClusterIDMap := make(map[int64]int64)
+	mismatchNsBizIDMap := make(map[int64]int64)
+
+	for _, info := range podsInfos {
+		for _, pod := range info.Pods {
+			spec := pod.Spec
+
+			workload, exists := wlMap[spec.Ref.Kind][spec.Ref.ID]
+			if !exists {
+				blog.Errorf("pod related workload(%+v) not exists, rid: %s", spec.Ref, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeWorkload)
+			}
+
+			if spec.NamespaceID != workload.NamespaceID || spec.ClusterID != workload.ClusterID {
+				blog.Errorf("pod(spec: %+v) related workload(%+v) is invalid, rid: %s", spec, workload, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeWorkload)
+			}
+
+			if info.BizID == workload.BizID {
+				matchingNsClusterIDMap[spec.NamespaceID] = spec.ClusterID
+				matchingNsIDMap[info.BizID] = append(matchingNsIDMap[info.BizID], spec.NamespaceID)
+				continue
+			}
+
+			mismatchNsBizIDMap[spec.NamespaceID] = info.BizID
+			mismatchNsIDMap[info.BizID] = append(mismatchNsIDMap[info.BizID], spec.NamespaceID)
+		}
+	}
+
+	// get namespace related shared cluster relations
+	sharedNsCond := make([]mapstr.MapStr, 0)
+	for bizID, ids := range matchingNsIDMap {
+		sharedNsCond = append(sharedNsCond, mapstr.MapStr{
+			types.BKBizIDField:       bizID,
+			types.BKNamespaceIDField: mapstr.MapStr{common.BKDBIN: ids},
+		})
+	}
+
+	for bizID, ids := range mismatchNsIDMap {
+		sharedNsCond = append(sharedNsCond, mapstr.MapStr{
+			types.BKAsstBizIDField:   bizID,
+			types.BKNamespaceIDField: mapstr.MapStr{common.BKDBIN: ids},
+		})
+	}
+
+	sharedRelCond := mapstr.MapStr{common.BKDBOR: sharedNsCond}
+	sharedRel := make([]types.NsSharedClusterRel, 0)
+	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(sharedRelCond).All(kit.Ctx, &sharedRel)
+	if err != nil {
+		blog.Errorf("get shared cluster relations failed, err: %v, cond: %v, rid:%s", err, sharedRelCond, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// checks if namespace biz ids are valid, then generate cluster and its plat biz map for node check
+	clusterPlatBizMap := make(map[int64]int64)
+	for _, rel := range sharedRel {
+		clusterPlatBizMap[rel.ClusterID] = rel.AsstBizID
+
+		inputBiz, exists := mismatchNsBizIDMap[rel.NamespaceID]
+		if !exists {
+			continue
+		}
+
+		if inputBiz != rel.AsstBizID {
+			blog.Errorf("shared ns %d input biz %d not matches actual asst biz %d, rid: %s", rel.NamespaceID, inputBiz,
+				rel.AsstBizID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNamespace)
+		}
+
+		delete(mismatchNsBizIDMap, rel.NamespaceID)
+	}
+
+	if len(mismatchNsBizIDMap) > 0 {
+		blog.Errorf("some shared ns info(%+v) is invalid, rid: %s", mismatchNsBizIDMap, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNamespace)
+	}
+
+	// fill matching ns related normal cluster and its id to clusterPlatBizMap
+	for bizID, nsIDs := range matchingNsIDMap {
+		for _, nsID := range nsIDs {
+			clusterID := matchingNsClusterIDMap[nsID]
+			_, exists := clusterPlatBizMap[clusterID]
+			if !exists {
+				clusterPlatBizMap[clusterID] = bizID
+			}
+		}
+	}
+
+	return clusterPlatBizMap, nil
+}
+
+// getNodeInfo get node id to node info map
+func (p *kubeOperation) getNodeInfo(kit *rest.Kit, nodeIDs []int64) (map[int64]types.Node, []int64,
+	ccErr.CCErrorCoder) {
 
 	filter := map[string]interface{}{
-		common.BKAppIDField:      bizID,
-		types.BKClusterIDFiled:   spec.ClusterID,
-		types.BKNamespaceIDField: spec.NamespaceID,
-		types.BKIDField:          spec.Ref.ID,
+		types.BKIDField: mapstr.MapStr{common.BKDBIN: nodeIDs},
 	}
-	util.SetModOwner(filter, kit.SupplierAccount)
+	util.SetQueryOwner(filter, kit.SupplierAccount)
 
-	kubeField := []string{types.ClusterUIDField, types.NamespaceField, types.KubeNameField}
+	fields := []string{types.BKIDField, types.KubeNameField, types.BKBizIDField, types.BKClusterIDFiled,
+		types.HasPodField}
 
-	workload := make([]map[string]interface{}, 0)
-	err = mongodb.Client().Table(tableName).Find(filter).Fields(kubeField...).All(kit.Ctx, &workload)
+	nodes := make([]types.Node, 0)
+	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(filter).Fields(fields...).All(kit.Ctx, &nodes)
 	if err != nil {
-		blog.Errorf("query host module config failed, err: %s, rid:%s", err, kit.Rid)
-		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("get node failed, err: %v, filter: %v, rid:%s", err, filter, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	if len(workload) != 1 {
-		blog.Errorf("workload gets the wrong amount, filter: %+v, num: %d, rid: %s", filter, len(workload), kit.Rid)
-		return nil, false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed,
-			errors.New("workload gets the wrong num"))
+	nodeMap := make(map[int64]types.Node)
+	noPodNodeIDs := make([]int64, 0, len(nodes))
+	for _, node := range nodes {
+		nodeMap[node.ID] = node
+
+		// if node does not have pods previously, returns these ids to set their hasPod flag to true
+		if node.HasPod == nil || !*node.HasPod {
+			noPodNodeIDs = append(noPodNodeIDs, node.ID)
+		}
 	}
 
-	clusterUID := util.GetStrByInterface(workload[0][types.ClusterUIDField])
-	if err != nil {
-		blog.Errorf("convert clusterUID failed, workload: %+v, rid: %s", workload, kit.Rid)
-		return nil, false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, errors.New("cluster uid type error"))
-	}
-
-	namespace := util.GetStrByInterface(workload[0][types.NamespaceField])
-	if namespace == "" {
-		blog.Errorf("convert namespace failed, workload: %+v, rid: %s", workload, kit.Rid)
-		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	workloadName := util.GetStrByInterface(workload[0][types.KubeNameField])
-	if workloadName == "" {
-		blog.Errorf("convert workloadName failed, workload: %+v, rid: %s", workload, kit.Rid)
-		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	nodeName, hasPod, err := p.getNodeInfo(kit, spec, bizID)
-	if err != nil {
-		return nil, false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	return &types.SysSpec{
-		WorkloadSpec: types.WorkloadSpec{
-			NamespaceSpec: types.NamespaceSpec{
-				ClusterSpec: types.ClusterSpec{
-					BizID:      bizID,
-					ClusterUID: clusterUID,
-					ClusterID:  spec.ClusterID,
-				},
-				Namespace:   namespace,
-				NamespaceID: spec.NamespaceID,
-			},
-			Ref: types.Reference{Kind: spec.Ref.Kind, Name: workloadName, ID: spec.Ref.ID},
-		},
-		SupplierAccount: kit.SupplierAccount,
-		HostID:          hostID,
-		NodeID:          spec.NodeID,
-		Node:            nodeName,
-	}, hasPod, nil
+	return nodeMap, noPodNodeIDs, nil
 }
 
-func (p *kubeOperation) getNodeInfo(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64) (string, bool, error) {
+func (p *kubeOperation) getNodeRelatedInfo(kit *rest.Kit, data []types.OneNodeCreateOption) (map[int64]types.Cluster,
+	map[int64]int64, ccErr.CCErrorCoder) {
 
-	nodeFilter := map[string]interface{}{
-		common.BKAppIDField:    bizID,
-		common.BKOwnerIDField:  kit.SupplierAccount,
-		types.BKClusterIDFiled: spec.ClusterID,
-		types.BKIDField:        spec.NodeID,
-	}
-	util.SetModOwner(nodeFilter, kit.SupplierAccount)
-
-	nodes := make([]map[string]interface{}, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(nodeFilter).
-		Fields(types.KubeNameField, types.HasPodField).All(kit.Ctx, &nodes)
-	if err != nil {
-		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", nodeFilter, err, kit.Rid)
-		return "", false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	if len(nodes) != 1 {
-		blog.Errorf("node gets the wrong amount, filter: %+v, num: %d, rid: %s", nodeFilter, len(nodes), kit.Rid)
-		return "", false, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
-	}
-
-	nodeName := util.GetStrByInterface(nodes[0][types.KubeNameField])
-	if err != nil {
-		blog.Errorf("convert nodeName failed, workload: %+v, rid: %s", nodes, kit.Rid)
-		return "", false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-
-	var hasPod bool
-	if nodes[0][types.HasPodField] == nil {
-		return nodeName, hasPod, nil
-	}
-
-	value, ok := nodes[0][types.HasPodField].(bool)
-	if !ok {
-		blog.Errorf("hasPod type illegal, filter: %+v, hasPod: %+v, rid: %s", nodeFilter,
-			nodes[0][types.HasPodField], kit.Rid)
-		return "", false, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	hasPod = value
-
-	return nodeName, hasPod, nil
-}
-
-func (p *kubeOperation) getClusterInfo(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
-	map[int64]string, ccErr.CCErrorCoder) {
-	clusterIDs := make([]int64, 0)
-	clusterIDName := make(map[int64]string)
-	for _, info := range data {
-		clusterIDs = append(clusterIDs, info.ClusterID)
-		clusterIDName[info.ClusterID] = *info.Name
+	clusterIDs := make([]int64, len(data))
+	hostIDs := make([]int64, len(data))
+	for i, info := range data {
+		clusterIDs[i] = info.ClusterID
+		hostIDs[i] = info.HostID
 	}
 
 	// 获取cluster信息
 	clusterFilter := map[string]interface{}{
-		common.BKAppIDField: bizID,
-		types.BKIDField:     map[string]interface{}{common.BKDBIN: clusterIDs},
+		types.BKIDField: map[string]interface{}{common.BKDBIN: clusterIDs},
 	}
 	util.SetModOwner(clusterFilter, kit.SupplierAccount)
 
 	clusters := make([]types.Cluster, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).
-		Fields(types.UidField, types.BKIDField).All(kit.Ctx, &clusters)
+		Fields(types.BKBizIDField, types.UidField, types.BKIDField).All(kit.Ctx, &clusters)
 	if err != nil {
 		blog.Errorf("query cluster failed, filter: %+v, err: %s, rid:%s", clusterFilter, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	clusterMap := make(map[int64]string)
+	clusterMap := make(map[int64]types.Cluster)
 	for _, cluster := range clusters {
-		if cluster.Uid == nil {
-			blog.Errorf("query cluster uid failed, filter: %+v, err: %s, rid:%s", clusterFilter, err, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed, types.ClusterUIDField)
-		}
-		clusterMap[cluster.ID] = *cluster.Uid
-	}
-	return clusterMap, nil
-}
-
-func checkNodeInfoDuplicatedOrNot(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption,
-	nameClusterID map[string]int64) ccErr.CCErrorCoder {
-
-	filters := make([]map[string]interface{}, 0)
-	for _, node := range data {
-		filter := map[string]interface{}{
-			common.BKAppIDField:    bizID,
-			types.BKClusterIDFiled: nameClusterID[*node.Name],
-			types.KubeNameField:    *node.Name,
-		}
-		util.SetModOwner(filter, kit.SupplierAccount)
-		filters = append(filters, filter)
+		clusterMap[cluster.ID] = cluster
 	}
 
-	cond := map[string]interface{}{
-		common.BKDBOR: filters,
+	// get host id to biz id map
+	hostFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
 	}
-	count, err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(cond).Count(kit.Ctx)
+	util.SetModOwner(hostFilter, kit.SupplierAccount)
+
+	relations := make([]metadata.ModuleHost, 0)
+	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(hostFilter).
+		Fields(common.BKAppIDField, common.BKHostIDField).All(kit.Ctx, &relations)
 	if err != nil {
-		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", cond, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		blog.Errorf("query host relation failed, filter: %+v, err: %s, rid:%s", hostFilter, err, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if count > 0 {
-		blog.Errorf("create node failed, there are duplicate node names, filter: %+v, rid: %s", cond, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "names")
+
+	hostMap := make(map[int64]int64)
+	for _, rel := range relations {
+		hostMap[rel.HostID] = rel.AppID
 	}
-	return nil
+	return clusterMap, hostMap, nil
 }
 
 // BatchCreateNode create container node data in batches.
-func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) (
+func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreateOption) (
 	[]*types.Node, ccErr.CCErrorCoder) {
 
 	nameClusterID := make(map[string]int64)
@@ -274,15 +357,10 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types
 		nameClusterID[*node.Name] = node.ClusterID
 	}
 
-	// cluster_id=>cluster_uid
-	clusterMap, cErr := p.getClusterInfo(kit, bizID, data)
+	// get map[clusterID]cluster & map[hostID]bizID for validation
+	clusterMap, hostMap, cErr := p.getNodeRelatedInfo(kit, data)
 	if cErr != nil {
 		return nil, cErr
-	}
-
-	if err := checkNodeInfoDuplicatedOrNot(kit, bizID, data, nameClusterID); err != nil {
-		return nil, cErr
-
 	}
 
 	// generate ids field
@@ -297,15 +375,23 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types
 	hasPod := false
 
 	for idx, node := range data {
-		if err := validateNodeData(kit, bizID, node); err != nil {
-			return nil, err
+		cluster, exists := clusterMap[node.ClusterID]
+		if !exists || cluster.BizID != node.BizID || cluster.Uid == nil {
+			blog.Errorf("node(biz %d) related cluster %d is invalid, rid: %s", node.BizID, node.ClusterID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDFiled)
 		}
+
+		if hostMap[node.HostID] != node.BizID {
+			blog.Errorf("node(biz %d) related host %d is invalid, rid: %s", node.BizID, node.HostID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		}
+
 		node := &types.Node{
 			ID:               int64(ids[idx]),
-			BizID:            bizID,
+			BizID:            node.BizID,
 			HostID:           node.HostID,
 			ClusterID:        node.ClusterID,
-			ClusterUID:       clusterMap[node.ClusterID],
+			ClusterUID:       *cluster.Uid,
 			Name:             node.Name,
 			Roles:            node.Roles,
 			Labels:           node.Labels,
@@ -336,89 +422,35 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, bizID int64, data []types
 	return result, nil
 }
 
-func checkClusterInfoDuplicatedOrNot(kit *rest.Kit, bizID int64, data *types.Cluster) ccErr.CCErrorCoder {
-
-	filterName := map[string]interface{}{
-		common.BKFieldName:  *data.Name,
-		common.BKAppIDField: bizID,
-	}
-	util.SetModOwner(filterName, kit.SupplierAccount)
-
-	filterUid := map[string]interface{}{
-		common.BKFieldName:  *data.Uid,
-		common.BKAppIDField: bizID,
-	}
-	util.SetModOwner(filterUid, kit.SupplierAccount)
-
-	filter := map[string]interface{}{
-		common.BKDBOR: []map[string]interface{}{
-			filterName, filterUid,
-		},
+// CheckPlatBizSharedNs check if platform biz's ns is in shared cluster and if its related biz matches the plat biz
+func (p *kubeOperation) CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][]int64) ccErr.CCErrorCoder {
+	if len(bizNsMap) == 0 {
+		return nil
 	}
 
-	count, err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Count(kit.Ctx)
+	nsCnt := 0
+	conds := make([]mapstr.MapStr, 0)
+
+	for bizID, nsIDs := range bizNsMap {
+		nsIDs = util.IntArrayUnique(nsIDs)
+		nsCnt += len(nsIDs)
+		conds = append(conds, mapstr.MapStr{
+			types.BKAsstBizIDField:   bizID,
+			types.BKNamespaceIDField: map[string]interface{}{common.BKDBIN: nsIDs},
+		})
+	}
+
+	cond := mapstr.MapStr{common.BKDBOR: conds}
+	cnt, err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(cond).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("count cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("count shared ns failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if count > 0 {
-		blog.Errorf("create cluster failed, name or uid duplicated, name: %s, uid: %s, rid: %s", data.Name,
-			data.Uid, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "name or uid")
+
+	if int(cnt) != nsCnt {
+		blog.Errorf("shared ns count %d is invalid, cond: %+v, rid: %s", cnt, cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
+
 	return nil
-}
-
-// CreateCluster create cluster instance.
-func (p *kubeOperation) CreateCluster(kit *rest.Kit, bizID int64, data *types.Cluster) (*types.Cluster,
-	ccErr.CCErrorCoder) {
-
-	// it is necessary to judge whether there is duplicate data here,
-	// to prevent subsequent calls to coreservice directly and lack of verification.
-	if err := data.ValidateCreate(); err.ErrCode != 0 {
-		blog.Errorf("create cluster failed, data: %+v, err: %+v, rid: %s", data, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
-	}
-
-	if err := checkClusterInfoDuplicatedOrNot(kit, bizID, data); err != nil {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
-	}
-
-	// generate id field
-	id, err := mongodb.Client().NextSequence(kit.Ctx, types.BKTableNameBaseCluster)
-	if err != nil {
-		blog.Errorf("create cluster failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
-	}
-
-	now := time.Now().Unix()
-	cluster := &types.Cluster{
-		ID:               int64(id),
-		BizID:            bizID,
-		SupplierAccount:  kit.SupplierAccount,
-		Name:             data.Name,
-		SchedulingEngine: data.SchedulingEngine,
-		Uid:              data.Uid,
-		Xid:              data.Xid,
-		Version:          data.Version,
-		NetworkType:      data.NetworkType,
-		Region:           data.Region,
-		Vpc:              data.Vpc,
-		Environment:      data.Environment,
-		NetWork:          data.NetWork,
-		Type:             data.Type,
-		Revision: table.Revision{
-			CreateTime: now,
-			LastTime:   now,
-			Creator:    kit.User,
-			Modifier:   kit.User,
-		},
-	}
-
-	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(kit.Ctx, cluster); err != nil {
-		blog.Errorf("create cluster failed, db insert failed, doc: %+v, err: %+v, rid: %s", cluster, err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed, "cluster")
-	}
-
-	return cluster, nil
 }

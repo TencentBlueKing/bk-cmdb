@@ -15,13 +15,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package kube
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
@@ -32,14 +32,7 @@ import (
 )
 
 // FindPodPath find pod path
-func (s *Service) FindPodPath(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) FindPodPath(ctx *rest.Contexts) {
 	req := new(types.PodPathOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
@@ -51,25 +44,21 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		return
 	}
 
-	bizIDWithName, err := s.getBizIDWithName(ctx.Kit, []int64{bizID})
+	// compatible for shared cluster scenario
+	podIDCond := filtertools.GenAtomFilter(common.BKFieldID, filter.In, req.PodIDs)
+	cond, err := s.Logics.KubeOperation().GenSharedNsListCond(ctx.Kit, types.KubePod, req.BizID, podIDCond)
 	if err != nil {
-		blog.Errorf("get bizID with name failed, bizID: %s, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	bizName := bizIDWithName[bizID]
 
-	cond := mapstr.MapStr{
-		common.BKAppIDField: mapstr.MapStr{common.BKDBEQ: bizID},
-		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: req.PodIDs},
-	}
-	fields := []string{common.BKFieldID, types.BKClusterIDFiled, types.BKNamespaceIDField, types.NamespaceField,
-		types.RefField}
+	fields := []string{common.BKFieldID, common.BKAppIDField, types.BKClusterIDFiled, types.BKNamespaceIDField,
+		types.NamespaceField, types.RefField}
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	resp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -80,9 +69,9 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 		return
 	}
 
-	paths, err := s.buildPodPaths(ctx.Kit, bizName, resp.Info)
+	paths, rawErr := s.buildPodPaths(ctx.Kit, req.BizID, resp.Info)
 	if err != nil {
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(rawErr)
 		return
 	}
 
@@ -91,9 +80,11 @@ func (s *Service) FindPodPath(ctx *rest.Contexts) {
 	})
 }
 
-func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod) ([]types.PodPath, error) {
+func (s *service) buildPodPaths(kit *rest.Kit, bizID int64, pods []types.Pod) ([]types.PodPath, error) {
 	paths := make([]types.PodPath, 0)
 	clusterIDs := make([]int64, 0)
+	allBizIDs := make([]int64, 0)
+
 	for _, pod := range pods {
 		id := pod.ID
 
@@ -118,22 +109,26 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 		}
 		namespace := pod.Namespace
 
+		if pod.Ref == nil {
+			blog.Errorf("pod %v ref is not set, rid: %s", pod, kit.Rid)
+			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefField)
+		}
 		if pod.Ref.Kind == "" {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefKindField, kit.Rid)
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, rid: %s", types.RefKindField, pod, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefKindField)
 		}
 		if pod.Ref.Name == "" {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefNameField, kit.Rid)
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, rid: %s", types.RefNameField, pod, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefNameField)
 		}
 		if pod.Ref.ID == 0 {
-			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, err: %v, rid: %s", types.RefIDField, kit.Rid)
+			blog.Errorf("get pod attribute failed, attr: %s, pod: %v, rid: %s", types.RefIDField, pod, kit.Rid)
 			return nil, fmt.Errorf("get pod attribute failed, attr: %s", types.RefIDField)
 		}
 		ref := pod.Ref
 
 		path := types.PodPath{
-			BizName:      bizName,
+			BizID:        pod.BizID,
 			ClusterID:    clusterID,
 			NamespaceID:  namespaceID,
 			Namespace:    namespace,
@@ -143,32 +138,68 @@ func (s *Service) buildPodPaths(kit *rest.Kit, bizName string, pods []types.Pod)
 			PodID:        id,
 		}
 		paths = append(paths, path)
+		allBizIDs = append(allBizIDs, pod.BizID)
 	}
 
-	if len(clusterIDs) != 0 {
-		clusterIDWithName, err := s.getClusterIDWithName(kit, clusterIDs)
-		if err != nil {
-			blog.Errorf("get cluster id with name failed, clusterIDs: %v, err: %v, rid: %s", clusterIDs, err, kit.Rid)
-			return nil, err
-		}
+	return s.combinePodPath(kit, bizID, allBizIDs, clusterIDs, paths)
+}
 
-		for idx, path := range paths {
-			paths[idx].ClusterName = clusterIDWithName[path.ClusterID]
-		}
+func (s *service) combinePodPath(kit *rest.Kit, bizID int64, allBizIDs, clusterIDs []int64, paths []types.PodPath) (
+	[]types.PodPath, error) {
+
+	// get cluster info, including biz id for shared cluster scenario
+	clusterCond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs}},
+		Fields:         []string{common.BKFieldID, common.BKFieldName},
+		DisableCounter: true,
 	}
 
-	return paths, nil
+	clusterRes, ccErr := s.ClientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, clusterCond)
+	if ccErr != nil {
+		blog.Errorf("search cluster failed, cond: %v, err: %v, rid: %s", clusterCond, ccErr, kit.Rid)
+		return nil, ccErr
+	}
+
+	clusterMap := make(map[int64]types.Cluster)
+	for _, cluster := range clusterRes.Data {
+		clusterMap[cluster.ID] = cluster
+	}
+
+	// get biz names
+	bizIDWithName, err := s.getBizIDWithName(kit, allBizIDs)
+	if err != nil {
+		blog.Errorf("get bizID with name failed, bizID: %+v, err: %v, rid: %s", allBizIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	// combine cluster and biz info for pod paths
+	sharedClusterPaths := make([]types.PodPath, 0)
+	for idx, path := range paths {
+		cluster, exists := clusterMap[path.ClusterID]
+		if !exists {
+			blog.Errorf("cluster %d not exists, rid: %s", path.ClusterID, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKClusterIDFiled)
+		}
+
+		if cluster.Name != nil {
+			path.ClusterName = *cluster.Name
+		}
+
+		if path.BizID != bizID {
+			path.BizName = bizIDWithName[path.BizID]
+			sharedClusterPaths = append(sharedClusterPaths, path)
+		}
+
+		path.BizID = bizID
+		path.BizName = bizIDWithName[bizID]
+		paths[idx] = path
+	}
+
+	return append(paths, sharedClusterPaths...), nil
 }
 
 // ListPod list pod
-func (s *Service) ListPod(ctx *rest.Contexts) {
-	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
-	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
-	if err != nil {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
-		return
-	}
-
+func (s *service) ListPod(ctx *rest.Contexts) {
 	req := new(types.PodQueryOption)
 	if err := ctx.DecodeInto(req); err != nil {
 		ctx.RespAutoError(err)
@@ -180,15 +211,15 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond(bizID)
+	// compatible for shared cluster scenario
+	cond, err := s.Logics.KubeOperation().GenSharedNsListCond(ctx.Kit, types.KubePod, req.BizID, req.Filter)
 	if err != nil {
-		blog.Errorf("build query pod condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	if req.Page.EnableCount {
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		counts, err := s.ClientSet.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBasePod, []map[string]interface{}{cond})
 		if err != nil {
 			blog.Errorf("count pod failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
@@ -208,7 +239,7 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 		Page:      req.Page,
 		Fields:    req.Fields,
 	}
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	resp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -219,8 +250,7 @@ func (s *Service) ListPod(ctx *rest.Contexts) {
 }
 
 // BatchCreatePod batch create pods.
-func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
-
+func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 	data := new(types.CreatePodsOption)
 	if err := ctx.DecodeInto(data); err != nil {
 		ctx.RespAutoError(err)
@@ -233,42 +263,8 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	filters := make([]map[string]interface{}, 0)
-	for _, info := range data.Data {
-		for _, pod := range info.Pods {
-			filter := map[string]interface{}{
-				types.BKBizIDField:       info.BizID,
-				types.BKClusterIDFiled:   pod.ClusterID,
-				types.BKNamespaceIDField: pod.NamespaceID,
-				types.BKNodeIDField:      pod.NodeID,
-				types.KubeNameField:      *pod.Name,
-				types.RefKindField:       pod.Ref.Kind,
-				types.RefIDField:         pod.Ref.ID,
-			}
-			filters = append(filters, filter)
-		}
-	}
-
-	counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-		types.BKTableNameBasePod, filters)
-	if err != nil {
-		blog.Errorf("count pods failed, filter: %#v, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	var podNum int64
-	for _, count := range counts {
-		podNum += count
-	}
-	if podNum > 0 {
-		blog.Errorf("some pods already exists and the creation fails, filter: %#v, rid: %s", filters, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.New("some pod already exists and the creation fails"))
-		return
-	}
-
 	var ids []int64
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		ids, err = s.Logics.KubeOperation().BatchCreatePod(ctx.Kit, data)
 		if err != nil {
@@ -286,7 +282,7 @@ func (s *Service) BatchCreatePod(ctx *rest.Contexts) {
 }
 
 // DeletePods delete pods and their containers
-func (s *Service) DeletePods(ctx *rest.Contexts) {
+func (s *service) DeletePods(ctx *rest.Contexts) {
 	opt := new(types.DeletePodsOption)
 	if err := ctx.DecodeInto(opt); err != nil {
 		ctx.RespAutoError(err)
@@ -299,21 +295,22 @@ func (s *Service) DeletePods(ctx *rest.Contexts) {
 	}
 
 	// get to delete pods and containers in them
-	orCond := make([]mapstr.MapStr, len(opt.Data))
+	ids := make([]int64, 0)
+	idBizMap := make(map[int64]int64)
 
-	for index, delData := range opt.Data {
-		orCond[index] = mapstr.MapStr{
-			common.BKAppIDField: delData.BizID,
-			types.BKIDField:     mapstr.MapStr{common.BKDBIN: delData.PodIDs},
+	for _, delData := range opt.Data {
+		ids = append(ids, delData.PodIDs...)
+		for _, id := range delData.PodIDs {
+			idBizMap[id] = delData.BizID
 		}
 	}
 
 	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKDBOR: orCond},
+		Condition: mapstr.MapStr{types.BKIDField: mapstr.MapStr{common.BKDBIN: ids}},
 		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
-	podResp, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	podResp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -326,8 +323,22 @@ func (s *Service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 
+	// checks if pod's namespace is a shared namespace and if its biz id is not the same with the input biz id
+	mismatchNsMap := make(map[int64][]int64)
+	for _, pod := range podResp.Info {
+		biz := idBizMap[pod.ID]
+		if pod.BizID != biz {
+			mismatchNsMap[biz] = append(mismatchNsMap[biz], pod.NamespaceID)
+		}
+	}
+
+	if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	// generate audit logs
-	audit := auditlog.NewKubeAudit(s.Engine.CoreAPI.CoreService())
+	audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
 	auditLogs, err := audit.GeneratePodAuditLog(generateAuditParameter, podResp.Info)
 	if err != nil {
@@ -336,17 +347,12 @@ func (s *Service) DeletePods(ctx *rest.Contexts) {
 	}
 
 	// delete pods
-	podIDs := make([]int64, len(podResp.Info))
-	for index, pod := range podResp.Info {
-		podIDs[index] = pod.ID
-	}
-
 	delOpt := &types.DeletePodsByIDsOption{
-		PodIDs: podIDs,
+		PodIDs: ids,
 	}
 
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Engine.CoreAPI.CoreService().Kube().DeletePods(ctx.Kit.Ctx, ctx.Kit.Header, delOpt)
+	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.ClientSet.CoreService().Kube().DeletePods(ctx.Kit.Ctx, ctx.Kit.Header, delOpt)
 		if err != nil {
 			blog.Errorf("delete pods failed, opt: %+v, del opt: %+v, err: %v, rid: %s", opt, delOpt, err, ctx.Kit.Rid)
 			return err
@@ -367,9 +373,10 @@ func (s *Service) DeletePods(ctx *rest.Contexts) {
 }
 
 // ListContainer list container
-func (s *Service) ListContainer(ctx *rest.Contexts) {
+func (s *service) ListContainer(ctx *rest.Contexts) {
 	req := new(types.ContainerQueryOption)
-	if err := ctx.DecodeInto(req); err != nil {
+	err := ctx.DecodeInto(req)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -379,15 +386,49 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := req.BuildCond()
+	// check if pod exists, compatible for shared cluster scenario
+	podQuery := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKFieldID: req.PodID},
+		Page:      metadata.BasePage{Limit: 1},
+		Fields:    []string{types.BKNamespaceIDField, common.BKAppIDField},
+	}
+	podResp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, podQuery)
 	if err != nil {
-		blog.Errorf("build query container condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get pod by id %d failed, err: %v, rid: %s", req.PodID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(podResp.Info) != 1 {
+		blog.Errorf("get no pod by id %d, rid: %s", req.PodID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKPodIDField))
+		return
+	}
+
+	if podResp.Info[0].BizID != req.BizID {
+		mismatchNsMap := map[int64][]int64{req.BizID: {podResp.Info[0].NamespaceID}}
+		if err = s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	andCond, err := filtertools.And(filtertools.GenAtomFilter(types.BKPodIDField, filter.Equal, req.PodID), req.Filter)
+	if err != nil {
+		blog.Errorf("generate container cond with pod failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	cond, err := andCond.ToMgo()
+	if err != nil {
+		blog.Errorf("parse container cond(%#v) failed, err: %v, rid: %s", andCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	if req.Page.EnableCount {
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		counts, err := s.ClientSet.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
 			types.BKTableNameBaseContainer, []map[string]interface{}{cond})
 		if err != nil {
 			blog.Errorf("count container failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
@@ -408,7 +449,7 @@ func (s *Service) ListContainer(ctx *rest.Contexts) {
 		Fields:    req.Fields,
 	}
 
-	resp, err := s.Engine.CoreAPI.CoreService().Kube().ListContainer(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	resp, err := s.ClientSet.CoreService().Kube().ListContainer(ctx.Kit.Ctx, ctx.Kit.Header, query)
 	if err != nil {
 		blog.Errorf("find container failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

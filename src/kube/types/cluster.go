@@ -46,7 +46,7 @@ var ClusterSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: RegionField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: VpcField, Type: enumor.String, IsRequired: false, IsEditable: false},
 	{Field: NetworkField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: TypeField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: TypeField, Type: enumor.String, IsRequired: true, IsEditable: true},
 	{Field: ProjectNameField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: ProjectIDField, Type: enumor.String, IsRequired: false, IsEditable: true},
 	{Field: ProjectCodeField, Type: enumor.String, IsRequired: false, IsEditable: true},
@@ -98,11 +98,33 @@ type Cluster struct {
 	Environment *string `json:"environment,omitempty" bson:"environment"`
 	// NetWork global routing network address (container overlay network) For example: ["1.1.1.0/21"]
 	NetWork *[]string `json:"network,omitempty" bson:"network"`
-	// Type cluster network type, e.g. public clusters, private clusters, etc.
-	Type *string `json:"type,omitempty" bson:"type"`
+	// Type cluster network type, e.g. INDEPENDENT_CLUSTER, SHARE_CLUSTER etc.
+	Type *ClusterType `json:"type,omitempty" bson:"type"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
+
+// ClusterType defines the type for cluster type enum
+type ClusterType string
+
+// Validate the ClusterType
+func (c ClusterType) Validate() ccErr.RawErrorInfo {
+	switch c {
+	case IndependentClusterType, SharedClusterType:
+	default:
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{TypeField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+const (
+	SharedClusterType      = "SHARE_CLUSTER"
+	IndependentClusterType = "INDEPENDENT_CLUSTER"
+)
 
 // IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.
 var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.BKOwnerIDField, BKBizIDField, ClusterUIDField}
@@ -113,20 +135,37 @@ type CreateClusterResult struct {
 	Info *Cluster `json:"data"`
 }
 
-// DeleteClusterOption delete cluster result.
-type DeleteClusterOption struct {
-	IDs []int64 `json:"ids"`
-}
-
 // CreateClusterRsp create cluster result for external call.
 type CreateClusterRsp struct {
 	metadata.BaseResp
 	Data metadata.RspID `json:"data"`
 }
 
+// DeleteClusterOption delete cluster result.
+type DeleteClusterOption struct {
+	BizID int64 `json:"bk_biz_id"`
+	DeleteClusterByIDsOption
+}
+
 // Validate validate the DeleteClusterOption
 func (option *DeleteClusterOption) Validate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
+	return option.DeleteClusterByIDsOption.Validate()
+}
+
+// DeleteClusterByIDsOption delete cluster by ids result.
+type DeleteClusterByIDsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate the DeleteClusterByIDsOption
+func (option *DeleteClusterByIDsOption) Validate() ccErr.RawErrorInfo {
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -145,6 +184,12 @@ func (option *DeleteClusterOption) Validate() ccErr.RawErrorInfo {
 
 // ValidateCreate check whether the parameters for creating a cluster are legal.
 func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
 	if option == nil {
 		return ccErr.RawErrorInfo{
@@ -155,6 +200,17 @@ func (option *Cluster) ValidateCreate() ccErr.RawErrorInfo {
 
 	if err := ValidateCreate(*option, ClusterFields); err.ErrCode != 0 {
 		return err
+	}
+
+	if option.Type == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{TypeField},
+		}
+	}
+
+	if rawErr := option.Type.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
 	}
 
 	return ccErr.RawErrorInfo{}
@@ -178,6 +234,7 @@ func (option *Cluster) validateUpdate() ccErr.RawErrorInfo {
 
 // QueryClusterOption query cluster by query builder
 type QueryClusterOption struct {
+	BizID  int64              `json:"bk_biz_id"`
 	Filter *filter.Expression `json:"filter"`
 	Page   metadata.BasePage  `json:"page"`
 	Fields []string           `json:"fields"`
@@ -185,6 +242,13 @@ type QueryClusterOption struct {
 
 // Validate the QueryClusterOption
 func (option *QueryClusterOption) Validate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
 	}
@@ -208,15 +272,38 @@ type ResponseCluster struct {
 	Data []Cluster `json:"cluster"`
 }
 
-// UpdateClusterOption update cluster request。
+// UpdateClusterOption update cluster request.
 type UpdateClusterOption struct {
+	BizID int64 `json:"bk_biz_id"`
+	UpdateClusterByIDsOption
+}
+
+// Validate the UpdateClusterOption
+func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
+	if option == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+	return option.UpdateClusterByIDsOption.Validate()
+}
+
+// UpdateClusterByIDsOption update cluster by ids request。
+type UpdateClusterByIDsOption struct {
 	IDs  []int64 `json:"ids"`
 	Data Cluster `json:"data"`
 }
 
-// Validate validate the UpdateClusterOption
-func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
-
+// Validate the UpdateClusterByIDsOption
+func (option *UpdateClusterByIDsOption) Validate() ccErr.RawErrorInfo {
 	if option == nil {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -242,4 +329,49 @@ func (option *UpdateClusterOption) Validate() ccErr.RawErrorInfo {
 	}
 
 	return ccErr.RawErrorInfo{}
+}
+
+// UpdateClusterTypeOpt update cluster type option
+type UpdateClusterTypeOpt struct {
+	BizID int64       `json:"bk_biz_id"`
+	ID    int64       `json:"id"`
+	Type  ClusterType `json:"type"`
+}
+
+// Validate the UpdateClusterTypeOpt
+func (option UpdateClusterTypeOpt) Validate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if option.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
+	if rawErr := option.Type.Validate(); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// NsSharedClusterRel shared cluster and biz relationship by namespace dimension.
+type NsSharedClusterRel struct {
+	NamespaceID     int64  `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	ClusterID       int64  `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	BizID           int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	AsstBizID       int64  `json:"bk_asst_biz_id" bson:"bk_asst_biz_id"`
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+// NsSharedClusterRelData namespace and shared cluster relation data.
+type NsSharedClusterRelData struct {
+	Count uint64               `json:"count"`
+	Info  []NsSharedClusterRel `json:"info"`
 }

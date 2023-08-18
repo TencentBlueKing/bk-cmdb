@@ -31,6 +31,7 @@ func init() {
 	registerIndexes(kubetypes.BKTableNameBaseNamespace, commNamespaceIndexes)
 	registerIndexes(kubetypes.BKTableNameBasePod, commPodIndexes)
 	registerIndexes(kubetypes.BKTableNameBaseContainer, commContainerIndexes)
+	registerIndexes(kubetypes.BKTableNameNsSharedClusterRel, nsSharedClusterRelIndexes)
 
 	workLoadTables := []string{
 		kubetypes.BKTableNameBaseDeployment, kubetypes.BKTableNameBaseDaemonSet,
@@ -337,6 +338,31 @@ var commClusterIndexes = []types.Index{
 		Keys: bson.D{
 			{kubetypes.XidField, 1},
 			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
+}
+
+var nsSharedClusterRelIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "namespace_id",
+		Keys: bson.D{
+			{kubetypes.BKNamespaceIDField, 1},
+		},
+		Background: true,
+		Unique:     true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "biz_id",
+		Keys: bson.D{
+			{kubetypes.BKBizIDField, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "asst_biz_id",
+		Keys: bson.D{
+			{kubetypes.BKAsstBizIDField, 1},
 		},
 		Background: true,
 	},

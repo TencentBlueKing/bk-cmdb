@@ -233,6 +233,9 @@ const (
 
 	// BKTableNameBaseContainer the table name of the Container
 	BKTableNameBaseContainer = "cc_ContainerBase"
+
+	// BKTableNameNsSharedClusterRel the table name of shared cluster and biz relation by namespace dimension
+	BKTableNameNsSharedClusterRel = "cc_NsSharedClusterRelation"
 )
 
 // common field names
@@ -265,6 +268,9 @@ const (
 
 	// BKBizIDField business id field
 	BKBizIDField = "bk_biz_id"
+
+	// BKAsstBizIDField asst business id field
+	BKAsstBizIDField = "bk_asst_biz_id"
 
 	// BKSupplierAccountField supplier account
 	BKSupplierAccountField = "bk_supplier_account"
