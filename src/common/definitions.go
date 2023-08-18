@@ -379,6 +379,9 @@ const (
 	// BKObjNameField the obj name field
 	BKObjNameField = "bk_obj_name"
 
+	// ObjSortNumberField the sort number field
+	ObjSortNumberField = "obj_sort_number"
+
 	// BKObjIconField the obj icon field
 	BKObjIconField = "bk_obj_icon"
 

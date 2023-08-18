@@ -122,6 +122,53 @@ func (o *object) FindSingleObject(kit *rest.Kit, field []string, objectID string
 	return &objs.Info[0], nil
 }
 
+// setObjectSortNumberField 设置 obj_sort_number 字段的值
+func (o *object) setObjectSortNumberField(kit *rest.Kit, obj *metadata.Object, data mapstr.MapStr) error {
+	//查询当前分组下的模型信息
+	objectInput := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{metadata.ModelFieldObjCls: obj.ObjCls},
+	}
+	objResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objectInput)
+	if err != nil {
+		blog.Errorf("list object failed, failed to read object, err: %v, rid: %s", err.Error(), kit.Rid)
+		return err
+	}
+
+	//指定了 obj_sort_number 字段值
+	if data.Exists(metadata.ModelFieldObjSortNumber) && obj.ObjSortNumber >= 0 && objResult.Count > 0 {
+		for _, object := range objResult.Info {
+			if object.ObjSortNumber >= obj.ObjSortNumber {
+				updateInput := &metadata.UpdateOption{
+					Condition: mapstr.MapStr{metadata.ModelFieldID: object.ID},
+					Data:      mapstr.MapStr{metadata.ModelFieldObjSortNumber: object.ObjSortNumber + 1},
+				}
+				_, err = o.clientSet.CoreService().Model().UpdateModel(kit.Ctx, kit.Header, updateInput)
+				if err != nil {
+					blog.Errorf("update object failed, id: %d, err: %v, rid: %s", object.ID, err, kit.Rid)
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	//未指定 obj_sort_number 字段值
+	if objResult.Count > 0 {
+		maxSortNumber := objResult.Info[0].ObjSortNumber
+		for _, object := range objResult.Info {
+			if object.ObjSortNumber > maxSortNumber {
+				maxSortNumber = object.ObjSortNumber
+			}
+		}
+		obj.ObjSortNumber = maxSortNumber + 1
+	} else {
+		//如果没有直接排第一位
+		obj.ObjSortNumber = 0
+	}
+
+	return nil
+}
+
 // CreateObject create common object
 func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error) {
 
@@ -144,6 +191,12 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 
 	if len(obj.ObjIcon) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
+	}
+
+	err = o.setObjectSortNumberField(kit, obj, data)
+	if err != nil {
+		blog.Errorf("set object sort number failed, objectId: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+		return nil, err
 	}
 
 	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header, &metadata.CreateModel{Spec: *obj})
@@ -518,12 +571,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	return results, nil
 }
 
-func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error {
-
-	if !data.Exists(metadata.ModelFieldObjCls) {
-		return nil
-	}
-
+func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr, obj *metadata.Object) error {
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			metadata.ModelFieldObjCls: data[metadata.ModelFieldObjCls],
@@ -534,11 +582,66 @@ func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error 
 		blog.Errorf("failed to read model classification, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-
 	if len(rsp.Info) <= 0 {
 		blog.Errorf("no model classification founded, err: %s, rid: %s",
 			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
+	}
+
+	//如果 model classification 存在且校验合法，则需要指定它在新分组下的 obj_sort_number
+	err = o.setObjectSortNumberField(kit, obj, data)
+	if err != nil {
+		blog.Errorf("set object sort number failed, objectId: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// updateObjectSortNumber 更新指定模型后面模型的 obj_sort_number
+func (o *object) updateObjectSortNumber(kit *rest.Kit, objId, objSortNumber int64) error {
+	//查询当前模型的分组信息
+	clsQuery := &metadata.QueryCondition{
+		Fields:    []string{metadata.ModelFieldObjCls},
+		Condition: mapstr.MapStr{metadata.ModelFieldID: objId},
+	}
+	clsResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, clsQuery)
+	if err != nil {
+		blog.Errorf("failed to read model classification id, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	if clsResult.Count <= 0 {
+		blog.Errorf("no model classification id founded, err: %s, rid: %s",
+			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)
+		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
+	}
+
+	//获取分组下模型信息
+	objectInput := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{metadata.ModelFieldObjCls: clsResult.Info[0].ObjCls},
+	}
+	objResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objectInput)
+	if err != nil {
+		blog.Errorf("list object ids failed, db find failed, err: %s", err.Error())
+		return err
+	}
+	if objResult.Count <= 0 {
+		blog.Errorf("no model classification id founded, err: %s, rid: %s",
+			kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
+		return kit.CCError.CCError(common.CCErrorModelNotFound)
+	}
+
+	for _, object := range objResult.Info {
+		if object.ObjSortNumber >= objSortNumber {
+			updateInput := &metadata.UpdateOption{
+				Condition: mapstr.MapStr{metadata.ModelFieldID: object.ID},
+				Data:      mapstr.MapStr{metadata.ModelFieldObjSortNumber: object.ObjSortNumber + 1},
+			}
+			_, err = o.clientSet.CoreService().Model().UpdateModel(kit.Ctx, kit.Header, updateInput)
+			if err != nil {
+				blog.Errorf("update object failed, id: %d, err: %v, rid: %s", object.ID, err, kit.Rid)
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -558,9 +661,22 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
 
-	if err := o.isClassificationValid(kit, data); err != nil {
-		return err
+	//如果传递了 bk_classification_id 字段,按更新模型分组处理
+	if data.Exists(metadata.ModelFieldObjCls) {
+		if err := o.isClassificationValid(kit, data, obj); err != nil {
+			return err
+		}
+		data.Set(metadata.ModelFieldObjSortNumber, obj.ObjSortNumber)
+	} else if data.Exists(metadata.ModelFieldObjSortNumber) && obj.ObjSortNumber >= 0 {
+		//如果未传递了 bk_classification_id 字段，传递了 obj_sort_number 字段,则表示更新模型顺序
+		//更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
+		err := o.updateObjectSortNumber(kit, id, obj.ObjSortNumber)
+		if err != nil {
+			blog.Errorf("update object sort number failed, id: %#v, err: %v, rid: %s", data, err, kit.Rid)
+			return err
+		}
 	}
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).

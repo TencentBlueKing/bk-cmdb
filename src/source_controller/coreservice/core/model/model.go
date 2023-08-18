@@ -334,7 +334,8 @@ func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOpti
 
 	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s ", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object,"+
+			" error info is %s ", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
