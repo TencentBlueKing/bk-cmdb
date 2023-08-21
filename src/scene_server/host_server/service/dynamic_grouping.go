@@ -13,6 +13,7 @@
 package service
 
 import (
+	"regexp"
 	"strconv"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/common/json"
 	meta "configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
@@ -44,10 +46,40 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	if err := newDynamicGroup.Validate(validatefunc); err != nil {
-		blog.Errorf("create dynamic group failed, invalid param: %+v, input: %+v, rid: %s", err, newDynamicGroup, ctx.Kit.Rid)
+		blog.Errorf("create dynamic group failed, invalid param: %+v, input: %+v, rid: %s",
+			err, newDynamicGroup, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error()))
 		return
 	}
+
+	for _, cond := range newDynamicGroup.Info.Condition {
+		for _, item := range cond.Condition {
+			//验证 value 是否为空
+			if item.Value == nil {
+				blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
+					item.Value, newDynamicGroup.AppID, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+				return
+			}
+			//模糊匹配时需要验证正则表达式的合法性
+			if item.Operator == common.BKDBLIKE {
+				strValue := util.GetStrByInterface(item.Value)
+				if strValue == "" {
+					blog.Errorf("HTTP request body data is not set, err: value not set regex: %v, bizID: %s, rid: %s",
+						item.Value, newDynamicGroup.AppID, ctx.Kit.Rid)
+					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+					return
+				}
+				if _, err := regexp.Compile(strValue); err != nil {
+					blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, rid: %s",
+						err, item.Value, ctx.Kit.Rid)
+					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
+					return
+				}
+			}
+		}
+	}
+
 	newDynamicGroup.CreateUser = ctx.Kit.User
 	newDynamicGroup.CreateTime = time.Now().UTC()
 	response := &meta.IDResult{}
@@ -186,6 +218,35 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error()))
 			return
 		}
+
+		for _, cond := range dynamicGroupInfo.Condition {
+			for _, item := range cond.Condition {
+				//验证 value 是否为空
+				if item.Value == nil {
+					blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
+						item.Value, bizID, ctx.Kit.Rid)
+					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+					return
+				}
+				//模糊匹配时需要验证正则表达式的合法性
+				if item.Operator == common.BKDBLIKE {
+					strValue := util.GetStrByInterface(item.Value)
+					if strValue == "" {
+						blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v,"+
+							" bizID: %s, rid: %s", item.Value, ctx.Kit.Rid)
+						ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+						return
+					}
+					if _, err := regexp.Compile(strValue); err != nil {
+						blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, rid: %s",
+							err, item.Value, ctx.Kit.Rid)
+						ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
+						return
+					}
+				}
+			}
+		}
+
 		updates[common.BKObjIDField] = objectID
 		updates["info"] = dynamicGroupInfo
 
@@ -481,6 +542,29 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		// build condition items.
 		for _, item := range cond.Condition {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
+			//验证 value 是否为空
+			if condItem.Value == nil {
+				blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, "+
+					"ID: %s, rid: %s", condItem.Value, bizID, targetID, ctx.Kit.Rid)
+				ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+				return
+			}
+			//模糊匹配时需要验证正则表达式的合法性
+			if condItem.Operator == common.BKDBLIKE {
+				strValue := util.GetStrByInterface(condItem.Value)
+				if strValue == "" {
+					blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, "+
+						"ID: %s, rid: %s", condItem.Value, bizID, targetID, ctx.Kit.Rid)
+					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+					return
+				}
+				if _, err := regexp.Compile(strValue); err != nil {
+					blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, bizID: %s, "+
+						"ID: %s, rid: %s", err, condItem.Value, bizID, targetID, ctx.Kit.Rid)
+					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
+					return
+				}
+			}
 			searchCondition.Condition = append(searchCondition.Condition, condItem)
 		}
 		searchCondition.TimeCondition = cond.TimeCondition
@@ -509,7 +593,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		return
 
 	} else if targetDynamicGroup.ObjID == common.BKInnerObjIDSet {
-		// build host search conditions.
+		// build set search conditions.
 		searchSetCondition := meta.SetCommonSearch{AppID: bizIDInt64, Condition: searchConditions, Page: searchPage}
 
 		// execute set object dynamic group.
