@@ -494,10 +494,11 @@ const FilterStore = new Vue({
       const flag = []
       this.IP.inner && flag.push('bk_host_innerip')
       this.IP.outer && flag.push('bk_host_outerip')
+      const { ipv4 = [], assetList = [] } = transformedIP.data
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
         ip: {
-          data: transformedIP.data.ipv4,
+          data: [...ipv4, ...assetList], // 兼容ip模糊搜索
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         },
