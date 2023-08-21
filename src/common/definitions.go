@@ -909,6 +909,10 @@ const (
 	DefaultModuleType string = "1"
 )
 
+var FieldTypes = []string{FieldTypeSingleChar, FieldTypeLongChar, FieldTypeInt, FieldTypeFloat, FieldTypeEnum,
+	FieldTypeEnumMulti, FieldTypeDate, FieldTypeTime, FieldTypeUser, FieldTypeOrganization, FieldTypeTimeZone,
+	FieldTypeBool, FieldTypeList, FieldTypeTable, FieldTypeInnerTable, FieldTypeEnumQuote}
+
 const (
 	// FieldTypeSingleChar the single char filed type
 	FieldTypeSingleChar string = "singlechar"

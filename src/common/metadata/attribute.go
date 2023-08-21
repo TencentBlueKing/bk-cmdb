@@ -163,53 +163,46 @@ type HostObjAttDes struct {
 	HostApplyEnabled bool `json:"host_apply_enabled"`
 }
 
-// Validate TODO
+// Validate Attribute
 func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
+	var attrValidatorMap = map[string]func(context.Context, interface{}, string) errors.RawErrorInfo{
+		common.FieldTypeSingleChar:   attribute.validChar,
+		common.FieldTypeLongChar:     attribute.validLongChar,
+		common.FieldTypeInt:          attribute.validInt,
+		common.FieldTypeFloat:        attribute.validFloat,
+		common.FieldTypeEnum:         attribute.validEnum,
+		common.FieldTypeEnumMulti:    attribute.validEnumMulti,
+		common.FieldTypeEnumQuote:    attribute.validEnumQuote,
+		common.FieldTypeDate:         attribute.validDate,
+		common.FieldTypeTime:         attribute.validTime,
+		common.FieldTypeTimeZone:     attribute.validTimeZone,
+		common.FieldTypeBool:         attribute.validBool,
+		common.FieldTypeUser:         attribute.validUser,
+		common.FieldTypeList:         attribute.validList,
+		common.FieldObject:           attribute.validObjectCondition,
+		common.FieldTypeOrganization: attribute.validOrganization,
+		common.FieldTypeInnerTable:   attribute.validInnerTable,
+	}
+
 	rawError := errors.RawErrorInfo{}
 	fieldType := attribute.PropertyType
 	switch fieldType {
-	case common.FieldTypeSingleChar:
-		rawError = attribute.validChar(ctx, data, key)
-	case common.FieldTypeLongChar:
-		rawError = attribute.validLongChar(ctx, data, key)
-	case common.FieldTypeInt:
-		rawError = attribute.validInt(ctx, data, key)
-	case common.FieldTypeFloat:
-		rawError = attribute.validFloat(ctx, data, key)
-	case common.FieldTypeEnum:
-		rawError = attribute.validEnum(ctx, data, key)
-	case common.FieldTypeEnumMulti:
-		rawError = attribute.validEnumMulti(ctx, data, key)
-	case common.FieldTypeEnumQuote:
-		rawError = attribute.validEnumQuote(ctx, data, key)
-	case common.FieldTypeDate:
-		rawError = attribute.validDate(ctx, data, key)
-	case common.FieldTypeTime:
-		rawError = attribute.validTime(ctx, data, key)
-	case common.FieldTypeTimeZone:
-		rawError = attribute.validTimeZone(ctx, data, key)
-	case common.FieldTypeBool:
-		rawError = attribute.validBool(ctx, data, key)
-	case common.FieldTypeUser:
-		rawError = attribute.validUser(ctx, data, key)
-	case common.FieldTypeList:
-		rawError = attribute.validList(ctx, data, key)
-	case common.FieldObject:
-		rawError = attribute.validObjectCondition(ctx, data, key)
-	case common.FieldTypeOrganization:
-		rawError = attribute.validOrganization(ctx, data, key)
 	case "foreignkey", "singleasst", "multiasst":
 		// TODO what validation should do on these types
 	case common.FieldTypeTable:
 		// TODO what validation should do on these types
 		rawError = attribute.validTable(ctx, data, key)
-	case common.FieldTypeInnerTable:
-		rawError = attribute.validInnerTable(ctx, data, key)
 	default:
-		rawError = errors.RawErrorInfo{
-			ErrCode: common.CCErrCommUnexpectedFieldType,
-			Args:    []interface{}{fieldType},
+		validator, exists := attrValidatorMap[fieldType]
+		if !exists {
+			rawError = errors.RawErrorInfo{
+				ErrCode: common.CCErrCommUnexpectedFieldType,
+				Args:    []interface{}{fieldType},
+			}
+			break
 		}
+
+		rawError = validator(ctx, data, key)
 	}
 	// 如果出现了问题，并且报错原内容为propertyID，则替换为propertyName。
 	if rawError.ErrCode != 0 {
@@ -918,57 +911,45 @@ func (attribute *Attribute) validOrganization(ctx context.Context, val interface
 
 	switch org := val.(type) {
 	case []interface{}:
-		if len(org) == 0 && attribute.IsRequired {
-			blog.Errorf("org is required, but is null, rid: %s", rid)
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
-		}
-
-		if len(org) == 0 {
-			return errors.RawErrorInfo{}
-		}
-
-		if attribute.IsMultiple == nil {
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
-		}
-
-		if !(*attribute.IsMultiple) && len(org) != 1 {
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
-		}
-
-		for _, orgID := range org {
-			if !util.IsInteger(orgID) {
-				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
-				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
-			}
+		if rawErr := attribute.validOrganizationValue(org, key, rid); rawErr.ErrCode != 0 {
+			return rawErr
 		}
 	case bson.A:
-		if len(org) == 0 && attribute.IsRequired {
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
-		}
-
-		if len(org) == 0 {
-			return errors.RawErrorInfo{}
-		}
-
-		if attribute.IsMultiple == nil {
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
-		}
-
-		if !(*attribute.IsMultiple) && len(org) != 1 {
-			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
-		}
-
-		for _, orgID := range org {
-			if !util.IsInteger(orgID) {
-				blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
-				return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
-			}
+		if rawErr := attribute.validOrganizationValue(org, key, rid); rawErr.ErrCode != 0 {
+			return rawErr
 		}
 	default:
 		blog.Errorf("params should be type organization,but its type is %T, rid: %s", val, rid)
 		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
 	}
 
+	return errors.RawErrorInfo{}
+}
+
+func (attribute *Attribute) validOrganizationValue(org []interface{}, key string, rid string) errors.RawErrorInfo {
+	if len(org) == 0 && attribute.IsRequired {
+		blog.Errorf("org is required, but is null, rid: %s", rid)
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+	}
+
+	if len(org) == 0 {
+		return errors.RawErrorInfo{}
+	}
+
+	if attribute.IsMultiple == nil {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{key}}
+	}
+
+	if !(*attribute.IsMultiple) && len(org) != 1 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+	}
+
+	for _, orgID := range org {
+		if !util.IsInteger(orgID) {
+			blog.Errorf("orgID params not int, type: %T, rid: %s", orgID, rid)
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid, Args: []interface{}{key}}
+		}
+	}
 	return errors.RawErrorInfo{}
 }
 
