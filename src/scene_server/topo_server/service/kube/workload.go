@@ -142,21 +142,9 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	// checks if workload's namespace is a shared namespace and if its biz id is not the same with the input biz id
-	mismatchNsIDs := make([]int64, 0)
-	for _, workload := range resp.Info {
-		wl := workload.GetWorkloadBase()
-		if wl.BizID != req.BizID {
-			mismatchNsIDs = append(mismatchNsIDs, wl.NamespaceID)
-		}
-	}
-
-	if len(mismatchNsIDs) > 0 {
-		mismatchNsMap := map[int64][]int64{req.BizID: mismatchNsIDs}
-		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
+	if err := s.checkWlSharedNs(ctx.Kit, resp.Info, req.BizID); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -194,6 +182,25 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// checkWlSharedNs checks if workload's ns is a shared ns and if its biz id is not the same with the input biz id
+func (s *service) checkWlSharedNs(kit *rest.Kit, workloads []types.WorkloadInterface, bizID int64) error {
+	mismatchNsIDs := make([]int64, 0)
+	for _, workload := range workloads {
+		wl := workload.GetWorkloadBase()
+		if wl.BizID != bizID {
+			mismatchNsIDs = append(mismatchNsIDs, wl.NamespaceID)
+		}
+	}
+
+	if len(mismatchNsIDs) > 0 {
+		mismatchNsMap := map[int64][]int64{bizID: mismatchNsIDs}
+		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(kit, mismatchNsMap); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteWorkload delete workload
@@ -239,21 +246,9 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	// checks if workload's namespace is a shared namespace and if its biz id is not the same with the input biz id
-	mismatchNsIDs := make([]int64, 0)
-	for _, workload := range resp.Info {
-		wl := workload.GetWorkloadBase()
-		if wl.BizID != req.BizID {
-			mismatchNsIDs = append(mismatchNsIDs, wl.NamespaceID)
-		}
-	}
-
-	if len(mismatchNsIDs) > 0 {
-		mismatchNsMap := map[int64][]int64{req.BizID: mismatchNsIDs}
-		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
+	if err := s.checkWlSharedNs(ctx.Kit, resp.Info, req.BizID); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	hasRes, rawErr := s.hasNextLevelResource(ctx.Kit, string(kind), req.IDs)

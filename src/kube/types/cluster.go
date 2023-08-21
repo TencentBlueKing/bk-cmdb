@@ -122,8 +122,8 @@ func (c ClusterType) Validate() ccErr.RawErrorInfo {
 }
 
 const (
-	SharedClusterType      = "SHARE_CLUSTER"
-	IndependentClusterType = "INDEPENDENT_CLUSTER"
+	SharedClusterType      ClusterType = "SHARE_CLUSTER"
+	IndependentClusterType ClusterType = "INDEPENDENT_CLUSTER"
 )
 
 // IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.

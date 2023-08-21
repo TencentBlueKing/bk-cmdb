@@ -1600,14 +1600,6 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 	}
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
-	// authorize
-	authRes := authmeta.ResourceAttribute{Basic: authmeta.Basic{Type: authmeta.HostInstance, Action: authmeta.Find},
-		BusinessID: req.BizID}
-	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
-		ctx.RespNoAuth(resp)
-		return
-	}
-
 	// 1. get hostIDs by k8s condition
 	hostIDs, err := s.getHostIDsByKubeCond(ctx.Kit, req)
 	if err != nil {
@@ -1615,10 +1607,7 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 	if len(hostIDs) == 0 {
-		ctx.RespEntity(meta.HostInfo{
-			Count: 0,
-			Info:  []mapstr.MapStr{},
-		})
+		ctx.RespEntity(meta.HostInfo{Count: 0, Info: make([]mapstr.MapStr, 0)})
 		return
 	}
 

@@ -362,16 +362,7 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 
-	// checks if pod's namespace is a shared namespace and if its biz id is not the same with the input biz id
-	mismatchNsMap := make(map[int64][]int64)
-	for _, pod := range podResp.Info {
-		biz := idBizMap[pod.ID]
-		if pod.BizID != biz {
-			mismatchNsMap[biz] = append(mismatchNsMap[biz], pod.NamespaceID)
-		}
-	}
-
-	if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
+	if err := s.checkDeletePodSharedNs(ctx.Kit, podResp.Info, idBizMap); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -386,9 +377,7 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 	}
 
 	// delete pods
-	delOpt := &types.DeletePodsByIDsOption{
-		PodIDs: ids,
-	}
+	delOpt := &types.DeletePodsByIDsOption{PodIDs: ids}
 
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.ClientSet.CoreService().Kube().DeletePods(ctx.Kit.Ctx, ctx.Kit.Header, delOpt)
@@ -409,6 +398,22 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// checkDeletePodSharedNs checks if pod's ns is a shared ns and if its biz id is not the same with the input biz id
+func (s *service) checkDeletePodSharedNs(kit *rest.Kit, pods []types.Pod, idBizMap map[int64]int64) error {
+	mismatchNsMap := make(map[int64][]int64)
+	for _, pod := range pods {
+		biz := idBizMap[pod.ID]
+		if pod.BizID != biz {
+			mismatchNsMap[biz] = append(mismatchNsMap[biz], pod.NamespaceID)
+		}
+	}
+
+	if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(kit, mismatchNsMap); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ListContainer list container
@@ -433,31 +438,9 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 		return
 	}
 
-	// check if pod exists, compatible for shared cluster scenario
-	podQuery := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKFieldID: req.PodID},
-		Page:      metadata.BasePage{Limit: 1},
-		Fields:    []string{types.BKNamespaceIDField, common.BKAppIDField},
-	}
-	podResp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, podQuery)
-	if err != nil {
-		blog.Errorf("get pod by id %d failed, err: %v, rid: %s", req.PodID, err, ctx.Kit.Rid)
+	if err = s.checkContainerPod(ctx.Kit, req); err != nil {
 		ctx.RespAutoError(err)
 		return
-	}
-
-	if len(podResp.Info) != 1 {
-		blog.Errorf("get no pod by id %d, rid: %s", req.PodID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKPodIDField))
-		return
-	}
-
-	if podResp.Info[0].BizID != req.BizID {
-		mismatchNsMap := map[int64][]int64{req.BizID: {podResp.Info[0].NamespaceID}}
-		if err = s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
 	}
 
 	andCond, err := filtertools.And(filtertools.GenAtomFilter(types.BKPodIDField, filter.Equal, req.PodID), req.Filter)
@@ -504,4 +487,31 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(0, resp.Info)
+}
+
+// checkContainerPod check if pod exists, compatible for shared cluster scenario
+func (s *service) checkContainerPod(kit *rest.Kit, req *types.ContainerQueryOption) error {
+	podQuery := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKFieldID: req.PodID},
+		Page:      metadata.BasePage{Limit: 1},
+		Fields:    []string{types.BKNamespaceIDField, common.BKAppIDField},
+	}
+	podResp, err := s.ClientSet.CoreService().Kube().ListPod(kit.Ctx, kit.Header, podQuery)
+	if err != nil {
+		blog.Errorf("get pod by id %d failed, err: %v, rid: %s", req.PodID, err, kit.Rid)
+		return err
+	}
+
+	if len(podResp.Info) != 1 {
+		blog.Errorf("get no pod by id %d, rid: %s", req.PodID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.BKPodIDField)
+	}
+
+	if podResp.Info[0].BizID != req.BizID {
+		mismatchNsMap := map[int64][]int64{req.BizID: {podResp.Info[0].NamespaceID}}
+		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(kit, mismatchNsMap); err != nil {
+			return err
+		}
+	}
+	return nil
 }

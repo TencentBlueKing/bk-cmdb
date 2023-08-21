@@ -169,10 +169,8 @@ func (p *kubeOperation) getSharedClusterInfo(kit *rest.Kit, podsInfos []types.Po
 	}
 
 	// check if workload info matches pod info, and check if namespace biz id is the same with input biz id
-	matchingNsIDMap := make(map[int64][]int64)
-	mismatchNsIDMap := make(map[int64][]int64)
-	matchingNsClusterIDMap := make(map[int64]int64)
-	mismatchNsBizIDMap := make(map[int64]int64)
+	matchingNsIDMap, mismatchNsIDMap := make(map[int64][]int64), make(map[int64][]int64)
+	matchingNsClusterIDMap, mismatchNsBizIDMap := make(map[int64]int64), make(map[int64]int64)
 
 	for _, info := range podsInfos {
 		for _, pod := range info.Pods {
@@ -235,8 +233,7 @@ func (p *kubeOperation) getSharedClusterInfo(kit *rest.Kit, podsInfos []types.Po
 		}
 
 		if inputBiz != rel.AsstBizID {
-			blog.Errorf("shared ns %d input biz %d not matches actual asst biz %d, rid: %s", rel.NamespaceID, inputBiz,
-				rel.AsstBizID, kit.Rid)
+			blog.Errorf("ns %d input biz %d != asst biz %d, rid: %s", rel.NamespaceID, inputBiz, rel.AsstBizID, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KubeNamespace)
 		}
 

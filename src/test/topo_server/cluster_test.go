@@ -35,7 +35,7 @@ import (
 
 var _ = Describe("kube cluster test", func() {
 	ctx := context.Background()
-	var bizId, clusterID, clusterID2 int64
+	var clusterID, clusterID2 int64
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
 			test.ClearDatabase()
@@ -52,7 +52,7 @@ var _ = Describe("kube cluster test", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
-			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			bizID, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -71,8 +71,9 @@ var _ = Describe("kube cluster test", func() {
 			vpc := "vpc-q6awe02n"
 			environment := "prod"
 			network := []string{"1.1.1.0/21"}
-			clusterType := "public"
-			createCLuster := &types.Cluster{
+			clusterType := types.IndependentClusterType
+			createCluster := &types.Cluster{
+				BizID:            bizID,
 				Name:             &clusterName,
 				SchedulingEngine: &schedulingEngine,
 				Uid:              &uid,
@@ -86,7 +87,7 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			id, err := kubeClient.CreateCluster(ctx, header, createCluster)
 			util.RegisterResponse(id)
 			Expect(err).NotTo(HaveOccurred())
 			clusterID = id
@@ -105,8 +106,9 @@ var _ = Describe("kube cluster test", func() {
 			region := "shenzhen"
 			vpc := "vpc-q6awe02n"
 			network := []string{"1.1.1.0/21"}
-			clusterType := "public"
-			createCLuster := &types.Cluster{
+			clusterType := types.IndependentClusterType
+			createCluster := &types.Cluster{
+				BizID:            bizID,
 				Name:             &clusterName,
 				SchedulingEngine: &schedulingEngine,
 				Uid:              &uid,
@@ -120,7 +122,7 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			id, err := kubeClient.CreateCluster(ctx, header, createCluster)
 			Expect(err).NotTo(HaveOccurred())
 			clusterID2 = id
 		}()
@@ -137,8 +139,9 @@ var _ = Describe("kube cluster test", func() {
 			vpc := "vpc-q6awe02n"
 			environment := "prod"
 			network := []string{"1.1.1.0/21"}
-			clusterType := "public"
-			createCLuster := &types.Cluster{
+			clusterType := types.SharedClusterType
+			createCluster := &types.Cluster{
+				BizID:            bizID,
 				SchedulingEngine: &schedulingEngine,
 				Uid:              &uid,
 				Xid:              &xid,
@@ -151,7 +154,7 @@ var _ = Describe("kube cluster test", func() {
 				Type:             &clusterType,
 			}
 
-			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
+			id, err := kubeClient.CreateCluster(ctx, header, createCluster)
 			util.RegisterResponse(id)
 			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
@@ -163,15 +166,16 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			version := "0.2"
 			data := &types.UpdateClusterOption{
-				IDs: []int64{clusterID},
-				Data: types.Cluster{
-					Version: &version,
+				BizID: bizID,
+				UpdateClusterByIDsOption: types.UpdateClusterByIDsOption{
+					IDs: []int64{clusterID},
+					Data: types.Cluster{
+						Version: &version,
+					},
 				},
 			}
-			rsp, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
+			err := kubeClient.UpdateClusterFields(ctx, header, data)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
-
 		}()
 
 		By("update kube cluster non-editable field")
@@ -179,13 +183,16 @@ var _ = Describe("kube cluster test", func() {
 		func() {
 			uid := "uid"
 			data := &types.UpdateClusterOption{
-				IDs: []int64{clusterID},
-				Data: types.Cluster{
-					Uid: &uid,
+				BizID: bizID,
+				UpdateClusterByIDsOption: types.UpdateClusterByIDsOption{
+					IDs: []int64{clusterID},
+					Data: types.Cluster{
+						Uid: &uid,
+					},
 				},
 			}
-			result, err := kubeClient.UpdateClusterFields(ctx, header, bizId, data)
-			util.RegisterResponse(result)
+			err := kubeClient.UpdateClusterFields(ctx, header, data)
+			util.RegisterResponseWithRid(err, header)
 			Expect(err.Error()).Should(ContainSubstring("uid"))
 		}()
 
@@ -193,16 +200,19 @@ var _ = Describe("kube cluster test", func() {
 
 		func() {
 			option := &types.DeleteClusterOption{
-				IDs: []int64{clusterID2},
+				BizID: bizID,
+				DeleteClusterByIDsOption: types.DeleteClusterByIDsOption{
+					IDs: []int64{clusterID2},
+				},
 			}
-			rsp, err := kubeClient.DeleteCluster(ctx, header, bizId, option)
+			err := kubeClient.DeleteCluster(ctx, header, option)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Result).To(Equal(true))
 		}()
 
 		By("search kube cluster by name")
 		func() {
 			input := &types.QueryClusterOption{
+				BizID: bizID,
 				Filter: &filter.Expression{
 					RuleFactory: &filter.CombinedRule{
 						Condition: filter.And,
@@ -220,7 +230,7 @@ var _ = Describe("kube cluster test", func() {
 					Limit: 10,
 				},
 			}
-			result, err := kubeClient.SearchCluster(ctx, header, bizId, input)
+			result, err := kubeClient.SearchCluster(ctx, header, input)
 			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Result).To(Equal(true))
@@ -236,6 +246,7 @@ var _ = Describe("kube cluster test", func() {
 
 		func() {
 			input := &types.QueryClusterOption{
+				BizID: bizID,
 				Filter: &filter.Expression{
 					RuleFactory: &filter.AtomRule{
 						Field:    types.KubeNameField,
@@ -247,7 +258,7 @@ var _ = Describe("kube cluster test", func() {
 					EnableCount: true,
 				},
 			}
-			result, err := kubeClient.SearchCluster(ctx, header, bizId, input)
+			result, err := kubeClient.SearchCluster(ctx, header, input)
 			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Result).To(Equal(true))
