@@ -1,3 +1,9 @@
+## [Version: v3.10.26-feature-auth-alpha4] - 2023-08-22
+**缺陷修复**
+- 主机模糊搜索ip有误
+- 全文检索的全部当作资源池主机
+- find_module_host_relation权限异常
+
 ## [Version: v3.10.26-feature-auth-alpha3] - 2023-05-16
 **缺陷修复**
 - 修复全文检索缺少方法引用的问题
