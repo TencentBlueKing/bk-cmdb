@@ -420,6 +420,7 @@ export function transformIP(raw) {
 
   transformedIP.data.ipv6 = IPs.IPv6List
   IPs.IPv6WithCloudList.forEach(([, ip]) => transformedIP.data.ipv6.push(ip))
+  transformedIP.data.assetList = IPs.assetList  // 没进到ipv4和ipv6原样返回，兼容ip模糊搜索
 
   const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
   if (cloudIds.length) {
