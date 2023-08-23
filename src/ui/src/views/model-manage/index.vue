@@ -121,7 +121,10 @@
             :clearable="true"
             :right-icon="'bk-icon icon-search'"
             :placeholder="$t('请输入关键字')"
-            v-model.trim="modelSearchKey"
+            :value="modelSearchKey"
+            @change="inputChange"
+            @compositionstart.native="inputCompositionStart"
+            @compositionend.native="inputCompositionEnd"
           >
           </bk-input>
         </div>
@@ -427,7 +430,6 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
-
   export default {
     name: 'ModelManagement',
     filters: {
@@ -456,6 +458,7 @@
         modelStatisticsSet: {}, // 模型实例数量统计
         curCreateModel: {}, // 当前创建的模型
         modelCreatedDialogVisible: false,
+        otherInputVal: '', // 针对某些输入法中文输入失焦后自动清空输入框情况 如：搜狗输入法
 
         // 分组表单弹窗
         groupDialog: {
@@ -681,6 +684,26 @@
         'deleteClassification',
       ]),
       ...mapActions('objectModel', ['createObject', 'updateObject']),
+      inputChange(val) {
+        // 在输入过程中如果是中文输入法 不让modelSearchKey变化
+        if (this.isComposition) {
+          this.modelSearchKey = this.otherInputVal
+          return
+        }
+        this.modelSearchKey = val
+      },
+      inputCompositionStart() {
+        // 当前为中文输入法
+        this.isComposition = true
+        this.otherInputVal = this.modelSearchKey
+      },
+      inputCompositionEnd(event) {
+        // 兼容输入框输入中文突然变英文的情况
+        setTimeout(() => {
+          this.isComposition = false
+          this.modelSearchKey = event.target.value
+        }, 100)
+      },
       loadAllModels() {
         return this.searchClassificationsObjects({
           params: {},

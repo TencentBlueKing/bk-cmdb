@@ -73,10 +73,13 @@
   }
 
   const handleSliderHidden = () => {
+    // 必要的重置数据
+    isAllValid.value = true
+    editedUniqueList.value = null
     emit('close')
   }
 
-  const handleSliderBeforeClose = () => {
+  const handleSliderBeforeClose = async () => {
     if (hasEmptyUnique.value || !isAllValid.value) {
       const subTitle = t(hasEmptyUnique.value ? '未编辑完成的数据将被忽略，原数据不会被更改' : '校验未通过，数据不会被更新')
       return new Promise((resolve) => {
@@ -110,7 +113,6 @@
     @hidden="handleSliderHidden">
     <div slot="content" class="content">
       <unique-manage
-        type="union"
         :field-list="fieldList"
         :unique-list="uniqueListLocal"
         :before-unique-list="beforeUniqueList"
@@ -123,6 +125,6 @@
 
 <style lang="scss" scoped>
   .content {
-    padding: 20px 18px;
+    padding: 24px;
   }
 </style>

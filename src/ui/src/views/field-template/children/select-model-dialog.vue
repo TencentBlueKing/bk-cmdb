@@ -11,9 +11,10 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, reactive, ref, watchEffect } from 'vue'
   import { useStore } from '@/store'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     selected: {
@@ -36,11 +37,26 @@
   const selectedLocal = ref([])
   const filterWord = ref('')
 
+  const dataEmpty = reactive({
+    type: 'search'
+  })
+
   watchEffect(async () => {
     classifications.value = await store.dispatch('objectModelClassify/searchClassificationsObjects', {
       fromCache: true
     })
   })
+  watchEffect(() => {
+    if (isShow.value) {
+      selectedLocal.value = props.selected.slice()
+    }
+  })
+
+  const dialogHeight = computed(() => `${Math.floor(Math.max(store.state.appHeight * 0.8, 200) - 110)}px`)
+  const dialogPos = computed(() => ({
+    top: `${Math.floor(Math.max(store.state.appHeight * 0.4 - (parseInt(dialogHeight.value, 10) / 2), 20))}`
+  }))
+  const dialogWidth = computed(() => (window.innerWidth > 1920 ? 1532 : 1132))
 
   const excludeModelIds = computed(() => store.getters['objectMainLineModule/mainLineModels']
     .filter(model => model.bk_obj_id !== BUILTIN_MODELS.HOST)
@@ -64,7 +80,7 @@
 
   const displayModelGroupList = computed(() => {
     if (filterWord.value) {
-      const reg = new RegExp(filterWord.value, 'i')
+      const reg = new RegExp(escapeRegexChar(filterWord.value), 'i')
       const list = []
       modelGroupList.value.forEach((group) => {
         list.push({
@@ -80,19 +96,17 @@
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
-      binded: {},
-      disabled: {}
+      binded: {}
     }
     modelList.value.forEach((model) => {
       status.selected[model.id] = selectedLocal.value.some(item => item.id === model.id)
       status.binded[model.id] = props.binded.some(item => item.id === model.id)
-      status.disabled[model.id] = props.selected.some(item => item.id === model.id)
     })
     return status
   })
 
   const handleSelect = (model) => {
-    if (selectedStatus.value.disabled[model.id]) {
+    if (selectedStatus.value.binded[model.id]) {
       return
     }
     if (selectedStatus.value.selected[model.id]) {
@@ -108,16 +122,14 @@
   const handleSelectAll = (checked) => {
     if (checked) {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && !selectedStatus.value.selected[model.id]) {
           selectedLocal.value.push(model)
         }
       })
     } else {
       modelList.value.forEach((model) => {
-        if (!selectedStatus.value.disabled[model.id]
-          && !selectedStatus.value.binded[model.id]
+        if (!selectedStatus.value.binded[model.id]
           && selectedStatus.value.selected[model.id]) {
           const index = selectedLocal.value.findIndex(item => item.id === model.id)
           if (~index) {
@@ -128,12 +140,17 @@
     }
   }
 
+
   const handleConfirm = () => {
     emit('confirm', selectedLocal.value)
     close()
   }
   const handleCancel = () => {
     close()
+  }
+
+  const handleClearFilter = () => {
+    filterWord.value = ''
   }
 
   const show = () => {
@@ -151,7 +168,8 @@
   <bk-dialog
     :render-directive="'if'"
     v-model="isShow"
-    width="1132"
+    :width="dialogWidth"
+    :position="dialogPos"
     :close-icon="false"
     :draggable="false"
     ext-cls="custom-wrapper">
@@ -166,7 +184,7 @@
           :right-icon="'bk-icon icon-search'" />
       </div>
     </template>
-    <div class="dialog-content">
+    <div :class="['dialog-content', { empty: !displayModelGroupList.length }]">
       <cmdb-collapse
         v-for="(group, index) in displayModelGroupList"
         class="model-group"
@@ -192,13 +210,12 @@
                   </div>
                   <bk-checkbox class="model-checkbox"
                     v-bk-tooltips="{
-                      disabled: !selectedStatus.binded[model.id] && !selectedStatus.disabled[model.id],
-                      content: $t(selectedStatus.binded[model.id] ? '模型已绑定' : '模型已选择')
+                      disabled: !selectedStatus.binded[model.id],
+                      content: $t('模型已绑定')
                     }"
                     :value="selectedStatus.selected[model.id]
-                      || selectedStatus.disabled[model.id]
                       || selectedStatus.binded[model.id]"
-                    :disabled="disabled || selectedStatus.disabled[model.id] || selectedStatus.binded[model.id]">
+                    :disabled="disabled || selectedStatus.binded[model.id]">
                   </bk-checkbox>
                 </div>
               </template>
@@ -206,6 +223,11 @@
           </template>
         </div>
       </cmdb-collapse>
+      <cmdb-data-empty
+        v-show="!displayModelGroupList.length"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
     <template #footer>
       <div class="dialog-footer">
@@ -215,7 +237,7 @@
           </i18n>
         </bk-checkbox>
         <div class="operation">
-          <bk-button theme="primary" :disabled="!selectedLocal.length"
+          <bk-button theme="primary"
             @click="handleConfirm">{{ $t('确定') }}</bk-button>
           <bk-button @click="handleCancel">{{ $t('取消') }}</bk-button>
         </div>
@@ -245,9 +267,15 @@
   }
 
   .dialog-content {
-    height: 580px;
+    height: v-bind(dialogHeight);
     padding: 0 12px;
     @include scrollbar-y;
+
+    &.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   .dialog-footer {
@@ -349,6 +377,12 @@
     .model-checkbox {
       flex: none;
       width: 20px;
+    }
+  }
+
+  @media screen and (min-width: 1920px) {
+    .model-list {
+      grid-template-columns: repeat(5, 1fr);
     }
   }
 </style>

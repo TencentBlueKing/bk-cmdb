@@ -516,14 +516,6 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 		return
 	}
 
-	searchByIpNum := len(body.Ipv4Ip.Data) + len(body.Ipv6Ip.Data)
-	if searchByIpNum > common.BKMaxLimitSize {
-		blog.Errorf("search host info at once exceeds max page size, number of queries: %d, rid: %s", searchByIpNum,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded))
-		return
-	}
-
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.Logic.SearchHost(ctx.Kit, body)
 	if err != nil {

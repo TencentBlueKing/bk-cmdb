@@ -39,7 +39,7 @@ const find = async (params, config) => {
 }
 
 // 查询模板字段数量
-const getFieldCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/attribute/count`, data, config)
+const getFieldCount = (data, config) => http.post('findmany/field_template/attribute/count', data, config)
 
 // 查询模板绑定的模型数量
 const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/field_template/object/count`, data, config)
@@ -47,7 +47,7 @@ const getModelCount = (data, config) => http.post(`${window.API_HOST}findmany/fi
 // 查询模板简要信息
 const findById = (id, config = {}) => http.get(`find/field_template/${id}`, config)
 
-// 查询模板字段
+// 查询模板字段，查看权限
 const getFieldList = (data, config) => http.post('findmany/field_template/attribute', {
   page: {
     ...maxPageParams(MAX_FIELD_COUNT),
@@ -56,7 +56,7 @@ const getFieldList = (data, config) => http.post('findmany/field_template/attrib
   ...data,
 }, config)
 
-// 查询模板唯一校验
+// 查询模板唯一校验，查看权限
 const getUniqueList = (data, config) => http.post('findmany/field_template/unique', data, config)
 
 // 查询模板绑定的模型
@@ -83,7 +83,7 @@ const deleteTemplate = (data, config) => http.delete('/delete/field_template', d
 const cloneTemplate = (data, config) => http.post('/create/field_template/clone', data, config)
 
 // 查询模型属性对应模版简要信息接口
-const getTemplateInfo = (data, config) => http.post('/find/field_template/simplify/by_attr_template_id', data, config)
+const getFieldBindTemplate = (data, config) => http.post('/find/field_template/simplify/by_attr_template_id', data, config)
 
 // 检测字段模板和模型中的字段的区别和冲突，返回值以模型上的字段为维度
 const getFieldDifference = (data, config) => http.post('find/field_template/attribute/difference', data, config)
@@ -106,6 +106,20 @@ const getModelSyncStatus = (data, config) => http.post('find/field_template/mode
 // 查询模板与模型差异状态
 const getModelDiffStatus = (data, config) => http.post('find/field_template/sync/status', data, config)
 
+// 获取字段绑定的模板的字段列表
+const getTemplateFieldListByField = async (field, config) => {
+  try {
+    const bindTemplate = await getFieldBindTemplate({
+      bk_template_id: field.bk_template_id,
+      bk_attribute_id: field.id
+    }, config)
+    const templateFieldList = await getFieldList({ bk_template_id: bindTemplate.id })
+    return templateFieldList?.info ?? []
+  } catch (error) {
+    return Promise.reject(error)
+  }
+}
+
 export default {
   create,
   update,
@@ -122,12 +136,13 @@ export default {
   unbind,
   deleteTemplate,
   cloneTemplate,
-  getTemplateInfo,
+  getFieldBindTemplate,
   getFieldDifference,
   getUniqueDifference,
   bindModel,
   syncModel,
   getTaskSyncStatus,
   getModelSyncStatus,
-  getModelDiffStatus
+  getModelDiffStatus,
+  getTemplateFieldListByField
 }

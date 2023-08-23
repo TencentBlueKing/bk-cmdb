@@ -29,10 +29,12 @@
 
   const requestId = Symbol()
 
+  const cloneInput = ref(null)
   const cloneForm = ref(cloneDeep(props.sourceTemplate))
   watch(() => props.sourceTemplate, (sourceTemplate) => {
     cloneForm.value = cloneDeep(sourceTemplate)
-  }, { deep: true })
+    cloneForm.value.name += '-copy'
+  }, { deep: true, immediate: true })
 
   const isShow = computed({
     get() {
@@ -74,8 +76,10 @@
       <bk-form-item :label="$t('模板名称')" :required="true" :property="'name'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input
+          ref="cloneInput"
           v-model="cloneForm.name"
           v-validate="'required|length:256'"
+          v-autofocus
           :placeholder="$t('请输入模板名称')"
           name="name">
         </bk-input>

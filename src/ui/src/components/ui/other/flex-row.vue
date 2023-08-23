@@ -18,10 +18,18 @@
       gap: {
         type: [String, Number],
         default: 0
+      },
+      colon: {
+        type: Boolean,
+        default: false
+      },
+      colonGap: {
+        type: [String, Number],
+        default: '14px'
       }
     },
     setup(props, { slots }) {
-      return () => <div class="flex-row">{ slots.default() }</div>
+      return () => <div class={['flex-row', { colon: props.colon }]}>{ slots.default() }</div>
     }
   })
 </script>
@@ -31,5 +39,17 @@
     display: flex;
     align-items: center;
     gap: v-bind(gap);
+
+    &.colon {
+      :first-child {
+        position: relative;
+        padding-right: v-bind(colonGap);
+        &::after {
+          position: absolute;
+          right: 0;
+          content: "：";
+        }
+      }
+    }
   }
 </style>

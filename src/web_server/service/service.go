@@ -29,6 +29,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
+	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
@@ -79,7 +80,8 @@ func (s *Service) WebService() *gin.Engine {
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
-	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html")
+	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html",
+		s.Config.Site.HtmlRoot+"/"+webCommon.InaccessibleHtml)
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)

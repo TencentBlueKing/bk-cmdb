@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect, reactive } from 'vue'
+  import { computed, ref, nextTick, watchEffect, reactive } from 'vue'
   import { t } from '@/i18n'
   import { useRoute } from '@/router/index'
   import { useStore } from '@/store'
@@ -21,6 +21,7 @@
     MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
     MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING
   } from '@/dictionary/menu-symbol'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
   import { wrapData } from './children/use-field'
@@ -34,8 +35,18 @@
     { title: t('字段设置'), icon: 2 },
     { title: t('模型信息确认'), icon: 3 }
   ]
+  const requestIds = {
+    template: Symbol(),
+    field: Symbol(),
+    unique: Symbol()
+  }
 
   const templateId = computed(() => Number(route.params.id))
+
+  const leaveConfirmConfig = reactive({
+    id: 'editFlowField',
+    active: true
+  })
 
   // 模板初始数据
   const fieldData = ref([])
@@ -56,9 +67,9 @@
 
   watchEffect(async () => {
     const [template, templateFieldList, templateUniqueList] = await Promise.all([
-      fieldTemplateService.findById(templateId.value),
-      fieldTemplateService.getFieldList({ bk_template_id: templateId.value }),
-      fieldTemplateService.getUniqueList({ bk_template_id: templateId.value })
+      fieldTemplateService.findById(templateId.value, { requestId: requestIds.template }),
+      fieldTemplateService.getFieldList({ bk_template_id: templateId.value }, { requestId: requestIds.field }),
+      fieldTemplateService.getUniqueList({ bk_template_id: templateId.value }, { requestId: requestIds.unique })
     ])
 
     beforeFieldList.value = templateFieldList?.info || []
@@ -73,6 +84,10 @@
 
     store.commit('setTitle', `${t('编辑字段组合模板')}【${template.name}】`)
   })
+
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
 
   // 模板最终数据，编辑后的数据优先否则为初始数据
   const templateData = computed(() => ({
@@ -105,32 +120,56 @@
 
   const handlePrevStep = () => {
     saveDraft()
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
-      history: true
+
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC,
+        history: false
+      })
     })
   }
   const handleNextStep = () => {
     saveDraft()
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
-      history: true
+
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
+        history: false
+      })
     })
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
   const handlePreview = () => {
     previewShow.value = true
   }
+
+  const handleLeave = () => {
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
 </script>
 <script>
   export default {
     beforeRouteLeave(to, from, next) {
       if (![MENU_MODEL_FIELD_TEMPLATE_EDIT_BASIC, MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
       }
       next()
     }
@@ -143,6 +182,7 @@
       <top-steps :steps="steps" width="632px" :current="2" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
     <field-manage
+      v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
       :field-list="fieldData"
       :unique-list="uniqueData"
       :before-field-list="beforeFieldList"
@@ -174,6 +214,15 @@
       :preview-show.sync="previewShow"
       :properties="previewFieldList">
     </field-preview>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('编辑步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </cmdb-sticky-layout>
 </template>
 

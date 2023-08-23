@@ -19,7 +19,6 @@ package fieldtmpl
 
 import (
 	"reflect"
-	"strings"
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
@@ -150,10 +149,6 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 		if rawErr := attr.ValidateBase(); rawErr.ErrCode != 0 {
 			return nil, rawErr.ToCCError(kit.CCError)
 		}
-		if strings.HasPrefix(attr.PropertyID, "bk") {
-			blog.Errorf("template attribute(%s) has 'bk' prefix, rid: %s", attr.PropertyID, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
-		}
 
 		if _, exists := innerFieldMap[attr.PropertyID]; exists {
 			blog.Errorf("template attribute(%s) collides with inner ones, rid: %s", attr.PropertyID, kit.Rid)
@@ -165,7 +160,7 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 		}
 
-		if _, exists := params.tmplPropIDMap[attr.PropertyName]; exists {
+		if _, exists := params.tmplNameMap[attr.PropertyName]; exists {
 			blog.Errorf("template attribute name(%s) duplicate, rid: %s", attr.PropertyName, kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
 		}
@@ -183,24 +178,27 @@ func (c *comparator) preCheckAttr(kit *rest.Kit, objID string, attrs []metadata.
 	}
 
 	// check if field template attributes collides with biz custom attributes
-	bizAttrCond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-		common.BKAppIDField: mapstr.MapStr{common.BKDBGT: 0},
-		common.BKDBOR: []mapstr.MapStr{
-			{common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: tmplPropertyIDs}},
-			{common.BKPropertyNameField: mapstr.MapStr{common.BKDBIN: tmplPropertyNames}},
+	param := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKAppIDField: mapstr.MapStr{common.BKDBGT: 0},
+			common.BKDBOR: []mapstr.MapStr{
+				{common.BKPropertyIDField: mapstr.MapStr{common.BKDBIN: tmplPropertyIDs}},
+				{common.BKPropertyNameField: mapstr.MapStr{common.BKDBIN: tmplPropertyNames}},
+			},
 		},
+		Fields: []string{common.BKPropertyIDField, common.BKAppIDField},
+		Page:   metadata.BasePage{Start: 0, Limit: 1},
 	}
 
-	bizAttrCnt, err := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		common.BKTableNameObjAttDes, []map[string]interface{}{bizAttrCond})
+	result, err := c.clientSet.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, objID, param)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(bizAttrCnt) <= 0 || bizAttrCnt[0] > 0 {
-		blog.Errorf("template(%+v) collides with biz custom field, cnt: %v, rid: %s", attrs, bizAttrCnt, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "attributes")
+	if len(result.Info) > 0 {
+		attr := result.Info[0]
+		blog.Errorf("template(%+v) collides with biz custom field, attr: %v, rid: %s", attrs, attr, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrTopoBizFieldConflict, objID, attr.BizID, attr.PropertyID)
 	}
 
 	return params, nil
@@ -421,7 +419,9 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 				return nil, result, nil
 			}
 
-			res.Update = append(res.Update, update)
+			if isChanged {
+				res.Update = append(res.Update, update)
+			}
 			continue
 		}
 
@@ -564,9 +564,6 @@ func (c *comparator) addUpdateAttrInfoForUI(kit *rest.Kit, params *compAttrParam
 		return
 	}
 
-	// ui do not compare template id
-	delete(updateData, common.BKTemplateID)
-
 	if len(updateData) > 0 {
 		res.Update = append(res.Update, metadata.CompareOneFieldTmplAttrRes{
 			Index:      params.tmplIndexMap[tmplAttr.PropertyID],
@@ -638,7 +635,10 @@ func (c *comparator) compareUpdatedAttr(kit *rest.Kit, tmplAttr *metadata.FieldT
 		updateData[common.BKOptionField] = tmplAttr.Option
 	}
 
-	if !reflect.DeepEqual(tmplAttr.Default, attr.Default) {
+	// todo 这里兼容当模型没有default字段，字段组合模版属性default字段为nil时，出现两者有差异的问题
+	if !reflect.DeepEqual(tmplAttr.Default, attr.Default) && (tmplAttr.Default != nil || attr.Default != nil ||
+		!reflect.ValueOf(tmplAttr.Default).IsNil() || !reflect.ValueOf(attr.Default).IsNil()) {
+
 		updateData[metadata.AttributeFieldDefault] = tmplAttr.Default
 	}
 

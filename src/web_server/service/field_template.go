@@ -20,7 +20,6 @@ package service
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
@@ -30,12 +29,12 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Service) initFieldTemplate(ws *gin.Engine) {
 	ws.POST("/findmany/field_template", s.ListFieldTemplate)
-	ws.POST("/findmany/field_template/attribute/count", s.CountFieldTemplateAttr)
 	ws.POST("/findmany/field_template/object/count", s.CountFieldTemplateObj)
 }
 
@@ -56,12 +55,19 @@ func (s *Service) ListFieldTemplate(c *gin.Context) {
 
 	tmplFilter := opt.TemplateFilter
 	if opt.ObjectFilter != nil {
-		var err errors.CCErrorCoder
-		tmplFilter, err = s.parseFieldTmplWithObjFilter(kit, tmplFilter, opt.ObjectFilter)
+		combinedFilter, isNone, err := s.parseFieldTmplWithObjFilter(kit, tmplFilter, opt.ObjectFilter)
 		if err != nil {
 			c.JSON(http.StatusOK, metadata.BaseResp{Code: err.GetCode(), ErrMsg: err.Error()})
 			return
 		}
+
+		if isNone {
+			c.JSON(http.StatusOK, metadata.NewSuccessResp(metadata.FieldTemplateInfo{Count: 0,
+				Info: make([]metadata.FieldTemplate, 0)}))
+			return
+		}
+
+		tmplFilter = combinedFilter
 	}
 
 	// list field template
@@ -82,17 +88,17 @@ func (s *Service) ListFieldTemplate(c *gin.Context) {
 
 // parseFieldTmplWithObjFilter parse field template with object filter to field template query filter
 func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilter *filter.Expression) (
-	*filter.Expression, errors.CCErrorCoder) {
+	*filter.Expression, bool, errors.CCErrorCoder) {
 
 	if objFilter == nil {
-		return tmplFilter, nil
+		return tmplFilter, false, nil
 	}
 
 	// get object ids by object filter
 	objCond, err := objFilter.ToMgo()
 	if err != nil {
 		blog.Errorf("parse object filter failed, err: %v, filter: %v, rid: %s", err, objFilter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "object_filter")
+		return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "object_filter")
 	}
 
 	objOpt := &metadata.QueryCondition{
@@ -103,11 +109,11 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 	objRes, ccErr := s.CoreAPI.ApiServer().ReadModel(kit.Ctx, kit.Header, objOpt)
 	if ccErr != nil {
 		blog.Errorf("list object ids failed, err: %v, opt: %+v, rid: %s", ccErr, objOpt, kit.Rid)
-		return nil, ccErr
+		return nil, false, ccErr
 	}
 
 	if len(objRes.Info) == 0 {
-		return nil, nil
+		return nil, true, nil
 	}
 
 	objIDs := make([]int64, len(objRes.Info))
@@ -122,11 +128,11 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 	relRes, ccErr := s.CoreAPI.ApiServer().FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, relOpt)
 	if ccErr != nil {
 		blog.ErrorJSON("list obj field template relation failed, err: %s, opt: %s, rid: %s", ccErr, relOpt, kit.Rid)
-		return nil, ccErr
+		return nil, false, ccErr
 	}
 
 	if len(relRes.Info) == 0 {
-		return nil, nil
+		return nil, true, nil
 	}
 
 	tmplIDs := make([]int64, len(relRes.Info))
@@ -138,81 +144,10 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 	tmplFilter, err = filtertools.And(tmplFilter, filtertools.GenAtomFilter(common.BKFieldID, filter.In, tmplIDs))
 	if err != nil {
 		blog.Errorf("add template id filter failed, err: %v, filter: %v, rid: %s", err, tmplFilter, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "template_filter")
+		return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "template_filter")
 	}
 
-	return tmplFilter, nil
-}
-
-// CountFieldTemplateAttr count field templates' attributes ** ONLY FOR UI **
-func (s *Service) CountFieldTemplateAttr(c *gin.Context) {
-	kit := rest.NewKitFromHeader(c.Request.Header, s.CCErr)
-
-	opt := new(metadata.CountFieldTmplResOption)
-	if err := json.NewDecoder(c.Request.Body).Decode(opt); err != nil {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommHTTPReadBodyFailed, ErrMsg: err.Error()})
-		return
-	}
-
-	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: rawErr.ErrCode, ErrMsg: rawErr.ToCCError(kit.CCError).Error()})
-		return
-	}
-
-	// count field template's attributes
-	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
-
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	var firstErr errors.CCErrorCoder
-	pipeline := make(chan struct{}, 10)
-
-	for idx := range opt.TemplateIDs {
-		if firstErr != nil {
-			break
-		}
-
-		pipeline <- struct{}{}
-		wg.Add(1)
-
-		go func(idx int) {
-			defer func() {
-				wg.Done()
-				<-pipeline
-			}()
-
-			attrOpt := &metadata.ListFieldTmplAttrOption{
-				TemplateID: opt.TemplateIDs[idx],
-				CommonQueryOption: metadata.CommonQueryOption{
-					Page: metadata.BasePage{EnableCount: true},
-				},
-			}
-			attrRes, err := s.CoreAPI.ApiServer().FieldTemplate().ListFieldTemplateAttr(kit.Ctx, kit.Header, attrOpt)
-			if err != nil {
-				blog.Errorf("count field template attribute failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
-				if firstErr == nil {
-					firstErr = err
-				}
-				return
-			}
-
-			lock.Lock()
-			countInfos[idx] = metadata.FieldTmplResCount{
-				TemplateID: opt.TemplateIDs[idx],
-				Count:      int(attrRes.Count),
-			}
-			lock.Unlock()
-		}(idx)
-	}
-
-	wg.Wait()
-
-	if firstErr != nil {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: firstErr.GetCode(), ErrMsg: firstErr.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, metadata.NewSuccessResp(countInfos))
+	return tmplFilter, false, nil
 }
 
 // CountFieldTemplateObj count field templates related objects ** ONLY FOR UI **

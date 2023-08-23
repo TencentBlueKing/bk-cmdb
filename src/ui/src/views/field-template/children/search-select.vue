@@ -18,6 +18,7 @@
   import fieldTemplateService from '@/service/field-template'
   import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     defaultFilter: {
@@ -50,7 +51,6 @@
     {
       id: 'modifier',
       name: t('更新人'),
-      placeholder: t('请输入关键字搜索'),
       multiable: true,
       remote: true
     }
@@ -95,7 +95,7 @@
       template_filter: {
         field: 'name',
         operator: queryBuilderOperator(QUERY_OPERATOR.LIKE),
-        value: val
+        value: escapeRegexChar(val)
       },
       fields: ['id', 'name'],
       page: {
@@ -153,8 +153,9 @@
   }
 
   const fetchMember = async (val, menu) => {
-    if (!isTyeing.value || !val?.length || val === `${menu.name}：`) {
-      return
+    let query = val
+    if (!isTyeing.value || !query?.length || query === `${menu.name}：`) {
+      query = 'a'
     }
 
     let result = []
@@ -164,7 +165,7 @@
         app_code: 'bk-magicbox',
         page: 1,
         page_size: 100,
-        fuzzy_lookups: val
+        fuzzy_lookups: query
       }
       const api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
       const response = await jsonp(api, params)
@@ -198,7 +199,23 @@
   }
 
   const handleSearchSelectChange = (list) => {
-    emit('search', list)
+    const ids = filterMenus.map(item => item.id)
+    list.forEach((item) => {
+      const nameItem = list.find(searchItem => searchItem.id === 'templateName')
+      if (!ids.includes(item.id)) {
+        // 存在多个就合并
+        if (nameItem) {
+          nameItem.values.push({ name: item.name })
+        } else {
+          item.id = 'templateName'
+          item.values = [{ name: item.name }]
+        }
+      }
+    })
+
+    // 合并完之后，被合并的项还会遗留，在这里去掉
+    const newList = list.filter(item => ids.includes(item.id))
+    emit('search', newList)
   }
   const handleInputChange = () => {
     isTyeing.value = true
@@ -234,5 +251,17 @@
 .search-select {
   width: 480px;
   background: #fff;
+}
+</style>
+<style lang="scss">
+.bk-search-list {
+  max-width: 360px;
+  .bk-search-list-menu-item {
+    width: 100%;
+    .item-name {
+      width: 100%;
+      @include ellipsis;
+    }
+  }
 }
 </style>

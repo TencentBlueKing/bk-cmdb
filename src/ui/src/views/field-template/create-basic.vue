@@ -11,13 +11,14 @@
 -->
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, onMounted, reactive, ref } from 'vue'
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE,
     MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS
   } from '@/dictionary/menu-symbol'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import BasicForm from './children/basic-form.vue'
 
@@ -25,6 +26,11 @@
 
   const nextButtonDisabled = ref(false)
   const basicFormRef = ref(null)
+
+  const leaveConfirmConfig = reactive({
+    id: 'createFlowBasic',
+    active: false
+  })
 
   const basicDefaultData = {
     name: '',
@@ -34,28 +40,58 @@
   const templateDraft = computed(() => store.getters['fieldTemplate/templateDraft'])
   const basicData = computed(() => ({ ...basicDefaultData, ...templateDraft.value.basic }))
 
+  onMounted(() => {
+    leaveConfirmConfig.active = basicData.value.name?.length > 0 || basicData.value.description?.length > 0
+  })
+
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
+
+  const handleFormDataChange = () => {
+    leaveConfirmConfig.active = true
+  }
+
   const handleNextStep = async () => {
     if (!await basicFormRef.value.$validator.validateAll()) {
       return
     }
     const { formData } = basicFormRef.value
     store.commit('fieldTemplate/setTemplateDraft', { basic: formData })
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS,
-      history: true
+
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS,
+        history: false
+      })
     })
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
+
+  const handleLeave = () => {
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
 </script>
 <script>
   export default {
     beforeRouteLeave(to, from, next) {
       if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_FIELD_SETTINGS].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
       }
       next()
     }
@@ -67,7 +103,7 @@
     <template #header="{ sticky }">
       <top-steps width="360px" :class="{ 'is-sticky': sticky }"></top-steps>
     </template>
-    <basic-form :data="basicData" ref="basicFormRef"></basic-form>
+    <basic-form :data="basicData" ref="basicFormRef" @change="handleFormDataChange"></basic-form>
     <template #footer="{ sticky }">
       <div :class="['layout-footer', { 'is-sticky': sticky }]">
         <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
@@ -83,6 +119,15 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('新建步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </cmdb-sticky-layout>
 </template>
 

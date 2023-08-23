@@ -18,8 +18,13 @@
           {{$t('唯一标识')}}
           <span class="color-danger">*</span>
         </span>
-        <div v-bk-tooltips.top.light.click="$t('模型字段唯一标识提示语')"
-          class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
+        <div :class="['cmdb-form-item', { 'is-error': errors.has('fieldId') }]"
+          v-bk-tooltips.top="{
+            disabled: isEditField && !isCreateMode,
+            theme: 'light',
+            trigger: 'click',
+            content: $t('模型字段唯一标识提示语')
+          }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldId"
             v-model.trim="fieldInfo.bk_property_id"
@@ -40,7 +45,7 @@
             name="fieldName"
             :placeholder="isSystemCreate ? $t('请输入名称，国际化时将会自动翻译，不可修改') : $t('请输入字段名称')"
             v-model.trim="fieldInfo.bk_property_name"
-            :disabled="isReadOnly || isSystemCreate || field.ispre"
+            :disabled="isReadOnly || isSystemCreate || field.ispre || isFromTemplateField"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>
@@ -56,8 +61,7 @@
             class="bk-select-full-width"
             searchable
             :clearable="false"
-            v-model="fieldInfo.bk_property_group"
-            :disabled="isEditField">
+            v-model="fieldInfo.bk_property_group">
             <bk-option v-for="(option, index) in groups"
               :key="index"
               :id="option.bk_group_id"
@@ -95,7 +99,7 @@
           class="cmdb-form-item"
           :key="fieldInfo.bk_property_type"
           v-if="isSettingComponentShow"
-          :is-read-only="isReadOnly || field.ispre"
+          :is-read-only="isReadOnly || field.ispre || isFromTemplateField"
           :is="`the-field-${fieldType}`"
           :multiple.sync="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
@@ -118,7 +122,7 @@
                 :is="`cmdb-form-${fieldInfo.bk_property_type}`"
                 :multiple="fieldInfo.ismultiple"
                 :options="fieldInfo.option || []"
-                :disabled="isReadOnly || isSystemCreate || field.ispre"
+                :disabled="isReadOnly || isSystemCreate || field.ispre || isFromTemplateField"
                 v-model="fieldInfo.default"
                 v-validate="getValidateRules(fieldInfo)"
                 ref="component">
@@ -127,7 +131,7 @@
                 v-if="isMultipleShow"
                 class="checkbox"
                 v-model="fieldInfo.ismultiple"
-                :disabled="isReadOnly || field.ispre">
+                :disabled="isReadOnly || field.ispre || isFromTemplateField">
                 <span>{{$t('可多选')}}</span>
               </bk-checkbox>
             </div>
@@ -153,7 +157,7 @@
         <div class="cmdb-form-item">
           <bk-input type="text" class="cmdb-form-input"
             v-model.trim="fieldInfo['unit']"
-            :disabled="isReadOnly"
+            :disabled="isReadOnly || isFromTemplateField"
             :placeholder="$t('请输入单位')">
           </bk-input>
         </div>
@@ -161,22 +165,17 @@
       <div class="form-label">
         <span class="label-text">{{$t('用户提示')}}</span>
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('placeholder') }">
-          <div :class="['form-item-container', { 'with-lock': isSettingScene }]">
-            <div class="form-component">
-              <bk-input
-                class="raw"
-                :rows="3"
-                :maxlength="2000"
-                name="placeholder"
-                :type="'textarea'"
-                v-model.trim="fieldInfo['placeholder']"
-                :disabled="isReadOnly"
-                v-validate="'length:2000'">
-              </bk-input>
-            </div>
-            <div class="lock-append" v-if="isSettingScene">
-              <lock-button :tips="$t('字段组合模板加解锁提示语')" v-model="fieldSettingExtra.lock.placeholder" />
-            </div>
+          <div class="form-component">
+            <bk-input
+              class="raw"
+              :rows="3"
+              :maxlength="2000"
+              name="placeholder"
+              :type="'textarea'"
+              v-model.trim="fieldInfo['placeholder']"
+              :disabled="isReadOnly || (isFromTemplateField && fieldSettingExtra.lock.placeholder)"
+              v-validate="'length:2000'">
+            </bk-input>
           </div>
           <p class="form-error" v-if="errors.has('placeholder')">{{errors.first('placeholder')}}</p>
         </div>
@@ -188,11 +187,17 @@
           fieldInfo: { id: field.id, ...fieldInfo }
         }">
       </slot>
+      <slot name="append-lock"
+        v-bind="{
+          fieldInfo: { id: field.id, ...fieldInfo }
+        }">
+      </slot>
     </div>
     <template slot="footer" slot-scope="{ sticky }">
       <div class="btn-group" :class="{ 'is-sticky': sticky }">
         <bk-button theme="primary"
           :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])"
+          :disabled="saveDisabled"
           @click="saveField">
           <span v-if="!isSettingScene">{{isEditField ? $t('保存') : $t('提交')}}</span>
           <span v-else>{{ $t('确定') }}</span>
@@ -215,12 +220,13 @@
   import theFieldEnumquote from './enumquote.vue'
   import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
-  import lockButton from '@/components/ui/button/lock-button.vue'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import { isEmptyPropertyValue } from '@/utils/tools'
   import useSideslider from '@/hooks/use-sideslider'
+  import { singleRuleTypes, unionRuleTypes } from '@/views/field-template/children/use-unique'
+  import fieldTemplateService from '@/service/field-template'
 
   export default {
     components: {
@@ -232,8 +238,7 @@
       theFieldList,
       theFieldBool,
       theConfig,
-      theFieldInnertable,
-      lockButton
+      theFieldInnertable
     },
     props: {
       properties: {
@@ -318,7 +323,8 @@
     provide() {
       return {
         customObjId: this.customObjId,
-        isSettingScene: this.isSettingScene
+        isSettingScene: this.isSettingScene,
+        isFromTemplateField: this.isFromTemplateField
       }
     },
     computed: {
@@ -328,6 +334,9 @@
       isGlobalView() {
         const [topRoute] = this.$route.matched
         return topRoute ? topRoute.name !== MENU_BUSINESS : true
+      },
+      saveDisabled() {
+        return !this.isSettingScene && this.isEditField && !this.isChanged?.value
       },
       fieldType() {
         let { bk_property_type: type } = this.fieldInfo
@@ -391,7 +400,7 @@
           return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
         }
         // eslint-disable-next-line max-len
-        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
         return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       },
       availableFieldTypeList() {
@@ -413,15 +422,11 @@
         return !this.fieldInfo.bk_property_id || !this.fieldInfo.bk_property_name
       },
       isUniqueSettingShow() {
-        const types = [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.ENUM,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.LIST
-        ]
+        const types = [...new Set([...singleRuleTypes, ...unionRuleTypes])]
         return types.includes(this.fieldInfo.bk_property_type) && !this.uniqueDisabled
+      },
+      isFromTemplateField() {
+        return !this.isSettingScene && this.field.bk_template_id > 0
       }
     },
     watch: {
@@ -465,9 +470,9 @@
       if (this.isEditField) {
         this.initData()
       }
-
-      const { beforeClose } = useSideslider(this.fieldInfo)
+      const { beforeClose, isChanged } = useSideslider(this.fieldInfo)
       this.beforeClose = beforeClose
+      this.isChanged = isChanged
     },
     methods: {
       ...mapActions('objectModelProperty', [
@@ -476,7 +481,10 @@
         'updateObjectAttribute',
         'updateBizObjectAttribute'
       ]),
-      initData() {
+      ...mapActions('objectModelFieldGroup', [
+        'updatePropertySort'
+      ]),
+      async initData() {
         Object.keys(this.fieldInfo).forEach((key) => {
           this.fieldInfo[key] = this.$tools.clone(this.field[key] ?? '')
         })
@@ -486,6 +494,13 @@
           Object.keys(this.fieldSetting).forEach((key) => {
             this.fieldSettingExtra[key] = this.$tools.clone(this.fieldSetting[key] ?? '')
           })
+        } else if (this.isFromTemplateField) {
+          // 模型字段编辑来自模板的字段，需要获取模板中针对字段的配置
+          const templateFieldList = await fieldTemplateService.getTemplateFieldListByField(this.field)
+          const templateField = templateFieldList.find(item => item.id === this.field.bk_template_id)
+          this.fieldSettingExtra.lock.isrequired = templateField?.isrequired?.lock
+          this.fieldSettingExtra.lock.editable = templateField?.editable?.lock
+          this.fieldSettingExtra.lock.placeholder = templateField?.placeholder?.lock
         }
       },
       async validateValue() {
@@ -523,41 +538,73 @@
 
         // 配置流程直接抛出事件并退出，在流程中自行处理
         if (this.isSettingScene) {
-          this.$emit('confirm', this.field.id, this.fieldInfo, this.fieldSettingExtra)
+          this.$emit('confirm', this.field.id, this.fieldInfo)
           return
         }
-
+        const defaultGroupld = this.isGlobalView ? 'default' : 'bizdefault'
+        const groupId =  this.fieldInfo.bk_property_group || defaultGroupld
+        const activeObjId = this.$route.params.modelId || this.customObjId
         if (this.isEditField) {
           const action = this.customObjId ? 'updateBizObjectAttribute' : 'updateObjectAttribute'
-          const params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
-          if (!this.isGlobalView) {
-            params.bk_biz_id = this.bizId
-          }
+          let params = this.field.ispre ? this.getPreFieldUpdateParams() : this.fieldInfo
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             params.default = null
           }
-          await this[action]({
-            bizId: this.bizId,
-            id: this.field.id,
-            params,
-            config: {
-              requestId: 'updateObjectAttribute'
-            }
-          }).then(() => {
-            fieldId = this.fieldInfo.bk_property_id
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
-            this.$http.cancelCache('getHostPropertyList')
+          if (this.isFromTemplateField) {
+            params = this.getTemplateFieldParams()
+          }
+          if (!this.isGlobalView) {
+            params.bk_biz_id = this.bizId
+          }
+          // 是否调用编辑字段接口
+          const paramsLen = Object.keys(params).length
+          // 是否调用修改字段分组接口
+          const isChangeGroupId = groupId !== this.group.bk_group_id
+          if (paramsLen) {
+            await this[action]({
+              bizId: this.bizId,
+              id: this.field.id,
+              params,
+              config: {
+                requestId: 'updateObjectAttribute'
+              }
+            }).then(() => {
+              fieldId = this.fieldInfo.bk_property_id
+              this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
+              this.$http.cancelCache('getHostPropertyList')
+            })
+          }
+          if (isChangeGroupId) {
+            // 每次都查询出最后一个元素的index
+            const toLastIndex = this.properties.
+              filter(property => property.bk_property_group === groupId)?.at(-1)?.bk_property_index
+              ?? -1
+            // 修改分组
+            await this.updatePropertySort({
+              objId: activeObjId,
+              propertyId: this.field.id,
+              params: {
+                bk_biz_id: params.bk_biz_id,
+                bk_property_group: groupId,
+                bk_property_index: toLastIndex + 1
+              },
+              config: {
+                requestId: `updatePropertySort_${activeObjId}`
+              }
+            }).then(() => {
+              this.$success(this.$t('修改成功'))
+            })
+          } else {
             this.$success(this.$t('修改成功'))
-          })
+          }
         } else {
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             Reflect.deleteProperty(this.fieldInfo, 'default')
           }
-          const groupId = this.isGlobalView ? 'default' : 'bizdefault'
           const selectedGroup = this.groups.find(group => group.bk_group_id === this.fieldInfo.bk_property_group)
           const otherParams = {
             creator: this.userName,
-            bk_property_group: this.fieldInfo.bk_property_group || this.group.bk_group_id || groupId,
+            bk_property_group: groupId,
             bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id,
             bk_supplier_account: this.supplierAccount
           }
@@ -576,7 +623,7 @@
               requestId: 'createObjectAttribute'
             }
           }).then(() => {
-            this.$http.cancel(`post_searchObjectAttribute_${this.activeModel.bk_obj_id}`)
+            this.$http.cancel(`post_searchObjectAttribute_${activeObjId}`)
             this.$http.cancelCache('getHostPropertyList')
             this.$success(this.$t('创建成功'))
           })
@@ -588,6 +635,16 @@
         const params = {}
         allowKey.forEach((key) => {
           params[key] = this.fieldInfo[key]
+        })
+        return params
+      },
+      getTemplateFieldParams() {
+        const allowKey = ['isrequired', 'editable', 'placeholder']
+        const params = {}
+        allowKey.forEach((key) => {
+          if (!this.fieldSettingExtra.lock[key]) {
+            params[key] = this.fieldInfo[key]
+          }
         })
         return params
       },
@@ -667,7 +724,7 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 8px 24px;
+            padding: 8px 40px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
             }
@@ -675,34 +732,6 @@
                 width: 88px;
                 height: 32px;
             }
-        }
-
-        .form-item-container {
-          &.with-lock {
-            display: flex;
-            :deep(.form-component) {
-              flex: 1;
-
-              .bk-form-input,
-              .bk-form-textarea,
-              .bk-textarea-wrapper {
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
-              }
-            }
-          }
-
-          .lock-append {
-            display: inline-flex;
-            width: 24px;
-            align-items: center;
-            justify-content: center;
-            background-color: #f2f4f8;
-            border: 1px solid #c4c6cc;
-            border-left: none;
-            border-top-right-radius: 2px;
-            border-bottom-right-radius: 2px;
-          }
         }
     }
 </style>

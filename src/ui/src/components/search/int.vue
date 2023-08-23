@@ -12,11 +12,14 @@
 
 <template>
   <span class="search-input-wrapper" v-if="multiple">
-    <bk-input class="search-input" type="number" v-model="start" v-on="listeners"></bk-input>
+    <bk-input :min="min" :max="max"
+      class="search-input" type="number" v-model="start" v-on="listeners"></bk-input>
     <span class="search-input-grep">-</span>
-    <bk-input class="search-input" type="number" v-model="end" v-on="listeners"></bk-input>
+    <bk-input :min="min" :max="max"
+      class="search-input" type="number" v-model="end" v-on="listeners"></bk-input>
   </span>
-  <bk-input class="search-input" type="number" v-model="localValue" v-on="listeners" v-else></bk-input>
+  <bk-input class="search-input" type="number"
+    :min="min" :max="max" v-model="localValue" v-on="listeners" v-else></bk-input>
 </template>
 
 <script>
@@ -28,10 +31,16 @@
       value: {
         type: [Number, String, Array],
         default: ''
+      },
+      options: {
+        type: Object,
+        default: () => {}
       }
     },
     data() {
       return {
+        max: 99999999999,
+        min: -999999999,
         listeners: {
           focus: () => this.handleToggle(true),
           blur: () => this.handleToggle(false),
@@ -45,7 +54,7 @@
       },
       localValue: {
         get() {
-          return this.value
+          return String(this.value) === 'NaN' ? '' : this.value
         },
         set(value) {
           let newValue
@@ -78,7 +87,12 @@
           this.localValue = [start, end]
         }
       }
-    }
+    },
+    mounted() {
+      const { min = -999999999, max = 99999999999 } = this.options || {}
+      this.max = max === '' ? 99999999999 : max
+      this.min = min  === '' ? -999999999 : min
+    },
   }
 </script>
 

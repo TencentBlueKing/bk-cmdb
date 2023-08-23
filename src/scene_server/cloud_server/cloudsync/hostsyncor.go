@@ -33,6 +33,83 @@ func NewHostSyncor(logics *logics.Logics) *HostSyncor {
 	}
 }
 
+func (h *HostSyncor) syncCloudHost(syncResult *metadata.SyncResult, hostResource *metadata.CloudHostResource,
+	taskID int64, accountConf *metadata.CloudAccountConf, startTime time.Time) error {
+
+	// 让writeKit的header含有同样的事务信息，以保证同一个事务里写操作后的数据能够被读到
+	ccom.CopyHeaderTxnInfo(h.readKit.Header, h.writeKit.Header)
+	if len(hostResource.DestroyedVpcs) > 0 {
+		// 同步被销毁的VPC相关资源
+		err := h.syncDestroyedVpcs(hostResource, syncResult)
+		if err != nil {
+			blog.Errorf("syncDestroyedVpcs fail, taskID: %d, err: %v, rid: %s", taskID, err, h.readKit.Rid)
+			return err
+		}
+	}
+
+	// 查询vpc对应的云区域并更新云主机资源信息里的云区域id
+	err := h.addCLoudId(accountConf, hostResource)
+	if err != nil {
+		blog.Errorf("addCLoudId fail, taskID: %d, err: %v, rid: %s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
+	diffHosts, err := h.getDiffHosts(hostResource)
+	if err != nil {
+		blog.Errorf("getDiffHosts fail, taskID: %d, err: %v, rid: %s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 没差异则结束
+	if len(diffHosts) == 0 {
+		blog.Infof("no diff hosts for taskid:%d, rid:%s", taskID, h.readKit.Rid)
+		if syncResult.SuccessInfo.Count == 0 {
+			blog.Infof("no any hosts need sync for taskID: %d, rid: %s", taskID, h.readKit.Rid)
+			return nil
+		}
+	}
+
+	// 有差异的更新任务同步状态为同步中
+	err = h.updateTaskState(h.writeKit, taskID, metadata.CloudSyncInProgress, nil)
+	if err != nil {
+		blog.Errorf("updateTaskState fail, taskID: %d, err: %v, rid:%s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 同步有差异的主机数据
+	err = h.syncDiffHosts(diffHosts, syncResult)
+	if err != nil {
+		blog.Errorf("syncDiffHosts fail, taskID: %d, err: %v, rid: %s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 设置SyncResult的状态信息
+	err = h.SetSyncResultStatus(syncResult, startTime)
+	if err != nil {
+		blog.Errorf("SetSyncResultStatus fail, taskID: %d, err: %v, rid: %s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 增加任务同步历史记录
+	_, err = h.addSyncHistory(syncResult, taskID)
+	if err != nil {
+		blog.Errorf("addSyncHistory fail, taskID: %d, err: %v, rid:%s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	// 完成后更新任务同步状态
+	err = h.updateTaskState(h.writeKit, taskID, syncResult.SyncStatus, &syncResult.StatusDescription)
+	if err != nil {
+		blog.Errorf("updateTaskState fail, taskid: %d, err: %v, rid:%s", taskID, err, h.readKit.Rid)
+		return err
+	}
+
+	blog.Infof("sync success, finish sync taskid: %v, costTime: %ds, detail: %#v, failInfo: %#v, rid: %s",
+		taskID, time.Since(startTime)/time.Second, syncResult.Detail, syncResult.FailInfo, h.readKit.Rid)
+	return nil
+}
+
 // Sync 同步云主机
 func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	defer func() {
@@ -54,16 +131,14 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	// 根据账号id获取账号详情
 	accountConf, err := h.logics.GetCloudAccountConf(h.readKit, task.AccountID)
 	if err != nil {
-		blog.Errorf("GetCloudAccountConf fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-			err.Error(), h.readKit.Rid)
+		blog.Errorf("GetCloudAccountConf fail, taskID: %d, err: %v, rid: %s", task.TaskID, err, h.readKit.Rid)
 		return err
 	}
 
 	// 根据任务详情和账号信息获取要同步的云主机资源
 	hostResource, err := h.getCloudHostResource(task, accountConf)
 	if err != nil {
-		blog.Errorf("getCloudHostResource fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-			err.Error(), h.readKit.Rid)
+		blog.Errorf("getCloudHostResource fail, taskID: %d, err: %v, rid: %s", task.TaskID, err, h.readKit.Rid)
 		return err
 	}
 	if len(hostResource.HostResource) == 0 && len(hostResource.DestroyedVpcs) == 0 {
@@ -71,93 +146,14 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 		return nil
 	}
 
-	blog.Infof(" taskid:%d, destroyed vpc count:%d, other vpc count:%d, rid:%s", task.TaskID,
+	blog.Infof("taskID: %d, destroyed vpc count: %d, other vpc count: %d, rid: %s", task.TaskID,
 		len(hostResource.DestroyedVpcs), len(hostResource.HostResource), h.readKit.Rid)
 
 	syncResult := new(metadata.SyncResult)
 	syncResult.FailInfo.IPError = make(map[string]string)
 
 	txnErr := h.logics.CoreAPI.CoreService().Txn().AutoRunTxn(h.readKit.Ctx, h.readKit.Header, func() error {
-		// 让writeKit的header含有同样的事务信息，以保证同一个事务里写操作后的数据能够被读到
-		ccom.CopyHeaderTxnInfo(h.readKit.Header, h.writeKit.Header)
-		if len(hostResource.DestroyedVpcs) > 0 {
-			// 同步被销毁的VPC相关资源
-			err = h.syncDestroyedVpcs(hostResource, syncResult)
-			if err != nil {
-				blog.Errorf("syncDestroyedVpcs fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-					err.Error(), h.readKit.Rid)
-				return err
-			}
-		}
-
-		// 查询vpc对应的管控区域并更新云主机资源信息里的云区域id
-		err = h.addCLoudId(accountConf, hostResource)
-		if err != nil {
-			blog.Errorf("addCLoudId fail, taskid:%d, err:%s, rid:%s", task.TaskID, err.Error(),
-				h.readKit.Rid)
-			return err
-		}
-
-		// 根据主机实例id获取mongo中的主机信息,并获取有差异的主机
-		diffHosts, err := h.getDiffHosts(hostResource)
-		if err != nil {
-			blog.Errorf("getDiffHosts fail, taskid:%d, err:%s, rid:%s", task.TaskID, err.Error(), h.readKit.Rid)
-			return err
-		}
-
-		// 没差异则结束
-		if len(diffHosts) == 0 {
-			blog.Infof("no diff hosts for taskid:%d, rid:%s", task.TaskID, h.readKit.Rid)
-			if syncResult.SuccessInfo.Count == 0 {
-				blog.Infof("no any hosts need sync for taskid:%d, rid:%s", task.TaskID,
-					h.readKit.Rid)
-				return nil
-			}
-		}
-
-		// 有差异的更新任务同步状态为同步中
-		err = h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncInProgress, nil)
-		if err != nil {
-			blog.Errorf("updateTaskState fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-				err.Error(), h.readKit.Rid)
-			return err
-		}
-
-		// 同步有差异的主机数据
-		err = h.syncDiffHosts(diffHosts, syncResult)
-		if err != nil {
-			blog.Errorf("syncDiffHosts fail, taskid:%d, err:%s, rid:%s", task.TaskID, err.Error(),
-				h.readKit.Rid)
-			return err
-		}
-
-		// 设置SyncResult的状态信息
-		err = h.SetSyncResultStatus(syncResult, startTime)
-		if err != nil {
-			blog.Errorf("SetSyncResultStatus fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-				err.Error(), h.readKit.Rid)
-			return err
-		}
-
-		// 增加任务同步历史记录
-		_, err = h.addSyncHistory(syncResult, task.TaskID)
-		if err != nil {
-			blog.Errorf("addSyncHistory fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-				err.Error(), h.readKit.Rid)
-			return err
-		}
-
-		// 完成后更新任务同步状态
-		err = h.updateTaskState(h.writeKit, task.TaskID, syncResult.SyncStatus, &syncResult.StatusDescription)
-		if err != nil {
-			blog.Errorf("updateTaskState fail, taskid:%d, err:%s, rid:%s", task.TaskID,
-				err.Error(), h.readKit.Rid)
-			return err
-		}
-
-		blog.Infof("sync success, finish sync taskid:%s, costTime:%ds, Detail:%#v, FailInfo:%#v, rid:%s",
-			task.TaskID, time.Since(startTime)/time.Second, syncResult.Detail, syncResult.FailInfo, h.readKit.Rid)
-		return nil
+		return h.syncCloudHost(syncResult, hostResource, task.TaskID, accountConf, startTime)
 	})
 
 	// 事务结束，去掉readKit、writeKit中header的事务信息
@@ -165,30 +161,29 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	ccom.DelHeaderTxnInfo(h.writeKit.Header)
 
 	if txnErr != nil {
-		blog.Errorf("sync fail, taskid:%d, txnErr:%v, rid:%s", task.TaskID, txnErr, h.readKit.Rid)
+		blog.Errorf("sync fail, taskID: %d, txnErr: %v, rid: %s", task.TaskID, txnErr, h.readKit.Rid)
 		err := h.updateTaskState(h.writeKit, task.TaskID, metadata.CloudSyncFail,
 			&metadata.SyncStatusDesc{ErrorInfo: txnErr.Error()})
 		if err != nil {
-			blog.Errorf("updateTaskState fail, taskid:%d, err:%v, rid:%s", task.TaskID, err,
-				h.readKit.Rid)
+			blog.Errorf("updateTaskState fail, taskID: %d, err: %v, rid: %s", task.TaskID, err, h.readKit.Rid)
 		}
 	} else {
+
 		// 检查同步状态，如果为异常，则更新为正常, 以在没有主机差异要同步时也可以恢复某些问题导致的状态异常；已经是正常的情况下不需要更新
-		opt := &metadata.SearchCloudOption{
-			Condition: mapstr.MapStr{common.BKCloudSyncTaskID: task.TaskID},
-		}
+		opt := &metadata.SearchCloudOption{Condition: mapstr.MapStr{common.BKCloudSyncTaskID: task.TaskID}}
 
 		ret, err := h.logics.CoreAPI.CoreService().Cloud().SearchSyncTask(h.readKit.Ctx, h.readKit.Header, opt)
 		if err != nil {
-			blog.Errorf("SearchSyncTask failed, taskid: %v, opt:%#v, err: %s, rid:%s",
-				task.TaskID, opt, err.Error(), h.readKit.Rid)
+			blog.Errorf("search task failed, taskID: %v, opt: %#v, err: %v, rid: %s", task.TaskID, opt,
+				err, h.readKit.Rid)
 			return err
 		}
+
 		if len(ret.Info) == 0 {
-			blog.Errorf("SearchSyncTask failed, taskid %d is not found, opt:%#v, rid:%s",
-				task.TaskID, opt, h.readKit.Rid)
+			blog.Errorf("sync failed, taskID: %d is not found, opt: %#v, rid: %s", task.TaskID, opt, h.readKit.Rid)
 			return fmt.Errorf("taskID %d is not found", task.TaskID)
 		}
+
 		if ret.Info[0].SyncStatus == metadata.CloudSyncFail {
 			costTime, _ := strconv.ParseFloat(fmt.Sprintf("%.1f",
 				float64(time.Since(startTime)/time.Millisecond)/1000.0), 64)
@@ -198,14 +193,13 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 				blog.Errorf("updateTaskState fail, taskid:%d, err:%v, rid:%s", task.TaskID, err,
 					h.readKit.Rid)
 			}
-			blog.Infof("update taskid:%d status from fail to success, rid:%s", task.TaskID,
-				h.readKit.Rid)
+			blog.Infof("update taskid:%d status from fail to success, rid:%s", task.TaskID, h.readKit.Rid)
 		}
 		blog.Errorf("sync success, taskid:%d, rid:%s", task.TaskID, h.readKit.Rid)
 	}
 
-	blog.Infof("sync loop for taskid:%d is over, costTime:%ds, rid:%s", task.TaskID, time.Since(startTime)/time.Second,
-		h.readKit.Rid)
+	blog.Infof("sync loop for taskID: %d is over, costTime: %ds, rid: %s", task.TaskID,
+		time.Since(startTime)/time.Second, h.readKit.Rid)
 
 	return nil
 }

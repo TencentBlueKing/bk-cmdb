@@ -47,7 +47,7 @@ export const IAM_VIEWS = {
   // 项目
   PROJECT: 'project',
   // 项目
-  FIELD_TEMPLATE: 'field_template'
+  FIELD_TEMPLATE: 'field_grouping_template'
 }
 
 export const IAM_VIEWS_NAME = {
@@ -1235,12 +1235,12 @@ export const IAM_ACTIONS = {
     })
   },
   C_FIELD_TEMPLATE: {
-    id: 'create_field_template',
+    id: 'create_field_grouping_template',
     name: ['字段组合模板创建', 'Create Field Template'],
     cmdb_action: 'fieldTemplate.create'
   },
   U_FIELD_TEMPLATE: {
-    id: 'edit_field_template',
+    id: 'edit_field_grouping_template',
     name: ['字段组合模板编辑', 'Update Field Template'],
     cmdb_action: 'fieldTemplate.update',
     relation: [{
@@ -1252,22 +1252,24 @@ export const IAM_ACTIONS = {
     })
   },
   R_FIELD_TEMPLATE: {
-    id: 'view_field_template',
+    id: 'view_field_grouping_template',
     name: ['字段组合模板查看', 'View Field Template'],
     cmdb_action: 'fieldTemplate.findMany',
     relation: [{
-      view: IAM_VIEWS.FIELD_TEMPLATE
+      view: IAM_VIEWS.FIELD_TEMPLATE,
+      instances: [IAM_VIEWS.FIELD_TEMPLATE]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]
     })
   },
   D_FIELD_TEMPLATE: {
-    id: 'view_field_template',
+    id: 'delete_field_grouping_template',
     name: ['字段组合模板删除', 'Delete Field Template'],
     cmdb_action: 'fieldTemplate.delete',
     relation: [{
-      view: IAM_VIEWS.FIELD_TEMPLATE
+      view: IAM_VIEWS.FIELD_TEMPLATE,
+      instances: [IAM_VIEWS.FIELD_TEMPLATE]
     }],
     transform: (cmdbAction, relationIds) => basicTransform(cmdbAction, {
       resource_id: relationIds[0]

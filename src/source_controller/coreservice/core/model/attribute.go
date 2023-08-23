@@ -187,15 +187,13 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		if (!inputParam.FromTemplate && attr.TemplateID != 0) || (inputParam.FromTemplate && attr.TemplateID == 0) {
 			blog.Errorf("scene parameter invalid, attr: %+v, from template: %v rid: %s", attr,
 				inputParam.FromTemplate, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 		}
 
-		if attr.IsPre {
-			if attr.PropertyID == common.BKInstNameField {
-				lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-				attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
-					attr.PropertyName, attr.PropertyID)
-			}
+		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
+			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
+				attr.PropertyName, attr.PropertyID)
 		}
 
 		attr.OwnerID = kit.SupplierAccount
@@ -203,7 +201,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		blog.V(5).Infof("property(id: %s, bizID: %d) exists: %v, rid: %s", attr.PropertyID, attr.BizID, exists, kit.Rid)
 		if err != nil {
 			blog.Errorf("check attribute(%s) exists failed, err: %v, rid: %s", attr.PropertyID, err, kit.Rid)
-			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
+			addExceptionFunc(int64(attrIdx), err, &attr)
 			continue
 		}
 
@@ -269,8 +267,8 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 
 			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond, false)
 			if err != nil {
-				blog.Errorf("failed to update the attribute(%#v) by the condition(%#v), err: %s, rid: %s",
-					attr, cond.ToMapStr(), err.Error(), kit.Rid)
+				blog.Errorf("failed to update the attribute(%#v) by the condition(%#v), err: %v, rid: %s", attr,
+					cond.ToMapStr(), err, kit.Rid)
 				addExceptionFunc(int64(attrIdx), err, &attr)
 				continue
 			}

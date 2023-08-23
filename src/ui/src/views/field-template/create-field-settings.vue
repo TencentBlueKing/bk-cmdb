@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { ref, computed, reactive } from 'vue'
+  import { ref, nextTick, computed, reactive } from 'vue'
   import { useStore } from '@/store'
   import routerActions from '@/router/actions'
   import {
@@ -20,6 +20,7 @@
     MENU_MODEL_FIELD_TEMPLATE,
   } from '@/dictionary/menu-symbol'
   import fieldTemplateService from '@/service/field-template'
+  import LeaveConfirm from '@/components/ui/dialog/leave-confirm'
   import TopSteps from './children/top-steps.vue'
   import FieldManage from './children/field-manage.vue'
   import CreateSuccess from './children/create-success.vue'
@@ -41,6 +42,11 @@
   const newTemplateId = ref(null)
   const previewShow = ref(false)
 
+  const leaveConfirmConfig = reactive({
+    id: 'createFlowField',
+    active: true
+  })
+
   const previewFieldList = computed(() => templateData.value.fieldList)
 
   const templateData = computed(() => ({
@@ -56,6 +62,11 @@
     fieldList: null,
     uniqueList: null
   })
+
+  const clearTemplateDraft = () => {
+    store.commit('fieldTemplate/clearTemplateDraft')
+  }
+
   const handleFieldUpdate = (data) => {
     settingData.fieldList = data.map(wrapData)
   }
@@ -64,13 +75,18 @@
   }
 
   const handlePrevStep = () => {
+    leaveConfirmConfig.active = false
+
     store.commit('fieldTemplate/setTemplateDraft', {
       fieldList: templateData.value.fieldList,
       uniqueList: templateData.value.uniqueList
     })
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC,
-      history: true
+
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC,
+        history: true
+      })
     })
   }
   const handleSubmit = async () => {
@@ -84,14 +100,20 @@
       const result = await fieldTemplateService.create(submitData, { requestId: requestIds.submit })
       newTemplateId.value = result.id
       isCreateSuccess.value = true
+      leaveConfirmConfig.active = false
+
+      clearTemplateDraft()
     } catch (err) {
       isCreateSuccess.value = false
       console.error(err)
     }
   }
   const handleCancel = () => {
-    routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE
+    leaveConfirmConfig.active = false
+    nextTick(() => {
+      routerActions.redirect({
+        name: MENU_MODEL_FIELD_TEMPLATE
+      })
     })
   }
   const handlePreview = () => {
@@ -99,25 +121,40 @@
   }
 
   const handleSuccessAction = (action) => {
-    if (action === 'bind') {
-      routerActions.redirect({
-        name: MENU_MODEL_FIELD_TEMPLATE_BIND,
-        params: {
-          id: newTemplateId.value
-        }
-      })
-    } else if (action === 'back') {
-      routerActions.redirect({
-        name: MENU_MODEL_FIELD_TEMPLATE
-      })
-    }
+    leaveConfirmConfig.active = false
+
+    nextTick(() => {
+      if (action === 'bind') {
+        routerActions.redirect({
+          name: MENU_MODEL_FIELD_TEMPLATE_BIND,
+          params: {
+            id: newTemplateId.value
+          }
+        })
+      } else if (action === 'back') {
+        routerActions.redirect({
+          name: MENU_MODEL_FIELD_TEMPLATE
+        })
+      }
+    })
   }
+
+  const handleLeave = () => {
+    clearTemplateDraft()
+  }
+
+  defineExpose({
+    leaveConfirmConfig,
+    clearTemplateDraft
+  })
 </script>
 <script>
   export default {
     beforeRouteLeave(to, from, next) {
       if (![MENU_MODEL_FIELD_TEMPLATE_CREATE_BASIC].includes(to.name)) {
-        this.$store.commit('fieldTemplate/clearTemplateDraft')
+        if (!this.leaveConfirmConfig.active) {
+          this.clearTemplateDraft()
+        }
       }
       next()
     }
@@ -163,6 +200,7 @@
             </template>
           </cmdb-auth>
           <bk-button
+            :disabled="submitButtonDisabled"
             @click="handlePreview">
             {{$t('预览')}}
           </bk-button>
@@ -177,6 +215,15 @@
       :preview-show.sync="previewShow"
       :properties="previewFieldList">
     </field-preview>
+    <leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('是否退出')"
+      :content="$t('新建步骤未完成，退出将撤销当前操作')"
+      :ok-text="$t('退出')"
+      :cancel-text="$t('取消')"
+      @leave="handleLeave">
+    </leave-confirm>
   </div>
 </template>
 

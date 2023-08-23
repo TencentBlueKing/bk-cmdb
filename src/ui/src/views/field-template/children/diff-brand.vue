@@ -47,7 +47,7 @@
   --new-color: #2DCB56;
   --update-color: #FF9C01;
   --conflict-color: #EA3636;
-  --unbinded-color: #979BA5;
+  --unbound-color: #979BA5;
   --unchanged-color: #979BA5;
 
   display: flex;
@@ -101,13 +101,13 @@
       color: var(--conflict-color);
     }
   }
-  &.unbinded {
+  &.unbound {
     .icon-box {
       background: #DCDEE5;
-      border: 1px solid var(--unbinded-color);
+      border: 1px solid var(--unbound-color);
     }
     .count {
-      color: var(--unbinded-color);
+      color: var(--unbound-color);
     }
   }
   &.unchanged {

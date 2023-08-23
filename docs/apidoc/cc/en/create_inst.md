@@ -24,7 +24,7 @@ Create instance
     }
 }
 
-Other fields that belong to instance properties can also be input parameters.
+Other fields that belong to instance properties can also be input parameters. The value of the 'table' type attribute is the id list of the quoted table type model instance (need to be created through the batch_create_quoted_inst interface first), up to 50.
 
 
 ### Request Parameters Example

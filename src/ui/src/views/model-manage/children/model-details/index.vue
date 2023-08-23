@@ -49,8 +49,7 @@
                 @confirm="handleModelNameUpdateConfirm"
                 :editable="isEditable"
                 validate="required|singlechar|length:256|reservedWord"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              >
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                 <template #append>
                   <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
                 </template>
@@ -61,8 +60,11 @@
             </div>
           </div>
           <div class="model-group-name">
-            <span class="model-group-name-label">{{$t('所属分组')}}</span>
+            <span :class="['model-group-name-label', { 'model-group-name-label-editing': modelGroupIsEditing }]">
+              {{$t('所属分组')}}
+            </span>
             <editable-field
+              :editing.sync="modelGroupIsEditing"
               class="model-group-name-edit"
               v-model="activeModel.bk_classification_id"
               :label="modelClassificationName"
@@ -94,7 +96,7 @@
             <flex-tag
               v-if="templateList.length"
               class="field-template-tag"
-              :max-width="'500px'"
+              :max-width="'355px'"
               :list="templateList"
               :is-link-style="true"
               :popover-options="{
@@ -115,6 +117,7 @@
                 <i class="reddot"
                   v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
                   v-bk-tooltips="{
+                    allowHTML: true,
                     theme: 'light template-diff-sync',
                     content: `#template-diff-sync-tooltips-${template.id}`
                   }">
@@ -282,7 +285,7 @@
     MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import EditableField from './editable-field.vue'
+  import EditableField from '@/components/ui/details/editable-field.vue'
   import FlexTag from '@/components/ui/flex-tag'
   import fieldTemplateService from '@/service/field-template'
 
@@ -322,6 +325,7 @@
           instanceCount: Symbol('instanceCount')
         },
         modelNameIsEditing: false,
+        modelGroupIsEditing: false,
         templateList: [],
         templateDiffStatus: {}
       }
@@ -859,9 +863,11 @@
         .model-identity {
           width: 225px;
           margin-left: 10px;
+          margin-right: 10px;
 
           .model-name {
             font-weight: 700;
+            color: #313238;
             line-height: 26px;
 
             .bk-tag {
@@ -884,13 +890,15 @@
           font-size: 12px;
           color: #63656e;
           display: flex;
-          align-items: center;
-          flex-wrap: wrap;
+          flex-direction: column;
 
           &-label {
             flex: 0 0 auto;
             line-height: 26px;
             color: #979BA5;
+          }
+          &-label-editing {
+            margin-top: 13px;
           }
         }
 
@@ -931,14 +939,16 @@
 
             :deep(.tag-item-text) {
               position: relative;
+              @include ellipsis;
               .reddot {
-                position: absolute;
-                right: -4px;
-                top: 0;
+                position: relative;
+                right: 0px;
+                top: -6px;
                 width: 6px;
                 height: 6px;
                 background: #EA3636;
                 border-radius: 50%;
+                display: inline-block;
               }
             }
           }
@@ -1011,6 +1021,7 @@
       .bk-tab-header {
         padding: 0 18px;
         background: #fff;
+        box-shadow: 0 2px 4px 0 #1919290d;
       }
       .bk-tab-section {
         padding: 0;

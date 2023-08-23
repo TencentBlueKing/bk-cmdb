@@ -91,7 +91,7 @@ type FieldTemplateAttr struct {
 	LastTime      *Time           `json:"last_time" bson:"last_time"`
 }
 
-// ValidateBase validate FieldTemplateAttr todo:需要分场景进行校验，下个pr调整
+// ValidateBase validate field template attribute
 func (f *FieldTemplateAttr) ValidateBase() ccErr.RawErrorInfo {
 
 	if err := f.validatePropertyID(); err.ErrCode != 0 {

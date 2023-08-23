@@ -146,7 +146,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
 	w.Config.Site.BkDomain, _ = cc.String("webServer.site.bkDomain")
 	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
-	w.Config.Site.EsbUrl, _ = cc.String("esb.addr")
+	w.Config.Site.BkDesktopUrl, _ = cc.String("webServer.site.bkDesktopUrl")
 
 	w.Config.Session.Name, _ = cc.String("webServer.session.name")
 	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")

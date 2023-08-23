@@ -11,11 +11,13 @@
 -->
 
 <script setup>
-  import { computed, ref, watchEffect } from 'vue'
+  import { computed, ref, watchEffect, watch, nextTick } from 'vue'
+  import cloneDeep from 'lodash/cloneDeep'
   import { useRoute } from '@/router/index'
   import { t } from '@/i18n'
   import { $success } from '@/magicbox/index.js'
   import CmdbTab from '@/components/ui/tab/index.vue'
+  import EditableField from '@/components/ui/details/editable-field.vue'
   import DetailsField from './details-field.vue'
   import DetailsUnique from './details-unique.vue'
   import DetailsModel from './details-model.vue'
@@ -40,21 +42,50 @@
     }
   })
 
-  const emit = defineEmits(['close', 'bind-change', 'clone-done', 'delete-done'])
+  const emit = defineEmits(['close', 'bind-change', 'clone-done', 'delete-done', 'update-template'])
 
   const route = useRoute()
 
   const templateId = computed(() => props.template?.id)
   const queryTab = computed(() => route.query.tab)
 
-  const templateLocal = computed(() => [props.template])
-  const { handleDelete: handleDeleteTemplate } = useTemplate(templateLocal)
+  const templateList = computed(() => [cloneDeep(props.template)])
+  const templateName = computed({
+    get() {
+      return templateList.value?.[0]?.name
+    },
+    set(val) {
+      emit('update-template', templateId.value, val, 'name')
+    }
+  })
+  const templateDesc = computed({
+    get() {
+      return templateList.value?.[0]?.description
+    },
+    set(val) {
+      emit('update-template', templateId.value, val, 'description')
+    }
+  })
+  const { handleDelete: handleDeleteTemplate } = useTemplate(templateList)
 
   const fieldCount = ref('')
   const modelCount = ref('')
   const uniqueList = ref([])
   const previewFieldList = ref([])
   const previewShow = ref(false)
+
+  const isNameEditing = ref(false)
+  const isDescEditing = ref(false)
+  watch([isNameEditing, isDescEditing], ([nameEditing, descEditing]) => {
+    nextTick(() => {
+      if (nameEditing) {
+        isDescEditing.value = false
+      }
+      if (descEditing) {
+        isNameEditing.value = false
+      }
+    })
+  })
 
   const isShowCloneDialog = ref(false)
 
@@ -103,17 +134,22 @@
     }
   ]))
 
-  const handleEdit = () => {
+  const handleEdit = (id, routeKey) => {
     const editRoutes = {
       [tabIds.field]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.unique]: MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
       [tabIds.model]: MENU_MODEL_FIELD_TEMPLATE_EDIT_BINDING,
     }
+    const query = {}
+    if (!routeKey && tabActive.value === tabIds.unique) {
+      query.action = 'openUnqiueDrawer'
+    }
     routerActions.redirect({
-      name: editRoutes[tabActive.value],
+      name: editRoutes[routeKey || tabActive.value],
       params: {
-        id: templateId.value
-      }
+        id: id ?? templateId.value
+      },
+      query
     })
 
     emit('close')
@@ -139,6 +175,8 @@
 
   const handleSliderHidden = () => {
     tabActive.value = tabIds.field
+    isDescEditing.value = false
+    isNameEditing.value = false
     emit('close')
   }
 
@@ -153,13 +191,37 @@
     emit('bind-change', templateId.value)
   }
 
-  const handleCloneSuccess = () => {
+  const handleCloneSuccess = (res) => {
+    const { id } = res
+    if (!id) return
+    handleEdit(id, tabIds.field)
     $success(t('克隆成功'))
-    isShowCloneDialog.value = false
-    emit('clone-done')
   }
   const handleCloneDialogToggle = (val) => {
     isShowCloneDialog.value = val
+  }
+  const handleClose = () => {
+    emit('close')
+  }
+
+  const handleSaveTemplate = async ({ value, confirm, stop }, dataKey) => {
+    try {
+      await fieldTemplateService.updateBaseInfo({
+        id: templateId.value,
+        name: templateName.value,
+        [dataKey]: value
+      })
+      confirm()
+    } catch (err) {
+      stop()
+      console.log(err)
+    }
+  }
+  const handleSaveName = (arg) => {
+    handleSaveTemplate(arg, 'name')
+  }
+  const handleSaveDesc = async (arg) => {
+    handleSaveTemplate(arg, 'description')
   }
 </script>
 <script>
@@ -180,11 +242,35 @@
     <cmdb-sticky-layout slot="content" class="content">
       <div class="content-head">
         <div class="data-row">
-          <div class="data-value title">{{ template.name }}</div>
+          <div class="data-value title">
+            <editable-field
+              class="editable-field-name"
+              v-model="templateName"
+              :editing.sync="isNameEditing"
+              font-size="12px"
+              validate="required|length:256"
+              :placeholder="$t('请输入模板名称')"
+              :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
+              @confirm="handleSaveName">
+            </editable-field>
+          </div>
         </div>
         <div class="data-row">
           <div class="data-key">{{$t('描述：')}}</div>
-          <div class="data-value">{{ template.description || '--' }}</div>
+          <div class="data-value desc">
+            <editable-field
+              class="editable-field-desc"
+              v-model="templateDesc"
+              :editing.sync="isDescEditing"
+              type="longchar"
+              :rows="4"
+              font-size="12px"
+              validate="length:2000"
+              :placeholder="$t('请输入模板描述')"
+              :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
+              @confirm="handleSaveDesc">
+            </editable-field>
+          </div>
         </div>
         <cmdb-tab class="details-tab" :tabs="tabs" :active="tabActive" @change="handleTabChange" />
       </div>
@@ -203,23 +289,39 @@
         <details-model
           v-if="tabActive === tabIds.model"
           :template-id="templateId"
-          @unbound="handleModelUnbound">
+          @unbound="handleModelUnbound"
+          @close="handleClose">
         </details-model>
       </div>
       <template slot="footer" slot-scope="{ sticky }">
         <div class="action-bar" :class="{ 'is-sticky': sticky }">
-          <bk-button theme="primary" @click="handleEdit">
-            {{ $t('进入编辑') }}
-          </bk-button>
+          <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+            <template #default="{ disabled }">
+              <bk-button theme="primary" @click="() => handleEdit()" :disabled="disabled">
+                {{ $t('进入编辑') }}
+              </bk-button>
+            </template>
+          </cmdb-auth>
           <bk-button theme="default" @click="handlePreviewField">
             {{$t('预览字段')}}
           </bk-button>
-          <bk-button theme="default" @click="handleClone">
-            {{$t('克隆')}}
-          </bk-button>
-          <bk-button theme="default" @click="handleDelete">
-            {{$t('删除')}}
-          </bk-button>
+          <cmdb-auth class="mr10" :auth="[
+            { type: $OPERATION.C_FIELD_TEMPLATE },
+            { type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }
+          ]">
+            <template #default="{ disabled }">
+              <bk-button theme="default" @click="handleClone" :disabled="disabled">
+                {{$t('克隆')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
+          <cmdb-auth :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [templateId] }">
+            <template #default="{ disabled }">
+              <bk-button theme="default" @click="handleDelete" :disabled="disabled || modelCount > 0">
+                {{$t('删除')}}
+              </bk-button>
+            </template>
+          </cmdb-auth>
         </div>
       </template>
 
@@ -252,17 +354,30 @@
         display: flex;
         align-items: center;
         font-size: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 4px;
+        line-height: 34px;
 
         .data-key {
           color: #63656E;
+          flex: none;
+          align-self: start;
         }
         .data-value {
           color: #313238;
         }
         .title {
-          font-weight: 700;
+          width: 368px;
+          font-weight: 700 !important;
           font-size: 14px;
+        }
+        .desc {
+          width: 368px;
+        }
+
+        .editable-field-name,
+        .editable-field-desc {
+          width: 100%;
+          vertical-align: initial;
         }
       }
 

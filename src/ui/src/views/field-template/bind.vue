@@ -39,7 +39,10 @@
 
   const bindModelRef = ref(null)
   const requestIds = {
-    bind: Symbol('bind')
+    template: Symbol('template'),
+    bind: Symbol('bind'),
+    field: Symbol('bind'),
+    unique: Symbol('unique')
   }
   const isBindSuccess = ref(false)
   const modelIdList = ref([])
@@ -47,19 +50,18 @@
   watchEffect(async () => {
     try {
       const [template, templateFieldList, templateUniqueList] = await Promise.all([
-        fieldTemplateService.findById(templateId.value),
-        fieldTemplateService.getFieldList({ bk_template_id: templateId.value }),
-        fieldTemplateService.getUniqueList({ bk_template_id: templateId.value })
+        fieldTemplateService.findById(templateId.value, { requestId: requestIds.template }),
+        fieldTemplateService.getFieldList({ bk_template_id: templateId.value }, { requestId: requestIds.field }),
+        fieldTemplateService.getUniqueList({ bk_template_id: templateId.value }, { requestId: requestIds.unique })
       ])
 
       fieldData.value = templateFieldList?.info || []
       uniqueData.value = templateUniqueList?.info || []
 
-      store.commit('setTitle', `${t('绑定模板')}【${template.name}】`)
+      store.commit('setTitle', `${t('绑定新模型')}【${template.name}】`)
 
       const modelList = await fieldTemplateService.getBindModel({
-        bk_template_id: templateId.value,
-        // filter: {}
+        bk_template_id: templateId.value
       })
       bindModelData.value = modelList
     } catch (err) {
@@ -70,6 +72,12 @@
   const finalFieldList = computed(() => normalizeFieldData(fieldData.value, false))
   const finalUniqueList = computed(() => normalizeUniqueData(uniqueData.value, fieldData.value, false))
 
+  const addedModelList = computed(() => bindModelRef.value?.modelList)
+  const submitButtonDisabled = computed(() => !addedModelList.value?.length
+    || !isDiffDone.value
+    || hasDiffError.value
+    || hasDiffConflict.value)
+
   const handleDiffUpdate = (hasError, hasConflict) => {
     isDiffDone.value = true
     hasDiffError.value = hasError
@@ -77,8 +85,8 @@
   }
 
   const handleSubmit = async () => {
-    const modelIds = bindModelRef.value?.modelList?.map?.(model => model.id)
-    if (!modelIds) {
+    const modelIds = addedModelList.value?.map?.(model => model.id)
+    if (!modelIds?.length) {
       console.error('data error!')
       return
     }
@@ -108,6 +116,7 @@
   <div class="bind">
     <template v-if="!isBindSuccess">
       <bind-model
+        v-bkloading="{ isLoading: $loading(Object.values(requestIds)) }"
         ref="bindModelRef"
         :height="`${$APP.height - 111 - 52}px`"
         :template-id="templateId"
@@ -124,7 +133,7 @@
           <template #default="{ disabled }">
             <bk-button
               theme="primary"
-              :disabled="disabled || !isDiffDone || hasDiffError || hasDiffConflict"
+              :disabled="disabled || submitButtonDisabled"
               :loading="$loading(requestIds.bind)"
               @click="handleSubmit">
               {{$t('提交')}}

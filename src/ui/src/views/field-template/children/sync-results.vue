@@ -43,12 +43,17 @@
   })
   let timer = null
 
+  const requestIds = {
+    sync: Symbol()
+  }
+
   const isSyncResultStatus = computed(() => ['success', 'error', 'abnormal'].includes(status.value))
+  const isEditEmptyModel = computed(() => props.scene === 'edit' && !props.modelIds.length)
 
   const getTaskSyncStatus = async (taskIds) => {
     try {
       status.value = 'loading'
-      title.value = t('正在查询同步状态...')
+      title.value = t('同步中...')
 
       const statusList = await fieldTemplateService.getTaskSyncStatus({
         task_ids: taskIds
@@ -61,7 +66,7 @@
         return
       }
 
-      summary.value = t('接下来，您可以在模板详情页面，查看模型同步详细结果')
+      summary.value = t('正在将变更内容同步至绑定模型，请稍等...')
 
       const undone = statusList?.some(task => ['new', 'waiting', 'executing'].includes(task.status))
       timer && clearTimeout(timer)
@@ -97,6 +102,12 @@
   }
 
   watchEffect(async () => {
+    // 编辑模板允许绑定的模型为空
+    if (isEditEmptyModel.value) {
+      status.value = 'success'
+      title.value = t('模板保存成功')
+      return
+    }
     try {
       status.value = 'loading'
       title.value = t(props.scene === 'edit' ? '模板编辑成功，正在同步至模型中...' : '信息正在同步至模型中...')
@@ -104,7 +115,7 @@
       const taskIds = await fieldTemplateService.syncModel({
         bk_template_id: props.templateId,
         object_ids: props.modelIds
-      })
+      }, { requestId: requestIds.sync })
 
       summary.value = t('接下来，您可以在模板详情页面，查看模型的绑定的状态')
 
@@ -123,7 +134,7 @@
         query: {
           action: 'view',
           id: props.templateId,
-          tab: 'model'
+          tab: isEditEmptyModel.value ? 'field' : 'model'
         }
       })
     } else if (action === 'back') {
@@ -138,7 +149,7 @@
   <div class="sync-results">
     <result-status :status="status">
       <template #title>
-        <span v-if="!isSyncResultStatus">{{ title }}</span>
+        <span v-if="!isSyncResultStatus || isEditEmptyModel">{{ title }}</span>
         <i18n path="字段组合模板同步结果" v-else>
           <template #success><em class="count">{{counts.success}}</em></template>
           <template #fail><em class="count">{{counts.fail}}</em></template>
@@ -146,7 +157,11 @@
       </template>
       <template #summary>{{ summary }}</template>
       <template #actions>
-        <bk-button theme="primary" @click="handleAction('view')">{{ $t('立即查看') }}</bk-button>
+        <bk-button theme="primary"
+          :disabled="$loading(requestIds.sync)"
+          @click="handleAction('view')">
+          {{ $t('立即查看') }}
+        </bk-button>
         <bk-button @click="handleAction('back')">{{ $t('返回列表') }}</bk-button>
       </template>
     </result-status>

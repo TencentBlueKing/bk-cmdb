@@ -12,8 +12,8 @@
 
 import { computed } from 'vue'
 import isEqual from 'lodash/isEqual'
+import { isEmptyPropertyValue } from '@/utils/tools'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-import { t } from '@/i18n'
 
 export default function useField(beforeFieldList, fieldListLocal) {
   const fieldStatus = computed(() => {
@@ -54,8 +54,13 @@ export default function useField(beforeFieldList, fieldListLocal) {
     return fieldStatus
   })
 
+  const removedFieldList = computed(() => beforeFieldList.value
+    .filter(item => fieldStatus.value[item.id].removed)
+    .map(unwrapData))
+
   return {
-    fieldStatus
+    fieldStatus,
+    removedFieldList
   }
 }
 
@@ -151,10 +156,17 @@ export const normalizeFieldData = (fieldData, isCreate = true, fieldStatus) => {
 
     if (isCreate) {
       Reflect.deleteProperty(field, 'id')
+
+      if (isEmptyPropertyValue(field.default)) {
+        Reflect.deleteProperty(field, 'default')
+      }
     } else {
       // 编辑流程，需要关注状态
       if (fieldStatus?.value?.[field.id]?.new) {
         Reflect.deleteProperty(field, 'id')
+      }
+      if (isEmptyPropertyValue(field.default)) {
+        field.default = null
       }
     }
 
@@ -185,46 +197,20 @@ export const normalizeUniqueData = (uniqueData, fieldData, isCreate = true, uniq
   return uniqueList
 }
 
-export const isFieldSame = (field1, field2) => field1.bk_property_id === field2.bk_property_id
-  || field1.bk_property_name === field2.bk_property_name
+export const isFieldSame = (field1, field2, id) => (field1.bk_property_id === field2.bk_property_id
+  || field1.bk_property_name === field2.bk_property_name)
+  && (!id || field1.id !== id)
 
-export const isFieldExist = (field, fieldList) => fieldList.some(item => isFieldSame(item.field, field))
+export const isFieldExist = (field, fieldList, id) => fieldList.some(item => isFieldSame(item.field, field, id))
 
 export const MAX_FIELD_COUNT = 20
 
 export const DETAILS_FIELDLIST_REQUEST_ID = Symbol()
 
-export const diffFieldList = [
-  {
-    label: t('唯一标识'),
-    type: 'bk_property_id'
-  },
-  {
-    label: t('名称'),
-    type: 'bk_property_name'
-  },
-  {
-    label: t('字段类型'),
-    type: 'bk_property_type'
-  },
-  {
-    label: t('枚举值设置'),
-    type: 'option'
-  },
-  {
-    label: t('默认值'),
-    type: 'default'
-  },
-  {
-    label: t('是否可编辑'),
-    type: 'editable'
-  },
-  {
-    label: t('是否必填'),
-    type: 'isrequired'
-  },
-  {
-    label: t('用户提示'),
-    type: 'placeholder'
-  }
-]
+export const DIFF_TYPES = {
+  NEW: 'new',
+  UPDATE: 'update',
+  CONFLICT: 'conflict',
+  UNBOUND: 'unbound',
+  UNCHANGED: 'unchanged'
+}

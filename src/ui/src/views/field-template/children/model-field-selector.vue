@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useStore } from '@/store'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
@@ -38,13 +38,18 @@
   const selectedModelId = ref('')
   const selected = ref([])
 
+  watch(selectedModelId, () => {
+    handleClearSelect()
+  })
+
   const searchParams = computed(() => ({
     bk_obj_id: selectedModelId.value,
     bk_supplier_account: store.getters.supplierAccount
   }))
   const [{ properties, pending }] = useProperty(searchParams)
 
-  const fieldList = computed(() => properties.value.filter(item => !excludeFieldType.includes(item.bk_property_type)))
+  const fieldList = computed(() => properties.value
+    .filter(item => !excludeFieldType.includes(item.bk_property_type) && !item.ispre))
   const selectedStatus = computed(() => {
     const status = {
       selected: {},
@@ -86,6 +91,9 @@
   const handleCancel = () => {
     emit('cancel')
   }
+  defineExpose({
+    selectedModelId
+  })
 </script>
 
 <template>
@@ -114,25 +122,33 @@
             <bk-link theme="primary" @click="handleClearSelect">{{ $t('清空') }}</bk-link>
           </div>
         </div>
-        <div class="field-list" v-if="selectedModelId" v-bkloading="{ isLoading: pending }">
+        <div :class="['field-list', { empty: !fieldList.length }]"
+          v-if="selectedModelId"
+          v-bkloading="{ isLoading: pending }">
           <field-card
             v-for="(field, index) in fieldList"
             :key="index"
             :field="field"
             :sortable="false"
             :deletable="false"
+            v-bk-tooltips="{
+              disabled: !selectedStatus.disabled[field.id],
+              content: $t('字段已在模板中存在，无法添加')
+            }"
             @click-field="handleSelect">
             <template #action-append>
               <bk-checkbox
-                v-bk-tooltips="{
-                  disabled: !selectedStatus.disabled[field.id],
-                  content: $t('字段已在模板中存在，无法添加')
-                }"
+                @change="handleSelect(field)"
                 :disabled="selectedStatus.disabled[field.id]"
-                v-model="selectedStatus.selected[field.id]">
+                :value="selectedStatus.selected[field.id]">
               </bk-checkbox>
             </template>
           </field-card>
+          <div class="field-list-empty" v-if="!fieldList.length">
+            <div class="tips">
+              <bk-icon type="info" />{{$t('无可用字段')}}
+            </div>
+          </div>
         </div>
         <div class="unselected-model" v-if="!selectedModelId">
           <div class="tips">
@@ -177,6 +193,10 @@
       align-content: flex-start;
       padding: 16px;
       background: #F5F7FA;
+
+      &.empty {
+        display: block;
+      }
     }
 
     .select-toolbar {
@@ -202,7 +222,8 @@
       }
     }
 
-    .unselected-model {
+    .unselected-model,
+    .field-list-empty {
       display: flex;
       align-items: center;
       justify-content: center;

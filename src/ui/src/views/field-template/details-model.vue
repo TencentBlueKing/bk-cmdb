@@ -22,10 +22,12 @@
   import routerActions from '@/router/actions'
   import {
     MENU_MODEL_FIELD_TEMPLATE_BIND,
-    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
+    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+    MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
   import ModelSyncStatus from './children/model-sync-status.vue'
-  import useModelSyncStatus, { isSyncing } from './children/use-model-sync-status'
+  import useModelSyncStatus, { isSyncing, isSynced } from './children/use-model-sync-status'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     templateId: {
@@ -33,7 +35,7 @@
     }
   })
 
-  const emit = defineEmits(['unbound'])
+  const emit = defineEmits(['unbound', 'close'])
 
   const store = useStore()
 
@@ -44,6 +46,7 @@
 
   const bindModelList = ref([])
   const searchName = ref('')
+  const stuff = ref({ type: 'default', payload: { emptyText: t('bk.table.emptyText') } })
 
   const TABLE_ROW_HEIGHT = 43
   const tableMaxHeight = computed(() => store.state.appHeight - 272 - 50)
@@ -68,14 +71,17 @@
     }
 
     if (searchName.value?.length) {
+      stuff.value.type = 'search'
       params.filter = {
         condition: 'AND',
         rules: [{
           field: 'bk_obj_name',
           operator: queryBuilderOperator(QUERY_OPERATOR.LIKE),
-          value: searchName.value
+          value: escapeRegexChar(searchName.value)
         }]
       }
+    } else {
+      stuff.value.type = 'default'
     }
 
     return params
@@ -104,7 +110,7 @@
       bindModelList.value = []
       firstLoading.value = false
     }
-  }, 200)
+  }, 200, { leading: true })
 
   watch([queryParams, onePageMaxCount], () => {
     getBindModel()
@@ -119,6 +125,7 @@
   }
 
   const handleGoBindModel = () => {
+    emit('close')
     routerActions.redirect({
       name: MENU_MODEL_FIELD_TEMPLATE_BIND,
       params: {
@@ -127,7 +134,7 @@
     })
   }
   const handleGoSync = (row) => {
-    routerActions.redirect({
+    routerActions.open({
       name: MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
       params: {
         id: props.templateId,
@@ -157,6 +164,19 @@
     })
   }
 
+  const handleLinkToModel = (model) => {
+    routerActions.open({
+      name: MENU_MODEL_DETAILS,
+      params: {
+        modelId: model.bk_obj_id
+      }
+    })
+  }
+  const handleClearFilter = () => {
+    searchName.value = ''
+    stuff.value.type = 'default'
+  }
+
   onUnmounted(() => {
     clearModelSyncReq()
   })
@@ -165,7 +185,16 @@
 <template>
   <div class="details-model" v-bkloading="{ isLoading: firstLoading }">
     <div class="action-bar">
-      <bk-button theme="primary" :outline="true" @click="handleGoBindModel">{{$t('绑定新模型')}}</bk-button>
+      <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
+        <template #default="{ disabled }">
+          <bk-button
+            theme="primary"
+            :outline="true"
+            :disabled="disabled"
+            @click="handleGoBindModel">{{$t('绑定新模型')}}</bk-button>
+        </template>
+      </cmdb-auth>
+
       <bk-input
         class="search-input"
         v-model="searchName"
@@ -183,7 +212,7 @@
         prop="bk_obj_name"
         show-overflow-tooltip>
         <template #default="{ row }">
-          <div :class="['model-cell', { paused: row.bk_ispaused }]">
+          <div :class="['model-cell', { paused: row.bk_ispaused }]" @click="handleLinkToModel(row)">
             <div class="model-icon">
               <i class="icon" :class="row.bk_obj_icon"></i>
             </div>
@@ -230,7 +259,7 @@
           </cmdb-auth>
           <cmdb-auth class="ml20"
             :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }"
-            v-if="!row.bk_ispaused">
+            v-if="!row.bk_ispaused && (statusMap[row.id] && !isSynced(statusMap[row.id].status))">
             <template #default="{ disabled }">
               <bk-button
                 theme="primary"
@@ -243,6 +272,11 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="stuff"
+        @clear="handleClearFilter"
+      ></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -267,6 +301,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      cursor: pointer;
       .model-icon {
         display: flex;
         align-items: center;
@@ -287,6 +322,9 @@
       &.paused {
         .model-name {
           color: #C4C6CC;
+        }
+        .tag {
+          background: #F5F7FA;
         }
       }
     }

@@ -49,7 +49,6 @@ type ServiceClientInterface interface {
 		data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
 	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header,
 		data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)
-
 	CreateServiceTemplateAllInfo(ctx context.Context, h http.Header, opt *metadata.CreateSvcTempAllInfoOption) (int64,
 		errors.CCErrorCoder)
 	UpdateServiceTemplateAllInfo(ctx context.Context, h http.Header,

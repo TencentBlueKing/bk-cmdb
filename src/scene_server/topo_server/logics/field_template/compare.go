@@ -228,6 +228,7 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 	pipeline := make(chan bool, 5)
 
 	result := make([]metadata.ListFieldTmpltSyncStatusResult, 0)
+	var lock sync.Mutex
 
 	// here, the concurrency is performed according to the objectID,
 	// and the concurrency internally compares the attributes first
@@ -240,13 +241,14 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 			defer func() {
 				wg.Done()
 				<-pipeline
+				lock.Unlock()
 			}()
 
 			attrStatus, err := t.getAttrSyncStatus(kit, id, objectID)
 			if err != nil {
 				firstErr = err
 			}
-
+			lock.Lock()
 			// if a difference in attributes has already been identified,
 			// there is no need to continue to calculate whether there is
 			// a difference in the unique check

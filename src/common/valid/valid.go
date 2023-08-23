@@ -31,6 +31,8 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/util"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // TODO 解析options的方式和 src/common/metadata/attribute.go 里的 ParseXxxOption 合并为一套，现在这两个地方的解析方式不太一样
@@ -61,8 +63,13 @@ func ValidFieldTypeEnumOption(option interface{}, isMultiple bool, rid string, e
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	arrOption, ok := option.([]interface{})
-	if !ok {
+	var arrOption []interface{}
+	switch optionVal := option.(type) {
+	case []interface{}:
+		arrOption = optionVal
+	case primitive.A:
+		arrOption = optionVal
+	default:
 		blog.Errorf("option %v not enum option, rid: %s", option, rid)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
@@ -283,11 +290,17 @@ func ValidFieldTypeList(option, defaultVal interface{}, rid string, errProxy ccE
 		return errProxy.Errorf(common.CCErrCommParamsLostField, "option")
 	}
 
-	arrOption, ok := option.([]interface{})
-	if !ok {
+	var arrOption []interface{}
+	switch optionVal := option.(type) {
+	case []interface{}:
+		arrOption = optionVal
+	case primitive.A:
+		arrOption = optionVal
+	default:
 		blog.Errorf("option %v not string type list option, rid: %s", option, rid)
 		return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
 	}
+
 	if len(arrOption) > common.AttributeOptionArrayMaxLength {
 		blog.Errorf("option array length %d exceeds max length %d", len(arrOption),
 			common.AttributeOptionArrayMaxLength)

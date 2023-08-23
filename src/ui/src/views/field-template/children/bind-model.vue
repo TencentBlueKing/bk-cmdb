@@ -13,6 +13,7 @@
 <script setup>
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
+  import { t } from '@/i18n'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -39,8 +40,18 @@
       type: Array,
       default: () => ([])
     },
+    // 删除的模板字段列表
+    removedFieldList: {
+      type: Array,
+      default: () => ([])
+    },
     // 模板唯一校验列表
     uniqueList: {
+      type: Array,
+      default: () => ([])
+    },
+    // 删除的模板唯一校验
+    removedUniqueList: {
       type: Array,
       default: () => ([])
     },
@@ -51,7 +62,7 @@
     height: String
   })
 
-  const emit = defineEmits(['update-diffs'])
+  const emit = defineEmits(['update-diffs', 'update-model-auth'])
 
   const http = useHttp()
 
@@ -65,6 +76,8 @@
   const diffLoadingIds = ref({})
   const unmountCallbacks = []
   const hasDiffError = ref(false)
+
+  const modelEditAuths = ref({})
 
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
@@ -151,14 +164,31 @@
 
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
-    selectedModel.value = initModelList?.[0] ?? null
     if (initModelList.length) {
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
     }
-
     modelListLocal.value = initModelList
   })
+
+  // 查找匹配第1个可用的模型作为选中模型
+  watch([modelListLocal, modelEditAuths], ([modelList, modelAuths]) => {
+    // 当前存在选中的模型则不变更
+    if (selectedModel.value) {
+      return
+    }
+
+    let firstModel = null
+    for (let i = 0; i < modelList.length; i++) {
+      const model = modelList[i]
+      // 未停用且有权限
+      if (!model.bk_ispaused && modelAuths[model.id]) {
+        firstModel = model
+        break
+      }
+    }
+    selectedModel.value = firstModel
+  }, { deep: true })
 
   const fieldDiffCounts = computed(() => {
     const counts = {}
@@ -182,13 +212,6 @@
     })
     return counts
   })
-  const displayDiffCounts = computed(() => {
-    const countMap = {
-      field: fieldDiffCounts.value,
-      unique: uniqueDiffCounts.value,
-    }
-    return countMap[currentTab.value]
-  })
 
   watch([fieldDiffCounts, uniqueDiffCounts], (diffCounts) => {
     let hasDiffConflict = false
@@ -210,19 +233,63 @@
     http.cancelRequest(allRquestIds)
   })
 
-  const handleConfirmAddModel = (selectedModels) => {
-    modelListLocal.value.push(...selectedModels)
-    if (!selectedModel.value) {
-      selectedModel.value = modelListLocal.value?.[0]
-    }
-
-    // 获取新选择模型diff
-    fetchFieldDiff(selectedModels)
-    fetchUniqueDiff(selectedModels)
+  const findAddDelete = (selectedModels) => {
+    const addSelect = []
+    const deleteSelect = []
+    const modelListLocalSet = new Set()
+    modelListLocal.value.forEach((selectModel) => {
+      modelListLocalSet.add(selectModel.id)
+    })
+    // 添加的
+    selectedModels.forEach((selectModel) => {
+      if (!modelListLocalSet.has(selectModel.id)) {
+        addSelect.push(selectModel)
+      } else {
+        modelListLocalSet.delete(selectModel.id)
+      }
+    })
+    // 删除的
+    modelListLocal.value.forEach((model) => {
+      if (modelListLocalSet.has(model.id)) {
+        deleteSelect.push(model)
+      }
+    })
+    return [addSelect, deleteSelect]
   }
 
-  const isSelected = model => model.id === selectedModel.value.id
-  const isConflict = model => displayDiffCounts.value[model.id] && displayDiffCounts.value[model.id].conflict
+  const handleConfirmAddModel = (selectedModels) => {
+    const [addSelect, deleteSelect] = findAddDelete(selectedModels)
+
+    modelListLocal.value.push(...addSelect)
+
+    deleteSelect.forEach((item) => {
+      handleClickRemoveModel(item, modelListLocal.value.indexOf(item))
+    })
+
+    // 获取新选择模型diff
+    fetchFieldDiff(addSelect)
+    fetchUniqueDiff(addSelect)
+  }
+
+  const isSelected = model => model.id === selectedModel.value?.id
+
+  const isFieldConflict = model => fieldDiffCounts.value[model.id] && fieldDiffCounts.value[model.id].conflict
+  const isUniqueConflict = model => uniqueDiffCounts.value[model.id] && uniqueDiffCounts.value[model.id].conflict
+  const isConflict = model => isFieldConflict(model) || isUniqueConflict(model)
+  const getConflictTips = (model) => {
+    if (isFieldConflict(model) && isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突和唯一校验冲突')
+    }
+    if (isFieldConflict(model)) {
+      return t('当前模型与模板绑定会存在字段冲突')
+    }
+    if (isUniqueConflict(model)) {
+      return t('当前模型与模板绑定会存在唯一校验冲突')
+    }
+  }
+
+  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
+
   const handleClickAddModel = () => {
     selectModelDialogRef.value.show()
   }
@@ -231,12 +298,14 @@
 
     // 变更当前选择的模型
     if (selectedModel.value === model) {
-      selectedModel.value = modelListLocal.value[modelIndex + 1] ?? modelListLocal.value[0]
+      selectedModel.value = null
     }
 
     // 删除对应模型的diff数据
     del(fieldDiffs.value, model.id)
     del(uniqueDiffs.value, model.id)
+
+    del(modelEditAuths.value, model.id)
   }
   const handleSelectModel = (model) => {
     if (model.bk_ispaused) {
@@ -246,6 +315,11 @@
   }
   const handleToggleTab = (tab) => {
     currentTab.value = tab
+  }
+
+  const handleModelAuthUpdate = (model, isPass) => {
+    set(modelEditAuths.value, model.id, isPass)
+    emit('update-model-auth', model, isPass)
   }
 
   defineExpose({
@@ -271,7 +345,11 @@
         </div>
         <div class="model-list" v-if="modelListLocal.length">
           <template v-for="(model, modelIndex) in modelListLocal">
-            <cmdb-auth :key="modelIndex" tag="div" :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }">
+            <cmdb-auth
+              :key="modelIndex"
+              tag="div"
+              :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+              @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"
                   :class="['model-item', {
@@ -302,9 +380,12 @@
                       <bk-icon class="button-icon" type="delete" />
                     </bk-button>
                     <loading :loading="$loading(diffLoadingIds[model.id])">
-                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon" v-if="isConflict(model)"></i>
-                      <span class="count" v-else>
-                        {{ displayDiffCounts[model.id] && displayDiffCounts[model.id].total }}
+                      <i class="bk-icon icon-exclamation-circle-shape conflict-icon"
+                        v-if="isConflict(model)"
+                        v-bk-tooltips="{ content: getConflictTips(model) }">
+                      </i>
+                      <span class="count-tag" v-else>
+                        {{ getTotal(model.id) }}
                       </span>
                     </loading>
                   </div>
@@ -321,10 +402,27 @@
         <div class="main-content" v-if="selectedModel">
           <div class="main-top">
             <div class="tab-list">
-              <div :class="['tab-item', { active: currentTab === 'field' }]"
-                @click="handleToggleTab('field')">{{ $t('字段对比') }}</div>
-              <div :class="['tab-item', { active: currentTab === 'unique' }]"
-                @click="handleToggleTab('unique')">{{ $t('唯一校验对比') }}</div>
+              <div :class="['tab-item', {
+                     active: currentTab === 'field',
+                     'is-conflict': fieldDiffCounts[selectedModel.id] && fieldDiffCounts[selectedModel.id].conflict > 0
+                   }]"
+                @click="handleToggleTab('field')">
+                {{ $t('字段对比') }}
+                <span class="count-tag" v-if="fieldDiffCounts[selectedModel.id]">
+                  {{ fieldDiffCounts[selectedModel.id].total }}
+                </span>
+              </div>
+              <div :class="['tab-item', {
+                     active: currentTab === 'unique',
+                     'is-conflict': uniqueDiffCounts[selectedModel.id]
+                       && uniqueDiffCounts[selectedModel.id].conflict > 0
+                   }]"
+                @click="handleToggleTab('unique')">
+                {{ $t('唯一校验对比') }}
+                <span class="count-tag" v-if="uniqueDiffCounts[selectedModel.id]">
+                  {{ uniqueDiffCounts[selectedModel.id].total }}
+                </span>
+              </div>
             </div>
           </div>
           <div class="main-body">
@@ -332,14 +430,16 @@
               v-if="currentTab === 'field'"
               :model="selectedModel"
               :diffs="fieldDiffs[selectedModel.id]"
-              :template-field-list="fieldList">
+              :template-field-list="fieldList"
+              :template-removed-field-list="removedFieldList">
             </field-diff>
             <unique-diff
               v-else-if="currentTab === 'unique'"
               :model="selectedModel"
               :diffs="uniqueDiffs[selectedModel.id]"
+              :template-field-list="fieldList"
               :template-unique-list="uniqueList"
-              :template-field-list="fieldList">
+              :template-removed-unique-list="removedUniqueList">
             </unique-diff>
           </div>
         </div>
@@ -365,7 +465,7 @@
       height: 100%;
       padding: 0 24px 18px 24px;
       background: #fff;
-      @include scrollbar-y;
+      @include scrollbar-y(6px, white);
 
       &.empty {
         display: flex;
@@ -412,17 +512,26 @@
           gap: 8px;
 
           .tab-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
             width: 162px;
             height: 32px;
-            line-height: 32px;
             background: #F5F7FA;
             border-radius: 21px;
             font-size: 14px;
-            text-align: center;
             cursor: pointer;
             &.active {
               background: #E1ECFF;
               color: #3A84FF;
+            }
+
+            &.is-conflict {
+              .count-tag {
+                color: #EA3636;
+                background: #FFDDDD;
+              }
             }
           }
         }
@@ -433,6 +542,19 @@
         height: calc(100% - 48px);
       }
     }
+  }
+
+  .count-tag {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 16px;
+    background: #F0F1F5;
+    border-radius: 8px;
+    font-family: ArialMT, Arial;
+    font-size: 12px;
+    color: #979BA5;
+    padding: 0 8px;
   }
 
   .total {
@@ -536,18 +658,6 @@
       margin-left: 4px;
     }
 
-    .count {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      height: 16px;
-      background: #F0F1F5;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #979BA5;
-      padding: 0 8px;
-    }
-
     &.is-conflict {
       border: 1px solid #DCDEE5;
       background: #FFEEEE;
@@ -560,7 +670,7 @@
     &.is-selected {
       background: #F0F5FF;
       border: 1px solid #3A84FF;
-      .count {
+      .count-tag {
         background: #E1ECFF;
         color: #3A84FF;
       }
@@ -578,7 +688,7 @@
       }
 
       &:not(.readonly) {
-        .count {
+        .count-tag {
           display: none;
         }
       }

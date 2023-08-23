@@ -75,16 +75,19 @@
     </div>
     <div class="field-info">
       <div class="field-name-area">
-        <span class="field-name" :title="field.bk_property_name">{{ field.bk_property_name }}</span>
-        <span class="field-required" v-if="field.isrequired">*</span>
+        <span class="field-name" :title="field.bk_property_name" v-bk-overflow-tips>
+          {{ field.update_bk_property_name ?? field.bk_property_name }}
+        </span>
+        <span class="field-required"
+          v-if="field.update_isrequired?.value ?? (field.isrequired?.value ?? field.isrequired)">*</span>
         <slot name="flag-append"></slot>
       </div>
-      <div class="field-id-area">
+      <div class="field-id-area" v-bk-overflow-tips>
         <span class="field-id">{{ field.bk_property_id }}</span>
       </div>
     </div>
     <div class="tags" v-if="isTemplate || $slots['tag-append'] || fieldUnique.list.length">
-      <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE">
+      <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE && fieldUnique.list.length">
         <em class="tag-text">{{$t('单独唯一')}}</em>
       </span>
       <span class="tag unique union" v-else-if="fieldUnique.type === UNIUQE_TYPES.UNION" v-bk-tooltips="{
@@ -134,7 +137,7 @@
       color: #989CA8;
       width: 24px;
       height: 24px;
-      font-size: 22px;
+      font-size: 18px;
       text-align: center;
       line-height: 24px;
     }
@@ -156,9 +159,12 @@
       font-size: 12px;
       @include ellipsis;
     }
+    .field-id-area {
+      @include ellipsis;
+      color: #C4C6CC;
+    }
     .field-id {
       font-size: 12px;
-      color: #C4C6CC;
     }
     .field-required {
       font-size: 12px;
@@ -175,7 +181,7 @@
       .tag {
         background: #E4FAF0;
         border-radius: 2px;
-        padding: 1px 2px;
+        padding: 1px 4px;
         height: 16px;
         line-height: 16px;
         white-space: nowrap;
@@ -203,7 +209,7 @@
           &.union {
             cursor: pointer;
             &:hover {
-              background: #A3C5FD;
+              background: #E1ECFF;
             }
           }
         }

@@ -121,12 +121,8 @@ func (s *service) checkUniques(kit *rest.Kit, uniques []metadata.FieldTemplateUn
 	}
 
 	attrIDs = util.IntArrayUnique(attrIDs)
-	exist, err := s.isTemplateAttrsExist(kit, attrIDs)
-	if err != nil {
+	if err := s.isTmplUniquesLegal(kit, attrIDs, uniques); err != nil {
 		return err
-	}
-	if !exist {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
 	}
 
 	existedUniques, err := s.findUniqueByTemplateID(kit, templateID)
@@ -181,19 +177,57 @@ func (s *service) checkKeys(kit *rest.Kit, target metadata.FieldTemplateUnique,
 	return nil
 }
 
-func (s *service) isTemplateAttrsExist(kit *rest.Kit, ids []int64) (bool, error) {
+func (s *service) isTmplUniquesLegal(kit *rest.Kit, attrIDs []int64, uniques []metadata.FieldTemplateUnique) error {
 	cond := map[string]interface{}{
-		common.BKFieldID: map[string]interface{}{common.BKDBIN: ids},
+		common.BKFieldID: map[string]interface{}{common.BKDBIN: attrIDs},
 	}
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	fields := []string{common.BKFieldID, common.BKPropertyTypeField}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).Count(kit.Ctx)
+	attrs := make([]metadata.FieldTemplateAttr, 0)
+	err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(fields...).All(kit.Ctx, &attrs)
 	if err != nil {
-		blog.Errorf("count template attributes failed, cond: %v, err: %v, rid: %v", cond, err, kit.Rid)
-		return false, err
+		blog.Errorf("find template attributes failed, cond: %v, err: %v, rid: %v", cond, err, kit.Rid)
+		return err
 	}
 
-	return int(cnt) == len(ids), nil
+	if len(attrs) != len(attrIDs) {
+		blog.Errorf("can not find all attributes, cond: %v, attrs count: %d, ids count: %d, rid: %v", cond, len(attrs),
+			len(attrIDs), kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
+	}
+
+	attrIDToType := make(map[int64]string)
+	for _, attr := range attrs {
+		attrIDToType[attr.ID] = attr.PropertyType
+	}
+
+	for _, unique := range uniques {
+		keys := unique.Keys
+		if len(keys) == 1 {
+			keyType := attrIDToType[keys[0]]
+			if keyType != common.FieldTypeSingleChar && keyType != common.FieldTypeInt && keyType !=
+				common.FieldTypeFloat {
+
+				blog.Errorf("unique attribute type is invalid, attr: %v, rid: %v", unique, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
+			}
+
+			continue
+		}
+
+		for _, key := range keys {
+			keyType := attrIDToType[key]
+			if keyType != common.FieldTypeSingleChar && keyType != common.FieldTypeInt && keyType !=
+				common.FieldTypeFloat && keyType != common.FieldTypeDate && keyType != common.FieldTypeList {
+
+				blog.Errorf("unique attribute type is invalid, attr: %v, rid: %v", unique, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjectUniqueKeys)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *service) findUniqueByTemplateID(kit *rest.Kit, id int64) ([]metadata.FieldTemplateUnique, error) {

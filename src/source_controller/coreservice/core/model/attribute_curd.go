@@ -1277,26 +1277,31 @@ func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*met
 // checkAttrTemplateInfo the topo server has similar judgment logic. If it needs to be modified,
 // both sides need to be modified at the same time. The function name in topo is: canAttrsUpdate
 func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool) error {
-
-	tmpltID, err := getObjectAttrTemplateID(kit, attrID)
-	if err != nil {
-		return err
-	}
-
-	if !isSync && tmpltID > 0 {
-		blog.Errorf("params invalid, attrID: %d, sync: %v, templateID: %d, rid: %s", attrID, isSync, tmpltID, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, attrID)
-	}
-
-	if !isSync && tmpltID == 0 {
+	// 1. 来自字段组合模版同步操作，都可以进行修改，直接正常返回
+	if isSync {
 		return nil
 	}
 
+	// 2. 不是同步操作，更新属性的bk_template_id为非0时，需要报错
 	data := mapstr.New()
 	for k, v := range input {
 		data[k] = v
 	}
+	newTmplID, ok := data[common.BKTemplateID]
+	if ok && newTmplID != 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+	}
 
+	// 3. 不是同步操作，更新模型自己的属性，正常返回
+	tmplID, err := getObjectAttrTemplateID(kit, attrID)
+	if err != nil {
+		return err
+	}
+	if tmplID == 0 {
+		return nil
+	}
+
+	// 4. 验证来自模版的属性，是否可以正常更新
 	fields := make([]string, 0)
 	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
 		fields = append(fields, metadata.AttributeFieldIsRequired)
@@ -1309,16 +1314,14 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		fields = append(fields, metadata.AttributeFieldPlaceHolder)
 	}
 
-	_, ok := data[common.BKTemplateID]
-
-	// 2、AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
+	// AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
 	// to be modified, the update operation does not have the above attributes to return an error
-	if len(fields) == 0 && !ok {
+	if len(fields) == 0 {
 		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
 	}
 
-	templateAttr, err := getTemplateAttrByID(kit, tmpltID, fields)
+	templateAttr, err := getTemplateAttrByID(kit, tmplID, fields)
 	if err != nil {
 		return err
 	}
@@ -1326,7 +1329,7 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		return nil
 	}
 
-	// 3、whether the corresponding lock in the attribute is false, if it is false,
+	// whether the corresponding lock in the attribute is false, if it is false,
 	// it can be updated, otherwise it cannot be updated
 	for _, field := range fields {
 		switch field {
@@ -1474,10 +1477,8 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	// 预定义字段，只能更新分组、分组内排序、单位、提示语和option
 	if hasIsPreProperty {
 		_ = data.ForEach(func(key string, val interface{}) error {
-			if key != metadata.AttributeFieldPropertyGroup &&
-				key != metadata.AttributeFieldPropertyIndex &&
-				key != metadata.AttributeFieldUnit &&
-				key != metadata.AttributeFieldPlaceHolder &&
+			if key != metadata.AttributeFieldPropertyGroup && key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldUnit && key != metadata.AttributeFieldPlaceHolder &&
 				key != metadata.AttributeFieldOption {
 				data.Remove(key)
 			}
@@ -1515,6 +1516,11 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	if err = data.MarshalJSONInto(&attribute); err != nil {
 		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
 		return err
+	}
+
+	// 更新default字段时，需要使用option对default进行数据校验，当没传时需要使用当前数据库里的数据进行校验
+	if attribute.Default != nil && attribute.Option == nil {
+		attribute.Option = dbAttributeArr[0].Option
 	}
 
 	if err = checkAttrTemplateInfo(kit, data, dbAttributeArr[0].ID, isSync); err != nil {

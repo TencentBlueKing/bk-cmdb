@@ -185,6 +185,12 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 
 	objIDs := make([]int64, 0)
 	objIDs = util.IntArrayUnique(opt.ObjectIDs)
+
+	if authResp, authorized := s.authorizeObjsBindFieldTemplate(ctx.Kit, opt.ID, objIDs); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, objIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -194,8 +200,6 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		ID:        opt.ID,
 		ObjectIDs: objIDs,
 	}
-
-	// todo:待补充鉴权
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateBindObject(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
@@ -227,6 +231,30 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+func (s *service) authorizeObjsBindFieldTemplate(kit *rest.Kit, templateID int64, objIDs []int64) (
+	*metadata.BaseResp, bool) {
+
+	resource := make([]meta.ResourceAttribute, 0)
+	for _, id := range objIDs {
+		resource = append(resource, meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:       meta.Model,
+				Action:     meta.Update,
+				InstanceID: id,
+			},
+		})
+	}
+
+	resource = append(resource, meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:       meta.FieldTemplate,
+			Action:     meta.Find,
+			InstanceID: templateID},
+	})
+
+	return s.auth.Authorize(kit, resource...)
+}
+
 // FieldTemplateUnbindObject field template binding model
 func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 	opt := new(metadata.FieldTemplateUnbindObjOpt)
@@ -240,12 +268,16 @@ func (s *service) FieldTemplateUnbindObject(ctx *rest.Contexts) {
 		return
 	}
 
+	if authResp, authorized := s.auth.Authorize(ctx.Kit, meta.ResourceAttribute{Basic: meta.Basic{
+		Type: meta.Model, Action: meta.Update, InstanceID: opt.ObjectID}}); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	if err := s.canObjsBindFieldTemplate(ctx.Kit, []int64{opt.ObjectID}); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-
-	// todo:待补充鉴权
 
 	txnErr := s.clientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.clientSet.CoreService().FieldTemplate().FieldTemplateUnbindObject(ctx.Kit.Ctx, ctx.Kit.Header, opt)
@@ -624,10 +656,10 @@ func (s *service) updateFieldTmplAttr(kit *rest.Kit, templateID int64, attrs []m
 	if len(attrOp.createAttrs) != 0 {
 		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateAttrs(kit.Ctx, kit.Header,
 			templateID, attrOp.createAttrs)
-		if err != nil {
+		if ccErr != nil {
 			blog.Errorf("create field template attribute failed, data: %v, err: %v, rid: %s", attrOp.createAttrs, ccErr,
 				kit.Rid)
-			return nil, err
+			return nil, ccErr
 		}
 		for idx, attr := range attrOp.createAttrs {
 			propertyIDToIDMap[attr.PropertyID] = resp.IDs[idx]
@@ -765,24 +797,6 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 
 	auditLogs := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewFieldTmplAuditLog(s.clientSet.CoreService())
-	if len(createUniques) != 0 {
-		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
-			templateID, createUniques)
-		if ccErr != nil {
-			blog.Errorf("create field template uniques failed, data: %v, err: %v, rid: %s", createUniques, ccErr,
-				kit.Rid)
-			return ccErr
-		}
-
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		createLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, resp.IDs, nil)
-		if err != nil {
-			blog.Errorf("generate field template unique audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
-		auditLogs = append(auditLogs, createLogs...)
-	}
-
 	if len(updateUniques) != 0 {
 		ccErr := s.clientSet.CoreService().FieldTemplate().UpdateFieldTemplateUniques(kit.Ctx, kit.Header, templateID,
 			updateUniques)
@@ -799,6 +813,24 @@ func (s *service) updateFieldTmplUnique(kit *rest.Kit, templateID int64, propert
 			return err
 		}
 		auditLogs = append(auditLogs, updateLogs...)
+	}
+
+	if len(createUniques) != 0 {
+		resp, ccErr := s.clientSet.CoreService().FieldTemplate().CreateFieldTemplateUniques(kit.Ctx, kit.Header,
+			templateID, createUniques)
+		if ccErr != nil {
+			blog.Errorf("create field template uniques failed, data: %v, err: %v, rid: %s", createUniques, ccErr,
+				kit.Rid)
+			return ccErr
+		}
+
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+		createLogs, err := audit.GenerateFieldTmplUniqueAuditLog(generateAuditParameter, resp.IDs, nil)
+		if err != nil {
+			blog.Errorf("generate field template unique audit log failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		auditLogs = append(auditLogs, createLogs...)
 	}
 
 	if len(auditLogs) == 0 {

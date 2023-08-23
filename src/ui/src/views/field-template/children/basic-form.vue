@@ -11,8 +11,9 @@
 -->
 
 <script setup>
-  import { ref, watch } from 'vue'
+  import { ref, watch, getCurrentInstance, computed } from 'vue'
   import cloneDeep from 'lodash/cloneDeep'
+  import { DUP_CHECK_IDS } from '@/setup/duplicate-remote-validate'
 
   const props = defineProps({
     data: {
@@ -21,13 +22,36 @@
     }
   })
 
+  const emit = defineEmits(['change'])
+
+  const currentInstance = getCurrentInstance().proxy
+
+  const dupCheckId = DUP_CHECK_IDS.FIELD_TEMPLATE_NAME
+  const originName = computed(() => props.data?.name)
+
   const formData = ref(cloneDeep(props.data))
   watch(() => props.data, (data) => {
     formData.value = cloneDeep(data)
   }, { deep: true })
 
+  const validateAll = async () => {
+    const validResults = []
+    for (const [key, val] of Object.entries(currentInstance.fields)) {
+      if (val.dirty) {
+        validResults.push(await currentInstance.$validator.validate(key))
+      }
+    }
+
+    return validResults.every(valid => valid)
+  }
+
+  const handleFormDataChange = () => {
+    emit('change')
+  }
+
   defineExpose({
-    formData
+    formData,
+    validateAll
   })
 </script>
 
@@ -37,17 +61,26 @@
       <bk-form-item :label="$t('模板名称')" :required="true" :property="'name'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input
-          v-validate="'required|length:256'"
+          data-vv-validate-on="change"
+          v-validate="`required|length:256|remoteDuplicate:${dupCheckId},${originName},${$t('模板名称已存在')}`"
           name="name"
           :placeholder="$t('请输入模板名称')"
-          v-model="formData.name">
+          v-model="formData.name"
+          @change="handleFormDataChange">
         </bk-input>
         <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
       </bk-form-item>
       <bk-form-item :label="$t('描述')" :property="'description'"
         class="cmdb-form-item" :class="{ 'is-error': errors.has('description') }">
-        <bk-input type="textarea" :rows="4" name="description" v-validate="'length:2000'"
-          v-model="formData.description" :placeholder="$t('请输入模板描述')"></bk-input>
+        <bk-input
+          type="textarea"
+          :rows="4"
+          name="description"
+          v-validate="'length:2000'"
+          v-model="formData.description"
+          :placeholder="$t('请输入模板描述')"
+          @change="handleFormDataChange">
+        </bk-input>
         <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
       </bk-form-item>
     </bk-form>

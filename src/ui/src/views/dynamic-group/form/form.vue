@@ -76,13 +76,14 @@
           {{isCreateMode ? $t('提交') : $t('保存')}}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="mr10" theme="default" @click="close">{{$t('取消')}}</bk-button>
+      <bk-button class="mr10" theme="default" @click="handleSliderBeforeClose('cancel')">{{$t('取消')}}</bk-button>
     </div>
   </bk-sideslider>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import { t } from '@/i18n'
   import FormPropertyList from './form-property-list.vue'
   import FormPropertySelector from './form-property-selector.js'
   import FormTarget from './form-target.vue'
@@ -153,7 +154,7 @@
       if (this.id) {
         this.getDetails()
       }
-      const { beforeClose, setChanged } = useSideslider(this.relationInfo)
+      const { beforeClose, setChanged } = useSideslider()
       this.beforeClose = beforeClose
       this.setChanged = setChanged
     },
@@ -205,7 +206,7 @@
           id: Date.now(),
           bk_obj_id: 'module',
           bk_property_id: 'service_template_id',
-          bk_property_name: this.$t('服务模板'),
+          bk_property_name: t('服务模板'),
           bk_property_index: -1,
           bk_property_type: 'service-template',
           isonly: true,
@@ -350,7 +351,7 @@
           } else {
             await this.createDynamicGroup()
           }
-          this.close()
+          this.close('submit')
         } catch (error) {
           console.error(error)
         }
@@ -441,29 +442,29 @@
         })
         return baseConditions
       },
-      close() {
-        if (this.handleSliderBeforeClose()) {
-          this.isShow = false
+      close(type) {
+        this.isShow = false
+        if (type !== 'normal') {
           RouterQuery.set({
-            _t: Date.now()
+            _t: Date.now(),
+            action: ''
           })
         }
       },
       show() {
         this.isShow = true
       },
-      handleSliderBeforeClose() {
+      handleSliderBeforeClose(type = 'normal') {
         const changedValues = !isEqual(this.formData, this.originFormData)
         const changedProperties =  !isEqual(this.selectedProperties, this.originProperties)
         if (changedValues || changedProperties) {
           this.setChanged(true)
-          this.beforeClose(() => {
-            this.isShow = false
+          return this.beforeClose(() => {
+            this.close(type)
           })
-        } else {
-          return true
         }
-        return false
+        this.close(type)
+        return true
       },
       handleHidden() {
         this.$emit('close')

@@ -546,20 +546,7 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 			return err
 		}
 
-		// 4、create a unique check for the model
-		if len(create) > 0 {
-			for _, unique := range create {
-				op := metadata.CreateModelAttrUnique{Data: unique, FromTemplate: true}
-				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
-				if err != nil {
-					blog.Errorf("create unique failed for failed: raw: %#v, err: %v, rid: %s", unique, err, kit.Rid)
-					return err
-				}
-			}
-			return nil
-		}
-
-		// 5、update the unique validation of the model
+		// 4、update the unique validation of the model
 		if len(update) > 0 {
 			for _, unique := range update {
 				input := metadata.UpdateUniqueRequest{
@@ -576,6 +563,20 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 				}
 			}
 		}
+
+		// 5、create a unique check for the model
+		if len(create) > 0 {
+			for _, unique := range create {
+				op := metadata.CreateModelAttrUnique{Data: unique, FromTemplate: true}
+				_, err := s.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objectID, op)
+				if err != nil {
+					blog.Errorf("create unique failed for failed: raw: %#v, err: %v, rid: %s", unique, err, kit.Rid)
+					return err
+				}
+			}
+			return nil
+		}
+
 		return nil
 	})
 

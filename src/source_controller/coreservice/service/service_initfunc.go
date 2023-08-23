@@ -78,22 +78,22 @@ func (s *coreService) initModel(web *restful.WebService) {
 		Handler: s.CreateTableModelTables})
 
 	// init model attribute groups methods
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/group",
-		Handler: s.CreateModelAttributeGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/model/{bk_obj_id}/group",
-		Handler: s.SetModelAttributeGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/group",
-		Handler: s.UpdateModelAttributeGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/create/model/{bk_obj_id}/group", Handler: s.CreateModelAttributeGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/set/model/{bk_obj_id}/group", Handler: s.SetModelAttributeGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/model/{bk_obj_id}/group", Handler: s.UpdateModelAttributeGroup})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/group",
 		Handler: s.UpdateModelAttributeGroupByCondition})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/group",
 		Handler: s.DeleteModelAttributeGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/group",
-		Handler: s.DeleteModelAttributeGroupByCondition})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/{bk_obj_id}/group",
-		Handler: s.SearchModelAttributeGroup})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/group",
-		Handler: s.SearchModelAttributeGroupByCondition})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/model/group", Handler: s.DeleteModelAttributeGroupByCondition})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/model/{bk_obj_id}/group", Handler: s.SearchModelAttributeGroup})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/model/group", Handler: s.SearchModelAttributeGroupByCondition})
 
 	// init attributes methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes",
@@ -127,14 +127,14 @@ func (s *coreService) initAttrUnique(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/model/attributes/unique",
-		Handler: s.SearchModelAttrUnique})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes/unique",
-		Handler: s.CreateModelAttrUnique})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes/unique/{id}",
-		Handler: s.UpdateModelAttrUnique})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes/unique/{id}",
-		Handler: s.DeleteModelAttrUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/model/attributes/unique", Handler: s.SearchModelAttrUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/create/model/{bk_obj_id}/attributes/unique", Handler: s.CreateModelAttrUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/model/{bk_obj_id}/attributes/unique/{id}", Handler: s.UpdateModelAttrUnique})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/model/{bk_obj_id}/attributes/unique/{id}", Handler: s.DeleteModelAttrUnique})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -173,22 +173,22 @@ func (s *coreService) initAssociationKind(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/associationkind",
-		Handler: s.CreateOneAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/associationkind",
-		Handler: s.CreateManyAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/associationkind",
-		Handler: s.SetOneAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/setmany/associationkind",
-		Handler: s.SetManyAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/associationkind",
-		Handler: s.UpdateAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/associationkind",
-		Handler: s.DeleteAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/associationkind/cascade",
-		Handler: s.CascadeDeleteAssociationKind})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/associationkind",
-		Handler: s.SearchAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/create/associationkind", Handler: s.CreateOneAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/createmany/associationkind", Handler: s.CreateManyAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/set/associationkind", Handler: s.SetOneAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/setmany/associationkind", Handler: s.SetManyAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/associationkind", Handler: s.UpdateAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/associationkind", Handler: s.DeleteAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/associationkind/cascade", Handler: s.CascadeDeleteAssociationKind})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/associationkind", Handler: s.SearchAssociationKind})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -246,8 +246,9 @@ func (s *coreService) initMainline(web *restful.WebService) {
 	// add handler for model topo and business topo
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/model",
 		Handler: s.SearchMainlineModelTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/mainline/instance/{bk_biz_id}",
-		Handler: s.SearchMainlineInstanceTopo})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/mainline/instance/{bk_biz_id}", Handler: s.SearchMainlineInstanceTopo})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -259,19 +260,18 @@ func (s *coreService) host(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/module/host/relation/inner/module",
-		Handler: s.TransferHostToInnerModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/set/module/host/relation/inner/module", Handler: s.TransferHostToInnerModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/module/host/relation/module",
 		Handler: s.TransferHostToNormalModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/module/host/relation/cross/business",
 		Handler: s.TransferHostToAnotherBusiness})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host",
-		Handler: s.DeleteHostFromSystem})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host", Handler: s.DeleteHostFromSystem})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/host/host_module_relations",
 		Handler: s.RemoveFromModule})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/module/host/relation",
-		Handler: s.GetHostModuleRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/read/module/host/relation", Handler: s.GetHostModuleRelation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/read/host/indentifier", Handler: s.HostIdentifier})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/host/{bk_host_id}", Handler: s.GetHostByID})
@@ -317,7 +317,8 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/meta/hosts/modules/search",
 		Handler: s.GetHostModulesIDs})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/list_hosts", Handler: s.ListHosts})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/list_hosts",
+		Handler: s.ListHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field",
 		Handler: s.UpdateHostCloudAreaField})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount",
@@ -497,8 +498,8 @@ func (s *coreService) initCommon(web *restful.WebService) {
 		Language: s.engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_field",
-		Handler: s.GetDistinctField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_count",
 		Handler: s.GetDistinctCount})
 

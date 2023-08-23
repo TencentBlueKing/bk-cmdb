@@ -12,6 +12,7 @@
 
 import { computed, unref } from 'vue'
 import isEqual from 'lodash/isEqual'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 import { UNIUQE_TYPES } from '@/dictionary/model-constants'
 
 export default function useUnique(beforeUniqueList, uniqueListLocal) {
@@ -119,3 +120,25 @@ export const getUniqueName = (unique, fieldList, isTemplate, propIdKey) => {
 }
 
 export const MAX_UNIQUE_COUNT = 5
+
+export const DIFF_TYPES = {
+  NEW: 'new',
+  UPDATE: 'update',
+  CONFLICT: 'conflict',
+  UNBOUND: 'unbound',
+  UNCHANGED: 'unchanged'
+}
+
+export const singleRuleTypes = [
+  PROPERTY_TYPES.SINGLECHAR,
+  PROPERTY_TYPES.INT,
+  PROPERTY_TYPES.FLOAT
+]
+
+export const unionRuleTypes = [
+  PROPERTY_TYPES.SINGLECHAR,
+  PROPERTY_TYPES.INT,
+  PROPERTY_TYPES.FLOAT,
+  PROPERTY_TYPES.DATE,
+  PROPERTY_TYPES.LIST
+]

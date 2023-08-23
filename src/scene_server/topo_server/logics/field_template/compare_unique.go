@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -77,6 +78,12 @@ func (t *template) CompareFieldTemplateUnique(kit *rest.Kit, opt *metadata.Compa
 
 	for _, attribute := range attrs {
 		compParams.attrMap[attribute.ID] = attribute.PropertyID
+	}
+
+	// get object uniques related field template ids that does not belong to field template for comparison
+	compParams.otherTmplIDMap, err = t.getOtherUniqueTmpl(kit, opt.TemplateID, objUniqueRes.Info)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// cross-compare object uniques with template uniques
@@ -147,6 +154,56 @@ func (t *template) getObjAttrsByID(kit *rest.Kit, objID string, uniques []metada
 	return objAttrRes.Info, nil
 }
 
+func (t *template) getOtherUniqueTmpl(kit *rest.Kit, templateID int64, uniques []metadata.ObjectUnique) (
+	map[int64]struct{}, error) {
+
+	otherTmplIDMap := make(map[int64]struct{})
+
+	if len(uniques) == 0 {
+		return otherTmplIDMap, nil
+	}
+
+	templateIDs := make([]int64, len(uniques))
+	for idx, unique := range uniques {
+		templateIDs[idx] = unique.TemplateID
+	}
+
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: &filter.Expression{
+			RuleFactory: &filter.CombinedRule{
+				Condition: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field:    common.BKFieldID,
+						Operator: filter.In.Factory(),
+						Value:    templateIDs,
+					}, &filter.AtomRule{
+						Field:    common.BKTemplateID,
+						Operator: filter.NotEqual.Factory(),
+						Value:    templateID,
+					},
+				},
+			},
+		}},
+		Fields: []string{common.BKFieldID},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+
+	res, err := t.clientSet.CoreService().FieldTemplate().ListFieldTemplateUnique(kit.Ctx, kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field template uniques failed, err: %v, opt: %+v, rid: %s", err, listOpt, kit.Rid)
+		return nil, err
+	}
+
+	for _, unique := range res.Info {
+		otherTmplIDMap[unique.ID] = struct{}{}
+	}
+
+	return otherTmplIDMap, nil
+}
+
 type compUniqueParams struct {
 	tmplIDMap map[int64]metadata.FieldTmplUniqueForUpdate
 	tmpKeyMap map[string]metadata.FieldTmplUniqueForUpdate
@@ -163,6 +220,8 @@ type compUniqueParams struct {
 	// used to change from single unique to joint unique in the subsequent
 	// update unique verification scenario.
 	tmplProToIDMap map[string]int64
+	// otherTmplIDMap other field template's unique ids map, used to check if unique template is deleted or conflict
+	otherTmplIDMap map[int64]struct{}
 }
 
 func (c *comparator) preCheckUnique(kit *rest.Kit, objID string, uniques []metadata.FieldTmplUniqueForUpdate,
@@ -427,14 +486,24 @@ func (c *comparator) compareUniqueForBackend(kit *rest.Kit, params *compUniquePa
 
 		tmplUnique, exists := params.tmplIDMap[unique.TemplateID]
 		if !exists {
+			// unique template is not exist, check if the unique conflicts with other templates
+			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
+				if isPartial {
+					result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
+					return nil, result, nil
+				}
+				return nil, nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
+					conflictKey)
+			}
+
+			// unique template belongs to other field template, do not update unique template id
+			if _, isOther := params.otherTmplIDMap[unique.TemplateID]; isOther {
+				continue
+			}
+
 			if isPartial {
 				result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
 				return nil, result, nil
-			}
-			// unique template is not exist, check if the unique conflicts with other templates
-			if conflictKey, isConflict := c.checkObjUniqueConflict(params, &compUnique); isConflict {
-				return nil, nil, kit.CCError.CCErrorf(common.CCErrTopoFieldTemplateUniqueConflict, compUnique.unique.ID,
-					conflictKey)
 			}
 
 			// unique template is deleted, so we update unique template id to -1
@@ -566,7 +635,7 @@ func (c *comparator) compareOneUniqueInfo(kit *rest.Kit, params *compUniqueParam
 
 	// check if unique keys are the same
 	if objCompUnique.compKey == tmplCompKey {
-		if isNoTmpl {
+		if !forUI && isNoTmpl {
 			// the template attribute in the unique verification refers to the
 			// auto-increment ID corresponding to the unique verification of the template
 			objCompUnique.unique.TemplateID = tmplUnique.ID

@@ -17,7 +17,7 @@
         <bk-checkbox
           class="checkbox"
           v-model="localValue.editable"
-          :disabled="isReadOnly || ispre">
+          :disabled="isReadOnly || ispre || (isFromTemplateField && editableLockLocal)">
           <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
             {{$t('在实例中可编辑')}}
           </span>
@@ -25,29 +25,25 @@
             v-if="modelId === 'host'"
             v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
         </bk-checkbox>
-        <lock-button v-if="isSettingScene" :tips="$t('字段组合模板加解锁提示语')" v-model="editableLockLocal" />
       </flex-row>
       <flex-row gap="2px" class="mt20" v-if="isRequiredShow && !isMainLineModel">
         <bk-checkbox
           class="checkbox"
           v-model="localValue.isrequired"
-          :disabled="isReadOnly || ispre">
+          :disabled="isReadOnly || ispre || (isFromTemplateField && isrequiredLockLocal)">
           <span>{{$t('设置为必填项')}}</span>
         </bk-checkbox>
-        <lock-button v-if="isSettingScene" :tips="$t('字段组合模板加解锁提示语')" v-model="isrequiredLockLocal" />
       </flex-row>
     </div>
   </div>
 </template>
 
 <script>
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import LockButton from '@/components/ui/button/lock-button.vue'
+  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
   import FlexRow from '@/components/ui/other/flex-row.vue'
 
   export default {
     components: {
-      LockButton,
       FlexRow
     },
     props: {
@@ -87,36 +83,6 @@
     },
     data() {
       return {
-        editableMap: [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.ENUM,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.TIME,
-          PROPERTY_TYPES.LONGCHAR,
-          PROPERTY_TYPES.OBJUSER,
-          PROPERTY_TYPES.TIMEZONE,
-          PROPERTY_TYPES.BOOL,
-          PROPERTY_TYPES.LIST,
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.INNER_TABLE
-        ],
-        isRequiredMap: [
-          PROPERTY_TYPES.SINGLECHAR,
-          PROPERTY_TYPES.INT,
-          PROPERTY_TYPES.FLOAT,
-          PROPERTY_TYPES.DATE,
-          PROPERTY_TYPES.TIME,
-          PROPERTY_TYPES.LONGCHAR,
-          PROPERTY_TYPES.OBJUSER,
-          PROPERTY_TYPES.TIMEZONE,
-          PROPERTY_TYPES.LIST,
-          PROPERTY_TYPES.ORGANIZATION,
-          PROPERTY_TYPES.INNER_TABLE
-        ],
         localValue: {
           editable: this.editable,
           isrequired: this.isrequired
@@ -126,14 +92,15 @@
     inject: [
       // 来源于自定义字段编辑
       'customObjId',
-      'isSettingScene'
+      'isSettingScene',
+      'isFromTemplateField'
     ],
     computed: {
       isEditableShow() {
-        return this.editableMap.indexOf(this.type) !== -1
+        return EDITABLE_TYPES.indexOf(this.type) !== -1
       },
       isRequiredShow() {
-        return this.isRequiredMap.indexOf(this.type) !== -1
+        return REQUIRED_TYPES.indexOf(this.type) !== -1
       },
       modelId() {
         return this.$route.params.modelId ?? this.customObjId

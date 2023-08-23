@@ -55,6 +55,9 @@
   const plusEl = ref(null)
   let tips = null
 
+  const maxResizeCount = 10
+  let execResizeTimes = 0
+
   const tags = computed(() => props.list.filter(item => item))
   const gapWidth = computed(() => parseInt(props.gap, 10))
   const ellipsisCount = ref(0)
@@ -127,7 +130,7 @@
   }
 
   const resizeHander = () => {
-    if (!tags.value.length) {
+    if (!tags.value.length || execResizeTimes > maxResizeCount) {
       return
     }
 
@@ -150,7 +153,8 @@
       let posItem = null
 
       for (const item of tagWidthList) {
-        accWidth = accWidth + item.width + gapWidth.value + 10
+        accWidth = accWidth + item.width + gapWidth.value
+        if (item.index === 0) continue
         if (accWidth > containerClientWidth) {
           posItem = item
           ellipsisCount.value = tags.value.length - item.index
@@ -183,11 +187,14 @@
       tipTagOffsetIndex.value = offsetIndex
       tagItemList.value = tagWidthList
     } else {
+      execResizeTimes = 0
       // 将plus元素放到最后并且隐藏
       containerEl.value.insertBefore(plusEl.value, tagItems[tagItems.length - 1].nextSibling)
       tagItems.forEach(item => item.classList.remove('is-pos'))
       plusEl.value.classList.remove('show')
     }
+
+    execResizeTimes += 1
   }
 
   const changing = ref(false)
@@ -208,12 +215,15 @@
   })
 
   watch(tags, () => {
+    execResizeTimes = 0
     execResizeHander()
   })
 
   onMounted(() => {
     resizeObserver.observe(containerEl.value)
     execResizeHander()
+
+    tips?.destroy?.()
   })
 
   onBeforeUnmount(() => {
@@ -236,11 +246,11 @@
       '--maxWidth': maxWidth,
       '--height': height
     }">
-    <li class="tag-item" v-bk-overflow-tips
+    <li class="tag-item"
       v-for="(tag, index) in tags"
       :key="tag.id || index"
       @click="handleClick(index)">
-      <div class="tag-item-text">
+      <div class="tag-item-text" v-bk-overflow-tips>
         <span @click="handleClickText(tag)">{{tag.name || tag}}</span>
         <slot name="text-append" v-bind="tag"></slot>
       </div>

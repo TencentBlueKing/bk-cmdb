@@ -61,7 +61,7 @@ data:
         bkDesktopUrl:  {{ include "cmdb.webserver.bk_desktop_url" . }}
         paasDomainUrl: {{ include "cmdb.webserver.paas_domain_url" . }}
         # bkDomain 用于配置前端需要的cookie domain地址
-        bkDomain: {{ include "cmdb.webserver.site.bkDomain" . }}
+        bkDomain: {{ .Values.common.webServer.site.bkDomain }}
         #帮助文档地址
         helpDocUrl: {{ .Values.common.webServer.site.helpDocUrl }}
         paas:

@@ -20,6 +20,7 @@
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE,
     MENU_MODEL_FIELD_TEMPLATE_EDIT,
+    MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS,
     MENU_MODEL_FIELD_TEMPLATE_BIND,
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
@@ -36,6 +37,7 @@
   import CloneDialog from './children/clone-dialog.vue'
   import useModelSyncStatus from './children/use-model-sync-status'
   import useTemplate from './children/use-template'
+  import { escapeRegexChar } from '@/utils/util'
 
   const requestIds = {
     list: Symbol('list'),
@@ -95,29 +97,32 @@
       page: {
         start: table.pagination.limit * (table.pagination.current - 1),
         limit: table.pagination.limit,
-        sort: table.sort
+        sort: table.sort || '-last_time' // 默认按照最新更新时间倒序
       }
     }
     filter.value.forEach((item) => {
+      const itemValue = item.value?.split(',').map(escapeRegexChar)
+      const operator = queryBuilderOperator(itemValue?.length > 1 ? QUERY_OPERATOR.IN : QUERY_OPERATOR.LIKE)
+      const value = itemValue?.length > 1 ? itemValue : itemValue[0]
       if (item.id === 'templateName') {
         params.template_filter.rules.push({
           field: 'name',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
       if (item.id === 'modifier') {
         params.template_filter.rules.push({
           field: 'modifier',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
       if (item.id === 'modelName') {
         params.object_filter.rules.push({
           field: 'bk_obj_name',
-          operator: queryBuilderOperator(QUERY_OPERATOR.IN),
-          value: item.value?.split(',')
+          operator,
+          value
         })
       }
     })
@@ -297,13 +302,14 @@
       history: true
     })
   }
-  const handleEdit = (id) => {
+  const handleEdit = (id, type = 'edit') => {
+    const name = type === 'clone' ? MENU_MODEL_FIELD_TEMPLATE_EDIT_FIELD_SETTINGS : MENU_MODEL_FIELD_TEMPLATE_EDIT
     routerActions.redirect({
-      name: MENU_MODEL_FIELD_TEMPLATE_EDIT,
+      name,
       params: {
         id
       },
-      history: true
+      history: false
     })
   }
   const handleBind = (id) => {
@@ -317,7 +323,7 @@
   }
 
   const handleSortChange = (sort) => {
-    table.sort = getSort(sort, { prop: 'name', order: 'descending' })
+    table.sort = getSort(sort)
     RouterQuery.refresh()
   }
 
@@ -341,11 +347,13 @@
     cloneSourceTemplate.value = template
   }
 
-  const handleCloneSuccess = () => {
+  const handleCloneSuccess = (res) => {
+    const { id } = res
+    if (!id) return
     getList()
     $success(t('克隆成功'))
     isShowCloneDialog.value = false
-    RouterQuery.refresh()
+    handleEdit(id, 'clone')
   }
   const handleCloneDone = () => {
     RouterQuery.refresh()
@@ -397,7 +405,8 @@
     const query = {
       templateName: '',
       modelName: '',
-      modifier: ''
+      modifier: '',
+      _t: Date.now()
     }
     filter.forEach((item) => {
       query[item.id] = item.values.map(val => val.name).join(',')
@@ -406,6 +415,13 @@
   }
   const handleBindModelChange = (templateId) => {
     getModelCount([templateId])
+  }
+
+  const handleUpdateTemplate = (id, val, dataKey) => {
+    const row = table.list.find(row => row.id === id)
+    if (row) {
+      set(row, dataKey, val)
+    }
   }
 </script>
 
@@ -443,21 +459,30 @@
         sortable="custom"
         prop="name"
         :label="$t('模板名称')"
+        fixed="left"
+        min-width="230"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div class="cell-link-content" @click.stop="handleRowIDClick(row)">{{ row.name }}</div>
+          <cmdb-auth tag="div" class="template-name-auth"
+            :auth="{ type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }">
+            <template #default="{ disabled }">
+              <div :class="['cell-link-content', { disabled }]" @click.stop="handleRowIDClick(row)">
+                {{ row.name }}
+              </div>
+            </template>
+          </cmdb-auth>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
         :label="$t('字段数量')"
+        min-width="130"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.field_count }}</div>
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        min-width="150"
         :label="$t('绑定的模型')">
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
@@ -470,8 +495,9 @@
         </template>
       </bk-table-column>
       <bk-table-column
-        prop="name"
+        prop="description"
         :label="$t('描述')"
+        min-width="290"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.description || '--' }}</div>
@@ -479,7 +505,8 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="modifier"
+        min-width="170"
         :label="$t('最近更新人')"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
@@ -488,14 +515,15 @@
       </bk-table-column>
       <bk-table-column
         sortable="custom"
-        prop="name"
+        prop="last_time"
         :label="$t('最近更新时间')"
+        min-width="190"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
           <div>{{ row.last_time }}</div>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right">
+      <bk-table-column :label="$t('操作')" min-width="250" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }">
             <template slot-scope="{ disabled }">
@@ -504,7 +532,7 @@
                 :disabled="disabled"
                 :text="true"
                 @click.stop="handleBind(row.id)">
-                {{$t('绑定模型')}}
+                {{$t('绑定新模型')}}
               </bk-button>
             </template>
           </cmdb-auth>
@@ -533,17 +561,17 @@
               </bk-button>
             </template>
           </cmdb-auth>
-          <cmdb-auth
-            :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [row.id] }"
-            v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
-            <template slot-scope="{ disabled }">
-              <bk-button
-                theme="primary"
-                :disabled="disabled || row.model_count > 0"
-                :text="true"
-                @click.stop="handleDelete(row)">
-                {{$t('删除')}}
-              </bk-button>
+          <cmdb-auth :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [row.id] }">
+            <template #default="{ disabled }">
+              <div v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !row.model_count }">
+                <bk-button
+                  theme="primary"
+                  :disabled="disabled || row.model_count > 0"
+                  :text="true"
+                  @click.stop="handleDelete(row)">
+                  {{$t('删除')}}
+                </bk-button>
+              </div>
             </template>
           </cmdb-auth>
         </template>
@@ -581,6 +609,7 @@
       @bind-change="handleBindModelChange"
       @clone-done="handleCloneDone"
       @delete-done="handleDeleteDone"
+      @update-template="handleUpdateTemplate"
       @close="handleDetailsDrawerClose">
     </template-details>
 
@@ -627,9 +656,17 @@
       margin-top: 14px;
     }
 
+    .template-name-auth {
+      width: 100%;
+    }
     .cell-link-content {
       color: $primaryColor;
       cursor: pointer;
+      @include ellipsis;
+
+      &.disabled {
+        color: #a3c5fd;
+      }
     }
     .cell-unbind {
       color: #FF9C01;

@@ -16,19 +16,20 @@
   import { v4 as uuidv4 } from 'uuid'
   import { t } from '@/i18n'
   import { $bkInfo, $error } from '@/magicbox'
-  import { swapItem } from '@/utils/util'
+  import { swapItem, escapeRegexChar } from '@/utils/util'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import FieldGrid from '@/components/model-manage/field-grid.vue'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import FieldSettingForm from '@/components/model-manage/field-group/field-detail/index.vue'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
   import UniqueManage from './unique-manage.vue'
   import ModelFieldSelector from './model-field-selector.vue'
   import UniqueManageDrawer from './unique-manage-drawer.vue'
-  import useField, { unwrapData, excludeFieldType, isFieldExist, defaultFieldData } from './use-field'
-  import useUnique from './use-unique'
+  import useField, { unwrapData, excludeFieldType, isFieldExist } from './use-field'
+  import useUnique, { singleRuleTypes, unionRuleTypes } from './use-unique'
+  import RouterQuery from '@/router/query'
 
   const props = defineProps({
     fieldList: {
@@ -66,13 +67,21 @@
   const uniqueLocalList = ref([])
 
   const settingFormComp = ref(null)
+  const modelFormComp = ref(null)
   const uniqueManageComp = ref(null)
   const uniqueTypeComp = ref(null)
 
   // use方法中参数默认必须是Ref类型
-  const { fieldStatus } = useField(oldFieldList, fieldLocalList)
+  const { fieldStatus, removedFieldList } = useField(oldFieldList, fieldLocalList)
   const { getUniqueByField, clearUniqueByField } =  useUnique(oldUniqueList, uniqueLocalList)
 
+  const defaultFieldSetting = () => ({
+    lock: {
+      isrequired: true,
+      editable: true,
+      placeholder: true
+    }
+  })
   const slider = reactive({
     title: '',
     uniqueEnabled: false,
@@ -80,40 +89,36 @@
     isShow: false,
     beforeClose: null,
     view: '',
-    isEditField: false
+    isEditField: false,
+    curFieldSetting: defaultFieldSetting()
   })
 
   const uniqueDrawerOpen = ref(false)
+  const stuff = ref({ type: 'default' })
 
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])
-    if (props.isCreateMode && !fieldList.length) {
-      fieldList.push({
-        ...defaultFieldData(),
-        id: uuidv4(),
-        bk_property_id: 'demo',
-        bk_property_name: t('示例字段'),
-        bk_property_type: PROPERTY_TYPES.SINGLECHAR
-      })
-    }
     fieldLocalList.value = fieldList.map(unwrapData)
     uniqueLocalList.value = cloneDeep(props.uniqueList || [])
+    const { action } = query?.value ?? {}
+    if (action === 'openUnqiueDrawer') {
+      handleOpenUnqiueDrawer()
+    }
   })
+
+  const query = computed(() => RouterQuery.getAll())
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))
 
-  // 本次删除的字段列表
-  const removedFieldList = computed(() => oldFieldList.value
-    .filter(item => fieldStatus.value[item.id].removed)
-    .map(unwrapData))
-
   const filterWord = ref('')
   const displayFieldLocalList = computed(() => {
     if (filterWord.value) {
-      const reg = new RegExp(filterWord.value, 'i')
+      stuff.value.type = 'search'
+      const reg = new RegExp(escapeRegexChar(filterWord.value), 'i')
       return fieldLocalList.value.filter(item => reg.test(item.field.bk_property_name))
     }
+    stuff.value.type = 'default'
     return fieldLocalList.value
   })
 
@@ -123,7 +128,7 @@
     slider.isCreateMode = true
 
     slider.curField = {}
-    slider.curFieldSetting = {}
+    slider.curFieldSetting = defaultFieldSetting()
 
     slider.uniqueEnabled = false
     slider.uniqueType = UNIUQE_TYPES.SINGLE
@@ -167,7 +172,7 @@
   const syncUnique = () => {
     emit('update-unique', uniqueLocalList.value)
   }
-  const appendField = (fieldData, extraData = {}) => {
+  const appendField = (fieldData) => {
     const data = {
       field: {
         // 在页面中创建的数据，此id键与后台数据有意保持一致为了简化在更新查找时的逻辑
@@ -175,17 +180,17 @@
         id: uuidv4(),
         ...fieldData
       },
-      extra: extraData
+      extra: slider.curFieldSetting
     }
     fieldLocalList.value.push(data)
-
+    syncField()
     return data
   }
-  const updateField = (id, fieldData, extraData) => {
+  const updateField = (id, fieldData) => {
     const fieldIndex = fieldLocalList.value.findIndex(item => item.field.id === id)
     const data = {
       field: { id, ...fieldData },
-      extra: extraData
+      extra: slider.curFieldSetting
     }
     if (~fieldIndex) {
       set(fieldLocalList.value, fieldIndex, data)
@@ -228,8 +233,17 @@
     }
   }
 
-  const handleFieldSave = (id, fieldData, extraData) => {
-    if (!id && isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value])) {
+  const isUniqueTypeDisabled = (fieldInfo, type) => {
+    if (type === UNIUQE_TYPES.SINGLE) {
+      return !singleRuleTypes.includes(fieldInfo.bk_property_type)
+    }
+    if (type === UNIUQE_TYPES.UNION) {
+      return !unionRuleTypes.includes(fieldInfo.bk_property_type)
+    }
+  }
+
+  const handleFieldSave = async (id, fieldData) => {
+    if (isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value], id)) {
       $error(t('字段已在模板中存在，无法添加'))
       return
     }
@@ -237,7 +251,7 @@
     // 启用了唯一校验并且类型是联合唯一才需要校验，单独唯一不校验在后续的处理中直接对数据进行修改
     if (slider.uniqueEnabled && slider.uniqueType === UNIUQE_TYPES.UNION) {
       // 校验“唯一校验”
-      const validateUniqueResult = uniqueManageComp.value?.isValid?.()
+      const validateUniqueResult = await uniqueManageComp.value?.isValid?.()
 
       if (!validateUniqueResult) {
         uniqueManageComp.value?.$el?.scrollIntoView?.()
@@ -247,9 +261,9 @@
 
     let currentField = null
     if (id) {
-      currentField = updateField(id, fieldData, extraData)
+      currentField = updateField(id, fieldData)
     } else {
-      currentField = appendField(fieldData, extraData)
+      currentField = appendField(fieldData)
     }
 
     if (slider.uniqueEnabled) {
@@ -310,8 +324,13 @@
       })
     }
   }
-  const handleUniqueEnabledChange = (enabled) => {
+  const handleUniqueEnabledChange = (enabled, fieldInfo) => {
     if (enabled) {
+      if (singleRuleTypes.includes(fieldInfo.bk_property_type)) {
+        slider.uniqueType = UNIUQE_TYPES.SINGLE
+      } else if (unionRuleTypes.includes(fieldInfo.bk_property_type)) {
+        slider.uniqueType = UNIUQE_TYPES.UNION
+      }
       nextTick(() => {
         uniqueTypeComp.value?.$el?.scrollIntoView?.()
       })
@@ -395,28 +414,33 @@
     slider.uniqueEnabled = false
     slider.uniqueType = UNIUQE_TYPES.SINGLE
   }
+  const beforeCloseDialog = () => new Promise((resolve) => {
+    $bkInfo({
+      title: t('确认退出'),
+      subTitle: t('退出会导致未保存信息丢失'),
+      extCls: 'bk-dialog-sub-header-center',
+      confirmFn: () => {
+        sliderClose()
+        resolve(true)
+      },
+      cancelFn: () => {
+        resolve(false)
+      }
+    })
+  })
+
   const handleSettingSliderBeforeClose = () => {
     const hasChanged = Object.keys(settingFormComp.value.changedValues).length
     if (hasChanged) {
-      return new Promise((resolve) => {
-        $bkInfo({
-          title: t('确认退出'),
-          subTitle: t('退出会导致未保存信息丢失'),
-          extCls: 'bk-dialog-sub-header-center',
-          confirmFn: () => {
-            sliderClose()
-            resolve(true)
-          },
-          cancelFn: () => {
-            resolve(false)
-          }
-        })
-      })
+      return beforeCloseDialog()
     }
     sliderClose()
     return true
   }
   const handleImportSliderBeforeClose = () => {
+    if (modelFormComp.value?.selectedModelId) {
+      return beforeCloseDialog()
+    }
     sliderClose()
     return true
   }
@@ -428,6 +452,10 @@
   }
   const handleUniqueDrawerClose = () => {
     uniqueDrawerOpen.value = false
+  }
+  const handleClearFilter = () => {
+    stuff.value.type = 'default'
+    filterWord.value = ''
   }
 </script>
 
@@ -544,7 +572,7 @@
             <grid-layout class="mt20" mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
               <grid-item :label="$t('设置为唯一校验')">
                 <bk-popconfirm
-                  v-if="slider.uniqueEnabled"
+                  v-if="slider.uniqueEnabled && slider.uniqueType === UNIUQE_TYPES.UNION"
                   :content="$t('取消字段唯一校验确认提示语')"
                   width="260"
                   trigger="click"
@@ -559,7 +587,7 @@
                     v-model="slider.uniqueEnabled"
                     theme="primary"
                     :pre-check="uniqueEnabledTogglePreCheck"
-                    @change="handleUniqueEnabledChange">
+                    @change="enabled => handleUniqueEnabledChange(enabled, fieldInfo)">
                   </bk-switcher>
                 </bk-popconfirm>
                 <bk-switcher
@@ -571,13 +599,21 @@
                   :disabled="disabled"
                   v-model="slider.uniqueEnabled"
                   theme="primary"
-                  @change="handleUniqueEnabledChange">
+                  @change="enabled => handleUniqueEnabledChange(enabled, fieldInfo)">
                 </bk-switcher>
               </grid-item>
               <grid-item required :label="$t('校验类型')" ref="uniqueTypeComp" v-if="slider.uniqueEnabled">
                 <bk-radio-group class="full-width-radio" v-model="slider.uniqueType" @change="handleUniqueTypeChange">
-                  <bk-radio-button :value="UNIUQE_TYPES.SINGLE">{{$t('单独唯一')}}</bk-radio-button>
-                  <bk-radio-button :value="UNIUQE_TYPES.UNION">{{$t('联合唯一')}}</bk-radio-button>
+                  <bk-radio-button
+                    :disabled="isUniqueTypeDisabled(fieldInfo, UNIUQE_TYPES.SINGLE)"
+                    :value="UNIUQE_TYPES.SINGLE">
+                    {{$t('单独唯一')}}
+                  </bk-radio-button>
+                  <bk-radio-button
+                    :disabled="isUniqueTypeDisabled(fieldInfo, UNIUQE_TYPES.UNION)"
+                    :value="UNIUQE_TYPES.UNION">
+                    {{$t('联合唯一')}}
+                  </bk-radio-button>
                 </bk-radio-group>
               </grid-item>
             </grid-layout>
@@ -597,10 +633,46 @@
               </unique-manage>
             </grid-layout>
           </template>
+          <template #append-lock="{ fieldInfo }">
+            <div class="lock-option-container">
+              <div class="lock-option-title">
+                <span class="sub-title">{{ $t('模型应用设置') }}</span>
+                {{ $t('模型应用设置提示语') }}
+              </div>
+              <div class="option-item" v-if="EDITABLE_TYPES.includes(fieldInfo.bk_property_type)">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.editable"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“在实例中可编辑”的配置')}}
+                </bk-checkbox>
+              </div>
+              <div class="option-item" v-if="REQUIRED_TYPES.includes(fieldInfo.bk_property_type)">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.isrequired"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“设置为必填项”的配置')}}
+                </bk-checkbox>
+              </div>
+              <div class="option-item">
+                <bk-checkbox
+                  v-model="slider.curFieldSetting.lock.placeholder"
+                  :true-value="false"
+                  :false-value="true"
+                  class="checkbox">
+                  {{$t('允许在模型中修改“用户提示”的配置')}}
+                </bk-checkbox>
+              </div>
+            </div>
+          </template>
         </field-setting-form>
         <model-field-selector
           v-else-if="slider.view === sliderViews.MODEL_FIELD_SELECTOR"
           :template-field-list="pureFieldList"
+          ref="modelFormComp"
           @confirm="handleImportSave"
           @cancel="handleImportSliderBeforeClose">
         </model-field-selector>
@@ -615,6 +687,32 @@
       @close="handleUniqueDrawerClose"
       @change-unique="handleChangeUnique">
     </unique-manage-drawer>
+
+
+    <cmdb-table-empty
+      v-if="!displayFieldLocalList.length"
+      slot="empty"
+      :stuff="stuff"
+      :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }"
+      @clear="handleClearFilter">
+      <bk-exception class="empty-set" type="empty" scene="part">
+        <i18n path="尚未创建字段">
+          <template #link>
+            <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
+              <template #default="{ disabled }">
+                <bk-button
+                  text
+                  theme="primary"
+                  :disabled="disabled"
+                  @click="handleAddField">
+                  {{$t('立即创建')}}
+                </bk-button>
+              </template>
+            </cmdb-auth>
+          </template>
+        </i18n>
+      </bk-exception>
+    </cmdb-table-empty>
   </div>
 </template>
 
@@ -662,12 +760,40 @@
     background: #F5F7FB;
   }
 
+  .lock-option-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-top: 1px solid #EAEBF0;
+    padding-top: 16px;
+    margin-top: 20px;
+    margin-bottom: 32px;
+    .lock-option-title {
+      font-size: 14px;
+      margin-bottom: 4px;
+
+      .sub-title {
+        font-weight: 700;
+      }
+    }
+
+    .option-item {
+      font-size: 14px;
+    }
+  }
+
   .full-width-radio {
     display: flex;
     .bk-form-radio-button {
       flex: 1;
       :deep(.bk-radio-button-text) {
         width: 100%;
+      }
+
+      &.disabled:first-child {
+        :deep(.bk-radio-button-text) {
+          border-left: 1px solid currentColor;
+        }
       }
     }
   }

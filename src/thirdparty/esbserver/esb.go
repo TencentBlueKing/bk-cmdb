@@ -22,6 +22,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 	"configcenter/src/thirdparty/esbserver/gse"
 	"configcenter/src/thirdparty/esbserver/iam"
+	"configcenter/src/thirdparty/esbserver/login"
 	"configcenter/src/thirdparty/esbserver/nodeman"
 	"configcenter/src/thirdparty/esbserver/user"
 
@@ -34,6 +35,7 @@ type EsbClientInterface interface {
 	User() user.UserClientInterface
 	NodemanSrv() nodeman.NodeManClientInterface
 	IamSrv() iam.IamClientInterface
+	LoginSrv() login.ClientInterface
 }
 
 type esbsrv struct {
@@ -42,6 +44,7 @@ type esbsrv struct {
 	userSrv    user.UserClientInterface
 	nodemanSrv nodeman.NodeManClientInterface
 	iamSrv     iam.IamClientInterface
+	loginSrv   login.ClientInterface
 	sync.RWMutex
 	esbConfig *esbutil.EsbConfigSrv
 	c         *util.Capability
@@ -130,6 +133,20 @@ func (e *esbsrv) User() user.UserClientInterface {
 		e.Lock()
 		e.userSrv = user.NewUserClientInterface(e.client, e.esbConfig)
 		srv = e.userSrv
+		e.Unlock()
+	}
+	return srv
+}
+
+// LoginSrv bk-login esb client
+func (e *esbsrv) LoginSrv() login.ClientInterface {
+	e.RLock()
+	srv := e.loginSrv
+	e.RUnlock()
+	if srv == nil {
+		e.Lock()
+		e.loginSrv = login.NewClientInterface(e.client, e.esbConfig)
+		srv = e.loginSrv
 		e.Unlock()
 	}
 	return srv
