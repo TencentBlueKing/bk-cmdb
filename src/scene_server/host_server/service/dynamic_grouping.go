@@ -46,7 +46,7 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	if err := newDynamicGroup.Validate(validatefunc); err != nil {
-		blog.Errorf("create dynamic group failed, invalid param: %+v, input: %+v, rid: %s",
+		blog.Errorf("create dynamic group failed, invalid param, err: %+v, input: %+v, rid: %s",
 			err, newDynamicGroup, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error()))
 		return
@@ -54,28 +54,11 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 
 	for _, cond := range newDynamicGroup.Info.Condition {
 		for _, item := range cond.Condition {
-			//验证 value 是否为空
-			if item.Value == nil {
-				blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
-					item.Value, newDynamicGroup.AppID, ctx.Kit.Rid)
-				ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+			if err := s.verifyRegexValidity(ctx, item, newDynamicGroup.AppID); err != nil {
+				blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %s, rid: %s",
+					err, newDynamicGroup, newDynamicGroup.AppID, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
 				return
-			}
-			//模糊匹配时需要验证正则表达式的合法性
-			if item.Operator == common.BKDBLIKE {
-				strValue := util.GetStrByInterface(item.Value)
-				if strValue == "" {
-					blog.Errorf("HTTP request body data is not set, err: value not set regex: %v, bizID: %s, rid: %s",
-						item.Value, newDynamicGroup.AppID, ctx.Kit.Rid)
-					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
-					return
-				}
-				if _, err := regexp.Compile(strValue); err != nil {
-					blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, rid: %s",
-						err, item.Value, ctx.Kit.Rid)
-					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
-					return
-				}
 			}
 		}
 	}
@@ -89,7 +72,8 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		var err error
 		response, err = s.CoreAPI.CoreService().Host().CreateDynamicGroup(ctx.Kit.Ctx, ctx.Kit.Header, &newDynamicGroup)
 		if err != nil {
-			blog.Errorf("create dynamic group failed, err: %+v, input: %+v, rid: %s", err, newDynamicGroup, ctx.Kit.Rid)
+			blog.Errorf("create dynamic group failed, err: %+v, input: %+v, rid: %s",
+				err, newDynamicGroup, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !response.Result {
@@ -104,11 +88,13 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditCreate)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &newDynamicGroup)
 		if err != nil {
-			blog.Errorf("generate audit log failed after create new dynamic group[%s], err: %+v, rid: %s", newDynamicGroup.ID, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed after create new dynamic group[%s], err: %+v, rid: %s",
+				newDynamicGroup.ID, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after create new dynamic group[%s], err: %+v, rid: %s", newDynamicGroup.ID, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed after create new dynamic group[%s], err: %+v, rid: %s",
+				newDynamicGroup.ID, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -116,13 +102,16 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		if auth.EnableAuthorize() {
 			bizID := strconv.FormatInt(newDynamicGroup.AppID, 10)
 
-			resp, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, newDynamicGroup.ID, ctx.Kit.Header)
+			resp, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, newDynamicGroup.ID,
+				ctx.Kit.Header)
 			if err != nil {
-				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", err, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
+				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s",
+					err, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
 				return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if !resp.Result {
-				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s", resp.ErrMsg, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
+				blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s",
+					resp.ErrMsg, bizID, newDynamicGroup.ID, ctx.Kit.Rid)
 				return resp.CCError()
 			}
 
@@ -133,7 +122,8 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 				Creator: ctx.Kit.User,
 			}
 
-			if _, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance); err != nil {
+			if _, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
+				iamInstance); err != nil {
 				blog.Errorf("register created new dynamic group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
@@ -147,6 +137,31 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(response.Data)
+}
+
+// verifyRegexValidity 验证正则表达式的合法性
+func (s *Service) verifyRegexValidity(ctx *rest.Contexts, item meta.DynamicGroupCondition, bizID int64) error {
+	//验证 value 是否为空
+	if item.Value == nil {
+		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
+			item.Value, bizID, ctx.Kit.Rid)
+		return ctx.Kit.CCError.Errorf(common.CCErrCommHTTPBodyEmpty)
+	}
+	//模糊匹配时需要验证正则表达式的合法性
+	if item.Operator == common.BKDBLIKE {
+		strValue := util.GetStrByInterface(item.Value)
+		if strValue == "" {
+			blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
+				item.Value, bizID, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty)
+		}
+		if _, err := regexp.Compile(strValue); err != nil {
+			blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, bizID: %s, rid: %s",
+				err, item.Value, bizID, ctx.Kit.Rid)
+			return ctx.Kit.CCError.Error(common.CCIllegalRegularExpression)
+		}
+	}
+	return nil
 }
 
 // UpdateDynamicGroup updates target dynamic group.
@@ -195,14 +210,15 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 		objectIDParam, isObjIDExist := params["bk_obj_id"]
 		if !isObjIDExist {
-			blog.Errorf("update dynamic group failed, bk_obj_id is required in update info condition action, input: %+v, rid: %s",
-				params, ctx.Kit.Rid)
+			blog.Errorf("update dynamic group failed, bk_obj_id is required in update info condition action,"+
+				" input: %+v, rid: %s", params, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id"))
 			return
 		}
 		objectID, ok := objectIDParam.(string)
 		if !ok {
-			blog.Errorf("update dynamic group failed, invalid bk_obj_id type, objectID: %+v, rid: %s", objectIDParam, ctx.Kit.Rid)
+			blog.Errorf("update dynamic group failed, invalid bk_obj_id type, objectID: %+v, rid: %s",
+				objectIDParam, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id"))
 			return
 		}
@@ -221,28 +237,11 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 		for _, cond := range dynamicGroupInfo.Condition {
 			for _, item := range cond.Condition {
-				//验证 value 是否为空
-				if item.Value == nil {
-					blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, rid: %s",
-						item.Value, bizID, ctx.Kit.Rid)
-					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+				if err := s.verifyRegexValidity(ctx, item, bizIDInt64); err != nil {
+					blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %s, rid: %s",
+						err, dynamicGroupInfo, bizIDInt64, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
 					return
-				}
-				//模糊匹配时需要验证正则表达式的合法性
-				if item.Operator == common.BKDBLIKE {
-					strValue := util.GetStrByInterface(item.Value)
-					if strValue == "" {
-						blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v,"+
-							" bizID: %s, rid: %s", item.Value, ctx.Kit.Rid)
-						ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
-						return
-					}
-					if _, err := regexp.Compile(strValue); err != nil {
-						blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, rid: %s",
-							err, item.Value, ctx.Kit.Rid)
-						ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
-						return
-					}
 				}
 			}
 		}
@@ -253,8 +252,8 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 	} else {
 		_, isExist := params[common.BKObjIDField]
 		if isExist {
-			blog.Errorf("update dynamic group failed, info.condition is required in update bk_obj_id action, input: %+v, rid: %s",
-				params, ctx.Kit.Rid)
+			blog.Errorf("update dynamic group failed, info.condition is required in update bk_obj_id action,"+
+				" input: %+v, rid: %s", params, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "info.condition"))
 			return
 		}
@@ -280,15 +279,18 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updates)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &meta.DynamicGroup{ID: targetID, AppID: bizIDInt64})
 		if err != nil {
-			blog.Errorf("generate audit log failed after update dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed after update dynamic group[%s], err: %+v, rid: %s",
+				targetID, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after update dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed after update dynamic group[%s], err: %+v, rid: %s",
+				targetID, err, ctx.Kit.Rid)
 			return err
 		}
 
-		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header, updates)
+		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx,
+			bizID, targetID, ctx.Kit.Header, updates)
 		if err != nil {
 			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
 				err, bizID, params, ctx.Kit.Rid)
@@ -328,7 +330,8 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	if !result.Result {
-		blog.Errorf("delete dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, rid: %s", result.Code, result.ErrMsg, bizID, ctx.Kit.Rid)
+		blog.Errorf("delete dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, rid: %s",
+			result.Code, result.ErrMsg, bizID, ctx.Kit.Rid)
 		ctx.RespAutoError(result.CCError())
 		return
 	}
@@ -342,7 +345,8 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !result.Result {
-			blog.Errorf("delete dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, rid: %s", result.Code, result.ErrMsg, bizID, ctx.Kit.Rid)
+			blog.Errorf("delete dynamic group failed, errcode: %d, errmsg: %s, bizID: %s, rid: %s",
+				result.Code, result.ErrMsg, bizID, ctx.Kit.Rid)
 			return result.CCError()
 		}
 
@@ -351,11 +355,13 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditDelete)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &dynamicGroup)
 		if err != nil {
-			blog.Errorf("generate audit log failed after delete dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed after delete dynamic group[%s], err: %+v, rid: %s",
+				targetID, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after delete dynamic group[%s], err: %+v, rid: %s", targetID, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed after delete dynamic group[%s], err: %+v, rid: %s",
+				targetID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -513,7 +519,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	// query target dynamic group.
 	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("execute dynamic group failed, err: %+v, bizID: %s, ID: %s, rid: %s", err, bizID, targetID, ctx.Kit.Rid)
+		blog.Errorf("execute dynamic group failed, err: %+v, bizID: %s, ID: %s, rid: %s",
+			err, bizID, targetID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error()))
 		return
 	}
@@ -524,7 +531,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	if len(result.Data.Name) == 0 {
-		blog.Errorf("execute dynamic group failed, group not found, bizID: %s, ID: %s, rid: %s", bizID, targetID, ctx.Kit.Rid)
+		blog.Errorf("execute dynamic group failed, group not found, bizID: %s, ID: %s, rid: %s",
+			bizID, targetID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommNotFound))
 		return
 	}
@@ -538,32 +546,14 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	// parse all dynamic group conditions to search condition.
 	for _, cond := range targetDynamicGroup.Info.Condition {
 		searchCondition := meta.SearchCondition{ObjectID: cond.ObjID, Condition: []meta.ConditionItem{}}
-
 		// build condition items.
 		for _, item := range cond.Condition {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
-			//验证 value 是否为空
-			if condItem.Value == nil {
-				blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, "+
-					"ID: %s, rid: %s", condItem.Value, bizID, targetID, ctx.Kit.Rid)
-				ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
+			if err := s.verifyRegexValidity(ctx, item, bizIDInt64); err != nil {
+				blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %s, rid: %s",
+					err, targetDynamicGroup, bizIDInt64, ctx.Kit.Rid)
+				ctx.RespAutoError(err)
 				return
-			}
-			//模糊匹配时需要验证正则表达式的合法性
-			if condItem.Operator == common.BKDBLIKE {
-				strValue := util.GetStrByInterface(condItem.Value)
-				if strValue == "" {
-					blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %s, "+
-						"ID: %s, rid: %s", condItem.Value, bizID, targetID, ctx.Kit.Rid)
-					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPBodyEmpty))
-					return
-				}
-				if _, err := regexp.Compile(strValue); err != nil {
-					blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, bizID: %s, "+
-						"ID: %s, rid: %s", err, condItem.Value, bizID, targetID, ctx.Kit.Rid)
-					ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCIllegalRegularExpression))
-					return
-				}
 			}
 			searchCondition.Condition = append(searchCondition.Condition, condItem)
 		}
