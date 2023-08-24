@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -31,7 +32,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/service/excel/core"
 	"configcenter/src/web_server/service/excel/operator/inst/exporter"
 	"configcenter/src/web_server/service/excel/operator/inst/importer"
@@ -72,9 +72,9 @@ func (s *service) BuildTemplate(c *gin.Context) {
 
 	// 2. 将excel模版文件返回，并删除临时文件
 	if objID == common.BKInnerObjIDHost {
-		logics.AddDownExcelHttpHeader(c, "bk_cmdb_import_host.xlsx")
+		addDownExcelHttpHeader(c, "bk_cmdb_import_host.xlsx")
 	} else {
-		logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_inst_%s.xlsx", objID))
+		addDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_inst_%s.xlsx", objID))
 	}
 
 	c.File(filePath)
@@ -150,9 +150,9 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 
 	// 3. 将excel文件返回，并删除临时文件
 	if objID == common.BKInnerObjIDHost {
-		logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
+		addDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
 	} else {
-		logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
+		addDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	}
 
 	c.File(filePath)
@@ -291,7 +291,7 @@ func (s *service) ExportObject(c *gin.Context) {
 	}
 
 	// 将excel文件返回，并删除临时文件
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
+	addDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
 	c.File(filePath)
 
 	if err := modelOp.Clean(); err != nil {
@@ -361,4 +361,17 @@ func getErrResp(kit *rest.Kit, code int, params ...string) metadata.BaseResp {
 		Code:   code,
 		ErrMsg: kit.CCError.CCErrorf(code, params).Error(),
 	}
+}
+
+func addDownExcelHttpHeader(c *gin.Context, name string) {
+	if strings.HasSuffix(name, ".xls") {
+		c.Header("Content-Type", "application/vnd.ms-excel")
+	} else {
+		c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	}
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Content-Disposition", "attachment; filename="+name) // 文件名
+	c.Header("Cache-Control", "must-revalidate, post-check=0, pre-check=0")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
 }

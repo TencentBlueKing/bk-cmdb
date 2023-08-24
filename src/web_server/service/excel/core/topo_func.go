@@ -72,7 +72,7 @@ func (d *Client) getCustomTopoObjIDs(kit *rest.Kit) ([]string, error) {
 	}
 
 	mainlineObjChildMap := make(map[string]string, 0)
-	for _, asst := range mainlineAsstRsp.Data.Info {
+	for _, asst := range mainlineAsstRsp.Info {
 		if asst.ObjectID == common.BKInnerObjIDHost {
 			continue
 		}
