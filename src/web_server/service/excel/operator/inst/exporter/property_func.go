@@ -28,6 +28,20 @@ func init() {
 	handleSpecialPropFuncMap[common.BKCloudIDField] = getHandleCloudAreaPropFunc()
 }
 
+func getHandleColPropFunc(property *core.ColProp) handleColPropFunc {
+	handleFunc, isSpecial := handleSpecialPropFuncMap[property.ID]
+	if isSpecial {
+		return handleFunc
+	}
+
+	handleFunc, ok := handleColPropFuncMap[property.PropertyType]
+	if !ok {
+		handleFunc = getDefaultHandleTypeFunc()
+	}
+
+	return handleFunc
+}
+
 type handleColPropFunc func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error)
 
 func getHandleNumericTypeFunc() handleColPropFunc {

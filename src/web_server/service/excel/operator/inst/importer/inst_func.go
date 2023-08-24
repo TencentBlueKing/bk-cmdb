@@ -38,6 +38,15 @@ func init() {
 	handleInstFieldFuncMap[common.FieldTypeInnerTable] = getHandleTableFieldFunc()
 }
 
+func getHandleInstFieldFunc(prop *PropWithTable) handleInstFieldFunc {
+	handleFunc, ok := handleInstFieldFuncMap[prop.PropertyType]
+	if !ok {
+		handleFunc = getDefaultHandleFieldFunc()
+	}
+
+	return handleFunc
+}
+
 type handleInstFieldFunc func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error)
 
 func getHandleIntFieldFunc() handleInstFieldFunc {

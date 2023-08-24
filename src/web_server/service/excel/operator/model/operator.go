@@ -59,7 +59,7 @@ func NewOp(opts ...BuildModelOpFunc) (*Operator, error) {
 func FilePath(filePath string) BuildModelOpFunc {
 	return func(modelOp *Operator) error {
 		var err error
-		modelOp.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate(), excel.DelDefaultSheet())
+		modelOp.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate())
 		if err != nil {
 			return err
 		}

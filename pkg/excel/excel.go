@@ -34,7 +34,7 @@ type Excel struct {
 	filePath        string
 	file            *excelize.File
 	writers         map[string]*excelize.StreamWriter
-	delDefaultSheet bool
+	hasDefaultSheet bool
 }
 
 type OperatorFunc func(excel *Excel) error
@@ -105,13 +105,13 @@ func OpenOrCreate() OperatorFunc {
 	}
 }
 
-// DelDefaultSheet delete default sheet
-func DelDefaultSheet() OperatorFunc {
+// KeepDefaultSheet keep default sheet
+func KeepDefaultSheet() OperatorFunc {
 	return func(excel *Excel) error {
 		excel.Lock()
 		defer excel.Unlock()
 
-		excel.delDefaultSheet = true
+		excel.hasDefaultSheet = true
 
 		return nil
 	}
@@ -324,7 +324,7 @@ func (excel *Excel) save() error {
 }
 
 // Close Excel file
-func (excel *Excel) Close() error {
+func (excel *Excel) Close() (err error) {
 	excel.Lock()
 	defer excel.Unlock()
 
@@ -332,19 +332,21 @@ func (excel *Excel) Close() error {
 		return fmt.Errorf("excel file has not been created yet")
 	}
 
-	if excel.delDefaultSheet {
-		if err := excel.deleteSheet(defaultSheet); err != nil {
-			return err
+	if !excel.hasDefaultSheet {
+		if err = excel.deleteSheet(defaultSheet); err != nil {
+			return
 		}
 
-		if err := excel.save(); err != nil {
-			return err
+		if err = excel.save(); err != nil {
+			return
 		}
 	}
 
-	if err := excel.file.Close(); err != nil {
-		return err
-	}
+	defer func() {
+		if err = excel.file.Close(); err != nil {
+			return
+		}
+	}()
 
 	return nil
 }
@@ -394,12 +396,13 @@ func (excel *Excel) NewStyle(style *Style) (int, error) {
 	return excel.file.NewStyle(excelStyle)
 }
 
-const singleCellLen = 1
+// oneCellLen 1个单元格的长度
+const oneCellLen = 1
 
 // MergeSameRowCell merge same row cell
 func (excel *Excel) MergeSameRowCell(sheet string, colIdx, rowIdx, length int) error {
 
-	if length == singleCellLen {
+	if length == oneCellLen {
 		return nil
 	}
 
@@ -425,7 +428,7 @@ func (excel *Excel) MergeSameRowCell(sheet string, colIdx, rowIdx, length int) e
 
 // MergeSameColCell merge same column cell
 func (excel *Excel) MergeSameColCell(sheet string, colIdx, rowIdx, height int) error {
-	if height == singleCellLen {
+	if height == oneCellLen {
 		return nil
 	}
 

@@ -180,6 +180,10 @@ func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, row
 		return 0, err
 	}
 
+	if insts == nil {
+		return rowIndex, nil
+	}
+
 	insts, instHeights, err := e.enrichInst(insts, colProps)
 	if err != nil {
 		blog.Errorf("enrich instance field failed, err: %v, rid: %s", err, e.kit.Rid)
@@ -264,15 +268,7 @@ func (e *Exporter) handleInst(inst mapstr.MapStr, colProps []core.ColProp, heigh
 			continue
 		}
 
-		handleFunc, isSpecial := handleSpecialInstFieldFuncMap[property.ID]
-		if !isSpecial {
-			var ok bool
-			handleFunc, ok = handleInstFieldFuncMap[property.PropertyType]
-			if !ok {
-				handleFunc = getDefaultHandleFieldFunc()
-			}
-		}
-
+		handleFunc := getHandleInstFieldFunc(&property)
 		rows, err := handleFunc(e, &property, val)
 		if err != nil {
 			blog.ErrorJSON("handle instance failed, property: %s, val: %s, err: %s, rid: %s", property, val, err,

@@ -28,17 +28,28 @@ import (
 
 // ColProp excel column property
 type ColProp struct {
-	ID            string      // 字段标识
-	Name          string      // 字段名称
-	PropertyType  string      // 字段类型
-	Option        interface{} // 枚举下拉列表
-	IsRequire     bool        // 是否必填
-	Group         string      // 字段分组
-	ExcelColIndex int         // 列所处excel位置
-	Length        int         // 属性需要占用多少列excel
-	NotExport     bool        // 是否导出
-	RefSheet      string      // 如果需要引用另一个sheet的值进行校验，那个sheet的名称
-	NotEditable   bool        // 是否不可编辑
+	// ID 字段标识
+	ID string
+	// Name 字段名称
+	Name string
+	// PropertyType 字段类型
+	PropertyType string
+	// Option 属性的option字段
+	Option interface{}
+	// IsRequire 是否必填
+	IsRequire bool
+	// Group 字段分组
+	Group string
+	// ExcelColIndex 字段在excel中，所处的列的位置
+	ExcelColIndex int
+	// Length 属性需要占用多少列excel
+	Length int
+	// NotExport 是否导出
+	NotExport bool
+	// RefSheet 如果需要引用另一个sheet的值进行校验，那个sheet的名称
+	RefSheet string
+	// NotEditable 是否不可编辑
+	NotEditable bool
 }
 
 // GetRowWidth get row width

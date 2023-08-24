@@ -52,11 +52,11 @@ func NewTmplOp(opts ...BuildTmplOpFunc) (*TmplOp, error) {
 	return tmpl, nil
 }
 
-// FilePath set template file path
+// FilePath set template operator file path
 func FilePath(filePath string) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		var err error
-		tmpl.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate(), excel.DelDefaultSheet())
+		tmpl.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate())
 		if err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func Client(client *core.Client) BuildTmplOpFunc {
 	}
 }
 
-// ObjID set template object id
+// ObjID set template operator object id
 func ObjID(objID string) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.objID = objID
@@ -86,7 +86,7 @@ func ObjID(objID string) BuildTmplOpFunc {
 	}
 }
 
-// Kit set template kit
+// Kit set template operator kit
 func Kit(kit *rest.Kit) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.kit = kit
@@ -94,7 +94,7 @@ func Kit(kit *rest.Kit) BuildTmplOpFunc {
 	}
 }
 
-// Language set template language
+// Language set template operator language
 func Language(language language.CCLanguageIf) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.language = language
@@ -222,15 +222,7 @@ func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error)
 			property.Name = property.Name + ccLang.Language("web_excel_header_required")
 		}
 
-		handleFunc, isSpecial := handleSpecialPropFuncMap[property.ID]
-		if !isSpecial {
-			var ok bool
-			handleFunc, ok = handleColPropFuncMap[property.PropertyType]
-			if !ok {
-				handleFunc = getDefaultHandleTypeFunc()
-			}
-		}
-
+		handleFunc := getHandleColPropFunc(&property)
 		headerField, err := handleFunc(t, &property)
 		if err != nil {
 			blog.ErrorJSON("handle column property failed, sheet: %s, property: %s, err: %s, rid: %s", t.objID,

@@ -416,10 +416,7 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 			continue
 		}
 
-		handleFunc, ok := handleInstFieldFuncMap[prop.PropertyType]
-		if !ok {
-			handleFunc = getDefaultHandleFieldFunc()
-		}
+		handleFunc := getHandleInstFieldFunc(&prop)
 
 		value, err := handleFunc(i, &prop, rows)
 		if err != nil {

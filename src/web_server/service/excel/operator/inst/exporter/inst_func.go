@@ -45,6 +45,20 @@ func init() {
 	handleSpecialInstFieldFuncMap[common.BKCloudIDField] = getHandleInstCloudAreaFunc()
 }
 
+func getHandleInstFieldFunc(property *core.ColProp) handleInstFieldFunc {
+	handleFunc, isSpecial := handleSpecialInstFieldFuncMap[property.ID]
+	if isSpecial {
+		return handleFunc
+	}
+
+	handleFunc, ok := handleInstFieldFuncMap[property.PropertyType]
+	if !ok {
+		handleFunc = getDefaultHandleFieldFunc()
+	}
+
+	return handleFunc
+}
+
 type handleInstFieldFunc func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error)
 
 const singleCellLen = 1
