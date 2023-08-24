@@ -51,7 +51,7 @@ const (
 	ModelFieldCreateTime = "create_time"
 	// ModelFieldLastTime TODO
 	ModelFieldLastTime = "last_time"
-	// ModelFieldObjSortNumber TODO
+	// ModelFieldObjSortNumber the sort number field
 	ModelFieldObjSortNumber = "obj_sort_number"
 )
 

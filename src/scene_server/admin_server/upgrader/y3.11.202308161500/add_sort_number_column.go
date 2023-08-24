@@ -33,8 +33,8 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 			common.BKDBExists: true,
 		},
 	}
-	err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).
-		Fields(common.ObjSortNumberField).All(ctx, &objSortNumberList)
+	err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).Fields(common.ObjSortNumberField).
+		All(ctx, &objSortNumberList)
 	if err != nil {
 		blog.Errorf("list object sort number failed, db find failed, err: %s", err.Error())
 		return err
@@ -44,9 +44,10 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 	}
 
 	//不存在则新建字段 obj_sort_number
-	if err := db.Table(common.BKTableNameObjDes).AddColumn(ctx, common.ObjSortNumberField, 0); err != nil {
-		blog.Errorf("add %s column to table %s failed, err: %v",
-			common.ObjSortNumberField, common.BKTableNameObjDes, err)
+	err = db.Table(common.BKTableNameObjDes).AddColumn(ctx, common.ObjSortNumberField, 0)
+	if err != nil {
+		blog.Errorf("add column to table failed, err: %v, column: %s, table: %s",
+			err, common.ObjSortNumberField, common.BKTableNameObjDes)
 		return err
 	}
 
@@ -88,7 +89,8 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 
 			err := db.Table(common.BKTableNameObjDes).Update(ctx, updateField, data)
 			if err != nil {
-				blog.Errorf("update sort number failed, objectId: d%, err: %s", objectId[common.BKFieldID], err.Error())
+				blog.Errorf("update sort number failed, , err: %s, objectId: d%",
+					err.Error(), objectId[common.BKFieldID])
 				return err
 			}
 		}

@@ -130,7 +130,8 @@ func (o *object) setObjectSortNumberField(kit *rest.Kit, obj *metadata.Object, d
 	}
 	objResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objectInput)
 	if err != nil {
-		blog.Errorf("list object failed, failed to read object, err: %v, rid: %s", err.Error(), kit.Rid)
+		blog.Errorf("list object failed, failed to read object, err: %v, classificationId: %v, rid: %s",
+			err.Error(), obj.ObjCls, kit.Rid)
 		return err
 	}
 
@@ -144,7 +145,7 @@ func (o *object) setObjectSortNumberField(kit *rest.Kit, obj *metadata.Object, d
 				}
 				_, err = o.clientSet.CoreService().Model().UpdateModel(kit.Ctx, kit.Header, updateInput)
 				if err != nil {
-					blog.Errorf("update object failed, id: %d, err: %v, rid: %s", object.ID, err, kit.Rid)
+					blog.Errorf("update object failed, err: %v, id: %v, rid: %s", err, object.ID, kit.Rid)
 					return err
 				}
 			}
@@ -571,7 +572,11 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	return results, nil
 }
 
-func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr, obj *metadata.Object) error {
+func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error {
+
+	if !data.Exists(metadata.ModelFieldObjCls) {
+		return nil
+	}
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			metadata.ModelFieldObjCls: data[metadata.ModelFieldObjCls],
@@ -588,12 +593,6 @@ func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr, obj *m
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
 
-	//如果 model classification 存在且校验合法，则需要指定它在新分组下的 obj_sort_number
-	err = o.setObjectSortNumberField(kit, obj, data)
-	if err != nil {
-		blog.Errorf("set object sort number failed, objectId: %s, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
-		return err
-	}
 	return nil
 }
 
@@ -606,12 +605,12 @@ func (o *object) updateObjectSortNumber(kit *rest.Kit, objId, objSortNumber int6
 	}
 	clsResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, clsQuery)
 	if err != nil {
-		blog.Errorf("failed to read model classification id, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("failed to read model classification id, err: %v, objID: %v, rid: %s", err, objId, kit.Rid)
 		return err
 	}
 	if clsResult.Count <= 0 {
-		blog.Errorf("no model classification id founded, err: %s, rid: %s",
-			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)
+		blog.Errorf("no model classification id founded, err: model classification no founded, objID: %v, rid: %s",
+			objId, kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
 
@@ -621,12 +620,13 @@ func (o *object) updateObjectSortNumber(kit *rest.Kit, objId, objSortNumber int6
 	}
 	objResult, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objectInput)
 	if err != nil {
-		blog.Errorf("list object ids failed, db find failed, err: %s", err.Error())
+		blog.Errorf("list object ids failed, db find failed, err: %s, classificationID: %v, rid: %s", err.Error(),
+			clsResult.Info[0].ObjCls, kit.Rid)
 		return err
 	}
 	if objResult.Count <= 0 {
-		blog.Errorf("no model classification id founded, err: %s, rid: %s",
-			kit.CCError.CCError(common.CCErrorModelNotFound), kit.Rid)
+		blog.Errorf("no model classification id founded, err: model no founded, classificationID: %v, rid: %s",
+			clsResult.Info[0].ObjCls, kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelNotFound)
 	}
 
@@ -638,7 +638,7 @@ func (o *object) updateObjectSortNumber(kit *rest.Kit, objId, objSortNumber int6
 			}
 			_, err = o.clientSet.CoreService().Model().UpdateModel(kit.Ctx, kit.Header, updateInput)
 			if err != nil {
-				blog.Errorf("update object failed, id: %d, err: %v, rid: %s", object.ID, err, kit.Rid)
+				blog.Errorf("update object failed, err: %v, id: %d, rid: %s", err, object.ID, kit.Rid)
 				return err
 			}
 		}
@@ -661,9 +661,16 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
 
+	if err := o.isClassificationValid(kit, data); err != nil {
+		return err
+	}
+
 	//如果传递了 bk_classification_id 字段,按更新模型分组处理
 	if data.Exists(metadata.ModelFieldObjCls) {
-		if err := o.isClassificationValid(kit, data, obj); err != nil {
+		//如果 model classification 存在且校验合法，则需要指定它在新分组下的 obj_sort_number
+		err = o.setObjectSortNumberField(kit, obj, data)
+		if err != nil {
+			blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, obj.ObjectID, kit.Rid)
 			return err
 		}
 		data.Set(metadata.ModelFieldObjSortNumber, obj.ObjSortNumber)
@@ -672,7 +679,7 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 		//更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
 		err := o.updateObjectSortNumber(kit, id, obj.ObjSortNumber)
 		if err != nil {
-			blog.Errorf("update object sort number failed, id: %#v, err: %v, rid: %s", data, err, kit.Rid)
+			blog.Errorf("update object sort number failed, err: %v, id: %#v, rid: %s", err, data, kit.Rid)
 			return err
 		}
 	}
