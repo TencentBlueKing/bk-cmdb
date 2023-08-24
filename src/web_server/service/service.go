@@ -85,15 +85,10 @@ func (s *Service) WebService() *gin.Engine {
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html",
 		s.Config.Site.HtmlRoot+"/"+webCommon.InaccessibleHtml)
 
-	ws.POST("/hosts/import", s.ImportHost)
-	ws.POST("/hosts/update", s.UpdateHosts)
 	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
-	ws.POST("/insts/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/logout", s.LogOutUser)
 	ws.GET("/login", s.Login)
 	ws.POST("/login", s.LoginUser)
-	ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
-	ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
 	ws.POST("/object/exportmany", s.BatchExportObject)
 	ws.POST("/object/importmany/analysis", s.BatchImportObjectAnalysis)
 	ws.POST("/object/importmany", s.BatchImportObject)

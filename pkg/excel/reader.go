@@ -18,39 +18,54 @@
 package excel
 
 import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/web_server/capability"
-	"configcenter/src/web_server/service/excel/core"
+	"sync"
 
-	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
 
-type service struct {
-	ws     *gin.Engine
-	engine *backbone.Engine
-	client *core.Client
+// Reader read data in the way of io stream
+type Reader struct {
+	sync.RWMutex
+	rows   *excelize.Rows
+	curIdx int
 }
 
-// Init init excel service
-func Init(c *capability.Capability) {
-	s := &service{
-		engine: c.Engine,
-		client: &core.Client{Engine: c.Engine},
+// Next will return true if find the next row element.
+func (r *Reader) Next() bool {
+	r.RLock()
+	defer r.RUnlock()
+
+	r.curIdx++
+	return r.rows.Next()
+}
+
+// CurRow return the current row's column values. This fetches the worksheet
+// data as a stream, returns each cell in a row as is, and will not skip empty
+// rows in the tail of the worksheet.
+func (r *Reader) CurRow() ([]string, error) {
+	r.Lock()
+	defer r.Unlock()
+
+	row, err := r.rows.Columns()
+	if err != nil {
+		return nil, err
 	}
 
-	c.Ws.POST("/importtemplate/:bk_obj_id", s.BuildTemplate)
+	return row, nil
+}
 
-	c.Ws.POST("/insts/object/:bk_obj_id/export", s.ExportInst)
+// Close reader
+func (r *Reader) Close() error {
+	r.Lock()
+	defer r.Unlock()
 
-	c.Ws.POST("/hosts/export", s.ExportHost)
+	return r.rows.Close()
+}
 
-	c.Ws.POST("/insts/object/:bk_obj_id/import", s.AddInst)
+// GetCurIdx get current index
+func (r *Reader) GetCurIdx() int {
+	r.RLock()
+	defer r.RUnlock()
 
-	c.Ws.POST("/hosts/import", s.AddHost)
-
-	c.Ws.POST("/hosts/update", s.UpdateHost)
-
-	c.Ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
-
-	c.Ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
+	return r.curIdx
 }

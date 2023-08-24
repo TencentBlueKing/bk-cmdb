@@ -1,4 +1,4 @@
-package operator
+package exporter
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/web_server/service/excel/db"
+	"configcenter/src/web_server/service/excel/core"
 )
 
 const emptyCell = ""
@@ -28,12 +28,12 @@ func init() {
 	handleSpecialPropFuncMap[common.BKCloudIDField] = getHandleCloudAreaPropFunc()
 }
 
-type handleColPropFunc func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error)
+type handleColPropFunc func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error)
 
 func getHandleNumericTypeFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 
-		sqref, err := db.GetSingleColSqref(property.ExcelColIndex)
+		sqref, err := core.GetSingleColSqref(property.ExcelColIndex)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func getHandleNumericTypeFunc() handleColPropFunc {
 }
 
 func getHandleEnumTypeFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 		optionArr, ok := property.Option.([]interface{})
 		if ok {
 			if err := t.excel.CreateSheet(property.RefSheet); err != nil {
@@ -58,7 +58,7 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 			for idx, name := range getEnumNames(optionArr) {
 				data[idx] = append(data[idx], excel.Cell{Value: name})
 			}
-			if err := t.excel.StreamingWrite(property.RefSheet, db.NameRowIdx, data); err != nil {
+			if err := t.excel.StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
 				return nil, err
 			}
 
@@ -71,7 +71,7 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 			}
 
 			if property.PropertyType == common.FieldTypeEnum {
-				sqref, err := db.GetSingleColSqref(property.ExcelColIndex)
+				sqref, err := core.GetSingleColSqref(property.ExcelColIndex)
 				if err != nil {
 					return nil, err
 				}
@@ -105,8 +105,8 @@ func getEnumNames(items []interface{}) []string {
 }
 
 func getHandleBoolTypeFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
-		sqref, err := db.GetSingleColSqref(property.ExcelColIndex)
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
+		sqref, err := core.GetSingleColSqref(property.ExcelColIndex)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,7 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 }
 
 func getHandleTableTypeFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 		nameStyle, err := t.styleCreator.getStyle(fieldName)
 		if err != nil {
 			return nil, err
@@ -132,13 +132,13 @@ func getHandleTableTypeFunc() handleColPropFunc {
 		}
 
 		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
-		propertyType := db.GetTypeAliasName(ccLang, property.PropertyType)
+		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
-		result := make([][]excel.Cell, db.HeaderLen)
-		result[db.NameRowIdx] = append(result[db.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
-		result[db.TypeRowIdx] = append(result[db.TypeRowIdx],
+		result := make([][]excel.Cell, core.HeaderLen)
+		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
+		result[core.TypeRowIdx] = append(result[core.TypeRowIdx],
 			excel.Cell{Value: propertyType, StyleID: headerStyle})
-		result[db.IDRowIdx] = append(result[db.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
+		result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
 
 		option, err := metadata.ParseTableAttrOption(property.Option)
 		if err != nil {
@@ -147,13 +147,13 @@ func getHandleTableTypeFunc() handleColPropFunc {
 
 		// 设置属性字段相关行，空白单元格的样式
 		for i := 1; i < len(option.Header); i++ {
-			result[db.NameRowIdx] = append(result[db.NameRowIdx], excel.Cell{StyleID: nameStyle})
-			result[db.TypeRowIdx] = append(result[db.TypeRowIdx], excel.Cell{StyleID: headerStyle})
-			result[db.IDRowIdx] = append(result[db.IDRowIdx], excel.Cell{StyleID: headerStyle})
+			result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{StyleID: nameStyle})
+			result[core.TypeRowIdx] = append(result[core.TypeRowIdx], excel.Cell{StyleID: headerStyle})
+			result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{StyleID: headerStyle})
 		}
 
 		for _, attr := range option.Header {
-			colProp := &db.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
+			colProp := &core.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
 				IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup, RefSheet: attr.PropertyName}
 
 			if colProp.PropertyType == common.FieldTypeEnumMulti {
@@ -170,13 +170,13 @@ func getHandleTableTypeFunc() handleColPropFunc {
 				return nil, err
 			}
 
-			if len(properyResult) < db.HeaderTableLen {
+			if len(properyResult) < core.HeaderTableLen {
 				return nil, fmt.Errorf("table type property %s is invalid, option attr: %v", property.ID, attr)
 			}
 
-			result[db.TableNameRowIdx] = append(result[db.TableNameRowIdx], properyResult[db.NameRowIdx]...)
-			result[db.TableTypeRowIdx] = append(result[db.TableTypeRowIdx], properyResult[db.TypeRowIdx]...)
-			result[db.TableIDRowIdx] = append(result[db.TableIDRowIdx], properyResult[db.IDRowIdx]...)
+			result[core.TableNameRowIdx] = append(result[core.TableNameRowIdx], properyResult[core.NameRowIdx]...)
+			result[core.TableTypeRowIdx] = append(result[core.TableTypeRowIdx], properyResult[core.TypeRowIdx]...)
+			result[core.TableIDRowIdx] = append(result[core.TableIDRowIdx], properyResult[core.IDRowIdx]...)
 		}
 
 		tableHeaderStyle, err := t.styleCreator.getStyle(tableHeader)
@@ -195,7 +195,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 }
 
 func getDefaultHandleTypeFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 		nameStyleType := fieldName
 		headerStyleType := generalHeader
 		if property.NotEditable {
@@ -213,18 +213,18 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 		}
 
 		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
-		propertyType := db.GetTypeAliasName(ccLang, property.PropertyType)
+		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
-		result := make([][]excel.Cell, db.HeaderLen)
-		result[db.NameRowIdx] = append(result[db.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
-		result[db.TypeRowIdx] = append(result[db.TypeRowIdx], excel.Cell{Value: propertyType, StyleID: headerStyle})
-		result[db.IDRowIdx] = append(result[db.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
+		result := make([][]excel.Cell, core.HeaderLen)
+		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
+		result[core.TypeRowIdx] = append(result[core.TypeRowIdx], excel.Cell{Value: propertyType, StyleID: headerStyle})
+		result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
 
-		result[db.TableNameRowIdx] = append(result[db.TableNameRowIdx],
+		result[core.TableNameRowIdx] = append(result[core.TableNameRowIdx],
 			excel.Cell{Value: emptyCell, StyleID: headerStyle})
-		result[db.TableTypeRowIdx] = append(result[db.TableTypeRowIdx],
+		result[core.TableTypeRowIdx] = append(result[core.TableTypeRowIdx],
 			excel.Cell{Value: emptyCell, StyleID: headerStyle})
-		result[db.TableIDRowIdx] = append(result[db.TableIDRowIdx],
+		result[core.TableIDRowIdx] = append(result[core.TableIDRowIdx],
 			excel.Cell{Value: emptyCell, StyleID: headerStyle})
 
 		return result, nil
@@ -232,8 +232,8 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 }
 
 func getHandleCloudAreaPropFunc() handleColPropFunc {
-	return func(t *TmplOp, property *db.ColProp) ([][]excel.Cell, error) {
-		cloudAreaArr, _, err := t.dao.GetCloudArea(t.kit)
+	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
+		cloudAreaArr, _, err := t.client.GetCloudArea(t.kit)
 		if err != nil {
 			blog.Errorf("get cloud area failed, err: %v, rid: %s", err, t.kit.Rid)
 			return nil, err
@@ -247,7 +247,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 		for idx, cloudArea := range cloudAreaArr {
 			data[idx] = append(data[idx], excel.Cell{Value: cloudArea})
 		}
-		if err := t.excel.StreamingWrite(property.RefSheet, db.NameRowIdx, data); err != nil {
+		if err := t.excel.StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
 			return nil, err
 		}
 
@@ -259,7 +259,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		sqref, err := db.GetSingleColSqref(property.ExcelColIndex)
+		sqref, err := core.GetSingleColSqref(property.ExcelColIndex)
 		if err != nil {
 			return nil, err
 		}

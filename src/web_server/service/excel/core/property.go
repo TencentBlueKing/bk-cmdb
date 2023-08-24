@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package db
+package core
 
 import (
 	"fmt"
@@ -41,8 +41,8 @@ type ColProp struct {
 	NotEditable   bool        // 是否不可编辑
 }
 
-// GetInstWidth get instance width
-func GetInstWidth(colProp []ColProp) (int, error) {
+// GetRowWidth get row width
+func GetRowWidth(colProp []ColProp) (int, error) {
 	if colProp == nil || len(colProp) == 0 {
 		return 0, fmt.Errorf("column properties is invalid, val: %v", colProp)
 	}
@@ -57,7 +57,7 @@ func sortColProp(colProps []ColProp, groups []metadata.AttributeGroup) ([]ColPro
 	requiredPropMap := make(map[string][]ColProp)
 	noRequiredPropMap := make(map[string][]ColProp)
 
-	// 构造必填字段和非必填字段所在分组的map
+	// 第一步，构造必填字段和非必填字段所在分组的map
 	for _, property := range colProps {
 		if property.IsRequire {
 			requiredPropMap[property.Group] = append(requiredPropMap[property.Group], property)
@@ -85,7 +85,8 @@ func sortColProp(colProps []ColProp, groups []metadata.AttributeGroup) ([]ColPro
 	return props, nil
 }
 
-const propertyNormalLen = 1
+// PropertyNormalLen normal length of property
+const PropertyNormalLen = 1
 
 func setColPropIndexAndLen(groups []metadata.AttributeGroup, fieldsGroupMap map[string][]ColProp, index int) (
 	[]ColProp, int, error) {
@@ -109,7 +110,7 @@ func setColPropIndexAndLen(groups []metadata.AttributeGroup, fieldsGroupMap map[
 				result = append(result, field)
 				continue
 			}
-			field.Length = propertyNormalLen
+			field.Length = PropertyNormalLen
 			result = append(result, field)
 			index++
 		}
@@ -146,7 +147,7 @@ func GetIDProp(colIndex int, objID string, defLang language.DefaultCCLanguageIf)
 		PropertyType:  common.FieldTypeInt,
 		Group:         instIDGroup,
 		ExcelColIndex: colIndex,
-		Length:        propertyNormalLen,
+		Length:        PropertyNormalLen,
 	}
 
 	switch objID {

@@ -75,7 +75,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 	}
 	params := c.PostForm("params")
 	if params == "" {
-		blog.ErrorJSON("ImportHost failed, not found params value, rid: %s", rid)
+		blog.ErrorJSON("AddHost failed, not found params value, rid: %s", rid)
 		msg := getReturnStr(common.CCErrCommParamsNeedSet,
 			defErr.CCErrorf(common.CCErrCommParamsNeedSet, "params").Error(), nil)
 		c.String(http.StatusOK, msg)
@@ -83,7 +83,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 	}
 	inputJSON := &excelImportInstInput{}
 	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
-		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
+		blog.ErrorJSON("AddHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
 			defErr.CCErrorf(common.CCErrCommParamsValueInvalidError, "params", err.Error()).Error(), nil)
 		c.String(http.StatusOK, msg)
@@ -223,7 +223,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	if _, err = os.Stat(dirFileName); err != nil {
-		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dirFileName, err, rid)
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %+v, rid: %s", dirFileName, err,
+			rid)
 		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
 			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
 		}

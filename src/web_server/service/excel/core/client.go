@@ -15,42 +15,54 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package excel
+package core
 
 import (
 	"configcenter/src/common/backbone"
-	"configcenter/src/web_server/capability"
-	"configcenter/src/web_server/service/excel/core"
-
-	"github.com/gin-gonic/gin"
+	"configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 )
 
-type service struct {
-	ws     *gin.Engine
-	engine *backbone.Engine
-	client *core.Client
+// Client used to process excel-related data
+type Client struct {
+	Engine *backbone.Engine
 }
 
-// Init init excel service
-func Init(c *capability.Capability) {
-	s := &service{
-		engine: c.Engine,
-		client: &core.Client{Engine: c.Engine},
-	}
+type hostSetInfo struct {
+	setIDs     []int64
+	hostSetMap map[int64][]int64
+}
 
-	c.Ws.POST("/importtemplate/:bk_obj_id", s.BuildTemplate)
+type topoInstData struct {
+	parentIDs         []int64
+	instIdParentIDMap map[int64]int64
+	instIdNameMap     map[int64]string
+}
 
-	c.Ws.POST("/insts/object/:bk_obj_id/export", s.ExportInst)
+// TopoBriefMsg topo brief message
+type TopoBriefMsg struct {
+	ObjID string
+	Name  string
+}
 
-	c.Ws.POST("/hosts/export", s.ExportHost)
+// ImportedParam import instance parameter
+type ImportedParam struct {
+	Language   language.CCLanguageIf
+	ObjID      string
+	Req        mapstr.MapStr
+	Instances  map[int]map[string]interface{}
+	HandleType HandleType
+}
 
-	c.Ws.POST("/insts/object/:bk_obj_id/import", s.AddInst)
+// SameIPRes same ip resource
+type SameIPRes struct {
+	V4Map map[string]struct{}
+	V6Map map[string]struct{}
+}
 
-	c.Ws.POST("/hosts/import", s.AddHost)
-
-	c.Ws.POST("/hosts/update", s.UpdateHost)
-
-	c.Ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
-
-	c.Ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
+// SimpleHost simple host
+type SimpleHost struct {
+	Ip      string
+	Ipv6    string
+	AgentID string
 }

@@ -62,3 +62,32 @@ func ColumnNumberToName(col int) (string, error) {
 func GetTotalRows() int {
 	return excelize.TotalRows
 }
+
+// CellNameToCoordinates converts alphanumeric cell name to [X, Y] coordinates
+// or returns an error.
+//
+// Example:
+//
+//	CellNameToCoordinates("A1") // returns 1, 1, nil
+//	CellNameToCoordinates("Z3") // returns 26, 3, nil
+func CellNameToCoordinates(cell string) (int, int, error) {
+	return excelize.CellNameToCoordinates(cell)
+}
+
+// CellMergeMsg cell merge message
+type CellMergeMsg struct {
+	start string
+	end   string
+}
+
+// GetStartAxis returns the top left cell reference of merged range, for
+// example: "C2".
+func (c *CellMergeMsg) GetStartAxis() string {
+	return c.start
+}
+
+// GetEndAxis returns the bottom right cell reference of merged range, for
+// example: "D4".
+func (c *CellMergeMsg) GetEndAxis() string {
+	return c.end
+}

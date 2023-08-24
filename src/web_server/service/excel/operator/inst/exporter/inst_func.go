@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package operator
+package exporter
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/web_server/service/excel/db"
+	"configcenter/src/web_server/service/excel/core"
 )
 
 var handleInstFieldFuncMap = make(map[string]handleInstFieldFunc)
@@ -45,7 +45,7 @@ func init() {
 	handleSpecialInstFieldFuncMap[common.BKCloudIDField] = getHandleInstCloudAreaFunc()
 }
 
-type handleInstFieldFunc func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error)
+type handleInstFieldFunc func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error)
 
 const singleCellLen = 1
 
@@ -54,7 +54,7 @@ func getRowWithOneCell() []excel.Cell {
 }
 
 func getHandleIntFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		intVal, err := util.GetInt64ByInterface(val)
 		if err != nil {
 			blog.Errorf("value type is not int, val: %v", val)
@@ -67,7 +67,7 @@ func getHandleIntFieldFunc() handleInstFieldFunc {
 }
 
 func getHandleFloatFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		floatVal, err := util.GetFloat64ByInterface(val)
 		if err != nil {
 			blog.Errorf("value type is not float64, val: %v", val)
@@ -80,7 +80,7 @@ func getHandleFloatFieldFunc() handleInstFieldFunc {
 }
 
 func getHandleEnumFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		arrVal, ok := property.Option.([]interface{})
 		if !ok {
 			blog.Errorf("option type is invalid, option: %v", property.Option)
@@ -98,7 +98,7 @@ func getHandleEnumFieldFunc() handleInstFieldFunc {
 }
 
 func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		if val == nil {
 			return [][]excel.Cell{getRowWithOneCell()}, nil
 		}
@@ -160,7 +160,7 @@ func getEnumNameByID(id string, items []interface{}) string {
 }
 
 func getHandleBoolFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		val, ok := val.(bool)
 		if !ok {
 			blog.Errorf("value type is not boolean, val: %v", val)
@@ -173,7 +173,7 @@ func getHandleBoolFieldFunc() handleInstFieldFunc {
 }
 
 func getHandleTableFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		table, ok := val.([]mapstr.MapStr)
 		if !ok {
 			return nil, fmt.Errorf("transfer table struct failed, val: %v", val)
@@ -191,7 +191,7 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 					handleFunc = getDefaultHandleFieldFunc()
 				}
 
-				colProp := &db.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
+				colProp := &core.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
 					IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup}
 				rows, err := handleFunc(e, colProp, data[attr.PropertyID])
 				if err != nil {
@@ -215,7 +215,7 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 }
 
 func getDefaultHandleFieldFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		var styleID int
 		if property.NotEditable {
 			var err error
@@ -233,7 +233,7 @@ func getDefaultHandleFieldFunc() handleInstFieldFunc {
 }
 
 func getHandleInstCloudAreaFunc() handleInstFieldFunc {
-	return func(e *Exporter, property *db.ColProp, val interface{}) ([][]excel.Cell, error) {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
 		cloudArr, err := util.GetMapInterfaceByInterface(val)
 		if err != nil {
 			return nil, err

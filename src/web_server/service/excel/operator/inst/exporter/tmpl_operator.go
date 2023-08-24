@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package operator
+package exporter
 
 import (
 	"configcenter/pkg/excel"
@@ -25,23 +25,23 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/web_server/service/excel/db"
+	"configcenter/src/web_server/service/excel/core"
 )
 
 // TmplOp excel template operator
 type TmplOp struct {
 	excel        *excel.Excel
 	styleCreator *styleCreator
-	dao          *db.Dao
+	client       *core.Client
 	objID        string
 	kit          *rest.Kit
 	language     language.CCLanguageIf
 }
 
-type BuildTmplFunc func(tmpl *TmplOp) error
+type BuildTmplOpFunc func(tmpl *TmplOp) error
 
 // NewTmplOp create a excel template operator
-func NewTmplOp(opts ...BuildTmplFunc) (*TmplOp, error) {
+func NewTmplOp(opts ...BuildTmplOpFunc) (*TmplOp, error) {
 	tmpl := new(TmplOp)
 	for _, opt := range opts {
 		if err := opt(tmpl); err != nil {
@@ -53,7 +53,7 @@ func NewTmplOp(opts ...BuildTmplFunc) (*TmplOp, error) {
 }
 
 // FilePath set template file path
-func FilePath(filePath string) BuildTmplFunc {
+func FilePath(filePath string) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		var err error
 		tmpl.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate(), excel.DelDefaultSheet())
@@ -70,16 +70,16 @@ func FilePath(filePath string) BuildTmplFunc {
 	}
 }
 
-// Dao set template dao
-func Dao(dao *db.Dao) BuildTmplFunc {
+// Client set template client
+func Client(client *core.Client) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
-		tmpl.dao = dao
+		tmpl.client = client
 		return nil
 	}
 }
 
 // ObjID set template object id
-func ObjID(objID string) BuildTmplFunc {
+func ObjID(objID string) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.objID = objID
 		return nil
@@ -87,7 +87,7 @@ func ObjID(objID string) BuildTmplFunc {
 }
 
 // Kit set template kit
-func Kit(kit *rest.Kit) BuildTmplFunc {
+func Kit(kit *rest.Kit) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.kit = kit
 		return nil
@@ -95,18 +95,18 @@ func Kit(kit *rest.Kit) BuildTmplFunc {
 }
 
 // Language set template language
-func Language(language language.CCLanguageIf) BuildTmplFunc {
+func Language(language language.CCLanguageIf) BuildTmplOpFunc {
 	return func(tmpl *TmplOp) error {
 		tmpl.language = language
 		return nil
 	}
 }
 
-// BuildHeader create a template with a header
-func (t *TmplOp) BuildHeader(colProps ...db.ColProp) error {
+// BuildHeader create an excel with a header
+func (t *TmplOp) BuildHeader(colProps ...core.ColProp) error {
 	if len(colProps) == 0 {
 		var err error
-		colProps, err = t.dao.GetSortedColProp(t.kit, mapstr.MapStr{common.BKObjIDField: t.objID})
+		colProps, err = t.client.GetSortedColProp(t.kit, mapstr.MapStr{common.BKObjIDField: t.objID})
 		if err != nil {
 			blog.Errorf("get sorted column property failed, err: %v, rid: %s", err, t.kit.Rid)
 			return err
@@ -153,17 +153,17 @@ var (
 		common.ExcelFirstColumnTableFieldID}
 
 	// rowIndexes 表头中，非表格相关的字段所在行号
-	rowIndexes = []int{db.NameRowIdx, db.TypeRowIdx, db.IDRowIdx}
+	rowIndexes = []int{core.NameRowIdx, core.TypeRowIdx, core.IDRowIdx}
 
 	// tableRowIndexes 表头中，表格相关的字段所在行号
-	tableRowIndexes = []int{db.TableNameRowIdx, db.TableTypeRowIdx, db.TableIDRowIdx}
+	tableRowIndexes = []int{core.TableNameRowIdx, core.TableTypeRowIdx, core.TableIDRowIdx}
 )
 
 const (
 	colWidth = 24
 )
 
-func (t *TmplOp) productExcelHeader(colProps []db.ColProp) error {
+func (t *TmplOp) productExcelHeader(colProps []core.ColProp) error {
 	if err := t.excel.CreateSheet(t.objID); err != nil {
 		blog.Errorf("create sheet failed, objID: %s, err: %v, rid: %s", t.objID, err, t.kit.Rid)
 		return err
@@ -180,7 +180,7 @@ func (t *TmplOp) productExcelHeader(colProps []db.ColProp) error {
 		return err
 	}
 
-	if err := t.excel.StreamingWrite(t.objID, db.NameRowIdx, header); err != nil {
+	if err := t.excel.StreamingWrite(t.objID, core.NameRowIdx, header); err != nil {
 		blog.Errorf("write excel header data to excel failed, header: %v, err: %v, rid: %s", header, err, t.kit.Rid)
 		return err
 	}
@@ -193,7 +193,7 @@ func (t *TmplOp) productExcelHeader(colProps []db.ColProp) error {
 	return nil
 }
 
-func (t *TmplOp) handleProperty(colProps []db.ColProp) ([][]excel.Cell, error) {
+func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error) {
 	ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
 
 	firstColStyle, err := t.styleCreator.getStyle(noEditHeader)
@@ -202,14 +202,14 @@ func (t *TmplOp) handleProperty(colProps []db.ColProp) ([][]excel.Cell, error) {
 		return nil, err
 	}
 
-	rowLen, err := db.GetInstWidth(colProps)
+	width, err := core.GetRowWidth(colProps)
 	if err != nil {
 		blog.Errorf("get row length failed, err: %v, rid: %s", err, t.kit.Rid)
 		return nil, err
 	}
-	header := make([][]excel.Cell, db.HeaderLen)
+	header := make([][]excel.Cell, core.HeaderLen)
 	for i := range header {
-		header[i] = make([]excel.Cell, rowLen)
+		header[i] = make([]excel.Cell, width)
 	}
 
 	for idx, field := range firstColFields {
@@ -248,13 +248,13 @@ func (t *TmplOp) handleProperty(colProps []db.ColProp) ([][]excel.Cell, error) {
 	return header, nil
 }
 
-func (t *TmplOp) mergeHeaderCell(colProps []db.ColProp) error {
+func (t *TmplOp) mergeHeaderCell(colProps []core.ColProp) error {
 	for _, property := range colProps {
 		if property.PropertyType != common.FieldTypeInnerTable {
-			err := t.excel.MergeSameColCell(t.objID, property.ExcelColIndex, db.TableNameRowIdx, db.HeaderTableLen)
+			err := t.excel.MergeSameColCell(t.objID, property.ExcelColIndex, core.TableNameRowIdx, core.HeaderTableLen)
 			if err != nil {
 				blog.Errorf("merge same column cell failed, colIdx: %d, rowIdx: %d, height: %d, err: %v, rid: %s",
-					property.ExcelColIndex, db.TableNameRowIdx, db.HeaderTableLen, err, t.kit.Rid)
+					property.ExcelColIndex, core.TableNameRowIdx, core.HeaderTableLen, err, t.kit.Rid)
 				return err
 			}
 		}

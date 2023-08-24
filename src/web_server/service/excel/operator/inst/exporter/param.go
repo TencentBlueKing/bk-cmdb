@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package operator
+package exporter
 
 import (
 	"errors"
@@ -23,24 +23,29 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
 // ExportParamI export excel instance parameter interface
 type ExportParamI interface {
-	// GetQueryPropCond get condition for query property
-	GetQueryPropCond() (mapstr.MapStr, error)
+	// GetPropCond get condition for query property
+	GetPropCond() (mapstr.MapStr, error)
 
-	// HasQueryInstCond has condition for query instance
-	HasQueryInstCond() bool
+	// HasInstCond has condition for query instance
+	HasInstCond() bool
 
-	// GetQueryInstCond get condition for query instance
-	GetQueryInstCond() (mapstr.MapStr, error)
+	// GetInstCond get condition for query instance
+	GetInstCond() (mapstr.MapStr, error)
+
+	// Validate validate parameter
+	Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error
 }
 
-// ExportInstParam export instance parameter
-type ExportInstParam struct {
+// InstParam export instance parameter
+type InstParam struct {
 	ObjID string `json:"bk_obj_id"`
 
 	// CustomFields 导出的实例字段
@@ -59,8 +64,8 @@ type ExportInstParam struct {
 	cursor *cursor
 }
 
-// GetQueryPropCond get condition for query property
-func (e *ExportInstParam) GetQueryPropCond() (mapstr.MapStr, error) {
+// GetPropCond get condition for query property
+func (e *InstParam) GetPropCond() (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField: e.ObjID,
 		metadata.PageName:   mapstr.MapStr{metadata.PageStart: 0, metadata.PageLimit: common.BKNoLimit},
@@ -73,8 +78,8 @@ func (e *ExportInstParam) GetQueryPropCond() (mapstr.MapStr, error) {
 	return cond, nil
 }
 
-// HasQueryInstCond has condition for query instance
-func (e *ExportInstParam) HasQueryInstCond() bool {
+// HasInstCond has condition for query instance
+func (e *InstParam) HasInstCond() bool {
 	if e.cursor == nil {
 		e.cursor = &cursor{}
 	}
@@ -82,8 +87,8 @@ func (e *ExportInstParam) HasQueryInstCond() bool {
 	return e.cursor.hasNext()
 }
 
-// GetQueryInstCond get condition for query instance
-func (e *ExportInstParam) GetQueryInstCond() (mapstr.MapStr, error) {
+// GetInstCond get condition for query instance
+func (e *InstParam) GetInstCond() (mapstr.MapStr, error) {
 	fields := make([]string, 0)
 	if len(e.CustomFields) > 0 {
 		fields = append(fields, e.CustomFields...)
@@ -105,8 +110,17 @@ func (e *ExportInstParam) GetQueryInstCond() (mapstr.MapStr, error) {
 	}, nil
 }
 
-// ExportHostParam export host parameter
-type ExportHostParam struct {
+// Validate validate parameter
+func (e *InstParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error {
+	if len(e.InstIDArr) > common.BKInstMaxExportLimit {
+		return fmt.Errorf("bk_inst_ids exceed max length: %d", common.BKInstMaxExportLimit)
+	}
+
+	return nil
+}
+
+// HostParam export host parameter
+type HostParam struct {
 	// 导出的主机字段
 	CustomFields []string `json:"export_custom_fields"`
 
@@ -129,8 +143,8 @@ type ExportHostParam struct {
 	cursor *cursor
 }
 
-// GetQueryPropCond get condition for query property
-func (e *ExportHostParam) GetQueryPropCond() (mapstr.MapStr, error) {
+// GetPropCond get condition for query property
+func (e *HostParam) GetPropCond() (mapstr.MapStr, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField: common.BKInnerObjIDHost,
 		metadata.PageName:   mapstr.MapStr{metadata.PageStart: 0, metadata.PageLimit: common.BKNoLimit},
@@ -145,10 +159,10 @@ func (e *ExportHostParam) GetQueryPropCond() (mapstr.MapStr, error) {
 	return cond, nil
 }
 
-// GetQueryInstCond get condition for query instance
-func (e *ExportHostParam) GetQueryInstCond() (mapstr.MapStr, error) {
+// GetInstCond get condition for query instance
+func (e *HostParam) GetInstCond() (mapstr.MapStr, error) {
 	if e.cursor == nil {
-		return nil, errors.New("need to call the HasQueryInstCond method first")
+		return nil, errors.New("need to call the HasInstCond method first")
 	}
 
 	fields := make([]string, 0)
@@ -199,8 +213,8 @@ func (e *ExportHostParam) GetQueryInstCond() (mapstr.MapStr, error) {
 	return result, nil
 }
 
-// HasQueryInstCond has condition for query instance
-func (e *ExportHostParam) HasQueryInstCond() bool {
+// HasInstCond has condition for query instance
+func (e *HostParam) HasInstCond() bool {
 	if e.cursor == nil {
 		limit := e.ExportCond.Page.Limit
 		if common.BKMaxExportLimit < e.ExportCond.Page.Limit {
@@ -215,6 +229,15 @@ func (e *ExportHostParam) HasQueryInstCond() bool {
 	}
 
 	return e.cursor.hasNext()
+}
+
+// Validate validate parameter
+func (e *HostParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error {
+	if e.ExportCond.Page.Limit <= 0 || e.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
+		return fmt.Errorf(lang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
+	}
+
+	return nil
 }
 
 type cursor struct {

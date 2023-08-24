@@ -247,6 +247,22 @@ func (excel *Excel) StreamingRead(sheet string) ([][]interface{}, error) {
 	return result, nil
 }
 
+// NewReader create io stream reader
+func (excel *Excel) NewReader(sheet string) (*Reader, error) {
+	excel.RLock()
+	defer excel.RUnlock()
+	if excel.file == nil {
+		return nil, fmt.Errorf("excel file has not been created yet")
+	}
+
+	rows, err := excel.file.Rows(sheet)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Reader{rows: rows, curIdx: -1}, nil
+}
+
 // MergeCell provides a function to merge cells by a given range reference for the StreamWriter
 func (excel *Excel) MergeCell(sheet string, hCell, vCell string) error {
 	excel.Lock()
@@ -431,4 +447,27 @@ func (excel *Excel) MergeSameColCell(sheet string, colIdx, rowIdx, height int) e
 	}
 
 	return nil
+}
+
+// GetMergeCellMsg provides a function to get all merged cells message from a worksheet
+// currently.
+func (excel *Excel) GetMergeCellMsg(sheet string) ([]CellMergeMsg, error) {
+	if excel.file == nil {
+		return nil, fmt.Errorf("excel file has not been created yet")
+	}
+
+	cells, err := excel.file.GetMergeCells(sheet)
+	if err != nil {
+		return nil, fmt.Errorf("get merge cell failed, sheet: %s, err: %v", sheet, err)
+	}
+
+	result := make([]CellMergeMsg, len(cells))
+	for idx, cell := range cells {
+		start := cell.GetStartAxis()
+		end := cell.GetEndAxis()
+
+		result[idx] = CellMergeMsg{start: start, end: end}
+	}
+
+	return result, nil
 }

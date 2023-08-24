@@ -147,19 +147,19 @@ func (lgc *Logics) importInsts(ctx context.Context, f *xlsx.File, objID string, 
 		params["input_type"] = common.InputTypeExcel
 		params["BatchInfo"] = inst
 		params[common.BKAppIDField] = modelBizID
-		result, err := lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), header,
-			util.GetOwnerID(header), objID, params)
-		if err != nil {
-			blog.Errorf("ImportInsts add inst info  http request  err: %v, rid: %s", err, rid)
-			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
-			continue
-		}
-
-		errData, exist := result.Data.Get("error")
-		if exist && errData != nil {
-			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errData))
-			continue
-		}
+		//result, err := lgc.CoreAPI.ApiServer().AddInstByImport(context.Background(), header,
+		//	util.GetOwnerID(header), objID, params)
+		//if err != nil {
+		//	blog.Errorf("ImportInsts add inst info  http request  err: %v, rid: %s", err, rid)
+		//	errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+		//	continue
+		//}
+		//
+		//errData, exist := result.Data.Get("error")
+		//if exist && errData != nil {
+		//	errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errData))
+		//	continue
+		//}
 
 		successMsgs = append(successMsgs, strconv.Itoa(rowNum))
 	}

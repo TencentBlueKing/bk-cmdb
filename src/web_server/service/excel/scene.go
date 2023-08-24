@@ -18,9 +18,11 @@
 package excel
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	"configcenter/src/common"
@@ -30,7 +32,10 @@ import (
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
-	"configcenter/src/web_server/service/excel/operator"
+	"configcenter/src/web_server/service/excel/core"
+	"configcenter/src/web_server/service/excel/operator/inst/exporter"
+	"configcenter/src/web_server/service/excel/operator/inst/importer"
+	"configcenter/src/web_server/service/excel/operator/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,8 +50,8 @@ func (s *service) BuildTemplate(c *gin.Context) {
 	randNum := rand.Uint32()
 	filePath := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 
-	tmplOp, err := operator.NewTmplOp(operator.FilePath(filePath), operator.Dao(s.dao), operator.ObjID(objID),
-		operator.Kit(kit), operator.Language(s.engine.Language))
+	tmplOp, err := exporter.NewTmplOp(exporter.FilePath(filePath), exporter.Client(s.client), exporter.ObjID(objID),
+		exporter.Kit(kit), exporter.Language(s.engine.Language))
 	if err != nil {
 		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
@@ -83,107 +88,277 @@ func (s *service) BuildTemplate(c *gin.Context) {
 
 // ExportInst export instance
 func (s *service) ExportInst(c *gin.Context) {
-	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
-	input := &operator.ExportInstParam{}
-	if err := c.BindJSON(input); err != nil {
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommJSONUnmarshalFailed, ErrMsg: err.Error()})
-		return
-	}
-
 	objID := c.Param(common.BKObjIDField)
-	input.ObjID = objID
-
-	// 1. 初始化导出excel对象
-	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
-
-	tmplOp, err := operator.NewTmplOp(operator.FilePath(filePath), operator.Dao(s.dao), operator.ObjID(objID),
-		operator.Kit(kit), operator.Language(s.engine.Language))
-	if err != nil {
-		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
-		return
-	}
-
-	exporter, err := operator.NewExporter(operator.SetTmplOp(tmplOp), operator.SetExportParam(input))
-
-	// 2. 导出实例数据到excel
-	if err := exporter.Export(); err != nil {
-		blog.Errorf("export instance data failed, err: %v, rid: %s", err, kit.Rid)
-		c.String(http.StatusInternalServerError, fmt.Errorf("export instance data failed, err: %+v", err).Error())
-		return
-	}
-
-	if err := exporter.Close(); err != nil {
-		blog.Errorf("close excel io failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
-		return
-	}
-
-	// 3. 将excel模版文件返回，并删除临时文件
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
-	c.File(filePath)
-
-	if err := exporter.Clean(); err != nil {
-		blog.Errorf("clean excel template failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
-		return
-	}
+	s.exportInstFunc(c, objID)
 }
 
 // ExportHost export host
 func (s *service) ExportHost(c *gin.Context) {
-	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
-	defLang := s.engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	s.exportInstFunc(c, common.BKInnerObjIDHost)
+}
 
-	input := &operator.ExportHostParam{}
+func (s *service) exportInstFunc(c *gin.Context, objID string) {
+	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
+	var input exporter.ExportParamI
+	if objID == common.BKInnerObjIDHost {
+		input = &exporter.HostParam{}
+	} else {
+		input = &exporter.InstParam{ObjID: objID}
+	}
+
 	if err := c.BindJSON(input); err != nil {
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommJSONUnmarshalFailed, ErrMsg: err.Error()})
 		return
 	}
-
-	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
-		blog.Errorf("host page input is illegal, page: %v, rid: %s", input.ExportCond.Page, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrWebGetHostFail,
-			ErrMsg: kit.CCError.Errorf(common.CCErrWebGetHostFail,
-				defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit)).Error()})
+	lang := s.engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	if err := input.Validate(kit, lang); err != nil {
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebGetObjectFail, err.Error()))
 		return
 	}
 
 	// 1. 初始化导出excel对象
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
-	objID := common.BKInnerObjIDHost
-	tmplOp, err := operator.NewTmplOp(operator.FilePath(filePath), operator.Dao(s.dao), operator.ObjID(objID),
-		operator.Kit(kit), operator.Language(s.engine.Language))
+
+	tmplOp, err := exporter.NewTmplOp(exporter.FilePath(filePath), exporter.Client(s.client), exporter.ObjID(objID),
+		exporter.Kit(kit), exporter.Language(s.engine.Language))
 	if err != nil {
 		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommExcelTemplateFailed, err.Error()))
 		return
 	}
 
-	exporter, err := operator.NewExporter(operator.SetTmplOp(tmplOp), operator.SetExportParam(input))
+	operator, err := exporter.NewExporter(exporter.TmplOperator(tmplOp), exporter.ExportParam(input))
+	if err != nil {
+		blog.Errorf("create excel exporter failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("create exporter failed, err: %+v", err).Error())
+		return
+	}
 
 	// 2. 导出实例数据到excel
-	if err := exporter.Export(); err != nil {
+	if err := operator.Export(); err != nil {
 		blog.Errorf("export instance data failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("export instance data failed, err: %+v", err).Error())
 		return
 	}
 
-	if err := exporter.Close(); err != nil {
+	if err := operator.Close(); err != nil {
 		blog.Errorf("close excel io failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebGetObjectFail, err.Error()))
 		return
 	}
 
-	// 3. 将excel模版文件返回，并删除临时文件
-	logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
+	// 3. 将excel文件返回，并删除临时文件
+	if objID == common.BKInnerObjIDHost {
+		logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
+	} else {
+		logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
+	}
+
 	c.File(filePath)
 
-	if err := exporter.Clean(); err != nil {
+	if err := operator.Clean(); err != nil {
 		blog.Errorf("clean excel template failed, err: %v, rid: %s", err, kit.Rid)
-		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebGetObjectFail, err.Error()))
 		return
+	}
+}
+
+const param = "params"
+
+// AddInst add instance
+func (s *service) AddInst(c *gin.Context) {
+	objID := c.Param(common.BKObjIDField)
+	s.importInstFunc(c, objID, core.AddInst)
+}
+
+// AddHost add host
+func (s *service) AddHost(c *gin.Context) {
+	s.importInstFunc(c, common.BKInnerObjIDHost, core.AddHost)
+}
+
+// UpdateHost update host
+func (s *service) UpdateHost(c *gin.Context) {
+	s.importInstFunc(c, common.BKInnerObjIDHost, core.UpdateHost)
+}
+
+// importInstFunc import instance function
+func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.HandleType) {
+	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
+	params := c.PostForm(param)
+	if params == "" {
+		blog.Errorf("not found params value, rid: %s", kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommParamsNeedSet, param))
+		return
+	}
+
+	var input importer.ImportParamI
+	switch handleType {
+	case core.AddHost:
+		input = &importer.AddHostParam{}
+	case core.UpdateHost:
+		input = &importer.UpdateHostParam{}
+	case core.AddInst:
+		input = &importer.InstParam{}
+	}
+
+	if err := json.Unmarshal([]byte(params), input); err != nil {
+		blog.Errorf("params unmarshal error, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommParamsValueInvalidError, params, err.Error()))
+		return
+	}
+
+	// todo 需要删除
+	if input.GetOpType() == 1 {
+		c.JSON(http.StatusOK, metadata.NewSuccessResp(nil))
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		blog.Errorf("get file failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileNoFound))
+		return
+	}
+
+	dir := webCommon.ResourcePath + "/import/"
+	if _, err = os.Stat(dir); err != nil {
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %v, rid: %s", dir, err, kit.Rid)
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, kit.Rid)
+		}
+	}
+
+	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), rand.Uint32())
+	err = c.SaveUploadedFile(file, filePath)
+	if err != nil {
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileSaveFail))
+		return
+	}
+
+	operator, err := importer.NewImporter(importer.FilePath(filePath), importer.Client(s.client),
+		importer.ImpObjID(objID),
+		importer.ImpKit(kit), importer.Language(s.engine.Language), importer.Param(input))
+	if err != nil {
+		blog.Errorf("create importer failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("create importer failed, err: %+v", err).Error())
+		return
+	}
+
+	result, err := operator.Import()
+	if err != nil {
+		blog.Errorf("import excel data failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("import excel data failed, err: %+v", err).Error())
+		return
+	}
+
+	if err := operator.Clean(); err != nil {
+		blog.Errorf("clean importer resource failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("clean importer resource failed, err: %+v", err).Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, metadata.NewSuccessResp(result))
+}
+
+// ExportObject export object
+func (s *service) ExportObject(c *gin.Context) {
+	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
+	objID := c.Param(common.BKObjIDField)
+
+	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
+	filePath := fmt.Sprintf("%s/%d_%s.xlsx", dir, time.Now().UnixNano(), objID)
+
+	modelOp, err := model.NewOp(model.FilePath(filePath), model.Client(s.client), model.ObjID(objID), model.Kit(kit),
+		model.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create model operator failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebOpenFileFail, err.Error()))
+		return
+	}
+
+	// 导出模型数据到excel
+	if err := modelOp.Export(); err != nil {
+		blog.Errorf("export model data failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebCreateEXCELFail, err.Error()))
+		return
+	}
+
+	if err := modelOp.Close(); err != nil {
+		blog.Errorf("close excel io failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrWebFileContentFail, ErrMsg: err.Error()})
+		return
+	}
+
+	// 将excel文件返回，并删除临时文件
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
+	c.File(filePath)
+
+	if err := modelOp.Clean(); err != nil {
+		blog.Errorf("clean model operator resource failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrWebFileContentFail, ErrMsg: err.Error()})
+		return
+	}
+}
+
+// ImportObject import object attribute
+func (s *service) ImportObject(c *gin.Context) {
+	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
+	objID := c.Param(common.BKObjIDField)
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileNoFound))
+		return
+	}
+
+	dir := webCommon.ResourcePath + "/import/"
+	if _, err = os.Stat(dir); err != nil {
+		blog.Warnf("os.Stat failed, filename: %s, will retry with os.MkdirAll, err: %v, rid: %s", dir, err, kit.Rid)
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("os.MkdirAll failed, filename: %s, err: %v, rid: %s", dir, err, kit.Rid)
+		}
+	}
+
+	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), rand.Uint32())
+	if err = c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileSaveFail))
+		return
+	}
+
+	modelOp, err := model.NewOp(model.FilePath(filePath), model.Client(s.client), model.ObjID(objID), model.Kit(kit),
+		model.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create model operator failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebOpenFileFail, err.Error()))
+		return
+	}
+
+	result, err := modelOp.Import()
+	if err != nil {
+		blog.Errorf("export model data failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileContentFail, err.Error()))
+		return
+	}
+
+	if err := modelOp.Close(); err != nil {
+		blog.Errorf("close excel io failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrWebFileContentFail, ErrMsg: err.Error()})
+		return
+	}
+
+	if err := modelOp.Clean(); err != nil {
+		blog.Errorf("close excel io failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrWebFileContentFail, ErrMsg: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func getErrResp(kit *rest.Kit, code int, params ...string) metadata.BaseResp {
+	return metadata.BaseResp{
+		Code:   code,
+		ErrMsg: kit.CCError.CCErrorf(code, params).Error(),
 	}
 }

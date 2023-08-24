@@ -252,9 +252,9 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header,
 
 // AddHostByExcel TODO
 func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header,
-	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+	params mapstr.MapStr) (resp *metadata.ImportInstResp, err error) {
 
-	resp = new(metadata.ResponseDataMapStr)
+	resp = new(metadata.ImportInstResp)
 	subPath := "hosts/excel/add"
 
 	err = a.client.Post().
@@ -269,9 +269,9 @@ func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header,
 
 // UpdateHost TODO
 func (a *apiServer) UpdateHost(ctx context.Context, h http.Header,
-	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
+	params mapstr.MapStr) (resp *metadata.ImportInstResp, err error) {
 
-	resp = new(metadata.ResponseDataMapStr)
+	resp = new(metadata.ImportInstResp)
 	subPath := "hosts/update"
 
 	err = a.client.Put().
@@ -319,9 +319,9 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 
 // AddInstByImport add instances by import excel
 func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
-	*metadata.ResponseDataMapStr, error) {
+	*metadata.ImportInstResp, error) {
 
-	resp := new(metadata.ResponseDataMapStr)
+	resp := new(metadata.ImportInstResp)
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(params).

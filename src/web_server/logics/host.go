@@ -348,22 +348,22 @@ func (lgc *Logics) importHosts(ctx context.Context, f *xlsx.File, header http.He
 			continue
 		}
 
-		params := map[string]interface{}{
-			"host_info":            host,
-			"input_type":           common.InputTypeExcel,
-			common.BKModuleIDField: moduleID,
-		}
-		result, err := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
-		if err != nil {
-			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
-			continue
-		}
-
-		errData, exist := result.Data.Get("error")
-		if exist && errData != nil {
-			errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errData))
-			continue
-		}
+		//params := map[string]interface{}{
+		//	"host_info":            host,
+		//	"input_type":           common.InputTypeExcel,
+		//	common.BKModuleIDField: moduleID,
+		//}
+		//result, err := lgc.CoreAPI.ApiServer().AddHostByExcel(context.Background(), header, params)
+		//if err != nil {
+		//	errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, err.Error()))
+		//	continue
+		//}
+		//
+		//errData, exist := result.Data.Get("error")
+		//if exist && errData != nil {
+		//	errMsgs = append(errMsgs, defLang.Languagef("import_data_fail", rowNum, errData))
+		//	continue
+		//}
 
 		successMsgs = append(successMsgs, strconv.Itoa(rowNum))
 	}
@@ -441,7 +441,8 @@ func (lgc *Logics) importStatisticsAssociation(ctx context.Context, header http.
 // UpdateHosts update excel import hosts
 // NOCC:golint/fnsize(后续重构处理)
 func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf,
-	modelBizID, opType int64, asstObjectUniqueIDMap map[string]int64, objectUniqueID int64) *metadata.ResponseDataMapStr {
+	modelBizID, opType int64, asstObjectUniqueIDMap map[string]int64,
+	objectUniqueID int64) *metadata.ResponseDataMapStr {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -503,21 +504,21 @@ func (lgc *Logics) UpdateHosts(ctx context.Context, f *xlsx.File, header http.He
 			continue
 		}
 
-		params := map[string]interface{}{
-			"host_info":  host,
-			"input_type": common.InputTypeExcel,
-		}
-		result, err := lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
-		if err != nil {
-			blog.Errorf("update host http request  error: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
-			return returnByErrCode(defErr, common.CCErrCommHTTPDoRequestFailed, nil, "")
-		}
-
-		errData, exist := result.Data.Get("error")
-		if exist && errData != nil {
-			errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, errData))
-			continue
-		}
+		//params := map[string]interface{}{
+		//	"host_info":  host,
+		//	"input_type": common.InputTypeExcel,
+		//}
+		//result, err := lgc.CoreAPI.ApiServer().UpdateHost(context.Background(), header, params)
+		//if err != nil {
+		//	blog.Errorf("update host http request  error: %v, rid: %s", err, util.GetHTTPCCRequestID(header))
+		//	return returnByErrCode(defErr, common.CCErrCommHTTPDoRequestFailed, nil, "")
+		//}
+		//
+		//errData, exist := result.Data.Get("error")
+		//if exist && errData != nil {
+		//	errMsgs = append(errMsgs, defLang.Languagef("import_update_data_fail", rowNum, errData))
+		//	continue
+		//}
 
 		successMsgs = append(successMsgs, strconv.Itoa(rowNum))
 	}
@@ -754,7 +755,8 @@ func (lgc *Logics) CheckHostsUpdated(ctx context.Context, header http.Header, ho
 }
 
 // GetHostBizRelations get host and biz relations
-func (lgc *Logics) GetHostBizRelations(ctx context.Context, header http.Header, hostInfos map[int]map[string]interface{}, bizID int64) (map[int64]int64, error) {
+func (lgc *Logics) GetHostBizRelations(ctx context.Context, header http.Header,
+	hostInfos map[int]map[string]interface{}, bizID int64) (map[int64]int64, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
@@ -787,11 +789,13 @@ func (lgc *Logics) GetHostBizRelations(ctx context.Context, header http.Header, 
 		}
 		resp, err := lgc.CoreAPI.ApiServer().GetHostModuleRelation(ctx, header, params)
 		if err != nil {
-			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation err:%v, params: %#v, rid: %s", err, params, rid)
+			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation err:%v, params: %#v, rid: %s", err, params,
+				rid)
 			return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !resp.Result {
-			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation resp:%#v, params: %#v, rid: %s", resp, params, rid)
+			blog.Errorf(" GetHostBizRelations failed, GetHostModuleRelation resp:%#v, params: %#v, rid: %s", resp,
+				params, rid)
 			return nil, resp.CCError()
 		}
 
@@ -981,7 +985,8 @@ func (lgc *Logics) getExistHostsByHostIDs(ctx context.Context, header http.Heade
 		return nil, defErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
-		blog.Errorf(" getExistHostsByHostIDs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option, rid)
+		blog.Errorf(" getExistHostsByHostIDs failed, ListHostWithoutApp resp:%#v, option: %d, rid: %s", resp, option,
+			rid)
 		return nil, resp.CCError()
 	}
 

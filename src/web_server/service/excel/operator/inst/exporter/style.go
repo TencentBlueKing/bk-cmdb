@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package operator
+package exporter
 
 import (
 	"configcenter/pkg/excel"

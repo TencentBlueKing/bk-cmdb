@@ -781,6 +781,18 @@ const (
 
 	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
 	ObjectIDField = "object_id"
+
+	// BKUnitField the property unit field
+	BKUnitField = "unit"
+
+	// BKPlaceholderField the property placeholder field
+	BKPlaceholderField = "placeholder"
+
+	// BKEditableField the property editable field
+	BKEditableField = "editable"
+
+	// BKIsreadonlyField the property isreadonly field
+	BKIsreadonlyField = "isreadonly"
 )
 
 const (
