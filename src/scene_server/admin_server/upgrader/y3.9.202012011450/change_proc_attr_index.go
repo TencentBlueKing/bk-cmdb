@@ -69,7 +69,7 @@ func changeProcAttrOption(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	doc := map[string]interface{}{
-		common.BKOptionField: metadata.IntOption{Min: "0", Max: "600"},
+		common.BKOptionField: metadata.PrevIntOption{Min: "0", Max: "600"},
 	}
 
 	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, filter, doc); err != nil {

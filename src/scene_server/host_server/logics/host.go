@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 )
 
 // GetHostAttributes TODO
@@ -58,7 +58,8 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHostInstanceDetails http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, kit.Rid)
+		blog.Errorf("GetHostInstanceDetails http response error, err code:%d, err msg:%s, input:%+v, rid:%s",
+			result.Code, result.ErrMsg, hostID, kit.Rid)
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
@@ -169,7 +170,7 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	for _, field := range defaultFields {
 		_, ok := host[field.PropertyID]
 		if !ok {
-			if true == valid.IsStrProperty(field.PropertyType) {
+			if true == attrvalid.IsStrProperty(field.PropertyType) {
 				host[field.PropertyID] = ""
 			} else {
 				host[field.PropertyID] = nil
@@ -840,7 +841,8 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 }
 
 // IPCloudToHost get host id by ip and cloud
-func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64, err errors.CCErrorCoder) {
+func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64,
+	err errors.CCErrorCoder) {
 	// FIXME there must be a better ip to hostID solution
 	ipArr := strings.Split(ip, ",")
 	condition := mapstr.MapStr{
@@ -852,7 +854,8 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 
 	hostInfoArr, err := lgc.GetHostInfoByConds(kit, condition)
 	if err != nil {
-		blog.ErrorJSON("IPCloudToHost GetHostInfoByConds error. err:%s, conditon:%s, rid:%s", err.Error(), condition, kit.Rid)
+		blog.ErrorJSON("IPCloudToHost GetHostInfoByConds error. err:%s, conditon:%s, rid:%s", err.Error(), condition,
+			kit.Rid)
 		return nil, 0, err
 	}
 	if len(hostInfoArr) == 0 {
@@ -861,8 +864,10 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 
 	hostID, convErr := hostInfoArr[0].Int64(common.BKHostIDField)
 	if nil != convErr {
-		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip, cloudID, kit.Rid)
-		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", convErr.Error())
+		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip,
+			cloudID, kit.Rid)
+		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+			common.BKHostIDField, "int", convErr.Error())
 	}
 
 	return hostInfoArr[0], hostID, nil
