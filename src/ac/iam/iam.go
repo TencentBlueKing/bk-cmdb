@@ -89,8 +89,8 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}, nil
 }
 
-// TryLockRegister try lock register iam operation to make sure only one task runs at the same time, retry 3 times.
-func TryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
+// tryLockRegister try lock register iam operation to make sure only one task runs at the same time, retry 3 times.
+func tryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
 	for i := 0; i < 3; i++ {
 		locker := lock.NewLocker(redisCli)
 		locked, err := locker.Lock(RegisterIamLock, 2*time.Minute)
@@ -141,7 +141,7 @@ func (i IAM) Register(ctx context.Context, redisCli redis.Client, opt *RegisterI
 		return nil
 	}
 
-	locker, err := TryLockRegister(redisCli, rid)
+	locker, err := tryLockRegister(redisCli, rid)
 	if err != nil {
 		return err
 	}
@@ -743,7 +743,7 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 		}
 	}
 
-	locker, err := TryLockRegister(redisCli, rid)
+	locker, err := tryLockRegister(redisCli, rid)
 	if err != nil {
 		return err
 	}
