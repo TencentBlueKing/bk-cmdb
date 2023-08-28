@@ -142,10 +142,7 @@
     computed: {
       ...mapGetters('objectModelClassify', [
         'classifications'
-      ]),
-      getClassifications() {
-        return this.classifications.filter(item => !item.bk_ishidden)
-      }
+      ])
     },
     watch: {
       isShow(isShow) {
