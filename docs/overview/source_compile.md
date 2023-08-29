@@ -24,7 +24,7 @@ go env -w GO111MODULE="auto"
 ``` shell
 git clone https://github.com/TencentBlueKing/bk-cmdb configcenter
 
-//clone 速度较慢或超时建议配置代理：
+# clone 速度较慢或超时建议配置代理：
 git config --global http.proxy IP:PORT
 git config --global https.proxy IP:PORT
 ```
@@ -35,7 +35,7 @@ cd configcenter
 
 go mod tidy
 
-//go依赖下载失败或超时建议修改代理：
+# go依赖下载失败或超时建议修改代理：
 go env -w GOPROXY=https://goproxy.cn,direct
 ```
 

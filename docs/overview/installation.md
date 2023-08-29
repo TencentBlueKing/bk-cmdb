@@ -64,11 +64,23 @@
 
 ### 5. 配置数据库
 
-#### 1. Redis需要打开auth认证的功能
+#### 1. Redis需要打开auth认证的功能，并为其配置密码
 
 ##### a. 修改配置文件
-
-##### 登录验证
+redis的配置文件默认在/etc/redis.conf，找到如下行：
+``` json
+#requirepass foobared
+``` 
+去掉前面的注释，并修改为所需要的密码：
+``` json
+ requirepass myPassword （其中myPassword就是要设置的密码）
+``` 
+##### b. 重启Redis
+如果Redis已经配置为service服务，可以通过以下方式重启：
+```json
+service redis restart
+```
+##### c. 登录验证
 
 设置Redis认证密码后，客户端登录时需要使用-a参数输入认证密码,举例如下：
 
@@ -96,50 +108,40 @@ mkdir -p ~/data/mongodb/cmdb
    主节点（Primary）
 
    ```
-   vim /etc/mongodb_cmdb.conf  //写入：
-   #mongodb_cmdb.conf
+   # vim /etc/mongodb_cmdb.conf  //写入：
+   
+   # mongodb_cmdb.conf
    dbpath=/root/app/data/mongodb/mongodb_cmdb
    logpath=/root/app/data/mongodb/mongodb_cmdb.log
    pidfilepath=/root/app/data/mongodb/mongodb_cmdb.pid
-   #keyFile=/root/app/data/mongodb.key
    directoryperdb=true
    logappend=true
    replSet=rs0
    bind_ip=0.0.0.0
    port=27017
-   #auth=true
    oplogSize=100
    fork=true
-   #noprealloc=true
-   #maxConns=4000
+
+   # 备注：以上配置信息仅供参考
+   # 参数说明：
+   # dbpath：存放数据目录
+   # logpath：日志数据目录
+   # pidfilepath：pid文件
+   # directoryperdb：数据库是否分目录存放
+   # logappend：日志追加方式存放
+   # replSet：Replica Set的名字
+   # bind_ip：mongodb绑定的ip地址
+   # port：端口
+   # fork：守护进程运行，创建进程
    ```
 
-   备注：以上配置信息仅供参考
-   参数说明：
-
-   ```
-   dbpath：存放数据目录
-   logpath：日志数据目录
-   pidfilepath：pid文件
-   keyFile：节点之间用于验证文件，内容必须保持一致，权限600，仅Replica Set 模式有效
-   directoryperdb：数据库是否分目录存放
-   logappend：日志追加方式存放
-   replSet：Replica Set的名字
-   bind_ip：mongodb绑定的ip地址
-   port：端口
-   auth：是否开启验证
-   fork：守护进程运行，创建进程
-   noprealloc：是否禁用数据文件预分配（往往影响性能）
-   maxConns：最大连接数，默认2000
-   ```
-
-3. 通过配置文件启动 mongodb，进入 mongodb 的 bin 目录，执行：
+3. 启动 mongodb，进入 mongodb 的 bin 目录，执行：
 
    ```
    mongod -f /etc/mongodb_cmdb.conf
    ```
 
-   ps：启动失败请查看对应日志文件排查问题
+   ps：启动失败可查看对应日志文件排查问题
 
 4. 配置集群后，执行`mongo`命令连接mongodb服务
 
@@ -151,7 +153,6 @@ mkdir -p ~/data/mongodb/cmdb
    说明：
    cfg 名字可选，只要跟mongodb参数不冲突，rs0为集群名字，仅作展示，用户使用中可以根据实际情况自行配置，_id 为 Replica Set 名字，
    members 里面的优先级 priority 值高的为主节点，对于仲裁点一定要加上`arbiterOnly:true`，否则主备模式不生效，
-   priority 表示优先级别，数值越大，表示是主节点，`arbiterOnly:true`表示仲裁节点。
    使集群cfg配置生效：`rs.initiate(cfg)`
    查看集群状态：`rs.status()`
 
@@ -385,9 +386,9 @@ mechanism=SCRAM-SHA-1
 ```yaml
 site :
    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-   domainUrl: http://192.168.0.1:8082
+   domainUrl: http://127.0.0.1:8082
    #登录地址
-   bkLoginUr: http://192.168.0.1/login/?app_id=%s&c_url=%s
+   bkLoginUr: http://127.0.0.1/login/?app_id=%s&c_url=%s
    appCode: cc
 ```
 
