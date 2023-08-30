@@ -1,4 +1,3 @@
-<!-- eslint-disable no-unused-vars -->
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.

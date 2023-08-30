@@ -32,7 +32,8 @@
                 :is-show-overflow-tips="isShowOverflowTips(property)"
                 :ref="`property-value-${property.bk_property_id}`"
                 :value="instState[property.bk_property_id]"
-                :property="property">
+                :property="property"
+                :instance="instState">
               </cmdb-property-value>
             </div>
             <template v-if="!loadingState.includes(property)">
@@ -423,7 +424,7 @@
                 color: #3c96ff;
                 cursor: pointer;
                 display: none;
-                font-size: 16px;
+                font-size: 12px;
             }
             .copy-box {
                 position: relative;
