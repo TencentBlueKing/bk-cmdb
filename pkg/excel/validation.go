@@ -31,7 +31,10 @@ type FieldType string
 const (
 	Decimal FieldType = "decimal"
 	Bool    FieldType = "bool"
-	Enum    FieldType = "enum"
+	// Enum 谨慎使用，excel本身限制单元格下拉列表的总大小不超过255字符，如果超过，会报错；
+	// 如果下拉列表总大小需要超过255字符，可以使用Ref类型引用另一个sheet的一列值作为下拉列表
+	Enum FieldType = "enum"
+	Ref  FieldType = "ref"
 )
 
 // ValidationParam validation parameter
@@ -60,7 +63,20 @@ func newValidation(param *ValidationParam) (*excelize.DataValidation, error) {
 			return nil, err
 		}
 	case Enum:
-		ref, err := getEnumRefDropList(util.GetStrByInterface(param.Option))
+		valArr, err := util.GetMapInterfaceByInterface(param.Option)
+		if err != nil {
+			return nil, err
+		}
+		strArr := make([]string, len(valArr))
+		for idx := range valArr {
+			strArr[idx] = util.GetStrByInterface(valArr[idx])
+		}
+
+		if err := validation.SetDropList(strArr); err != nil {
+			return nil, err
+		}
+	case Ref:
+		ref, err := getRefDropList(util.GetStrByInterface(param.Option))
 		if err != nil {
 			return nil, err
 		}
@@ -72,6 +88,6 @@ func newValidation(param *ValidationParam) (*excelize.DataValidation, error) {
 	return validation, nil
 }
 
-func getEnumRefDropList(sheet string) (string, error) {
+func getRefDropList(sheet string) (string, error) {
 	return fmt.Sprintf("'%s'%s", sheet, enumRefSuffix), nil
 }

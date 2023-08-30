@@ -42,10 +42,40 @@ type ExportParamI interface {
 
 	// Validate validate parameter
 	Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error
+
+	// GetAsstObjUniqueIDMap get association object unique id map
+	GetAsstObjUniqueIDMap() map[string]int64
+
+	// GetObjUniqueID get object unique id
+	GetObjUniqueID() int64
+}
+
+// BaseParam base add data parameter
+type BaseParam struct {
+	// AsstObjUniqueIDMap 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AsstObjUniqueIDMap map[string]int64 `json:"association_condition"`
+
+	// ObjUniqueID 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// 自关联的时候，规定左边对象使用到的唯一索引
+	ObjUniqueID int64 `json:"object_unique_id"`
+
+	cursor *cursor
+}
+
+// GetAsstObjUniqueIDMap get association object unique id map
+func (b *BaseParam) GetAsstObjUniqueIDMap() map[string]int64 {
+	return b.AsstObjUniqueIDMap
+}
+
+// GetObjUniqueID get object unique id
+func (b *BaseParam) GetObjUniqueID() int64 {
+	return b.ObjUniqueID
 }
 
 // InstParam export instance parameter
 type InstParam struct {
+	BaseParam `json:",inline"`
+
 	ObjID string `json:"bk_obj_id"`
 
 	// CustomFields 导出的实例字段
@@ -53,15 +83,6 @@ type InstParam struct {
 
 	// InstIDArr 指定需要导出的实例ID
 	InstIDArr []int64 `json:"bk_inst_ids"`
-
-	// AssociationCond 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
-	AssociationCond map[string]int64 `json:"association_condition"`
-
-	// ObjectUniqueID 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
-	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
-
-	cursor *cursor
 }
 
 // GetPropCond get condition for query property
@@ -121,6 +142,8 @@ func (e *InstParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) e
 
 // HostParam export host parameter
 type HostParam struct {
+	BaseParam `json:",inline"`
+
 	// 导出的主机字段
 	CustomFields []string `json:"export_custom_fields"`
 
@@ -132,15 +155,6 @@ type HostParam struct {
 
 	// 导出主机查询参数,就是search host 主机参数
 	ExportCond metadata.HostCommonSearch `json:"export_condition"`
-
-	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
-	AssociationCond map[string]int64 `json:"association_condition"`
-
-	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
-	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
-
-	cursor *cursor
 }
 
 // GetPropCond get condition for query property

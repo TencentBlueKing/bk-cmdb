@@ -127,28 +127,183 @@ const (
 	onceImportLimit = 100
 )
 
-// Import import instance from excel
-func (i *Importer) Import() (mapstr.MapStr, error) {
-	result, err := i.importInst()
+// Handle handle import request
+func (i *Importer) Handle() (mapstr.MapStr, error) {
+	// 获取association sheet中关联的模型以及关联关系的条数等信息
+	if i.param.GetOpType() == getAsstFlag {
+		result, err := i.getAsstInfo()
+		if err != nil {
+			blog.Errorf("get instance association info failed, err: %v, rid: %s", err, i.kit.Rid)
+			return nil, err
+		}
+
+		return result, nil
+	}
+
+	// 从excel获取实例数据，进行导入
+	result, hasErrMsg, err := i.importInst()
 	if err != nil {
 		blog.Errorf("import instance failed, err: %v, rid: %s", err, i.kit.Rid)
 		return nil, err
 	}
 
+	if hasErrMsg || len(i.param.GetAsstObjUniqueIDMap()) == 0 {
+		return result, nil
+	}
+
+	// 从excel获取关联关系数据，进行导入
+	return i.importAssociation()
+}
+
+func (i *Importer) getAsstInfo() (mapstr.MapStr, error) {
+	exist, err := i.excel.IsSheetExist(core.AsstSheet)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exist {
+		return mapstr.MapStr{"association": mapstr.New()}, nil
+	}
+
+	asstInfo, err := i.getAsstFromExcel()
+	if err != nil {
+		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		return nil, err
+	}
+
+	if asstInfo == nil || len(asstInfo.asstIDs) == 0 {
+		return mapstr.MapStr{"association": mapstr.New()}, nil
+	}
+
+	associations, err := i.client.FindAsstByAsstID(i.kit, i.objID, asstInfo.asstIDs)
+	if err != nil {
+		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.kit.Rid)
+		return nil, err
+	}
+
+	statisticalInfos := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
+	for _, asst := range associations {
+		objID := asst.AsstObjID
+		// 只统计关联的对象
+		if asst.ObjectID != i.objID {
+			objID = asst.ObjectID
+		}
+
+		statisticalInfo, ok := statisticalInfos[objID]
+		if !ok {
+			statisticalInfo = metadata.ObjectAsstIDStatisticsInfo{}
+		}
+
+		data := asstInfo.statisticalMap[asst.AssociationName]
+
+		statisticalInfo.Create += data.Create
+		statisticalInfo.Delete += data.Delete
+		statisticalInfo.Total += data.Total
+
+		statisticalInfos[objID] = statisticalInfo
+	}
+
+	return mapstr.MapStr{"association": statisticalInfos}, nil
+}
+
+type excelAsstInfo struct {
+	// asstIDs 关联标识id数组
+	asstIDs []string
+	// statisticalMap key为关联标识id，value为关联标识使用的统计结果结构体
+	statisticalMap map[string]metadata.ObjectAsstIDStatisticsInfo
+	// asstInfoMap 需要导入的excel关联关系数据
+	asstInfoMap map[int]metadata.ExcelAssociation
+	// errMsg 关联关系sheet不合法的数据信息
+	errMsg []metadata.RowMsgData
+}
+
+func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
+	reader, err := i.excel.NewReader(core.AsstSheet)
+	if err != nil {
+		blog.Errorf("create excel reader failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, i.kit.Rid)
+		return nil, err
+	}
+	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+
+	statisticalMap := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
+	asstIDs := make([]string, 0)
+	asstInfoMap := make(map[int]metadata.ExcelAssociation)
+	errMsg := make([]metadata.RowMsgData, 0)
+
+	for reader.Next() {
+		if reader.GetCurIdx() < core.AsstDataRowIdx {
+			continue
+		}
+
+		row, err := reader.CurRow()
+		if err != nil {
+			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, i.kit.Rid)
+			return nil, err
+		}
+
+		if len(row) < core.AsstDstInstColIdx+1 {
+			msg := lang.Languagef("web_excel_row_handle_error", core.AsstSheet, reader.GetCurIdx()+1)
+			errMsg = append(errMsg, metadata.RowMsgData{Row: reader.GetCurIdx(), Msg: msg})
+			continue
+		}
+
+		asstID := row[core.AsstIDColIdx]
+		op := row[core.AsstOPColIdx]
+		srcInst := row[core.AsstSrcInstColIdx]
+		dstInst := row[core.AsstDstInstColIdx]
+
+		idx := reader.GetCurIdx()
+
+		if asstID == "" || op == "" || srcInst == "" || dstInst == "" {
+			msg := lang.Languagef("web_excel_row_handle_error", core.AsstSheet, idx)
+			errMsg = append(errMsg, metadata.RowMsgData{Row: idx, Msg: msg})
+			continue
+		}
+
+		statisticalInfo, ok := statisticalMap[asstID]
+		if !ok {
+			asstIDs = append(asstIDs, asstID)
+			statisticalInfo = metadata.ObjectAsstIDStatisticsInfo{}
+		}
+
+		operate := core.GetAsstOpFlag(core.AsstOp(op))
+		switch operate {
+		case metadata.ExcelAssociationOperateDelete:
+			statisticalInfo.Delete += 1
+		case metadata.ExcelAssociationOperateAdd:
+			statisticalInfo.Create += 1
+		}
+
+		statisticalMap[asstID] = statisticalInfo
+
+		asstInfoMap[idx] = metadata.ExcelAssociation{
+			ObjectAsstID: asstID,
+			Operate:      operate,
+			SrcPrimary:   srcInst,
+			DstPrimary:   dstInst,
+		}
+	}
+
+	if err := reader.Close(); err != nil {
+		blog.Errorf("close reader failed, err: %v, rid: %s", err, i.kit.Rid)
+		return nil, err
+	}
+
+	result := &excelAsstInfo{asstIDs: asstIDs, statisticalMap: statisticalMap, asstInfoMap: asstInfoMap, errMsg: errMsg}
 	return result, nil
 }
 
-func (i *Importer) importInst() (mapstr.MapStr, error) {
+func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 	reader, err := i.excel.NewReader(i.objID)
 	if err != nil {
 		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.objID, err, i.kit.Rid)
-		return nil, err
+		return nil, false, err
 	}
 
 	excelMsg, err := i.getExcelMsg(reader)
 	if err != nil {
 		blog.Errorf("get object excel message failed, err: %v, rid: %s", err, i.kit.Rid)
-		return nil, err
+		return nil, false, err
 	}
 
 	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
@@ -166,14 +321,17 @@ func (i *Importer) importInst() (mapstr.MapStr, error) {
 			continue
 		}
 
-		inst, err := i.getNextInst(reader, excelMsg)
 		idx := reader.GetCurIdx() + 1
+		inst, err := i.getNextInst(reader, excelMsg)
 		if err != nil {
 			blog.Errorf("get next instance from excel failed, err: %v, rid: %s", err, i.kit.Rid)
 			errMsg = append(errMsg, lang.Languagef("import_data_fail", idx, err.Error()))
 			continue
 		}
-		insts[idx] = inst
+
+		if inst != nil {
+			insts[idx] = inst
+		}
 
 		if len(insts) < onceImportLimit && reader.Next() {
 			hasDoneNext = true
@@ -191,7 +349,7 @@ func (i *Importer) importInst() (mapstr.MapStr, error) {
 		req, err := i.param.BuildParam(insts)
 		if err != nil {
 			blog.Errorf("get import instances parameter failed, err: %v, rid: %s", err, i.kit.Rid)
-			return nil, err
+			return nil, false, err
 		}
 		importParam := &core.ImportedParam{
 			Language: i.language, ObjID: i.objID, Instances: insts, Req: req,
@@ -214,10 +372,10 @@ func (i *Importer) importInst() (mapstr.MapStr, error) {
 
 	if err := reader.Close(); err != nil {
 		blog.Errorf("close read excel io failed, err: %v, rid: %s", err, i.kit.Rid)
-		return nil, err
+		return nil, false, err
 	}
 
-	return result, nil
+	return result, len(errMsg) > 0, nil
 }
 
 func (i *Importer) getExcelMsg(reader *excel.Reader) (*ExcelMsg, error) {
@@ -406,10 +564,12 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 	}
 
 	inst := make(map[string]interface{})
+	hasInst := false
 	for idx, val := range rows[0] {
 		if val == "" {
 			continue
 		}
+		hasInst = true
 
 		prop, ok := excelMsg.propertyMap[idx]
 		if !ok {
@@ -426,11 +586,15 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 		inst[prop.ID] = value
 	}
 
+	if !hasInst {
+		return nil, nil
+	}
+
 	return inst, nil
 }
 
 func (i *Importer) doSpecialOp(insts map[int]map[string]interface{}) (map[int]map[string]interface{}, []string) {
-	if i.objID != common.BKInnerObjIDHost {
+	if i.objID != common.BKInnerObjIDHost || len(insts) == 0 {
 		return insts, nil
 	}
 
@@ -704,4 +868,78 @@ func (i *Importer) getCheckHostRes(hosts map[int]map[string]interface{}) (*check
 	}
 
 	return &checkHostRes{existingHosts: existingHosts, bizID: bizID, hostBizMap: hostBizMap}, nil
+}
+
+func (i *Importer) importAssociation() (mapstr.MapStr, error) {
+	exist, err := i.excel.IsSheetExist(core.AsstSheet)
+	if err != nil {
+		return nil, err
+	}
+
+	result := mapstr.New()
+	if !exist {
+		return result, nil
+	}
+
+	asstInfo, err := i.getAsstFromExcel()
+	if err != nil {
+		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		return nil, err
+	}
+	asstObjUniqueIDMap := i.param.GetAsstObjUniqueIDMap()
+
+	if asstInfo == nil || asstObjUniqueIDMap == nil {
+		return result, nil
+	}
+
+	// 将不需要导入的关联关系数据过滤出来
+	associations, err := i.client.FindAsstByAsstID(i.kit, i.objID, asstInfo.asstIDs)
+	if err != nil {
+		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.kit.Rid)
+		return nil, err
+	}
+
+	skipAsstID := make(map[string]struct{})
+	for _, asst := range associations {
+		_, hasAsstObjID := asstObjUniqueIDMap[asst.AsstObjID]
+		_, hasObjID := asstObjUniqueIDMap[asst.ObjectID]
+
+		// 如果有一个为true, 表示该类型的关联关系是需要导入的
+		if hasAsstObjID || hasObjID {
+			continue
+		}
+
+		skipAsstID[asst.AssociationName] = struct{}{}
+	}
+
+	importedAsst := make(map[int]metadata.ExcelAssociation)
+	for idx, asst := range asstInfo.asstInfoMap {
+		if _, ok := skipAsstID[asst.ObjectAsstID]; ok {
+			continue
+		}
+
+		importedAsst[idx] = asst
+	}
+	if len(importedAsst) == 0 {
+		return result, nil
+	}
+
+	// 导入指定的关联关系
+	input := &metadata.RequestImportAssociation{
+		AssociationInfoMap:    importedAsst,
+		AsstObjectUniqueIDMap: asstObjUniqueIDMap,
+		ObjectUniqueID:        i.param.GetObjUniqueID(),
+	}
+
+	asstResp, err := i.client.ImportAssociation(i.kit, i.objID, input)
+	if err != nil {
+		blog.Errorf("import association failed, input: %v, err: %v, rid: %s", input, err, i.kit.Rid)
+		return nil, err
+	}
+
+	if len(asstResp.ErrMsgMap) != 0 {
+		result["error"] = asstResp.ErrMsgMap
+	}
+
+	return result, nil
 }

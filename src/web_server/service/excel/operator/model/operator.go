@@ -102,7 +102,7 @@ func Language(language language.CCLanguageIf) BuildModelOpFunc {
 
 // Close excel
 func (op *Operator) Close() error {
-	if err := op.excel.Flush(op.objID); err != nil {
+	if err := op.excel.Flush([]string{op.objID, core.AsstSheet}); err != nil {
 		blog.Errorf("flush excel failed, sheet %s, err: %v, rid: %s", op.objID, err, op.kit.Rid)
 		return err
 	}

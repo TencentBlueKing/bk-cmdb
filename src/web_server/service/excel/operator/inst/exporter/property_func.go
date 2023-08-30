@@ -76,7 +76,7 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 				return nil, err
 			}
 
-			if err := t.excel.Flush(property.RefSheet); err != nil {
+			if err := t.excel.Flush([]string{property.RefSheet}); err != nil {
 				return nil, err
 			}
 
@@ -90,7 +90,7 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 					return nil, err
 				}
 				if err := t.excel.AddValidation(t.objID,
-					&excel.ValidationParam{Type: excel.Enum, Sqref: sqref, Option: property.RefSheet}); err != nil {
+					&excel.ValidationParam{Type: excel.Ref, Sqref: sqref, Option: property.RefSheet}); err != nil {
 					return nil, err
 				}
 			}
@@ -136,7 +136,7 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 
 func getHandleTableTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		nameStyle, err := t.styleCreator.getStyle(fieldName)
+		nameStyle, err := t.styleCreator.getStyle(firstRow)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +148,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
-		result := make([][]excel.Cell, core.HeaderLen)
+		result := make([][]excel.Cell, core.InstHeaderLen)
 		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
 		result[core.TypeRowIdx] = append(result[core.TypeRowIdx],
 			excel.Cell{Value: propertyType, StyleID: headerStyle})
@@ -210,7 +210,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 
 func getDefaultHandleTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		nameStyleType := fieldName
+		nameStyleType := firstRow
 		headerStyleType := generalHeader
 		if property.NotEditable {
 			nameStyleType = noEditHeader
@@ -229,7 +229,7 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
-		result := make([][]excel.Cell, core.HeaderLen)
+		result := make([][]excel.Cell, core.InstHeaderLen)
 		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
 		result[core.TypeRowIdx] = append(result[core.TypeRowIdx], excel.Cell{Value: propertyType, StyleID: headerStyle})
 		result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
@@ -265,7 +265,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		if err := t.excel.Flush(property.RefSheet); err != nil {
+		if err := t.excel.Flush([]string{property.RefSheet}); err != nil {
 			return nil, err
 		}
 
@@ -278,7 +278,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 			return nil, err
 		}
 		if err := t.excel.AddValidation(t.objID,
-			&excel.ValidationParam{Type: excel.Enum, Sqref: sqref, Option: property.RefSheet}); err != nil {
+			&excel.ValidationParam{Type: excel.Ref, Sqref: sqref, Option: property.RefSheet}); err != nil {
 			return nil, err
 		}
 

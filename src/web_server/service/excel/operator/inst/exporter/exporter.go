@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 )
@@ -86,19 +87,15 @@ func (e *Exporter) Export() error {
 		return err
 	}
 
-	rowIndex := core.InstRowIdx
-	for e.exportParam.HasInstCond() {
-		instCond, err := e.exportParam.GetInstCond()
-		if err != nil {
-			blog.Errorf("get instance condition failed, err: %v, rid: %s", err, e.kit.Rid)
-			return err
-		}
+	instIDs, err := e.exportInst(colProps)
+	if err != nil {
+		blog.Errorf("export instance failed, err: %v, rid: %s", err, e.kit.Rid)
+		return err
+	}
 
-		rowIndex, err = e.exportByCond(instCond, colProps, rowIndex)
-		if err != nil {
-			blog.Errorf("export instance by condition failed, err: %v, rid: %s", err, e.kit.Rid)
-			return err
-		}
+	if err := e.exportAsst(instIDs); err != nil {
+		blog.Errorf("export association failed, err: %v, rid: %s", err, e.kit.Rid)
+		return err
 	}
 
 	return nil
@@ -173,45 +170,76 @@ func (e *Exporter) getTopoProps() ([]core.ColProp, error) {
 	return result, nil
 }
 
-func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, rowIndex int) (int, error) {
+func (e *Exporter) exportInst(colProps []core.ColProp) ([]int64, error) {
+	rowIndex := core.InstRowIdx
+	var result, instIDs []int64
+	for e.exportParam.HasInstCond() {
+		instCond, err := e.exportParam.GetInstCond()
+		if err != nil {
+			blog.Errorf("get instance condition failed, err: %v, rid: %s", err, e.kit.Rid)
+			return nil, err
+		}
+
+		rowIndex, instIDs, err = e.exportByCond(instCond, colProps, rowIndex)
+		if err != nil {
+			blog.Errorf("export instance by condition failed, err: %v, rid: %s", err, e.kit.Rid)
+			return nil, err
+		}
+
+		result = append(result, instIDs...)
+	}
+
+	return result, nil
+}
+
+func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, rowIndex int) (int, []int64, error) {
 	insts, err := e.getInst(cond)
 	if err != nil {
 		blog.Errorf("get instance failed, objID: %s, cond: %v, err: %v, rid: %s", e.objID, cond, err, e.kit.Rid)
-		return 0, err
+		return 0, nil, err
 	}
 
 	if insts == nil {
-		return rowIndex, nil
+		return rowIndex, nil, nil
 	}
 
 	insts, instHeights, err := e.enrichInst(insts, colProps)
 	if err != nil {
 		blog.Errorf("enrich instance field failed, err: %v, rid: %s", err, e.kit.Rid)
-		return 0, err
+		return 0, nil, err
 	}
 
+	instIDs := make([]int64, 0)
+	instIDKey := metadata.GetInstIDFieldByObjID(e.objID)
 	for idx, inst := range insts {
 		rows, err := e.handleInst(inst, colProps, instHeights[idx])
 		if err != nil {
 			blog.ErrorJSON("convert an instance to excel rows failed, inst: %s, property: %s, err: %s, rid: %s", inst,
 				colProps, err, e.kit.Rid)
-			return 0, err
+			return 0, nil, err
 		}
 
 		if err := e.excel.StreamingWrite(e.objID, rowIndex, rows); err != nil {
 			blog.ErrorJSON("write data to excel failed, rows: %s, err: %s, rid: %s", rows, err, e.kit.Rid)
-			return 0, err
+			return 0, nil, err
 		}
 
 		if err := e.mergeCell(colProps, rowIndex, instHeights[idx]); err != nil {
 			blog.Errorf("merge instance cell failed, err: %v, rid: %s", err, e.kit.Rid)
-			return 0, err
+			return 0, nil, err
 		}
 
 		rowIndex += instHeights[idx]
+
+		instID, err := inst.Int64(instIDKey)
+		if err != nil {
+			blog.Errorf("parse instance(%+v) id(key:%s) failed, err: %v, objID: %s, rid: %s", inst, instIDKey, err,
+				e.objID, e.kit.Rid)
+		}
+		instIDs = append(instIDs, instID)
 	}
 
-	return rowIndex, nil
+	return rowIndex, instIDs, nil
 }
 
 func (e *Exporter) getInst(cond mapstr.MapStr) ([]mapstr.MapStr, error) {
@@ -310,4 +338,187 @@ func (e *Exporter) mergeCell(colProps []core.ColProp, rowIndex, height int) erro
 	}
 
 	return nil
+}
+
+func (e *Exporter) exportAsst(instIDs []int64) error {
+	// 未设置, 不导出关联关系数据
+	if len(e.exportParam.GetAsstObjUniqueIDMap()) == 0 {
+		return nil
+	}
+
+	asstData, err := e.getInstAsst(instIDs)
+	if err != nil {
+		blog.Errorf("get instance association failed, instIDs: %v, err: %v, rid: %s", instIDs, err, e.kit.Rid)
+		return err
+	}
+
+	if err := e.excel.StreamingWrite(core.AsstSheet, core.AsstDataRowIdx, asstData); err != nil {
+		blog.Errorf("write instance association to excel failed, data: %v, err: %v, rid: %s", asstData, err, e.kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (e *Exporter) getInstAsst(instIDs []int64) ([][]excel.Cell, error) {
+	// 1. 获取需要导出的模型关联关系，以及判断是否有自关联的关联关系
+	asstObjUniqueIDMap := e.exportParam.GetAsstObjUniqueIDMap()
+	asstObjIDMap := make(map[string]struct{})
+	hasSelfAsst := false
+
+	for key := range asstObjUniqueIDMap {
+		if key == e.objID {
+			hasSelfAsst = true
+			continue
+		}
+
+		asstObjIDMap[key] = struct{}{}
+	}
+
+	asstList, err := e.client.GetObjAssociation(e.kit, e.objID)
+	if err != nil {
+		blog.Errorf("get object association failed, err: %v, rid: %s", err, e.kit.Rid)
+		return nil, err
+	}
+
+	asstIDs := make([]string, 0)
+	for _, asst := range asstList {
+		if hasSelfAsst && asst.ObjectID == asst.AsstObjID {
+			asstIDs = append(asstIDs, asst.AssociationName)
+			continue
+		}
+
+		_, ok := asstObjIDMap[asst.ObjectID]
+		if ok {
+			asstIDs = append(asstIDs, asst.AssociationName)
+			continue
+		}
+
+		_, ok = asstObjIDMap[asst.AsstObjID]
+		if ok {
+			asstIDs = append(asstIDs, asst.AssociationName)
+		}
+	}
+
+	// 2. 获取实例的关联关系数据
+	instAsstArr, err := e.client.GetInstAsst(e.kit, e.objID, instIDs, asstIDs, hasSelfAsst)
+	if err != nil {
+		blog.Errorf("get instance association failed, instIDs: %v, asstIDs: %v, err: %v, rid: %d", instIDs, asstIDs,
+			err, e.kit.Rid)
+		return nil, err
+	}
+
+	// 3. 获取实例关联关系中，源实例和目标实例的唯一标识信息; 这里当前模型的唯一标识会单独获取
+	asstData, err := e.getInstAsstData(instAsstArr)
+	if err != nil {
+		blog.Errorf("get instance association data failed, instAsstArr: %v, err: %v, rid: %s", instAsstArr, err,
+			e.kit.Rid)
+		return nil, err
+	}
+
+	// 4. 构造需要写到excel的关联关系数据
+	result := make([][]excel.Cell, len(asstData))
+	for idx, data := range asstData {
+		row := make([]excel.Cell, core.AsstDstInstColIdx+1)
+		row[core.AsstIDColIdx] = excel.Cell{Value: data.asstID}
+		row[core.AsstSrcInstColIdx] = excel.Cell{Value: data.srcInst}
+		row[core.AsstDstInstColIdx] = excel.Cell{Value: data.destInst}
+
+		result[idx] = row
+	}
+
+	return result, nil
+}
+
+type instAsstData struct {
+	asstID   string
+	srcInst  string
+	destInst string
+}
+
+func (e *Exporter) getInstAsstData(instAsstArr []*metadata.InstAsst) ([]instAsstData, error) {
+	// 当前操作对象实例id
+	instIDs := make([]int64, 0)
+	// 关联的对方的实例id
+	asstInstIDMap := make(map[string][]int64)
+
+	for _, instAsst := range instAsstArr {
+		if instAsst.ObjectID == e.objID {
+			instIDs = append(instIDs, instAsst.InstID)
+			asstInstIDMap[instAsst.AsstObjectID] = append(asstInstIDMap[instAsst.AsstObjectID], instAsst.AsstInstID)
+			continue
+		}
+
+		instIDs = append(instIDs, instAsst.AsstInstID)
+		asstInstIDMap[instAsst.ObjectID] = append(asstInstIDMap[instAsst.ObjectID], instAsst.InstID)
+	}
+
+	asstObjUniqueIDMap := e.exportParam.GetAsstObjUniqueIDMap()
+
+	asstInstUniqueKeyMap := make(map[string]map[int64]string)
+	for objID, asstInstIDs := range asstInstIDMap {
+		instUniqueKeys, err := e.client.GetInstUniqueKeys(e.kit, objID, asstInstIDs, asstObjUniqueIDMap[objID])
+		if err != nil {
+			blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", objID, err, e.kit.Rid)
+			return nil, err
+		}
+
+		asstInstUniqueKeyMap[objID] = instUniqueKeys
+	}
+
+	curInstUniqueKey, err := e.client.GetInstUniqueKeys(e.kit, e.objID, instIDs, e.exportParam.GetObjUniqueID())
+	if err != nil {
+		blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", e.objID, err, e.kit.Rid)
+		return nil, err
+	}
+
+	result := make([]instAsstData, 0)
+	for _, instAsst := range instAsstArr {
+		if instAsst.ObjectID == e.objID {
+			srcInst, ok := curInstUniqueKey[instAsst.InstID]
+			if !ok {
+				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.objID, e.kit.Rid)
+				continue
+			}
+
+			asstInstUniqueKey, ok := asstInstUniqueKeyMap[instAsst.AsstObjectID]
+			if !ok {
+				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.AsstObjectID,
+					e.kit.Rid)
+				continue
+			}
+
+			dstInst, ok := asstInstUniqueKey[instAsst.AsstInstID]
+			if !ok {
+				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.AsstObjectID,
+					e.kit.Rid)
+				continue
+			}
+
+			result = append(result, instAsstData{asstID: instAsst.ObjectAsstID, srcInst: srcInst, destInst: dstInst})
+			continue
+		}
+
+		asstInstUniqueKey, ok := asstInstUniqueKeyMap[instAsst.ObjectID]
+		if !ok {
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID, e.kit.Rid)
+			continue
+		}
+
+		srcInst, ok := asstInstUniqueKey[instAsst.InstID]
+		if !ok {
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID, e.kit.Rid)
+			continue
+		}
+
+		dstInst, ok := curInstUniqueKey[instAsst.AsstInstID]
+		if !ok {
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.objID, e.kit.Rid)
+			continue
+		}
+
+		result = append(result, instAsstData{asstID: instAsst.ObjectAsstID, srcInst: srcInst, destInst: dstInst})
+	}
+
+	return result, nil
 }

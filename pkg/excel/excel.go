@@ -288,21 +288,23 @@ func (excel *Excel) mergeCell(sheet string, hCell, vCell string) error {
 }
 
 // Flush file
-func (excel *Excel) Flush(sheet string) error {
+func (excel *Excel) Flush(sheets []string) error {
 	excel.Lock()
 	defer excel.Unlock()
 	if excel.file == nil {
 		return fmt.Errorf("excel file has not been created yet")
 	}
 
-	if excel.writers[sheet] == nil {
-		return nil
-	}
+	for _, sheet := range sheets {
+		if excel.writers[sheet] == nil {
+			continue
+		}
 
-	if err := excel.writers[sheet].Flush(); err != nil {
-		return err
+		if err := excel.writers[sheet].Flush(); err != nil {
+			return err
+		}
+		delete(excel.writers, sheet)
 	}
-	delete(excel.writers, sheet)
 
 	return nil
 }
@@ -473,4 +475,21 @@ func (excel *Excel) GetMergeCellMsg(sheet string) ([]CellMergeMsg, error) {
 	}
 
 	return result, nil
+}
+
+// IsSheetExist is sheet exist
+func (excel *Excel) IsSheetExist(sheet string) (bool, error) {
+	excel.RLock()
+	defer excel.RUnlock()
+
+	if excel.file == nil {
+		return false, fmt.Errorf("excel file has not been created yet")
+	}
+
+	idx, err := excel.file.GetSheetIndex(sheet)
+	if err != nil {
+		return false, err
+	}
+
+	return idx > -1, nil
 }

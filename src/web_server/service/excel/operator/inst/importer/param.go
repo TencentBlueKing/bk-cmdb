@@ -23,6 +23,8 @@ import (
 	"configcenter/src/web_server/service/excel/core"
 )
 
+const getAsstFlag = 1
+
 // ImportParamI import excel instance parameter interface
 type ImportParamI interface {
 	// BuildParam get import instances parameter
@@ -36,23 +38,39 @@ type ImportParamI interface {
 
 	// GetBizID get business id
 	GetBizID() int64
+
+	// GetAsstObjUniqueIDMap get association object unique id map
+	GetAsstObjUniqueIDMap() map[string]int64
+
+	// GetObjUniqueID get object unique id
+	GetObjUniqueID() int64
 }
 
 // BaseParam base add data parameter
 type BaseParam struct {
 	OpType int64 `json:"op"`
-	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
 
-	AssociationCond map[string]int64 `json:"association_condition"`
+	// AsstObjUniqueIDMap 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
+	AsstObjUniqueIDMap map[string]int64 `json:"association_condition"`
 
-	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
+	// ObjUniqueID 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
 	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
+	ObjUniqueID int64 `json:"object_unique_id"`
 }
 
 // GetOpType get operation type
 func (b *BaseParam) GetOpType() int64 {
 	return b.OpType
+}
+
+// GetAsstObjUniqueIDMap get association object unique id map
+func (b *BaseParam) GetAsstObjUniqueIDMap() map[string]int64 {
+	return b.AsstObjUniqueIDMap
+}
+
+// GetObjUniqueID get object unique id
+func (b *BaseParam) GetObjUniqueID() int64 {
+	return b.ObjUniqueID
 }
 
 // InstParam import instance parameter

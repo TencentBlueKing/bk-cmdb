@@ -208,12 +208,6 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		return
 	}
 
-	// todo 需要删除
-	if input.GetOpType() == 1 {
-		c.JSON(http.StatusOK, metadata.NewSuccessResp(nil))
-		return
-	}
-
 	file, err := c.FormFile("file")
 	if err != nil {
 		blog.Errorf("get file failed, err: %v, rid: %s", err, kit.Rid)
@@ -237,18 +231,17 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 	}
 
 	operator, err := importer.NewImporter(importer.FilePath(filePath), importer.Client(s.client),
-		importer.ImpObjID(objID),
-		importer.ImpKit(kit), importer.Language(s.engine.Language), importer.Param(input))
+		importer.ImpObjID(objID), importer.ImpKit(kit), importer.Language(s.engine.Language), importer.Param(input))
 	if err != nil {
 		blog.Errorf("create importer failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("create importer failed, err: %+v", err).Error())
 		return
 	}
 
-	result, err := operator.Import()
+	result, err := operator.Handle()
 	if err != nil {
-		blog.Errorf("import excel data failed, err: %v, rid: %s", err, kit.Rid)
-		c.String(http.StatusInternalServerError, fmt.Errorf("import excel data failed, err: %+v", err).Error())
+		blog.Errorf("handle excel import request failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("handle import request failed, err: %+v", err).Error())
 		return
 	}
 

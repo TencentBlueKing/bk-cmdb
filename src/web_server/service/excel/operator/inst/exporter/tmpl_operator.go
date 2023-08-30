@@ -113,8 +113,13 @@ func (t *TmplOp) BuildHeader(colProps ...core.ColProp) error {
 		}
 	}
 
-	if err := t.productExcelHeader(colProps); err != nil {
-		blog.Errorf("product excel header failed, err: %v, rid: %s", err, t.kit.Rid)
+	if err := t.productInstHeader(colProps); err != nil {
+		blog.Errorf("product excel instance header failed, err: %v, rid: %s", err, t.kit.Rid)
+		return err
+	}
+
+	if err := t.productAssociationHeader(); err != nil {
+		blog.Errorf("product excel instance association failed, err: %v, rid: %s", err, t.kit.Rid)
 		return err
 	}
 
@@ -123,7 +128,7 @@ func (t *TmplOp) BuildHeader(colProps ...core.ColProp) error {
 
 // Close excel
 func (t *TmplOp) Close() error {
-	if err := t.excel.Flush(t.objID); err != nil {
+	if err := t.excel.Flush([]string{t.objID, core.AsstSheet}); err != nil {
 		blog.Errorf("flush excel failed, sheet %s, err: %v, rid: %s", t.objID, err, t.kit.Rid)
 		return err
 	}
@@ -147,8 +152,8 @@ func (t *TmplOp) Clean() error {
 }
 
 var (
-	// firstColFields excel第0列0-5格的cell值
-	firstColFields = []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
+	// InstFirstColFields excel实例sheet第0列0-5格的cell值
+	InstFirstColFields = []string{common.ExcelFirstColumnFieldName, common.ExcelFirstColumnFieldType,
 		common.ExcelFirstColumnFieldID, common.ExcelFirstColumnTableFieldName, common.ExcelFirstColumnTableFieldType,
 		common.ExcelFirstColumnTableFieldID}
 
@@ -163,7 +168,7 @@ const (
 	colWidth = 24
 )
 
-func (t *TmplOp) productExcelHeader(colProps []core.ColProp) error {
+func (t *TmplOp) productInstHeader(colProps []core.ColProp) error {
 	if err := t.excel.CreateSheet(t.objID); err != nil {
 		blog.Errorf("create sheet failed, objID: %s, err: %v, rid: %s", t.objID, err, t.kit.Rid)
 		return err
@@ -207,12 +212,12 @@ func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error)
 		blog.Errorf("get row length failed, err: %v, rid: %s", err, t.kit.Rid)
 		return nil, err
 	}
-	header := make([][]excel.Cell, core.HeaderLen)
+	header := make([][]excel.Cell, core.InstHeaderLen)
 	for i := range header {
 		header[i] = make([]excel.Cell, width)
 	}
 
-	for idx, field := range firstColFields {
+	for idx, field := range InstFirstColFields {
 		fieldName := ccLang.Language(field)
 		header[idx][0] = excel.Cell{Value: fieldName, StyleID: firstColStyle}
 	}
@@ -261,6 +266,164 @@ func (t *TmplOp) mergeHeaderCell(colProps []core.ColProp) error {
 					property.ExcelColIndex, idx, property.Length, err, t.kit.Rid)
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+func (t *TmplOp) productAssociationHeader() error {
+	if err := t.excel.CreateSheet(core.AsstSheet); err != nil {
+		blog.Errorf("create sheet failed, name: %s, err: %v, rid: %s", core.AsstSheet, err, t.kit.Rid)
+		return err
+	}
+
+	if err := t.setAsstColWidth(); err != nil {
+		return err
+	}
+
+	if err := t.writeAsstHeader(); err != nil {
+		blog.Errorf("write excel association header failed, err: %v, rid: %s", err, t.kit.Rid)
+		return err
+	}
+
+	if err := t.setAsstValidation(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const (
+	asstFirstColWidth  = 24
+	asstSecondColWidth = 36
+	asstThirdColWidth  = 12
+	asstFourthColWidth = 80
+	asstFifthColWidth  = 80
+)
+
+func (t *TmplOp) setAsstColWidth() error {
+	colWidths := []float64{
+		asstFirstColWidth, asstSecondColWidth, asstThirdColWidth, asstFourthColWidth, asstFifthColWidth,
+	}
+	for idx, width := range colWidths {
+		if err := t.excel.SetColWidth(core.AsstSheet, idx+1, idx+1, width); err != nil {
+			blog.Errorf("set sheet width failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, t.kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+var firstAsstColFields = []string{
+	common.ExcelFirstColumnAssociationAttribute,
+	common.ExcelFirstColumnFieldDescription,
+}
+
+func (t *TmplOp) writeAsstHeader() error {
+	header := make([][]excel.Cell, core.AsstExampleRowIdx+1)
+	for idx := range header {
+		header[idx] = make([]excel.Cell, 0)
+	}
+	lang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
+
+	// 设置关联关系sheet表头第一列数据
+	firstColStyle, err := t.styleCreator.getStyle(noEditHeader)
+	if err != nil {
+		blog.Errorf("get style failed, style: %s, err: %v, rid: %s", noEditHeader, err, t.kit.Rid)
+		return err
+	}
+	for idx, field := range firstAsstColFields {
+		header[idx] = append(header[idx], excel.Cell{StyleID: firstColStyle, Value: lang.Language(field)})
+	}
+
+	// 设置关联关系sheet表头第一行数据(除第一列的单元格)
+	firstRowStyle, err := t.styleCreator.getStyle(firstRow)
+	if err != nil {
+		return err
+	}
+	firstRowFields := []string{lang.Language("excel_association_object_id"), lang.Language("excel_association_op"),
+		lang.Language("excel_association_src_inst"), lang.Language("excel_association_dst_inst")}
+	for idx := range firstRowFields {
+		header[core.AsstStartRowIdx] = append(header[core.AsstStartRowIdx],
+			excel.Cell{StyleID: firstRowStyle, Value: firstRowFields[idx]})
+	}
+
+	// 设置关联关系sheet表头第二行数据(除第一列的单元格)
+	exampleStyle, err := t.styleCreator.getStyle(example)
+	if err != nil {
+		return err
+	}
+	exampleFields := []string{lang.Language("excel_example_association"), lang.Language("excel_example_op"),
+		lang.Language("excel_example_association_src_inst"), lang.Language("excel_example_association_dst_inst")}
+	for idx := range exampleFields {
+		header[core.AsstExampleRowIdx] = append(header[core.AsstExampleRowIdx],
+			excel.Cell{StyleID: exampleStyle, Value: exampleFields[idx]})
+	}
+
+	if err := t.excel.StreamingWrite(core.AsstSheet, core.AsstStartRowIdx, header); err != nil {
+		blog.Errorf("write excel header data to excel failed, header: %v, err: %v, rid: %s", header, err, t.kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (t *TmplOp) setAsstValidation() error {
+	params := make([]*excel.ValidationParam, 0)
+
+	// 设置「关联标识」的列表，定义excel选项下拉
+	asstList, err := t.client.GetObjAssociation(t.kit, t.objID)
+	if err != nil {
+		blog.Errorf("get object association failed, err: %v, rid: %s", err, t.kit.Rid)
+		return err
+	}
+	asstNameList := make([]string, len(asstList))
+	for idx, asst := range asstList {
+		asstNameList[idx] = asst.AssociationName
+	}
+
+	lang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
+	refSheet := lang.Language("excel_association_object_id")
+	if err := t.excel.CreateSheet(refSheet); err != nil {
+		return err
+	}
+	data := make([][]excel.Cell, len(asstList))
+	for idx, asst := range asstList {
+		data[idx] = append(data[idx], excel.Cell{Value: asst.AssociationName})
+	}
+	if err := t.excel.StreamingWrite(refSheet, core.AsstStartRowIdx, data); err != nil {
+		return err
+	}
+	if err := t.excel.Flush([]string{refSheet}); err != nil {
+		return err
+	}
+	if err := t.excel.Save(); err != nil {
+		return err
+	}
+
+	sqref, err := excel.GetSingleColSqref(core.AsstIDColIdx, core.AsstDataRowIdx+1, excel.GetTotalRows())
+	if err != nil {
+		blog.Errorf("get single column sqref failed, err: %v, rid: %s", err, t.kit.Rid)
+		return err
+	}
+	params = append(params, &excel.ValidationParam{Type: excel.Ref, Sqref: sqref, Option: refSheet})
+
+	// 设置「操作」的列表，定义excel选项下拉
+	sqref, err = excel.GetSingleColSqref(core.AsstOPColIdx, core.AsstDataRowIdx+1, excel.GetTotalRows())
+	if err != nil {
+		blog.Errorf("get single column sqref failed, err: %v, rid: %s", err, t.kit.Rid)
+		return err
+	}
+	params = append(params, &excel.ValidationParam{Type: excel.Enum, Sqref: sqref, Option: core.AsstOps})
+
+	for _, param := range params {
+		if err = t.excel.AddValidation(core.AsstSheet, param); err != nil {
+			blog.Errorf("add validation failed, sheet: %s, param: %v, err: %s, rid: %s", core.AsstSheet, param, err,
+				t.kit.Rid)
+
+			return err
 		}
 	}
 

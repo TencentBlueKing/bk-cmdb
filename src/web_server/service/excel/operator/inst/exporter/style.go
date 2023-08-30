@@ -25,17 +25,19 @@ type styleType string
 
 const (
 	noEditHeader  styleType = "noEditHeader"
-	fieldName     styleType = "fieldName"
+	firstRow      styleType = "firstRow"
 	tableHeader   styleType = "tableHeader"
 	generalHeader styleType = "generalHeader"
 	noEditField   styleType = "noEditField"
+	example       styleType = "example"
 
 	noEditHeaderColor  = "fabf8f"
 	noEditFieldColor   = "fee9da"
-	fieldNameColor     = "92d050"
+	firstRowColor      = "92d050"
 	tableHeaderColor   = "d1e0b6"
 	generalHeaderColor = "c6efce"
 	borderColor        = "d4d4d4"
+	exampleColor       = "c6efce"
 )
 
 var generalBorder = []excel.Border{
@@ -48,9 +50,10 @@ var createStyleFuncMap = make(map[styleType]createStyleFunc)
 func init() {
 	createStyleFuncMap[noEditHeader] = getNoEditHeaderStyleFunc()
 	createStyleFuncMap[noEditField] = getNoEditFieldStyleFunc()
-	createStyleFuncMap[fieldName] = getFieldNameStyleFunc()
+	createStyleFuncMap[firstRow] = getFirstRowStyleFunc()
 	createStyleFuncMap[generalHeader] = getGeneralHeaderStyleFunc()
 	createStyleFuncMap[tableHeader] = getTableHeaderStyleFunc()
+	createStyleFuncMap[example] = getExampleStyleFunc()
 }
 
 type createStyleFunc func(s *styleCreator) (int, error)
@@ -83,9 +86,9 @@ func getNoEditFieldStyleFunc() createStyleFunc {
 	}
 }
 
-func getFieldNameStyleFunc() createStyleFunc {
+func getFirstRowStyleFunc() createStyleFunc {
 	return func(s *styleCreator) (int, error) {
-		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{fieldNameColor}, Pattern: 1},
+		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{firstRowColor}, Pattern: 1},
 			Border: generalBorder}
 
 		result, err := s.excel.NewStyle(style)
@@ -114,6 +117,20 @@ func getGeneralHeaderStyleFunc() createStyleFunc {
 func getTableHeaderStyleFunc() createStyleFunc {
 	return func(s *styleCreator) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{tableHeaderColor}, Pattern: 1},
+			Border: generalBorder}
+
+		result, err := s.excel.NewStyle(style)
+		if err != nil {
+			return 0, err
+		}
+
+		return result, nil
+	}
+}
+
+func getExampleStyleFunc() createStyleFunc {
+	return func(s *styleCreator) (int, error) {
+		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{exampleColor}, Pattern: 1},
 			Border: generalBorder}
 
 		result, err := s.excel.NewStyle(style)
