@@ -134,13 +134,28 @@ mkdir -p ~/data/mongodb/cmdb
    # port：端口
    # fork：守护进程运行，创建进程
    ```
+MongoDB官方资料：
+   [配置文件选项](https://www.mongodb.com/docs/manual/reference/configuration-options/)
+   [ReplicaSet配置](https://www.mongodb.com/docs/manual/reference/replica-configuration/)
 
 3. 启动 mongodb，进入 mongodb 的 bin 目录，执行：
-
+使用配置文件启动
    ```
    mongod -f /etc/mongodb_cmdb.conf
    ```
-
+使用命令行方式启动
+   ```
+   mongod --dbpath /root/app/data/mongodb/mongodb_cmdb \
+      --logpath /root/app/data/mongodb/mongodb_cmdb.log \
+      --pidfilepath /root/app/data/mongodb/mongodb_cmdb.pid \
+      --directoryperdb \
+      --logappend \
+      --replSet rs0 \
+      --bind_ip 0.0.0.0 \
+      --port 27017 \
+      --oplogSize 100 \
+      --fork
+   ```
    ps：启动失败可查看对应日志文件排查问题
 
 4. 配置集群后，执行`mongo`命令连接mongodb服务
@@ -392,8 +407,64 @@ site :
    appCode: cc
 ```
 
-还有`mongodb.yaml 和 redis.yaml`等配置也要确保与实际部署的 mongodb 和 redis 服务配置相同，不同处手动修改
-
+`mongodb.yaml 和 redis.yaml`等配置也要确保与实际部署的 mongodb 和 redis 服务配置相同，不同处手动修改，以下为示例配置：
+mongodb.yaml:
+```yaml
+mongodb:
+   host: 127.0.0.1:27017
+   port: 27017
+   usr: cc
+   pwd: "cc"
+   database: cmdb
+   maxOpenConns: 3000
+   maxIdleConns: 100
+   mechanism: SCRAM-SHA-1
+   rsName: rs0
+   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+   socketTimeoutSeconds: 10
+   # mongodb事件监听存储事件链的mongodb配置
+watch:
+   host: 127.0.0.1:27017
+   port: 27017
+   usr: cc
+   pwd: "cc"
+   database: cmdb
+   maxOpenConns: 10
+   maxIdleConns: 5
+   mechanism: SCRAM-SHA-1
+   rsName: rs0
+   socketTimeoutSeconds: 10
+```
+redis.yaml：
+```yaml
+redis:
+   #公共redis配置信息,用于存取缓存，用户信息等数据
+   host: 127.0.0.1:6379
+   pwd: "cc"
+   sentinelPwd: ""
+   database: "0"
+   maxOpenConns: 3000
+   maxIDleConns: 1000
+   #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
+   #接收主机信息数据的redis
+   snap:
+      host: 127.0.0.1:6379
+      pwd: "cc"
+      sentinelPwd: ""
+      database: "0"
+   #接收模型实例数据的redis
+   discover:
+      host: 127.0.0.1:6379
+      pwd: "cc"
+      sentinelPwd: ""
+      database: "0"
+   #接受硬件数据的redis
+   netcollect:
+      host: 127.0.0.1:6379
+      pwd: "cc"
+      sentinelPwd: ""
+      database: "0"
+```
 确认配置无误后启动服务：
 
 ``` shell
