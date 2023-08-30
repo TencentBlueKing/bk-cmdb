@@ -13,7 +13,6 @@
 package service
 
 import (
-	"regexp"
 	"strconv"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"configcenter/src/common/json"
 	meta "configcenter/src/common/metadata"
 	parser "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
@@ -34,12 +32,12 @@ import (
 func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 	newDynamicGroup := meta.DynamicGroup{}
 	if err := ctx.DecodeInto(&newDynamicGroup); err != nil {
-		blog.Errorf("create dynamic group failed, decode request body err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("create dynamic group failed, decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
-	if err := s.createRequestParamCheck(ctx.Kit, newDynamicGroup); err != nil {
-		blog.Errorf("create request param check failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+	if err := s.createGroupParamCheck(ctx.Kit, newDynamicGroup); err != nil {
+		blog.Errorf("create request param check failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -52,8 +50,8 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		var err error
 		response, err = s.CoreAPI.CoreService().Host().CreateDynamicGroup(ctx.Kit.Ctx, ctx.Kit.Header, &newDynamicGroup)
 		if err != nil {
-			blog.Errorf("create dynamic group failed, err: %+v, input: %+v, rid: %s",
-				err, newDynamicGroup, ctx.Kit.Rid)
+			blog.Errorf("create dynamic group failed, err: %v, input: %+v, rid: %s", err, newDynamicGroup,
+				ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !response.Result {
@@ -68,20 +66,18 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditCreate)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &newDynamicGroup)
 		if err != nil {
-			blog.Errorf("generate audit log failed after create new dynamic group, err: %+v, id: %s, rid: %s",
-				err, newDynamicGroup.ID, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, err: %v, id: %s, rid: %s", err, newDynamicGroup.ID, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after create new dynamic group, err: %+v, id: %s, rid: %s",
-				err, newDynamicGroup.ID, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, err: %v, id: %s, rid: %s", err, newDynamicGroup.ID, ctx.Kit.Rid)
 			return err
 		}
 
 		// register dynamic group resource create action to iam.
 		if auth.EnableAuthorize() {
 			if err := s.registerActionToIAM(ctx.Kit, newDynamicGroup); err != nil {
-				blog.Errorf("register created new dynamic group to iam failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("register created new dynamic group to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -96,13 +92,13 @@ func (s *Service) CreateDynamicGroup(ctx *rest.Contexts) {
 	ctx.RespEntity(response.Data)
 }
 
-// registerActionToIam  register dynamic group resource create action to iam.
+// registerActionToIam register dynamic group resource create action to iam.
 func (s *Service) registerActionToIAM(kit *rest.Kit, dynamicGroup meta.DynamicGroup) error {
 	bizID := strconv.FormatInt(dynamicGroup.AppID, 10)
 	resp, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(kit.Ctx, bizID, dynamicGroup.ID, kit.Header)
 	if err != nil {
-		blog.Errorf("get created new dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s",
-			err, bizID, dynamicGroup.ID, kit.Rid)
+		blog.Errorf("get created new dynamic group failed, err: %v, biz: %s, ID: %s, rid: %s", err, bizID,
+			dynamicGroup.ID, kit.Rid)
 		return err
 	}
 	if !resp.Result {
@@ -118,14 +114,14 @@ func (s *Service) registerActionToIAM(kit *rest.Kit, dynamicGroup meta.DynamicGr
 		Creator: kit.User,
 	}
 	if _, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance); err != nil {
-		blog.Errorf("register created new dynamic group to iam failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("register created new dynamic group to iam failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
-// createRequestParamCheck 新建动态分组接口请求参数检查
-func (s *Service) createRequestParamCheck(kit *rest.Kit, dynamicGroup meta.DynamicGroup) error {
+// createGroupParamCheck 新建动态分组接口请求参数检查
+func (s *Service) createGroupParamCheck(kit *rest.Kit, dynamicGroup meta.DynamicGroup) error {
 	//  validate dynamic group func.
 	validateFunc := func(objectID string) ([]meta.Attribute, error) {
 		return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
@@ -133,46 +129,11 @@ func (s *Service) createRequestParamCheck(kit *rest.Kit, dynamicGroup meta.Dynam
 	}
 
 	if err := dynamicGroup.Validate(validateFunc); err != nil {
-		blog.Errorf("create dynamic group failed, invalid param, err: %+v, input: %+v, rid: %s",
+		blog.Errorf("create dynamic group failed, invalid param, err: %v, input: %+v, rid: %s",
 			err, dynamicGroup, kit.Rid)
 		return err
 	}
 
-	for _, cond := range dynamicGroup.Info.Condition {
-		for _, item := range cond.Condition {
-			if err := s.verifyRegexValidity(kit, item, dynamicGroup.AppID); err != nil {
-				blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %d, rid: %s",
-					err, dynamicGroup, dynamicGroup.AppID, kit.Rid)
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// verifyRegexValidity 验证正则表达式的合法性
-func (s *Service) verifyRegexValidity(kit *rest.Kit, item meta.DynamicGroupCondition, bizID int64) error {
-	//验证 value 是否为空
-	if item.Value == nil {
-		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %d, rid: %s",
-			item.Value, bizID, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommHTTPBodyEmpty)
-	}
-	//模糊匹配时需要验证正则表达式的合法性
-	if item.Operator != common.BKDBLIKE {
-		return nil
-	}
-	strValue := util.GetStrByInterface(item.Value)
-	if strValue == "" {
-		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v, bizID: %d, rid: %s",
-			item.Value, bizID, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPBodyEmpty)
-	}
-	if _, err := regexp.Compile(strValue); err != nil {
-		blog.Errorf("the regular expression's type assertion failed, err: %+v, regex: %v, bizID: %d, rid: %s",
-			err, item.Value, bizID, kit.Rid)
-		return kit.CCError.Error(common.CCIllegalRegularExpression)
-	}
 	return nil
 }
 
@@ -188,7 +149,7 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 
 	bizIDInt64, err := strconv.ParseInt(bizID, 10, 64)
 	if err != nil {
-		blog.Errorf("update dynamic group failed, invalid bizID from path, err: %+v, bizID: %s, rid: %s",
+		blog.Errorf("update dynamic group failed, invalid bizID from path, err: %v, bizID: %s, rid: %s",
 			err, bizID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
@@ -197,14 +158,14 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 	// decode update request data(DynamicGroup struct to interfaces).
 	params := make(map[string]interface{})
 	if err := ctx.DecodeInto(&params); err != nil {
-		blog.Errorf("update dynamic group failed, decode request body, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("update dynamic group failed, decode request body, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	// final updates.
 	updates := make(map[string]interface{})
-	if err := s.updateRequestParamCheck(ctx.Kit, bizIDInt64, params, updates); err != nil {
-		blog.Errorf("update request param check failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+	if err := s.updateGroupParamCheck(ctx.Kit, bizIDInt64, params, updates); err != nil {
+		blog.Errorf("update request param check failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -216,20 +177,20 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditUpdate).WithUpdateFields(updates)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &meta.DynamicGroup{ID: targetID, AppID: bizIDInt64})
 		if err != nil {
-			blog.Errorf("generate audit log failed after update dynamic group[%s], err: %+v, rid: %s",
+			blog.Errorf("generate audit log failed after update dynamic group[%s], err: %v, rid: %s",
 				targetID, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after update dynamic group[%s], err: %+v, rid: %s",
-				targetID, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed after update dynamic group[%s], err: %v, rid: %s", targetID, err,
+				ctx.Kit.Rid)
 			return err
 		}
 
-		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx,
-			bizID, targetID, ctx.Kit.Header, updates)
+		response, err := s.CoreAPI.CoreService().Host().UpdateDynamicGroup(ctx.Kit.Ctx, bizID, targetID,
+			ctx.Kit.Header, updates)
 		if err != nil {
-			blog.Errorf("update dynamic group failed, err: %+v, biz: %s, input: %+v, rid: %s",
+			blog.Errorf("update dynamic group failed, err: %v, biz: %s, input: %+v, rid: %s",
 				err, bizID, params, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
@@ -249,20 +210,20 @@ func (s *Service) UpdateDynamicGroup(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// createRequestParamCheck 更新动态分组接口请求参数检查
-func (s *Service) updateRequestParamCheck(kit *rest.Kit, bizID int64, params, updates map[string]interface{}) error {
+// updateGroupParamCheck 更新动态分组接口请求参数检查
+func (s *Service) updateGroupParamCheck(kit *rest.Kit, bizID int64, params, updates map[string]interface{}) error {
 
 	if info, isExist := params["info"]; isExist {
 		// update dynamic group info.
 		row, err := json.Marshal(info)
 		if err != nil {
-			blog.Errorf("update dynamic group failed, invalid info, err: %+v, info: %+v, rid: %s", err, info, kit.Rid)
+			blog.Errorf("update dynamic group failed, invalid info, err: %v, info: %+v, rid: %s", err, info, kit.Rid)
 			return err
 		}
 
 		dynamicGroupInfo := &meta.DynamicGroupInfo{}
 		if err = json.Unmarshal(row, dynamicGroupInfo); err != nil {
-			blog.Errorf("update dynamic group failed, invalid info, err: %+v, row: %+v, rid: %s", err, row, kit.Rid)
+			blog.Errorf("update dynamic group failed, invalid info, err: %v, row: %+v, rid: %s", err, row, kit.Rid)
 			return err
 		}
 
@@ -285,18 +246,8 @@ func (s *Service) updateRequestParamCheck(kit *rest.Kit, bizID int64, params, up
 				SearchObjectAttributes(kit, bizID, objectID)
 		}
 		if err := dynamicGroupInfo.Validate(objectID, validatefunc); err != nil {
-			blog.Errorf("update dynamic group failed, err: %+v, rid: %s", err, kit.Rid)
+			blog.Errorf("update dynamic group failed, err: %v, rid: %s", err, kit.Rid)
 			return err
-		}
-
-		for _, cond := range dynamicGroupInfo.Condition {
-			for _, item := range cond.Condition {
-				if err := s.verifyRegexValidity(kit, item, bizID); err != nil {
-					blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %d, rid: %s",
-						err, dynamicGroupInfo, bizID, kit.Rid)
-					return err
-				}
-			}
 		}
 
 		updates[common.BKObjIDField] = objectID
@@ -305,15 +256,15 @@ func (s *Service) updateRequestParamCheck(kit *rest.Kit, bizID int64, params, up
 	} else {
 		_, isExist := params[common.BKObjIDField]
 		if isExist {
-			blog.Errorf("update dynamic group failed, err: info.condition is required in update bk_obj_id action,"+
-				" input: %+v, rid: %s", params, kit.Rid)
+			blog.Errorf("update dynamic group failed, err: info.condition is required in update bk_obj_id action, "+
+				"input: %+v, rid: %s", params, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid)
 		}
 
 		_, isExist = params[common.BKFieldName]
 		if !isExist {
-			blog.Errorf("update dynamic group failed, err: empty update content, bk_biz_id/info/name, "+
-				"input: %+v, rid: %s", params, kit.Rid)
+			blog.Errorf("update dynamic group failed, err: empty update content, bk_biz_id/info/name, input: %+v, "+
+				"rid: %s", params, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid)
 		}
 	}
@@ -337,7 +288,7 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 	// pre-query target dynamic group object.
 	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("delete dynamic group failed, err: %+v, biz: %s, rid: %s", err, bizID, ctx.Kit.Rid)
+		blog.Errorf("delete dynamic group failed, err: %v, biz: %s, rid: %s", err, bizID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -353,7 +304,7 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 	autoRunTxnFunc := func() error {
 		result, err := s.CoreAPI.CoreService().Host().DeleteDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header)
 		if err != nil {
-			blog.Errorf("delete dynamic group failed, err: %+v, biz: %s, rid: %s", err, bizID, ctx.Kit.Rid)
+			blog.Errorf("delete dynamic group failed, err: %v, biz: %s, rid: %s", err, bizID, ctx.Kit.Rid)
 			return ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !result.Result {
@@ -367,13 +318,13 @@ func (s *Service) DeleteDynamicGroup(ctx *rest.Contexts) {
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, meta.AuditDelete)
 		auditLogs, err := audit.GenerateAuditLog(auditParam, &dynamicGroup)
 		if err != nil {
-			blog.Errorf("generate audit log failed after delete dynamic group[%s], err: %+v, rid: %s",
-				targetID, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed after delete dynamic group[%s], err: %v, rid: %s", targetID, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed after delete dynamic group[%s], err: %+v, rid: %s",
-				targetID, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed after delete dynamic group[%s], err: %v, rid: %s", targetID, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -400,7 +351,7 @@ func (s *Service) GetDynamicGroup(ctx *rest.Contexts) {
 	// do query action now.
 	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(ctx.Kit.Ctx, bizID, targetID, ctx.Kit.Header)
 	if err != nil {
-		blog.Errorf("get dynamic group failed, err: %+v, biz: %s, ID: %s, rid: %s",
+		blog.Errorf("get dynamic group failed, err: %v, biz: %s, ID: %s, rid: %s",
 			err, bizID, targetID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
@@ -432,7 +383,7 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 
 	input := new(meta.QueryCondition)
 	if err := ctx.DecodeInto(input); err != nil {
-		blog.Errorf("search dynamic groups failed, decode request body err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
@@ -470,8 +421,8 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 	// do search action now.
 	result, err := s.CoreAPI.CoreService().Host().SearchDynamicGroup(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
-		blog.Errorf("search dynamic groups failed, err: %+v, biz: %s, input: %+v, rid: %s",
-			err, bizID, input, ctx.Kit.Rid)
+		blog.Errorf("search dynamic groups failed, err: %v, biz: %s, input: %+v, rid: %s", err, bizID, input,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -496,23 +447,23 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	bizID := req.PathParameter("bk_biz_id")
 	bizIDInt64, err := strconv.ParseInt(bizID, 10, 64)
 	if err != nil {
-		blog.Errorf("execute dynamic group failed, invalid bizID from path, err: %+v, bizID: %s, rid: %s",
+		blog.Errorf("execute dynamic group failed, invalid bizID from path, err: %v, bizID: %s, rid: %s",
 			err, bizID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
 
-	input := meta.QueryCondition{}
-	if err := ctx.DecodeInto(&input); err != nil {
-		blog.Errorf("execute dynamic group failed, decode request body err: %+v, rid: %s", err, ctx.Kit.Rid)
+	input := new(meta.QueryCondition)
+	if err := ctx.DecodeInto(input); err != nil {
+		blog.Errorf("execute dynamic group failed, decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	searchPage := input.Page
 
-	result, searchConditions, err := s.executesRequestParamCheck(ctx.Kit, &input, bizIDInt64, targetID)
+	result, searchConditions, err := s.executesGroupParamCheck(ctx.Kit, input, bizIDInt64, targetID)
 	if err != nil {
-		blog.Errorf("update request param check failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("update request param check failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -528,7 +479,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		data, err := logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
 			ExecuteHostDynamicGroup(ctx.Kit, &searchHostCondition, input.Fields, input.DisableCounter)
 		if err != nil {
-			blog.Errorf("execute dynamic group failed, search hosts, err: %+v, bizID: %s, ID: %s, rid: %s",
+			blog.Errorf("execute dynamic group failed, search hosts, err: %v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error()))
 			return
@@ -547,7 +498,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 		data, err := logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).
 			ExecuteSetDynamicGroup(ctx.Kit, &searchSetCondition, input.Fields, input.DisableCounter)
 		if err != nil {
-			blog.Errorf("execute dynamic group failed, search sets, err: %+v, bizID: %s, ID: %s, rid: %s",
+			blog.Errorf("execute dynamic group failed, search sets, err: %v, bizID: %s, ID: %s, rid: %s",
 				err, bizID, targetID, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrGetUserCustomQueryDetailFailed, err.Error()))
 			return
@@ -567,8 +518,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	}
 }
 
-// createRequestParamCheck 执行动态分组接口请求参数检查
-func (s *Service) executesRequestParamCheck(kit *rest.Kit, input *meta.QueryCondition, bizID int64, targetID string) (
+// executesGroupParamCheck 执行动态分组接口请求参数检查
+func (s *Service) executesGroupParamCheck(kit *rest.Kit, input *meta.QueryCondition, bizID int64, targetID string) (
 	*meta.GetDynamicGroupResult, []meta.SearchCondition, error) {
 
 	if len(input.Fields) == 0 {
@@ -591,7 +542,7 @@ func (s *Service) executesRequestParamCheck(kit *rest.Kit, input *meta.QueryCond
 	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(kit.Ctx, strconv.FormatInt(bizID, 10),
 		targetID, kit.Header)
 	if err != nil {
-		blog.Errorf("execute dynamic group failed, err: %+v, bizID: %d, ID: %s, rid: %s",
+		blog.Errorf("execute dynamic group failed, err: %v, bizID: %d, ID: %s, rid: %s",
 			err, bizID, targetID, kit.Rid)
 		return &meta.GetDynamicGroupResult{}, nil, err
 	}
@@ -617,9 +568,9 @@ func (s *Service) executesRequestParamCheck(kit *rest.Kit, input *meta.QueryCond
 		// build condition items.
 		for _, item := range cond.Condition {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
-			if err := s.verifyRegexValidity(kit, item, bizID); err != nil {
-				blog.Errorf("verify regex validity failed, err: %+v, input: %+v, bizID: %d, rid: %s",
-					err, targetDynamicGroup, bizID, kit.Rid)
+			if err := item.VerifyRegexValidity(); err != nil {
+				blog.Errorf("verify regex validity failed, err: %v, input: %+v, bizID: %d, rid: %s", err,
+					targetDynamicGroup, bizID, kit.Rid)
 				return &meta.GetDynamicGroupResult{}, nil, err
 			}
 			searchCondition.Condition = append(searchCondition.Condition, condItem)
