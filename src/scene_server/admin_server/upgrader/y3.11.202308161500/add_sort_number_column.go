@@ -36,7 +36,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 	err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).Fields(common.ObjSortNumberField).
 		All(ctx, &objSortNumberList)
 	if err != nil {
-		blog.Errorf("list object sort number failed, db find failed, err: %s", err.Error())
+		blog.Errorf("list object sort number failed, db find failed, err: %v", err)
 		return err
 	}
 	if len(objSortNumberList) > 0 {
@@ -56,7 +56,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 	err = db.Table(common.BKTableNameObjClassification).Find(nil).
 		Fields(common.BKClassificationIDField).All(ctx, &classificationIds)
 	if err != nil {
-		blog.Errorf("list classification ids failed, db find failed, err: %s", err.Error())
+		blog.Errorf("list classification ids failed, db find failed, err: %v", err)
 		return err
 	}
 
@@ -71,7 +71,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 		err := db.Table(common.BKTableNameObjDes).Find(objectFilter).
 			Fields(common.BKFieldID).All(ctx, &objectList)
 		if err != nil {
-			blog.Errorf("list object ids failed, db find failed, err: %s", err.Error())
+			blog.Errorf("list object ids failed, db find failed, err: %v", err)
 			return err
 		}
 		if len(objectList) == 0 {
@@ -89,8 +89,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 
 			err := db.Table(common.BKTableNameObjDes).Update(ctx, updateField, data)
 			if err != nil {
-				blog.Errorf("update sort number failed, , err: %s, objectId: d%",
-					err.Error(), objectId[common.BKFieldID])
+				blog.Errorf("update sort number failed, err: %v, objectId: d%", err, objectId[common.BKFieldID])
 				return err
 			}
 		}

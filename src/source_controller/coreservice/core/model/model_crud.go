@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -49,6 +50,14 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		blog.Errorf("request(%s): it is failed to make sequence id on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
+
+	sortNum, err := m.GetModelLastNum(kit, *model)
+	if err != nil {
+		blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
+		return id, err
+	}
+
+	model.ObjSortNumber = sortNum
 	model.ID = int64(id)
 	model.OwnerID = kit.SupplierAccount
 
@@ -65,15 +74,77 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 	return id, err
 }
 
+// GetModelLastNum 获取模型排序字段
+func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (int64, error) {
+	//查询当前分组下的模型信息
+	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: model.ObjCls}
+	modelResult := make([]metadata.Object, 10)
+	sortCond := "-obj_sort_number"
+	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).
+		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); findErr != nil {
+		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", findErr, kit.Rid)
+		return 0, findErr
+	}
+
+	switch {
+	case model.ObjSortNumber == 0 && len(modelResult) <= 0:
+		return 0, nil
+
+	case model.ObjSortNumber == 0 && len(modelResult) > 0:
+		return modelResult[0].ObjSortNumber + 1, nil
+
+	case model.ObjSortNumber > 0 && len(modelResult) <= 0:
+		return model.ObjSortNumber, nil
+
+	case model.ObjSortNumber > 0 && len(modelResult) > 0:
+		if updateErr := m.valueAdd(kit, model, modelResult); updateErr != nil {
+			blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
+			return 0, updateErr
+		}
+		return model.ObjSortNumber, nil
+
+	default:
+		// 按逻辑不应触达此处
+		return 0, kit.CCError.Error(common.CCErrCommParamsIsInvalid)
+	}
+}
+
+// valueAdd 大于等于model值的obj_sort_number字段值加一
+func (m *modelManager) valueAdd(kit *rest.Kit, model metadata.Object, modelArr []metadata.Object) error {
+	for _, mod := range modelArr {
+		if mod.ObjSortNumber < model.ObjSortNumber {
+			continue
+		}
+		updateFilter := map[string]interface{}{metadata.ModelFieldID: mod.ID}
+		updateData := map[string]interface{}{metadata.ModelFieldObjSortNumber: mod.ObjSortNumber + 1}
+		updateErr := mongodb.Client().Table(common.BKTableNameObjDes).Update(kit.Ctx, updateFilter, updateData)
+		if updateErr != nil {
+			blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s",
+				updateErr, updateFilter, kit.Rid)
+			return updateErr
+		}
+	}
+	return nil
+}
+
 func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
 	data.Set(metadata.ModelFieldLastTime, time.Now())
 	models := make([]metadata.Object, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
-	if nil != err {
-		blog.Errorf("find models failed, filter: %+v, err: %s, rid: %s", cond.ToMapStr(), err.Error(), kit.Rid)
+	if err != nil {
+		blog.Errorf("find models failed, err: %s, filter: %+v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
+
+	if err := m.setUpdateObjectSortNumber(kit, &data); err != nil {
+		blog.Errorf("set object sort number failed, err: %v, data: %s, rid: %s", err, data, kit.Rid)
+		return 0, err
+	}
+
+	// remove unchangeable fields.
+	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
 
 	// 停用模型 pausedFlag 为 true
 	pausedFlag := false
@@ -134,6 +205,64 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 	}
 
 	return cnt, err
+}
+
+// setUpdateObjectSortNumber 根据更新条件设置 obj_sort_number 值
+func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.MapStr) error {
+	if !data.Exists(metadata.ModelFieldObjSortNumber) && !data.Exists(metadata.ModelFieldObjCls) {
+		return nil
+	}
+
+	object := metadata.Object{}
+	if err := data.ToStructByTag(&object, "field"); err != nil {
+		blog.Errorf("parsing data failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
+		return err
+	}
+	//如果传递了 bk_classification_id 字段,按照更新模型所属分组处理
+	if data.Exists(metadata.ModelFieldObjCls) {
+		sortNum, err := m.GetModelLastNum(kit, object)
+		if err != nil {
+			blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
+			return err
+		}
+		data.Set(metadata.ModelFieldObjSortNumber, sortNum)
+		return nil
+	}
+
+	//如果未传递了 bk_classification_id 字段，传递了 obj_sort_number 字段,则表示在当前分组下更新模型顺序
+	//更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
+	if object.ObjSortNumber < 0 {
+		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
+
+	//查询当前模型的分组信息
+	clsInput := map[string]interface{}{metadata.ModelFieldID: object.ID}
+	clsResult := make([]metadata.Object, 0)
+	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(clsInput).Fields(metadata.ModelFieldObjCls).
+		All(kit.Ctx, &clsResult); findErr != nil {
+		blog.Error("get object classification failed, err: %v, objID: %d, rid: %s", findErr, object.ID, kit.Rid)
+		return findErr
+	}
+	if len(clsResult) <= 0 {
+		blog.Errorf("no model classification id founded, err: model classification no founded, objID: %d, rid: %s",
+			object.ID, kit.Rid)
+		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
+	}
+
+	//查询当前分组下的所有模型信息
+	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: clsResult[0].ObjCls}
+	modelResult := make([]metadata.Object, 10)
+	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).
+		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); findErr != nil {
+		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", findErr, kit.Rid)
+		return findErr
+	}
+
+	if updateErr := m.valueAdd(kit, object, modelResult); updateErr != nil {
+		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
+		return updateErr
+	}
+	return nil
 }
 
 func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Object, error) {
