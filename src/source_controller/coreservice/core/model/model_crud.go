@@ -36,7 +36,8 @@ func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+		blog.Errorf("it is failed to execute database count operation by the condition, err: %v, cond: %v, rid: %s",
+			err, cond.ToMapStr(), kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -47,7 +48,8 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 
 	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjDes)
 	if err != nil {
-		blog.Errorf("request(%s): it is failed to make sequence id on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+		blog.Errorf("it is failed to make sequence id on the table, err: %v, table: %s, rid: %s",
+			err, common.BKTableNameObjDes, kit.Rid)
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -268,8 +270,10 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Object, error) {
 
 	dataResult := make([]metadata.Object, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
+		All(kit.Ctx, &dataResult); nil != err {
+		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
+			err, cond.ToMapStr(), kit.Rid)
 		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -279,8 +283,10 @@ func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]met
 func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	dataResult := make([]mapstr.MapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult); nil != err {
-		blog.Errorf("request(%s): it is failed to find all models by the condition (%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
+		All(kit.Ctx, &dataResult); nil != err {
+		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
+			err, cond.ToMapStr(), kit.Rid)
 		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -291,7 +297,8 @@ func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint6
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a deletion operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+		blog.Errorf("it is failed to execute a deletion operation on the table, err: %v, table: %s, rid: %s",
+			err, common.BKTableNameObjDes, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -306,7 +313,8 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 
 	// delete model property group
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s",
+			err.Error(), delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
