@@ -1,3 +1,7 @@
+## [Version: v3.10.26-feature-auth-alpha5] - 2023-08-31
+**缺陷修复**
+- 修复服务模板IP选项不可以置空的问题
+
 ## [Version: v3.10.26-feature-auth-alpha4] - 2023-08-22
 **缺陷修复**
 - 主机模糊搜索ip有误
