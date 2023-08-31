@@ -573,7 +573,7 @@ func (f *CommonCountFilter) GetConditions() (map[string]interface{}, error) {
 // ImportInstRes batch create instance by excel result
 type ImportInstRes struct {
 	Errors  []string `json:"error"`
-	Success []string `json:"success"`
+	Success []int64  `json:"success"`
 }
 
 // ImportInstResp batch create instance by excel result response

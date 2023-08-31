@@ -45,11 +45,16 @@ type ValidationParam struct {
 }
 
 const (
-	fieldTypeBoolTrue  = "true"
+	// fieldTypeBoolTrue bool类型为true的值
+	fieldTypeBoolTrue = "true"
+	// fieldTypeBoolFalse bool类型为false的值
 	fieldTypeBoolFalse = "false"
-	enumRefSuffix      = "!$A:$A"
-	errTitle           = "警告"
-	errMessage         = "此值与此单元格定义的数据验证限制不匹配。"
+	// enumRefSuffix 引用某一个sheet的第一列前缀
+	enumRefSuffix = "!$A:$A"
+	// errTitle 当填入excel数据不满足校验时，弹出的错误框标题
+	errTitle = "警告"
+	// errMessage 当填入excel数据不满足校验时，弹出的错误框内容
+	errMessage = "此值与此单元格定义的数据验证限制不匹配。"
 )
 
 func newValidation(param *ValidationParam) (*excelize.DataValidation, error) {

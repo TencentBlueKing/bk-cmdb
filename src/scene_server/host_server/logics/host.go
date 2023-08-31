@@ -54,11 +54,11 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
-		blog.Errorf("GetHostInstanceDetails http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, kit.Rid)
+		blog.Errorf("get host instance details failed, err: %v, input:%+v, rid:%s", err, hostID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("get host instance details failed, err code: %d, err msg: %s, input: %+v, rid: %s", result.Code,
+		blog.Errorf("get host instance details failed, code: %d, msg: %s, input: %+v, rid: %s", result.Code,
 			result.ErrMsg, hostID, kit.Rid)
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}

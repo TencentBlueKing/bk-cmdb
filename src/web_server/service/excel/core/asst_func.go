@@ -44,7 +44,7 @@ func (d *Client) GetObjAssociation(kit *rest.Kit, objID string) ([]*metadata.Ass
 	}
 
 	// 确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
-	resp, err := d.Engine.CoreAPI.ApiServer().SearchObjectAssociation(kit.Ctx, kit.Header, cond)
+	resp, err := d.ApiClient.SearchObjectAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -76,7 +76,7 @@ func (d *Client) FindAsstByAsstID(kit *rest.Kit, objID string, asstIDs []string)
 	input := metadata.FindAssociationByObjectAssociationIDRequest{
 		ObjAsstIDArr: asstIDs,
 	}
-	resp, err := d.Engine.CoreAPI.ApiServer().FindAssociationByObjectAssociationID(kit.Ctx, kit.Header, objID, input)
+	resp, err := d.ApiClient.FindAssociationByObjectAssociationID(kit.Ctx, kit.Header, objID, input)
 	if err != nil {
 		blog.ErrorJSON("find model association by bk_obj_asst_id failed, err: %s, objID: %s, input: %s, rid: %s",
 			err.Error(), objID, input, kit.Rid)
@@ -96,7 +96,7 @@ func (d *Client) FindAsstByAsstID(kit *rest.Kit, objID string, asstIDs []string)
 func (d *Client) ImportAssociation(kit *rest.Kit, objID string, input *metadata.RequestImportAssociation) (
 	*metadata.ResponeImportAssociationData, error) {
 
-	resp, err := d.Engine.CoreAPI.ApiServer().ImportAssociation(kit.Ctx, kit.Header, objID, input)
+	resp, err := d.ApiClient.ImportAssociation(kit.Ctx, kit.Header, objID, input)
 	if err != nil {
 		blog.Errorf("import association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -129,7 +129,7 @@ func (d *Client) GetInstAsst(kit *rest.Kit, objID string, instIDs []int64, asstI
 	}
 	input := &metadata.SearchAssociationInstRequest{ObjID: objID, Condition: cond}
 
-	objRes, err := d.Engine.CoreAPI.ApiServer().SearchAssociationInst(kit.Ctx, kit.Header, input)
+	objRes, err := d.ApiClient.SearchAssociationInst(kit.Ctx, kit.Header, input)
 	if err != nil {
 		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -149,7 +149,7 @@ func (d *Client) GetInstAsst(kit *rest.Kit, objID string, instIDs []int64, asstI
 	}
 	input.Condition = cond
 
-	asstObjRes, err := d.Engine.CoreAPI.ApiServer().SearchAssociationInst(kit.Ctx, kit.Header, input)
+	asstObjRes, err := d.ApiClient.SearchAssociationInst(kit.Ctx, kit.Header, input)
 	if err != nil {
 		blog.Errorf("fetch %s association data failed, input: %+v, err: %v, rid: %s", objID, input, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -171,7 +171,7 @@ func (d *Client) GetInstUniqueKeys(kit *rest.Kit, objID string, instIDs []int64,
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
 	option := mapstr.MapStr{"condition": mapstr.MapStr{instIDKey: mapstr.MapStr{common.BKDBIN: instIDs}}}
 
-	resp, err := d.Engine.CoreAPI.ApiServer().GetInstUniqueFields(kit.Ctx, kit.Header, objID, uniqueID, option)
+	resp, err := d.ApiClient.GetInstUniqueFields(kit.Ctx, kit.Header, objID, uniqueID, option)
 	if err != nil {
 		blog.Errorf("get instance unique fields failed, err: %v, option: %v, rid: %s", err, option, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)

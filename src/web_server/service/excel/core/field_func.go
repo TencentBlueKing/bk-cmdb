@@ -36,6 +36,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/util"
+	"configcenter/src/web_server/middleware/user/plugins"
 )
 
 // TransEnumQuoteIDToName transfer enum quote field id to name
@@ -71,24 +72,14 @@ func (d *Client) getEnumQuoteInstNames(kit *rest.Kit, colProps []ColProp, rowMap
 			return fmt.Errorf("convert variable rowMap[%v] type to int array failed", property)
 		}
 
-		enumQuoteIDMap := make(map[int64]interface{}, 0)
-		for _, enumQuoteID := range enumQuoteIDList {
-			id, err := util.GetInt64ByInterface(enumQuoteID)
-			if err != nil {
-				blog.Errorf("convert enumQuoteID[%d] to int64 failed, type: %T, err: %v, rid: %s", enumQuoteID,
-					enumQuoteID, kit.Rid)
-				return err
-			}
-
-			if id == 0 {
-				return fmt.Errorf("enum quote instID is %d, it is illegal", id)
-			}
-
-			enumQuoteIDMap[id] = struct{}{}
+		if len(enumQuoteIDList) == 0 {
+			continue
 		}
 
-		if len(enumQuoteIDMap) == 0 {
-			continue
+		enumQuoteIDs, err := util.SliceInterfaceToInt64(enumQuoteIDList)
+		if err != nil {
+			blog.Errorf("slice interface to int64 failed, data: %v, err: %v, rid: %s", enumQuoteIDList, err, kit.Rid)
+			return err
 		}
 
 		quoteObjID, err := getEnumQuoteObjID(kit, property.Option)
@@ -97,16 +88,12 @@ func (d *Client) getEnumQuoteInstNames(kit *rest.Kit, colProps []ColProp, rowMap
 			return err
 		}
 
-		enumQuoteIDs := make([]int64, 0)
-		for enumQuoteID := range enumQuoteIDMap {
-			enumQuoteIDs = append(enumQuoteIDs, enumQuoteID)
-		}
 		input := &metadata.QueryCondition{
 			Fields:         []string{common.GetInstNameField(quoteObjID)},
 			Condition:      mapstr.MapStr{common.GetInstIDField(quoteObjID): mapstr.MapStr{common.BKDBIN: enumQuoteIDs}},
 			DisableCounter: true,
 		}
-		resp, err := d.Engine.CoreAPI.ApiServer().ReadInstance(kit.Ctx, kit.Header, quoteObjID, input)
+		resp, err := d.ApiClient.ReadInstance(kit.Ctx, kit.Header, quoteObjID, input)
 		if err != nil {
 			blog.Errorf("get quote inst name list failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 			return err
@@ -116,11 +103,15 @@ func (d *Client) getEnumQuoteInstNames(kit *rest.Kit, colProps []ColProp, rowMap
 		for _, info := range resp.Data.Info {
 			var ok bool
 			var enumQuoteName string
-			if name, exist := info.Get(common.GetInstNameField(quoteObjID)); exist {
-				enumQuoteName, ok = name.(string)
-				if !ok {
-					enumQuoteName = ""
-				}
+			name, exist := info.Get(common.GetInstNameField(quoteObjID))
+			if !exist {
+				enumQuoteNames = append(enumQuoteNames, enumQuoteName)
+				continue
+			}
+
+			enumQuoteName, ok = name.(string)
+			if !ok {
+				enumQuoteName = ""
 			}
 			enumQuoteNames = append(enumQuoteNames, enumQuoteName)
 		}
@@ -138,7 +129,7 @@ func (d *Client) TransEnumQuoteNameToID(kit *rest.Kit, names []string, prop *Col
 		return nil, fmt.Errorf("property is nil")
 	}
 
-	if names == nil || len(names) == 0 {
+	if len(names) == 0 {
 		return nil, nil
 	}
 
@@ -153,7 +144,7 @@ func (d *Client) TransEnumQuoteNameToID(kit *rest.Kit, names []string, prop *Col
 		Condition:      mapstr.MapStr{common.GetInstNameField(objID): mapstr.MapStr{common.BKDBIN: names}},
 		DisableCounter: true,
 	}
-	resp, err := d.Engine.CoreAPI.ApiServer().ReadInstance(kit.Ctx, kit.Header, objID, input)
+	resp, err := d.ApiClient.ReadInstance(kit.Ctx, kit.Header, objID, input)
 	if err != nil {
 		blog.Errorf("get instance id list failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -178,69 +169,60 @@ func getEnumQuoteObjID(kit *rest.Kit, option interface{}) (string, error) {
 		return "", fmt.Errorf("enum quote option is nil")
 	}
 
-	arrOption, ok := option.([]interface{})
-	if !ok {
-		blog.Errorf("option %v not enum quote option, rid: %s", option, kit.Rid)
-		return "", fmt.Errorf("enum quote option is unvalid")
+	quoteOption, err := metadata.ParseEnumQuoteOption(kit.Ctx, option)
+	if err != nil {
+		blog.Errorf("parse enum quote failed, data: %v, err: %v, rid: %s", option, err, kit.Rid)
+		return "", err
 	}
 
-	for _, o := range arrOption {
-		mapOption, ok := o.(map[string]interface{})
-		if !ok || mapOption == nil {
-			blog.Errorf("option %v not enum quote option, enum quote option item must bk_obj_id, rid: %s", option,
-				kit.Rid)
-			return "", fmt.Errorf("convert option map[string]interface{} failed")
-		}
-
-		objIDVal, objIDOk := mapOption[common.BKObjIDField]
-		if !objIDOk || objIDVal == "" {
-			blog.Errorf("enum quote option bk_obj_id can't be empty, rid: %s", option, kit.Rid)
-			return "", fmt.Errorf("enum quote option bk_obj_id can't be empty")
-		}
-
-		objID, ok := objIDVal.(string)
-		if !ok {
-			blog.Errorf("objIDVal %v not string, rid: %s", objIDVal, kit.Rid)
-			return "", fmt.Errorf("enum quote option bk_obj_id is not string")
-		}
-
-		return objID, nil
+	if len(quoteOption) == 0 {
+		return "", nil
 	}
 
-	return "", nil
+	return quoteOption[0].ObjID, nil
 }
 
 // GetInstWithOrgName get instance with organization name
 func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLanguageIf, insts []mapstr.MapStr,
 	colProps []ColProp) ([]mapstr.MapStr, error) {
 
+	orgPropIDs := make([]string, 0)
+	for _, property := range colProps {
+		if property.PropertyType == common.FieldTypeOrganization {
+			orgPropIDs = append(orgPropIDs, property.ID)
+		}
+	}
+
 	orgIDList := make([]int64, 0)
 	for _, inst := range insts {
-		for _, property := range colProps {
-			if property.PropertyType != common.FieldTypeOrganization || inst[property.ID] == nil {
+		for _, propertyID := range orgPropIDs {
+			if inst[propertyID] == nil {
 				continue
 			}
 
-			orgIDs, ok := inst[property.ID].([]interface{})
+			orgIDs, ok := inst[propertyID].([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("org id list type not []interface{}, real type is %T", inst[property.ID])
+				return nil, fmt.Errorf("org id list type not []interface{}, real type is %T", inst[propertyID])
 			}
 
 			if len(orgIDs) == 0 {
 				continue
 			}
 
-			for _, orgID := range orgIDs {
-				id, err := util.GetInt64ByInterface(orgID)
-				if err != nil {
-					return nil, err
-				}
-				orgIDList = append(orgIDList, id)
+			ids, err := util.SliceInterfaceToInt64(orgIDs)
+			if err != nil {
+				blog.Errorf("slice interface to int64 failed, val: %v, err: %v, rid: %s", orgIDs, err, kit.Rid)
+				return nil, err
 			}
+			orgIDList = append(orgIDList, ids...)
 		}
 	}
 
 	orgIDs := util.IntArrayUnique(orgIDList)
+	if len(orgIDs) == 0 {
+		return insts, nil
+	}
+
 	organizations, err := getAllOrganization(kit, orgIDs)
 	if err != nil {
 		blog.Errorf("get department failed, err: %v, rid: %s", err, kit.Rid)
@@ -252,14 +234,14 @@ func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLang
 	}
 
 	for idx, inst := range insts {
-		for _, property := range colProps {
-			if property.PropertyType != common.FieldTypeOrganization || inst[property.ID] == nil {
+		for _, propertyID := range orgPropIDs {
+			if inst[propertyID] == nil {
 				continue
 			}
 
-			orgIDs, ok := inst[property.ID].([]interface{})
+			orgIDs, ok := inst[propertyID].([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("org id list type not []interface{}, real type is %T", inst[property.ID])
+				return nil, fmt.Errorf("org id list type not []interface{}, real type is %T", inst[propertyID])
 			}
 
 			if len(orgIDs) == 0 {
@@ -282,7 +264,7 @@ func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLang
 				orgName = append(orgName, fmt.Sprintf("[%d]%s", id, name))
 			}
 
-			insts[idx][property.ID] = strings.Join(orgName, ",")
+			insts[idx][propertyID] = strings.Join(orgName, ",")
 		}
 	}
 
@@ -412,7 +394,7 @@ func (d *Client) GetInstWithTable(kit *rest.Kit, objID string, insts []mapstr.Ma
 	}
 	for _, property := range tableProperty {
 		opt := &metadata.ListQuotedInstOption{ObjID: objID, PropertyID: property.ID, CommonQueryOption: queryOpt}
-		instances, err := d.Engine.CoreAPI.ApiServer().ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, opt)
+		instances, err := d.ApiClient.ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, opt)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -442,4 +424,167 @@ func (d *Client) GetInstWithTable(kit *rest.Kit, objID string, insts []mapstr.Ma
 	}
 
 	return insts, instHeights, nil
+}
+
+// GetInstWithUserFullName 将导出的实例的用户名转化为完整的用户名
+func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCLanguageIf, objID string,
+	insts []mapstr.MapStr) ([]mapstr.MapStr, error) {
+
+	cond := mapstr.MapStr{
+		common.BKObjIDField:                 objID,
+		metadata.AttributeFieldPropertyType: common.FieldTypeUser,
+	}
+	attrs, err := d.ApiClient.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get attributes failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	propertyIDs := make([]string, 0)
+	for _, attr := range attrs {
+		propertyIDs = append(propertyIDs, attr.PropertyID)
+	}
+
+	names := make([]string, 0)
+	for _, inst := range insts {
+		for _, propertyID := range propertyIDs {
+			if inst[propertyID] == nil {
+				continue
+			}
+
+			username, ok := inst[propertyID].(string)
+			if !ok {
+				blog.Errorf("failed to cast %s instance from interface{} to string", objID, kit.Rid)
+				return nil, fmt.Errorf("failed to cast %s instance from interface{} to string", objID)
+			}
+
+			names = append(names, strings.Split(username, ",")...)
+		}
+	}
+
+	userList := util.RemoveDuplicatesAndEmpty(names)
+	// get username from esb
+	fullNameMap, err := d.getUsernameFromEsb(kit, userList)
+	if err != nil {
+		blog.Errorf("get username map from ESB failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	for idx, inst := range insts {
+		for _, propertyID := range propertyIDs {
+			if inst[propertyID] == nil {
+				continue
+			}
+
+			nameStr, ok := inst[propertyID].(string)
+			if !ok {
+				blog.Errorf("failed to cast %s instance from interface{} to string", objID, kit.Rid)
+				return nil, fmt.Errorf("failed to cast %s instance from interface{} to string", objID)
+			}
+
+			oldNames := strings.Split(nameStr, ",")
+			newNames := make([]string, 0)
+
+			for _, name := range oldNames {
+				fullName := fullNameMap[name]
+				if fullName == "" {
+					// return the original name and remind that the user is nonexistent in '()'
+					fullName = fmt.Sprintf("%s(%s)", name, lang.Language("nonexistent_user"))
+				}
+				newNames = append(newNames, fullName)
+			}
+			insts[idx][propertyID] = strings.Join(newNames, ",")
+		}
+	}
+
+	return insts, nil
+}
+
+func (d *Client) getUsernameFromEsb(kit *rest.Kit, userList []string) (map[string]string, error) {
+	usernameMap := map[string]string{}
+
+	if len(userList) == 0 {
+		return usernameMap, nil
+	}
+
+	loginVersion, _ := cc.String("webServer.login.version")
+	user := plugins.CurrentPlugin(loginVersion)
+
+	// 处理请求的用户数据，将用户拼接成不超过500字节的字符串进行用户数据的获取
+	userListStr := getUserListStr(userList)
+
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr errors.CCErrorCoder
+	pipeline := make(chan bool, 10)
+	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
+
+	for _, subStr := range userListStr {
+		pipeline <- true
+		wg.Add(1)
+		go func(subStr string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			lock.Lock()
+			params := make(map[string]string)
+			params["fields"] = "username,display_name"
+			params["exact_lookups"] = subStr
+			lock.Unlock()
+
+			userListEsbSub, errNew := user.GetUserList(d.GinCtx, params)
+			if errNew != nil {
+				firstErr = errNew.ToCCError(kit.CCError)
+				blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, firstErr, kit.Rid)
+				return
+			}
+
+			lock.Lock()
+			userListEsb = append(userListEsb, userListEsbSub...)
+			lock.Unlock()
+		}(subStr)
+	}
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	for _, userInfo := range userListEsb {
+		username := fmt.Sprintf("%s(%s)", userInfo.EnName, userInfo.CnName)
+		usernameMap[userInfo.EnName] = username
+	}
+	return usernameMap, nil
+}
+
+const getUserMaxLength = 500
+
+// getUserListStr get user list str
+func getUserListStr(userList []string) []string {
+	userListStr := make([]string, 0)
+
+	userBuffer := bytes.Buffer{}
+	for _, user := range userList {
+		if userBuffer.Len()+len(user) > getUserMaxLength {
+			userBuffer.WriteString(user)
+			userStr := userBuffer.String()
+			userListStr = append(userListStr, userStr)
+			userBuffer.Reset()
+			continue
+		}
+
+		userBuffer.WriteString(user)
+		userBuffer.WriteByte(',')
+	}
+
+	if userBuffer.Len() == 0 {
+		return userList
+	}
+
+	userStr := userBuffer.String()
+	userListStr = append(userListStr, userStr[:len(userStr)-1])
+
+	return userListStr
 }

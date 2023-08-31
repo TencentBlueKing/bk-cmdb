@@ -212,7 +212,7 @@ func (excel *Excel) StreamingWrite(sheet string, startIdx int, data [][]Cell) er
 }
 
 // StreamingRead streaming read from file
-func (excel *Excel) StreamingRead(sheet string) ([][]interface{}, error) {
+func (excel *Excel) StreamingRead(sheet string) (result [][]string, err error) {
 	excel.RLock()
 	defer excel.RUnlock()
 	if excel.file == nil {
@@ -224,9 +224,14 @@ func (excel *Excel) StreamingRead(sheet string) ([][]interface{}, error) {
 		return nil, err
 	}
 
-	var result [][]interface{}
+	defer func() {
+		if err = rows.Close(); err != nil {
+			return
+		}
+	}()
+
 	for rows.Next() {
-		var rowData []interface{}
+		var rowData []string
 		cols, err := rows.Columns()
 		if err != nil {
 			return nil, err
@@ -239,13 +244,10 @@ func (excel *Excel) StreamingRead(sheet string) ([][]interface{}, error) {
 		result = append(result, rowData)
 	}
 
-	// close the stream
-	if err = rows.Close(); err != nil {
-		return nil, err
-	}
-
 	return result, nil
 }
+
+const initIdx = -1
 
 // NewReader create io stream reader
 func (excel *Excel) NewReader(sheet string) (*Reader, error) {
@@ -260,7 +262,7 @@ func (excel *Excel) NewReader(sheet string) (*Reader, error) {
 		return nil, err
 	}
 
-	return &Reader{rows: rows, curIdx: -1}, nil
+	return &Reader{rows: rows, curIdx: initIdx}, nil
 }
 
 // MergeCell provides a function to merge cells by a given range reference for the StreamWriter
@@ -303,6 +305,7 @@ func (excel *Excel) Flush(sheets []string) error {
 		if err := excel.writers[sheet].Flush(); err != nil {
 			return err
 		}
+
 		delete(excel.writers, sheet)
 	}
 
@@ -378,10 +381,6 @@ func (excel *Excel) AddValidation(sheet string, param *ValidationParam) error {
 	}
 
 	if err := excel.file.AddDataValidation(sheet, validation); err != nil {
-		return err
-	}
-
-	if err := excel.save(); err != nil {
 		return err
 	}
 

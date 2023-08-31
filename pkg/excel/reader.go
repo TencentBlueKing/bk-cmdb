@@ -30,7 +30,7 @@ type Reader struct {
 	curIdx int
 }
 
-// Next will return true if find the next row element.
+// Next will return true if the next row element is found
 func (r *Reader) Next() bool {
 	r.RLock()
 	defer r.RUnlock()

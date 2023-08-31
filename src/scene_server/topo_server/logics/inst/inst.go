@@ -254,7 +254,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	}
 
 	ccLang := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-	result := &metadata.ImportInstRes{}
+	result := new(metadata.ImportInstRes)
 
 	for idx, inst := range batchInfo.BatchInfo {
 		if inst == nil {
@@ -296,7 +296,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 					return err
 				}
 
-				result.Success = append(result.Success, strconv.FormatInt(idx, 10))
+				result.Success = append(result.Success, idx)
 				return nil
 			}
 
@@ -306,7 +306,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 				return err
 			}
 
-			result.Success = append(result.Success, strconv.FormatInt(idx, 10))
+			result.Success = append(result.Success, idx)
 			return nil
 		})
 	}

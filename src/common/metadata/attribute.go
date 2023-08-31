@@ -80,6 +80,8 @@ const (
 	AttributeFieldLastTime = "last_time"
 	// AttributeFieldDefault attribute default value field
 	AttributeFieldDefault = "default"
+	// AttributeFieldIsMultiple the is multiple name field
+	AttributeFieldIsMultiple = "ismultiple"
 )
 
 const (

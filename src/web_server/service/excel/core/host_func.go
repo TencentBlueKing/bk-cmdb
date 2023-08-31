@@ -34,21 +34,19 @@ import (
 // GetCloudArea search total cloud area id and name return an array of cloud name and a name-id map
 func (d *Client) GetCloudArea(kit *rest.Kit, names ...string) ([]string, map[string]int64, error) {
 	cloudArea := make([]mapstr.MapStr, 0)
-	start := 0
+	input := metadata.CloudAreaSearchParam{
+		SearchCloudOption: metadata.SearchCloudOption{
+			Fields: []string{common.BKCloudIDField, common.BKCloudNameField},
+			Page:   metadata.BasePage{Start: 0, Limit: common.BKMaxPageSize},
+		},
+	}
+	if len(names) != 0 {
+		input.SearchCloudOption.Condition = mapstr.MapStr{
+			common.BKCloudNameField: mapstr.MapStr{common.BKDBIN: names},
+		}
+	}
 	for {
-		input := metadata.CloudAreaSearchParam{
-			SearchCloudOption: metadata.SearchCloudOption{
-				Fields: []string{common.BKCloudIDField, common.BKCloudNameField},
-				Page:   metadata.BasePage{Start: start, Limit: common.BKMaxPageSize},
-			},
-		}
-		if len(names) != 0 {
-			input.SearchCloudOption.Condition = mapstr.MapStr{
-				common.BKCloudNameField: mapstr.MapStr{common.BKDBIN: names},
-			}
-		}
-
-		rsp, err := d.Engine.CoreAPI.ApiServer().SearchCloudArea(kit.Ctx, kit.Header, input)
+		rsp, err := d.ApiClient.SearchCloudArea(kit.Ctx, kit.Header, input)
 		if err != nil {
 			blog.Errorf("search cloud area failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, nil, err
@@ -59,7 +57,7 @@ func (d *Client) GetCloudArea(kit *rest.Kit, names ...string) ([]string, map[str
 			break
 		}
 
-		start += common.BKMaxPageSize
+		input.SearchCloudOption.Page.Start += common.BKMaxPageSize
 	}
 
 	if len(cloudArea) == 0 {
@@ -91,7 +89,7 @@ func (d *Client) GetCloudArea(kit *rest.Kit, names ...string) ([]string, map[str
 
 // GetHost get host instance
 func (d *Client) GetHost(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	result, err := d.Engine.CoreAPI.ApiServer().GetHostData(kit.Ctx, kit.Header, cond)
+	result, err := d.ApiClient.GetHostData(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("get host failed, condition: %+v, err: %+v, rid: %s", cond, err, kit.Rid)
 		return nil, err
@@ -217,7 +215,7 @@ func handleData(kit *rest.Kit, host mapstr.MapStr, objID string) (mapstr.MapStr,
 }
 
 func (d *Client) getHostSetInfo(kit *rest.Kit, hosts []mapstr.MapStr) (*hostSetInfo, error) {
-	res, err := d.Engine.CoreAPI.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	res, err := d.ApiClient.SearchPlatformSetting(kit.Ctx, kit.Header, "current")
 	if err != nil {
 		return nil, err
 	}
@@ -299,26 +297,18 @@ func (d *Client) handleCustomTopo(kit *rest.Kit, hosts []mapstr.MapStr, hostSetI
 		hostTopoNameMap := make(map[int64]string, 0)
 
 		for hostID, topoIDs := range hostTopoIDMap {
-			names := make([]string, 0)
-
+			nameStr := ""
 			for _, topoID := range topoIDs {
+				hostIDMap[hostID] = append(hostIDMap[hostID], instIDParentIDMap[topoID])
 				parentID := instIDParentIDMap[topoID]
 				parentName := parentData.instIdNameMap[parentID]
-				names = append(names, parentName)
-
-				hostIDMap[hostID] = append(hostIDMap[hostID], instIDParentIDMap[topoID])
-			}
-
-			nameStr := ""
-			for _, name := range names {
 				if nameStr == "" {
-					nameStr = name
+					nameStr = parentName
 					continue
 				}
 
-				nameStr += "," + name
+				nameStr += "," + parentName
 			}
-
 			hostTopoNameMap[hostID] = nameStr
 		}
 
@@ -355,7 +345,7 @@ func (d *Client) getTopoInstData(kit *rest.Kit, instIDs []int64, objID string) (
 		Fields:    []string{idField, nameField, common.BKInstParentStr},
 	}
 
-	insts, err := d.Engine.CoreAPI.ApiServer().ReadInstance(kit.Ctx, kit.Header, objID, query)
+	insts, err := d.ApiClient.ReadInstance(kit.Ctx, kit.Header, objID, query)
 	if err != nil {
 		blog.Errorf("get custom level inst data failed, query cond: %#v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -416,32 +406,22 @@ func (d *Client) GetSameIPRes(kit *rest.Kit, hostInfos map[int]map[string]interf
 	result := &SameIPRes{V4Map: map[string]struct{}{}, V6Map: map[string]struct{}{}}
 
 	// step1. extract all innerIP from hostInfos
-	ipArr, ipv6Arr := make([]string, 0), make([]string, 0)
+	innerIPs, innerIPv6s := make([]string, 0), make([]string, 0)
 	for _, host := range hostInfos {
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if ok && innerIP != "" {
-			ipArr = append(ipArr, innerIP)
+			innerIPs = append(innerIPs, strings.Split(innerIP, ",")...)
 		}
 		innerIPv6, ok := host[common.BKHostInnerIPv6Field].(string)
 		if ok && innerIPv6 != "" {
-			ipv6Arr = append(ipv6Arr, innerIPv6)
+			innerIPv6s = append(innerIPv6s, strings.Split(innerIPv6, ",")...)
 		}
 	}
-	if len(ipArr) == 0 && len(ipv6Arr) == 0 {
+	if len(innerIPs) == 0 && len(innerIPv6s) == 0 {
 		return result, nil
 	}
 
 	// step2. query host info by innerIPs
-	innerIPs, innerIPv6s := make([]string, 0), make([]string, 0)
-	for _, innerIP := range ipArr {
-		innerIPArr := strings.Split(innerIP, ",")
-		innerIPs = append(innerIPs, innerIPArr...)
-	}
-	for _, innerIPv6 := range ipv6Arr {
-		innerIPv6Arr := strings.Split(innerIPv6, ",")
-		innerIPv6s = append(innerIPv6s, innerIPv6Arr...)
-	}
-
 	rules := make([]querybuilder.Rule, 0)
 	if len(innerIPs) > 0 {
 		rules = append(rules, querybuilder.AtomRule{
@@ -461,7 +441,7 @@ func (d *Client) GetSameIPRes(kit *rest.Kit, hostInfos map[int]map[string]interf
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
 			common.BKCloudIDField},
 	}
-	resp, err := d.Engine.CoreAPI.ApiServer().ListHostWithoutApp(kit.Ctx, kit.Header, option)
+	resp, err := d.ApiClient.ListHostWithoutApp(kit.Ctx, kit.Header, option)
 	if err != nil {
 		blog.Errorf("list host without app failed, option: %+v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -485,6 +465,7 @@ func (d *Client) GetSameIPRes(kit *rest.Kit, hostInfos map[int]map[string]interf
 			result.V6Map[keyV6] = struct{}{}
 		}
 	}
+
 	return result, nil
 }
 
@@ -498,11 +479,18 @@ func (d *Client) GetExistingHost(kit *rest.Kit, hosts map[int]map[string]interfa
 	// step1. extract all innerIP from hostInfos
 	var hostIDs []int64
 	for _, host := range hosts {
-		if hostID, ok := host[common.BKHostIDField]; ok {
-			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-				hostIDs = append(hostIDs, hostIDVal)
-			}
+		hostID, ok := host[common.BKHostIDField]
+		if !ok {
+			blog.Errorf("host can not find %s field, data: %v, rid: %s", common.BKHostIDField, host, kit.Rid)
+			return nil, fmt.Errorf("host can not find %s field, data: %v", common.BKHostIDField, host)
 		}
+
+		hostIDVal, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.Errorf("host %s field is invalid, value: %v, rid: %s", common.BKHostIDField, hostID, kit.Rid)
+			return nil, err
+		}
+		hostIDs = append(hostIDs, hostIDVal)
 	}
 
 	if len(hostIDs) == 0 {
@@ -524,7 +512,7 @@ func (d *Client) GetExistingHost(kit *rest.Kit, hosts map[int]map[string]interfa
 			common.BKAgentIDField,
 		},
 	}
-	resp, err := d.Engine.CoreAPI.ApiServer().ListHostWithoutApp(kit.Ctx, kit.Header, option)
+	resp, err := d.ApiClient.ListHostWithoutApp(kit.Ctx, kit.Header, option)
 	if err != nil {
 		blog.Errorf("list host without app failed, err: %v, option: %v, rid: %s", err, option, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -537,15 +525,22 @@ func (d *Client) GetExistingHost(kit *rest.Kit, hosts map[int]map[string]interfa
 	// step3. arrange data as a map, cloudKey: hostID
 	hostMap := make(map[int64]SimpleHost, 0)
 	for _, host := range resp.Data.Info {
-		if hostID, ok := host[common.BKHostIDField]; ok {
-			if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-				hostMap[hostIDVal] = SimpleHost{
-					Ip:      util.GetStrByInterface(host[common.BKHostInnerIPField]),
-					Ipv6:    util.GetStrByInterface(host[common.BKHostInnerIPv6Field]),
-					AgentID: util.GetStrByInterface(host[common.BKAgentIDField]),
-				}
+		hostID, ok := host[common.BKHostIDField]
+		if !ok {
+			blog.Errorf("host can not find %s field, data: %v, rid: %s", common.BKHostIDField, host, kit.Rid)
+			return nil, fmt.Errorf("host can not find %s field, data: %v", common.BKHostIDField, host)
+		}
 
-			}
+		hostIDVal, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.Errorf("host %s field is invalid, value: %v, rid: %s", common.BKHostIDField, hostID, kit.Rid)
+			return nil, err
+		}
+
+		hostMap[hostIDVal] = SimpleHost{
+			Ip:      util.GetStrByInterface(host[common.BKHostInnerIPField]),
+			Ipv6:    util.GetStrByInterface(host[common.BKHostInnerIPv6Field]),
+			AgentID: util.GetStrByInterface(host[common.BKAgentIDField]),
 		}
 	}
 

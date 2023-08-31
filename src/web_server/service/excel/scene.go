@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/service/excel/core"
+	"configcenter/src/web_server/service/excel/operator"
 	"configcenter/src/web_server/service/excel/operator/inst/exporter"
 	"configcenter/src/web_server/service/excel/operator/inst/importer"
 	"configcenter/src/web_server/service/excel/operator/model"
@@ -50,8 +51,16 @@ func (s *service) BuildTemplate(c *gin.Context) {
 	randNum := rand.Uint32()
 	filePath := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 
-	tmplOp, err := exporter.NewTmplOp(exporter.FilePath(filePath), exporter.Client(s.client), exporter.ObjID(objID),
-		exporter.Kit(kit), exporter.Language(s.engine.Language))
+	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
+		operator.Kit(kit), operator.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
+		return
+	}
+
+	tmplOp, err := exporter.NewTmplOp(exporter.BaseOperator(baseOp))
 	if err != nil {
 		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: err.Error()})
@@ -120,8 +129,16 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
 
-	tmplOp, err := exporter.NewTmplOp(exporter.FilePath(filePath), exporter.Client(s.client), exporter.ObjID(objID),
-		exporter.Kit(kit), exporter.Language(s.engine.Language))
+	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer(), GinCtx: c}
+	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
+		operator.Kit(kit), operator.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommExcelTemplateFailed, err.Error()))
+		return
+	}
+
+	tmplOp, err := exporter.NewTmplOp(exporter.BaseOperator(baseOp))
 	if err != nil {
 		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommExcelTemplateFailed, err.Error()))
@@ -230,22 +247,30 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		return
 	}
 
-	operator, err := importer.NewImporter(importer.FilePath(filePath), importer.Client(s.client),
-		importer.ImpObjID(objID), importer.ImpKit(kit), importer.Language(s.engine.Language), importer.Param(input))
+	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
+		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
 		blog.Errorf("create importer failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("create importer failed, err: %+v", err).Error())
 		return
 	}
 
-	result, err := operator.Handle()
+	op, err := importer.NewImporter(importer.BaseOperator(baseOp), importer.Param(input))
+	if err != nil {
+		blog.Errorf("create importer failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("create importer failed, err: %+v", err).Error())
+		return
+	}
+
+	result, err := op.Handle()
 	if err != nil {
 		blog.Errorf("handle excel import request failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("handle import request failed, err: %+v", err).Error())
 		return
 	}
 
-	if err := operator.Clean(); err != nil {
+	if err := op.Clean(); err != nil {
 		blog.Errorf("clean importer resource failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("clean importer resource failed, err: %+v", err).Error())
 		return
@@ -262,8 +287,16 @@ func (s *service) ExportObject(c *gin.Context) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%d_%s.xlsx", dir, time.Now().UnixNano(), objID)
 
-	modelOp, err := model.NewOp(model.FilePath(filePath), model.Client(s.client), model.ObjID(objID), model.Kit(kit),
-		model.Language(s.engine.Language))
+	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
+		operator.Kit(kit), operator.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create model operator failed, err: %v, rid: %s", err, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebOpenFileFail, err.Error()))
+		return
+	}
+
+	modelOp, err := model.NewOp(model.BaseOperator(baseOp))
 	if err != nil {
 		blog.Errorf("create model operator failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebOpenFileFail, err.Error()))
@@ -319,8 +352,16 @@ func (s *service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	modelOp, err := model.NewOp(model.FilePath(filePath), model.Client(s.client), model.ObjID(objID), model.Kit(kit),
-		model.Language(s.engine.Language))
+	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
+		operator.Kit(kit), operator.Language(s.engine.Language))
+	if err != nil {
+		blog.Errorf("create importer failed, err: %v, rid: %s", err, kit.Rid)
+		c.String(http.StatusInternalServerError, fmt.Errorf("create importer failed, err: %+v", err).Error())
+		return
+	}
+
+	modelOp, err := model.NewOp(model.BaseOperator(baseOp))
 	if err != nil {
 		blog.Errorf("create model operator failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebOpenFileFail, err.Error()))

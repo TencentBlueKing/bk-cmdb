@@ -30,15 +30,10 @@ import (
 
 // GetInst get instance
 func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	result, err := d.Engine.CoreAPI.ApiServer().GetInstDetail(kit.Ctx, kit.Header, objID, cond)
-	if nil != err {
+	result, err := d.ApiClient.GetInstDetail(kit.Ctx, kit.Header, objID, cond)
+	if err != nil {
 		blog.Errorf("get inst data detail error: %v , search condition: %#v, rid: %s", err, cond, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !result.Result {
-		blog.Errorf("get inst data detail error: %v ,condition: %#v, rid: %s", result.ErrMsg, cond, kit.Rid)
-		return nil, kit.CCError.Error(result.Code)
+		return nil, err
 	}
 
 	if result.Data.Count == 0 {
@@ -50,17 +45,17 @@ func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]map
 }
 
 // HandleImportedInst handle imported instance
-func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]string, []string) {
+func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int64, []string) {
 	var result *metadata.ImportInstResp
 	var err error
 
 	switch param.HandleType {
 	case AddHost:
-		result, err = d.Engine.CoreAPI.ApiServer().AddHostByExcel(kit.Ctx, kit.Header, param.Req)
+		result, err = d.ApiClient.AddHostByExcel(kit.Ctx, kit.Header, param.Req)
 	case UpdateHost:
-		result, err = d.Engine.CoreAPI.ApiServer().UpdateHost(kit.Ctx, kit.Header, param.Req)
+		result, err = d.ApiClient.UpdateHost(kit.Ctx, kit.Header, param.Req)
 	case AddInst:
-		result, err = d.Engine.CoreAPI.ApiServer().AddInstByImport(kit.Ctx, kit.Header, kit.SupplierAccount,
+		result, err = d.ApiClient.AddInstByImport(kit.Ctx, kit.Header, kit.SupplierAccount,
 			param.ObjID, param.Req)
 	default:
 		err = fmt.Errorf("handle type is invalid, type: %s", param.HandleType)
@@ -69,8 +64,8 @@ func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]stri
 	if err != nil {
 		blog.Errorf("add instance failed, err: %v, rid: %s", err, kit.Rid)
 		errMsg := make([]string, 0)
+		defLang := param.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 		for idx := range param.Instances {
-			defLang := param.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 			errMsg = append(errMsg, defLang.Languagef("import_data_fail", idx, err.Error()))
 		}
 

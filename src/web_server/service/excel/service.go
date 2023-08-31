@@ -20,7 +20,6 @@ package excel
 import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/web_server/capability"
-	"configcenter/src/web_server/service/excel/core"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,14 +27,12 @@ import (
 type service struct {
 	ws     *gin.Engine
 	engine *backbone.Engine
-	client *core.Client
 }
 
 // Init init excel service
 func Init(c *capability.Capability) {
 	s := &service{
 		engine: c.Engine,
-		client: &core.Client{Engine: c.Engine},
 	}
 
 	c.Ws.POST("/importtemplate/:bk_obj_id", s.BuildTemplate)

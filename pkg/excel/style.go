@@ -25,16 +25,25 @@ import (
 type Style struct {
 	Fill   *Fill
 	Border []Border
+	Font   *Font
 }
 
 func (s *Style) convert() (*excelize.Style, error) {
-	style := &excelize.Style{}
+	style := new(excelize.Style)
 	if s.Fill != nil {
 		fill, err := s.Fill.convert()
 		if err != nil {
 			return nil, err
 		}
 		style.Fill = fill
+	}
+
+	if s.Font != nil {
+		font, err := s.Font.convert()
+		if err != nil {
+			return nil, err
+		}
+		style.Font = font
 	}
 
 	if s.Border != nil {
@@ -121,9 +130,9 @@ func (f *Font) convert() (*excelize.Font, error) {
 type FillType string
 
 const (
-	// Pattern pattern
+	// Pattern pattern fill type
 	Pattern FillType = "pattern"
-	// Gradient gradient
+	// Gradient gradient fill type
 	Gradient FillType = "gradient"
 )
 

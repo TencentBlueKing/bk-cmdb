@@ -63,15 +63,15 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header,
 	return
 }
 
-// GetObjectData TODO
+// GetObjectData get object data
 func (a *apiServer) GetObjectData(ctx context.Context, h http.Header,
-	params mapstr.MapStr) (resp *metadata.ObjectAttrBatchResult, err error) {
+	cond *metadata.ExportObjectCondition) (resp *metadata.ObjectAttrBatchResult, err error) {
 	resp = new(metadata.ObjectAttrBatchResult)
 	subPath := "/findmany/object"
 
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(params).
+		Body(cond).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
@@ -118,6 +118,15 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 		WithHeaders(h).
 		Do().
 		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
 	return
 }
 
@@ -678,4 +687,21 @@ func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params m
 	}
 
 	return &resp.Data, nil
+}
+
+// SearchPlatformSetting find platform config.
+func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, status string) (
+	resp *metadata.PlatformSettingResult, err error) {
+
+	resp = new(metadata.PlatformSettingResult)
+	subPath := "/find/system_config/platform_setting/%s"
+
+	err = a.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath, status).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
 }

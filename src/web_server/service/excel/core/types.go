@@ -18,13 +18,45 @@
 package core
 
 import (
-	"configcenter/src/apimachinery/apiserver"
-
-	"github.com/gin-gonic/gin"
+	"configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 )
 
-// Client used to process excel-related data
-type Client struct {
-	ApiClient apiserver.ApiServerClientInterface
-	GinCtx    *gin.Context
+type hostSetInfo struct {
+	setIDs     []int64
+	hostSetMap map[int64][]int64
+}
+
+type topoInstData struct {
+	parentIDs         []int64
+	instIdParentIDMap map[int64]int64
+	instIdNameMap     map[int64]string
+}
+
+// TopoBriefMsg topo brief message
+type TopoBriefMsg struct {
+	ObjID string
+	Name  string
+}
+
+// ImportedParam import instance parameter
+type ImportedParam struct {
+	Language   language.CCLanguageIf
+	ObjID      string
+	Req        mapstr.MapStr
+	Instances  map[int]map[string]interface{}
+	HandleType HandleType
+}
+
+// SameIPRes same ip resource
+type SameIPRes struct {
+	V4Map map[string]struct{}
+	V6Map map[string]struct{}
+}
+
+// SimpleHost simple host
+type SimpleHost struct {
+	Ip      string
+	Ipv6    string
+	AgentID string
 }

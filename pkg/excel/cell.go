@@ -38,11 +38,12 @@ func (c *Cell) transfer() *excelize.Cell {
 
 // GetCellIdx get cell index
 func GetCellIdx(col int, row int) (string, error) {
-	// 由于第三方库的行和列是从1开始，所以这里进行了+1操作，使调用者可以按照从0开始进行计数
-	return excelize.CoordinatesToCellName(col+1, row+1)
+	// 由于第三方库的行和列不是从0开始，所以这里加上开始数，使调用者可以按照从0开始进行计数
+	return excelize.CoordinatesToCellName(col+colStartIdx, row+rowStartIdx)
 }
 
 // GetSingleColSqref get single column sqref
+// Example: GetSingleColSqref(0, 1, 2) // return A1:A2
 func GetSingleColSqref(col, startRow, endRow int) (string, error) {
 	colNum, err := ColumnNumberToName(col)
 	if err != nil {
@@ -53,6 +54,8 @@ func GetSingleColSqref(col, startRow, endRow int) (string, error) {
 }
 
 // ColumnNumberToName provides a function to convert the integer to Excel
+// sheet column title.
+// Example:	ColumnNumberToName(0) // returns "A", nil
 func ColumnNumberToName(col int) (string, error) {
 	// 由于第三方库的列是从1开始，所以这里进行了+1操作，使调用者可以按照从0开始进行计数
 	return excelize.ColumnNumberToName(col + 1)

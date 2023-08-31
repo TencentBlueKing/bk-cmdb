@@ -18,6 +18,8 @@
 package core
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -43,7 +45,7 @@ func (d *Client) GetCustomTopoBriefMsg(kit *rest.Kit) ([]TopoBriefMsg, error) {
 		Condition: mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}},
 	}
 
-	objResult, err := d.Engine.CoreAPI.ApiServer().ReadModel(kit.Ctx, kit.Header, input)
+	objResult, err := d.ApiClient.ReadModel(kit.Ctx, kit.Header, input)
 	if err != nil {
 		blog.Errorf("search mainline obj failed, objIDs: %#v, err: %v, rid: %s", objIDs, err, kit.Rid)
 		return nil, err
@@ -65,7 +67,7 @@ func (d *Client) getCustomTopoObjIDs(kit *rest.Kit) ([]string, error) {
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline},
 	}
-	mainlineAsstRsp, err := d.Engine.CoreAPI.ApiServer().ReadModuleAssociation(kit.Ctx, kit.Header, query)
+	mainlineAsstRsp, err := d.ApiClient.ReadModuleAssociation(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
@@ -95,7 +97,7 @@ func (d *Client) getCustomTopoObjIDs(kit *rest.Kit) ([]string, error) {
 
 // GetDefaultBizID get resource pool biz ID
 func (d *Client) GetDefaultBizID(kit *rest.Kit) (int64, error) {
-	resp, err := d.Engine.CoreAPI.ApiServer().SearchDefaultApp(kit.Ctx, kit.Header, kit.SupplierAccount)
+	resp, err := d.ApiClient.SearchDefaultApp(kit.Ctx, kit.Header, kit.SupplierAccount)
 	if err != nil {
 		blog.Errorf("search default bizID failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -123,11 +125,17 @@ func (d *Client) GetHostBizRelations(kit *rest.Kit, hosts map[int]map[string]int
 	for _, host := range hosts {
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
-			continue
+			blog.Errorf("host can not find %s field, data: %v, rid: %s", common.BKHostIDField, host, kit.Rid)
+			return nil, fmt.Errorf("host can not find %s field, data: %v", common.BKHostIDField, host)
 		}
-		if hostIDVal, err := util.GetInt64ByInterface(hostID); err == nil {
-			hostIDs = append(hostIDs, hostIDVal)
+
+		hostIDVal, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.Errorf("host %s field is invalid, value: %v, rid: %s", common.BKHostIDField, hostID, kit.Rid)
+			return nil, err
 		}
+
+		hostIDs = append(hostIDs, hostIDVal)
 	}
 
 	hostLen := len(hostIDs)
@@ -147,7 +155,7 @@ func (d *Client) GetHostBizRelations(kit *rest.Kit, hosts map[int]map[string]int
 		params := mapstr.MapStr{
 			common.BKHostIDField: ids,
 		}
-		resp, err := d.Engine.CoreAPI.ApiServer().GetHostModuleRelation(kit.Ctx, kit.Header, params)
+		resp, err := d.ApiClient.GetHostModuleRelation(kit.Ctx, kit.Header, params)
 		if err != nil {
 			blog.Errorf("get host module relation failed, err: %v, params: %#v, rid: %s", err, params, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)

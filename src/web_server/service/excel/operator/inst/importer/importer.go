@@ -18,27 +18,23 @@
 package importer
 
 import (
+	"errors"
 	"fmt"
 
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
+	"configcenter/src/web_server/service/excel/operator"
 )
 
 // Importer operator who import the instance into excel
 type Importer struct {
-	excel    *excel.Excel
-	client   *core.Client
-	objID    string
-	kit      *rest.Kit
-	language language.CCLanguageIf
-	param    ImportParamI
+	*operator.BaseOp
+	param ImportParamI
 }
 
 type BuildImporterFunc func(importer *Importer) error
@@ -55,47 +51,10 @@ func NewImporter(opts ...BuildImporterFunc) (*Importer, error) {
 	return importer, nil
 }
 
-// FilePath set importer file path
-func FilePath(filePath string) BuildImporterFunc {
+// BaseOperator set base operator
+func BaseOperator(op *operator.BaseOp) BuildImporterFunc {
 	return func(importer *Importer) error {
-		var err error
-		importer.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-}
-
-// Client set importer client
-func Client(client *core.Client) BuildImporterFunc {
-	return func(importer *Importer) error {
-		importer.client = client
-		return nil
-	}
-}
-
-// ImpObjID set importer object id
-func ImpObjID(objID string) BuildImporterFunc {
-	return func(importer *Importer) error {
-		importer.objID = objID
-		return nil
-	}
-}
-
-// ImpKit set importer kit
-func ImpKit(kit *rest.Kit) BuildImporterFunc {
-	return func(importer *Importer) error {
-		importer.kit = kit
-		return nil
-	}
-}
-
-// Language set importer language
-func Language(language language.CCLanguageIf) BuildImporterFunc {
-	return func(importer *Importer) error {
-		importer.language = language
+		importer.BaseOp = op
 		return nil
 	}
 }
@@ -110,13 +69,13 @@ func Param(param ImportParamI) BuildImporterFunc {
 
 // Clean close importer file io and remove excel file
 func (i *Importer) Clean() error {
-	if err := i.excel.Close(); err != nil {
-		blog.Errorf("close excel failed, err: %v, rid: %s", err, i.kit.Rid)
+	if err := i.GetExcel().Close(); err != nil {
+		blog.Errorf("close excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return err
 	}
 
-	if err := i.excel.Clean(); err != nil {
-		blog.Errorf("remove excel file failed, err: %v, rid: %s", err, i.kit.Rid)
+	if err := i.GetExcel().Clean(); err != nil {
+		blog.Errorf("remove excel file failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return err
 	}
 
@@ -133,7 +92,7 @@ func (i *Importer) Handle() (mapstr.MapStr, error) {
 	if i.param.GetOpType() == getAsstFlag {
 		result, err := i.getAsstInfo()
 		if err != nil {
-			blog.Errorf("get instance association info failed, err: %v, rid: %s", err, i.kit.Rid)
+			blog.Errorf("get instance association info failed, err: %v, rid: %s", err, i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -143,7 +102,7 @@ func (i *Importer) Handle() (mapstr.MapStr, error) {
 	// 从excel获取实例数据，进行导入
 	result, hasErrMsg, err := i.importInst()
 	if err != nil {
-		blog.Errorf("import instance failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("import instance failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -156,7 +115,7 @@ func (i *Importer) Handle() (mapstr.MapStr, error) {
 }
 
 func (i *Importer) getAsstInfo() (mapstr.MapStr, error) {
-	exist, err := i.excel.IsSheetExist(core.AsstSheet)
+	exist, err := i.GetExcel().IsSheetExist(core.AsstSheet)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +126,7 @@ func (i *Importer) getAsstInfo() (mapstr.MapStr, error) {
 
 	asstInfo, err := i.getAsstFromExcel()
 	if err != nil {
-		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -175,9 +134,9 @@ func (i *Importer) getAsstInfo() (mapstr.MapStr, error) {
 		return mapstr.MapStr{"association": mapstr.New()}, nil
 	}
 
-	associations, err := i.client.FindAsstByAsstID(i.kit, i.objID, asstInfo.asstIDs)
+	associations, err := i.GetClient().FindAsstByAsstID(i.GetKit(), i.GetObjID(), asstInfo.asstIDs)
 	if err != nil {
-		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -185,7 +144,7 @@ func (i *Importer) getAsstInfo() (mapstr.MapStr, error) {
 	for _, asst := range associations {
 		objID := asst.AsstObjID
 		// 只统计关联的对象
-		if asst.ObjectID != i.objID {
+		if asst.ObjectID != i.GetObjID() {
 			objID = asst.ObjectID
 		}
 
@@ -218,12 +177,12 @@ type excelAsstInfo struct {
 }
 
 func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
-	reader, err := i.excel.NewReader(core.AsstSheet)
+	reader, err := i.GetExcel().NewReader(core.AsstSheet)
 	if err != nil {
-		blog.Errorf("create excel reader failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, i.kit.Rid)
+		blog.Errorf("create excel reader failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, i.GetKit().Rid)
 		return nil, err
 	}
-	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 
 	statisticalMap := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
 	asstIDs := make([]string, 0)
@@ -237,7 +196,7 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 
 		row, err := reader.CurRow()
 		if err != nil {
-			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, i.kit.Rid)
+			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -252,7 +211,7 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 		srcInst := row[core.AsstSrcInstColIdx]
 		dstInst := row[core.AsstDstInstColIdx]
 
-		idx := reader.GetCurIdx()
+		idx := reader.GetCurIdx() + 1
 
 		if asstID == "" || op == "" || srcInst == "" || dstInst == "" {
 			msg := lang.Languagef("web_excel_row_handle_error", core.AsstSheet, idx)
@@ -285,7 +244,7 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 	}
 
 	if err := reader.Close(); err != nil {
-		blog.Errorf("close reader failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("close reader failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -293,22 +252,55 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 	return result, nil
 }
 
-func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
-	reader, err := i.excel.NewReader(i.objID)
+func (i *Importer) preCheck(excelMsg *ExcelMsg) error {
+	reader, err := i.GetExcel().NewReader(i.GetObjID())
 	if err != nil {
-		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.objID, err, i.kit.Rid)
+		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.GetObjID(), err, i.GetKit().Rid)
+		return err
+	}
+	var instCount int
+	for reader.Next() {
+		instCount++
+	}
+
+	// 实例数需要减去excel表头占用的行数
+	instCount -= core.InstHeaderLen
+
+	// 如果存在合并多行作为一个实例，那么需要将这些多出来的行数减掉
+	if excelMsg != nil && len(excelMsg.mergeRowRes) != 0 {
+		for start, end := range excelMsg.mergeRowRes {
+			instCount -= end - start
+		}
+	}
+
+	if instCount > common.ExcelImportMaxRow {
+		lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+		return errors.New(lang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
+	}
+
+	return nil
+}
+
+func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
+	reader, err := i.GetExcel().NewReader(i.GetObjID())
+	if err != nil {
+		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.GetObjID(), err, i.GetKit().Rid)
 		return nil, false, err
 	}
 
 	excelMsg, err := i.getExcelMsg(reader)
 	if err != nil {
-		blog.Errorf("get object excel message failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get object excel message failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, false, err
 	}
 
-	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+	if err := i.preCheck(excelMsg); err != nil {
+		return nil, false, err
+	}
+
+	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 	result := mapstr.New()
-	var successMsg []string
+	var successMsg []int64
 	var errMsg []string
 	insts := make(map[int]map[string]interface{})
 
@@ -324,7 +316,7 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 		idx := reader.GetCurIdx() + 1
 		inst, err := i.getNextInst(reader, excelMsg)
 		if err != nil {
-			blog.Errorf("get next instance from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+			blog.Errorf("get next instance from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 			errMsg = append(errMsg, lang.Languagef("import_data_fail", idx, err.Error()))
 			continue
 		}
@@ -339,30 +331,27 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 		}
 
 		insts, errRes := i.doSpecialOp(insts)
-		if len(errRes) != 0 {
-			errMsg = append(errMsg, errRes...)
-		}
+		errMsg = append(errMsg, errRes...)
+
 		if len(insts) == 0 {
 			continue
 		}
 
 		req, err := i.param.BuildParam(insts)
 		if err != nil {
-			blog.Errorf("get import instances parameter failed, err: %v, rid: %s", err, i.kit.Rid)
+			blog.Errorf("get import instances parameter failed, err: %v, rid: %s", err, i.GetKit().Rid)
 			return nil, false, err
 		}
 		importParam := &core.ImportedParam{
-			Language: i.language, ObjID: i.objID, Instances: insts, Req: req,
+			Language: i.GetLang(), ObjID: i.GetObjID(), Instances: insts, Req: req,
 			HandleType: i.param.GetHandleType(),
 		}
-		successRes, errRes := i.client.HandleImportedInst(i.kit, importParam)
+		successRes, errRes := i.GetClient().HandleImportedInst(i.GetKit(), importParam)
 		if len(successRes) != 0 {
 			successMsg = append(successMsg, successRes...)
 		}
 
-		if len(errRes) != 0 {
-			errMsg = append(errMsg, errRes...)
-		}
+		errMsg = append(errMsg, errRes...)
 
 		insts = make(map[int]map[string]interface{})
 	}
@@ -371,7 +360,7 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 	result["error"] = errMsg
 
 	if err := reader.Close(); err != nil {
-		blog.Errorf("close read excel io failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("close read excel io failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, false, err
 	}
 
@@ -381,13 +370,13 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 func (i *Importer) getExcelMsg(reader *excel.Reader) (*ExcelMsg, error) {
 	propertyMap, err := i.getPropertyMap(reader)
 	if err != nil {
-		blog.Errorf("get property failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get property failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
 	mergeRes, err := i.getMergeRowRes()
 	if err != nil {
-		blog.Errorf("get excel merge row resource, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get excel merge row resource, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -397,18 +386,18 @@ func (i *Importer) getExcelMsg(reader *excel.Reader) (*ExcelMsg, error) {
 func (i *Importer) getPropertyMap(reader *excel.Reader) (map[int]PropWithTable, error) {
 
 	cond := mapstr.MapStr{
-		common.BKObjIDField: i.objID,
+		common.BKObjIDField: i.GetObjID(),
 		common.BKAppIDField: i.param.GetBizID(),
 	}
-	colProps, err := i.client.GetObjColProp(i.kit, cond)
+	colProps, err := i.GetClient().GetObjColProp(i.GetKit(), cond)
 	if err != nil {
-		blog.Errorf("get property failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get property failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
 	if i.param.GetHandleType() == core.UpdateHost {
-		lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
-		colProps = append(colProps, core.GetIDProp(core.PropDefaultColIdx, i.objID, lang))
+		lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+		colProps = append(colProps, core.GetIDProp(core.PropDefaultColIdx, i.GetObjID(), lang))
 	}
 
 	propMap := make(map[string]core.ColProp)
@@ -421,7 +410,7 @@ func (i *Importer) getPropertyMap(reader *excel.Reader) (map[int]PropWithTable, 
 	}
 	idRow, err := reader.CurRow()
 	if err != nil {
-		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -430,7 +419,7 @@ func (i *Importer) getPropertyMap(reader *excel.Reader) (map[int]PropWithTable, 
 	}
 	tableIDRow, err := reader.CurRow()
 	if err != nil {
-		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -444,7 +433,7 @@ func (i *Importer) buildPropWithTable(propMap map[string]core.ColProp, idRow []s
 	for idx, propID := range idRow {
 		prop, ok := propMap[propID]
 		if !ok {
-			blog.Warnf("can not find property, id: %s, kit: %s", propID, i.kit.Rid)
+			blog.Warnf("can not find property, id: %s, kit: %s", propID, i.GetKit().Rid)
 			continue
 		}
 		prop.ExcelColIndex = idx
@@ -467,19 +456,13 @@ func (i *Importer) buildPropWithTable(propMap map[string]core.ColProp, idRow []s
 		}
 
 		subProperties := make(map[int]PropWithTable, len(option.Header))
-		for subIdx, tablePropID := range tableIDRow {
-			if subIdx < idx {
-				continue
-			}
-
-			if subIdx > idx+len(option.Header)-1 {
-				break
-			}
+		for subIdx := idx; subIdx < idx+len(option.Header) && subIdx < len(tableIDRow); subIdx++ {
+			tablePropID := tableIDRow[subIdx]
 
 			subProp, ok := tableHeaderMap[tablePropID]
 			if !ok {
 				blog.Errorf("can not find table sub property, id: %s, table sub id: %s, kit: %s", propID, tablePropID,
-					i.kit.Rid)
+					i.GetKit().Rid)
 				continue
 			}
 
@@ -496,7 +479,7 @@ func (i *Importer) buildPropWithTable(propMap map[string]core.ColProp, idRow []s
 
 // getMergeRowRes 获取对同一列的行进行合并的开始和结束范围
 func (i *Importer) getMergeRowRes() (map[int]int, error) {
-	msgs, err := i.excel.GetMergeCellMsg(i.objID)
+	msgs, err := i.GetExcel().GetMergeCellMsg(i.GetObjID())
 	if err != nil {
 		return nil, err
 	}
@@ -546,7 +529,7 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 	rows := make([][]string, 0)
 	row, err := reader.CurRow()
 	if err != nil {
-		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 	rows = append(rows, row)
@@ -556,7 +539,7 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 		for endRow != reader.GetCurIdx() && reader.Next() {
 			row, err := reader.CurRow()
 			if err != nil {
-				blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+				blog.Errorf("read data from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 				return nil, err
 			}
 			rows = append(rows, row)
@@ -581,7 +564,7 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 		value, err := handleFunc(i, &prop, rows)
 		if err != nil {
 			blog.ErrorJSON("handle instance failed, property: %s, data: %s, err: %s, rid: %s", prop, rows, err,
-				i.kit.Rid)
+				i.GetKit().Rid)
 		}
 		inst[prop.ID] = value
 	}
@@ -594,15 +577,13 @@ func (i *Importer) getNextInst(reader *excel.Reader, excelMsg *ExcelMsg) (map[st
 }
 
 func (i *Importer) doSpecialOp(insts map[int]map[string]interface{}) (map[int]map[string]interface{}, []string) {
-	if i.objID != common.BKInnerObjIDHost || len(insts) == 0 {
+	if i.GetObjID() != common.BKInnerObjIDHost || len(insts) == 0 {
 		return insts, nil
 	}
 
 	var errMsg []string
 	hosts, errRes := i.transferCloudArea(insts)
-	if len(errRes) != 0 {
-		errMsg = append(errMsg, errRes...)
-	}
+	errMsg = append(errMsg, errRes...)
 
 	if len(hosts) == 0 {
 		return nil, errMsg
@@ -613,27 +594,24 @@ func (i *Importer) doSpecialOp(insts map[int]map[string]interface{}) (map[int]ma
 	switch handleType {
 	case core.AddHost:
 		hosts, errRes = i.checkAddedHost(hosts)
-		if len(errRes) != 0 {
-			errMsg = append(errMsg, errRes...)
-		}
+		errMsg = append(errMsg, errRes...)
+
 	case core.UpdateHost:
 		hosts, errRes = i.checkUpdatedHost(hosts)
-		if len(errRes) != 0 {
-			errMsg = append(errMsg, errRes...)
-		}
+		errMsg = append(errMsg, errRes...)
 	}
 
 	return hosts, errMsg
 }
 
 func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[int]map[string]interface{}, []string) {
-	if i.objID != common.BKInnerObjIDHost {
+	if i.GetObjID() != common.BKInnerObjIDHost {
 		return hosts, nil
 	}
 
 	var errMsg []string
 	legalHost := make(map[int]map[string]interface{})
-	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 
 	cloudNames := []string{common.DefaultCloudName}
 	for _, host := range hosts {
@@ -641,9 +619,9 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 			cloudNames = append(cloudNames, util.GetStrByInterface(name))
 		}
 	}
-	_, cloudMap, err := i.client.GetCloudArea(i.kit, util.StrArrayUnique(cloudNames)...)
+	_, cloudMap, err := i.GetClient().GetCloudArea(i.GetKit(), util.StrArrayUnique(cloudNames)...)
 	if err != nil {
-		blog.Errorf("get host cloud area failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get host cloud area failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		for idx := range hosts {
 			errMsg = append(errMsg, lang.Languagef("import_data_fail", idx, err.Error()))
 		}
@@ -662,7 +640,7 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 		}
 
 		if _, ok := cloudMap[cloudStr]; !ok {
-			blog.Errorf("cloud area name %s of line %d doesn't exist, rid: %s", cloudStr, index, i.kit.Rid)
+			blog.Errorf("cloud area name %s of line %d doesn't exist, rid: %s", cloudStr, index, i.GetKit().Rid)
 			msg := lang.Languagef("import_host_cloudID_not_exist", index, host[common.BKHostInnerIPField], cloudStr)
 			errMsg = append(errMsg, msg)
 			continue
@@ -676,17 +654,17 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 }
 
 func (i *Importer) checkAddedHost(hosts map[int]map[string]interface{}) (map[int]map[string]interface{}, []string) {
-	if i.objID != common.BKInnerObjIDHost {
+	if i.GetObjID() != common.BKInnerObjIDHost {
 		return hosts, nil
 	}
 
 	var errMsg []string
 	legalHost := make(map[int]map[string]interface{})
-	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 
-	res, err := i.client.GetSameIPRes(i.kit, hosts)
+	res, err := i.GetClient().GetSameIPRes(i.GetKit(), hosts)
 	if err != nil {
-		blog.Errorf("get host same ip resource failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get host same ip resource failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		for idx := range hosts {
 			errMsg = append(errMsg, lang.Languagef("import_data_fail", idx, err.Error()))
 		}
@@ -758,15 +736,15 @@ func (i *Importer) checkAddedHost(hosts map[int]map[string]interface{}) (map[int
 }
 
 func (i *Importer) checkUpdatedHost(hosts map[int]map[string]interface{}) (map[int]map[string]interface{}, []string) {
-	if i.objID != common.BKInnerObjIDHost {
+	if i.GetObjID() != common.BKInnerObjIDHost {
 		return hosts, nil
 	}
 
 	var errMsg []string
-	lang := i.language.CreateDefaultCCLanguageIf(util.GetLanguage(i.kit.Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 	res, err := i.getCheckHostRes(hosts)
 	if err != nil {
-		blog.Errorf("get check updated host resource failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get check updated host resource failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		for idx := range hosts {
 			errMsg = append(errMsg, lang.Languagef("import_update_data_fail", idx, err.Error()))
 		}
@@ -783,7 +761,7 @@ func (i *Importer) checkUpdatedHost(hosts map[int]map[string]interface{}) (map[i
 		hostID, ok := host[common.BKHostIDField]
 		if !ok {
 			blog.Errorf("bk_host_id field doesn't exist, innerIpv4: %v, innerIpv6: %v, rid: %v",
-				host[common.BKHostInnerIPField], host[common.BKHostInnerIPv6Field], i.kit.Rid)
+				host[common.BKHostInnerIPField], host[common.BKHostInnerIPv6Field], i.GetKit().Rid)
 			errMsg = append(errMsg, lang.Languagef("import_update_host_miss_hostID", index))
 			continue
 		}
@@ -845,25 +823,25 @@ type checkHostRes struct {
 }
 
 func (i *Importer) getCheckHostRes(hosts map[int]map[string]interface{}) (*checkHostRes, error) {
-	existingHosts, err := i.client.GetExistingHost(i.kit, hosts)
+	existingHosts, err := i.GetClient().GetExistingHost(i.GetKit(), hosts)
 	if err != nil {
-		blog.Errorf("get existing hosts failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get existing hosts failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
 	bizID := i.param.GetBizID()
 	if bizID == 0 {
 		// get resource pool biz ID
-		bizID, err = i.client.GetDefaultBizID(i.kit)
+		bizID, err = i.GetClient().GetDefaultBizID(i.GetKit())
 		if err != nil {
-			blog.Errorf("get resource pool biz ID failed, err: %v, rid:%s", err, i.kit.Rid)
+			blog.Errorf("get resource pool biz ID failed, err: %v, rid:%s", err, i.GetKit().Rid)
 			return nil, err
 		}
 	}
 
-	hostBizMap, err := i.client.GetHostBizRelations(i.kit, hosts)
+	hostBizMap, err := i.GetClient().GetHostBizRelations(i.GetKit(), hosts)
 	if err != nil {
-		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -871,7 +849,7 @@ func (i *Importer) getCheckHostRes(hosts map[int]map[string]interface{}) (*check
 }
 
 func (i *Importer) importAssociation() (mapstr.MapStr, error) {
-	exist, err := i.excel.IsSheetExist(core.AsstSheet)
+	exist, err := i.GetExcel().IsSheetExist(core.AsstSheet)
 	if err != nil {
 		return nil, err
 	}
@@ -883,7 +861,7 @@ func (i *Importer) importAssociation() (mapstr.MapStr, error) {
 
 	asstInfo, err := i.getAsstFromExcel()
 	if err != nil {
-		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("get association info from excel failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 	asstObjUniqueIDMap := i.param.GetAsstObjUniqueIDMap()
@@ -893,9 +871,9 @@ func (i *Importer) importAssociation() (mapstr.MapStr, error) {
 	}
 
 	// 将不需要导入的关联关系数据过滤出来
-	associations, err := i.client.FindAsstByAsstID(i.kit, i.objID, asstInfo.asstIDs)
+	associations, err := i.GetClient().FindAsstByAsstID(i.GetKit(), i.GetObjID(), asstInfo.asstIDs)
 	if err != nil {
-		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.kit.Rid)
+		blog.Errorf("find model association by bk_obj_asst_id failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
 
@@ -931,9 +909,9 @@ func (i *Importer) importAssociation() (mapstr.MapStr, error) {
 		ObjectUniqueID:        i.param.GetObjUniqueID(),
 	}
 
-	asstResp, err := i.client.ImportAssociation(i.kit, i.objID, input)
+	asstResp, err := i.GetClient().ImportAssociation(i.GetKit(), i.GetObjID(), input)
 	if err != nil {
-		blog.Errorf("import association failed, input: %v, err: %v, rid: %s", input, err, i.kit.Rid)
+		blog.Errorf("import association failed, input: %v, err: %v, rid: %s", input, err, i.GetKit().Rid)
 		return nil, err
 	}
 

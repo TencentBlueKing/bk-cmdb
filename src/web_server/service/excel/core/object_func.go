@@ -81,7 +81,7 @@ func getFilterProp(objID string) []string {
 
 // GetObjColProp get object column property
 func (d *Client) GetObjColProp(kit *rest.Kit, cond mapstr.MapStr) ([]ColProp, error) {
-	attrs, err := d.Engine.CoreAPI.ApiServer().ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, cond)
+	attrs, err := d.ApiClient.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("get object fields failed, condition: %v, err: %v ,rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -109,7 +109,7 @@ func (d *Client) getObjGroup(kit *rest.Kit, objID string, bizID int64) ([]metada
 			metadata.PageSort: common.BKPropertyGroupIndexField},
 	}
 
-	result, err := d.Engine.CoreAPI.ApiServer().GetObjectGroup(kit.Ctx, kit.Header, kit.SupplierAccount, objID, cond)
+	result, err := d.ApiClient.GetObjectGroup(kit.Ctx, kit.Header, kit.SupplierAccount, objID, cond)
 	if err != nil {
 		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, kit.Rid)
 		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
@@ -127,9 +127,8 @@ func (d *Client) getObjGroup(kit *rest.Kit, objID string, bizID int64) ([]metada
 
 // GetObjectData get object data
 func (d *Client) GetObjectData(kit *rest.Kit, objID string) ([]interface{}, error) {
-	cond := mapstr.MapStr{common.Condition: []string{objID}}
-
-	result, err := d.Engine.CoreAPI.ApiServer().GetObjectData(kit.Ctx, kit.Header, cond)
+	cond := &metadata.ExportObjectCondition{ObjIDs: []string{objID}}
+	result, err := d.ApiClient.GetObjectData(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		blog.Errorf("ger object data failed, cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
@@ -145,7 +144,7 @@ func (d *Client) GetObjectData(kit *rest.Kit, objID string) ([]interface{}, erro
 
 // AddObjectBatch batch add object
 func (d *Client) AddObjectBatch(kit *rest.Kit, param map[string]interface{}) (*metadata.Response, error) {
-	result, err := d.Engine.CoreAPI.ApiServer().AddObjectBatch(kit.Ctx, kit.Header, param)
+	result, err := d.ApiClient.AddObjectBatch(kit.Ctx, kit.Header, param)
 	if err != nil {
 		return nil, err
 	}

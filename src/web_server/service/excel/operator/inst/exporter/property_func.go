@@ -51,7 +51,7 @@ func getHandleNumericTypeFunc() handleColPropFunc {
 		if err != nil {
 			return nil, err
 		}
-		err = t.excel.AddValidation(t.objID, &excel.ValidationParam{Type: excel.Decimal, Sqref: sqref})
+		err = t.GetExcel().AddValidation(t.GetObjID(), &excel.ValidationParam{Type: excel.Decimal, Sqref: sqref})
 		if err != nil {
 			return nil, err
 		}
@@ -65,22 +65,22 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 		optionArr, ok := property.Option.([]interface{})
 		if ok {
-			if err := t.excel.CreateSheet(property.RefSheet); err != nil {
+			if err := t.GetExcel().CreateSheet(property.RefSheet); err != nil {
 				return nil, err
 			}
 			data := make([][]excel.Cell, len(optionArr))
 			for idx, name := range getEnumNames(optionArr) {
 				data[idx] = append(data[idx], excel.Cell{Value: name})
 			}
-			if err := t.excel.StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
+			if err := t.GetExcel().StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
 				return nil, err
 			}
 
-			if err := t.excel.Flush([]string{property.RefSheet}); err != nil {
+			if err := t.GetExcel().Flush([]string{property.RefSheet}); err != nil {
 				return nil, err
 			}
 
-			if err := t.excel.Save(); err != nil {
+			if err := t.GetExcel().Save(); err != nil {
 				return nil, err
 			}
 
@@ -89,7 +89,7 @@ func getHandleEnumTypeFunc() handleColPropFunc {
 				if err != nil {
 					return nil, err
 				}
-				if err := t.excel.AddValidation(t.objID,
+				if err := t.GetExcel().AddValidation(t.GetObjID(),
 					&excel.ValidationParam{Type: excel.Ref, Sqref: sqref, Option: property.RefSheet}); err != nil {
 					return nil, err
 				}
@@ -124,7 +124,7 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 		if err != nil {
 			return nil, err
 		}
-		if err = t.excel.AddValidation(t.objID,
+		if err = t.GetExcel().AddValidation(t.GetObjID(),
 			&excel.ValidationParam{Type: excel.Bool, Sqref: sqref, Option: property.Name}); err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
+		ccLang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)
@@ -226,7 +226,7 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		ccLang := t.language.CreateDefaultCCLanguageIf(util.GetLanguage(t.kit.Header))
+		ccLang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)
@@ -247,13 +247,13 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 
 func getHandleCloudAreaPropFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		cloudAreaArr, _, err := t.client.GetCloudArea(t.kit)
+		cloudAreaArr, _, err := t.GetClient().GetCloudArea(t.GetKit())
 		if err != nil {
-			blog.Errorf("get cloud area failed, err: %v, rid: %s", err, t.kit.Rid)
+			blog.Errorf("get cloud area failed, err: %v, rid: %s", err, t.GetKit().Rid)
 			return nil, err
 		}
 
-		if err := t.excel.CreateSheet(property.RefSheet); err != nil {
+		if err := t.GetExcel().CreateSheet(property.RefSheet); err != nil {
 			return nil, err
 		}
 
@@ -261,15 +261,15 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 		for idx, cloudArea := range cloudAreaArr {
 			data[idx] = append(data[idx], excel.Cell{Value: cloudArea})
 		}
-		if err := t.excel.StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
+		if err := t.GetExcel().StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
 			return nil, err
 		}
 
-		if err := t.excel.Flush([]string{property.RefSheet}); err != nil {
+		if err := t.GetExcel().Flush([]string{property.RefSheet}); err != nil {
 			return nil, err
 		}
 
-		if err := t.excel.Save(); err != nil {
+		if err := t.GetExcel().Save(); err != nil {
 			return nil, err
 		}
 
@@ -277,7 +277,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 		if err != nil {
 			return nil, err
 		}
-		if err := t.excel.AddValidation(t.objID,
+		if err := t.GetExcel().AddValidation(t.GetObjID(),
 			&excel.ValidationParam{Type: excel.Ref, Sqref: sqref, Option: property.RefSheet}); err != nil {
 			return nil, err
 		}

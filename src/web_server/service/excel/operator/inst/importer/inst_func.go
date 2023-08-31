@@ -52,14 +52,15 @@ type handleInstFieldFunc func(i *Importer, property *PropWithTable, rows [][]str
 func getHandleIntFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
 		val := rows[0][property.ExcelColIndex]
 		intVal, err := strconv.ParseInt(val, 10, 64)
 		if err != nil {
-			blog.Errorf("failed to convert string type to int type, val: %v, err: %v, rid: %s", val, err, i.kit.Rid)
+			blog.Errorf("failed to convert string type to int type, val: %v, err: %v, rid: %s", val, err,
+				i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -70,14 +71,15 @@ func getHandleIntFieldFunc() handleInstFieldFunc {
 func getHandleFloatFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
 		val := rows[0][property.ExcelColIndex]
 		floatVal, err := strconv.ParseFloat(val, 64)
 		if err != nil {
-			blog.Errorf("failed to convert string type to float type, val: %v, err: %v, rid: %s", val, err, i.kit.Rid)
+			blog.Errorf("failed to convert string type to float type, val: %v, err: %v, rid: %s", val, err,
+				i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -88,14 +90,15 @@ func getHandleFloatFieldFunc() handleInstFieldFunc {
 func getHandleBoolFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
 		val := rows[0][property.ExcelColIndex]
 		bolVal, err := strconv.ParseBool(val)
 		if err != nil {
-			blog.Errorf("failed to convert string type to bool type, val: %v, err: %v, rid: %s", val, err, i.kit.Rid)
+			blog.Errorf("failed to convert string type to bool type, val: %v, err: %v, rid: %s", val, err,
+				i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -106,7 +109,7 @@ func getHandleBoolFieldFunc() handleInstFieldFunc {
 func getHandleEnumFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
@@ -123,7 +126,7 @@ func getHandleEnumFieldFunc() handleInstFieldFunc {
 func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
@@ -148,14 +151,15 @@ func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 func getHandleEnumQuoteFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
 		names := strings.Split(rows[0][property.ExcelColIndex], "\n")
-		ids, err := i.client.TransEnumQuoteNameToID(i.kit, names, &property.ColProp)
+		ids, err := i.GetClient().TransEnumQuoteNameToID(i.GetKit(), names, &property.ColProp)
 		if err != nil {
-			blog.Errorf("transfer enum quote name to id failed, names: %v, err: %v, rid: %s", names, err, i.kit.Rid)
+			blog.Errorf("transfer enum quote name to id failed, names: %v, err: %v, rid: %s", names, err,
+				i.GetKit().Rid)
 			return nil, err
 		}
 
@@ -204,13 +208,14 @@ var (
 func getHandleOrgFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
 		val := rows[0][property.ExcelColIndex]
 		if len(val) <= 0 {
-			blog.Errorf("instance organization is invalid, inst: %v, id: %s, rid: %s", rows, property.ID, i.kit.Rid)
+			blog.Errorf("instance organization is invalid, inst: %v, id: %s, rid: %s", rows, property.ID,
+				i.GetKit().Rid)
 			return nil, fmt.Errorf("instance origiazation is invalid, id: %s", property.ID)
 		}
 
@@ -220,13 +225,15 @@ func getHandleOrgFieldFunc() handleInstFieldFunc {
 		for idx, item := range orgItems {
 			orgID := orgBracketsRegexp.FindStringSubmatch(item)
 			if len(orgID) != 3 {
-				blog.Errorf("instance organization is invalid, val: %v, id: %s, rid: %s", val, property.ID, i.kit.Rid)
+				blog.Errorf("instance organization is invalid, val: %v, id: %s, rid: %s", val, property.ID,
+					i.GetKit().Rid)
 				return nil, fmt.Errorf("instance organization is invalid, val: %v, id: %s", val, property.ID)
 			}
 
 			var err error
 			if org[idx], err = strconv.ParseInt(orgID[1], 10, 64); err != nil {
-				blog.Errorf("instance organization is invalid, val: %v, id: %s, rid: %s", val, property.ID, i.kit.Rid)
+				blog.Errorf("instance organization is invalid, val: %v, id: %s, rid: %s", val, property.ID,
+					i.GetKit().Rid)
 				return nil, fmt.Errorf("instance organization is invalid, val: %v, id: %s", val, property.ID)
 			}
 		}
@@ -238,7 +245,7 @@ func getHandleOrgFieldFunc() handleInstFieldFunc {
 func getHandleUserFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 
@@ -288,7 +295,7 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 func getDefaultHandleFieldFunc() handleInstFieldFunc {
 	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
 		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
-			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.kit.Rid)
+			blog.Errorf("instance is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
 			return nil, fmt.Errorf("instance is invalid")
 		}
 

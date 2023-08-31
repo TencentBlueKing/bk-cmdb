@@ -67,34 +67,34 @@ func ExportParam(param ExportParamI) BuildExporterFunc {
 func (e *Exporter) Export() error {
 	cond, err := e.exportParam.GetPropCond()
 	if err != nil {
-		blog.Errorf("get property condition failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get property condition failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
-	colProps, err := e.client.GetSortedColProp(e.kit, cond)
+	colProps, err := e.GetClient().GetSortedColProp(e.GetKit(), cond)
 	if err != nil {
-		blog.Errorf("get sorted column property failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get sorted column property failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
 
 	colProps, err = e.addExtraProp(colProps)
 	if err != nil {
-		blog.Errorf("add extra property failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("add extra property failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
 
 	if err := e.BuildHeader(colProps...); err != nil {
-		blog.Errorf("build excel template failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("build excel template failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
 
 	instIDs, err := e.exportInst(colProps)
 	if err != nil {
-		blog.Errorf("export instance failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("export instance failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
 
 	if err := e.exportAsst(instIDs); err != nil {
-		blog.Errorf("export association failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("export association failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return err
 	}
 
@@ -104,12 +104,12 @@ func (e *Exporter) Export() error {
 func (e *Exporter) addExtraProp(colProps []core.ColProp) ([]core.ColProp, error) {
 	result := make([]core.ColProp, 0)
 	idColIdx := common.HostAddMethodExcelDefaultIndex
-	defLang := e.language.CreateDefaultCCLanguageIf(util.GetLanguage(e.kit.Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
 
-	if e.objID == common.BKInnerObjIDHost {
+	if e.GetObjID() == common.BKInnerObjIDHost {
 		topoProps, err := e.getTopoProps()
 		if err != nil {
-			blog.Errorf("get topo properties failed, err: %v, rid: %s", err, e.kit.Rid)
+			blog.Errorf("get topo properties failed, err: %v, rid: %s", err, e.GetKit().Rid)
 			return nil, err
 		}
 
@@ -117,7 +117,7 @@ func (e *Exporter) addExtraProp(colProps []core.ColProp) ([]core.ColProp, error)
 		idColIdx += len(topoProps)
 	}
 
-	result = append(result, core.GetIDProp(idColIdx, e.objID, defLang))
+	result = append(result, core.GetIDProp(idColIdx, e.GetObjID(), defLang))
 
 	colProps = moveOldPropIdx(len(result), colProps)
 
@@ -142,15 +142,15 @@ const (
 )
 
 func (e *Exporter) getTopoProps() ([]core.ColProp, error) {
-	defLang := e.language.CreateDefaultCCLanguageIf(util.GetLanguage(e.kit.Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
 	topoMsg := make([]core.TopoBriefMsg, 0)
 
 	topoMsg = append(topoMsg, core.TopoBriefMsg{ObjID: core.TopoObjID, Name: defLang.Language(topoName)})
 	topoMsg = append(topoMsg, core.TopoBriefMsg{ObjID: common.BKInnerObjIDApp, Name: defLang.Language(bizName)})
 
-	customTopoMsg, err := e.client.GetCustomTopoBriefMsg(e.kit)
+	customTopoMsg, err := e.GetClient().GetCustomTopoBriefMsg(e.GetKit())
 	if err != nil {
-		blog.Errorf("get custom topo name failed, err: %v, rid: %s", err, e.kit)
+		blog.Errorf("get custom topo name failed, err: %v, rid: %s", err, e.GetKit())
 		return nil, err
 	}
 	topoMsg = append(topoMsg, customTopoMsg...)
@@ -176,13 +176,13 @@ func (e *Exporter) exportInst(colProps []core.ColProp) ([]int64, error) {
 	for e.exportParam.HasInstCond() {
 		instCond, err := e.exportParam.GetInstCond()
 		if err != nil {
-			blog.Errorf("get instance condition failed, err: %v, rid: %s", err, e.kit.Rid)
+			blog.Errorf("get instance condition failed, err: %v, rid: %s", err, e.GetKit().Rid)
 			return nil, err
 		}
 
 		rowIndex, instIDs, err = e.exportByCond(instCond, colProps, rowIndex)
 		if err != nil {
-			blog.Errorf("export instance by condition failed, err: %v, rid: %s", err, e.kit.Rid)
+			blog.Errorf("export instance by condition failed, err: %v, rid: %s", err, e.GetKit().Rid)
 			return nil, err
 		}
 
@@ -195,37 +195,38 @@ func (e *Exporter) exportInst(colProps []core.ColProp) ([]int64, error) {
 func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, rowIndex int) (int, []int64, error) {
 	insts, err := e.getInst(cond)
 	if err != nil {
-		blog.Errorf("get instance failed, objID: %s, cond: %v, err: %v, rid: %s", e.objID, cond, err, e.kit.Rid)
+		blog.Errorf("get instance failed, objID: %s, cond: %v, err: %v, rid: %s", e.GetObjID(), cond, err,
+			e.GetKit().Rid)
 		return 0, nil, err
 	}
 
-	if insts == nil {
+	if len(insts) == 0 {
 		return rowIndex, nil, nil
 	}
 
 	insts, instHeights, err := e.enrichInst(insts, colProps)
 	if err != nil {
-		blog.Errorf("enrich instance field failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("enrich instance field failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return 0, nil, err
 	}
 
 	instIDs := make([]int64, 0)
-	instIDKey := metadata.GetInstIDFieldByObjID(e.objID)
+	instIDKey := metadata.GetInstIDFieldByObjID(e.GetObjID())
 	for idx, inst := range insts {
 		rows, err := e.handleInst(inst, colProps, instHeights[idx])
 		if err != nil {
 			blog.ErrorJSON("convert an instance to excel rows failed, inst: %s, property: %s, err: %s, rid: %s", inst,
-				colProps, err, e.kit.Rid)
+				colProps, err, e.GetKit().Rid)
 			return 0, nil, err
 		}
 
-		if err := e.excel.StreamingWrite(e.objID, rowIndex, rows); err != nil {
-			blog.ErrorJSON("write data to excel failed, rows: %s, err: %s, rid: %s", rows, err, e.kit.Rid)
+		if err := e.GetExcel().StreamingWrite(e.GetObjID(), rowIndex, rows); err != nil {
+			blog.ErrorJSON("write data to excel failed, rows: %s, err: %s, rid: %s", rows, err, e.GetKit().Rid)
 			return 0, nil, err
 		}
 
 		if err := e.mergeCell(colProps, rowIndex, instHeights[idx]); err != nil {
-			blog.Errorf("merge instance cell failed, err: %v, rid: %s", err, e.kit.Rid)
+			blog.Errorf("merge instance cell failed, err: %v, rid: %s", err, e.GetKit().Rid)
 			return 0, nil, err
 		}
 
@@ -234,7 +235,7 @@ func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, row
 		instID, err := inst.Int64(instIDKey)
 		if err != nil {
 			blog.Errorf("parse instance(%+v) id(key:%s) failed, err: %v, objID: %s, rid: %s", inst, instIDKey, err,
-				e.objID, e.kit.Rid)
+				e.GetObjID(), e.GetKit().Rid)
 		}
 		instIDs = append(instIDs, instID)
 	}
@@ -243,31 +244,37 @@ func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, row
 }
 
 func (e *Exporter) getInst(cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	if e.objID == common.BKInnerObjIDHost {
-		return e.client.GetHost(e.kit, cond)
+	if e.GetObjID() == common.BKInnerObjIDHost {
+		return e.GetClient().GetHost(e.GetKit(), cond)
 	}
 
-	return e.client.GetInst(e.kit, e.objID, cond)
+	return e.GetClient().GetInst(e.GetKit(), e.GetObjID(), cond)
 }
 
 // enrichInst 第一个返回值是返回实例数据，第二个返回值返回的每个实例数据所占用的excel行数
 func (e *Exporter) enrichInst(insts []mapstr.MapStr, colProps []core.ColProp) ([]mapstr.MapStr, []int, error) {
-	insts, err := e.client.TransEnumQuoteIDToName(e.kit, insts, colProps)
+	insts, err := e.GetClient().TransEnumQuoteIDToName(e.GetKit(), insts, colProps)
 	if err != nil {
-		blog.Errorf("handle instance enum quota field failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("handle instance enum quota field failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, nil, err
 	}
 
-	ccLang := e.language.CreateDefaultCCLanguageIf(util.GetLanguage(e.kit.Header))
-	insts, err = e.client.GetInstWithOrgName(e.kit, ccLang, insts, colProps)
+	ccLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	insts, err = e.GetClient().GetInstWithOrgName(e.GetKit(), ccLang, insts, colProps)
 	if err != nil {
-		blog.Errorf("get instance with organization name field failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get instance with organization name field failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, nil, err
 	}
 
-	insts, instHeights, err := e.client.GetInstWithTable(e.kit, e.objID, insts, colProps)
+	insts, err = e.GetClient().GetInstWithUserFullName(e.GetKit(), ccLang, e.GetObjID(), insts)
 	if err != nil {
-		blog.Errorf("get instance with table field failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get instance with full user name field failed, err: %v, rid: %s", err, e.GetKit().Rid)
+		return nil, nil, err
+	}
+
+	insts, instHeights, err := e.GetClient().GetInstWithTable(e.GetKit(), e.GetObjID(), insts, colProps)
+	if err != nil {
+		blog.Errorf("get instance with table field failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, nil, err
 	}
 
@@ -277,7 +284,7 @@ func (e *Exporter) enrichInst(insts []mapstr.MapStr, colProps []core.ColProp) ([
 func (e *Exporter) handleInst(inst mapstr.MapStr, colProps []core.ColProp, height int) ([][]excel.Cell, error) {
 	width, err := core.GetRowWidth(colProps)
 	if err != nil {
-		blog.Errorf("get row length failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get row length failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, err
 	}
 
@@ -300,7 +307,7 @@ func (e *Exporter) handleInst(inst mapstr.MapStr, colProps []core.ColProp, heigh
 		rows, err := handleFunc(e, &property, val)
 		if err != nil {
 			blog.ErrorJSON("handle instance failed, property: %s, val: %s, err: %s, rid: %s", property, val, err,
-				e.kit.Rid)
+				e.GetKit().Rid)
 			return nil, err
 		}
 
@@ -329,10 +336,10 @@ func (e *Exporter) mergeCell(colProps []core.ColProp, rowIndex, height int) erro
 			continue
 		}
 
-		err := e.excel.MergeSameColCell(e.objID, property.ExcelColIndex, rowIndex, height)
+		err := e.GetExcel().MergeSameColCell(e.GetObjID(), property.ExcelColIndex, rowIndex, height)
 		if err != nil {
 			blog.Errorf("merge same column cell failed, colIdx: %d, rowIdx: %d, height: %d, err: %v, rid: %s",
-				property.ExcelColIndex, core.TableNameRowIdx, core.HeaderTableLen, err, e.kit.Rid)
+				property.ExcelColIndex, core.TableNameRowIdx, core.HeaderTableLen, err, e.GetKit().Rid)
 			return err
 		}
 	}
@@ -348,12 +355,13 @@ func (e *Exporter) exportAsst(instIDs []int64) error {
 
 	asstData, err := e.getInstAsst(instIDs)
 	if err != nil {
-		blog.Errorf("get instance association failed, instIDs: %v, err: %v, rid: %s", instIDs, err, e.kit.Rid)
+		blog.Errorf("get instance association failed, instIDs: %v, err: %v, rid: %s", instIDs, err, e.GetKit().Rid)
 		return err
 	}
 
-	if err := e.excel.StreamingWrite(core.AsstSheet, core.AsstDataRowIdx, asstData); err != nil {
-		blog.Errorf("write instance association to excel failed, data: %v, err: %v, rid: %s", asstData, err, e.kit.Rid)
+	if err := e.GetExcel().StreamingWrite(core.AsstSheet, core.AsstDataRowIdx, asstData); err != nil {
+		blog.Errorf("write instance association to excel failed, data: %v, err: %v, rid: %s", asstData, err,
+			e.GetKit().Rid)
 		return err
 	}
 
@@ -367,7 +375,7 @@ func (e *Exporter) getInstAsst(instIDs []int64) ([][]excel.Cell, error) {
 	hasSelfAsst := false
 
 	for key := range asstObjUniqueIDMap {
-		if key == e.objID {
+		if key == e.GetObjID() {
 			hasSelfAsst = true
 			continue
 		}
@@ -375,9 +383,9 @@ func (e *Exporter) getInstAsst(instIDs []int64) ([][]excel.Cell, error) {
 		asstObjIDMap[key] = struct{}{}
 	}
 
-	asstList, err := e.client.GetObjAssociation(e.kit, e.objID)
+	asstList, err := e.GetClient().GetObjAssociation(e.GetKit(), e.GetObjID())
 	if err != nil {
-		blog.Errorf("get object association failed, err: %v, rid: %s", err, e.kit.Rid)
+		blog.Errorf("get object association failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, err
 	}
 
@@ -401,10 +409,10 @@ func (e *Exporter) getInstAsst(instIDs []int64) ([][]excel.Cell, error) {
 	}
 
 	// 2. 获取实例的关联关系数据
-	instAsstArr, err := e.client.GetInstAsst(e.kit, e.objID, instIDs, asstIDs, hasSelfAsst)
+	instAsstArr, err := e.GetClient().GetInstAsst(e.GetKit(), e.GetObjID(), instIDs, asstIDs, hasSelfAsst)
 	if err != nil {
 		blog.Errorf("get instance association failed, instIDs: %v, asstIDs: %v, err: %v, rid: %d", instIDs, asstIDs,
-			err, e.kit.Rid)
+			err, e.GetKit().Rid)
 		return nil, err
 	}
 
@@ -412,7 +420,7 @@ func (e *Exporter) getInstAsst(instIDs []int64) ([][]excel.Cell, error) {
 	asstData, err := e.getInstAsstData(instAsstArr)
 	if err != nil {
 		blog.Errorf("get instance association data failed, instAsstArr: %v, err: %v, rid: %s", instAsstArr, err,
-			e.kit.Rid)
+			e.GetKit().Rid)
 		return nil, err
 	}
 
@@ -443,7 +451,7 @@ func (e *Exporter) getInstAsstData(instAsstArr []*metadata.InstAsst) ([]instAsst
 	asstInstIDMap := make(map[string][]int64)
 
 	for _, instAsst := range instAsstArr {
-		if instAsst.ObjectID == e.objID {
+		if instAsst.ObjectID == e.GetObjID() {
 			instIDs = append(instIDs, instAsst.InstID)
 			asstInstIDMap[instAsst.AsstObjectID] = append(asstInstIDMap[instAsst.AsstObjectID], instAsst.AsstInstID)
 			continue
@@ -457,41 +465,44 @@ func (e *Exporter) getInstAsstData(instAsstArr []*metadata.InstAsst) ([]instAsst
 
 	asstInstUniqueKeyMap := make(map[string]map[int64]string)
 	for objID, asstInstIDs := range asstInstIDMap {
-		instUniqueKeys, err := e.client.GetInstUniqueKeys(e.kit, objID, asstInstIDs, asstObjUniqueIDMap[objID])
+		instUniqueKeys, err := e.GetClient().GetInstUniqueKeys(e.GetKit(), objID, asstInstIDs,
+			asstObjUniqueIDMap[objID])
 		if err != nil {
-			blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", objID, err, e.kit.Rid)
+			blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", objID, err, e.GetKit().Rid)
 			return nil, err
 		}
 
 		asstInstUniqueKeyMap[objID] = instUniqueKeys
 	}
 
-	curInstUniqueKey, err := e.client.GetInstUniqueKeys(e.kit, e.objID, instIDs, e.exportParam.GetObjUniqueID())
+	curInstUniqueKey, err := e.GetClient().GetInstUniqueKeys(e.GetKit(), e.GetObjID(), instIDs,
+		e.exportParam.GetObjUniqueID())
 	if err != nil {
-		blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", e.objID, err, e.kit.Rid)
+		blog.Errorf("get instance uniques keys failed, objID: %s, err: %v, rid: %s", e.GetObjID(), err, e.GetKit().Rid)
 		return nil, err
 	}
 
 	result := make([]instAsstData, 0)
 	for _, instAsst := range instAsstArr {
-		if instAsst.ObjectID == e.objID {
+		if instAsst.ObjectID == e.GetObjID() {
 			srcInst, ok := curInstUniqueKey[instAsst.InstID]
 			if !ok {
-				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.objID, e.kit.Rid)
+				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.GetObjID(),
+					e.GetKit().Rid)
 				continue
 			}
 
 			asstInstUniqueKey, ok := asstInstUniqueKeyMap[instAsst.AsstObjectID]
 			if !ok {
 				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.AsstObjectID,
-					e.kit.Rid)
+					e.GetKit().Rid)
 				continue
 			}
 
 			dstInst, ok := asstInstUniqueKey[instAsst.AsstInstID]
 			if !ok {
 				blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.AsstObjectID,
-					e.kit.Rid)
+					e.GetKit().Rid)
 				continue
 			}
 
@@ -501,19 +512,21 @@ func (e *Exporter) getInstAsstData(instAsstArr []*metadata.InstAsst) ([]instAsst
 
 		asstInstUniqueKey, ok := asstInstUniqueKeyMap[instAsst.ObjectID]
 		if !ok {
-			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID, e.kit.Rid)
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID,
+				e.GetKit().Rid)
 			continue
 		}
 
 		srcInst, ok := asstInstUniqueKey[instAsst.InstID]
 		if !ok {
-			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID, e.kit.Rid)
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, instAsst.ObjectID,
+				e.GetKit().Rid)
 			continue
 		}
 
 		dstInst, ok := curInstUniqueKey[instAsst.AsstInstID]
 		if !ok {
-			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.objID, e.kit.Rid)
+			blog.Warnf("association is invalid, val: %v, objID: %s, rid: %s", instAsst, e.GetObjID(), e.GetKit().Rid)
 			continue
 		}
 

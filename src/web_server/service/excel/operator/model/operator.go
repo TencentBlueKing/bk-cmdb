@@ -25,20 +25,16 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
+	"configcenter/src/web_server/service/excel/operator"
 )
 
 // Operator model operator
 type Operator struct {
-	excel    *excel.Excel
-	client   *core.Client
-	objID    string
-	kit      *rest.Kit
-	language language.CCLanguageIf
+	*operator.BaseOp
 }
 
 type BuildModelOpFunc func(modelOp *Operator) error
@@ -55,65 +51,28 @@ func NewOp(opts ...BuildModelOpFunc) (*Operator, error) {
 	return modelOp, nil
 }
 
-// FilePath set model file path
-func FilePath(filePath string) BuildModelOpFunc {
+// BaseOperator set base operator
+func BaseOperator(op *operator.BaseOp) BuildModelOpFunc {
 	return func(modelOp *Operator) error {
-		var err error
-		modelOp.excel, err = excel.NewExcel(excel.FilePath(filePath), excel.OpenOrCreate())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-}
-
-// Client set model client
-func Client(dao *core.Client) BuildModelOpFunc {
-	return func(modelOp *Operator) error {
-		modelOp.client = dao
-		return nil
-	}
-}
-
-// ObjID set model object id
-func ObjID(objID string) BuildModelOpFunc {
-	return func(modelOp *Operator) error {
-		modelOp.objID = objID
-		return nil
-	}
-}
-
-// Kit set model kit
-func Kit(kit *rest.Kit) BuildModelOpFunc {
-	return func(modelOp *Operator) error {
-		modelOp.kit = kit
-		return nil
-	}
-}
-
-// Language set model language
-func Language(language language.CCLanguageIf) BuildModelOpFunc {
-	return func(modelOp *Operator) error {
-		modelOp.language = language
+		modelOp.BaseOp = op
 		return nil
 	}
 }
 
 // Close excel
 func (op *Operator) Close() error {
-	if err := op.excel.Flush([]string{op.objID, core.AsstSheet}); err != nil {
-		blog.Errorf("flush excel failed, sheet %s, err: %v, rid: %s", op.objID, err, op.kit.Rid)
+	if err := op.GetExcel().Flush([]string{op.GetObjID(), core.AsstSheet}); err != nil {
+		blog.Errorf("flush excel failed, sheet %s, err: %v, rid: %s", op.GetObjID(), err, op.GetKit().Rid)
 		return err
 	}
 
-	if err := op.excel.Save(); err != nil {
-		blog.Errorf("save excel failed, err: %v, rid: %s", err, op.kit.Rid)
+	if err := op.GetExcel().Save(); err != nil {
+		blog.Errorf("save excel failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return err
 	}
 
-	if err := op.excel.Close(); err != nil {
-		blog.Errorf("close excel failed, err: %v, rid: %s", err, op.kit.Rid)
+	if err := op.GetExcel().Close(); err != nil {
+		blog.Errorf("close excel failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return err
 	}
 
@@ -122,23 +81,23 @@ func (op *Operator) Close() error {
 
 // Clean delete temporary file
 func (op *Operator) Clean() error {
-	return op.excel.Clean()
+	return op.GetExcel().Clean()
 }
 
 // Export export data to excel
 func (op *Operator) Export() error {
-	if err := op.excel.CreateSheet(op.objID); err != nil {
-		blog.Errorf("create sheet failed, objID: %s, err: %v, rid: %s", op.objID, err, op.kit.Rid)
+	if err := op.GetExcel().CreateSheet(op.GetObjID()); err != nil {
+		blog.Errorf("create sheet failed, objID: %s, err: %v, rid: %s", op.GetObjID(), err, op.GetKit().Rid)
 		return err
 	}
 
 	if err := op.setExcelTitle(); err != nil {
-		blog.Errorf("set excel title failed, err: %v, rid: %s", err, op.kit.Rid)
+		blog.Errorf("set excel title failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return err
 	}
 
 	if err := op.setExcelData(); err != nil {
-		blog.Errorf("set excel data failed, err: %v, rid: %s", err, op.kit.Rid)
+		blog.Errorf("set excel data failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return err
 	}
 
@@ -146,15 +105,20 @@ func (op *Operator) Export() error {
 }
 
 const (
+	// headerLen excel模型数据表头长度
 	headerLen = 3
-	descIdx   = 0
-	typeIdx   = 1
-	idIdx     = 2
-	dataIdx   = 3
+	// descIdx excel模型字段名称所在行位置
+	descIdx = 0
+	// typeIdx excel模型类型所在行位置
+	typeIdx = 1
+	// idIdx excel模型id所在行位置
+	idIdx = 2
+	// dataIdx excel模型数据开始所在行位置
+	dataIdx = 3
 )
 
 func (op *Operator) setExcelTitle() error {
-	lang := op.language.CreateDefaultCCLanguageIf(util.GetLanguage(op.kit.Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 
 	header := make([][]excel.Cell, headerLen)
@@ -168,8 +132,9 @@ func (op *Operator) setExcelTitle() error {
 		header[idIdx][idx].Value = field.id
 	}
 
-	if err := op.excel.StreamingWrite(op.objID, descIdx, header); err != nil {
-		blog.Errorf("write excel header data to excel failed, header: %v, err: %v, rid: %s", header, err, op.kit.Rid)
+	if err := op.GetExcel().StreamingWrite(op.GetObjID(), descIdx, header); err != nil {
+		blog.Errorf("write excel header data to excel failed, header: %v, err: %v, rid: %s", header, err,
+			op.GetKit().Rid)
 		return err
 	}
 
@@ -187,33 +152,33 @@ func getSortFields(lang language.DefaultCCLanguageIf) []fieldBriefMsg {
 	boolType := lang.Language("val_type_bool")
 
 	var fields = []fieldBriefMsg{
-		{id: common.BKPropertyIDField, desc: lang.Language("web_en_name_required"), fType: textType},
-		{id: common.BKPropertyNameField, desc: lang.Language("web_bk_alias_name_required"), fType: textType},
-		{id: common.BKPropertyTypeField, desc: lang.Language("web_bk_data_type_required"), fType: textType},
-		{id: common.BKPropertyGroupField, desc: lang.Language("property_group"), fType: textType},
-		{id: common.BKOptionField, desc: lang.Language("property_option"), fType: textType},
-		{id: common.BKUnitField, desc: lang.Language("unit"), fType: textType},
-		{id: common.BKDescriptionField, desc: lang.Language("desc"), fType: textType},
-		{id: common.BKPlaceholderField, desc: lang.Language("placeholder"), fType: textType},
-		{id: common.BKEditableField, desc: lang.Language("is_editable"), fType: boolType},
-		{id: common.BKIsRequiredField, desc: lang.Language("property_is_required"), fType: boolType},
-		{id: common.BKIsreadonlyField, desc: lang.Language("property_is_readonly"), fType: boolType},
-		{id: common.BKIsOnlyField, desc: lang.Language("property_is_only"), fType: boolType},
-		{id: common.BKIsMultipleField, desc: lang.Language("property_is_multiple"), fType: boolType},
-		{id: common.BKDefaultFiled, desc: lang.Language("property_default"), fType: textType},
+		{id: metadata.AttributeFieldPropertyID, desc: lang.Language("web_en_name_required"), fType: textType},
+		{id: metadata.AttributeFieldPropertyName, desc: lang.Language("web_bk_alias_name_required"), fType: textType},
+		{id: metadata.AttributeFieldPropertyType, desc: lang.Language("web_bk_data_type_required"), fType: textType},
+		{id: metadata.AttributeFieldPropertyGroup, desc: lang.Language("property_group"), fType: textType},
+		{id: metadata.AttributeFieldOption, desc: lang.Language("property_option"), fType: textType},
+		{id: metadata.AttributeFieldUnit, desc: lang.Language("unit"), fType: textType},
+		{id: metadata.AttributeFieldDescription, desc: lang.Language("desc"), fType: textType},
+		{id: metadata.AttributeFieldPlaceHolder, desc: lang.Language("placeholder"), fType: textType},
+		{id: metadata.AttributeFieldIsEditable, desc: lang.Language("is_editable"), fType: boolType},
+		{id: metadata.AttributeFieldIsRequired, desc: lang.Language("property_is_required"), fType: boolType},
+		{id: metadata.AttributeFieldIsReadOnly, desc: lang.Language("property_is_readonly"), fType: boolType},
+		{id: metadata.AttributeFieldIsOnly, desc: lang.Language("property_is_only"), fType: boolType},
+		{id: metadata.AttributeFieldIsMultiple, desc: lang.Language("property_is_multiple"), fType: boolType},
+		{id: metadata.AttributeFieldDefault, desc: lang.Language("property_default"), fType: textType},
 	}
 
 	return fields
 }
 
 func (op *Operator) setExcelData() error {
-	attrs, err := op.client.GetObjectData(op.kit, op.objID)
+	attrs, err := op.GetClient().GetObjectData(op.GetKit(), op.GetObjID())
 	if err != nil {
-		blog.Errorf("get excel object data failed, err: %v, rid: %s", err, op.kit.Rid)
+		blog.Errorf("get excel object data failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return err
 	}
 
-	lang := op.language.CreateDefaultCCLanguageIf(util.GetLanguage(op.kit.Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 	data := make([][]excel.Cell, len(attrs))
 	for i := range data {
@@ -240,7 +205,8 @@ func (op *Operator) setExcelData() error {
 
 				value, err := json.Marshal(cell)
 				if err != nil {
-					blog.Errorf("value is invalid, field: %s, val: %v, err: %v, rid: %s", id, cell, err, op.kit.Rid)
+					blog.Errorf("value is invalid, field: %s, val: %v, err: %v, rid: %s", id, cell, err,
+						op.GetKit().Rid)
 					data[rowIdx][idx].Value = "error info:" + err.Error()
 					continue
 				}
@@ -253,8 +219,8 @@ func (op *Operator) setExcelData() error {
 		}
 	}
 
-	if err := op.excel.StreamingWrite(op.objID, dataIdx, data); err != nil {
-		blog.Errorf("write excel data to excel failed, header: %v, err: %v, rid: %s", data, err, op.kit.Rid)
+	if err := op.GetExcel().StreamingWrite(op.GetObjID(), dataIdx, data); err != nil {
+		blog.Errorf("write excel data to excel failed, header: %v, err: %v, rid: %s", data, err, op.GetKit().Rid)
 		return err
 	}
 
@@ -265,16 +231,16 @@ func (op *Operator) setExcelData() error {
 func (op *Operator) Import() (*metadata.Response, error) {
 	attrs, err := op.getImportAttr()
 	if err != nil {
-		blog.Errorf("get imported attribute failed, err: %v, rid: %s", err, op.kit.Rid)
+		blog.Errorf("get imported attribute failed, err: %v, rid: %s", err, op.GetKit().Rid)
 		return nil, err
 	}
 
 	attrs = convAttr(attrs)
 
-	param := map[string]interface{}{op.objID: map[string]interface{}{"attr": attrs}}
-	result, err := op.client.AddObjectBatch(op.kit, param)
+	param := map[string]interface{}{op.GetObjID(): map[string]interface{}{"attr": attrs}}
+	result, err := op.GetClient().AddObjectBatch(op.GetKit(), param)
 	if err != nil {
-		blog.ErrorJSON("add object attribute failed, attrs: %s, err: %s, rid: %s", attrs, err, op.kit.Rid)
+		blog.ErrorJSON("add object attribute failed, attrs: %s, err: %s, rid: %s", attrs, err, op.GetKit().Rid)
 		return nil, err
 	}
 
@@ -282,9 +248,9 @@ func (op *Operator) Import() (*metadata.Response, error) {
 }
 
 func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
-	reader, err := op.excel.NewReader(op.objID)
+	reader, err := op.GetExcel().NewReader(op.GetObjID())
 	if err != nil {
-		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", op.objID, err, op.kit.Rid)
+		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", op.GetObjID(), err, op.GetKit().Rid)
 		return nil, err
 	}
 
@@ -297,7 +263,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 
 		row, err := reader.CurRow()
 		if err != nil {
-			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, op.kit.Rid)
+			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, op.GetKit().Rid)
 			return nil, err
 		}
 
@@ -307,7 +273,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 		break
 	}
 
-	lang := op.language.CreateDefaultCCLanguageIf(util.GetLanguage(op.kit.Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 	idTypeMap := make(map[string]string)
 	for _, field := range fields {
@@ -324,7 +290,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 
 		row, err := reader.CurRow()
 		if err != nil {
-			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, op.kit.Rid)
+			blog.Errorf("get reader current row data failed, err: %v, rid: %s", err, op.GetKit().Rid)
 			return nil, err
 		}
 
@@ -342,7 +308,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 
 			boolVal, err := strconv.ParseBool(val)
 			if err != nil {
-				blog.Errorf("convert string to bool type failed, val: %v, err: %v, rid: %s", val, err, op.kit.Rid)
+				blog.Errorf("convert string to bool type failed, val: %v, err: %v, rid: %s", val, err, op.GetKit().Rid)
 				return nil, err
 			}
 			attr[id] = boolVal

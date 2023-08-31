@@ -87,6 +87,7 @@ const (
 	PropDefaultColIdx = 0
 )
 
+// HandleType 导入excel操作类型
 type HandleType string
 
 const (
@@ -100,6 +101,7 @@ const (
 	AddInst HandleType = "addInst"
 )
 
+// AsstOp 关联关系操作
 type AsstOp string
 
 const (

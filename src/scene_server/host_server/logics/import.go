@@ -211,7 +211,7 @@ func getIpField(host map[string]interface{}) (string, string, string) {
 // UpdateHostByExcel update host by excel
 // NOCC:golint/fnsize(后续重构，和实例合在一起)
 func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]interface{}, hostIDArr []int64,
-	indexHostIDMap map[int64]int64) ([]string, []string, error) {
+	indexHostIDMap map[int64]int64) ([]int64, []string, error) {
 
 	relRes, err := lgc.getHostRelationDestMsg(kit)
 	if err != nil {
@@ -248,7 +248,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 		hostBizMap[relation.HostID] = relation.AppID
 	}
 
-	successMsg := make([]string, 0)
+	successMsg := make([]int64, 0)
 	errMsg := make([]string, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
@@ -303,7 +303,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 				return err
 			}
 
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+			successMsg = append(successMsg, index)
 			return nil
 		})
 	}
@@ -314,7 +314,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 // AddHostByExcel add host by import excel
 // NOCC:golint/fnsize(后续重构，和实例的合成一个函数)
 func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string,
-	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg, errMsg []string, err error) {
+	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg []int64, errMsg []string, err error) {
 
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
@@ -405,7 +405,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			}
 
 			// add current host operate result to batch add result
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+			successMsg = append(successMsg, index)
 
 			// add audit log
 			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {

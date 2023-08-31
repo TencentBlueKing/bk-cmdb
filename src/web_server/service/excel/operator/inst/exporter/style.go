@@ -24,13 +24,22 @@ import (
 type styleType string
 
 const (
-	noEditHeader  styleType = "noEditHeader"
-	firstRow      styleType = "firstRow"
-	tableHeader   styleType = "tableHeader"
+	// requiredField 必填的表头单元格类型
+	requiredField styleType = "requiredField"
+	// noEditHeader 不可编辑的表头单元格类型
+	noEditHeader styleType = "noEditHeader"
+	// firstRow 第一行数据的单元格类型
+	firstRow styleType = "firstRow"
+	// tableHeader 表格表头的单元格类型
+	tableHeader styleType = "tableHeader"
+	// generalHeader 表头正常单元格的类型
 	generalHeader styleType = "generalHeader"
-	noEditField   styleType = "noEditField"
-	example       styleType = "example"
+	// noEditField 不可编辑的单元格类型
+	noEditField styleType = "noEditField"
+	// example 例子数据的单元格类型
+	example styleType = "example"
 
+	requiredFieldColor = "#FF0000"
 	noEditHeaderColor  = "fabf8f"
 	noEditFieldColor   = "fee9da"
 	firstRowColor      = "92d050"
@@ -48,6 +57,7 @@ var generalBorder = []excel.Border{
 var createStyleFuncMap = make(map[styleType]createStyleFunc)
 
 func init() {
+	createStyleFuncMap[requiredField] = getRequiredFieldStyleFunc()
 	createStyleFuncMap[noEditHeader] = getNoEditHeaderStyleFunc()
 	createStyleFuncMap[noEditField] = getNoEditFieldStyleFunc()
 	createStyleFuncMap[firstRow] = getFirstRowStyleFunc()
@@ -132,6 +142,20 @@ func getExampleStyleFunc() createStyleFunc {
 	return func(s *styleCreator) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{exampleColor}, Pattern: 1},
 			Border: generalBorder}
+
+		result, err := s.excel.NewStyle(style)
+		if err != nil {
+			return 0, err
+		}
+
+		return result, nil
+	}
+}
+
+func getRequiredFieldStyleFunc() createStyleFunc {
+	return func(s *styleCreator) (int, error) {
+		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{firstRowColor}, Pattern: 1},
+			Border: generalBorder, Font: &excel.Font{Color: requiredFieldColor}}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {

@@ -39,7 +39,7 @@ type ApiServerClientInterface interface {
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response,
 		err error)
 	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
-	GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (
+	GetObjectData(ctx context.Context, h http.Header, cond *metadata.ExportObjectCondition) (
 		resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 		resp *metadata.QueryInstResult, err error)
@@ -115,6 +115,9 @@ type ApiServerClientInterface interface {
 
 	SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
 		*metadata.SearchDataResult, error)
+
+	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
+		err error)
 }
 
 // NewApiServerClientInterface TODO

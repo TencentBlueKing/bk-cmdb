@@ -95,11 +95,12 @@ func getHandleFloatFieldFunc() handleInstFieldFunc {
 
 func getHandleEnumFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
-		arrVal, ok := property.Option.([]interface{})
-		if !ok {
+		option, err := metadata.ParseEnumOption(e.GetKit().Ctx, property.Option)
+		if err != nil {
 			blog.Errorf("option type is invalid, option: %v", property.Option)
 			return [][]excel.Cell{getRowWithOneCell()}, nil
 		}
+
 		enumID, ok := val.(string)
 		if !ok {
 			blog.Errorf("val type is invalid, val: %v", val)
@@ -107,7 +108,7 @@ func getHandleEnumFieldFunc() handleInstFieldFunc {
 		}
 
 		handleFunc := getDefaultHandleFieldFunc()
-		return handleFunc(e, property, getEnumNameByID(enumID, arrVal))
+		return handleFunc(e, property, getEnumNameByID(enumID, option))
 	}
 }
 
@@ -117,9 +118,9 @@ func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 			return [][]excel.Cell{getRowWithOneCell()}, nil
 		}
 
-		items, ok := property.Option.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("enum multiple option param is invalid, option: %v", property.Option)
+		option, err := metadata.ParseEnumOption(e.GetKit().Ctx, property.Option)
+		if err != nil {
+			return nil, err
 		}
 
 		enumArr, ok := val.([]interface{})
@@ -134,7 +135,7 @@ func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 				return nil, fmt.Errorf("convert enum multiple id [%v] to string failed", enumID)
 			}
 
-			name := getEnumNameByID(id, items)
+			name := getEnumNameByID(id, option)
 			enumMultiName = append(enumMultiName, name)
 		}
 
@@ -146,31 +147,16 @@ func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 }
 
 // getEnumNameByID get enum name from option
-func getEnumNameByID(id string, items []interface{}) string {
-	var name string
-	for _, item := range items {
-		mapVal, ok := item.(map[string]interface{})
-		if !ok {
+func getEnumNameByID(id string, option metadata.EnumOption) string {
+	for _, item := range option {
+		if item.ID != id {
 			continue
 		}
 
-		enumID, ok := mapVal[common.BKFieldID]
-		if !ok {
-			continue
-		}
-		enumIDStr := util.GetStrByInterface(enumID)
-		if enumIDStr != id {
-			continue
-		}
-
-		enumName, ok := mapVal[common.BKFieldName]
-		if !ok {
-			continue
-		}
-		name = util.GetStrByInterface(enumName)
+		return item.Name
 	}
 
-	return name
+	return ""
 }
 
 func getHandleBoolFieldFunc() handleInstFieldFunc {
@@ -210,13 +196,13 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 				rows, err := handleFunc(e, colProp, data[attr.PropertyID])
 				if err != nil {
 					blog.ErrorJSON("handle instance failed, property: %s, val: %s, err: %s, rid: %s", property, val,
-						err, e.kit.Rid)
+						err, e.GetKit().Rid)
 					return nil, err
 				}
 
 				if len(rows) != singleCellLen {
 					blog.ErrorJSON("instance table field is invalid, property: %s, val: %s, err: %s, rid: %s", property,
-						val, err, e.kit.Rid)
+						val, err, e.GetKit().Rid)
 					return nil, err
 				}
 
@@ -254,8 +240,8 @@ func getHandleInstCloudAreaFunc() handleInstFieldFunc {
 		}
 
 		if len(cloudArr) != 1 {
-			blog.Errorf("host has many cloud areas, val: %#v, rid: %s", val, e.kit.Rid)
-			return nil, e.kit.CCError.CCError(common.CCErrCommReplyDataFormatError)
+			blog.Errorf("host has many cloud areas, val: %#v, rid: %s", val, e.GetKit().Rid)
+			return nil, e.GetKit().CCError.CCError(common.CCErrCommReplyDataFormatError)
 		}
 
 		cloudMap, ok := cloudArr[0].(map[string]interface{})
