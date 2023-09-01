@@ -125,6 +125,9 @@ func (o *object) FindSingleObject(kit *rest.Kit, field []string, objectID string
 // CreateObject create common object
 func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error) {
 
+	if !data.Exists(metadata.ModelFieldObjSortNumber) {
+		data.Set(metadata.ModelFieldObjSortNumber, -1)
+	}
 	obj, err := o.createParamCheck(kit, data)
 	if err != nil {
 		blog.Errorf("param check failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)

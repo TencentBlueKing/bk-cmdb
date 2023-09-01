@@ -154,12 +154,13 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	locked, err := locker.Lock(redisKey, time.Second*35)
 	defer locker.Unlock()
 	if err != nil {
-		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err.Error(), inputParam, kit.Rid)
+		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err, inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
 	}
 	if !locked {
 		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)", inputParam.Spec.ObjectID))
+		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)",
+			inputParam.Spec.ObjectID))
 	}
 	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
 
@@ -184,12 +185,14 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(kit, inputParam.Spec.ObjCls)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", kit.Rid, inputParam.Spec.ObjCls, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s",
+			kit.Rid, inputParam.Spec.ObjCls, err)
 		return nil, err
 	}
 
 	if !isValid {
-		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", kit.Rid, inputParam.Spec.ObjCls)
+		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid",
+			kit.Rid, inputParam.Spec.ObjCls)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
@@ -199,11 +202,12 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err)
 		return nil, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", kit.Rid, inputParam.Spec.ObjectID)
+		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ",
+			kit.Rid, inputParam.Spec.ObjectID)
 		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
 	}
 
@@ -213,7 +217,8 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("whether same name model exists, name: %s, err: %s, rid: %s", inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		blog.Errorf("whether same name model exists, name: %s, err: %v, rid: %s", inputParam.Spec.ObjectName,
+			err, kit.Rid)
 		return nil, err
 	}
 	if sameNameCount > 0 {
@@ -223,8 +228,8 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 
 	// check object instance and instance association table.
 	/* 	if err := m.createObjectShardingTables(kit, inputParam.Spec.ObjectID); err != nil {
-		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %s, rid: %s",
-			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err.Error(), kit.Rid)
+		blog.Errorf("handle object sharding tables failed, object: %s name: %s, err: %v, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.ObjectName, err, kit.Rid)
 		return nil, err
 	} */
 
@@ -232,15 +237,18 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec, err.Error())
+		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec,
+			err)
 		return nil, err
 	}
 
 	// create initial phase model attributes.
 	if len(inputParam.Attributes) != 0 {
-		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
+		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{
+			Attributes: inputParam.Attributes})
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
+			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v",
+				kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
 			return nil, err
 		}
 	}
@@ -259,19 +267,22 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set",
+			kit.Rid, inputParam.Spec.ObjectID)
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(kit, inputParam.Spec.ObjCls)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", kit.Rid, inputParam.Spec.ObjCls, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s",
+			kit.Rid, inputParam.Spec.ObjCls, err)
 		return dataResult, err
 	}
 
 	if !isValid {
-		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", kit.Rid, inputParam.Spec.ObjCls)
+		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid",
+			kit.Rid, inputParam.Spec.ObjCls)
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
@@ -281,7 +292,8 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 
 	existsModel, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err.Error())
+		blog.Errorf("request(%s): it is failed to check the model (%s) is exists, error info is %s ", kit.Rid,
+			inputParam.Spec.ObjectID, err)
 		return &metadata.SetDataResult{}, err
 	}
 
@@ -294,16 +306,19 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 
 		_, err := m.update(kit, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to update some fields (%#v) for the model (%s), error info is %s", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
+			blog.Errorf("request(%s): it is failed to update some fields (%#v) for the model (%s), error info is %s",
+				kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
 			return dataResult, err
 		}
 
 		dataResult.UpdatedCount.Count++
-		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{OriginIndex: 0, ID: uint64(existsModel.ID)})
+		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{OriginIndex: 0,
+			ID: uint64(existsModel.ID)})
 	} else {
 		id, err := m.save(kit, &inputParam.Spec)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec.ObjectID, err.Error())
+			blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid,
+				inputParam.Spec.ObjectID, err)
 			return dataResult, err
 		}
 		dataResult.CreatedCount.Count++
@@ -313,7 +328,8 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	// set model attributes
 	setAttrResult, err := m.modelAttribute.SetModelAttributes(kit, inputParam.Spec.ObjectID, metadata.SetModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the attributes (%#v) for the model (%s), error info is %s", kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
+		blog.Errorf("request(%s): it is failed to update the attributes (%#v) for the model (%s), error info is %s",
+			kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
 		return dataResult, err
 	}
 	_ = setAttrResult // TODO: how to return this result ? let me think about it;
@@ -332,10 +348,11 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 // UpdateModel TODO
 func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if err != nil {
-		blog.Errorf("convert the condition from mapstr into condition object failed, err: %s, condition: %v, rid: %s",
-			err.Error(), inputParam.Condition, kit.Rid)
+		blog.Errorf("convert the condition from mapstr into condition object failed, err: %v, condition: %v, rid: %s",
+			err, inputParam.Condition, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -347,15 +364,18 @@ func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOpti
 func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all models by the deletion condition
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, "+
+			"error info is %s", kit.Rid, inputParam.Condition, err)
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
 	modelItems, err := m.search(kit, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to find the all models by the condition (%#v), error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to find the all models by the condition (%#v), error info is %s",
+			kit.Rid, deleteCond.ToMapStr(), err)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -367,29 +387,34 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 	// check if the model is used: firstly to check instance
 	exists, err := m.dependent.HasInstance(kit, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, error info is %s", kit.Rid, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, "+
+			"error info is %s", kit.Rid, targetObjIDS, err)
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.", kit.Rid, targetObjIDS)
+		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.",
+			kit.Rid, targetObjIDS)
 		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasInstanceErr)
 	}
 
 	// check if the model is used: secondly to check association
 	exists, err = m.dependent.HasAssociation(kit, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, error info is %s", kit.Rid, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, "+
+			"error info is %s", kit.Rid, targetObjIDS, err)
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.", kit.Rid, targetObjIDS)
+		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.",
+			kit.Rid, targetObjIDS)
 		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrCoreServiceModelHasAssociationErr)
 	}
 
 	// delete model self
 	cnt, err := m.deleteModelAndAttributes(kit, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the models (%#v) and their attributes, error info is %s", kit.Rid, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to delete the models (%#v) and their attributes, error info is %s",
+			kit.Rid, targetObjIDS, err)
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -408,7 +433,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	models, err := m.search(kit, deleteCond)
 	if err != nil {
 		blog.Errorf("cascade delete model, search target models failed, condition: %s, error: %s, rid: %s",
-			deleteCond.ToMapStr(), err.Error(), kit.Rid)
+			deleteCond.ToMapStr(), err, kit.Rid)
 		return nil, err
 	}
 
@@ -424,7 +449,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	exists, err := m.dependent.HasInstance(kit, objIDs)
 	if err != nil {
 		blog.Errorf("cascade delete model, check object instance failed, objects: %+v, error: %s, rid: %s",
-			objIDs, err.Error(), kit.Rid)
+			objIDs, err, kit.Rid)
 		return nil, err
 	}
 	if exists {
@@ -437,7 +462,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	exists, err = m.dependent.HasAssociation(kit, objIDs)
 	if err != nil {
 		blog.Errorf("cascade delete model, check model associations failed, objects: %+v, error: %s, rid: %s",
-			objIDs, err.Error(), kit.Rid)
+			objIDs, err, kit.Rid)
 		return nil, err
 	}
 	if exists {
@@ -449,7 +474,7 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	// cascade delete.
 	cnt, err := m.cascadeDelete(kit, objIDs)
 	if err != nil {
-		blog.Errorf("cascade delete model failed, objects: %+v, err: %s, rid: %s", objIDs, err.Error(), kit.Rid)
+		blog.Errorf("cascade delete model failed, objects: %+v, err: %v, rid: %s", objIDs, err, kit.Rid)
 		return nil, err
 	}
 
@@ -553,13 +578,16 @@ func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.De
 }
 
 // SearchModel TODO
-func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
+func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult,
+	error) {
 
 	dataResult := &metadata.QueryModelDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object,"+
+			" error info is %s", kit.Rid, inputParam.Condition, err)
 		return dataResult, err
 	}
 
@@ -571,7 +599,8 @@ func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondi
 
 	modelItems, err := m.search(kit, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", kit.Rid,
+			searchCond.ToMapStr(), err)
 		return dataResult, err
 	}
 
@@ -581,13 +610,16 @@ func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondi
 }
 
 // SearchModelWithAttribute TODO
-func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error) {
+func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	*metadata.QueryModelWithAttributeDataResult, error) {
 
 	dataResult := &metadata.QueryModelWithAttributeDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, "+
+			"error info is %s", kit.Rid, inputParam.Condition, err)
 		return dataResult, err
 	}
 
@@ -600,7 +632,8 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 	dataResult.Count = int64(totalCount)
 	modelItems, err := m.search(kit, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to search models by the condition (%#v), error info is %s", kit.Rid,
+			searchCond.ToMapStr(), err)
 		return dataResult, err
 	}
 
@@ -611,7 +644,8 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldSupplierAccount).Eq(modelItem.OwnerID))
 		attributeItems, err := m.modelAttribute.search(kit, queryAttributeCond)
 		if nil != err {
-			blog.Errorf("request(%s):it is failed to search the object(%s)'s attributes, error info is %s", modelItem.ObjectID, err.Error())
+			blog.Errorf("request(%s):it is failed to search the object(%s)'s attributes, error info is %s",
+				modelItem.ObjectID, err)
 			return dataResult, err
 		}
 		dataResult.Info = append(dataResult.Info, metadata.SearchModelInfo{Spec: modelItem, Attributes: attributeItems})

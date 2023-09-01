@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
 
@@ -43,53 +44,35 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 		return nil
 	}
 
-	//不存在则新建字段 obj_sort_number
-	err = db.Table(common.BKTableNameObjDes).AddColumn(ctx, common.ObjSortNumberField, 0)
+	//获取所有模型信息
+	objectList := make([]metadata.Object, 0)
+	err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKFieldID, common.BKClassificationIDField).
+		All(ctx, &objectList)
 	if err != nil {
-		blog.Errorf("add column to table failed, err: %v, column: %s, table: %s",
-			err, common.ObjSortNumberField, common.BKTableNameObjDes)
+		blog.Errorf("list object ids failed, db find failed, err: %v", err)
 		return err
 	}
 
-	//获取所有模型分组信息
-	classificationIds := make([]map[string]string, 0)
-	err = db.Table(common.BKTableNameObjClassification).Find(nil).
-		Fields(common.BKClassificationIDField).All(ctx, &classificationIds)
-	if err != nil {
-		blog.Errorf("list classification ids failed, db find failed, err: %v", err)
-		return err
+	clsMap := make(map[string][]int64)
+	for _, object := range objectList {
+		clsMap[object.ObjCls] = append(clsMap[object.ObjCls], object.ID)
 	}
 
-	for _, classification := range classificationIds {
-		//获取分组下模型信息
-		objectList := make([]map[string]int64, 0)
-		objectFilter := map[string]interface{}{
-			common.BKClassificationIDField: map[string]interface{}{
-				common.BKDBEQ: classification[common.BKClassificationIDField],
-			},
-		}
-		err := db.Table(common.BKTableNameObjDes).Find(objectFilter).
-			Fields(common.BKFieldID).All(ctx, &objectList)
-		if err != nil {
-			blog.Errorf("list object ids failed, db find failed, err: %v", err)
-			return err
-		}
-		if len(objectList) == 0 {
+	for _, idArr := range clsMap {
+		if len(idArr) == 0 {
 			continue
 		}
-
-		//更新字段值
-		for index, objectId := range objectList {
-			updateField := map[string]interface{}{
-				common.BKFieldID: objectId[common.BKFieldID],
+		for index, id := range idArr {
+			filter := map[string]int64{
+				common.BKFieldID: id,
 			}
-			data := map[string]interface{}{
-				common.ObjSortNumberField: index,
+			doc := map[string]int64{
+				common.ObjSortNumberField: int64(index),
 			}
-
-			err := db.Table(common.BKTableNameObjDes).Update(ctx, updateField, data)
+			err = db.Table(common.BKTableNameObjDes).Upsert(ctx, filter, doc)
 			if err != nil {
-				blog.Errorf("update sort number failed, err: %v, objectId: d%", err, objectId[common.BKFieldID])
+				blog.Errorf("add column to table failed, err: %v, column: %s, table: %s", err,
+					common.ObjSortNumberField, common.BKTableNameObjDes)
 				return err
 			}
 		}

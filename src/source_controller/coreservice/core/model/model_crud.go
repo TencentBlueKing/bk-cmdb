@@ -35,7 +35,7 @@ import (
 func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("it is failed to execute database count operation by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrObjectDBOpErrno, err.Error())
@@ -88,43 +88,35 @@ func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (in
 		return 0, findErr
 	}
 
-	switch {
-	case model.ObjSortNumber == 0 && len(modelResult) <= 0:
-		return 0, nil
-
-	case model.ObjSortNumber == 0 && len(modelResult) > 0:
+	if model.ObjSortNumber < 0 {
 		return modelResult[0].ObjSortNumber + 1, nil
-
-	case model.ObjSortNumber > 0 && len(modelResult) <= 0:
-		return model.ObjSortNumber, nil
-
-	case model.ObjSortNumber > 0 && len(modelResult) > 0:
-		if updateErr := m.valueAdd(kit, model, modelResult); updateErr != nil {
-			blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
-			return 0, updateErr
-		}
-		return model.ObjSortNumber, nil
-
-	default:
-		// 按逻辑不应触达此处
-		return 0, kit.CCError.Error(common.CCErrCommParamsIsInvalid)
 	}
+
+	if model.ObjSortNumber >= 0 && len(modelResult) <= 0 {
+		return model.ObjSortNumber, nil
+	}
+
+	if updateErr := m.objSortNumberAdd(kit, model); updateErr != nil {
+		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
+		return 0, updateErr
+	}
+	return model.ObjSortNumber, nil
 }
 
 // valueAdd 大于等于model值的obj_sort_number字段值加一
-func (m *modelManager) valueAdd(kit *rest.Kit, model metadata.Object, modelArr []metadata.Object) error {
-	for _, mod := range modelArr {
-		if mod.ObjSortNumber < model.ObjSortNumber {
-			continue
-		}
-		updateFilter := map[string]interface{}{metadata.ModelFieldID: mod.ID}
-		updateData := map[string]interface{}{metadata.ModelFieldObjSortNumber: mod.ObjSortNumber + 1}
-		updateErr := mongodb.Client().Table(common.BKTableNameObjDes).Update(kit.Ctx, updateFilter, updateData)
-		if updateErr != nil {
-			blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s",
-				updateErr, updateFilter, kit.Rid)
-			return updateErr
-		}
+func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) error {
+	incCond := mapstr.MapStr{
+		metadata.ModelFieldObjCls:        model.ObjCls,
+		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: model.ObjSortNumber},
+		metadata.ModelFieldID:            mapstr.MapStr{common.BKDBNE: model.ID},
+	}
+
+	incData := mapstr.MapStr{metadata.ModelFieldObjSortNumber: int64(1)}
+	err := mongodb.Client().Table(common.BKTableNameObjDes).UpdateMultiModel(kit.Ctx, incCond, types.ModeUpdate{
+		Op: "inc", Doc: incData})
+	if err != nil {
+		blog.Errorf("increase object sort number failed, err: %v, model: %+v, rid: %s", err, model, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	return nil
 }
@@ -222,6 +214,9 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	}
 	//如果传递了 bk_classification_id 字段,按照更新模型所属分组处理
 	if data.Exists(metadata.ModelFieldObjCls) {
+		if !data.Exists(metadata.ModelFieldObjSortNumber) {
+			object.ObjSortNumber = -1
+		}
 		sortNum, err := m.GetModelLastNum(kit, object)
 		if err != nil {
 			blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
@@ -250,17 +245,9 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 			object.ID, kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
+	object.ObjCls = clsResult[0].ObjCls
 
-	//查询当前分组下的所有模型信息
-	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: clsResult[0].ObjCls}
-	modelResult := make([]metadata.Object, 10)
-	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).
-		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); findErr != nil {
-		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", findErr, kit.Rid)
-		return findErr
-	}
-
-	if updateErr := m.valueAdd(kit, object, modelResult); updateErr != nil {
+	if updateErr := m.objSortNumberAdd(kit, object); updateErr != nil {
 		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
 		return updateErr
 	}
@@ -271,7 +258,7 @@ func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]met
 
 	dataResult := make([]metadata.Object, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
-		All(kit.Ctx, &dataResult); nil != err {
+		All(kit.Ctx, &dataResult); err != nil {
 		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
 		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -283,8 +270,8 @@ func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]met
 func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	dataResult := make([]mapstr.MapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
-		All(kit.Ctx, &dataResult); nil != err {
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx,
+		&dataResult); err != nil {
 		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
 		return dataResult, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -296,7 +283,7 @@ func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condi
 func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
-	if nil != err {
+	if err != nil {
 		blog.Errorf("it is failed to execute a deletion operation on the table, err: %v, table: %s, rid: %s",
 			err, common.BKTableNameObjDes, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
