@@ -46,6 +46,6 @@
 <template>
   <div class="mapstring-value">
     <div class="empty" v-if="!tags.length">--</div>
-    <flex-tag v-else :list="tags"></flex-tag>
+    <flex-tag v-else :is-tag-style="true" :list="tags"></flex-tag>
   </div>
 </template>
