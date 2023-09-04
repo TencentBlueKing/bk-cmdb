@@ -128,13 +128,14 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	if !data.Exists(metadata.ModelFieldObjSortNumber) {
 		data.Set(metadata.ModelFieldObjSortNumber, -1)
 	}
-	obj, err := o.createParamCheck(kit, data)
+	obj, err := o.createObjectParamCheck(kit, data)
 	if err != nil {
 		blog.Errorf("param check failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
 		return nil, err
 	}
 
-	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header, &metadata.CreateModel{Spec: *obj})
+	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header,
+		&metadata.CreateModel{Spec: *obj})
 	if err != nil {
 		blog.Errorf("create object(%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 		return nil, err
@@ -201,8 +202,8 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	return obj, nil
 }
 
-// CreateObject create common object
-func (o *object) createParamCheck(kit *rest.Kit, data mapstr.MapStr) (*metadata.Object, error) {
+// createParamCheck create object param check
+func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*metadata.Object, error) {
 	obj, err := o.isValid(kit, false, data)
 	if err != nil {
 		blog.Errorf("valid data failed, err: %v, data :%v, rid: %s", err, data, kit.Rid)

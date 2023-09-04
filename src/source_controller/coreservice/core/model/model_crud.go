@@ -53,6 +53,9 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
+	if model.ObjSortNumber < 0 {
+		return id, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
 	sortNum, err := m.GetModelLastNum(kit, *model)
 	if err != nil {
 		blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
@@ -80,30 +83,30 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (int64, error) {
 	//查询当前分组下的模型信息
 	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: model.ObjCls}
-	modelResult := make([]metadata.Object, 10)
+	modelResult := make([]metadata.Object, 0)
 	sortCond := "-obj_sort_number"
-	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).
-		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); findErr != nil {
-		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", findErr, kit.Rid)
-		return 0, findErr
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).
+		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); err != nil {
+		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
 	}
 
-	if model.ObjSortNumber < 0 {
+	if len(modelResult) <= 0 {
+		return 0, nil
+	}
+
+	if model.ObjSortNumber < 0 && len(modelResult) > 0 {
 		return modelResult[0].ObjSortNumber + 1, nil
 	}
 
-	if model.ObjSortNumber >= 0 && len(modelResult) <= 0 {
-		return model.ObjSortNumber, nil
-	}
-
-	if updateErr := m.objSortNumberAdd(kit, model); updateErr != nil {
-		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
-		return 0, updateErr
+	if err := m.objSortNumberAdd(kit, model); err != nil {
+		blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, err
 	}
 	return model.ObjSortNumber, nil
 }
 
-// valueAdd 大于等于model值的obj_sort_number字段值加一
+// objSortNumberAdd 大于等于model值的obj_sort_number字段值加一
 func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) error {
 	incCond := mapstr.MapStr{
 		metadata.ModelFieldObjCls:        model.ObjCls,
@@ -115,7 +118,7 @@ func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) er
 	err := mongodb.Client().Table(common.BKTableNameObjDes).UpdateMultiModel(kit.Ctx, incCond, types.ModeUpdate{
 		Op: "inc", Doc: incData})
 	if err != nil {
-		blog.Errorf("increase object sort number failed, err: %v, model: %+v, rid: %s", err, model, kit.Rid)
+		blog.Errorf("increase object sort number failed, err: %v, model: %v, rid: %s", err, model, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	return nil
@@ -127,7 +130,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 	models := make([]metadata.Object, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
 	if err != nil {
-		blog.Errorf("find models failed, err: %s, filter: %+v, rid: %s", err, cond.ToMapStr(), kit.Rid)
+		blog.Errorf("find models failed, err: %v, filter: %v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -172,7 +175,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 
 			count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(nameCond).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("failed to check the validity of the model name, filter: %+v, err: %v, rid: %s",
+				blog.Errorf("failed to check the validity of the model name, filter:  %v, err: %v, rid: %s",
 					nameCond, err, kit.Rid)
 				return 0, err
 			}
@@ -184,7 +187,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 			filter := map[string]interface{}{common.BKFieldID: model.ID}
 			cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, data)
 			if err != nil {
-				blog.Errorf("failed to update table (%s), err: %v, cond: %+v, data: %+v, err: %v,rid: %s",
+				blog.Errorf("failed to update table (%s), err: %v, cond:  %v, data:  %v, err: %v,rid: %s",
 					common.BKTableNameObjDes, filter, data, err, kit.Rid)
 				return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 			}
@@ -194,7 +197,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
 	if err != nil {
-		blog.Errorf("failed to update the table (%s), err: %s, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
+		blog.Errorf("failed to update the table (%s), err: %v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -235,10 +238,10 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	//查询当前模型的分组信息
 	clsInput := map[string]interface{}{metadata.ModelFieldID: object.ID}
 	clsResult := make([]metadata.Object, 0)
-	if findErr := mongodb.Client().Table(common.BKTableNameObjDes).Find(clsInput).Fields(metadata.ModelFieldObjCls).
-		All(kit.Ctx, &clsResult); findErr != nil {
-		blog.Error("get object classification failed, err: %v, objID: %d, rid: %s", findErr, object.ID, kit.Rid)
-		return findErr
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(clsInput).Fields(metadata.ModelFieldObjCls).
+		All(kit.Ctx, &clsResult); err != nil {
+		blog.Error("get object classification failed, err: %v, objID: %d, rid: %s", err, object.ID, kit.Rid)
+		return err
 	}
 	if len(clsResult) <= 0 {
 		blog.Errorf("no model classification id founded, err: model classification no founded, objID: %d, rid: %s",
@@ -247,9 +250,9 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	}
 	object.ObjCls = clsResult[0].ObjCls
 
-	if updateErr := m.objSortNumberAdd(kit, object); updateErr != nil {
-		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", updateErr, kit.Rid)
-		return updateErr
+	if err := m.objSortNumberAdd(kit, object); err != nil {
+		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", err, kit.Rid)
+		return err
 	}
 	return nil
 }
@@ -347,7 +350,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	modelDelCond = util.SetQueryOwner(modelDelCond, kit.SupplierAccount)
 
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDelCond); err != nil {
-		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, modelDelCond, kit.Rid)
+		blog.Errorf("delete model attribute failed, err: %v, cond: %v, rid: %s", err, modelDelCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -360,7 +363,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
 
 	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, quoteCond); err != nil {
-		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, quoteCond, kit.Rid)
+		blog.Errorf("delete model quote relations failed, err: %v, filter: %v, rid: %v", err, quoteCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -371,14 +374,14 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 
 	// delete model property group.
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {
-		blog.Errorf("delete model attribute group failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("delete model attribute group failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete table model.
 	_, err = mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
 	if err != nil {
-		blog.Errorf("delete model failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("delete model failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -395,7 +398,7 @@ func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID stri
 	// create table object instance collection.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
-		return fmt.Errorf("create object instance sharding table, %+v", err)
+		return fmt.Errorf("create object instance sharding table,  %+v", err)
 	}
 	return nil
 }

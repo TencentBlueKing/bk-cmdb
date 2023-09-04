@@ -27,7 +27,7 @@ import (
 )
 
 func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
-	//查询 obj_sort_number 字段是否已存在，存在则返回
+	// 查询 obj_sort_number 字段是否已存在，存在则返回
 	objSortNumberList := make([]map[string]int64, 0)
 	objSortNumberFilter := map[string]interface{}{
 		common.ObjSortNumberField: map[string]interface{}{
@@ -44,7 +44,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 		return nil
 	}
 
-	//获取所有模型信息
+	// 获取所有模型信息
 	objectList := make([]metadata.Object, 0)
 	err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKFieldID, common.BKClassificationIDField).
 		All(ctx, &objectList)
@@ -58,11 +58,11 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 		clsMap[object.ObjCls] = append(clsMap[object.ObjCls], object.ID)
 	}
 
-	for _, idArr := range clsMap {
-		if len(idArr) == 0 {
+	for _, ids := range clsMap {
+		if len(ids) == 0 {
 			continue
 		}
-		for index, id := range idArr {
+		for index, id := range ids {
 			filter := map[string]int64{
 				common.BKFieldID: id,
 			}
