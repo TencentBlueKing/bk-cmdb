@@ -147,12 +147,12 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 
 // VerifyRegexValidity 验证正则表达式的合法性
 func (c *DynamicGroupCondition) VerifyRegexValidity() error {
-	//验证 value 是否为空
+	// 验证 value 是否为空
 	if c.Value == nil {
 		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v", c.Value)
 		return errors.New("value not set")
 	}
-	//模糊匹配时需要验证正则表达式的合法性
+	// 模糊匹配时需要验证正则表达式的合法性
 	if c.Operator != common.BKDBLIKE {
 		return nil
 	}
