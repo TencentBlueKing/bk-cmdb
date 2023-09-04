@@ -22,7 +22,7 @@
           v-model.trim="filter">
         </bk-input>
       </div>
-      <ul class="property-list property-list-unselected">
+      <ul v-if="unselectedProperties.length" class="property-list property-list-unselected">
         <li ref="unselectedPropertyItem" class="property-item"
           v-for="(property, index) in unselectedProperties" :key="index"
           @click="selectProperty(property)">
@@ -30,6 +30,9 @@
           <i class="bk-icon icon-arrows-right"></i>
         </li>
       </ul>
+      <cmdb-data-empty v-else slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </div>
     <div class="config-wrapper config-selected fl">
       <div class="wrapper-header selected-header">
@@ -112,7 +115,13 @@
     data() {
       return {
         filter: '',
-        localSelected: []
+        localSelected: [],
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
     },
     computed: {
@@ -163,6 +172,9 @@
     watch: {
       selected() {
         this.initLocalSelected()
+      },
+      filter(value) {
+        this.dataEmpty.type = value ? 'search' : 'empty'
       }
     },
     created() {
@@ -215,6 +227,9 @@
             this.$emit('reset')
           }
         })
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }

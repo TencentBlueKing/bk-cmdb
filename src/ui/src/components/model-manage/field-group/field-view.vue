@@ -16,75 +16,117 @@
     <div class="field-view-list" ref="fieldList">
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('唯一标识')}}</span>：
+          <span>{{$t('唯一标识')}}</span>
         </div>
         <span class="property-value">{{field.bk_property_id}}</span>
       </div>
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('字段名称')}}</span>：
+          <span>{{$t('字段名称')}}</span>
         </div>
         <span class="property-value">{{field.bk_property_name}}</span>
       </div>
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('字段类型')}}</span>：
+          <span>{{$t('字段类型')}}</span>
         </div>
         <span class="property-value">{{fieldTypeMap[field.bk_property_type]}}</span>
       </div>
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('是否可编辑')}}</span>：
+          <span>{{$t('是否可编辑')}}</span>
         </div>
         <span class="property-value">{{field.editable ? $t('可编辑') : $t('不可编辑')}}</span>
       </div>
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('是否必填')}}</span>：
+          <span>{{$t('是否必填')}}</span>
         </div>
         <span class="property-value">{{field.isrequired ? $t('必填') : $t('非必填')}}</span>
       </div>
       <div class="property-item" v-if="hasMultipleType">
         <div class="property-name">
-          <span>{{$t('是否可多选')}}</span>：
+          <span>{{$t('是否可多选')}}</span>
         </div>
         <span class="property-value">{{field.ismultiple ? $t('可多选') : $t('不可多选')}}</span>
       </div>
       <div class="property-item" v-if="stringLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t('正则校验')}}</span>：
+          <span>{{$t('正则校验')}}</span>
         </div>
         <span class="property-value">{{option || '--'}}</span>
       </div>
       <template v-else-if="numberLikes.includes(field.bk_property_type)">
         <div class="property-item">
           <div class="property-name">
-            <span>{{$t('最小值')}}</span>：
+            <span>{{$t('最小值')}}</span>
           </div>
           <span class="property-value">{{option.min || (option.min === 0 ? 0 : '--')}}</span>
         </div>
         <div class="property-item">
           <div class="property-name">
-            <span>{{$t('最大值')}}</span>：
+            <span>{{$t('最大值')}}</span>
           </div>
           <span class="property-value">{{option.max || (option.max === 0 ? 0 : '--')}}</span>
         </div>
       </template>
-      <div class="property-item">
+      <div class="property-item" v-if="numberLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{$t('单位')}}</span>：
+          <span>{{$t('单位')}}</span>
         </div>
         <span class="property-value">{{field.unit || '--'}}</span>
       </div>
       <div class="property-item">
         <div class="property-name">
-          <span>{{$t('用户提示')}}</span>：
+          <span>{{$t('用户提示')}}</span>
         </div>
         <span class="property-value">{{field.placeholder || '--'}}</span>
       </div>
+      <div class="property-item full-width" v-if="isTableType">
+        <div class="property-name">
+          <span>{{$t('表格列设置')}}</span>
+        </div>
+        <div class="property-value mt10">
+          <bk-table
+            :data="option.header"
+            :outer-border="true"
+            :header-border="false">
+            <bk-table-column
+              :label="$t('字段ID')"
+              prop="bk_property_id"
+              :show-overflow-tooltip="true" />
+            <bk-table-column
+              :label="$t('字段名称')"
+              prop="bk_property_name"
+              :show-overflow-tooltip="true" />
+            <bk-table-column
+              :label="$t('字段类型')"
+              prop="bk_property_type"
+              :show-overflow-tooltip="true">
+              <template #default="{ row }">
+                {{ fieldTypeMap[row.bk_property_type] }}
+              </template>
+            </bk-table-column>
+          </bk-table>
+        </div>
+      </div>
+      <div class="property-item full-width" v-if="isTableType">
+        <div class="property-name">
+          <span>{{$t('默认值')}}</span>
+        </div>
+        <div class="property-value mt10">
+          <table-default-settings
+            v-if="option.header.length > 0"
+            :readonly="true"
+            :preview="true"
+            :headers="option.header"
+            :defaults="option.default" />
+          <span v-else>--</span>
+        </div>
+      </div>
       <div class="property-item enum-list" v-if="listLikes.includes(field.bk_property_type)">
         <div class="property-name">
-          <span>{{ ['list'].includes(this.type) ? $t('列表值') : $t('枚举值') }}</span>：
+          <span>{{ ['list'].includes(this.type) ? $t('列表值') : $t('枚举值') }}</span>
         </div>
         <div class="property-value">
           <template v-if="getEnumValue.length">
@@ -93,10 +135,9 @@
           <span v-else>--</span>
         </div>
       </div>
-      <div class="property-item enum-list"
-        v-if="!listLikes.includes(field.bk_property_type)">
+      <div class="property-item enum-list" v-else-if="!isTableType">
         <div class="property-name">
-          <span>{{$t('默认值')}}</span>：
+          <span>{{$t('默认值')}}</span>
         </div>
         <cmdb-property-value
           class="property-value"
@@ -119,8 +160,12 @@
 
 <script>
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import TableDefaultSettings from './table-default-settings.vue'
 
   export default {
+    components: {
+      TableDefaultSettings
+    },
     props: {
       field: {
         type: Object,
@@ -149,11 +194,20 @@
         if (this.listLikes.includes(this.type)) {
           return this.field.option || []
         }
+        if (this.isTableType) {
+          return this.field.option || {
+            header: [],
+            default: []
+          }
+        }
         return this.field.option
       },
       hasMultipleType() {
         const types = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI]
         return types.includes(this.type)
+      },
+      isTableType() {
+        return this.type === PROPERTY_TYPES.INNER_TABLE
       },
       defaultValue() {
         if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {
@@ -212,7 +266,8 @@
         .property-item {
             min-width: 48%;
             padding-top: 20px;
-            &.enum-list {
+            &.enum-list,
+            &.full-width {
                 flex: 100%;
                 .property-name,
                 .property-value {
@@ -220,13 +275,28 @@
                     vertical-align: top;
                 }
             }
+            &.full-width {
+              .property-value {
+                display: block;
+              }
+              .property-name {
+                width: auto;
+              }
+            }
         }
         .property-name {
             display: inline-block;
             color: #63656e;
+            width: 90px;
             span {
-                display: inline-block;
-                min-width: 70px;
+              display: inline-block;
+              position: relative;
+              padding-right: 14px;
+              &::after {
+                position: absolute;
+                right: 0;
+                content: "：";
+              }
             }
         }
         .property-value {

@@ -34,7 +34,7 @@ import (
 
 	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
 
 var sortFields = []string{
@@ -51,6 +51,7 @@ var sortFields = []string{
 	"isreadonly",
 	"isonly",
 	"ismultiple",
+	"default",
 }
 
 // ImportObject import object attribute
@@ -67,13 +68,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
-			defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -106,7 +100,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
+	attrItems, errMsg, err := s.Logics.GetImportAttr(ctx, f, objID, 3, defLang)
 	if len(attrItems) == 0 {
 		var msg string
 		if err != nil {
@@ -126,7 +120,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	logics.ConvAttrOption(attrItems)
+	logics.ConvAttr(attrItems)
 
 	param := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, param)
@@ -208,11 +202,19 @@ func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row
 			case common.BKOptionField:
 
 				bOptions, err := json.Marshal(t)
-				if nil != err {
-					blog.Errorf("option format error:%v, rid: %s", t, rid)
+				if err != nil {
+					blog.Errorf("option format failed, err: %v, rid: %s", err, rid)
 					cell.SetValue("error info:" + err.Error())
 				} else {
 					cell.SetString(string(bOptions))
+				}
+			case common.BKDefaultFiled:
+				bDef, err := json.Marshal(t)
+				if err != nil {
+					blog.Errorf("default value format failed, err: %v, rid: %s", err, rid)
+					cell.SetValue("error info:" + err.Error())
+				} else {
+					cell.SetString(string(bDef))
 				}
 
 			default:
@@ -590,6 +592,11 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 		blog.Errorf("unmarshal body to json failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	if len(cond.Object) == 0 {
+		c.JSON(http.StatusOK, metadata.Response{BaseResp: metadata.BaseResp{Result: true, ErrMsg: "success"}})
 		return
 	}
 

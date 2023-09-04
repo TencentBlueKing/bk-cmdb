@@ -175,7 +175,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		template, err = ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, input.Property)
 		if err != nil {
 			blog.Errorf("update process template: %v failed.", input)
-			return ctx.Kit.CCError.CCError(common.CCErrProcUpdateProcessTemplateFailed)
+			return err
 		}
 		return nil
 	})

@@ -863,3 +863,39 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-pod-folder:before {
 	content: "\e3d2";
 }
+.icon-duanzifu:before {
+	content: "\e3d3";
+}
+.icon-host:before {
+	content: "\e3d4";
+}
+.icon-shuzi:before {
+	content: "\e3d8";
+}
+.icon-fudianleixing:before {
+	content: "\e3d5";
+}
+.icon-meiju:before {
+	content: "\e3d6";
+}
+.icon-changzifu:before {
+	content: "\e3d9";
+}
+.icon-zuzhijiagou:before {
+	content: "\e3d7";
+}
+.icon-yonghu:before {
+	content: "\e3db";
+}
+.icon-bool:before {
+	content: "\e3da";
+}
+.icon-shiqu:before {
+	content: "\e3dc";
+}
+.icon-zonghe:before {
+	content: "\e3dd";
+}
+.icon-cc-table:before {
+	content: "\e3de";
+}

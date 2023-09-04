@@ -40,6 +40,8 @@ var commHostBaseIndexes = []types.Index{
 		PartialFilterExpression: map[string]interface{}{
 			common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
+			// only hosts with addressing = "static" must satisfy the uniqueness of inner ip + cloud id
+			common.BKAddressingField: common.BKAddressingStatic,
 		},
 	},
 	{
@@ -53,6 +55,23 @@ var commHostBaseIndexes = []types.Index{
 		PartialFilterExpression: map[string]interface{}{
 			common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
+			// only hosts with addressing = "static" must satisfy the uniqueness of inner ipv6 + cloud id
+			common.BKAddressingField: common.BKAddressingStatic,
+		},
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
+		Keys: bson.D{
+			{common.BKAgentIDField, 1},
+		},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKAgentIDField: map[string]string{
+				common.BKDBType: "string",
+				// allows multiple hosts to not bind agentID, in this case they will have a default empty agentID of ""
+				common.BKDBGT: "",
+			},
 		},
 	},
 }

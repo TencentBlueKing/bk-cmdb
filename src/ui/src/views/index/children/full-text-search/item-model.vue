@@ -38,8 +38,8 @@
 <script>
   import { defineComponent, toRefs, computed } from 'vue'
   import store from '@/store'
-  import { t } from '@/i18n'
   import { getText, getHighlightValue } from './use-item.js'
+  import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
 
   export default defineComponent({
     name: 'item-model',
@@ -87,20 +87,7 @@
         })
       })))
 
-      const fieldTypeMap = {
-        singlechar: t('短字符'),
-        int: t('数字'),
-        float: t('浮点'),
-        enum: t('枚举'),
-        date: t('日期'),
-        time: t('时间'),
-        longchar: t('长字符'),
-        objuser: t('用户'),
-        timezone: t('时区'),
-        bool: 'bool',
-        list: t('列表'),
-        organization: t('组织')
-      }
+      const fieldTypeMap = PROPERTY_TYPE_NAMES
 
       return {
         properties,

@@ -112,7 +112,7 @@
     },
     watch: {
       info(info) {
-        const hostList = info.host.bk_host_innerip.split(',')
+        const hostList = info.host.bk_host_innerip ? info.host.bk_host_innerip.split(',') : info.host.bk_host_innerip_v6.split(',')
         const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
         this.setBreadcrumbs(host)
       },

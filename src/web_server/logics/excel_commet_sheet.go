@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 	"strings"
@@ -21,49 +20,55 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
 
-// ProductExcelCommentSheet TODO
-// ProductExcelHeader Excel comment sheet，
-func ProductExcelCommentSheet(ctx context.Context, excel *xlsx.File, defLang lang.DefaultCCLanguageIf) {
+// ProductExcelCommentSheet product excel comment sheet
+func ProductExcelCommentSheet(ctx context.Context, excel *xlsx.File, defLang lang.DefaultCCLanguageIf) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	sheetName := defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + "_sheet_name")
-	if "" == sheetName {
+	if sheetName == "" {
 		sheetName = "comment"
 	}
 
 	sheet, err := excel.AddSheet(sheetName)
-	if nil != err {
-		blog.Errorf("add comment sheet error,sheet name:%s, error:%s , rid: %s", sheetName, err.Error(), rid)
-		return
+	if err != nil {
+		blog.Errorf("add comment sheet error,sheet name: %s, error: %v, rid: %s", sheetName, err, rid)
+		return err
 	}
 	strJSON := defLang.Language(common.ExcelCommentSheetCotentLangPrefixKey + "_sheet")
-	if "" == strJSON {
+	if strJSON == "" {
 		blog.Errorf("excel comment sheet content is empty, rid: %s", rid)
-		return
+		return err
 	}
 	var jsSheet jsonSheet
 	err = json.Unmarshal([]byte(strJSON), &jsSheet)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("excel comment sheet content not json format , rid: %s", rid)
-		return
+		return err
 	}
 
+	if err := productExcelCommentSheet(jsSheet, sheet, defLang); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func productExcelCommentSheet(jsSheet jsonSheet, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
 	for idx, col := range jsSheet.Cols {
-		if nil == col {
+		if col == nil {
 			continue
 		}
+		sheet.SetColWidth(idx+1, idx+1, *col.Width)
 		c := sheet.Col(idx)
 		c.Collapsed = col.Collapsed
 		c.Hidden = col.Hidden
-		c.Max = col.Max
-		c.Min = col.Min
-		c.Width = col.Width
-		if nil != col.Style {
+		if col.Style != nil {
 			s := c.GetStyle()
-			if nil == s {
+			if s == nil {
 				s = xlsx.NewStyle()
 			}
 			s.Alignment = col.Style.Alignment
@@ -77,25 +82,29 @@ func ProductExcelCommentSheet(ctx context.Context, excel *xlsx.File, defLang lan
 
 			c.SetStyle(s)
 		}
-
 	}
 
 	for idx, row := range jsSheet.Rows {
-		if nil == row {
+		if row == nil {
 			continue
 		}
-		r := sheet.Row(idx)
-		if 0 < row.Height {
+		r, err := sheet.Row(idx)
+		if err != nil {
+			return err
+		}
+		if row.Height > 0 {
 			r.SetHeight(row.Height)
-
 		}
 		r.Hidden = row.Hidden
 
 		for cIdx, c := range row.Cells {
-			if nil == c {
+			if c == nil {
 				continue
 			}
-			cell := sheet.Cell(idx, cIdx)
+			cell, err := sheet.Cell(idx, cIdx)
+			if err != nil {
+				return err
+			}
 			cell.SetFormula(c.Formula)
 			cell.Hidden = c.Hidden
 			cell.HMerge = c.HMerge
@@ -126,11 +135,10 @@ func ProductExcelCommentSheet(ctx context.Context, excel *xlsx.File, defLang lan
 
 				cell.SetStyle(s)
 			}
-
 		}
-
 	}
 
+	return nil
 }
 
 type style struct {
@@ -155,9 +163,9 @@ type cell struct {
 type col struct {
 	Min       int
 	Max       int
-	Hidden    bool
-	Width     float64
-	Collapsed bool
+	Hidden    *bool
+	Width     *float64
+	Collapsed *bool
 	Style     *style
 }
 

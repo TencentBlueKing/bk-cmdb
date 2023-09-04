@@ -19,6 +19,13 @@ type DeleteOption struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
+// DeleteTableOption delete table field option.
+type DeleteTableOption struct {
+	ObjID      string `json:"bk_obj_id"`
+	ID         int64  `json:"id"`
+	PropertyID string `json:"bk_property_id"`
+}
+
 // DeletedOptionResult delete  api http response return result struct
 type DeletedOptionResult struct {
 	BaseResp `json:",inline"`

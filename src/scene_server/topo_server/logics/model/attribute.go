@@ -15,6 +15,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"unicode/utf8"
 
 	"configcenter/src/ac/extensions"
@@ -28,15 +29,18 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
-	DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error
+	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
+	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	// CreateObjectBatch upsert object attributes
 	CreateObjectBatch(kit *rest.Kit, data map[string]metadata.ImportObjectData) (mapstr.MapStr, error)
+	UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64) error
 	// FindObjectBatch find object to attributes mapping
 	FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapStr, error)
 	ValidObjIDAndInstID(kit *rest.Kit, objID string, option interface{}, isMultiple bool) error
@@ -255,6 +259,119 @@ func (a *attribute) ValidObjIDAndInstID(kit *rest.Kit, objID string, option inte
 	return nil
 }
 
+func (a *attribute) validTableAttributes(kit *rest.Kit, option interface{}) error {
+
+	if option == nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "option")
+	}
+
+	tableOption, err := metadata.ParseTableAttrOption(option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, option: %+v, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	headerAttrMap, err := a.validAndGetTableAttrHeaderDetail(kit, tableOption.Header)
+	if err != nil {
+		return err
+	}
+
+	if err := a.ValidTableAttrDefaultValue(kit, tableOption.Default, headerAttrMap); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validAndGetTableAttrHeaderDetail in the creation and update scenarios, the full amount of header
+// content needs to be passed.
+func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
+	map[string]*metadata.Attribute, error) {
+
+	if len(header) == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	if len(header) > metadata.TableHeaderMaxNum {
+		return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableHeaderMaxNum)
+	}
+	propertyAttr := make(map[string]*metadata.Attribute)
+	var longCharNum int
+	for index := range header {
+		// determine whether the underlying type is legal
+		if !metadata.ValidTableFieldBaseType(header[index].PropertyType) {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyType)
+		}
+		// the number of long characters in the basic type of the table
+		// field type cannot exceed the maximum value supported by the system.
+		if header[index].PropertyType == common.FieldTypeLongChar {
+			longCharNum++
+		}
+		if longCharNum > metadata.TableLongCharMaxNum {
+			return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableLongCharMaxNum)
+		}
+
+		// check if property type for creation is valid, can't update property type
+		if header[index].PropertyType == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+		}
+
+		if header[index].PropertyID == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+		}
+
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(header[index].PropertyID) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
+					"model_attr_bk_property_id"), common.AttributeIDMaxLength)
+		}
+
+		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, header[index].PropertyID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !match {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyID)
+		}
+
+		if header[index].PropertyName == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+		}
+
+		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
+					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
+		}
+
+		propertyAttr[header[index].PropertyID] = &header[index]
+	}
+	return propertyAttr, nil
+}
+
+// ValidTableAttrDefaultValue attr: key is property_id, value is the corresponding header content.
+func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map[string]interface{},
+	attr map[string]*metadata.Attribute) error {
+
+	if len(defaultValue) == 0 {
+		return nil
+	}
+	if len(defaultValue) > metadata.TableDefaultMaxLines {
+		return kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table.default.limit", metadata.TableDefaultMaxLines)
+	}
+	// judge the legality of each field of the default
+	// value according to the attributes of the header.
+	for _, value := range defaultValue {
+		for k, v := range value {
+			attr[k].IsRequired = false
+			if err := attr[k].ValidTableDefaultAttr(kit.Ctx, v); err.ErrCode != 0 {
+				return err.ToCCError(kit.CCError)
+			}
+		}
+	}
+	return nil
+}
+
 // isValid check is valid
 func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribute) error {
 	if data.PropertyID == common.BKInstParentStr {
@@ -262,7 +379,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	}
 
 	if (isUpdate && data.IsMultiple != nil) || !isUpdate {
-		if err := util.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+		if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
 			return err
 		}
 	}
@@ -305,8 +422,8 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if !isUpdate && a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := util.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple,
-			data.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, data.Default, kit.Rid,
+			kit.CCError); err != nil {
 			return err
 		}
 	}
@@ -409,6 +526,143 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 	return nil
 }
 
+func (a *attribute) validCreateTableAttribute(kit *rest.Kit, data *metadata.Attribute) error {
+	// check if the object is mainline object, if yes. then user can not create required attribute.
+	yes, err := a.isMainlineModel(kit, data.ObjectID)
+	if err != nil {
+		blog.Errorf("not allow to add required attribute to mainline object: %+v. "+"rid: %d.", data, kit.Rid)
+		return err
+	}
+
+	if yes && data.IsRequired {
+		return kit.CCError.Error(common.CCErrTopoCanNotAddRequiredAttributeForMainlineModel)
+	}
+
+	// check the object id
+	exist, err := a.obj.IsObjectExist(kit, data.ObjectID)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		blog.Errorf("obj id is not exist, obj id: %s, rid: %s", data.ObjectID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+	}
+
+	if err = a.checkAttributeGroupExist(kit, data); err != nil {
+		blog.Errorf("failed to create the default group, err: %s, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := a.validTableAttributes(kit, data.Option); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metadata.Attribute) error {
+
+	t := metadata.Now()
+	obj := metadata.Object{
+		ObjCls:     metadata.ClassificationTableID,
+		ObjIcon:    "icon-cc-table",
+		ObjectID:   data.ObjectID,
+		ObjectName: data.PropertyName,
+		IsHidden:   true,
+		Creator:    string(metadata.FromCCSystem),
+		Modifier:   string(metadata.FromCCSystem),
+		CreateTime: &t,
+		LastTime:   &t,
+		OwnerID:    kit.SupplierAccount,
+	}
+
+	objRsp, err := a.clientSet.CoreService().Model().CreateTableModel(kit.Ctx, kit.Header,
+		&metadata.CreateModel{Spec: obj, Attributes: []metadata.Attribute{*data}})
+	if err != nil {
+		blog.Errorf("create table object(%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
+		return err
+	}
+
+	obj.ID = int64(objRsp.Created.ID)
+	objID := metadata.GenerateModelQuoteObjName(data.ObjectID, data.PropertyID)
+	// create the default group
+	groupData := metadata.Group{
+		IsDefault:  true,
+		GroupIndex: -1,
+		GroupName:  "Default",
+		GroupID:    NewGroupID(true),
+		ObjectID:   objID,
+		OwnerID:    obj.OwnerID,
+	}
+
+	_, err = a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
+		objID, metadata.CreateModelAttributeGroup{Data: groupData})
+	if err != nil {
+		blog.Errorf("create attribute group[%s] failed, err: %v, rid: %s", groupData.GroupID, err, kit.Rid)
+		return err
+	}
+
+	// generate audit log of object attribute group.
+	audit := auditlog.NewObjectAuditLog(a.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// save audit log.
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+// CreateTableObjectAttribute create internal form fields in a separate process
+func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (
+	*metadata.Attribute, error) {
+	if data.IsOnly {
+		data.IsRequired = true
+	}
+
+	if len(data.PropertyGroup) == 0 {
+		data.PropertyGroup = "default"
+	}
+
+	if err := a.validCreateTableAttribute(kit, data); err != nil {
+		return nil, err
+	}
+
+	if err := a.createTableModelAndAttributeGroup(kit, data); err != nil {
+		return nil, err
+	}
+
+	data.OwnerID = kit.SupplierAccount
+	if err := a.createModelQuoteRelation(kit, data.ObjectID, data.PropertyID); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, propertyID string) error {
+
+	relation := metadata.ModelQuoteRelation{
+		DestModel:  metadata.GenerateModelQuoteObjID(objectID, propertyID),
+		SrcModel:   objectID,
+		PropertyID: propertyID,
+		Type:       common.ModelQuoteType(common.FieldTypeInnerTable),
+	}
+
+	if cErr := a.clientSet.CoreService().ModelQuote().CreateModelQuoteRelation(kit.Ctx, kit.Header,
+		[]metadata.ModelQuoteRelation{relation}); cErr != nil {
+		blog.Errorf("created quote relation failed, relation: %#v, err: %v, rid: %s", relation, cErr, kit.Rid)
+		return cErr
+	}
+
+	return nil
+}
+
 // CreateObjectAttribute create object attribute
 func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error) {
 	if data.IsOnly {
@@ -505,30 +759,17 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 }
 
 // DeleteObjectAttribute delete object attribute
-func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, modelBizID int64) error {
-	util.AddModelBizIDCondition(cond, modelBizID)
-	queryCond := &metadata.QueryCondition{
-		Condition: cond,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	attrItems, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
-	if err != nil {
-		blog.Errorf("failed to find the attributes by the cond(%v), err: %v, rid: %s", cond, err, kit.Rid)
-		return err
-	}
-
-	if len(attrItems.Info) == 0 {
-		blog.Errorf("not find the attributes by the cond(%v), rid: %s", cond, kit.Rid)
-		return nil
-	}
+func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error {
 
 	auditLogArr := make([]metadata.AuditLog, 0)
 	attrIDMap := make(map[string][]int64, 0)
 	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	for _, attrItem := range attrItems.Info {
+	for _, attrItem := range attrItems {
+		if attrItem.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attrItem, kit.Rid)
+			return kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		// generate audit log of model attribute.
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, attrItem.ID, &attrItem)
 		if err != nil {
@@ -565,6 +806,269 @@ func (a *attribute) DeleteObjectAttribute(kit *rest.Kit, cond mapstr.MapStr, mod
 		return err
 	}
 
+	return nil
+}
+
+func (a *attribute) getTableAttrOptionFromDB(kit *rest.Kit, attID, bizID int64) (
+	*metadata.TableAttributesOption, string, error) {
+
+	cond := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: attID},
+		Page:           metadata.BasePage{Limit: common.BKNoLimit},
+		DisableCounter: true,
+	}
+	resp, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, bizID, cond)
+	if nil != err {
+		blog.Errorf("search table attr failed, cond: %+v, bizID: %d, err: %v, rid: %s", cond, bizID, err, kit.Rid)
+		return nil, "", err
+	}
+
+	if len(resp.Info) == 0 {
+		blog.Errorf("no table attr found, cond: %+v, bizID: %d, err: %v, rid: %s", cond, bizID, err, kit.Rid)
+		return nil, "", kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if len(resp.Info) > 1 {
+		blog.Errorf("multi table attr found, cond: %+v, bizID: %d, err: %v, rid: %s", cond, bizID, err, kit.Rid)
+		return nil, "", kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if resp.Info[0].PropertyType != common.FieldTypeInnerTable {
+		blog.Errorf("attr type error, property: %v, cond: %+v, bizID: %d, err: %v, rid: %s", resp.Info[0].PropertyType,
+			cond, bizID, err, kit.Rid)
+		return nil, "", kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	dbAttrsOp, err := metadata.ParseTableAttrOption(resp.Info[0].Option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		return nil, "", err
+	}
+	return dbAttrsOp, resp.Info[0].ObjectID, nil
+}
+
+func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.TableAttributesOption, objID string) (
+	*metadata.TableAttributesOption, *metadata.TableAttributesOption, []string, error) {
+	// according to this map, it is judged whether it is an operation
+	// to delete the table header in the update scene.
+	curHeaderPropertyIDMap := make(map[string]metadata.Attribute)
+	createAttrMap := make(map[string]metadata.Attribute)
+
+	updated := new(metadata.TableAttributesOption)
+	for _, header := range curAttrsOp.Header {
+		// determine whether the underlying type is legal
+		if !metadata.ValidTableFieldBaseType(header.PropertyType) {
+			return nil, nil, nil, fmt.Errorf("table header type is invalid, type : %v", header.PropertyType)
+		}
+		curHeaderPropertyIDMap[header.PropertyID] = header
+		header.ObjectID = metadata.GenerateModelQuoteObjID(objID, header.PropertyID)
+		createAttrMap[header.PropertyID] = header
+	}
+
+	deletePropertyIDs := make([]string, 0)
+
+	for idx := range dbAttrsOp.Header {
+		value, ok := curHeaderPropertyIDMap[dbAttrsOp.Header[idx].PropertyID]
+		if !ok {
+			deletePropertyIDs = append(deletePropertyIDs, dbAttrsOp.Header[idx].PropertyID)
+			continue
+		}
+		// In the update scenario, obtain the corresponding value from the DB for the unchangeable data
+		value.PropertyIndex = dbAttrsOp.Header[idx].PropertyIndex
+		value.BizID = dbAttrsOp.Header[idx].BizID
+		value.ObjectID = metadata.GenerateModelQuoteObjID(objID, dbAttrsOp.Header[idx].PropertyID)
+		value.PropertyGroup = dbAttrsOp.Header[idx].PropertyGroup
+		updated.Header = append(updated.Header, value)
+		// delete the update part, so that the remaining data in
+		// curAttrsOp needs to be newly created.
+		delete(createAttrMap, dbAttrsOp.Header[idx].PropertyID)
+	}
+
+	for id := range curAttrsOp.Default {
+		for v := range curAttrsOp.Default[id] {
+			if _, ok := curHeaderPropertyIDMap[v]; !ok {
+				blog.Errorf("the default value tag: (%v) is not in the header, rid: %s", v, kit.Rid)
+				return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "default")
+			}
+		}
+		// since the default value is directly verified through attributes,
+		// the default value is placed in the update part as a whole.
+		updated.Default = append(updated.Default, curAttrsOp.Default[id])
+	}
+
+	header := make([]metadata.Attribute, 0)
+	for _, v := range createAttrMap {
+		header = append(header, v)
+	}
+
+	// the header here is the new header part
+	curAttrsOp.Header = header
+	if len(curAttrsOp.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
+		return nil, nil, nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header",
+			metadata.TableHeaderMaxNum)
+	}
+
+	return curAttrsOp, updated, deletePropertyIDs, nil
+}
+
+// validUpdateHeader 判断更新场景下的header是否合法
+func (a *attribute) validUpdateHeader(kit *rest.Kit, createHeader, updateHeader []metadata.Attribute) error {
+	if len(createHeader) == 0 && len(updateHeader) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	allHeader := make([]metadata.Attribute, 0)
+
+	if len(createHeader) > 0 {
+		allHeader = append(allHeader, createHeader...)
+	}
+	if len(updateHeader) > 0 {
+		allHeader = append(allHeader, updateHeader...)
+	}
+
+	_, err := a.validAndGetTableAttrHeaderDetail(kit, allHeader)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateTableObjectAttr update object table attribute
+func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, attID, modelBizID int64) error {
+
+	attr := new(metadata.Attribute)
+	if err := mapstruct.Decode2Struct(data, attr); err != nil {
+		blog.Errorf("unmarshal mapstr data into attr failed, attr: %s, err: %v, rid: %s", attr, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed, "data")
+	}
+
+	propertyID := util.GetStrByInterface(data[common.BKPropertyIDField])
+	if propertyID == "" {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
+	}
+
+	updateDataStruct, createDataStruct := *attr, *attr
+
+	curAttrsOp, err := metadata.ParseTableAttrOption(attr.Option)
+	if err != nil {
+		blog.Errorf("decode attr option failed, bizID: %d, err: %v, rid: %s", modelBizID, err, kit.Rid)
+		return err
+	}
+
+	dbAttrsOp, objID, err := a.getTableAttrOptionFromDB(kit, attID, modelBizID)
+	if err != nil {
+		return err
+	}
+
+	// to update. here, the two parts need to be processed separately, and the underlying verification is different.
+	created, updated, _, err := calcTableOptionDiffDefault(kit, curAttrsOp, dbAttrsOp, objID)
+	if err != nil {
+		blog.Errorf("calc table option header failed, objID: %s, curAttrsOp: %+v, dbAttrsOp: %+v, err: %v, rid: %s",
+			objID, curAttrsOp, dbAttrsOp, err, kit.Rid)
+		return err
+	}
+
+	if err := a.validUpdateHeader(kit, created.Header, updated.Header); err != nil {
+		blog.Errorf("update header illegal, create header: %+v, update header: %+v, err: %v, rid: %s", created.Header,
+			updated.Header, err, kit.Rid)
+		return err
+	}
+
+	// for the verification header, it should be verified separately, because some headers are newly created
+	// and some headers are updated. different scenarios correspond to different content that needs to be verified.
+	// for checking the default value, you can check it as a whole, because you only need to check whether the
+	// default value conforms to the attribute of the header. the checksum operation of the default value is
+	// uniformly placed in the default field of the option in the update.
+	headerMap := make(map[string]*metadata.Attribute)
+
+	for idx := range created.Header {
+		headerMap[created.Header[idx].PropertyID] = &created.Header[idx]
+	}
+
+	for idx := range updated.Header {
+		headerMap[updated.Header[idx].PropertyID] = &updated.Header[idx]
+	}
+
+	// updated this part is to be updated
+	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
+		blog.Errorf("valid table attr default failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	updateDataStruct.Option = updated
+	updateDataStruct.ObjectID = objID
+	updateData, err := mapstruct.Struct2Map(updateDataStruct)
+	if err != nil {
+		blog.Errorf("struct to map failed: data: %+v, err: %v, rid: %s", updateDataStruct, err, kit.Rid)
+		return err
+	}
+	if len(created.Header) == 0 && len(updateData) == 0 {
+		return nil
+	}
+
+	condUpdate := mapstr.MapStr{common.BKFieldID: attID}
+	util.AddModelBizIDCondition(condUpdate, modelBizID)
+	input := metadata.UpdateTableOption{Condition: condUpdate}
+	createDataStruct.Option = created
+
+	if len(created.Header) > 0 {
+		input.CreateData = metadata.CreatePartDataOption{Data: []metadata.Attribute{createDataStruct}, ObjID: objID}
+	}
+
+	if len(updateData) > 0 {
+		input.UpdateData = updateData
+	}
+	err = a.clientSet.CoreService().Model().UpdateTableModelAttrsByCondition(kit.Ctx, kit.Header, &input)
+	if err != nil {
+		blog.Errorf("failed to update model attr, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := a.saveUpdateTableLog(kit, data, objID, modelBizID, attID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *attribute) saveUpdateTableLog(kit *rest.Kit, data mapstr.MapStr, objID string, modelBizID,
+	attrID int64) error {
+	queryCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKObjIDField: objID,
+		},
+		DisableCounter: true,
+		Fields:         []string{common.BKFieldID},
+	}
+	objResult, err := a.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		blog.Errorf("[NetDevice] search net device object, search objectName fail, %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	if len(objResult.Info) == 0 {
+		blog.Errorf("[NetDevice] search net device object, search objectName fail, queryCond: %+v,err: %v, rid: %s",
+			queryCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	if len(objResult.Info) > 1 {
+		blog.Errorf("[NetDevice] search net device object, search objectName fail, queryCond: %+v,err: %v, rid: %s",
+			queryCond, err, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParseDBFailed)
+	}
+	// save audit log.
+	audit := auditlog.NewObjectAttributeAuditLog(a.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(data)
+	auditLog, err := audit.GenerateTableAuditLog(generateAuditParameter, objID, modelBizID, attrID, nil)
+	if err != nil {
+		blog.Errorf("generate audit log failed before update model attribute, attID: %d, err: %v, rid: %s",
+			attrID, err, kit.Rid)
+		return err
+	}
+
+	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, attID: %d, err: %v, rid: %s", attrID, err, kit.Rid)
+		return err
+	}
 	return nil
 }
 
@@ -662,6 +1166,15 @@ type createObjectBatchObjResult struct {
 	Error string `json:"error,omitempty"`
 }
 
+type upsertResult int64
+
+const (
+	success upsertResult = iota
+	undefinedFail
+	insertFail
+	updateFail
+)
+
 // CreateObjectBatch this method doesn't act as it's name, it create or update model's attributes indeed.
 // it only operate on model already exist, that is to say no new model will be created.
 func (a *attribute) CreateObjectBatch(kit *rest.Kit, inputDataMap map[string]metadata.ImportObjectData) (mapstr.MapStr,
@@ -734,7 +1247,14 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 
 	objRes := createObjectBatchObjResult{}
 	hasError := false
-	for idx, attr := range attributes {
+	ids := make([]int64, 0)
+	for id := range attributes {
+		ids = append(ids, id)
+	}
+	sort.Sort(util.Int64Slice(ids))
+
+	for _, idx := range ids {
+		attr := attributes[idx]
 		propID := attr.PropertyID
 		if propID == common.BKInstParentStr {
 			continue
@@ -767,54 +1287,82 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 					continue
 				}
 				attr.PropertyGroup = grp.Data.GroupID
+				grpNameIDMap[attr.PropertyGroupName] = grp.Data.GroupID
 			}
 		} else {
 			attr.PropertyGroup = NewGroupID(true)
 		}
 
-		// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
-		attrCond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: propID}
-		util.AddModelBizIDCondition(attrCond, attr.BizID)
-
-		attrCnt, err := a.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-			common.BKTableNameObjAttDes, []map[string]interface{}{attrCond})
-		if err != nil {
-			blog.Errorf("count attribute failed, err: %v, cond: %#v, rid: %s", err, attrCond, kit.Rid)
-			objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+		if result, err := a.upsertObjectAttr(kit, objID, &attr); err != nil {
+			switch result {
+			case undefinedFail:
+				objRes.Errors = append(objRes.Errors, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			case insertFail:
+				objRes.InsertFailed = append(objRes.InsertFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			case updateFail:
+				objRes.UpdateFailed = append(objRes.UpdateFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
+			}
 			hasError = true
 			continue
-		}
-
-		if attrCnt[0] == 0 {
-			// create attribute
-			createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{attr}}
-			_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
-			if err != nil {
-				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
-				objRes.InsertFailed = append(objRes.InsertFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
-				hasError = true
-				continue
-			}
-		} else {
-			// update attribute
-			updateData := attr.ToMapStr()
-			updateData.Remove(metadata.AttributeFieldPropertyID)
-			updateData.Remove(metadata.AttributeFieldObjectID)
-			updateData.Remove(metadata.AttributeFieldID)
-			updateAttrOpt := metadata.UpdateOption{Condition: attrCond, Data: updateData}
-			_, err := a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
-			if err != nil {
-				blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
-				objRes.UpdateFailed = append(objRes.UpdateFailed, rowInfo{Row: idx, Info: err.Error(), PropID: propID})
-				hasError = true
-				continue
-			}
 		}
 
 		objRes.Success = append(objRes.Success, rowInfo{Row: idx, PropID: attr.PropertyID})
 	}
 
 	return objRes, hasError
+}
+
+func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata.Attribute) (upsertResult, error) {
+	// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
+	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
+	util.AddModelBizIDCondition(cond, attr.BizID)
+	queryCond := &metadata.QueryCondition{Condition: cond}
+	result, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, attr.BizID,
+		queryCond)
+	if err != nil {
+		blog.Errorf("find attribute failed, err: %v, cond: %#v, rid: %s", err, queryCond, kit.Rid)
+		return undefinedFail, err
+	}
+
+	if len(result.Info) == 0 {
+		// create attribute
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			if _, err := a.CreateTableObjectAttribute(kit, attr); err != nil {
+				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
+				return insertFail, err
+			}
+			return success, nil
+		}
+
+		createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{*attr}}
+		_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
+		if err != nil {
+			blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
+			return insertFail, err
+		}
+		return success, nil
+	}
+
+	// update attribute
+	updateData := attr.ToMapStr()
+	if attr.PropertyType == common.FieldTypeInnerTable {
+		if err := a.UpdateTableObjectAttr(kit, updateData, result.Info[0].ID, attr.BizID); err != nil {
+			blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+			return updateFail, err
+		}
+		return success, nil
+	}
+
+	updateData.Remove(metadata.AttributeFieldPropertyID)
+	updateData.Remove(metadata.AttributeFieldObjectID)
+	updateData.Remove(metadata.AttributeFieldID)
+	updateAttrOpt := metadata.UpdateOption{Condition: cond, Data: updateData}
+	_, err = a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
+	if err != nil {
+		blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
+		return updateFail, err
+	}
+	return success, nil
 }
 
 // FindObjectBatch find object to attribute mapping batch

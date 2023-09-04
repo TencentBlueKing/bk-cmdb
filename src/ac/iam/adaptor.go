@@ -286,6 +286,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
 		meta.Find:                           ViewResourcePoolHost,
 		meta.FindMany:                       ViewResourcePoolHost,
+		meta.ManageHostAgentID:              ManageHostAgentID,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,

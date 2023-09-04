@@ -62,7 +62,8 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 		return result, err
 	}
 
-	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostNameField}
+	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
+		common.BKCloudIDField, common.BKHostNameField}
 	for _, attr := range attributes {
 		fields = append(fields, attr.PropertyID)
 	}

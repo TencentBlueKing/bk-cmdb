@@ -75,7 +75,7 @@
     .item-label {
       display: flex;
       width: var(--label-width);
-      font-size: var(--font-size, 12px);
+      font-size: var(--grid-item-font-size, 12px);
       color: #63656E;
 
       .label-text {

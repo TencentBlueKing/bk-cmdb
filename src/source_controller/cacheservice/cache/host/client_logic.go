@@ -29,8 +29,9 @@ import (
 	rawRedis "github.com/go-redis/redis/v7"
 )
 
-func (c *Client) tryRefreshHostDetail(hostID int64, ips string, cloudID int64, detail []byte) {
-	hostKey := hostKey.HostDetailKey(hostID)
+func (c *Client) tryRefreshHostDetail(rid string, host *hostBase) {
+
+	hostKey := hostKey.HostDetailKey(host.hostID)
 	if !c.lock.CanRefresh(hostKey) {
 		return
 	}
@@ -43,7 +44,7 @@ func (c *Client) tryRefreshHostDetail(hostID int64, ips string, cloudID int64, d
 			c.lock.SetUnRefreshing(hostKey)
 		}()
 
-		refreshHostDetailCache(hostID, ips, cloudID, detail)
+		refreshHostDetailCache(rid, host)
 	}()
 }
 

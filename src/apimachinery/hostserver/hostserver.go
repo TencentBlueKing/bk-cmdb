@@ -22,7 +22,6 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
 	"configcenter/src/kube/types"
 )
 
@@ -59,12 +58,12 @@ type HostServerClientInterface interface {
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error)
 	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error)
-	SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+	SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
-	SearchHostWithBiz(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (
+	SearchHostWithBiz(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
-
-	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
+	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
+		SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 
@@ -89,6 +88,9 @@ type HostServerClientInterface interface {
 	// SearchHostWithKube search host with k8s condition
 	SearchKubeHost(ctx context.Context, h http.Header, req types.SearchHostOption) (*metadata.SearchHost,
 		errors.CCErrorCoder)
+	BindAgent(ctx context.Context, h http.Header, params *metadata.BindAgentParam) errors.CCErrorCoder
+	UnbindAgent(ctx context.Context, h http.Header, params *metadata.UnbindAgentParam) errors.CCErrorCoder
+
 	AddCloudHostToBiz(ctx context.Context, header http.Header, option *metadata.AddCloudHostToBizParam) (
 		*metadata.RspIDs, errors.CCErrorCoder)
 	DeleteCloudHostFromBiz(ctx context.Context, header http.Header,

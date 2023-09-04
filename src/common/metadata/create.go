@@ -23,3 +23,14 @@ type CreatedOneOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     CreateOneDataResult `json:"data"`
 }
+
+// BatchCreateResp batch create response
+type BatchCreateResp struct {
+	BaseResp `json:",inline"`
+	Data     BatchCreateResult `json:"data"`
+}
+
+// BatchCreateResult batch create result
+type BatchCreateResult struct {
+	IDs []uint64 `json:"ids"`
+}

@@ -17,7 +17,6 @@
     {
       'is-focus': focused,
       'is-disabled': disabled,
-      'is-readonly': readonly,
       'is-unselected': unselected
     }
   ]">
@@ -92,7 +91,6 @@
   })
 
   const focused = ref(false)
-  const readonly = ref(true)
   const unselected = ref(false)
 
   const tree = ref(null)

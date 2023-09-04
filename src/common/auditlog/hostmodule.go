@@ -70,7 +70,7 @@ func (h *hostModuleLog) WithCurrent(kit *rest.Kit) errors.CCError {
 
 // SaveAudit save the audit msg
 func (h *hostModuleLog) SaveAudit(kit *rest.Kit) errors.CCError {
-	hostInfos, err := h.getInnerIP(kit)
+	hostInfos, err := h.getInnerIPAndInnerIPv6(kit)
 	if err != nil {
 		return err
 	}
@@ -189,6 +189,11 @@ func (h *hostModuleLog) SaveAudit(kit *rest.Kit) errors.CCError {
 			return err
 		}
 
+		hostIPv6, err := host.String(common.BKHostInnerIPv6Field)
+		if err != nil {
+			return err
+		}
+
 		sets := make([]metadata.Topo, 0)
 		for setID, modules := range preHostRelationMap[hostID] {
 			sets = append(sets, metadata.Topo{
@@ -235,12 +240,13 @@ func (h *hostModuleLog) SaveAudit(kit *rest.Kit) errors.CCError {
 
 		// generate audit log.
 		logs = append(logs, metadata.AuditLog{
-			AuditType:    metadata.HostType,
-			ResourceType: metadata.HostRes,
-			Action:       action,
-			BusinessID:   bizID,
-			ResourceID:   hostID,
-			ResourceName: hostIP,
+			AuditType:          metadata.HostType,
+			ResourceType:       metadata.HostRes,
+			Action:             action,
+			BusinessID:         bizID,
+			ResourceID:         hostID,
+			ResourceName:       hostIP,
+			ExtendResourceName: hostIPv6,
 			OperationDetail: &metadata.HostTransferOpDetail{
 				PreData: preData,
 				CurData: curData,
@@ -272,13 +278,14 @@ func (h *hostModuleLog) getHostModuleConfig(kit *rest.Kit) ([]metadata.ModuleHos
 	return result.Info, nil
 }
 
-func (h *hostModuleLog) getInnerIP(kit *rest.Kit) ([]mapstr.MapStr, errors.CCError) {
+func (h *hostModuleLog) getInnerIPAndInnerIPv6(kit *rest.Kit) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     len(h.hostIDArr),
 		Sort:      common.BKAppIDField,
 		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.hostIDArr}},
-		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
+		Fields: fmt.Sprintf("%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field),
 	}
 
 	result, err := h.audit.clientSet.Host().GetHosts(kit.Ctx, kit.Header, query)

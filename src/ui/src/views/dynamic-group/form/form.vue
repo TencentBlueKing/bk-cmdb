@@ -86,6 +86,7 @@
   import FormPropertySelector from './form-property-selector.js'
   import FormTarget from './form-target.vue'
   import RouterQuery from '@/router/query'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     components: {
       FormPropertyList,
@@ -118,7 +119,8 @@
         }),
         availableModelIds: Object.freeze(['host', 'module', 'set']),
         availableModels: [],
-        propertyMap: {}
+        propertyMap: {},
+        disabledPropertyMap: {}
       }
     },
     computed: {
@@ -176,6 +178,12 @@
           })
           propertyMap.module.unshift(this.getServiceTemplateProperty())
           this.propertyMap = Object.freeze(propertyMap)
+
+          Object.keys(this.propertyMap).forEach((objId) => {
+            this.disabledPropertyMap[objId] = this.propertyMap[objId]
+              .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+              .map(item => item.bk_property_id)
+          })
         } catch (error) {
           console.error(error)
           this.propertyMap = {}

@@ -170,7 +170,7 @@
     <div class="options options-right">
       <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
       <filter-collection class="option-collection ml10" v-test-id></filter-collection>
-      <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
+      <icon-button :class="['option-filter', 'ml10', { active: hasCondition }]" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
@@ -182,7 +182,7 @@
       :is-container-host="isContainerHost">
     </edit-multiple-host>
 
-    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="650">
+    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="750">
       <component
         :is="dialog.component"
         v-bind="dialog.componentProps"
@@ -238,7 +238,7 @@
         dialog: {
           show: false,
           props: {
-            width: 1100
+            width: 1280
           },
           component: null,
           componentProps: {}
@@ -320,6 +320,9 @@
       },
       tableHeaderPropertyIdList() {
         return this.$parent.tableHeader.map(item => item.bk_property_id)
+      },
+      hasCondition() {
+        return FilterStore.hasCondition
       }
     },
     methods: {
@@ -547,7 +550,8 @@
         .option-collection,
         .option-filter {
             flex: 32px 0 0;
-            &:hover {
+            &:hover,
+            .active {
                 color: $primaryColor;
             }
         }

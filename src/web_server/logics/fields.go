@@ -25,8 +25,22 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
+
+// ExcelDataRange excel data range
+type ExcelDataRange struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
+// HeaderTable excel header about table type
+type HeaderTable struct {
+	Start        int                 `json:"start"`
+	End          int                 `json:"end"`
+	NameIndexMap map[int]string      `json:"name_index_map"`
+	Field        map[string]Property `json:"field"`
+}
 
 // Property object fields
 type Property struct {
@@ -41,6 +55,17 @@ type Property struct {
 	NotObjPropery bool // Not an attribute of the object, indicating that the field to be exported is needed for export,
 	AsstObjID     string
 	NotExport     bool
+	Length        int // 这个属性需要占用多少列excel
+	NotEditable   bool
+}
+
+// ImportExcelPreData import excel pre data
+type ImportExcelPreData struct {
+	Fields       map[string]Property
+	NameIndexMap map[int]string
+	DataRange    []ExcelDataRange
+	TableMap     map[string]HeaderTable
+	Sheet        *xlsx.Sheet
 }
 
 // HandleFieldParam 处理Excel表格字段入参
@@ -75,6 +100,7 @@ type HandleHostDataParam struct {
 	ObjID             string
 	ObjIDs            []string
 	Fields            map[string]Property
+	RowCount          int // 主机需要占用多少行excel
 }
 
 // HandleHostParam 处理主机数据入参
@@ -189,45 +215,65 @@ func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, modelBizID i
 	}
 
 	fields := make([]Property, 0)
-	noUniqueFields := make([]Property, 0)
-	noRequiredFields := make([]Property, 0)
+	requiredFieldMap := make(map[string][]Property)
+	noRequiredFieldMap := make(map[string][]Property)
 
-	// 第一步，选出唯一校验字段；
+	// 构造必填字段和非必填字段所在分组的map
 	for _, field := range sortedFields {
-		noUniqueFields = append(noUniqueFields, field)
+		if field.IsRequire {
+			requiredFieldMap[field.Group] = append(requiredFieldMap[field.Group], field)
+			continue
+		}
+		noRequiredFieldMap[field.Group] = append(noRequiredFieldMap[field.Group], field)
 	}
 
-	// 第二步，根据字段分组，对必填字段排序；并选出非必填字段
-	for _, group := range groups {
-		for _, field := range noUniqueFields {
-			if field.Group != group.ID {
-				continue
-			}
-			if field.IsRequire != true {
-				noRequiredFields = append(noRequiredFields, field)
-				continue
-			}
-			field.ExcelColIndex = index
-			index++
-			fields = append(fields, field)
-		}
+	// 第二步，根据字段分组，对必填字段排序
+	requiredFields, index, err := setFieldsIndex(groups, requiredFieldMap, index)
+	if err != nil {
+		return nil, err
 	}
+	fields = append(fields, requiredFields...)
 
 	// 第三步，根据字段分组，用必填字段使用的index，继续对非必填字段进行排序
-	for _, group := range groups {
-		for _, field := range noRequiredFields {
-			if field.Group != group.ID {
-				continue
-			}
-			field.ExcelColIndex = index
-			index++
-			fields = append(fields, field)
-		}
+	noRequiredFields, index, err := setFieldsIndex(groups, noRequiredFieldMap, index)
+	if err != nil {
+		return nil, err
 	}
+
+	fields = append(fields, noRequiredFields...)
 	return fields, nil
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) ([]Property, error) {
+func setFieldsIndex(groups []PropertyGroup, fieldsGroupMap map[string][]Property, index int) ([]Property, int, error) {
+	result := make([]Property, 0)
+	for _, group := range groups {
+		fields, ok := fieldsGroupMap[group.ID]
+		if ok {
+			for _, field := range fields {
+				field.ExcelColIndex = index
+				if field.PropertyType == common.FieldTypeInnerTable {
+					option, err := metadata.ParseTableAttrOption(field.Option)
+					if err != nil {
+						return nil, 0, err
+					}
+					index += len(option.Header)
+					field.Length = len(option.Header)
+					result = append(result, field)
+					continue
+				}
+				field.Length = 1
+				result = append(result, field)
+				index++
+			}
+		}
+	}
+
+	return result, index, nil
+}
+
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, modelBizID int64) (
+	[]Property, error) {
+
 	rid := util.GetHTTPCCRequestID(header)
 
 	condition := mapstr.MapStr{
@@ -241,19 +287,16 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 	}
 	condition.Merge(conds)
 
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
-	if nil != err {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !result.Result {
-		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, rid)
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
+	result, err := lgc.Engine.CoreAPI.ApiServer().ModelQuote().GetObjectAttrWithTable(context.Background(), header,
+		condition)
+	if err != nil {
+		blog.Errorf("get object fields failed, objID: %s, input: %v, err: %v ,rid: %s", objID, conds, err, rid)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).
+			Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	ret := []Property{}
-	for _, attr := range result.Data {
+	for _, attr := range result {
 		ret = append(ret, Property{
 			ID:            attr.PropertyID,
 			Name:          attr.PropertyName,
@@ -308,6 +351,7 @@ func addSystemField(fields map[string]Property, objID string, defLang lang.Defau
 		PropertyType:  common.FieldTypeInt,
 		Group:         "defalut",
 		ExcelColIndex: index,
+		Length:        1,
 	}
 
 	switch objID {

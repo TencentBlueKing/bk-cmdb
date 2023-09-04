@@ -300,7 +300,8 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("FindHostsBySetTemplates failed, Validate err: %v, option:%#v, rid:%s", rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
+		blog.Errorf("FindHostsBySetTemplates failed, Validate err: %v, option:%#v, rid:%s",
+			rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -368,7 +369,8 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("FindHostsBySetTemplates failed, findDistinctHostInfo err: %s, distinctHostCond:%#v, searchHostCond:%#v, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("FindHostsBySetTemplates failed, findDistinctHostInfo err: %v, distinctHostCond:%#v, "+
+			"searchHostCond:%#v, rid:%s", err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

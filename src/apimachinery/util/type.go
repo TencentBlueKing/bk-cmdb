@@ -32,6 +32,7 @@ type APIMachineryConfig struct {
 	// request's burst value
 	Burst     int64
 	TLSConfig *TLSClientConfig
+	ExtraConf *ExtraClientConfig
 }
 
 // Capability TODO

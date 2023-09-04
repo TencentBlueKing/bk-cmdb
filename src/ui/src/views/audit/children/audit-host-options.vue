@@ -60,6 +60,7 @@
             :clearable="false"
             v-model="instanceType">
             <bk-option id="resource_name" :name="$t('IP')"></bk-option>
+            <bk-option id="extend_resource_name" :name="$t('IPv6')"></bk-option>
             <bk-option id="resource_id" name="ID"></bk-option>
           </bk-select>
         </bk-input>
@@ -90,6 +91,7 @@
     operation_time: [today, today],
     resource_id: '',
     resource_name: '',
+    extend_resource_name: '',
     category: 'host',
     fuzzy_query: false,
     condition: {
@@ -126,6 +128,7 @@
       instanceType() {
         this.condition.resource_id = ''
         this.condition.resource_name = ''
+        this.condition.extend_resource_name = ''
       }
     },
     created() {

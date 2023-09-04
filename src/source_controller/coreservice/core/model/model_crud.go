@@ -183,6 +183,79 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	return cnt, nil
 }
 
+// cascadeDeleteTable delete the fields of the tabular model, grouping. model etc.
+func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTableOption) error {
+
+	obj := metadata.GenerateModelQuoteObjID(input.ObjID, input.PropertyID)
+
+	// delete quoted instance table
+	instTable := common.GetInstTableName(obj, kit.SupplierAccount)
+	err := mongodb.Client().DropTable(kit.Ctx, instTable)
+	if err != nil {
+		blog.Errorf("drop instance table failed, err: %v, table: %s, rid: %s", err, instTable, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
+	// delete model property attribute.
+	modelDelCond := mapstr.MapStr{
+		common.BKFieldID: input.ID,
+	}
+	modelDelCond = util.SetQueryOwner(modelDelCond, kit.SupplierAccount)
+
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDelCond); err != nil {
+		blog.Errorf("delete model attribute failed, err: %v, cond: %+v, rid: %s", err, modelDelCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model quote relation.
+	quoteCond := mapstr.MapStr{
+		common.BKDestModelField:  obj,
+		common.BKSrcModelField:   input.ObjID,
+		common.BKPropertyIDField: input.PropertyID,
+	}
+	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
+
+	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, quoteCond); err != nil {
+		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, quoteCond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	cond := mapstr.MapStr{
+		common.BKObjIDField: obj,
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	// delete model property group.
+	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("delete model attribute group failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	// delete table model.
+	_, err = mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
+	if err != nil {
+		blog.Errorf("delete model failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	return nil
+}
+
+// createTableObjectShardingTables creates new collections for new table model,
+// which create new object instance and association collections, and fix missing indexes.
+func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID string) error {
+	// table collection names.
+	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	// table collections indexes.
+	instTableIndexes := dbindex.TableInstanceIndexes()
+	// create table object instance collection.
+	err := m.createShardingTable(kit, instTableName, instTableIndexes)
+	if err != nil {
+		return fmt.Errorf("create object instance sharding table, %+v", err)
+	}
+	return nil
+}
+
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {

@@ -25,14 +25,14 @@
         @click="handleChildClick(service)">
         <i class="node-icon fl">{{moduleName[0]}}</i>
         <span class="child-options fr" v-if="mode !== 'view'">
-          <bk-link class="action-link" @click="handleViewService(service)">查看详情</bk-link>
+          <bk-link class="action-link" @click="handleViewService(service)">{{$t('查看详情')}}</bk-link>
           <bk-popover v-if="serviceExistHost(service.id)">
-            <bk-link class="action-link disabled">删除</bk-link>
+            <bk-link class="action-link disabled">{{$t('删除')}}</bk-link>
             <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
               <template #link><span @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span></template>
             </i18n>
           </bk-popover>
-          <bk-link v-else class="action-link" @click="handleDeleteService(index)">删除</bk-link>
+          <bk-link v-else class="action-link" @click="handleDeleteService(index)">{{$t('删除')}}</bk-link>
         </span>
         <span class="child-name">{{service.name}}</span>
       </li>

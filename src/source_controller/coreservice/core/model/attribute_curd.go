@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -60,6 +61,49 @@ var (
 func (m *modelAttribute) Count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	return cnt, err
+}
+
+func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
+
+	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
+	if err != nil {
+		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	index, err := m.GetAttrLastIndex(kit, attribute)
+	if err != nil {
+		return id, err
+	}
+
+	attribute.PropertyIndex = index
+	attribute.ID = int64(id)
+	attribute.OwnerID = kit.SupplierAccount
+
+	if attribute.CreateTime == nil {
+		attribute.CreateTime = &metadata.Time{}
+		attribute.CreateTime.Time = time.Now()
+	}
+
+	if attribute.LastTime == nil {
+		attribute.LastTime = &metadata.Time{}
+		attribute.LastTime.Time = time.Now()
+	}
+
+	if attribute.IsMultiple == nil {
+		isMultiple := false
+		attribute.IsMultiple = &isMultiple
+	}
+
+	if err = m.saveTableAttrCheck(kit, attribute); err != nil {
+		blog.Errorf("save table attr failed, attribute: %v, err: %v, rid: %s", attribute, err, kit.Rid)
+		return 0, err
+	}
+	if err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
+		blog.Errorf("save table attr failed, attr: %v, err: %v, rid: %s", attribute, err, kit.Rid)
+		return id, err
+	}
+
+	return id, nil
 }
 
 func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
@@ -172,6 +216,19 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	return nil
 }
 
+func (m *modelAttribute) checkTableAttributeMustNotEmpty(kit *rest.Kit, attribute metadata.Attribute) error {
+	if attribute.PropertyID == "" {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+	}
+	if attribute.PropertyName == "" {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+	}
+	if attribute.PropertyType != common.FieldTypeInnerTable {
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
+	}
+	return nil
+}
+
 func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute metadata.Attribute) error {
 	if attribute.PropertyID == "" {
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
@@ -183,6 +240,206 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
 	}
 
+	return nil
+}
+
+func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute metadata.Attribute) error {
+
+	lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+
+	if attribute.PropertyID != "" {
+		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
+
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"),
+				common.AttributeIDMaxLength)
+		}
+
+		if !SatisfyMongoFieldLimit(attribute.PropertyID) {
+			blog.Errorf("attribute property id:(%s) not satisfy mongo field limit, rid: %s",
+				attribute.PropertyID, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+		}
+
+		// check only preset attribute's property id can start with bk_ or _bk
+		if !attribute.IsPre {
+			if strings.HasPrefix(attribute.PropertyID, "bk_") ||
+				strings.HasPrefix(attribute.PropertyID, "_bk") {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+			}
+		}
+	}
+
+	attribute.PropertyName = strings.TrimSpace(attribute.PropertyName)
+	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
+		blog.Errorf("attribute property name is exceed max limit:(%d), rid: %s", common.AttributeNameMaxLength, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_name"),
+			common.AttributeNameMaxLength)
+	}
+
+	if attribute.Placeholder != "" {
+		attribute.Placeholder = strings.TrimSpace(attribute.Placeholder)
+
+		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_placeholder"),
+				common.AttributePlaceHolderMaxLength)
+		}
+		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
+		if nil != err || !match {
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
+		}
+	}
+
+	if attribute.Unit != "" {
+		attribute.Unit = strings.TrimSpace(attribute.Unit)
+		if common.AttributeUnitMaxLength < utf8.RuneCountInString(attribute.Unit) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_uint"),
+				common.AttributeUnitMaxLength)
+		}
+	}
+
+	if attribute.PropertyType != common.FieldTypeInnerTable {
+		blog.Errorf("attr property type is error, property is : %s", attribute.PropertyType, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+	}
+
+	tableOption, err := metadata.ParseTableAttrOption(attribute.Option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if len(tableOption.Header) == 0 {
+		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	if err := m.checkTableAttr(kit, attribute.PropertyID, attribute.ObjectID, tableOption); err != nil {
+		blog.Errorf("check table attribute failed, tableOption: %+v, err: %v, rid: %s", tableOption, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []metadata.Attribute) (
+	map[string]*metadata.Attribute, error) {
+
+	if len(header) == 0 {
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	if len(header) > metadata.TableHeaderMaxNum {
+		return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header", metadata.TableHeaderMaxNum)
+	}
+
+	propertyAttr := make(map[string]*metadata.Attribute)
+	var longCharNum int
+	for index := range header {
+		// determine whether the underlying type is legal
+		if !metadata.ValidTableFieldBaseType(header[index].PropertyType) {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyType)
+		}
+		// the number of long characters in the basic type of the table
+		// field type cannot exceed the maximum value supported by the system.
+		if header[index].PropertyType == common.FieldTypeLongChar {
+			longCharNum++
+		}
+		if longCharNum > metadata.TableLongCharMaxNum {
+			return nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header long char",
+				metadata.TableLongCharMaxNum)
+		}
+
+		// check if property type for creation is valid, can't update property type
+		if header[index].PropertyType == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+		}
+
+		if header[index].PropertyID == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+		}
+
+		if common.AttributeIDMaxLength < utf8.RuneCountInString(header[index].PropertyID) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeIDMaxLength)
+		}
+
+		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, header[index].PropertyID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !match {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, header[index].PropertyID)
+		}
+		if header[index].PropertyName == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+		}
+
+		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
+			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeNameMaxLength)
+		}
+
+		if err := valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
+			header[index].IsMultiple, kit.CCError); err != nil {
+			return nil, err
+		}
+		propertyAttr[header[index].PropertyID] = &header[index]
+	}
+	return propertyAttr, nil
+}
+
+func (m *modelAttribute) checkTableAttr(kit *rest.Kit, propertyID, objectID string,
+	tableOption *metadata.TableAttributesOption) error {
+
+	if len(tableOption.Header) == 0 {
+		blog.Errorf("table attribute option invalid, header is nil, tableOption: %+v, rid: %s", tableOption, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "table header")
+	}
+
+	headerMap, err := m.validAndGetTableAttrHeaderDetail(kit, tableOption.Header)
+	if err != nil {
+		blog.Errorf("failed to valid the header of the table, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// 这里还得获取一下数据库中的内容 因为可能这个header只是新加的，在更新场景下还得把以前的header内容拿出来 没有加进来
+	input := mapstr.MapStr{
+		common.BKPropertyIDField:   propertyID,
+		common.BKObjIDField:        objectID,
+		common.BKPropertyTypeField: common.FieldTypeInnerTable,
+	}
+	attrResult, err := m.newSearch(kit, input)
+	if err != nil {
+		blog.Errorf("failed to search the attr of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return err
+	}
+
+	if len(attrResult) != 1 {
+		blog.Errorf("failed to search the attributes of the model, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return err
+	}
+
+	op, err := metadata.ParseTableAttrOption(attrResult[0].Option)
+	if err != nil {
+		blog.Errorf("get attribute option failed, error: %v, option: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for index := range op.Header {
+		if _, ok := headerMap[op.Header[index].PropertyID]; !ok {
+			headerMap[op.Header[index].PropertyID] = &op.Header[index]
+		}
+	}
+
+	if tableOption.Default != nil {
+		for _, value := range tableOption.Default {
+			for k, v := range value {
+				if err := m.checkTableAttributeDefaultValue(kit, headerMap[k].Option, v,
+					headerMap[k].PropertyType); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -267,19 +524,54 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	return nil
 }
 
+func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, defautValue interface{},
+	propertyType string) error {
+
+	switch propertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		if err := valid.ValidFieldTypeString(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeInt:
+		if err := valid.ValidFieldTypeInt(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeFloat:
+		if err := valid.ValidFieldTypeFloat(option, defautValue, kit.Rid, kit.CCError); err != nil {
+			return err
+		}
+	case common.FieldTypeBool:
+		if err := valid.ValidateBoolType(defautValue); err != nil {
+			blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	case common.FieldTypeEnumMulti:
+		// 默认值相关的检查都是按照最宽松的进行校验
+		if err := valid.ValidFieldTypeEnumOption(option, true, kit.Rid, kit.CCError); err != nil {
+			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	default:
+		blog.Errorf("property type is error, propertyType: %v, rid: %s", propertyType, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+	}
+
+	return nil
+}
+
 func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := util.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := util.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := util.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	case common.FieldTypeDate:
@@ -303,12 +595,12 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 			return fmt.Errorf("time zone default value is not time zone type, type: %T", attribute.Default)
 		}
 	case common.FieldTypeBool:
-		if err := util.ValidateBoolType(attribute.Default); err != nil {
+		if err := valid.ValidateBoolType(attribute.Default); err != nil {
 			blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	case common.FieldTypeList:
-		if err := util.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
+		if err := valid.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
 			return err
 		}
 	default:
@@ -414,7 +706,8 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKObjIDField, common.BKAppIDField}
+	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
+		common.BKObjIDField, common.BKAppIDField}
 
 	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(kit.Ctx, &resultAttrs)
@@ -430,17 +723,21 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 
 	objIDArrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return 0, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
 
-	if err := m.cleanAttributeFieldInInstances(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+	if err := m.cleanAttributeFieldInInstances(kit, resultAttrs); err != nil {
 		blog.Errorf("delete object attributes with cond: %v, but delete these attribute in instance failed, "+
 			"err: %v, rid: %s", condMap, err, kit.Rid)
 		return 0, err
 	}
 
 	// delete template attribute when delete model attribute
-	if err := m.cleanAttrTemplateRelation(kit.Ctx, kit.SupplierAccount, resultAttrs); err != nil {
+	if err := m.cleanAttrTemplateRelation(kit, resultAttrs); err != nil {
 		blog.Errorf("delete the relation between attributes and templates failed, attr: %v, err: %v, rid: %s",
 			resultAttrs, err, kit.Rid)
 		return 0, err
@@ -471,36 +768,14 @@ type bizObjectFields struct {
 	fields []string
 }
 
-// cleanAttributeFieldInInstances TODO
-// remove attribute filed in this object's instances
-func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, ownerID string, attrs []metadata.Attribute) error {
+// cleanAttributeFieldInInstances remove attribute filed in this object's instances
+func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []metadata.Attribute) error {
 	// this operation may take a long time, do not use transaction
-	ctx = context.Background()
+	kit.Ctx = context.Background()
 
-	objectFields := make(map[string][]bizObjectFields, 0)
-	hostApplyFields := make(map[int64][]int64)
-
-	// TODO: now, we only support set, module, host model's biz attribute clean operation.
-	for _, attr := range attrs {
-		biz := attr.BizID
-		if biz != 0 {
-			if !isBizObject(attr.ObjectID) {
-				return fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
-			}
-		}
-
-		_, exist := objectFields[attr.ObjectID]
-		if !exist {
-			objectFields[attr.ObjectID] = make([]bizObjectFields, 0)
-		}
-		objectFields[attr.ObjectID] = append(objectFields[attr.ObjectID], bizObjectFields{
-			bizID:  biz,
-			fields: []string{attr.PropertyID},
-		})
-
-		if attr.ObjectID == common.BKInnerObjIDHost {
-			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
-		}
+	objectFields, hostApplyFields, err := m.getObjAndHostApplyFields(kit, attrs)
+	if err != nil {
+		return err
 	}
 
 	// delete these attribute's fields in the model instance
@@ -524,9 +799,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 			}
 
-			cond := map[string]interface{}{
-				common.BKDBOR: existConds,
-			}
+			cond := map[string]interface{}{common.BKDBOR: existConds}
 
 			if objField.bizID > 0 {
 				if !isBizObject(object) {
@@ -534,7 +807,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 
 				if object == common.BKInnerObjIDHost {
-					if err := m.cleanHostAttributeField(ctx, ownerID, objField); err != nil {
+					if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, objField); err != nil {
 						return err
 					}
 					continue
@@ -548,7 +821,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 							bizID:  0,
 							fields: fields,
 						}
-						if err := m.cleanHostAttributeField(ctx, ownerID, ele); err != nil {
+						if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, ele); err != nil {
 							return err
 						}
 						continue
@@ -558,59 +831,15 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 				}
 			}
 
-			cond = util.SetQueryOwner(cond, ownerID)
+			cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
-			collectionName := common.GetInstTableName(object, ownerID)
+			collectionName := common.GetInstTableName(object, kit.SupplierAccount)
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
 				defer wg.Done()
+				hitError = m.dropColumns(kit, object, collName, filter, fields)
 
-				instCount, err := mongodb.Client().Table(collName).Find(filter).Count(ctx)
-				if err != nil {
-					blog.Error("count instances with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
-					hitError = err
-					return
-				}
-
-				instIDField := common.GetInstIDField(object)
-				for start := uint64(0); start < instCount; start += pageSize {
-					insts := make([]map[string]interface{}, 0)
-					err := mongodb.Client().Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(instIDField).All(ctx, &insts)
-					if err != nil {
-						blog.Error("get instance ids with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, filter, fields, err)
-						hitError = err
-						return
-					}
-
-					if len(insts) == 0 {
-						return
-					}
-
-					instIDs := make([]int64, len(insts))
-					for index, inst := range insts {
-						instID, err := util.GetInt64ByInterface(inst[instIDField])
-						if err != nil {
-							blog.Error("get instance id failed, inst: %+v, err: %v", inst, err)
-							hitError = err
-							return
-						}
-						instIDs[index] = instID
-					}
-
-					instFilter := map[string]interface{}{
-						instIDField: map[string]interface{}{
-							common.BKDBIN: instIDs,
-						},
-					}
-
-					if err := mongodb.Client().Table(collName).DropColumns(ctx, instFilter, fields); err != nil {
-						blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v", collectionName, instFilter, fields, err)
-						hitError = err
-						return
-					}
-				}
 			}(collectionName, cond, fields)
-
 		}
 	}
 	// wait for all the public object routine is done.
@@ -626,15 +855,96 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(ctx context.Context, own
 	}
 
 	// step 3: clean host apply fields
-	if err := m.cleanHostApplyField(ctx, ownerID, hostApplyFields); err != nil {
+	if err := m.cleanHostApplyField(kit.Ctx, kit.SupplierAccount, hostApplyFields); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID string,
-	attrs []metadata.Attribute) error {
+// getObjAndHostApplyFields TODO: now, we only support set, module, host model's biz attribute clean operation.
+func (m *modelAttribute) getObjAndHostApplyFields(kit *rest.Kit, attrs []metadata.Attribute) (
+	map[string][]bizObjectFields, map[int64][]int64, error) {
+	objectFields := make(map[string][]bizObjectFields, 0)
+	hostApplyFields := make(map[int64][]int64)
+	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return nil, nil, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
+		biz := attr.BizID
+		if biz != 0 {
+			if !isBizObject(attr.ObjectID) {
+				return nil, nil, fmt.Errorf("unsupported object %s's clean instance field operation", attr.ObjectID)
+			}
+		}
+
+		_, exist := objectFields[attr.ObjectID]
+		if !exist {
+			objectFields[attr.ObjectID] = make([]bizObjectFields, 0)
+		}
+		objectFields[attr.ObjectID] = append(objectFields[attr.ObjectID], bizObjectFields{
+			bizID:  biz,
+			fields: []string{attr.PropertyID},
+		})
+
+		if attr.ObjectID == common.BKInnerObjIDHost {
+			hostApplyFields[biz] = append(hostApplyFields[biz], attr.ID)
+		}
+	}
+	return objectFields, hostApplyFields, nil
+}
+
+func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, filter types.Filter,
+	fields []string) error {
+	instCount, err := mongodb.Client().Table(collName).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count instances with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
+			"rid: %s", collName, filter, fields, err, kit.Rid)
+		return err
+	}
+
+	instIDField := common.GetInstIDField(object)
+	for start := uint64(0); start < instCount; start += pageSize {
+		insts := make([]map[string]interface{}, 0)
+		err := mongodb.Client().Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(instIDField).
+			All(kit.Ctx, &insts)
+		if err != nil {
+			blog.Errorf("get instance ids with the attr to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
+				"rid: %s", collName, filter, fields, err, kit.Rid)
+			return err
+		}
+
+		if len(insts) == 0 {
+			return nil
+		}
+
+		instIDs := make([]int64, len(insts))
+		for index, inst := range insts {
+			instID, err := util.GetInt64ByInterface(inst[instIDField])
+			if err != nil {
+				blog.Errorf("get instance id failed, inst: %+v, err: %v, rid: %s", inst, err, kit.Rid)
+				return err
+			}
+			instIDs[index] = instID
+		}
+
+		instFilter := map[string]interface{}{
+			instIDField: map[string]interface{}{
+				common.BKDBIN: instIDs,
+			},
+		}
+
+		if err := mongodb.Client().Table(collName).DropColumns(kit.Ctx, instFilter, fields); err != nil {
+			blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v, "+
+				"rid: %s", collName, instFilter, fields, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metadata.Attribute) error {
 
 	if len(attrs) == 0 {
 		return nil
@@ -642,6 +952,10 @@ func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID 
 
 	attrMap := make(map[string][]int64)
 	for _, attr := range attrs {
+		if attr.PropertyType == common.FieldTypeInnerTable {
+			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
+			return kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
 		attrMap[attr.ObjectID] = append(attrMap[attr.ObjectID], attr.ID)
 	}
 
@@ -649,15 +963,15 @@ func (m *modelAttribute) cleanAttrTemplateRelation(ctx context.Context, ownerID 
 		cond := mapstr.MapStr{
 			common.BKAttributeIDField: mapstr.MapStr{common.BKDBIN: attrIDs},
 		}
-		cond = util.SetQueryOwner(cond, ownerID)
+		cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 		switch objID {
 		case common.BKInnerObjIDSet:
-			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(ctx, cond); err != nil {
+			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(kit.Ctx, cond); err != nil {
 				return err
 			}
 
 		case common.BKInnerObjIDModule:
-			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(ctx, cond); err != nil {
+			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, cond); err != nil {
 				return err
 			}
 		}
@@ -777,6 +1091,17 @@ func isBizObject(objectID string) bool {
 	}
 }
 
+//  saveTableAttrCheck form new field check
+func (m *modelAttribute) saveTableAttrCheck(kit *rest.Kit, attribute metadata.Attribute) error {
+	if err := m.checkTableAttributeMustNotEmpty(kit, attribute); err != nil {
+		return err
+	}
+	if err := m.checkTableAttributeValidity(kit, attribute); err != nil {
+		return err
+	}
+	return nil
+}
+
 //  saveCheck 新加字段检查
 func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
 
@@ -801,7 +1126,149 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) 
 	return nil
 }
 
-// checkUpdate 删除不可以更新字段，检验字段是否重复， 返回更新的行数，错误
+// checkTableAttrUpdate delete the field that cannot be updated, check whether the field is repeated
+func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
+	cond universalsql.Condition) (err error) {
+
+	dbAttributeArr, err := m.search(kit, cond)
+	if err != nil {
+		blog.Errorf("find nothing by the condition: %+v, err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+	if len(dbAttributeArr) == 0 {
+		blog.Errorf("find nothing by the condition(%#v), rid: %s", cond.ToMapStr(), kit.Rid)
+		return nil
+	}
+
+	// is there a predefined field for the updated attribute
+	hasIsPreProperty := false
+	for _, dbAttribute := range dbAttributeArr {
+		if dbAttribute.IsPre {
+			hasIsPreProperty = true
+			break
+		}
+	}
+
+	// 预定义字段，只能更新分组、分组内排序、单位、提示语和option
+	if hasIsPreProperty {
+		_ = data.ForEach(func(key string, val interface{}) error {
+			if key != metadata.AttributeFieldPropertyGroup &&
+				key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldUnit &&
+				key != metadata.AttributeFieldPlaceHolder &&
+				key != metadata.AttributeFieldOption {
+				data.Remove(key)
+			}
+			return nil
+		})
+	}
+
+	if err := checkAttrOption(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
+
+	if err = checkPropertyGroup(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
+
+	attr := metadata.Attribute{}
+	if err = data.MarshalJSONInto(&attr); err != nil {
+		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+	if err = m.checkTableAttributeValidity(kit, attr); err != nil {
+		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, dbAttr := range dbAttributeArr {
+		if err = m.checkChangeField(kit, dbAttr, data); err != nil {
+			return err
+		}
+	}
+
+	// 删除不可更新字段， 避免由于传入数据，修改字段
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Remove(metadata.AttributeFieldPropertyType)
+	data.Remove(metadata.AttributeFieldCreateTime)
+	data.Remove(metadata.AttributeFieldIsPre)
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
+	return err
+}
+
+func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
+	option, exists := data.Get(metadata.AttributeFieldOption)
+	if !exists {
+		return nil
+	}
+	propertyType := dbAttributeArr[0].PropertyType
+	for _, dbAttribute := range dbAttributeArr {
+		if dbAttribute.PropertyType != propertyType {
+			blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
+				dbAttributeArr, kit.Ctx)
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
+		}
+	}
+
+	// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
+	isMultiple := dbAttributeArr[0].IsMultiple
+	if val, ok := data.Get(common.BKIsMultipleField); ok {
+		ismultiple, ok := val.(bool)
+		if !ok {
+			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+		}
+		isMultiple = &ismultiple
+	}
+
+	if isMultiple == nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+	}
+
+	if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
+		kit.CCError); err != nil {
+		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
+		return err
+	}
+
+	return nil
+}
+
+func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
+
+	grp, exists := data.Get(metadata.AttributeFieldPropertyGroup)
+	if !exists {
+		return nil
+	}
+
+	// check if property group exists in object
+	objIDs := make([]string, 0)
+	for _, dbAttribute := range dbAttributeArr {
+		objIDs = append(objIDs, dbAttribute.ObjectID)
+	}
+	objIDs = util.StrArrayUnique(objIDs)
+	cond := map[string]interface{}{
+		common.BKObjIDField: map[string]interface{}{
+			common.BKDBIN: objIDs,
+		},
+	}
+	if grp != "" {
+		cond[common.BKPropertyGroupIDField] = grp
+	}
+
+	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+	if cnt != uint64(len(objIDs)) {
+		blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
+	}
+	return nil
+}
+
+// checkUpdate delete the field that cannot be updated, check whether the field is repeated
 func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
@@ -814,7 +1281,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		return nil
 	}
 
-	// 更新的属性是否存在预定义字段。
+	// is there a predefined field for the updated attribute。
 	hasIsPreProperty := false
 	for _, dbAttribute := range dbAttributeArr {
 		if dbAttribute.IsPre {
@@ -861,7 +1328,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 		}
 
-		if err := util.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
+		if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
 			kit.CCError); err != nil {
 			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 			return err

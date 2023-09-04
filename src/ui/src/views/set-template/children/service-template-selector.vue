@@ -51,7 +51,9 @@
         v-model.trim="filter.templateName">
       </bk-input>
       <span class="select-all">
-        <bk-checkbox :value="isSelectAll" :indeterminate="isHalfSelected" @change="handleSelectAll">全选</bk-checkbox>
+        <bk-checkbox :value="isSelectAll" :indeterminate="isHalfSelected" @change="handleSelectAll">
+          {{ $t('全选') }}
+        </bk-checkbox>
       </span>
     </div>
     <ul class="template-list clearfix"

@@ -13,32 +13,37 @@
 <template>
   <div class="form-label">
     <span class="label-text">{{$t('字段设置')}}</span>
-    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isEditableShow">
-      <bk-checkbox
-        v-model="localValue.editable"
-        :disabled="isReadOnly || ispre">
-        <span class="cmdb-checkbox-text" v-bk-tooltips="$t('不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑')">
-          {{$t('可编辑')}}
-        </span>
-        <i class="bk-cc-icon icon-cc-tips disabled-tips"
-          v-if="modelId === 'host'"
-          v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
-      </bk-checkbox>
-    </label>
-    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow && !isMainLineModel">
-      <bk-checkbox
-        v-model="localValue.isrequired"
-        :disabled="isReadOnly || ispre">
-        <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
-      </bk-checkbox>
-    </label>
-    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isMultipleShow">
-      <bk-checkbox
-        v-model="localValue.multiple"
-        :disabled="isReadOnly || ispre">
-        <span class="cmdb-checkbox-text">{{$t('可多选')}}</span>
-      </bk-checkbox>
-    </label>
+    <div class="checkbox-options">
+      <label v-if="isEditableShow">
+        <bk-checkbox
+          class="checkbox"
+          v-model="localValue.editable"
+          :disabled="isReadOnly || ispre">
+          <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
+            {{$t('可编辑')}}
+          </span>
+          <i class="bk-cc-icon icon-cc-tips disabled-tips"
+            v-if="modelId === 'host'"
+            v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
+        </bk-checkbox>
+      </label>
+      <label class="ml30" v-if="isRequiredShow && !isMainLineModel">
+        <bk-checkbox
+          class="checkbox"
+          v-model="localValue.isrequired"
+          :disabled="isReadOnly || ispre">
+          <span>{{$t('必填')}}</span>
+        </bk-checkbox>
+      </label>
+      <label class="ml30" v-if="isMultipleShow">
+        <bk-checkbox
+          class="checkbox"
+          v-model="localValue.multiple"
+          :disabled="isReadOnly || ispre">
+          <span>{{$t('可多选')}}</span>
+        </bk-checkbox>
+      </label>
+    </div>
   </div>
 </template>
 
@@ -93,7 +98,8 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.ORGANIZATION,
           PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.INNER_TABLE
         ],
         isRequiredMap: [
           PROPERTY_TYPES.SINGLECHAR,
@@ -105,7 +111,8 @@
           PROPERTY_TYPES.OBJUSER,
           PROPERTY_TYPES.TIMEZONE,
           PROPERTY_TYPES.LIST,
-          PROPERTY_TYPES.ORGANIZATION
+          PROPERTY_TYPES.ORGANIZATION,
+          PROPERTY_TYPES.INNER_TABLE
         ],
         isMultipleMap: [
           PROPERTY_TYPES.ORGANIZATION,
@@ -164,5 +171,12 @@
   .disabled-tips {
     font-size: 12px;
     margin-left: 6px;
+  }
+  .checkbox-options {
+    margin-bottom: 10px;
+    .checkbox {
+      height: 24px;
+      line-height: 24px;
+    }
   }
 </style>

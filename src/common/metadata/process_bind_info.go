@@ -42,7 +42,8 @@ import (
 
 var (
 	// 标准字段，不论在什么环境上都需要使用的
-	ignoreField = map[string]struct{}{"template_row_id": struct{}{}, "row_id": struct{}{}, common.BKIP: struct{}{}, common.BKPort: struct{}{}, common.BKProtocol: struct{}{}, common.BKEnable: struct{}{}}
+	ignoreField = map[string]struct{}{"template_row_id": {}, "row_id": {}, common.BKIP: {},
+		common.BKPort: {}, common.BKProtocol: {}, common.BKEnable: {}}
 )
 var (
 	//  内部变量，不允许改变，改变值请用对应的Register 方案
@@ -157,6 +158,14 @@ func (pbi *ProcPropertyBindInfo) Validate() (string, error) {
 		if err := property.Std.Protocol.Value.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKProtocol), err
 		}
+
+		if property.Std.IP.Value != nil && *property.Std.IP.Value != "" {
+			if err := ValidateBindIPMatchProtocol(*property.Std.IP.Value, *property.Std.Protocol.Value); err != nil {
+				return fmt.Sprintf("%s[%d].(%s and %s)", common.BKProcBindInfo, idx, common.BKIP,
+					common.BKProtocol), err
+			}
+		}
+
 		if err := property.Std.Enable.Validate(); err != nil {
 			return fmt.Sprintf("%s[%d].%s", common.BKProcBindInfo, idx, common.BKEnable), err
 		}
@@ -265,9 +274,16 @@ func (pbi *ProcPropertyBindInfo) ExtractChangeInfoBindInfo(i *Process, host map[
 			}
 		}
 
+		// 兼容进程中enable为nil的场景，改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致同步失败
+		defaultEnable := false
+		if inputProcBindInfo.Std.Enable == nil {
+			inputProcBindInfo.Std.Enable = &defaultEnable
+		}
+
 		if !exists || IsAsDefaultValue(row.Std.Enable.AsDefaultValue) {
+			// 兼容进程模板中enable为nil的场景，将进程数据改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致同步失败
 			if row.Std.Enable.Value == nil && inputProcBindInfo.Std.Enable != nil {
-				inputProcBindInfo.Std.Enable = nil
+				inputProcBindInfo.Std.Enable = &defaultEnable
 				changed = true
 			} else if row.Std.Enable.Value != nil && inputProcBindInfo.Std.Enable == nil {
 				inputProcBindInfo.Std.Enable = row.Std.Enable.Value
@@ -552,6 +568,12 @@ func (pbi ProcPropertyBindInfo) NewProcBindInfo(cErr cErr.DefaultCCErrorIf,
 
 		procBindInfo.Std.Enable = row.Std.Enable.Value
 
+		// 兼容进程模板中enable为nil的场景，将进程数据改为false，因为进程子属性中enable是必填项，如果为nil的话会报错，导致主机转移失败
+		if row.Std.Enable.Value == nil {
+			defaultEnable := false
+			procBindInfo.Std.Enable = &defaultEnable
+		}
+
 		if row.extra != nil {
 			procBindInfo.extra = row.extra.NewProcBindInfo()
 		}
@@ -626,6 +648,11 @@ func (pbi *ProcPropertyBindInfoValue) Validate() (string, error) {
 	if err := pbi.Std.Protocol.Value.Validate(); err != nil {
 		return common.BKProtocol, err
 	}
+
+	if err := ValidateBindIPMatchProtocol(*pbi.Std.IP.Value, *pbi.Std.Protocol.Value); err != nil {
+		return fmt.Sprintf("%s and %s", common.BKIP, common.BKProtocol), err
+	}
+
 	if err := pbi.Std.Enable.Validate(); err != nil {
 		return common.BKEnable, err
 	}

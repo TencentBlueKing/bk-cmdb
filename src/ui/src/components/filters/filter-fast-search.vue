@@ -21,7 +21,8 @@
 
 <script>
   import FilterStore from './store'
-  import isIP from 'validator/es/lib/isIP'
+  import { splitIP, parseIP, getDefaultIP } from '@/components/filters/utils'
+
   export default {
     data() {
       return {
@@ -38,29 +39,21 @@
         this.dispatchFilter(text)
       },
       dispatchFilter(currentValue) {
-        const values = currentValue.trim().split(/,|;|\n/g)
-          .map(text => text.trim())
-          .filter(text => text.length)
-        const IP = []
-        const assets = []
-        values.forEach((text) => {
-          isIP(text) ? IP.push(text) : assets.push(text)
-        })
+        const IPs = parseIP(splitIP(currentValue))
+        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
+        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
+        const ip = Object.assign(getDefaultIP(), { text: currentValue })
+
         FilterStore.resetPage(true)
-        if (IP.length) {
-          FilterStore.updateIP({
-            text: IP.join('\n'),
-            exact: true,
-            inner: true,
-            outer: true
-          })
-        }
-        if (assets.length) {
+        if (IPList.length) {
+          FilterStore.updateIP(ip)
+        } else if (IPs.assetList.length) {
           FilterStore.createOrUpdateCondition([{
             field: 'bk_asset_id',
             model: 'host',
             operator: '$in',
-            value: assets
+            value: IPs.assetList
           }])
         }
         this.value = ''

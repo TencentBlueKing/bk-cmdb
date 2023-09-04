@@ -1655,8 +1655,11 @@ func (ps *ProcServer) handleAddedServiceInsts(hostMap map[int64]map[string]inter
 		if _, exists := hostWithSrvInstMap[hostID]; exists {
 			continue
 		}
-
-		srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+		namePrefix := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField])
+		if namePrefix == "" {
+			namePrefix = util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPv6Field])
+		}
+		srvInstName := namePrefix + srvInstNameSuffix
 		added = append(added, metadata.ServiceInstancesInfo{
 			Name: srvInstName,
 		})
@@ -1963,7 +1966,7 @@ func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, m
 	_, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, option)
 	if err != nil {
 		blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrUpdateModuleAttributesFail)
+		return err
 	}
 	return nil
 }

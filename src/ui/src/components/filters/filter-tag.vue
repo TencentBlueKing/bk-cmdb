@@ -99,6 +99,7 @@
         .filter-clear {
             line-height: initial;
             margin: 0 0 10px 10px;
+            font-size: 12px;
         }
     }
 </style>

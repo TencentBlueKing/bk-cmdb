@@ -66,7 +66,7 @@
       '--max-width': colMaxWidth,
       '--min-height': rowMinHeight,
       '--max-columns': maxColumns,
-      '--font-size': fontSize
+      '--grid-item-font-size': fontSize
     }">
     <slot></slot>
   </div>
@@ -77,6 +77,7 @@
   display: grid;
   gap: var(--gap, 24px);
   grid-template-columns: repeat(var(--max-columns, auto-fill), minmax(var(--min-width, 200px), var(--max-width, 1fr)));
-  grid-auto-rows: minmax(var(--min-height, 32px), auto);
+  // grid-auto-rows: minmax(var(--min-height, 32px), max-content);
+  grid-auto-rows: min(max-content, max(auto, var(--min-height, 32px)));
 }
 </style>

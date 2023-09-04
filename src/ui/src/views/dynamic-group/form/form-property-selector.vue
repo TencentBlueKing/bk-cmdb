@@ -36,11 +36,20 @@
             :key="property.id"
             :title="property.bk_property_name"
             :checked="isChecked(property)"
+            :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
             @change="handleChange(property, ...arguments)">
-            {{property.bk_property_name}}
+            <span v-bk-tooltips.top-start="{
+              disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
+              content: $t('该字段不支持配置')
+            }">
+              {{property.bk_property_name}}
+            </span>
           </bk-checkbox>
         </div>
       </div>
+      <cmdb-data-empty v-if="isShowEmpty" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </div>
     <div class="property-selector-footer" slot="footer">
       <bk-button class="mr10" theme="primary" @click="handleConfirm">{{$t('确定')}}</bk-button>
@@ -64,7 +73,14 @@
         isShow: false,
         filter: '',
         localSelected: [...this.selected],
-        matchedPropertyMap: this.dynamicGroupForm.propertyMap
+        matchedPropertyMap: this.dynamicGroupForm.propertyMap,
+        disabledPropertyMap: this.dynamicGroupForm.disabledPropertyMap,
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
     },
     computed: {
@@ -79,12 +95,18 @@
       },
       propertyMap() {
         return this.dynamicGroupForm.propertyMap
+      },
+      isShowEmpty() {
+        return this.matchedPropertyMap.host.length === 0
+          && this.matchedPropertyMap.module.length === 0
+          && this.matchedPropertyMap.set.length === 0
       }
     },
     watch: {
       filter(filter) {
         this.filterTimer && clearTimeout(this.filterTimer)
         this.filterTimer = setTimeout(() => this.handleFilter(filter), 500)
+        this.dataEmpty.type = filter ? 'search' : 'empty'
       }
     },
     methods: {
@@ -104,11 +126,11 @@
         }
       },
       isShowGroup(model) {
-        return !!this.matchedPropertyMap[model.bk_obj_id].length
+        return !!this.matchedPropertyMap?.[model.bk_obj_id]?.length
       },
       isShowProperty(property) {
         const modelId = property.bk_obj_id
-        return this.matchedPropertyMap[modelId].some(target => target === property)
+        return this.matchedPropertyMap?.[modelId]?.some(target => target === property)
       },
       isChecked(property) {
         return this.localSelected.some(target => target.id === property.id)
@@ -133,6 +155,9 @@
       },
       hanldeHidden() {
         this.$emit('close')
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }

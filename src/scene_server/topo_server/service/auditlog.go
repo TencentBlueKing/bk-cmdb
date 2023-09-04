@@ -55,7 +55,8 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 
 	// the front-end table display fields
 	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
-		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
+		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField,
+		common.BKExtendResourceNameField}
 
 	cond := mapstr.MapStr{}
 	condition := query.Condition

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
@@ -39,11 +40,15 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 	for idx := range params {
 		if objID == common.BKInnerObjIDHost {
-			params[idx] = metadata.ConvertHostSpecialStringToArray(params[idx])
+			params[idx], err = metadata.ConvertHostSpecialStringToArray(params[idx])
+			if err != nil {
+				blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, err
+			}
 		}
 
 		// build new object instance data.
-		if !util.IsInnerObject(objID) {
+		if !valid.IsInnerObject(objID) {
 			params[idx][common.BKObjIDField] = objID
 		}
 		params[idx].Set(instIDFieldName, ids[idx])
@@ -85,7 +90,11 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
-		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
+		var err error
+		inputParam, err = metadata.ConvertHostSpecialStringToArray(inputParam)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -97,7 +106,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	// build new object instance data.
 	instIDFieldName := common.GetInstIDField(objID)
 	inputParam[instIDFieldName] = id
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		inputParam[common.BKObjIDField] = objID
 	}
 	ts := time.Now()
@@ -134,10 +143,14 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {
 	if objID == common.BKInnerObjIDHost {
-		data = metadata.ConvertHostSpecialStringToArray(data)
+		var err error
+		data, err = metadata.ConvertHostSpecialStringToArray(data)
+		if err != nil {
+			return err
+		}
 	}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
 	ts := time.Now()
@@ -158,7 +171,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
 	if objID == common.BKInnerObjIDHost {

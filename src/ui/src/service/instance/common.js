@@ -139,8 +139,13 @@ export const searchInstanceByName = async (modelId, name, options, config) => {
     } else {
       request = service.find({ bk_obj_id: modelId, params, config })
     }
-    const result = await request
-    return result
+    try {
+      const result = await request
+      return result
+    } catch (error) {
+      console.error(error)
+      return Promise.reject(error)
+    }
   }
   throw Error('not found model service find method')
 }
@@ -178,30 +183,35 @@ const getNameValue = (modelId, nameKey) => {
 }
 
 export const getModelInstanceOptions = async (modelId, instName, instIds, options, config) => {
-  const results = await searchInstanceByName(modelId, instName, options, config)
-  const list = results.list ?? results.info
+  try {
+    const results = await searchInstanceByName(modelId, instName, options, config)
+    const list = results.list ?? results.info
 
-  const nameKey = getNameKey(modelId)
-  const idKey = getIdKey(modelId)
+    const nameKey = getNameKey(modelId)
+    const idKey = getIdKey(modelId)
 
-  const optionGeter = item => ({
-    id: getIdValue(modelId, idKey)(item),
-    name: getNameValue(modelId, nameKey)(item)
-  })
-  const instOptions = list.map(optionGeter)
+    const optionGeter = item => ({
+      id: getIdValue(modelId, idKey)(item),
+      name: getNameValue(modelId, nameKey)(item)
+    })
+    const instOptions = list.map(optionGeter)
 
-  const idList = instOptions.map(options => options.id)
+    const idList = instOptions.map(options => options.id)
 
-  // 没有传递name来搜索，同时传了ids，表示需要根据ids搜索并将结果补充至列表
-  if (!instName && instIds?.length) {
-    const diffIds = instIds.filter(id => !idList.includes(id))
-    if (diffIds.length) {
-      const { list: diffList } = await searchInstanceByIds(modelId, diffIds, config) || {}
-      instOptions.push(...(diffList || []).map(optionGeter))
+    // 没有传递name来搜索，同时传了ids，表示需要根据ids搜索并将结果补充至列表
+    if (!instName && instIds?.length) {
+      const diffIds = instIds.filter(id => !idList.includes(id))
+      if (diffIds.length) {
+        const { list: diffList } = await searchInstanceByIds(modelId, diffIds, config) || {}
+        instOptions.push(...(diffList || []).map(optionGeter))
+      }
     }
-  }
 
-  return instOptions
+    return instOptions
+  } catch (error) {
+    console.error(error)
+    return Promise.reject(error)
+  }
 }
 
 export const getModelInstanceByIds = async (modelId, instIds, config) => {

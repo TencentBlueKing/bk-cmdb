@@ -27,6 +27,7 @@ import {
 } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
+import { escapeRegexChar } from '@/utils/util'
 
 export default function useItem(list) {
   const getModelById = store.getters['objectModelClassify/getModelById']
@@ -41,8 +42,9 @@ export default function useItem(list) {
       const { key, kind, source } = item
       const newItem = { ...item }
       if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
+        const ip = source.bk_host_innerip || source.bk_host_innerip_v6
         newItem.type = key
-        newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
+        newItem.title = Array.isArray(ip) ? ip.join(',') : ip
         newItem.typeName = t('主机')
         newItem.linkTo = handleGoResourceHost
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS) {
@@ -94,6 +96,9 @@ export default function useItem(list) {
       name: MENU_RESOURCE_HOST_DETAILS,
       params: {
         id: host.bk_host_id
+      },
+      query: {
+        from: 'resource'
       },
       history: true
     }
@@ -252,7 +257,7 @@ export const getHighlightValue = (value, data) => {
       continue
     }
 
-    const re = new RegExp(words[1])
+    const re = new RegExp(escapeRegexChar(words[1]))
     if (re.test(value)) {
       matched = keyword
       break

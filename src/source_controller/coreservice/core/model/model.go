@@ -55,6 +55,96 @@ func New(dependent OperationDependences, language language.CCLanguageIf) core.Mo
 	return coreMgr
 }
 
+// CreateTableModel create a new table model
+func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	// check the model attributes value
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("table model object %s is not set, rid: %s", inputParam.Spec.ObjectID, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	if len(inputParam.Attributes) == 0 {
+		blog.Errorf("table model attr is not set, rid: %s", kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "attribute")
+	}
+
+	locker := lock.NewLocker(redis.Client())
+	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
+
+	locked, err := locker.Lock(redisKey, time.Second*35)
+	defer locker.Unlock()
+	if err != nil {
+		blog.Errorf("get create table model lock failed, err: %v, input: %v, rid: %s", err, inputParam, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
+	}
+
+	if !locked {
+		blog.Errorf("create table model have same task in progress, input: %v, rid:%s", inputParam, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr,
+			fmt.Sprintf("create table object(%s)", inputParam.Spec.ObjectID))
+	}
+
+	blog.V(5).Infof("create table model redis lock info, key: %s, bl: %v, err: %v, rid: %s",
+		redisKey, locked, err, kit.Rid)
+
+	originObjID := inputParam.Spec.ObjectID
+	inputParam.Spec.ObjectID = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
+		inputParam.Attributes[0].PropertyID)
+	inputParam.Spec.ObjectName = metadata.GenerateModelQuoteObjID(inputParam.Spec.ObjectID,
+		inputParam.Attributes[0].PropertyName)
+
+	// check the model if it is exists
+	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
+	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
+	_, exists, err := m.isExists(kit, condCheckModel)
+	if nil != err {
+		blog.Errorf("failed to check whether the table model (%s) is exists, err: %v, rid: %s",
+			inputParam.Spec.ObjectID, err, kit.Rid)
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("failed to create a table model, model (%s) is already exists, rid: %s ",
+			inputParam.Spec.ObjectID, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectID)
+	}
+
+	// check for duplicate model names
+	modelNameUniqueFilter := map[string]interface{}{
+		common.BKObjNameField: inputParam.Spec.ObjectName,
+	}
+	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get model count failed, name: %s, err: %v, rid: %s", inputParam.Spec.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+	if sameNameCount > 0 {
+		blog.Warnf("create model failed, field `%s` duplicated, rid: %s", inputParam.Spec.ObjectName, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.ObjectName)
+	}
+
+	// create new table model after checking base information and sharding table operation.
+	inputParam.Spec.OwnerID = kit.SupplierAccount
+	id, err := m.save(kit, &inputParam.Spec)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to save the model (%#v), err: %v", kit.Rid, inputParam.Spec, err)
+		return nil, err
+	}
+
+	// 创建源模型的模型属性
+	_, err = m.modelAttribute.CreateTableModelAttributes(kit, originObjID,
+		metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
+	if nil != err {
+		blog.Errorf("it is failed to create some attributes (%#v) for the model (%s), err: %v, rid: %s",
+			inputParam.Attributes, inputParam.Spec.ObjectID, err, kit.Rid)
+		return nil, err
+	}
+
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+}
+
 // CreateModel create a new model
 func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
@@ -363,6 +453,34 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	}
 
 	return &metadata.DeletedCount{Count: cnt}, nil
+}
+
+// CascadeDeleteTableModel delete table models in a cascading manner
+func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.DeleteTableOption) error {
+	// NOTE: just single model cascade delete action now.
+	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
+	cond, _ := mongo.NewConditionFromMapStr(condMap)
+	cond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: intput.ObjID})
+
+	// NOTE: the func logics supports cascade delete models in batch mode.
+	// You can change the condition to index many models.
+	models, err := m.search(kit, cond)
+	if err != nil {
+		blog.Errorf("search target models failed, cond: %s, err: %v, rid: %s", cond.ToMapStr(), err, kit.Rid)
+		return err
+	}
+
+	if len(models) == 0 {
+		return nil
+	}
+
+	// cascade delete table related resources.
+	if err := m.cascadeDeleteTable(kit, intput); err != nil {
+		blog.Errorf("cascade delete model failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // SearchModel TODO

@@ -38,14 +38,13 @@
         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
           <bk-input type="text" class="cmdb-form-input"
             name="fieldName"
-            :placeholder="$t('请输入字段名称')"
+            :placeholder="isSystemCreate ? $t('请输入名称，国际化时将会自动翻译，不可修改') : $t('请输入字段名称')"
             v-model.trim="fieldInfo.bk_property_name"
             :disabled="isReadOnly || isSystemCreate || field.ispre"
             v-validate="'required|length:128'">
           </bk-input>
           <p class="form-error">{{errors.first('fieldName')}}</p>
         </div>
-        <i class="icon-cc-exclamation-tips" v-if="isSystemCreate" tabindex="-1" v-bk-tooltips="$t('国际化配置翻译，不可修改')"></i>
       </label>
       <div class="form-label">
         <span class="label-text">
@@ -90,7 +89,7 @@
           </bk-select>
         </div>
       </div>
-      <div class="field-detail">
+      <div class="field-detail" v-show="!['foreignkey'].includes(fieldType)">
         <the-config
           :type="fieldInfo.bk_property_type"
           :is-read-only="isReadOnly"
@@ -110,7 +109,9 @@
           :is="`the-field-${fieldType}`"
           :multiple="fieldInfo.ismultiple"
           v-model="fieldInfo.option"
+          :is-edit-field="isEditField"
           :type="fieldInfo.bk_property_type"
+          :default-value.sync="fieldInfo.default"
           ref="component"
         ></component>
         <label class="form-label" v-if="isDefaultComponentShow">
@@ -125,8 +126,9 @@
               :is="`cmdb-form-${fieldInfo.bk_property_type}`"
               :multiple="fieldInfo.ismultiple"
               :options="fieldInfo.option || []"
+              :disabled="isReadOnly || isSystemCreate || field.ispre"
               v-model="fieldInfo.default"
-              v-validate="$tools.getValidateRules(fieldInfo)"
+              v-validate="getValidateRules(fieldInfo)"
               ref="component"
             ></component>
             <p class="form-error">{{errors.first('defalut')}}</p>
@@ -185,11 +187,13 @@
   import theFieldList from './list'
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
+  import theFieldInnertable from './inner-table/index.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
   import { PROPERTY_TYPES, PROPERTY_TYPE_LIST } from '@/dictionary/property-constants'
   import { isEmptyPropertyValue } from '@/utils/tools'
+  import useSideslider from '@/hooks/use-sideslider'
 
   export default {
     components: {
@@ -200,9 +204,14 @@
       theFieldEnumquote,
       theFieldList,
       theFieldBool,
-      theConfig
+      theConfig,
+      theFieldInnertable
     },
     props: {
+      properties: {
+        type: Array,
+        required: true
+      },
       field: {
         type: Object
       },
@@ -234,7 +243,6 @@
     },
     data() {
       return {
-        fieldTypeList: PROPERTY_TYPE_LIST,
         fieldInfo: {
           bk_property_name: '',
           bk_property_id: '',
@@ -288,7 +296,8 @@
           PROPERTY_TYPES.LIST,
           PROPERTY_TYPES.BOOL,
           PROPERTY_TYPES.ENUMMULTI,
-          PROPERTY_TYPES.ENUMQUOTE
+          PROPERTY_TYPES.ENUMQUOTE,
+          PROPERTY_TYPES.INNER_TABLE
         ]
         return types.indexOf(this.fieldInfo.bk_property_type) !== -1
       },
@@ -297,7 +306,9 @@
           PROPERTY_TYPES.ENUM,
           PROPERTY_TYPES.ENUMMULTI,
           PROPERTY_TYPES.ENUMQUOTE,
-          PROPERTY_TYPES.BOOL
+          PROPERTY_TYPES.BOOL,
+          PROPERTY_TYPES.INNER_TABLE,
+          PROPERTY_TYPES.LIST
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
       },
@@ -315,6 +326,17 @@
           return this.field.creator === 'cc_system'
         }
         return false
+      },
+      fieldTypeList() {
+        if (this.customObjId) {
+          const disabledTypes = this.isEditField
+            ? [PROPERTY_TYPES.INNER_TABLE]
+            : [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.FOREIGNKEY, PROPERTY_TYPES.ENUMQUOTE]
+          return PROPERTY_TYPE_LIST.filter(item => !disabledTypes.includes(item.id))
+        }
+        // eslint-disable-next-line max-len
+        const createFieldList = PROPERTY_TYPE_LIST.filter(item => ![PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.FOREIGNKEY].includes(item.id))
+        return this.isEditField ? PROPERTY_TYPE_LIST : createFieldList
       }
     },
     watch: {
@@ -336,9 +358,15 @@
               break
             case PROPERTY_TYPES.OBJUSER:
             case PROPERTY_TYPES.ORGANIZATION:
+              this.fieldInfo.default = ''
               this.fieldInfo.option = ''
               this.fieldInfo.ismultiple = true
               break
+            case PROPERTY_TYPES.INNER_TABLE:
+              this.fieldInfo.option = {
+                header: [],
+                default: []
+              }
             default:
               this.fieldInfo.default = ''
               this.fieldInfo.option = ''
@@ -352,6 +380,9 @@
       if (this.isEditField) {
         this.initData()
       }
+
+      const { beforeClose } = useSideslider(this.fieldInfo)
+      this.beforeClose = beforeClose
     },
     methods: {
       ...mapActions('objectModelProperty', [
@@ -383,6 +414,15 @@
         if (!await this.validateValue()) {
           return
         }
+
+        const tableTypeCount = this.properties
+          .filter(property => property.bk_property_type === PROPERTY_TYPES.INNER_TABLE).length
+        const isTableType = this.fieldInfo.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+        if (!this.isEditField && isTableType && tableTypeCount >= 5) {
+          this.$error('最多只能添加5个表格字段')
+          return
+        }
+
         let fieldId = null
         if (this.fieldInfo.bk_property_type === 'int' || this.fieldInfo.bk_property_type === 'float') {
           this.fieldInfo.option.min = this.isNullOrUndefinedOrEmpty(this.fieldInfo.option.min) ? '' : Number(this.fieldInfo.option.min)
@@ -455,6 +495,11 @@
       },
       cancel() {
         this.$emit('cancel')
+      },
+      getValidateRules(fieldInfo) {
+        const rules =  this.$tools.getValidateRules(fieldInfo)
+        Reflect.deleteProperty(rules, 'required')
+        return rules
       }
     }
   }

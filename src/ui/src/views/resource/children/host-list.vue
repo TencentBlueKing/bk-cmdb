@@ -53,6 +53,8 @@
             :show-unit="false"
             :property="property"
             :multiple="property.bk_obj_id !== 'host'"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, property)">
           </cmdb-property-value>
         </template>
@@ -256,7 +258,7 @@
         return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
       },
       isPropertySortable(property) {
-        return property.bk_obj_id === 'host' && !['foreignkey', 'topology'].includes(property.bk_property_type)
+        return this.$tools.isPropertySortable(property)
       },
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
@@ -286,6 +288,10 @@
           this.table.pagination.count = count
           this.table.list = info
           this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+          const params = this.getParams()
+          if (params.ip.data.length > 0) {
+            this.table.stuff.type = 'search'
+          }
         } catch (error) {
           this.table.pagination.count = 0
           this.table.checked = []

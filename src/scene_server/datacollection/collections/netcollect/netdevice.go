@@ -62,7 +62,7 @@ func (h *NetCollect) Mock() string {
 }
 
 // Analyze implements the Analyzer interface
-func (h *NetCollect) Analyze(msg *string) (bool, error) {
+func (h *NetCollect) Analyze(msg *string, sourceType string) (bool, error) {
 	if msg == nil {
 		return false, fmt.Errorf("message nil")
 	}

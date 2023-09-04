@@ -236,7 +236,7 @@
           bizIds: [biz.bk_biz_id]
         }).then(() => {
           this.$bkMessage({
-            message: `${biz.bk_biz_name}已彻底删除`
+            message: `${biz.bk_biz_name} ${this.$t('已彻底删除')}`
           })
           this.getTableData()
         })

@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -99,5 +100,5 @@ func (p *processOperation) validateHostID(kit *rest.Kit, hostID int64) (string, 
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	return host[common.BKHostInnerIPField].(string), nil
+	return util.GetStrByInterface(host[common.BKHostInnerIPField]), nil
 }

@@ -109,6 +109,8 @@
           <span class="host-count">{{dir.host_count}}</span>
         </template>
       </li>
+      <cmdb-data-empty v-if="filterDirList.length === 0" slot="empty"
+        :stuff="dataEmpty" @clear="handleClearFilter"></cmdb-data-empty>
     </ul>
   </div>
 </template>
@@ -131,7 +133,10 @@
           id: null,
           name: ''
         },
-        acitveDirId: null
+        acitveDirId: null,
+        dataEmpty: {
+          type: 'search'
+        }
       }
     },
     computed: {
@@ -329,6 +334,9 @@
             }
           }
         })
+      },
+      handleClearFilter() {
+        this.dirSearch = ''
       }
     }
   }

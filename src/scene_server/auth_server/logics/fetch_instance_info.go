@@ -120,8 +120,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	return instances.Info, nil
 }
 
-// FetchHostInfo TODO
-// fetch hosts' specified attributes info using host ids
+// FetchHostInfo fetch hosts' specified attributes info using host ids
 func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
@@ -150,6 +149,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 			}
 		}
 		if hasName {
+			attrs = append(attrs, common.BKHostInnerIPv6Field)
 			attrs = append(attrs, common.BKCloudIDField)
 		}
 	}
@@ -252,7 +252,8 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 			}
 			ip := util.GetStrByInterface(host[common.BKHostInnerIPField])
-			host[types.NameField] = getHostDisplayName(ip, cloudMap[cloudID])
+			ipv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
+			host[types.NameField] = metadata.GetHostDisplayName(ip, ipv6, cloudMap[cloudID])
 		}
 
 		if needPath {

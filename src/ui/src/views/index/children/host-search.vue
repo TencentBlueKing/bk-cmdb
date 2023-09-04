@@ -33,16 +33,13 @@
             {{$t('搜索')}}
           </bk-button>
           <div class="picking-popover-content" slot="content">
-            <i18n tag="p" path="检测到输入框中包含非标准IP格式字符串，请选择以XXX自动解析">
-              <template #c1><span>&lt;{{$t('IP')}}&gt;</span></template>
-              <template #c2><span>&lt;{{$t('固资编号')}}&gt;</span></template>
-            </i18n>
+            <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
             <div class="buttons">
-              <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'"
+              <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
                 @click="handleSearch('ip')">
                 {{$t('IP')}}
               </bk-button>
-              <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'"
+              <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
                 @click="handleSearch('asset')">
                 {{$t('固资编号')}}
               </bk-button>
@@ -58,8 +55,6 @@
 <script>
   import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
   import QS from 'qs'
-  import isIP from 'validator/es/lib/isIP'
-  import isInt from 'validator/es/lib/isInt'
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
 
@@ -88,6 +83,10 @@
           tippyOptions: {
             hideOnClick: true
           }
+        },
+        searchFlag: {
+          ip: false,
+          asset: false
         },
         request: {
           search: Symbol('search')
@@ -152,27 +151,18 @@
         window.sessionStorage.setItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY, JSON.stringify(this.searchContent))
 
         if (searchList.length) {
-          const IPList = []
-          const IPWithCloudList = []
-          const assetList = []
-          const cloudIdSet = new Set()
-          searchList.forEach((text) => {
-            if (isIP(text, 4)) {
-              IPList.push(text)
-            } else {
-              const splitData = text.split(':')
-              const [cloudId, ip] = splitData
-              if (splitData.length === 2 && isInt(cloudId) && isIP(ip)) {
-                IPWithCloudList.push(text)
-                cloudIdSet.add(parseInt(cloudId, 10))
-              } else {
-                assetList.push(text)
-              }
-            }
-          })
-          // console.log(IPList, IPWithCloudList, assetList, cloudIdSet, force)
-          // 判断是否存在IP、固资编号混合搜索
-          if (!force && (IPList.length || IPWithCloudList.length) && assetList.length) {
+          const IPs = FilterUtils.parseIP(searchList)
+          const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
+
+          this.searchFlag.ip = IPv4List.length
+            || IPv4WithCloudList.length
+            || IPv6List.length
+            || IPv6WithCloudList.length
+          this.searchFlag.asset = assetList.length > 0
+          const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
+
+          // 判断是否存在IP、IPv6、固资编号混合搜索
+          if (!force && isMixSearch) {
             this.$refs.popover.showHandler()
             return
           }
@@ -180,19 +170,12 @@
           const assetSearch = () => this.handleAssetSearch(assetList)
 
           const ipSearch = () => {
-            // 无云区域与有云区域的混合搜索
-            if (IPList.length && IPWithCloudList.length) {
-              return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
-            }
-            // 纯IP搜索
-            if (IPList.length) {
-              return this.handleIPSearch(IPList)
-            }
             // 不同云区域+IP的混合搜索
             if (cloudIdSet.size > 1) {
               return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
             }
-            this.handleIPWithCloudSearch(IPWithCloudList, cloudIdSet)
+
+            this.handleIPSearch(IPs)
           }
 
           // 优先使用混合搜索下的选择
@@ -203,47 +186,28 @@
             return ipSearch()
           }
 
-          // 纯固资编号搜索
-          if (assetList.length) {
+          // 非混合搜索
+          if (this.searchFlag.asset) {
             return assetSearch()
           }
-          // IP系列搜索
-          ipSearch()
+          if (this.searchFlag.ip) {
+            return ipSearch()
+          }
         } else {
           this.searchContent = ''
           this.textareaDom && this.textareaDom.focus()
         }
       },
-      handleIPSearch(list) {
-        const ip = {
-          text: list.join('\n'),
-          inner: true,
-          outer: true,
-          exact: true
-        }
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            scope: 'all',
-            ip: QS.stringify(ip, { encode: false })
-          },
-          history: true
-        })
-      },
-      handleIPWithCloudSearch(list, cloudSet) {
-        const IPList = list.map((text) => {
-          const [, ip] = text.split(':')
-          return ip
-        })
-        const ip = {
-          text: IPList.join('\n'),
-          inner: true,
-          outer: true,
-          exact: true
-        }
-        const filter = {
-          'bk_cloud_id.in': [cloudSet.values().next().value].join(',')
-        }
+      handleIPSearch(IPs) {
+        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
+        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
+
+        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
+
+        const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
+        const filter = cloudIds.length ? { 'bk_cloud_id.in': cloudIds.join(',') } : {}
+
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {

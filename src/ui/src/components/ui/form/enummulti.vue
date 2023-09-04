@@ -102,7 +102,9 @@
             return Array.isArray(this.value) ? this.value[0] : this.value
           }
 
-          return this.value
+          // 多选时需要过滤掉不在选项列表中的值
+          const vals = !Array.isArray(this.value) ? [this.value] : this.value
+          return vals.filter(val => this.options?.some?.(option => option.id === val))
         },
         set(value) {
           this.$emit('input', value)

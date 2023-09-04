@@ -318,4 +318,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initResourceDirectory(web)
 
 	s.initKube(web)
+
+	s.initModelQuote(web)
 }

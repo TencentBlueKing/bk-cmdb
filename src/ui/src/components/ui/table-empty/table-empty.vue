@@ -19,7 +19,7 @@
           <i18n class="operation-text" path="搜索为空提示语">
             <template #filter><span style="margin: 0 3px">{{$t('调整关键词')}}</span></template>
             <template #clear>
-              <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click="$emit('clear')">
+              <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click.stop="$emit('clear')">
                 {{$t('清空筛选条件')}}
               </bk-button>
             </template>

@@ -314,9 +314,10 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 
 	input := &metadata.QueryInput{
 		Condition: condition,
-		Fields:    common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKCloudIDField,
-		Start:     int(page.Offset),
-		Limit:     int(page.Limit),
+		Fields: common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostInnerIPv6Field + "," +
+			common.BKCloudIDField,
+		Start: int(page.Offset),
+		Limit: int(page.Limit),
 	}
 
 	hostResp, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
@@ -344,8 +345,9 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 	for _, host := range hostResp.Info {
 		cloudID, _ := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		instances = append(instances, types.InstanceResource{
-			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
-			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID]),
+			ID: util.GetStrByInterface(host[common.BKHostIDField]),
+			DisplayName: metadata.GetHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
+				util.GetStrByInterface(host[common.BKHostInnerIPv6Field]), cloudMap[cloudID]),
 		})
 	}
 
@@ -356,9 +358,10 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 }
 
 type hostInstance struct {
-	ID      int64  `json:"bk_host_id"`
-	InnerIP string `json:"bk_host_innerip"`
-	CloudID int64  `json:"bk_cloud_id"`
+	ID        int64  `json:"bk_host_id"`
+	InnerIP   string `json:"bk_host_innerip"`
+	InnerIPv6 string `json:"bk_host_innerip_v6"`
+	CloudID   int64  `json:"bk_cloud_id"`
 }
 
 func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, page types.Page) (
@@ -384,7 +387,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 			}
 			listHostParam := &metadata.ListWithIDOption{
 				IDs:    hostIDs[offset:limit],
-				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field},
 			}
 			hostArrStr, err := lgc.CoreAPI.CacheService().Cache().Host().ListHostWithHostID(kit.Ctx, kit.Header,
 				listHostParam)
@@ -404,7 +407,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 		}
 	} else {
 		listHostParam := &metadata.ListHostWithPage{
-			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field},
 			Page: metadata.BasePage{
 				Start: int(page.Offset),
 				Limit: int(page.Limit),
@@ -446,7 +449,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	for _, host := range hosts {
 		instances = append(instances, types.InstanceResource{
 			ID:          strconv.FormatInt(host.ID, 10),
-			DisplayName: getHostDisplayName(host.InnerIP, cloudMap[host.CloudID]),
+			DisplayName: metadata.GetHostDisplayName(host.InnerIP, host.InnerIPv6, cloudMap[host.CloudID]),
 		})
 	}
 

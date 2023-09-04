@@ -4,11 +4,11 @@
 	"field_type_int": "number",
 	"field_type_float": "float",
 	"field_type_enum": "enumeration",
+	"field_type_enummulti": "enum multiple",
+	"field_type_enumquote": "enum quote",
 	"field_type_date": "date",
 	"field_type_time": "time",
 	"field_type_objuser": "User",
-	"field_type_singleasst": "single association",
-	"field_type_multiasst": "multiple associations",
 	"field_type_timezone": "time zone",
 	"field_type_bool": "boolean",
 	"field_type_bool_true": "Yes",
@@ -17,5 +17,8 @@
 	"field_name": "Field name(Please do not edit)",
 	"field_type": "Field type(Please do not edit)",
 	"field_id": "Field ID(Please do not edit)",
+	"table_field_name": "Table Field name(Please do not edit)",
+	"table_field_type": "Table Field type(Please do not edit)",
+	"table_field_id": "Table Field ID(Please do not edit)",
 	"inst_data": "Instance data"
 }

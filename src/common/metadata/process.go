@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/thirdparty/hooks/process"
 )
 
@@ -841,8 +842,19 @@ const (
 	// BindInnerIP TODO
 	BindInnerIP SocketBindType = "3"
 	// BindOuterIP TODO
-	BindOuterIP SocketBindType = "4"
+	BindOuterIP     SocketBindType = "4"
+	BindLocalHostV6 SocketBindType = "5"
+	BindAllV6       SocketBindType = "6"
+	BindInnerIPv6   SocketBindType = "7"
+	BindOuterIPv6   SocketBindType = "8"
 )
+
+var ProcBindIPHostFieldMap = map[SocketBindType]string{
+	BindInnerIP:   common.BKHostInnerIPField,
+	BindOuterIP:   common.BKHostOuterIPField,
+	BindInnerIPv6: common.BKHostInnerIPv6Field,
+	BindOuterIPv6: common.BKHostOuterIPv6Field,
+}
 
 // NeedIPFromHost TODO
 func (p *SocketBindType) NeedIPFromHost() bool {
@@ -851,7 +863,7 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 	}
 
 	switch *p {
-	case BindInnerIP, BindOuterIP:
+	case BindInnerIP, BindOuterIP, BindInnerIPv6, BindOuterIPv6:
 		return true
 	default:
 		return false
@@ -864,33 +876,33 @@ func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 		return "", process.ValidateProcessBindIPEmptyHook()
 	}
 
-	var ip string
+	if p.NeedIPFromHost() {
+		if host == nil {
+			return "", errors.New("process host is not specified to get bind ip")
+		}
+
+		ip := util.GetStrByInterface(host[ProcBindIPHostFieldMap[*p]])
+
+		index := strings.Index(strings.Trim(ip, ","), ",")
+		if index == -1 {
+			return ip, nil
+		}
+		return ip[:index], nil
+	}
 
 	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1", nil
 	case BindAll:
 		return "0.0.0.0", nil
-	case BindInnerIP:
-		if host == nil {
-			return "", errors.New("process host is not specified to get bind inner ip")
-		}
-		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
-	case BindOuterIP:
-		if host == nil {
-			return "", errors.New("process host is not specified to get bind outer ip")
-		}
-		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
+	case BindLocalHostV6:
+		return "::1", nil
+	case BindAllV6:
+		return "::", nil
 	default:
 		blog.Errorf("process template bind info ip is invalid, socket bind type: %s", *p)
 		return "", errors.New("process template bind info ip is invalid")
 	}
-
-	index := strings.Index(strings.Trim(ip, ","), ",")
-	if index == -1 {
-		return ip, nil
-	}
-	return ip[:index], nil
 }
 
 // String 用于打印
@@ -908,6 +920,14 @@ func (p *SocketBindType) String() string {
 		return "第一内网IP"
 	case BindOuterIP:
 		return "第一外网IP"
+	case BindLocalHostV6:
+		return "::1"
+	case BindAllV6:
+		return "::"
+	case BindInnerIPv6:
+		return "第一内网IPv6"
+	case BindOuterIPv6:
+		return "第一外网IPv6"
 	default:
 		return ""
 	}
@@ -915,7 +935,8 @@ func (p *SocketBindType) String() string {
 
 // Validate TODO
 func (p SocketBindType) Validate() error {
-	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP, BindLocalHostV6, BindAllV6,
+		BindInnerIPv6, BindOuterIPv6}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -929,7 +950,9 @@ const (
 	// ProtocolTypeTCP TODO
 	ProtocolTypeTCP ProtocolType = "1"
 	// ProtocolTypeUDP TODO
-	ProtocolTypeUDP ProtocolType = "2"
+	ProtocolTypeUDP  ProtocolType = "2"
+	ProtocolTypeTCP6 ProtocolType = "3"
+	ProtocolTypeUDP6 ProtocolType = "4"
 )
 
 // String 用于打印
@@ -939,6 +962,10 @@ func (p ProtocolType) String() string {
 		return "TCP"
 	case ProtocolTypeUDP:
 		return "UDP"
+	case ProtocolTypeTCP6:
+		return "TCP6"
+	case ProtocolTypeUDP6:
+		return "UDP6"
 	default:
 		return ""
 	}
@@ -949,11 +976,35 @@ func (p *ProtocolType) Validate() error {
 	if p == nil || len(*p) == 0 {
 		return errors.New("protocol is not set or is empty")
 	}
-	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP}
+
+	// validate if process bind protocol value is valid, the value is not empty
+	if err := process.ValidateProcessBindProtocolHook(string(*p)); err != nil {
+		return err
+	}
+
+	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP, ProtocolTypeTCP6, ProtocolTypeUDP6}
 	if util.InArray(*p, validValues) == false {
 		return fmt.Errorf("invalid protocol type, value: %s, available values: %+v", p, validValues)
 	}
 	return nil
+}
+
+// ValidateBindIPMatchProtocol validate if process template bind ip matches protocol
+func ValidateBindIPMatchProtocol(s SocketBindType, p ProtocolType) error {
+	switch s {
+	case BindLocalHost, BindAll, BindInnerIP, BindOuterIP:
+		if p == ProtocolTypeTCP || p == ProtocolTypeUDP {
+			return nil
+		}
+		return fmt.Errorf("socket bind type(%s) and protocol type(%s) is not match", s, p)
+	case BindLocalHostV6, BindAllV6, BindInnerIPv6, BindOuterIPv6:
+		if p == ProtocolTypeTCP6 || p == ProtocolTypeUDP6 {
+			return nil
+		}
+		return fmt.Errorf("socket bind type(%s) and protocol type(%s) is not match", s, p)
+	default:
+		return errors.New("process template bind info ip is invalid")
+	}
 }
 
 // Process TODO
@@ -1094,7 +1145,7 @@ type ServiceTemplate struct {
 
 // Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
-	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
 		return "name", err
 	}
@@ -2005,6 +2056,11 @@ type PropertyBindIP struct {
 func (ti *PropertyBindIP) Validate() error {
 	if ti.Value == nil || len(*ti.Value) == 0 {
 		return process.ValidateProcessBindIPEmptyHook()
+	}
+
+	// validate if process bind ip value is valid, the value is not empty
+	if err := process.ValidateProcessBindIPHook(string(*ti.Value)); err != nil {
+		return err
 	}
 
 	if err := ti.Value.Validate(); err != nil {

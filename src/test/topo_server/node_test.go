@@ -24,7 +24,6 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/test"
@@ -76,14 +75,14 @@ var _ = Describe("kube cluster test", func() {
 		})
 
 		It("search host created using api", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Ip: params.IPInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Ipv4Ip: metadata.IPInfo{
 					Data:  []string{"127.0.0.1"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}

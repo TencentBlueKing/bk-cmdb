@@ -503,6 +503,7 @@
       },
       handleClearFilter() {
         this.filterName = ''
+        this.handleFilter()
         this.dataEmpty.stuff.type = 'default'
       }
     }

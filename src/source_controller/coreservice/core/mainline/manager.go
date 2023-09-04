@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/source_controller/coreservice/multilingual"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
@@ -126,7 +127,7 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 
 	// load other mainline instance(except business,set,module) list of target business
 	for _, objectID := range im.modelIDs {
-		if util.IsInnerObject(objectID) {
+		if valid.IsInnerObject(objectID) {
 			continue
 		}
 

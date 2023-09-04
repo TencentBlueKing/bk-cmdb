@@ -443,7 +443,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		if nil != err {
 			blog.ErrorJSON("UpdatePlat failed, UpdateInstance failed, input:%s, err:%s, rid:%s", updateOption,
 				err.Error(), ctx.Kit.Rid)
-			return ctx.Kit.CCError.Errorf(common.CCErrTopoInstDeleteFailed)
+			return err
 		}
 
 		// save audit log.

@@ -30,9 +30,12 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
+	eventtype "configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/gse/client"
 )
 
@@ -191,16 +194,26 @@ func (es *EventServer) initConfigs() error {
 		return nil
 	}
 
-	es.config.TaskConf, err = client.NewGseConnConfig("gse.taskServer")
-	if err != nil {
-		blog.Errorf("get gse taskServer Config error, err: %v", err)
-		return err
-	}
+	switch es.config.IdentifierConf.Version {
+	case eventtype.V1:
+		es.config.TaskConf, err = client.NewGseConnConfig("gse.taskServer")
+		if err != nil {
+			blog.Errorf("get gse taskServer Config error, err: %v", err)
+			return err
+		}
 
-	es.config.ApiConf, err = client.NewGseConnConfig("gse.apiServer")
-	if err != nil {
-		blog.Errorf("get gse apiServer Config error, err: %v", err)
-		return err
+		es.config.ApiConf, err = client.NewGseConnConfig("gse.apiServer")
+		if err != nil {
+			blog.Errorf("get gse apiServer Config error, err: %v", err)
+			return err
+		}
+	case eventtype.V2:
+		config, err := apigwutil.ParseApiGWConfig("gse.apiGW")
+		if err != nil {
+			blog.Errorf("get gse api gateway config error, err: %v", err)
+			return err
+		}
+		es.config.GseApiGWConfig = config
 	}
 
 	return nil
@@ -269,20 +282,34 @@ func (es *EventServer) runSyncData() error {
 		return nil
 	}
 
-	gseTaskClient, err := client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
-	if err != nil {
-		blog.Errorf("new gse taskServer error, err: %v", err)
-		return err
-	}
+	var err error
+	var gseTaskClient *client.GseTaskServerClient
+	var gseApiClient *client.GseApiServerClient
+	var gwClient gse.GseClientInterface
+	switch es.config.IdentifierConf.Version {
+	case eventtype.V1:
+		gseTaskClient, err = client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
+		if err != nil {
+			blog.Errorf("new gse taskServer error, err: %v", err)
+			return err
+		}
 
-	gseApiClient, err := client.NewGseApiServerClient(es.config.ApiConf.Endpoints, es.config.ApiConf.TLSConf)
-	if err != nil {
-		blog.Errorf("new gse apiServer error, err: %v", err)
-		return err
+		gseApiClient, err = client.NewGseApiServerClient(es.config.ApiConf.Endpoints, es.config.ApiConf.TLSConf)
+		if err != nil {
+			blog.Errorf("new gse apiServer error, err: %v", err)
+			return err
+		}
+
+	case eventtype.V2:
+		gwClient, err = gse.NewGseApiGWClient(es.config.GseApiGWConfig, es.engine.Metric().Registry())
+		if err != nil {
+			blog.Errorf("new gse api gateway client error, err: %v", err)
+			return err
+		}
 	}
 
 	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,
-		gseTaskClient, gseApiClient)
+		gwClient, gseTaskClient, gseApiClient, es.config.IdentifierConf.Version)
 	if err != nil {
 		blog.Errorf("new host identifier error, err: %v", err)
 		return err

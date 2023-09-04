@@ -141,5 +141,5 @@
 	"1101119": "The topology identification is illegal, the unique identification of k8s and cc cannot be mixed",
 	"1101120": "model %s forbids the creation of association relationships",
 	"1101121": "the associated model %s forbids the creation of association relationships",
-    "": "" 
+	"": ""
 }

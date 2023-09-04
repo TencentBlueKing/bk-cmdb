@@ -29,6 +29,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	modelquote "configcenter/src/apimachinery/coreservice/model_quote"
 	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/project"
@@ -64,6 +65,7 @@ type CoreServiceClientInterface interface {
 	Common() common.CommonInterface
 	Kube() kube.KubeClientInterface
 	Project() project.ProjectClientInterface
+	ModelQuote() modelquote.Interface
 }
 
 // NewCoreServiceClient TODO
@@ -182,4 +184,9 @@ func (c *coreService) Kube() kube.KubeClientInterface {
 // Project return the project client
 func (c *coreService) Project() project.ProjectClientInterface {
 	return project.NewProjectClientInterface(c.restCli)
+}
+
+// ModelQuote return the model quote client
+func (c *coreService) ModelQuote() modelquote.Interface {
+	return modelquote.New(c.restCli)
 }

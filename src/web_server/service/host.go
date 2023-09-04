@@ -15,8 +15,8 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -29,49 +29,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks/process"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx/v3"
 )
-
-type excelExportHostInput struct {
-	// 导出的主机字段
-	CustomFields []string `json:"export_custom_fields"`
-	// 指定需要导出的主机ID, 设置本参数后， ExportCond限定条件无效
-	HostIDArr []int64 `json:"bk_host_ids"`
-	// 需要导出主机业务id
-	AppID int64 `json:"bk_biz_id"`
-	// 导出主机查询参数,就是search host 主机参数
-	ExportCond metadata.HostCommonSearch `json:"export_condition"`
-
-	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
-	AssociationCond map[string]int64 `json:"association_condition"`
-	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
-	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
-}
-
-type excelImportAddHostInput struct {
-	ModuleID int64 `json:"bk_module_id"`
-	OpType   int64 `json:"op"`
-	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
-	AssociationCond map[string]int64 `json:"association_condition"`
-	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
-	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
-}
-
-type excelImportUpdateHostInput struct {
-	BizID  int64 `json:"bk_biz_id"`
-	OpType int64 `json:"op"`
-	// 用来限定导出关联关系，map[bk_obj_id]object_unique_id 2021年05月17日
-	AssociationCond map[string]int64 `json:"association_condition"`
-	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
-	// 自关联的时候，规定左边对象使用到的唯一索引
-	ObjectUniqueID int64 `json:"object_unique_id"`
-}
 
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
@@ -97,7 +61,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
-	inputJSON := &excelImportAddHostInput{}
+	inputJSON := &metadata.ExcelImportAddHostInput{}
 	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
 		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
@@ -133,7 +97,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		}
 	}(filePath, rid)
 
-	f, err := xlsx.OpenFile(filePath)
+	f, err := xlsx.OpenFile(filePath, xlsx.UseDiskVCellStore)
 	if nil != err {
 		blog.Errorf("ImportHost failed, open form data as excel file failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -155,7 +119,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
-	input := &excelExportHostInput{}
+	input := &metadata.ExcelExportHostInput{}
 	if err := c.BindJSON(input); err != nil {
 		blog.ErrorJSON("Unmarshal input error. input: %s, err: %s, rid: %s", c.Keys, err.Error(), rid)
 
@@ -171,6 +135,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
+	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
+		blog.Errorf("host page input is illegal, page: %v, rid: %s", input.ExportCond.Page, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(
+			common.CCErrWebGetHostFail, defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit)).
+			Error(), nil)))
+		return
+	}
+
 	objectName, objIDs, err := s.getCustomObjectInfo(ctx, header)
 	if err != nil {
 		blog.Errorf("get custom instance name failed, err: %v, rid: %s", err, rid)
@@ -178,7 +150,6 @@ func (s *Service) ExportHost(c *gin.Context) {
 	}
 
 	appID := input.AppID
-
 	objID := common.BKInnerObjIDHost
 	filterFields := logics.GetFilterFields(objID)
 	customFields := logics.GetCustomFields(filterFields, input.CustomFields)
@@ -192,41 +163,8 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 
-	hostInfo, err := s.handleHostInfo(c, fields, appID, objIDs, input)
-	if err != nil {
-		blog.Errorf("search and handle host info failed, err: %v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail,
-			err.Error()).Error(), nil)))
-		return
-	}
-
-	hostInfo, err = s.handleExportEnumQuoteInst(c, header, hostInfo, objID, fields, rid)
-	if err != nil {
-		blog.Errorf("handle enum quote inst failed, err: %v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(
-			common.CCErrCommExcelTemplateFailed, objID).Error(), nil)))
-		return
-	}
-
-	usernameMap, propertyList, err := s.getUsernameMapWithPropertyList(c, objID, hostInfo)
-	if nil != err {
-		blog.Errorf("ExportHost failed, get username map and property list failed, err: %+v, rid: %s", err, rid)
-		reply := getReturnStr(common.CCErrWebGetUsernameMapFail, defErr.Errorf(common.CCErrWebGetUsernameMapFail,
-			objID).Error(), nil)
-		_, _ = c.Writer.Write([]byte(reply))
-		return
-	}
-
-	org, orgPropertyList, err := s.getDepartment(c, objID, hostInfo)
-	if err != nil {
-		blog.Errorf("get department map and property list failed, err: %+v, rid: %s", err, rid)
-		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebGetDepartmentMapFail,
-			defErr.Errorf(common.CCErrWebGetDepartmentMapFail, err.Error()).Error(), nil)))
-	}
-
 	file := xlsx.NewFile()
-	err = s.Logics.BuildHostExcelFromData(ctx, objID, fields, nil, hostInfo, file, header, appID, usernameMap,
-		propertyList, objectName, objIDs, org, orgPropertyList, input.AssociationCond, input.ObjectUniqueID)
+	err = s.Logics.BuildHostExcelFromData(c, objID, fields, nil, file, header, objectName, objIDs, input, s.Config)
 	if nil != err {
 		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err,
 			rid)
@@ -244,7 +182,13 @@ func (s *Service) ExportHost(c *gin.Context) {
 	}
 
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fmt.Sprintf("%dhost.xlsx", time.Now().UnixNano()))
-	logics.ProductExcelCommentSheet(ctx, file, defLang)
+	if err := logics.ProductExcelCommentSheet(ctx, file, defLang); err != nil {
+		blog.Errorf("export host failed, err: %+v, rid: %s", err, rid)
+		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
+			common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)))
+		return
+	}
+
 	if err := file.Save(dirFileName); err != nil {
 		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
 		_, _ = c.Writer.Write([]byte(getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(
@@ -252,11 +196,44 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 	logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
-	c.File(dirFileName)
-
-	if err := os.Remove(dirFileName); err != nil {
-		blog.Errorf("ExportHost success, but remove host.xlsx file failed, err: %+v, rid: %s", err, rid)
+	if err := s.writeFile(c, dirFileName, rid); err != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("write exported file failed, err: %+v", err))
+		return
 	}
+
+	defer func(dirFileName string, rid string) {
+		if err := os.Remove(dirFileName); err != nil {
+			blog.Errorf("export host success, but remove host.xlsx file failed, err: %+v, rid: %s", err, rid)
+		}
+	}(dirFileName, rid)
+}
+
+func (s *Service) writeFile(c *gin.Context, dirFileName string, rid string) error {
+	exportedFile, err := os.Open(dirFileName)
+	if err != nil {
+		blog.Errorf("open exported file failed, file: %s, err: %+v, rid: %s", dirFileName, err, rid)
+		return err
+	}
+	defer exportedFile.Close()
+
+	buf := make([]byte, 1024*1024)
+	for {
+		n, err := exportedFile.Read(buf)
+		if err != nil && err != io.EOF {
+			blog.Errorf("read exported file failed, file: %s, err: %+v, rid: %s", dirFileName, err, rid)
+			return err
+		}
+		if n == 0 {
+			break
+		}
+		if _, err := c.Writer.Write(buf[:n]); err != nil {
+			blog.Errorf("write exported file failed, file: %s, err: %+v, rid: %s", dirFileName, err, rid)
+			return err
+		}
+		c.Writer.Flush()
+	}
+
+	return nil
 }
 
 // BuildDownLoadExcelTemplate build download excel template
@@ -368,9 +345,18 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 				},
 			},
 		},
-		Fields: []string{common.BKHostIDField, common.BKHostNameField, common.BKHostInnerIPField,
-			common.BKHostOuterIPField},
-		Page: metadata.BasePage{Limit: 1},
+		Fields: []string{
+			common.BKHostIDField,
+			common.BKHostNameField,
+			common.BKHostInnerIPField,
+			common.BKHostOuterIPField,
+			common.BKHostInnerIPv6Field,
+			common.BKHostOuterIPv6Field,
+		},
+		Page: metadata.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
 	}
 	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {
@@ -392,8 +378,15 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 		c.JSON(http.StatusOK, result)
 		return
 	}
-
-	host := Host{}
+	type hostBase struct {
+		HostID    int64  `json:"bk_host_id"`
+		HostName  string `json:"bk_host_name"`
+		InnerIP   string `json:"bk_host_innerip"`
+		InnerIPv6 string `json:"bk_host_innerip_v6"`
+		OuterIP   string `json:"bk_host_outerip"`
+		OuterIPv6 string `json:"bk_host_outerip_v6"`
+	}
+	host := hostBase{}
 	raw := resp.Data.Info[0]
 	if err := mapstr.DecodeFromMapStr(&host, raw); err != nil {
 		msg := fmt.Sprintf("decode response data into host failed, raw: %+v, err: %+v, rid: %s", raw, err, rid)
@@ -413,6 +406,19 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 	if len(host.OuterIP) > 0 {
 		ipOptions = append(ipOptions, host.OuterIP)
 	}
+
+	// add process ipv6 options if needed
+	if process.NeedIPv6OptionsHook() {
+		ipOptions = append(ipOptions, "::1")
+		ipOptions = append(ipOptions, "::")
+		if len(host.InnerIPv6) > 0 {
+			ipOptions = append(ipOptions, host.InnerIPv6)
+		}
+		if len(host.OuterIPv6) > 0 {
+			ipOptions = append(ipOptions, host.OuterIPv6)
+		}
+	}
+
 	result := metadata.ResponseDataMapStr{
 		BaseResp: metadata.BaseResp{Result: true, Code: 0},
 		Data: map[string]interface{}{
@@ -440,7 +446,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
-	inputJSON := &excelImportUpdateHostInput{}
+	inputJSON := &metadata.ExcelImportUpdateHostInput{}
 	if err := json.Unmarshal([]byte(params), inputJSON); err != nil {
 		blog.ErrorJSON("ImportHost failed, params unmarshal error, err: %s, rid: %s", err.Error(), rid)
 		msg := getReturnStr(common.CCErrCommParamsValueInvalidError,
@@ -485,7 +491,7 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		}
 	}(filePath, rid)
 
-	f, err := xlsx.OpenFile(filePath)
+	f, err := xlsx.OpenFile(filePath, xlsx.UseDiskVCellStore)
 	if nil != err {
 		blog.Errorf("excel import update hosts failed, open form data as excel file failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
@@ -497,52 +503,6 @@ func (s *Service) UpdateHosts(c *gin.Context) {
 		inputJSON.AssociationCond, inputJSON.ObjectUniqueID)
 
 	c.JSON(http.StatusOK, result)
-}
-
-func (s *Service) getCustomData(ctx context.Context, header http.Header, instIDs []int64, objID, rid string) ([]int64,
-	map[int64]int64, map[int64]string, error) {
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			common.BKInstIDField: mapstr.MapStr{
-				common.BKDBIN: instIDs,
-			},
-		},
-		Fields: []string{common.BKInstIDField, common.BKInstNameField, common.BKInstParentStr},
-	}
-
-	insts, err := s.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, objID, query)
-	if err != nil {
-		blog.Errorf("get custom level inst data failed, query cond: %#v, err: %v, rid: %s", query, err, rid)
-		return nil, nil, nil, err
-	}
-
-	parentIDs := make([]int64, 0)
-	instIdParentIdMap := make(map[int64]int64, 0)
-	instIdNameMap := make(map[int64]string, 0)
-	for _, inst := range insts.Data.Info {
-		parentID, err := inst.Int64(common.BKParentIDField)
-		if err != nil {
-			blog.Errorf("get inst parent id failed, err: %v, rid: %s", err, rid)
-			return nil, nil, nil, err
-		}
-		parentIDs = append(parentIDs, parentID)
-
-		instID, err := inst.Int64(common.BKInstIDField)
-		if err != nil {
-			blog.Errorf("get inst id failed, err: %v, rid: %s", err, rid)
-			return nil, nil, nil, err
-		}
-		instIdParentIdMap[instID] = parentID
-
-		instName, err := inst.String(common.BKInstNameField)
-		if err != nil {
-			blog.Errorf("get inst name failed, err: %v, rid: %s", err, rid)
-			return nil, nil, nil, err
-		}
-		instIdNameMap[instID] = instName
-	}
-
-	return parentIDs, instIdParentIdMap, instIdNameMap, nil
 }
 
 // getCustomObjectInfo get custom instance object info
@@ -606,292 +566,4 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 	}
 
 	return objectName, util.ReverseArrayString(objectIDs), nil
-}
-
-// handleHostInfo handle host info to export host
-func (s *Service) handleHostInfo(c *gin.Context, fields map[string]logics.Property, appID int64,
-	objIDs []string, input *excelExportHostInput) ([]mapstr.MapStr, error) {
-
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	ctx := util.NewContextFromGinContext(c)
-	webCommon.SetProxyHeader(c)
-	header := c.Request.Header
-	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
-
-	hostFields := make([]string, 0)
-	for _, property := range fields {
-		hostFields = append(hostFields, property.ID)
-	}
-
-	if input.ExportCond.Page.Limit <= 0 || input.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
-		return nil, errors.New(defLang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
-	}
-
-	hostInfo := make([]mapstr.MapStr, 0)
-	hostCount := input.ExportCond.Page.Limit + input.ExportCond.Page.Start
-	limit := input.ExportCond.Page.Limit
-	for start := input.ExportCond.Page.Start; start < hostCount; start = start + common.BKMaxExportLimit {
-		input.ExportCond.Page.Start = start
-		if limit > common.BKMaxExportLimit {
-			input.ExportCond.Page.Limit = common.BKMaxExportLimit
-			limit = limit - common.BKMaxExportLimit
-		} else {
-			input.ExportCond.Page.Limit = limit
-		}
-
-		hostData, err := s.Logics.GetHostData(appID, input.HostIDArr, hostFields, input.ExportCond, header, defLang)
-		if err != nil {
-			blog.Errorf("get host info failed, err: %v, rid: %s", err, rid)
-			return nil, err
-		}
-		hostInfo = append(hostInfo, hostData...)
-	}
-
-	if len(hostInfo) == 0 {
-		blog.Errorf("not find host, host id: %v, cond: %#v, rid: %s", input.HostIDArr, input.ExportCond, rid)
-		return nil, nil
-	}
-
-	if err := s.handleModule(hostInfo, rid); err != nil {
-		blog.Errorf("add module name to host failed, err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-	setDIs, hostSetMap, err := s.handleSet(hostInfo, rid)
-	if err != nil {
-		blog.Errorf("add set name to host failed, err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-
-	if len(objIDs) > 0 {
-		setParentIDs, setCustomMap, err := s.getSetParentID(ctx, header, setDIs, rid)
-		if err != nil {
-			blog.Errorf("get set parent id and host set rel map failed, err: %v, rid: %s", err, rid)
-			return nil, err
-		}
-
-		err = s.handleCustomData(ctx, header, hostInfo, objIDs, rid, setParentIDs, setCustomMap, hostSetMap)
-		if err != nil {
-			blog.Errorf("get custom parent id and host custom rel map failed, err: %v, rid: %s", err, rid)
-			return nil, err
-		}
-	}
-
-	return hostInfo, nil
-}
-
-// handleModule 处理module数据
-func (s *Service) handleModule(hostInfo []mapstr.MapStr, rid string) error {
-	// 统计host与module关系
-	for _, data := range hostInfo {
-		moduleMap, exist := data[common.BKInnerObjIDModule].([]interface{})
-		if !exist {
-			blog.Errorf("get module map data from host data failed, not exist, data: %#v, rid: %s", data, rid)
-			return fmt.Errorf("from host data get module map, not exist, rid: %s", rid)
-		}
-
-		moduleNameMap := make(map[string]int)
-		for idx, module := range moduleMap {
-			rowMap, err := mapstr.NewFromInterface(module)
-			if err != nil {
-				blog.Errorf("get module data from host data failed, err: %v, rid: %s", err, rid)
-				return err
-			}
-
-			moduleName, err := rowMap.String(common.BKModuleNameField)
-			if err != nil {
-				blog.Errorf("get module name from host data failed, err: %v, rid: %s", err, rid)
-				return fmt.Errorf("from host data get module name, not exist, rid: %s", rid)
-			}
-			moduleNameMap[moduleName] = idx
-		}
-
-		var moduleStr string
-		for moduleName := range moduleNameMap {
-			if moduleStr == "" {
-				moduleStr = moduleName
-			} else {
-				moduleStr += "," + moduleName
-			}
-		}
-		data.Set("modules", moduleStr)
-	}
-
-	return nil
-}
-
-// handleSet TODO
-// handleModule 处理set数据
-func (s *Service) handleSet(hostInfo []mapstr.MapStr, rid string) ([]int64, map[int64][]int64, error) {
-	// 统计host与set关系
-	hostSetMap := make(map[int64][]int64, 0)
-	setIDs := make([]int64, 0)
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
-	res, err := s.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
-	if err != nil {
-		return nil, nil, err
-	}
-	conf := res.Data
-
-	for _, data := range hostInfo {
-		setMap, exist := data[common.BKInnerObjIDSet].([]interface{})
-		if !exist {
-			blog.Errorf("get set map data from host data, not exist, data: %#v, rid: %s", data, rid)
-			return nil, nil, fmt.Errorf("from host data get set map, not exist, rid: %s", rid)
-		}
-
-		rowMap, err := mapstr.NewFromInterface(data[common.BKInnerObjIDHost])
-		if err != nil {
-			blog.Errorf("get host map data failed, hostData: %#v, err: %v, rid: %s", data, err, rid)
-			return nil, nil, err
-		}
-
-		hostID, err := rowMap.Int64(common.BKHostIDField)
-		if err != nil {
-			blog.Errorf("get host id failed, host id: %s, err: %v, rid: %s", hostID, err, rid)
-			return nil, nil, nil
-		}
-
-		setNameMap := make(map[string]int)
-		setSubIDs := make([]int64, 0)
-		for idx, set := range setMap {
-			rowMap, err := mapstr.NewFromInterface(set)
-			if err != nil {
-				blog.Errorf("get set data from host data failed, err: %v, rid: %s", err, rid)
-				return nil, nil, err
-			}
-
-			setName, err := rowMap.String(common.BKSetNameField)
-			if err != nil {
-				blog.Errorf("get set name from host data failed, err: %v, rid: %s", err, rid)
-				return nil, nil, fmt.Errorf("from host data get set name, not exist, rid: %s", rid)
-			}
-			setNameMap[setName] = idx
-
-			setID, err := rowMap.Int64(common.BKSetIDField)
-			if err != nil {
-				blog.Errorf("get set id from host data failed, err: %v, rid: %s", err, rid)
-				return nil, nil, err
-			}
-
-			if setName != string(conf.BuiltInSetName) {
-				setIDs = append(setIDs, setID)
-				setSubIDs = append(setSubIDs, setID)
-			}
-		}
-
-		hostSetMap[hostID] = setSubIDs
-
-		var setStr string
-		for setName := range setNameMap {
-			if setStr == "" {
-				setStr = setName
-			} else {
-				setStr += "," + setName
-			}
-		}
-		data.Set("sets", setStr)
-	}
-
-	return setIDs, hostSetMap, nil
-}
-
-// getSetParentID get set parent id and set custom rel map
-func (s *Service) getSetParentID(ctx context.Context, header http.Header, setIDs []int64, rid string) ([]int64,
-	map[int64]int64, error) {
-	// 获取set数据，统计set parent id
-	querySet := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			common.BKSetIDField: mapstr.MapStr{
-				common.BKDBIN: setIDs,
-			},
-		},
-		Fields: []string{common.BKSetIDField, common.BKInstParentStr, common.BKSetNameField},
-	}
-
-	sets, err := s.Engine.CoreAPI.ApiServer().ReadInstance(ctx, header, common.BKInnerObjIDSet, querySet)
-	if err != nil {
-		blog.Errorf("get set data failed, cond: %#v, err: %v,rid:%s", querySet, err, rid)
-		return nil, nil, err
-	}
-	if !sets.Result {
-		blog.Errorf("get sets failed, err code: %d, err msg: %s, rid: %s", sets.Code, sets.ErrMsg, rid)
-		return nil, nil, fmt.Errorf("get sets failed, err msg: %s", sets.ErrMsg)
-	}
-
-	setParentIDs := make([]int64, 0)
-	setCustomMap := make(map[int64]int64, 0)
-	for _, set := range sets.Data.Info {
-		parentID, err := set.Int64(common.BKInstParentStr)
-		if err != nil {
-			blog.Errorf("get set parent id failed, err: %v, rid: %s", err, rid)
-			return nil, nil, err
-		}
-		setParentIDs = append(setParentIDs, parentID)
-
-		setID, err := set.Int64(common.BKSetIDField)
-		if err != nil {
-			blog.Errorf("get set id failed, err: %v, rid: %s", err, rid)
-			return nil, nil, err
-		}
-		setCustomMap[setID] = parentID
-	}
-
-	return setParentIDs, setCustomMap, nil
-}
-
-// handleCustomData 处理自定义成层级数据
-func (s *Service) handleCustomData(ctx context.Context, header http.Header, hostInfo []mapstr.MapStr, objIDs []string,
-	rid string, parentIDs []int64, setCustomMap map[int64]int64, hostSetMap map[int64][]int64) error {
-	instIdParentIDMap := make(map[int64]int64, 0)
-	instIdNameMap := make(map[int64]string, 0)
-	var err error
-	for _, objID := range objIDs {
-		parentIDs, instIdParentIDMap, instIdNameMap, err = s.getCustomData(ctx, header, parentIDs, objID, rid)
-		if err != nil {
-			blog.Errorf("get custom data failed, cond: %#v, err: %v, rid: %s", parentIDs, err, rid)
-			return err
-		}
-
-		hostCustomMap := make(map[int64][]int64, 0)
-		hostCustomNameMap := make(map[int64]string, 0)
-		for hostID, setIDs := range hostSetMap {
-			customNameMap := make(map[string]int, 0)
-			for idx, setID := range setIDs {
-				customNameMap[instIdNameMap[setCustomMap[setID]]] = idx
-				hostCustomMap[hostID] = append(hostCustomMap[hostID], setCustomMap[setID])
-			}
-
-			customStr := ""
-			for customName := range customNameMap {
-				if customStr == "" {
-					customStr = customName
-				} else {
-					customStr += "," + customName
-				}
-			}
-
-			hostCustomNameMap[hostID] = customStr
-		}
-
-		for _, data := range hostInfo {
-			rowMap, err := mapstr.NewFromInterface(data[common.BKInnerObjIDHost])
-			if err != nil {
-				blog.Errorf("get host map data failed, hostData: %#v, err: %v, rid: %s", data, err, rid)
-				return err
-			}
-
-			hostID, err := rowMap.Int64(common.BKHostIDField)
-			if err != nil {
-				blog.Errorf("get host id failed, host id: %s, err: %v, rid: %s", hostID, err, rid)
-				return err
-			}
-
-			data[objID] = hostCustomNameMap[hostID]
-		}
-
-		setCustomMap = instIdParentIDMap
-		hostSetMap = hostCustomMap
-	}
-
-	return nil
 }

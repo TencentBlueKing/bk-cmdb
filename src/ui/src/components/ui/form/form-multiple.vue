@@ -22,15 +22,19 @@
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list">
               <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                <li class="property-item"
+                <li :class="['property-item', property.bk_property_type]"
                   v-if="!uneditableProperties.includes(property.bk_property_id)"
                   :key="propertyIndex">
                   <cmdb-auth tag="div" class="property-name" :title="property['bk_property_name']" v-bind="authProps">
                     <bk-checkbox class="property-name-checkbox" slot-scope="{ disabled }"
                       :id="`property-name-${property['bk_property_id']}`"
-                      :disabled="disabled"
+                      :disabled="disabled || $tableTypePropertyIds.includes(property['bk_property_id'])"
                       v-model="editable[property['bk_property_id']]">
                       <span class="property-name-text"
+                        v-bk-tooltips.top-start="{
+                          content: $t('暂不支持'),
+                          disabled: !$tableTypePropertyIds.includes(property['bk_property_id'])
+                        }"
                         :for="`property-name-${property['bk_property_id']}`"
                         :class="{ required: property['isrequired'] && editable[property.bk_property_id] }">
                         {{property['bk_property_name']}}
@@ -46,6 +50,7 @@
                   </cmdb-auth>
                   <div class="property-value">
                     <component class="form-component"
+                      v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE"
                       :is="`cmdb-form-${property['bk_property_type']}`"
                       :class="{ error: errors.has(property['bk_property_id']) }"
                       :unit="property['unit']"
@@ -60,6 +65,12 @@
                       v-validate="getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]">
                     </component>
+                    <cmdb-form-innertable v-else
+                      :mode="'update'"
+                      :property="property"
+                      :immediate="false"
+                      :readonly="true"
+                      v-model.trim="values[property['bk_property_id']]" />
                     <span class="form-error"
                       :title="errors.first(property['bk_property_id'])">
                       {{errors.first(property['bk_property_id'])}}
@@ -96,6 +107,8 @@
 
 <script>
   import formMixins from '@/mixins/form'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     name: 'cmdb-form-multiple',
     mixins: [formMixins],
@@ -111,6 +124,7 @@
     },
     data() {
       return {
+        PROPERTY_TYPES,
         isMultiple: true,
         allValidating: false,
         values: {},
@@ -331,6 +345,12 @@
                         flex: 1;
                     }
                 }
+            }
+
+            &.innertable {
+                flex: 1 1 100%;
+                width: 100%;
+                max-width: unset;
             }
         }
     }

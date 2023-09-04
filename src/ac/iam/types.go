@@ -376,6 +376,7 @@ const (
 	ResourcePoolHostTransferToBusiness ActionID = "assign_host_to_biz"
 	// ResourcePoolHostTransferToDirectory TODO
 	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
+	ManageHostAgentID                   ActionID = "manage_host_agent_id"
 
 	// CreateResourcePoolDirectory TODO
 	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"

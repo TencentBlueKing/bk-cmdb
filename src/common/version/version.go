@@ -38,6 +38,7 @@ var (
 	CCRunModeProduct = "product"
 	CCRunModeTest    = "test"
 	CCRunModeDev     = "dev"
+	CCRunModeForCI   = "for_ci"
 )
 
 var (

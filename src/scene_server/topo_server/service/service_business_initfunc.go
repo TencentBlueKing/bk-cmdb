@@ -66,6 +66,9 @@ func (s *Service) initBusinessObjectAttribute(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr", Handler: s.CreateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectattr/biz/{bk_biz_id}", Handler: s.CreateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr", Handler: s.SearchObjectAttribute})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/objectattr/web",
+		Handler: s.SearchObjectAttributeForWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectattr/host", Handler: s.ListHostModelAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/{id}", Handler: s.UpdateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/biz/{bk_biz_id}/id/{id}", Handler: s.UpdateObjectAttribute})
@@ -120,6 +123,7 @@ func (s *Service) initBusinessGraphics(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// NOCC:golint/fnsize(需要放到一个函数中)
 func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -149,18 +153,38 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	// object association methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectassociation", Handler: s.SearchObjectAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/objectassociation", Handler: s.CreateObjectAssociation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectassociation/{id}", Handler: s.UpdateObjectAssociation})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectassociation/{id}", Handler: s.DeleteObjectAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path:    "/update/objectassociation/{id}",
+		Handler: s.UpdateObjectAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/delete/objectassociation/{id}",
+		Handler: s.DeleteObjectAssociation})
 
 	// inst association methods
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation", Handler: s.SearchAssociationInst})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/related", Handler: s.SearchAssociationRelatedInst})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/instassociation", Handler: s.CreateAssociationInst})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/instassociation", Handler: s.CreateManyInstAssociation})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/{bk_obj_id}/{association_id}", Handler: s.DeleteAssociationInst})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/instassociation/batch", Handler: s.DeleteAssociationInstBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/instance_associations/object/{bk_obj_id}", Handler: s.SearchInstanceAssociations})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/instance_associations/object/{bk_obj_id}", Handler: s.CountInstanceAssociations})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/instassociation",
+		Handler: s.SearchAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/instassociation/related",
+		Handler: s.SearchAssociationRelatedInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/create/instassociation",
+		Handler: s.CreateAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/createmany/instassociation",
+		Handler: s.CreateManyInstAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/delete/instassociation/{bk_obj_id}/{association_id}",
+		Handler: s.DeleteAssociationInst})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path:    "/delete/instassociation/batch",
+		Handler: s.DeleteAssociationInstBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/search/instance_associations/object/{bk_obj_id}",
+		Handler: s.SearchInstanceAssociations})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/count/instance_associations/object/{bk_obj_id}",
+		Handler: s.CountInstanceAssociations})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/model",
 		Handler: s.SearchModuleAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}/inst/detail",
@@ -169,12 +193,20 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 		Handler: s.SearchAssociationInstWithBizID})
 
 	// topo search methods
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", Handler: s.SearchInstByAssociation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/instassociation/object/{bk_obj_id}",
+		Handler: s.SearchInstByAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}",
+		Handler: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", Handler: s.SearchInstChildTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}", Handler: s.ImportInstanceAssociation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}",
+		Handler: s.SearchInstChildTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/import/instassociation/{bk_obj_id}",
+		Handler: s.ImportInstanceAssociation})
 	// 专用方法，提供给关联关系导入使用
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,

@@ -12,6 +12,7 @@
 
 import store from '@/store'
 import i18n from '@/i18n'
+import isIP from 'validator/es/lib/isIP'
 import isInt from 'validator/es/lib/isInt'
 import queryBuilderOperator, { QUERY_OPERATOR, QUERY_OPERATOR_SYMBOL } from '@/utils/query-builder-operator'
 import isEmpty from 'lodash/isEmpty'
@@ -355,26 +356,81 @@ export function splitIP(raw) {
   return list
 }
 
-export function transformIP(raw) {
-  const transformedIP = {
-    data: [],
-    condition: null
-  }
-  const list = splitIP(raw)
+export function parseIP(list) {
+  const IPv4List = []
+  const IPv6List = []
+  const IPv4WithCloudList = []
+  const IPv6WithCloudList = []
+  const assetList = []
+
+  const cloudIdSet = new Set()
+
   list.forEach((text) => {
-    const [IP, cloudId] = text.split(':').reverse()
-    transformedIP.data.push(IP)
-    // 当前的查询接口对于形如 0:ip0  1:ip1 的输入
-    // 拆分后实际的查询结果是云区域id与ip的排列组合形式:0+ip0, 0+ip1, 1+ip0, 1+ip1
-    // 因此实际传入的云区域id不能重复，只用设置一次conditon即可
-    if (cloudId && !transformedIP.condition) {
-      transformedIP.condition = {
-        field: 'bk_cloud_id',
-        operator: '$eq',
-        value: parseInt(cloudId, 10)
+    if (isIP(text, 4)) {
+      IPv4List.push(text)
+      // 空表示省略没写的状态
+      cloudIdSet.add('')
+    } else if (isIP(text, 6)) {
+      IPv6List.push(text)
+      cloudIdSet.add('')
+    } else {
+      const matchedV4 = text.split(':')
+      const matchedV6 = text.match(/^(\d+):\[([0-9a-fA-F:.]+)\]$/)
+      if (matchedV4.length === 2 && isInt(matchedV4[0]) && isIP(matchedV4[1], 4)) {
+        const cloudId = Number(matchedV4[0])
+        IPv4WithCloudList.push([cloudId, matchedV4[1]])
+        cloudIdSet.add(cloudId)
+      } else if (matchedV6 && isIP(matchedV6[2])) {
+        const cloudId = Number(matchedV6[1])
+        const ip = matchedV6[2]
+        if (isIP(ip, 4)) {
+          IPv4WithCloudList.push([cloudId, ip])
+        } else {
+          IPv6WithCloudList.push([cloudId, ip])
+        }
+        cloudIdSet.add(cloudId)
+      } else {
+        assetList.push(text)
       }
     }
   })
+
+  return {
+    IPv4List,
+    IPv6List,
+    IPv4WithCloudList,
+    IPv6WithCloudList,
+    assetList,
+    cloudIdSet
+  }
+}
+
+export function transformIP(raw) {
+  const transformedIP = {
+    data: {
+      ipv4: [],
+      ipv6: []
+    },
+    condition: null
+  }
+  const IPs = parseIP(splitIP(raw))
+
+  transformedIP.data.ipv4 = IPs.IPv4List
+  IPs.IPv4WithCloudList.forEach(([, ip]) => transformedIP.data.ipv4.push(ip))
+
+  transformedIP.data.ipv6 = IPs.IPv6List
+  IPs.IPv6WithCloudList.forEach(([, ip]) => transformedIP.data.ipv6.push(ip))
+  transformedIP.data.assetList = IPs.assetList  // 没进到ipv4和ipv6原样返回，兼容ip模糊搜索
+
+  const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
+  if (cloudIds.length) {
+    transformedIP.condition = {
+      field: 'bk_cloud_id',
+      operator: '$eq',
+      value: [...IPs.cloudIdSet][0]
+    }
+  }
+
   return transformedIP
 }
 
@@ -486,6 +542,7 @@ export default {
   getOperatorSymbol,
   splitIP,
   getDefaultIP,
+  parseIP,
   defineProperty,
   getUniqueProperties,
   getInitialProperties,

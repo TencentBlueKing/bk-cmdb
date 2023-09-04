@@ -57,8 +57,8 @@ type ExprOption struct {
 func NewDefaultExprOpt(ruleFields map[string]enumor.FieldType) *ExprOption {
 	return &ExprOption{
 		RuleFields:    ruleFields,
-		MaxInLimit:    200,
-		MaxNotInLimit: 200,
+		MaxInLimit:    500,
+		MaxNotInLimit: 500,
 		MaxRulesLimit: 50,
 		MaxRulesDepth: MaxRulesDepth,
 	}
