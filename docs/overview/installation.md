@@ -397,15 +397,35 @@ mechanism=SCRAM-SHA-1
 
 ### 1. 启动服务
 
-启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，如下：尤其检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。 
+启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，如下：
+1. 检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。 
 ```yaml
-site :
-   #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-   domainUrl: http://127.0.0.1:8082
-   #登录地址
-   bkLoginUr: http://127.0.0.1/login/?app_id=%s&c_url=%s
-   appCode: cc
+webServer:
+   site :
+      #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+      domainUrl: http://127.0.0.1:8082
+      #登录地址
+      bkLoginUr: http://127.0.0.1/login/?app_id=%s&c_url=%s
+      appCode: cc
 ```
+2. 检查登录模式
+```yaml
+webServer:
+  login:
+     #登录模式
+     version: opensource
+``` 
+登录模式可选值：
+- `opensource` 代表跳转到 CMDB登录页面进行登录，需要对账户密码进行配置，可在使用 init.py 初始化配置文件时指定参数 " --user_info 账号:密码 " ，或者找到以下配置项进行配置：
+```yaml
+webServer:
+   session:
+      #账号密码，以 : 分割
+      userInfo: 账号:密码
+```
+- `skip-login` 代表不需要进行登陆操作
+- `blueking` 代表通过「蓝鲸统一登录」进行登录
+
 
 `mongodb.yaml 和 redis.yaml`等配置也要确保与实际部署的 mongodb 和 redis 服务配置相同，不同处手动修改，以下为示例配置：
 mongodb.yaml:
