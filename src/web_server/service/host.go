@@ -520,7 +520,7 @@ func (s *Service) getCustomObjectInfo(ctx context.Context, header http.Header) (
 	}
 
 	mainlineObjectChildMap := make(map[string]string, 0)
-	for _, asst := range mainlineAsstRsp.Data.Info {
+	for _, asst := range mainlineAsstRsp.Info {
 		if asst.ObjectID == common.BKInnerObjIDHost {
 			continue
 		}

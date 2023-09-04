@@ -308,6 +308,8 @@ const (
 	findObjectAssociationLatestPattern                    = "/api/v3/find/objectassociation"
 	createObjectAssociationLatestPattern                  = "/api/v3/create/objectassociation"
 	findObjectAssociationWithAssociationKindLatestPattern = "/api/v3/find/topoassociationtype"
+	// excel 导入主机专用接口
+	findModelAssociationPattern = "/api/v3/find/instassociation/model"
 )
 
 var (
@@ -321,6 +323,7 @@ var (
 		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectAssociationLatest() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -535,6 +538,19 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: 0,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入主机专用接口, 跳过鉴权
+	if ps.hitPattern(findModelAssociationPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.SkipAction,
@@ -1170,8 +1186,11 @@ var (
 
 	searchObjectInstancesRegexp = regexp.MustCompile(`^/api/v3/search/instances/object/[^\s/]+/?$`)
 	countObjectInstancesRegexp  = regexp.MustCompile(`^/api/v3/count/instances/object/[^\s/]+/?$`)
+	// excel 导入主机专用接口
+	findObjectInstancesForExcelRegexp = regexp.MustCompile(`^/api/v3/find/instance/[^\s/]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectInstanceLatest() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1726,6 +1745,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   instanceType,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入主机专用接口, 跳过鉴权
+	if ps.hitRegexp(findObjectInstancesForExcelRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
 			},

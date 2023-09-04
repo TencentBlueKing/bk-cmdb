@@ -506,12 +506,13 @@ func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header,
 }
 
 // ReadModuleAssociation get mainline topo model association
-func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header,
-	cond *metadata.QueryCondition) (resp *metadata.SearchAsstModelResp, err error) {
-	resp = new(metadata.SearchAsstModelResp)
+func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (
+	*metadata.AsstResult, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.SearchAsstModelResp)
 	subPath := "/find/instassociation/model"
 
-	err = a.client.Post().
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(cond).
 		SubResourcef(subPath).
@@ -519,7 +520,15 @@ func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header,
 		Do().
 		Into(resp)
 
-	return
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }
 
 // ReadModel read object model data by obj id

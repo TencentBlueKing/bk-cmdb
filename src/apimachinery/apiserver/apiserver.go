@@ -95,12 +95,12 @@ type ApiServerClientInterface interface {
 	SearchBiz(ctx context.Context, ownerID string, h http.Header,
 		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 
-	ReadModuleAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.
-		SearchAsstModelResp, err error)
+	ReadModuleAssociation(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (*metadata.AsstResult,
+		errors.CCErrorCoder)
 	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
 		errors.CCErrorCoder)
-	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.
-		QueryConditionResult, err error)
+	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
+		resp *metadata.QueryConditionResult, err error)
 	SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.SearchUniqueResult, err error)
 
 	FindAssociationByObjectAssociationID(ctx context.Context, h http.Header, objID string,
