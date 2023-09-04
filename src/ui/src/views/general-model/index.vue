@@ -919,7 +919,8 @@
               bk_obj_id: this.objId
             })
           },
-          success: () => RouterQuery.set({ _t: Date.now() })
+          success: () => RouterQuery.set({ _t: Date.now() }),
+          error: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
       },
