@@ -81,7 +81,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 
 // GetModelLastNum 获取模型排序字段
 func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (int64, error) {
-	//查询当前分组下的模型信息
+	// 查询当前分组下的模型信息
 	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: model.ObjCls}
 	modelResult := make([]metadata.Object, 0)
 	sortCond := "-obj_sort_number"
@@ -215,7 +215,11 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		blog.Errorf("parsing data failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
 		return err
 	}
-	//如果传递了 bk_classification_id 字段,按照更新模型所属分组处理
+	if object.ObjSortNumber < 0 {
+		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
+
+	// 如果传递了 bk_classification_id 字段,按照更新模型所属分组处理
 	if data.Exists(metadata.ModelFieldObjCls) {
 		if !data.Exists(metadata.ModelFieldObjSortNumber) {
 			object.ObjSortNumber = -1
@@ -229,13 +233,9 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		return nil
 	}
 
-	//如果未传递了 bk_classification_id 字段，传递了 obj_sort_number 字段,则表示在当前分组下更新模型顺序
-	//更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
-	if object.ObjSortNumber < 0 {
-		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
-	}
-
-	//查询当前模型的分组信息
+	// 如果未传递了 bk_classification_id 字段，传递了 obj_sort_number 字段,则表示在当前分组下更新模型顺序
+	// 更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
+	// 查询当前模型的分组信息
 	clsInput := map[string]interface{}{metadata.ModelFieldID: object.ID}
 	clsResult := make([]metadata.Object, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(clsInput).Fields(metadata.ModelFieldObjCls).
