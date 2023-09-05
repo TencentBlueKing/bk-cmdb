@@ -95,7 +95,7 @@ func getHandleFloatFieldFunc() handleInstFieldFunc {
 
 func getHandleEnumFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
-		option, err := metadata.ParseEnumOption(e.GetKit().Ctx, property.Option)
+		option, err := metadata.ParseEnumOption(property.Option)
 		if err != nil {
 			blog.Errorf("option type is invalid, option: %v", property.Option)
 			return [][]excel.Cell{getRowWithOneCell()}, nil
@@ -118,7 +118,7 @@ func getHandleEnumMultiFieldFunc() handleInstFieldFunc {
 			return [][]excel.Cell{getRowWithOneCell()}, nil
 		}
 
-		option, err := metadata.ParseEnumOption(e.GetKit().Ctx, property.Option)
+		option, err := metadata.ParseEnumOption(property.Option)
 		if err != nil {
 			return nil, err
 		}
