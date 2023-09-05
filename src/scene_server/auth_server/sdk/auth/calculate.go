@@ -120,8 +120,6 @@ func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscM
 func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (
 	bool, error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
-
 	content, canContent := p.Element.(*operator.Content)
 
 	if !canContent {
@@ -137,19 +135,12 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	allAttrPolicies := make([]*operator.Policy, 0)
 	var resource string
 
-	results := make([]bool, 0)
 	for _, policy := range content.Content {
 		var authorized bool
 		var err error
 
 		switch policy.Operator {
-		case operator.And:
-			authorized, err = a.authContent(ctx, policy, rscMap)
-			if err != nil {
-				return false, err
-			}
-
-		case operator.Or:
+		case operator.And, operator.Or:
 			authorized, err = a.authContent(ctx, policy, rscMap)
 			if err != nil {
 				return false, err
@@ -162,71 +153,19 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 			}
 
 		default:
-
-			// must be a FieldValue type
-			fv, can := policy.Element.(*operator.FieldValue)
-			if !can {
-				return false, fmt.Errorf("invalid type %v, should be FieldValue type", reflect.TypeOf(policy.Element))
+			var isAttrPolicy bool
+			authorized, isAttrPolicy, resource, err = a.authAtomPolicy(ctx, rscMap, policy, resource)
+			if err != nil {
+				return false, err
 			}
 
-			authRsc, exist := rscMap[fv.Field.Resource]
-			if !exist {
-				return false, fmt.Errorf("can not find resource %s which is in iam policy", fv.Field.Resource)
-			}
-
-			// check the special resource id at first
-			switch fv.Field.Attribute {
-			case operator.IamIDKey:
-
-				authorized, err = policy.Operator.Operator().Match(authRsc.ID, fv.Value)
-				if err != nil {
-					return false, fmt.Errorf("do %s match calculate failed, err: %v", p.Operator, err)
-				}
-
-				blog.Infof(">> calculate op %s, val: %v, rsc: '%s', auth: %v, rid: %v", policy.Operator, fv.Value,
-					fv.Field.Resource, authorized, rid)
-
-			case operator.IamPathKey:
-
-				authPath, err := getIamPath(authRsc.Attribute)
-				if err != nil {
-					return false, err
-				}
-
-				// compatible for cases when resources to be authorized hasn't put its paths in attributes
-				if len(authPath) == 0 {
-					authorized, err = a.authResourceAttribute(ctx, policy.Operator, []*operator.Policy{policy}, authRsc)
-				} else {
-					authorized, err = a.calculateAuthPath(policy, fv, authPath)
-				}
-
-				if err != nil {
-					return false, err
-				}
-
-			default:
-				// other attributes only support operator: 'eq', 'in'
-				if policy.Operator != operator.Equal && policy.Operator != operator.In {
-					return false, fmt.Errorf("unsupported operator %s with attribute auth", policy.Operator)
-				}
-
+			if isAttrPolicy {
 				// record these attribute for later calculate.
 				allAttrPolicies = append(allAttrPolicies, policy)
-
-				// initialize and validate the resource, can not be empty and should be all the same.
-				if len(resource) == 0 {
-					resource = fv.Field.Resource
-				} else {
-					if resource != fv.Field.Resource {
-						return false, fmt.Errorf("a content have different resource %s / %s, should be same",
-							authRsc, fv.Field.Resource)
-					}
-				}
 
 				// we try to handle next attribute if it has.
 				continue
 			}
-
 		}
 
 		// do this check, so that we can return quickly.
@@ -241,9 +180,6 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 				return true, nil
 			}
 		}
-
-		// save the result.
-		results = append(results, authorized)
 	}
 
 	if len(allAttrPolicies) != 0 {
@@ -253,30 +189,92 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 		if err != nil {
 			return false, err
 		}
-		results = append(results, yes)
+
+		return yes, nil
 	}
 
 	switch p.Operator {
 	case operator.And:
-		for _, yes := range results {
-			if !yes {
-				return false, nil
-			}
-		}
 		// all the content is true
 		return true, nil
 
 	case operator.Or:
-		for _, yes := range results {
-			if yes {
-				return true, nil
-			}
-		}
 		// all the content is false
 		return false, nil
 
 	default:
 		return false, fmt.Errorf("invalid policy content with operator: %s ", p.Operator)
+	}
+}
+
+func (a *Authorize) authAtomPolicy(ctx context.Context, rscMap map[string]*types.Resource, policy *operator.Policy,
+	resource string) (bool, bool, string, error) {
+
+	rid := ctx.Value(common.ContextRequestIDField)
+
+	// must be a FieldValue type
+	fv, can := policy.Element.(*operator.FieldValue)
+	if !can {
+		return false, false, "", fmt.Errorf("invalid type %v, should be FieldValue type",
+			reflect.TypeOf(policy.Element))
+	}
+
+	authRsc, exist := rscMap[fv.Field.Resource]
+	if !exist {
+		return false, false, "", fmt.Errorf("can not find resource %s which is in iam policy", fv.Field.Resource)
+	}
+
+	// check the special resource id at first
+	switch fv.Field.Attribute {
+	case operator.IamIDKey:
+
+		authorized, err := policy.Operator.Operator().Match(authRsc.ID, fv.Value)
+		if err != nil {
+			return false, false, "", fmt.Errorf("do %s match calculate failed, err: %v", policy.Operator, err)
+		}
+
+		blog.Infof(">> calculate op %s, val: %v, rsc: '%s', auth: %v, rid: %v", policy.Operator, fv.Value,
+			fv.Field.Resource, authorized, rid)
+
+		return authorized, false, "", nil
+
+	case operator.IamPathKey:
+
+		authPath, err := getIamPath(authRsc.Attribute)
+		if err != nil {
+			return false, false, "", err
+		}
+
+		// compatible for cases when resources to be authorized hasn't put its paths in attributes
+		var authorized bool
+		if len(authPath) == 0 {
+			authorized, err = a.authResourceAttribute(ctx, policy.Operator, []*operator.Policy{policy}, authRsc)
+		} else {
+			authorized, err = a.calculateAuthPath(policy, fv, authPath)
+		}
+
+		if err != nil {
+			return false, false, "", err
+		}
+
+		return authorized, false, "", nil
+	default:
+		// other attributes only support operator: 'eq', 'in'
+		if policy.Operator != operator.Equal && policy.Operator != operator.In {
+			return false, false, "", fmt.Errorf("unsupported operator %s with attribute auth", policy.Operator)
+		}
+
+		// initialize and validate the resource, can not be empty and should be all the same.
+		if len(resource) == 0 {
+			resource = fv.Field.Resource
+		} else {
+			if resource != fv.Field.Resource {
+				return false, false, "", fmt.Errorf("a content have different resource %s / %s, should be same",
+					authRsc, fv.Field.Resource)
+			}
+		}
+
+		return false, true, resource, nil
 	}
 }
 

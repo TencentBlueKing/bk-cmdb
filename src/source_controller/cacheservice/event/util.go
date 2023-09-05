@@ -21,54 +21,36 @@ import (
 	"configcenter/src/common/watch"
 )
 
-// GetResourceKeyWithCursorType TODO
-// get resource key
+var resourceKeyMap = map[watch.CursorType]Key{
+	watch.Host:                    HostKey,
+	watch.ModuleHostRelation:      ModuleHostRelationKey,
+	watch.Biz:                     BizKey,
+	watch.Set:                     SetKey,
+	watch.Module:                  ModuleKey,
+	watch.ObjectBase:              ObjectBaseKey,
+	watch.Process:                 ProcessKey,
+	watch.ProcessInstanceRelation: ProcessInstanceRelationKey,
+	watch.HostIdentifier:          HostIdentityKey,
+	watch.MainlineInstance:        MainlineInstanceKey,
+	watch.InstAsst:                InstAsstKey,
+	watch.BizSet:                  BizSetKey,
+	watch.BizSetRelation:          BizSetRelationKey,
+	watch.Plat:                    PlatKey,
+	watch.KubeCluster:             KubeClusterKey,
+	watch.KubeNode:                KubeNodeKey,
+	watch.KubeNamespace:           KubeNamespaceKey,
+	watch.KubeWorkload:            KubeWorkloadKey,
+	watch.KubePod:                 KubePodKey,
+	watch.Project:                 ProjectKey,
+}
+
+// GetResourceKeyWithCursorType get resource key
 func GetResourceKeyWithCursorType(res watch.CursorType) (Key, error) {
-	var key Key
-	switch res {
-	case watch.Host:
-		key = HostKey
-	case watch.ModuleHostRelation:
-		key = ModuleHostRelationKey
-	case watch.Biz:
-		key = BizKey
-	case watch.Set:
-		key = SetKey
-	case watch.Module:
-		key = ModuleKey
-	case watch.ObjectBase:
-		key = ObjectBaseKey
-	case watch.Process:
-		key = ProcessKey
-	case watch.ProcessInstanceRelation:
-		key = ProcessInstanceRelationKey
-	case watch.HostIdentifier:
-		key = HostIdentityKey
-	case watch.MainlineInstance:
-		key = MainlineInstanceKey
-	case watch.InstAsst:
-		key = InstAsstKey
-	case watch.BizSet:
-		key = BizSetKey
-	case watch.BizSetRelation:
-		key = BizSetRelationKey
-	case watch.Plat:
-		key = PlatKey
-	case watch.KubeCluster:
-		key = KubeClusterKey
-	case watch.KubeNode:
-		key = KubeNodeKey
-	case watch.KubeNamespace:
-		key = KubeNamespaceKey
-	case watch.KubeWorkload:
-		key = KubeWorkloadKey
-	case watch.KubePod:
-		key = KubePodKey
-	case watch.Project:
-		key = ProjectKey
-	default:
+	key, exists := resourceKeyMap[res]
+	if !exists {
 		return key, fmt.Errorf("unsupported cursor type %s", res)
 	}
+
 	return key, nil
 }
 

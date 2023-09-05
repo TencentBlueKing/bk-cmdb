@@ -82,60 +82,13 @@ func ValidFieldTypeEnumOption(option interface{}, isMultiple bool, rid string, e
 
 	var count int
 	for _, o := range arrOption {
-		mapOption, ok := o.(map[string]interface{})
-		if !ok || mapOption == nil {
-			blog.Errorf("option %v not enum option, enum option item must id and name, rid: %s", option, rid)
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
-		}
-		idVal, idOk := mapOption["id"]
-		if !idOk || idVal == "" {
-			blog.Errorf("enum option id can't be empty, option: %+v, rid: %s", option, rid)
-			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
-		}
-		if idValStr, ok := idVal.(string); !ok {
-			blog.Errorf("idVal %v not string, rid: %s", idVal, rid)
-			return errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
-		} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(idValStr) {
-			blog.Errorf(" option id %s length %d exceeds max length %d, rid: %s", idValStr,
-				utf8.RuneCountInString(idValStr), common.AttributeOptionValueMaxLength, rid)
-			return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option id",
-				common.AttributeOptionValueMaxLength)
+		isDefault, err := validOneEnumOption(option, o, rid, errProxy)
+		if err != nil {
+			return err
 		}
 
-		nameVal, nameOk := mapOption["name"]
-		if !nameOk || nameVal == "" {
-			blog.Errorf("enum option name can't be empty, option: %+v, rid: %s", option, rid)
-			return errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
-		}
-
-		isDefault, ok := mapOption["is_default"]
-		if !ok {
-			blog.Errorf("enum option is default can't be empty, option: %+v, rid: %s", option, rid)
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
-		}
-		isDefaultVal, ok := isDefault.(bool)
-		if !ok {
-			blog.Errorf("convert enum option is default to bool failed, option: %+v, rid: %s", option, rid)
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
-		}
-		if isDefaultVal {
+		if isDefault {
 			count += 1
-		}
-
-		switch mapOption["type"] {
-		case "text":
-			if nameValStr, ok := nameVal.(string); !ok {
-				blog.Errorf("nameVal %v not string, rid: %s", nameVal, rid)
-				return errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
-			} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(nameValStr) {
-				blog.Errorf(" option name %s length %d exceeds max length %d, rid: %s", nameValStr,
-					utf8.RuneCountInString(nameValStr), common.AttributeOptionValueMaxLength, rid)
-				return errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option name",
-					common.AttributeOptionValueMaxLength)
-			}
-		default:
-			blog.Errorf("enum option type must be 'text', current: %v, rid: %s", mapOption["type"], rid)
-			return errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
 		}
 	}
 
@@ -145,6 +98,69 @@ func ValidFieldTypeEnumOption(option interface{}, isMultiple bool, rid string, e
 	}
 
 	return nil
+}
+
+func validOneEnumOption(option interface{}, o interface{}, rid string, errProxy ccErr.DefaultCCErrorIf) (bool, error) {
+	mapOption, ok := o.(map[string]interface{})
+	if !ok || mapOption == nil {
+		blog.Errorf("option %v not enum option, enum option item must id and name, rid: %s", option, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+
+	idVal, idOk := mapOption["id"]
+	if !idOk || idVal == "" {
+		blog.Errorf("enum option id can't be empty, option: %+v, rid: %s", option, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option id")
+	}
+
+	idValStr, ok := idVal.(string)
+	if !ok {
+		blog.Errorf("idVal %v not string, rid: %s", idVal, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsNeedString, "option id")
+	}
+
+	if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(idValStr) {
+		blog.Errorf(" option id %s length %d exceeds max length %d, rid: %s", idValStr,
+			utf8.RuneCountInString(idValStr), common.AttributeOptionValueMaxLength, rid)
+		return false, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option id",
+			common.AttributeOptionValueMaxLength)
+	}
+
+	nameVal, nameOk := mapOption["name"]
+	if !nameOk || nameVal == "" {
+		blog.Errorf("enum option name can't be empty, option: %+v, rid: %s", option, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsNeedSet, "option name")
+	}
+
+	switch mapOption["type"] {
+	case "text":
+		if nameValStr, ok := nameVal.(string); !ok {
+			blog.Errorf("nameVal %v not string, rid: %s", nameVal, rid)
+			return false, errProxy.Errorf(common.CCErrCommParamsNeedString, "option name")
+		} else if common.AttributeOptionValueMaxLength < utf8.RuneCountInString(nameValStr) {
+			blog.Errorf(" option name %s length %d exceeds max length %d, rid: %s", nameValStr,
+				utf8.RuneCountInString(nameValStr), common.AttributeOptionValueMaxLength, rid)
+			return false, errProxy.Errorf(common.CCErrCommValExceedMaxFailed, "option name",
+				common.AttributeOptionValueMaxLength)
+		}
+	default:
+		blog.Errorf("enum option type must be 'text', current: %v, rid: %s", mapOption["type"], rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option type")
+	}
+
+	isDefault, ok := mapOption["is_default"]
+	if !ok {
+		blog.Errorf("enum option is default can't be empty, option: %+v, rid: %s", option, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
+	}
+
+	isDefaultVal, ok := isDefault.(bool)
+	if !ok {
+		blog.Errorf("convert enum option is default to bool failed, option: %+v, rid: %s", option, rid)
+		return false, errProxy.Errorf(common.CCErrCommParamsIsInvalid, "option default")
+	}
+
+	return isDefaultVal, nil
 }
 
 // ValidFieldTypeInt validate int or float field type's option and default value

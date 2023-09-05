@@ -406,17 +406,12 @@ func (c *comparator) compareAttrForBackend(kit *rest.Kit, params *compAttrParams
 		if !exists {
 			update, isChanged, err := c.handleTemplateAttrNotExist(kit, params, tmplID, tmplAttr.PropertyID,
 				attr, attrIDTmplID)
-			if err != nil {
-				if isPartial && isChanged {
-					result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
-					return nil, result, nil
-				}
-				return nil, nil, err
-			}
-
 			if isPartial && isChanged {
 				result := &metadata.ListFieldTmpltSyncStatusResult{ObjectID: objectID, NeedSync: true}
 				return nil, result, nil
+			}
+			if err != nil {
+				return nil, nil, err
 			}
 
 			if isChanged {

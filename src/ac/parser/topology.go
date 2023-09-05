@@ -73,29 +73,8 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
-	// find reduced business list for the user with any business resources
-	if ps.hitPattern(findReducedBusinessListPattern, http.MethodGet) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find simplified business list with limited fields return
-	if ps.hitPattern(findSimplifiedBusinessListPattern, http.MethodGet) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
+	ps = ps.findBiz()
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -126,146 +105,8 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
-	// update business, this is not a normalize api.
-	// TODO: update this api format.
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("invalid update business request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("udpate business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Update,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update business enable status, this is not a normalize api.
-	// TODO: update this api format.
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = errors.New("invalid update business enable status request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("udpate business enable status, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Update,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// delete business, this is not a normalize api.
-	// TODO: update this api format
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("invalid delete business request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Delete,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find business, this is not a normalize api.
-	// TODO: update this api format
-	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// find resource pool business
-	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// update business status to `disabled` or `enable`
-	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Archive,
-					InstanceID: bizID,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// batch update business properties
-	if ps.hitPattern(updatemanyBizPropertyPattern, http.MethodPut) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
+	ps = ps.updateBiz()
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -321,6 +162,156 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+func (ps *parseStream) findBiz() *parseStream {
+	// find reduced business list for the user with any business resources
+	if ps.hitPattern(findReducedBusinessListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find simplified business list with limited fields return
+	if ps.hitPattern(findSimplifiedBusinessListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business, this is not a normalize api.
+	// TODO: update this api format
+	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
+	// find resource pool business
+	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+func (ps *parseStream) updateBiz() *parseStream {
+	// update business, this is not a normalize api. TODO: update this api format.
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("invalid update business request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("udpate business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Update,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// update business enable status, this is not a normalize api. TODO: update this api format.
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("invalid update business enable status request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("udpate biz enable status, but got invalid biz id %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Update,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// delete business, this is not a normalize api. TODO: update this api format
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("invalid delete business request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Delete,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// update business status to `disabled` or `enable`
+	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Archive,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// batch update business properties
+	if ps.hitPattern(updatemanyBizPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:   meta.Business,
+			Action: meta.SkipAction,
+		}}}
+		return ps
+	}
 	return ps
 }
 
@@ -692,7 +683,8 @@ func (ps *parseStream) mainline() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find mainline idle and fault module with statistics, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find mainline idle and fault module with statistics, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -1047,7 +1039,8 @@ func (ps *parseStream) objectModule() *parseStream {
 		}
 		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr, ps.RequestCtx.URI, err)
+			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr,
+				ps.RequestCtx.URI, err)
 			return ps
 		}
 

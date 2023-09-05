@@ -179,31 +179,36 @@ func (s *coreService) CreateProcessInstance(kit *rest.Kit, process *metadata.Pro
 	return process, nil
 }
 
-// CreateProcessInstances TODO
-func (s *coreService) CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process, errors.CCErrorCoder) {
+// CreateProcessInstances create process instances
+func (s *coreService) CreateProcessInstances(kit *rest.Kit, processes []*metadata.Process) ([]*metadata.Process,
+	errors.CCErrorCoder) {
+
 	processesBytes, err := json.Marshal(processes)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrCommJsonEncode)
 	}
-	mData := []mapstr.MapStr{}
-	if err := json.Unmarshal(processesBytes, &mData); nil != err && 0 != len(processesBytes) {
+
+	mData := make([]mapstr.MapStr, 0)
+	if err = json.Unmarshal(processesBytes, &mData); err != nil {
 		return nil, kit.CCError.CCError(common.CCErrCommJsonDecode)
 	}
-	inputParam := metadata.CreateManyModelInstance{
-		Datas: mData,
+
+	inputParam := &metadata.BatchCreateModelInstOption{
+		Data: mData,
 	}
-	result, err := s.core.InstanceOperation().CreateManyModelInstance(kit, common.BKProcessObjectName, inputParam)
+	result, err := s.core.InstanceOperation().BatchCreateModelInstance(kit, common.BKProcessObjectName, inputParam)
 	if err != nil {
-		blog.Errorf("CreateProcessInstances failed, CreateManyModelInstance failed, inputParam: %#v, err: %v, rid: %s", inputParam, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
-	}
-	if len(processes) != len(result.Created) {
-		blog.Errorf("CreateProcessInstances failed, len(processes) != len(result.Created), inputParam: %#v, rid: %s", inputParam, kit.Rid)
+		blog.Errorf("create process instances failed, inputParam: %#v, err: %v, rid: %s", inputParam, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
 	}
 
-	for idx, created := range result.Created {
-		processes[idx].ProcessID = int64(created.ID)
+	if len(processes) != len(result.IDs) {
+		blog.Errorf("input processes count != created processes count, inputParam: %#v, rid: %s", inputParam, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrProcCreateProcessFailed)
+	}
+
+	for idx, id := range result.IDs {
+		processes[idx].ProcessID = id
 	}
 
 	return processes, nil
