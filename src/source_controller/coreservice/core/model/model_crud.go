@@ -53,9 +53,6 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	if model.ObjSortNumber < 0 {
-		return id, kit.CCError.CCError(common.CCErrCommParamsInvalid)
-	}
 	sortNum, err := m.GetModelLastNum(kit, *model)
 	if err != nil {
 		blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
@@ -216,6 +213,8 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		return err
 	}
 	if object.ObjSortNumber < 0 {
+		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
+			"rid: %s", object.ObjSortNumber, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 

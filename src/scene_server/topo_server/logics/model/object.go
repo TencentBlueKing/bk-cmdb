@@ -125,9 +125,6 @@ func (o *object) FindSingleObject(kit *rest.Kit, field []string, objectID string
 // CreateObject create common object
 func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error) {
 
-	if !data.Exists(metadata.ModelFieldObjSortNumber) {
-		data.Set(metadata.ModelFieldObjSortNumber, -1)
-	}
 	obj, err := o.createObjectParamCheck(kit, data)
 	if err != nil {
 		blog.Errorf("param check failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
@@ -202,7 +199,7 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	return obj, nil
 }
 
-// createParamCheck create object param check
+// createObjectParamCheck create object param check
 func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*metadata.Object, error) {
 	obj, err := o.isValid(kit, false, data)
 	if err != nil {
@@ -225,6 +222,15 @@ func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*met
 	if len(obj.ObjIcon) == 0 {
 		blog.Errorf("objIcon is non-exist, err: objIcon not set, rid: %s", kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
+	}
+
+	if obj.ObjSortNumber < 0 {
+		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
+			"rid: %s", obj.ObjSortNumber, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+	}
+	if exist := data.Exists(common.ObjSortNumberField); !exist {
+		obj.ObjSortNumber = -1
 	}
 
 	return obj, nil
