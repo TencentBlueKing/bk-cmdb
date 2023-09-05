@@ -447,8 +447,9 @@ const (
 const (
 	// KubeFolderID 每个cluster只有唯一的 folder，此节点没有表，统一用 999 表示 folder的ID，如果需要确认具体的 folder
 	// 需要与clusterID结合起来使用
-	KubeFolderID   = 999
-	KubeFolderName = "空Pod节点"
+	KubeFolderID     = 999
+	KubeFolderName   = "空Pod节点"
+	KubeFolderNameEn = "Empty Pod Node(s)"
 )
 
 // container field names

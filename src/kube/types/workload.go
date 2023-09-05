@@ -301,12 +301,37 @@ type WlDataResp struct {
 	Info []WorkloadInterface `json:"info"`
 }
 
-type jsonWlInfo struct {
+type jsonWlDataResp struct {
 	Info json.RawMessage `json:"info"`
 }
 
-// wlArrayUnmarshalJSON unmarshal workload array json
-func wlArrayUnmarshalJSON(kind WorkloadType, js []byte) ([]WorkloadInterface, error) {
+// UnmarshalJSON unmarshal WlDataResp
+func (w *WlDataResp) UnmarshalJSON(data []byte) error {
+	kind := w.Kind
+	var err error
+	if err = kind.Validate(); err != nil {
+		return err
+	}
+
+	req := new(jsonWlDataResp)
+	if err = json.Unmarshal(data, req); err != nil {
+		return err
+	}
+
+	if len(req.Info) == 0 {
+		return nil
+	}
+
+	w.Info, err = WlArrayUnmarshalJSON(w.Kind, req.Info)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WlArrayUnmarshalJSON unmarshal workload array json
+func WlArrayUnmarshalJSON(kind WorkloadType, js []byte) ([]WorkloadInterface, error) {
 	newInst, err := kind.NewInst()
 	if err != nil {
 		return nil, err
@@ -360,7 +385,7 @@ func (w *WlCreateOption) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	createData, err := wlArrayUnmarshalJSON(kind, req.Data)
+	createData, err := WlArrayUnmarshalJSON(kind, req.Data)
 	if err != nil {
 		return err
 	}

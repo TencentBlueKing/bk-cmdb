@@ -61,15 +61,15 @@ var ContainerSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: KubeNameField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ContainerUIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ImageField, Type: enumor.String, IsRequired: true, IsEditable: false},
-	{Field: PortsField, Type: enumor.String, IsRequired: false, IsEditable: true},
-	{Field: HostPortsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: ArgsField, Type: enumor.String, IsRequired: false, IsEditable: true},
+	{Field: PortsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: HostPortsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: ArgsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 	{Field: StartedField, Type: enumor.Numeric, IsRequired: false, IsEditable: true},
 	{Field: RequestsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: LimitsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
 	{Field: LivenessField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: EnvironmentField, Type: enumor.Object, IsRequired: false, IsEditable: true},
-	{Field: MountsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: EnvironmentField, Type: enumor.Array, IsRequired: false, IsEditable: true},
+	{Field: MountsField, Type: enumor.Array, IsRequired: false, IsEditable: true},
 }
 
 const (

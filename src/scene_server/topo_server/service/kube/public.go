@@ -36,7 +36,7 @@ import (
 
 // findKubeTopoPathInfo generate different query conditions based on different resources.
 func (s *service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPathOption, filter mapstr.MapStr,
-	tableNames []string) (*types.KubeTopoPathRsp, error) {
+	tableNames []string, isShared bool) (*types.KubeTopoPathRsp, error) {
 
 	result := &types.KubeTopoPathRsp{Info: make([]types.KubeObjectInfo, 0)}
 
@@ -47,9 +47,13 @@ func (s *service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 		DisableCounter: true}
 
 	// according to the topology display, put the folder to the front
-	if tableNames[0] == types.BKTableNameBaseNamespace {
+	if tableNames[0] == types.BKTableNameBaseNamespace && !isShared {
+		folderName := types.KubeFolderName
+		if util.GetLanguage(kit.Header) == string(common.English) {
+			folderName = types.KubeFolderNameEn
+		}
 		result.Info = append(result.Info, types.KubeObjectInfo{
-			ID: types.KubeFolderID, Name: types.KubeFolderName, Kind: types.KubeFolder,
+			ID: types.KubeFolderID, Name: folderName, Kind: types.KubeFolder,
 		})
 	}
 
@@ -93,7 +97,7 @@ func (s *service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 			workloads, cErr := s.ClientSet.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query,
 				types.WorkloadType(kind[tableName]))
 			if cErr != nil {
-				blog.Errorf("find namespace failed, cond: %v, err: %v, rid: %s", query, cErr, kit.Rid)
+				blog.Errorf("find %s failed, cond: %v, err: %v, rid: %s", kind[tableName], query, cErr, kit.Rid)
 				return result, cErr
 			}
 			for _, workload := range workloads.Info {
@@ -476,7 +480,8 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	}
 
 	// get the next level resource object.
-	subObject, filter, err := s.GetKubeSubTopoObject(ctx.Kit, option.ReferenceObjID, option.ReferenceID, option.BizID)
+	subObject, cond, isShared, err := s.GetKubeSubTopoObject(ctx.Kit, option.ReferenceObjID, option.ReferenceID,
+		option.BizID)
 	if err != nil {
 		blog.Errorf("failed to get subObject, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -494,14 +499,14 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 		var count int64
 		for _, tableName := range tableNames {
 			counts, err := s.ClientSet.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, tableName,
-				[]map[string]interface{}{filter})
+				[]map[string]interface{}{cond})
 			if err != nil {
-				blog.Errorf("count %s failed, err: %v, cond: %#v, rid: %s", err, tableName, filter, ctx.Kit.Rid)
+				blog.Errorf("count %s failed, err: %v, cond: %#v, rid: %s", err, tableName, cond, ctx.Kit.Rid)
 				ctx.RespAutoError(err)
 				return
 			}
 			// for the next-level topology of the cluster, a folder needs to be added in addition to the namespace.
-			if tableName == types.BKTableNameBaseNamespace {
+			if tableName == types.BKTableNameBaseNamespace && !isShared {
 				counts[0] += 1
 			}
 			count += counts[0]
@@ -511,7 +516,7 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.findKubeTopoPathInfo(ctx.Kit, option, filter, tableNames)
+	result, err := s.findKubeTopoPathInfo(ctx.Kit, option, cond, tableNames, isShared)
 	if err != nil {
 		blog.Errorf("failed to get topo path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -522,28 +527,51 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 
 // GetKubeSubTopoObject get the next-level topology resource object of the specified resource
 func (s *service) GetKubeSubTopoObject(kit *rest.Kit, object string, id int64, bizID int64) (string,
-	map[string]interface{}, error) {
+	map[string]interface{}, bool, error) {
 
 	switch object {
 	case types.KubeBusiness:
 		// compatible for shared cluster scenario
 		cond, err := s.Logics.KubeOperation().GenSharedClusterListCond(kit, bizID, nil)
 		if err != nil {
-			return "", nil, err
+			return "", nil, false, err
 		}
-		return types.KubeCluster, cond, nil
+		return types.KubeCluster, cond, false, nil
 	case types.KubeCluster:
-		return types.KubeNamespace, map[string]interface{}{
-			types.BKClusterIDFiled: id,
-		}, nil
+		// compatible for shared cluster scenario
+		clusterCond := &metadata.QueryCondition{
+			Fields:    []string{common.BKAppIDField, types.TypeField},
+			Page:      metadata.BasePage{Limit: 1},
+			Condition: mapstr.MapStr{types.BKIDField: id},
+		}
+		clusterRes, err := s.ClientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, clusterCond)
+		if err != nil {
+			blog.Errorf("get cluster by id %d failed, err: %v, rid: %s", id, err, kit.Rid)
+			return "", nil, false, err
+		}
+
+		if len(clusterRes.Data) != 1 {
+			blog.Errorf("get cluster by id %d, but count is wrong, rid: %s", id, kit.Rid)
+			return "", nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
+		}
+
+		if clusterRes.Data[0].BizID == bizID {
+			return types.KubeNamespace, mapstr.MapStr{types.BKClusterIDFiled: id}, false, nil
+		}
+
+		if clusterRes.Data[0].Type == nil || *clusterRes.Data[0].Type != types.SharedClusterType {
+			blog.Errorf("cluster %d is not shared cluster, rid: %s", id, kit.Rid)
+			return "", nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, types.BKClusterIDFiled)
+		}
+		return types.KubeNamespace, mapstr.MapStr{types.BKClusterIDFiled: id, types.BKBizIDField: bizID}, true, nil
 	case types.KubeNamespace:
 		return types.KubeWorkload, map[string]interface{}{
 			types.BKNamespaceIDField: id,
-		}, nil
+		}, false, nil
 	case types.KubeFolder, types.KubePod:
-		return "", nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_reference_obj_id")
+		return "", nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_reference_obj_id")
 	default:
-		return types.KubePod, make(map[string]interface{}), nil
+		return types.KubePod, make(map[string]interface{}), false, nil
 	}
 }
 

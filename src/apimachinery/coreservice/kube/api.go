@@ -303,6 +303,7 @@ func (k *kube) ListWorkload(ctx context.Context, header http.Header, input *meta
 	result := types.WlInstResp{
 		Data: types.WlDataResp{
 			Kind: kind,
+			Info: make([]types.WorkloadInterface, 0),
 		},
 	}
 
