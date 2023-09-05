@@ -561,42 +561,42 @@ func (ibt *importerBizTopo) cacheServiceCategory(ctx context.Context, bizID int6
 	return nil
 }
 
-var processPropertyOp map[metadata.ProcessPropertyName]processPropertyOpI
+var processPropertyOp map[common.ProcessPropertyName]processPropertyOpF
 
 func init() {
-	processPropertyOp = make(map[metadata.ProcessPropertyName]processPropertyOpI)
+	processPropertyOp = make(map[common.ProcessPropertyName]processPropertyOpF)
 
-	processPropertyOp[metadata.ProcNumName] = &procNumOp{}
-	processPropertyOp[metadata.StopCmdName] = &stopCmdOp{}
-	processPropertyOp[metadata.RestartCmdName] = &restartCmdOp{}
-	processPropertyOp[metadata.FaceStopCmdName] = &faceStopCmdOp{}
-	processPropertyOp[metadata.BkFuncNameName] = &bkFuncNameOp{}
-	processPropertyOp[metadata.WorkPathName] = &workPathOp{}
-	processPropertyOp[metadata.BindIpName] = &bindIpOp{}
-	processPropertyOp[metadata.PriorityName] = &priorityOp{}
-	processPropertyOp[metadata.ReloadCmdName] = &reloadCmdOp{}
-	processPropertyOp[metadata.BkProcessName] = &bkProcessNameOp{}
-	processPropertyOp[metadata.PortName] = &portOp{}
-	processPropertyOp[metadata.PidFileName] = &pidFileOp{}
-	processPropertyOp[metadata.AutoStartName] = &autoStartOp{}
-	processPropertyOp[metadata.BkStartCheckSecsName] = &bkStartCheckSecsOp{}
-	processPropertyOp[metadata.StartCmdName] = &startCmdOp{}
-	processPropertyOp[metadata.PropertyUserName] = &userOp{}
-	processPropertyOp[metadata.TimeoutName] = &timeoutOp{}
-	processPropertyOp[metadata.ProtocolName] = &protocolOp{}
-	processPropertyOp[metadata.DescriptionName] = &descriptionOp{}
-	processPropertyOp[metadata.BkStartParamRegexName] = &bkStartParamRegexOp{}
+	processPropertyOp[common.ProcNumName] = procNumOpFunc()
+	processPropertyOp[common.StopCmdName] = stopCmdOpFunc()
+	processPropertyOp[common.RestartCmdName] = restartCmdOpFunc()
+	processPropertyOp[common.FaceStopCmdName] = faceStopCmdOpFunc()
+	processPropertyOp[common.BkFuncNameName] = bkFuncNameOpFunc()
+	processPropertyOp[common.WorkPathName] = workPathOpFunc()
+	processPropertyOp[common.BindIpName] = bindIpOpFunc()
+	processPropertyOp[common.PriorityName] = priorityOpFunc()
+	processPropertyOp[common.ReloadCmdName] = reloadCmdOpFunc()
+	processPropertyOp[common.BkProcessName] = bkProcessNameOpFunc()
+	processPropertyOp[common.PortName] = portOpFunc()
+	processPropertyOp[common.PidFileName] = pidFileOpFunc()
+	processPropertyOp[common.AutoStartName] = autoStartOpFunc()
+	processPropertyOp[common.BkStartCheckSecsName] = bkStartCheckSecsOpFunc()
+	processPropertyOp[common.StartCmdName] = startCmdOpFunc()
+	processPropertyOp[common.PropertyUserName] = userOpFunc()
+	processPropertyOp[common.TimeoutName] = timeoutOpFunc()
+	processPropertyOp[common.ProtocolName] = protocolOpFunc()
+	processPropertyOp[common.DescriptionName] = descriptionOpFunc()
+	processPropertyOp[common.BkStartParamRegexName] = bkStartParamRegexOpFunc()
 }
 
 func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) (*metadata.ProcessProperty, error) {
 	processProperty := &metadata.ProcessProperty{}
 	for key, val := range proc {
-		op, exist := processPropertyOp[metadata.ProcessPropertyName(key)]
+		op, exist := processPropertyOp[common.ProcessPropertyName(key)]
 		if !exist {
 			return nil, fmt.Errorf("%s illegal. val: %s", key, val)
 		}
 
-		if err := op.setVal(processProperty, key, val); err != nil {
+		if err := op(processProperty, key, val); err != nil {
 			return nil, err
 		}
 	}
