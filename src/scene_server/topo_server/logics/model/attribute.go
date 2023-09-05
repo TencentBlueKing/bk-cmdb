@@ -101,8 +101,25 @@ func (a *attribute) getEnumQuoteOption(kit *rest.Kit, option interface{}, isMult
 			common.AttributeOptionArrayMaxLength)
 	}
 
+	quoteObjID, instIDMap, err := a.parseArrOption(kit, option, arrOption)
+	if err != nil {
+		return "", nil, err
+	}
+
+	instIDs := make([]int64, 0)
+	for instID := range instIDMap {
+		instIDs = append(instIDs, instID)
+	}
+
+	return quoteObjID, instIDs, nil
+}
+
+func (a *attribute) parseArrOption(kit *rest.Kit, option interface{}, arrOption []interface{}) (string,
+	map[int64]interface{}, error) {
+
 	var quoteObjID string
 	instIDMap := make(map[int64]interface{}, 0)
+
 	for _, o := range arrOption {
 		mapOption, ok := o.(map[string]interface{})
 		if !ok || mapOption == nil {
@@ -155,12 +172,7 @@ func (a *attribute) getEnumQuoteOption(kit *rest.Kit, option interface{}, isMult
 		}
 	}
 
-	instIDs := make([]int64, 0)
-	for instID := range instIDMap {
-		instIDs = append(instIDs, instID)
-	}
-
-	return quoteObjID, instIDs, nil
+	return quoteObjID, instIDMap, nil
 }
 
 // enumQuoteCanNotUseModel 校验引用模型不能为集群、模块、进程、容器、自定义层级相关模型
@@ -366,10 +378,12 @@ func (a *attribute) ValidTableAttrDefaultValue(kit *rest.Kit, defaultValue []map
 	// value according to the attributes of the header.
 	for _, value := range defaultValue {
 		for k, v := range value {
+			isRequired := attr[k].IsRequired
 			attr[k].IsRequired = false
 			if err := attr[k].ValidTableDefaultAttr(kit.Ctx, v); err.ErrCode != 0 {
 				return err.ToCCError(kit.CCError)
 			}
+			attr[k].IsRequired = isRequired
 		}
 	}
 	return nil
@@ -381,52 +395,28 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		return nil
 	}
 
-	if (isUpdate && data.IsMultiple != nil) || !isUpdate {
-		if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
-			return err
-		}
-	}
-
-	// 用户类型字段，在创建的时候默认是支持可多选的，而且这个字段是否可多选在页面是不可配置的,所以在创建的时候将值置为true
-	if data.PropertyType == common.FieldTypeUser && !isUpdate {
-		isMultiple := true
-		data.IsMultiple = &isMultiple
-	}
-
-	// check if property type for creation is valid, can't update property type
-	if !isUpdate && data.PropertyType == "" {
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
-	}
-
-	if !isUpdate || data.PropertyID != "" {
-		if common.AttributeIDMaxLength < utf8.RuneCountInString(data.PropertyID) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
-					"model_attr_bk_property_id"), common.AttributeIDMaxLength)
-		}
-		match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, data.PropertyID)
-		if err != nil {
-			return err
+	if isUpdate {
+		if data.IsMultiple != nil {
+			if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+				return err
+			}
 		}
 
-		if !match {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, data.PropertyID)
+		if data.PropertyID != "" {
+			if err := a.validateAttrPropertyID(kit, data.PropertyID); err != nil {
+				return err
+			}
 		}
-	}
 
-	if !isUpdate || data.PropertyName != "" {
-		if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
-					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
+		if data.PropertyName != "" {
+			if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
+				return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
+					a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
+						"model_attr_bk_property_name"), common.AttributeNameMaxLength)
+			}
 		}
-	}
-
-	// check option validity for creation,
-	// update validation is in coreservice cause property type need to be obtained from db
-	if !isUpdate && a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := valid.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, data.Default, kit.Rid,
-			kit.CCError); err != nil {
+	} else {
+		if err := a.isCreateDataValid(kit, data); err != nil {
 			return err
 		}
 	}
@@ -445,6 +435,59 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 			common.AttributePlaceHolderMaxLength)
 	}
 
+	return nil
+}
+
+func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) error {
+	if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+		return err
+	}
+
+	// check if property type for creation is valid, can't update property type
+	if data.PropertyType == "" {
+		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyType)
+	}
+
+	// 用户类型字段，在创建的时候默认是支持可多选的，而且这个字段是否可多选在页面是不可配置的,所以在创建的时候将值置为true
+	if data.PropertyType == common.FieldTypeUser {
+		isMultiple := true
+		data.IsMultiple = &isMultiple
+	}
+
+	if err := a.validateAttrPropertyID(kit, data.PropertyID); err != nil {
+		return err
+	}
+
+	if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.CreateDefaultCCLanguageIf(
+			util.GetLanguage(kit.Header)).Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+	}
+
+	// check option validity for creation,
+	// update validation is in coreservice cause property type need to be obtained from db
+	if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
+		if err := valid.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, data.Default, kit.Rid,
+			kit.CCError); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *attribute) validateAttrPropertyID(kit *rest.Kit, propertyID string) error {
+	if common.AttributeIDMaxLength < utf8.RuneCountInString(propertyID) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.CreateDefaultCCLanguageIf(
+			util.GetLanguage(kit.Header)).Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+	}
+
+	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, propertyID)
+	if err != nil {
+		return err
+	}
+
+	if !match {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, propertyID)
+	}
 	return nil
 }
 
@@ -1136,7 +1179,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 	}
 
 	// updated this part is to be updated
-	if err := a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
+	if err = a.ValidTableAttrDefaultValue(kit, updated.Default, headerMap); err != nil {
 		blog.Errorf("valid table attr default failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

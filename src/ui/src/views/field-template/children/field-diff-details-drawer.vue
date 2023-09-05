@@ -192,7 +192,7 @@
     ref="sidesliderComp"
     v-transfer-dom
     :width="880"
-    :title="`【${modelBeforeField.bk_property_name}】${$t('更新差异')}`"
+    :title="`【${modelBeforeField?.bk_property_name ?? afterField.bk_property_name}】${$t('更新差异')}`"
     :is-show.sync="isShow">
     <div :class="['diff-details', diffType, { 'is-template-conflict': isTemplateBindConflict }]" slot="content">
       <div class="diff-top">
@@ -222,11 +222,11 @@
           <div class="col before-col">
             <div class="diff-item">
               <div class="field-key">{{$t('唯一标识')}}</div>
-              <div class="field-value">{{ modelBeforeField.bk_property_id || '--' }}</div>
+              <div class="field-value" v-bk-overflow-tips>{{ modelBeforeField.bk_property_id || '--' }}</div>
             </div>
             <div class="diff-item">
               <div class="field-key">{{$t('名称')}}</div>
-              <div class="field-value">{{ modelBeforeField.bk_property_name || '--' }}</div>
+              <div class="field-value" v-bk-overflow-tips>{{ modelBeforeField.bk_property_name || '--' }}</div>
             </div>
             <div class="diff-item">
               <div class="field-key">{{$t('字段类型')}}</div>
@@ -309,11 +309,11 @@
             <template v-else>
               <div :class="getAfterDiffItemClass('bk_property_id')">
                 <div class="field-key">{{$t('唯一标识')}}</div>
-                <div class="field-value">{{afterField.bk_property_id}}</div>
+                <div class="field-value" v-bk-overflow-tips>{{afterField.bk_property_id}}</div>
               </div>
               <div :class="getAfterDiffItemClass('bk_property_name')">
                 <div class="field-key">{{ $t('名称') }}</div>
-                <div class="field-value">{{afterField.bk_property_name}}</div>
+                <div class="field-value" v-bk-overflow-tips>{{afterField.bk_property_name}}</div>
               </div>
               <div :class="getAfterDiffItemClass('bk_property_type')">
                 <div class="field-key">{{ $t('字段类型') }}</div>
@@ -539,6 +539,7 @@
     }
 
     .field-value {
+      max-width: calc(100% - 70px);
       @include ellipsis;
     }
 

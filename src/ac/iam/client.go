@@ -201,6 +201,10 @@ func (c *iamClient) UpdateSystemConfig(ctx context.Context, config *SysConfig) e
 
 // RegisterResourcesTypes register resource types in IAM
 func (c *iamClient) RegisterResourcesTypes(ctx context.Context, resTypes []ResourceType) error {
+	if len(resTypes) == 0 {
+		return nil
+	}
+
 	resp := new(BaseResponse)
 	result := c.client.Post().
 		SubResourcef("/api/v1/model/systems/%s/resource-types", c.config.SystemID).
@@ -239,7 +243,8 @@ func (c *iamClient) UpdateResourcesType(ctx context.Context, resType ResourceTyp
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("udpate resource type %s failed, code: %d, msg:%s", resType.ID, resp.Code, resp.Message),
+			Reason: fmt.Errorf("udpate resource type %s failed, code: %d, msg:%s", resType.ID, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -248,6 +253,9 @@ func (c *iamClient) UpdateResourcesType(ctx context.Context, resType ResourceTyp
 
 // DeleteResourcesTypes delete resource types in IAM
 func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeID) error {
+	if len(resTypeIDs) == 0 {
+		return nil
+	}
 
 	ids := make([]struct {
 		ID TypeID `json:"id"`
@@ -270,7 +278,8 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeI
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("delete resource type %v failed, code: %d, msg:%s", resTypeIDs, resp.Code, resp.Message),
+			Reason: fmt.Errorf("delete resource type %v failed, code: %d, msg:%s", resTypeIDs, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -279,6 +288,9 @@ func (c *iamClient) DeleteResourcesTypes(ctx context.Context, resTypeIDs []TypeI
 
 // RegisterActions register actions in IAM
 func (c *iamClient) RegisterActions(ctx context.Context, actions []ResourceAction) error {
+	if len(actions) == 0 {
+		return nil
+	}
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -318,7 +330,8 @@ func (c *iamClient) UpdateAction(ctx context.Context, action ResourceAction) err
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("udpate resource action %v failed, code: %d, msg:%s", action, resp.Code, resp.Message),
+			Reason: fmt.Errorf("udpate resource action %v failed, code: %d, msg:%s", action, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -348,7 +361,8 @@ func (c *iamClient) DeleteActions(ctx context.Context, actionIDs []ActionID) err
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actionIDs, resp.Code, resp.Message),
+			Reason: fmt.Errorf("delete resource actions %v failed, code: %d, msg:%s", actionIDs, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -372,7 +386,8 @@ func (c *iamClient) RegisterActionGroups(ctx context.Context, actionGroups []Act
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("register action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code, resp.Message),
+			Reason: fmt.Errorf("register action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -396,7 +411,8 @@ func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []Actio
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("update action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code, resp.Message),
+			Reason: fmt.Errorf("update action groups %v failed, code: %d, msg:%s", actionGroups, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -405,6 +421,9 @@ func (c *iamClient) UpdateActionGroups(ctx context.Context, actionGroups []Actio
 
 // RegisterInstanceSelections TODO
 func (c *iamClient) RegisterInstanceSelections(ctx context.Context, instanceSelections []InstanceSelection) error {
+	if len(instanceSelections) == 0 {
+		return nil
+	}
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -420,7 +439,8 @@ func (c *iamClient) RegisterInstanceSelections(ctx context.Context, instanceSele
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("add instance selections %v failed, code: %d, msg:%s", instanceSelections, resp.Code, resp.Message),
+			Reason: fmt.Errorf("add instance selections %v failed, code: %d, msg:%s", instanceSelections, resp.Code,
+				resp.Message),
 		}
 	}
 
@@ -444,7 +464,8 @@ func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelecti
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("udpate instance selections %v failed, code: %d, msg:%s", instanceSelection, resp.Code, resp.Message),
+			Reason: fmt.Errorf("udpate instance selections %v failed, code: %d, msg:%s", instanceSelection,
+				resp.Code, resp.Message),
 		}
 	}
 
@@ -453,6 +474,10 @@ func (c *iamClient) UpdateInstanceSelection(ctx context.Context, instanceSelecti
 
 // DeleteInstanceSelections delete instance selections in IAM
 func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelectionIDs []InstanceSelectionID) error {
+	if len(instanceSelectionIDs) == 0 {
+		return nil
+	}
+
 	ids := make([]struct {
 		ID InstanceSelectionID `json:"id"`
 	}, len(instanceSelectionIDs))
@@ -474,7 +499,8 @@ func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelect
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("delete instance selections %v failed, code: %d, msg:%s", instanceSelectionIDs, resp.Code, resp.Message),
+			Reason: fmt.Errorf("delete instance selections %v failed, code: %d, msg:%s", instanceSelectionIDs,
+				resp.Code, resp.Message),
 		}
 	}
 
@@ -482,7 +508,8 @@ func (c *iamClient) DeleteInstanceSelections(ctx context.Context, instanceSelect
 }
 
 // RegisterResourceCreatorActions regitser resource creator actions in IAM
-func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
+func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context,
+	resourceCreatorActions ResourceCreatorActions) error {
 
 	resp := new(BaseResponse)
 	result := c.client.Post().
@@ -498,7 +525,8 @@ func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resource
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("register resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions, resp.Code, resp.Message),
+			Reason: fmt.Errorf("register resource creator actions %v failed, code: %d, msg:%s",
+				resourceCreatorActions, resp.Code, resp.Message),
 		}
 	}
 
@@ -506,7 +534,8 @@ func (c *iamClient) RegisterResourceCreatorActions(ctx context.Context, resource
 }
 
 // UpdateResourceCreatorActions update resource creator actions in IAM
-func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCreatorActions ResourceCreatorActions) error {
+func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context,
+	resourceCreatorActions ResourceCreatorActions) error {
 
 	resp := new(BaseResponse)
 	result := c.client.Put().
@@ -522,7 +551,8 @@ func (c *iamClient) UpdateResourceCreatorActions(ctx context.Context, resourceCr
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("update resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions, resp.Code, resp.Message),
+			Reason: fmt.Errorf("update resource creator actions %v failed, code: %d, msg:%s", resourceCreatorActions,
+				resp.Code, resp.Message),
 		}
 	}
 
@@ -595,7 +625,8 @@ func (c *iamClient) DeleteActionPolicies(ctx context.Context, actionID ActionID)
 	if resp.Code != 0 {
 		return &AuthError{
 			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("delete action %s policies failed, code: %d, msg: %s", actionID, resp.Code, resp.Message),
+			Reason: fmt.Errorf("delete action %s policies failed, code: %d, msg: %s", actionID, resp.Code,
+				resp.Message),
 		}
 	}
 

@@ -63,13 +63,9 @@
         v-model.trim="keyword"
       >
       </bk-input>
-      <bk-button
-        text
-        class="setting-btn"
-        icon="cog"
-        v-if="canEditSort"
-        @click="configProperty.show = true"
-      ></bk-button>
+      <div class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
+        <img src="@/assets/images/icon/icon-model-setting.png">
+      </div>
     </div>
     <div class="group-wrapper">
       <draggable
@@ -403,6 +399,7 @@
   import useUnique from '@/views/field-template/children/use-unique.js'
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
+  import { escapeRegexChar } from '@/utils/util'
 
   export default {
     name: 'FieldGroup',
@@ -698,7 +695,7 @@
       },
       filterField() {
         if (this.keyword) {
-          const reg = new RegExp(this.keyword, 'i')
+          const reg = new RegExp(escapeRegexChar(this.keyword), 'i')
           const displayGroupedProperties = []
           this.groupedProperties.forEach((group) => {
             const matchedProperties = []
@@ -750,7 +747,7 @@
       },
       getVerification() {
         return this.searchObjectUniqueConstraints({
-          objId: this.activeModel.bk_obj_id,
+          objId: this.objId,
           params: {},
           config: {
             requestId: 'searchObjectUniqueConstraints'
@@ -765,10 +762,12 @@
           }))
           const { getUniqueByField } =  useUnique([], uniqueList)
           const { list: fieldUniqueList, type: fieldUniqueType } = getUniqueByField(property)
-          const fieldUniqueWithNameList = fieldUniqueList.map(item => ({
-            ...item,
-            names: item.keys.map(key => this.properties.find(field => field.id === key)?.bk_property_name)
-          }))
+          const fieldUniqueWithNameList = fieldUniqueList
+            .filter(item => item.keys.every(key => this.properties.find(({ id }) => id === key)))
+            .map(item => ({
+              ...item,
+              names: item.keys.map(key => this.properties.find(field => field.id === key)?.bk_property_name)
+            }))
           return {
             list: fieldUniqueWithNameList,
             type: fieldUniqueType
@@ -1256,16 +1255,18 @@ $modelHighlightColor: #3c96ff;
   .setting-btn {
     margin-left: 10px;
     height: 32px;
-    line-height: 32px;
     color: #979ba5;
     border: 1px solid #c4c6cc;
     border-radius: 2px;
     width: 32px;
     display: flex;
     justify-content: center;
-    /deep/ .icon-cog {
-      font-size: 16px;
-      vertical-align: 2px;
+    align-items: center;
+    background: white;
+    cursor: pointer;
+    img {
+      width: 16px;
+      height: 16px;
     }
   }
 }

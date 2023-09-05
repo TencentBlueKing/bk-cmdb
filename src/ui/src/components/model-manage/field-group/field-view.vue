@@ -94,7 +94,13 @@
             <bk-table-column
               :label="$t('字段ID')"
               prop="bk_property_id"
-              :show-overflow-tooltip="true" />
+              :show-overflow-tooltip="true">
+              <template #default="{ row }">
+                <div class="property-name-text" :class="{ required: row.isrequired }">
+                  {{row.bk_property_id}}
+                </div>
+              </template>
+            </bk-table-column>
             <bk-table-column
               :label="$t('字段名称')"
               prop="bk_property_name"
@@ -258,6 +264,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .property-name-text {
+      display: inline-block;
+      position: relative;
+      padding-right: 10px;
+    }
     .field-view-layout {
         height: 100%;
         @include scrollbar-y;

@@ -60,8 +60,11 @@
             </div>
           </div>
           <div class="model-group-name">
-            <span class="model-group-name-label">{{$t('所属分组')}}</span>
+            <span :class="['model-group-name-label', { 'model-group-name-label-editing': modelGroupIsEditing }]">
+              {{$t('所属分组')}}
+            </span>
             <editable-field
+              :editing.sync="modelGroupIsEditing"
               class="model-group-name-edit"
               v-model="activeModel.bk_classification_id"
               :label="modelClassificationName"
@@ -93,7 +96,7 @@
             <flex-tag
               v-if="templateList.length"
               class="field-template-tag"
-              :max-width="'500px'"
+              :max-width="'355px'"
               :list="templateList"
               :is-link-style="true"
               :popover-options="{
@@ -322,6 +325,7 @@
           instanceCount: Symbol('instanceCount')
         },
         modelNameIsEditing: false,
+        modelGroupIsEditing: false,
         templateList: [],
         templateDiffStatus: {}
       }
@@ -893,6 +897,9 @@
             line-height: 26px;
             color: #979BA5;
           }
+          &-label-editing {
+            margin-top: 13px;
+          }
         }
 
         .instance-count {
@@ -932,14 +939,16 @@
 
             :deep(.tag-item-text) {
               position: relative;
+              @include ellipsis;
               .reddot {
-                position: absolute;
-                right: -4px;
-                top: 0;
+                position: relative;
+                right: 0px;
+                top: -6px;
                 width: 6px;
                 height: 6px;
                 background: #EA3636;
                 border-radius: 50%;
+                display: inline-block;
               }
             }
           }
@@ -1012,6 +1021,7 @@
       .bk-tab-header {
         padding: 0 18px;
         background: #fff;
+        box-shadow: 0 2px 4px 0 #1919290d;
       }
       .bk-tab-section {
         padding: 0;

@@ -91,6 +91,9 @@
   const handleCancel = () => {
     emit('cancel')
   }
+  defineExpose({
+    selectedModelId
+  })
 </script>
 
 <template>

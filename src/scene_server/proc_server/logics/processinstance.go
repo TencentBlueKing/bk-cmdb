@@ -94,7 +94,7 @@ func (lgc *Logic) ListProcessInstances(kit *rest.Kit, bizID int64, serviceInstan
 	return processInstanceList, nil
 }
 
-// ListProcessInstanceWithIDs TODO
+// ListProcessInstanceWithIDs list process instance with ids
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, errors.CCErrorCoder) {
 	reqParam := &metadata.QueryCondition{
 		Condition: mapstr.MapStr(map[string]interface{}{
@@ -102,24 +102,18 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 				common.BKDBIN: procIDs,
 			},
 		}),
+		DisableCounter: true,
 	}
-	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
-		reqParam)
+
+	ret := new(metadata.ProcInstanceResponse)
+	err := lgc.CoreAPI.CoreService().Instance().ReadInstanceStruct(kit.Ctx, kit.Header, common.BKInnerObjIDProc,
+		reqParam, ret)
 	if nil != err {
 		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, err)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	processes := make([]metadata.Process, 0)
-	for _, p := range ret.Info {
-		process := new(metadata.Process)
-		if err := p.MarshalJSONInto(process); err != nil {
-			return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-		}
-		processes = append(processes, *process)
-	}
-
-	return processes, nil
+	return ret.Data.Info, nil
 }
 
 // GetProcessInstanceWithID TODO

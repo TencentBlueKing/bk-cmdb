@@ -94,7 +94,7 @@
       }] = useFile()
       const currentModelId = toRef(importState, 'bk_obj_id')
       // 由接口解析出来的excel中的关联模型
-      const computedRelationMap = computed(() => (response.value.association || {}))
+      const computedRelationMap = computed(() => (response.value?.association || {}))
       const computedRelationModels = computed(() => Object.keys(computedRelationMap.value))
 
       // 获取当前模型的唯一校验，用于导出的参数object_unique_id
