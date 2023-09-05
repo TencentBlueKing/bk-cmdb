@@ -44,7 +44,7 @@ var _ = Describe("workload test", func() {
 	var wlID int64
 	wlName := "wlName"
 	It("prepare environment, create business, cluster, namespace", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "kube",
@@ -82,7 +82,7 @@ var _ = Describe("workload test", func() {
 		}
 
 		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
-		util.RegisterResponse(id)
+		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
 

@@ -91,7 +91,7 @@ type ApiServerClientInterface interface {
 		h http.Header) errors.CCErrorCoder
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
-	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) (resp *metadata.Response, err error)
+	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error
 	SearchBiz(ctx context.Context, ownerID string, h http.Header,
 		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 
