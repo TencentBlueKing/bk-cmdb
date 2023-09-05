@@ -36,7 +36,7 @@ import (
 	"configcenter/src/thirdparty/monitor"
 )
 
-// Run admin server
+// Run start server
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	process, err := parseSeverConfig(ctx, op)
 	if err != nil {

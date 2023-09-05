@@ -66,9 +66,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 
 	cond := make(map[string]interface{})
 	if isResourceIDStringType(resourceType) {
-		cond[idField] = map[string]interface{}{
-			common.BKDBIN: filter.IDs,
-		}
+		cond[idField] = map[string]interface{}{common.BKDBIN: filter.IDs}
 	} else {
 		ids := make([]int64, len(filter.IDs))
 		for idx, idStr := range filter.IDs {
@@ -85,17 +83,10 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	}
 
 	if len(extraCond) > 0 {
-		cond = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{cond, extraCond},
-		}
+		cond = map[string]interface{}{common.BKDBAND: []map[string]interface{}{cond, extraCond}}
 	}
 
-	param := metadata.PullResourceParam{
-		Condition: cond,
-		Fields:    attrs,
-		Limit:     common.BKNoLimit,
-		Offset:    0,
-	}
+	param := metadata.PullResourceParam{Condition: cond, Fields: attrs, Limit: common.BKNoLimit, Offset: 0}
 	instances, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
