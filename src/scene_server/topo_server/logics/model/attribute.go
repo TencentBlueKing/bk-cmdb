@@ -1379,9 +1379,17 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 	for k, v := range input {
 		data[k] = v
 	}
-	newTmplID, ok := data[common.BKTemplateID]
-	if ok && newTmplID != 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+	if newTmplID, ok := data[common.BKTemplateID]; ok {
+		id, err := util.GetIntByInterface(newTmplID)
+		if err != nil {
+			blog.Errorf("get int by interface failed, val: %v, err: %s, rid: %s", newTmplID, err, kit.Rid)
+			return err
+		}
+
+		if id != 0 {
+			blog.Errorf("modify field %s forbidden, val: %s, rid: %s", common.BKTemplateID, newTmplID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+		}
 	}
 
 	// 3. 不是同步操作，更新模型自己的属性，正常返回
@@ -1394,6 +1402,10 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 	}
 
 	// 4. 验证来自模版的属性，是否可以正常更新
+	return a.validTmplAttrCanUpdate(kit, data, attr)
+}
+
+func (a *attribute) validTmplAttrCanUpdate(kit *rest.Kit, data mapstr.MapStr, attr *metadata.Attribute) error {
 	fields := make([]string, 0)
 	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
 		fields = append(fields, metadata.AttributeFieldIsRequired)
@@ -1743,17 +1755,17 @@ func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata
 	}
 
 	// update attribute
+	// 如果属性来源于字段模版，那么无法进行更新，正常返回成功
+	if result.Info[0].TemplateID != 0 {
+		return success, nil
+	}
+
 	updateData := attr.ToMapStr()
 	if attr.PropertyType == common.FieldTypeInnerTable {
 		if err := a.UpdateTableObjectAttr(kit, updateData, result.Info[0].ID, attr.BizID); err != nil {
 			blog.Errorf("failed to update module attr, err: %s, rid: %s", err, kit.Rid)
 			return updateFail, err
 		}
-		return success, nil
-	}
-
-	// 如果属性来源于字段模版，那么无法进行更新，正常返回成功
-	if result.Info[0].TemplateID != 0 {
 		return success, nil
 	}
 

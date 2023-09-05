@@ -1724,3 +1724,22 @@ const (
 	// BkStartParamRegexName process property bkStartParamRegex name
 	BkStartParamRegexName ProcessPropertyName = "bk_start_param_regex"
 )
+
+const (
+	// Field query field define
+	Field = "field"
+
+	// Operator query operator define
+	Operator = "operator"
+
+	// Value query value define
+	Value = "value"
+
+	// Condition query condition define
+	Condition = "condition"
+)
+
+const (
+	// TopoModuleName topo path name
+	TopoModuleName = "topo_module_name"
+)

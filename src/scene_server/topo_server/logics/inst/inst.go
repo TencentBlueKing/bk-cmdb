@@ -42,7 +42,7 @@ type InstOperationInterface interface {
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
 	// CreateInstBatch batch create instance by excel
-	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*BatchResult, error)
+	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*metadata.ImportInstRes, error)
 	// DeleteInst delete instance by objectid and condition
 	DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapStr, needCheckHost bool) error
 	// DeleteInstByInstID batch delete instance by inst id
@@ -77,15 +77,6 @@ func NewInstOperation(client apimachinery.ClientSetInterface, lang language.CCLa
 		language:    lang,
 		authManager: authManager,
 	}
-}
-
-// BatchResult batch create instance by excel result
-type BatchResult struct {
-	Errors         []string `json:"error"`
-	Success        []string `json:"success"`
-	SuccessCreated []int64  `json:"success_created"`
-	SuccessUpdated []int64  `json:"success_updated"`
-	UpdateErrors   []string `json:"update_error"`
 }
 
 // ObjectWithInsts a struct include object msg and insts array
@@ -253,8 +244,8 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 }
 
 // createInstBatch batch create instance by excel
-func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*BatchResult,
-	error) {
+func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
+	*metadata.ImportInstRes, error) {
 
 	relRes, err := c.getObjRelationDestMsg(kit, objID)
 	if err != nil {
@@ -263,7 +254,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	}
 
 	ccLang := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
-	result := &BatchResult{}
+	result := new(metadata.ImportInstRes)
 
 	for idx, inst := range batchInfo.BatchInfo {
 		if inst == nil {
@@ -279,6 +270,9 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		if exist && (instID == "" || instID == nil) {
 			exist = false
 		}
+
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
 		_ = c.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(inst, relRes)
 			if err != nil {
@@ -302,7 +296,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 					return err
 				}
 
-				result.Success = append(result.Success, strconv.FormatInt(idx, 10))
+				result.Success = append(result.Success, idx)
 				return nil
 			}
 
@@ -312,7 +306,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 				return err
 			}
 
-			result.Success = append(result.Success, strconv.FormatInt(idx, 10))
+			result.Success = append(result.Success, idx)
 			return nil
 		})
 	}
@@ -531,7 +525,7 @@ func (c *commonInst) updateTableData(kit *rest.Kit, tableData *metadata.TableDat
 
 // CreateInstBatch batch create instance by excel
 func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
-	*BatchResult, error) {
+	*metadata.ImportInstRes, error) {
 
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) {

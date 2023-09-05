@@ -1300,9 +1300,17 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 
 	// 2. 不是同步操作，更新属性的bk_template_id为非0时，需要报错
 	data := input.Clone()
-	newTmplID, ok := data[common.BKTemplateID]
-	if ok && newTmplID != 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+	if newTmplID, ok := data[common.BKTemplateID]; ok {
+		id, err := util.GetIntByInterface(newTmplID)
+		if err != nil {
+			blog.Errorf("get int by interface failed, val: %v, err: %s, rid: %s", newTmplID, err, kit.Rid)
+			return err
+		}
+
+		if id != 0 {
+			blog.Errorf("modify field %s forbidden, val: %s, rid: %s", common.BKTemplateID, newTmplID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+		}
 	}
 
 	// 3. 不是同步操作，更新模型自己的属性，正常返回
@@ -1315,6 +1323,10 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 	}
 
 	// 4. 验证来自模版的属性，是否可以正常更新
+	return validTmplAttrCanUpdate(kit, data, tmplID)
+}
+
+func validTmplAttrCanUpdate(kit *rest.Kit, data mapstr.MapStr, tmplID int64) error {
 	fields := make([]string, 0)
 	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
 		fields = append(fields, metadata.AttributeFieldIsRequired)
@@ -1372,6 +1384,7 @@ func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isS
 		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
 	}
+
 	return nil
 }
 
@@ -1537,6 +1550,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	if err = checkAttrTemplateInfo(kit, data, dbAttributeArr[0].ID, isSync); err != nil {
+		blog.Errorf("check attribute template info failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

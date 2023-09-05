@@ -39,7 +39,7 @@ type ApiServerClientInterface interface {
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response,
 		err error)
 	SearchDefaultApp(ctx context.Context, h http.Header, ownerID string) (resp *metadata.QueryInstResult, err error)
-	GetObjectData(ctx context.Context, h http.Header, params mapstr.MapStr) (
+	GetObjectData(ctx context.Context, h http.Header, cond *metadata.ExportObjectCondition) (
 		resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 		resp *metadata.QueryInstResult, err error)
@@ -56,15 +56,14 @@ type ApiServerClientInterface interface {
 	GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string,
 		params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error)
 	AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
-	AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr,
-		err error)
-	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
+	AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
+	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
 	GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp,
 		err error)
 	AddInst(ctx context.Context, h http.Header, ownerID, objID string,
 		params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
 	AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
-		*metadata.ResponseDataMapStr, error)
+		*metadata.ImportInstResp, error)
 	AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchAssociationInst(ctx context.Context, h http.Header,
 		request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
@@ -116,6 +115,9 @@ type ApiServerClientInterface interface {
 
 	SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
 		*metadata.SearchDataResult, error)
+
+	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
+		err error)
 }
 
 // NewApiServerClientInterface TODO

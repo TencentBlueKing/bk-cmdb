@@ -54,11 +54,11 @@ func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[stri
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
-		blog.Errorf("GetHostInstanceDetails http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, kit.Rid)
+		blog.Errorf("get host instance details failed, err: %v, input:%+v, rid:%s", err, hostID, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("get host instance details failed, err code: %d, err msg: %s, input: %+v, rid: %s", result.Code,
+		blog.Errorf("get host instance details failed, code: %d, msg: %s, input: %+v, rid: %s", result.Code,
 			result.ErrMsg, hostID, kit.Rid)
 		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
@@ -248,9 +248,7 @@ func (lgc *Logics) SearchHostInfo(kit *rest.Kit, cond metadata.QueryCondition) (
 
 // HostSearch search host by multiple condition
 const (
-	SplitFlag      = "##"
-	TopoSetName    = "TopSetName"
-	TopoModuleName = "TopModuleName"
+	SplitFlag = "##"
 )
 
 // GetHostIDByCond query hostIDs by condition base on cc_ModuleHostConfig
@@ -862,8 +860,9 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	}
 
 	hostID, convErr := hostInfoArr[0].Int64(common.BKHostIDField)
-	if convErr != nil {
-		blog.Errorf("parse host id failed, host: %+v, rid: %s", hostInfoArr[0], kit.Rid)
+	if nil != convErr {
+		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip,
+			cloudID, kit.Rid)
 		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
 			common.BKHostIDField, "int", convErr.Error())
 	}
