@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 
 	"github.com/tealeg/xlsx/v3"
 )
@@ -522,7 +522,8 @@ func getDataFromByExcelRow(ctx context.Context, row *xlsx.Row, rowIndex int, fie
 		if !hasField {
 			continue
 		}
-		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.String(), rowIndex, field, result, defLang, errMsg)
+		result, errMsg = buildAttrByPropertyType(rid, fieldName, cell.String(), rowIndex, field, result, defLang,
+			errMsg)
 	}
 	if len(errMsg) != 0 {
 		return nil, errMsg
@@ -593,7 +594,7 @@ func buildAttrByPropertyType(rid, fieldName, cellValue string, rowIndex int, fie
 		userNames = strings.Trim(strings.Trim(userNames, " "), ",")
 		result[fieldName] = userNames
 	default:
-		if valid.IsStrProperty(field.PropertyType) {
+		if attrvalid.IsStrProperty(field.PropertyType) {
 			result[fieldName] = strings.TrimSpace(cellValue)
 		}
 	}

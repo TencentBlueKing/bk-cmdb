@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -387,8 +388,8 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeNameMaxLength)
 		}
 
-		if err := valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
-			header[index].IsMultiple, kit.CCError); err != nil {
+		if err = attrvalid.ValidTableFieldOption(kit, header[index].PropertyType, header[index].Option,
+			header[index].Default, header[index].IsMultiple); err != nil {
 			return nil, err
 		}
 		propertyAttr[header[index].PropertyID] = &header[index]
@@ -559,15 +560,15 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := valid.ValidFieldTypeString(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeString(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := valid.ValidFieldTypeInt(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeInt(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := valid.ValidFieldTypeFloat(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeFloat(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeBool:
@@ -577,7 +578,7 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 		}
 	case common.FieldTypeEnumMulti:
 		// 默认值相关的检查都是按照最宽松的进行校验
-		if err := valid.ValidFieldTypeEnumOption(option, true, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeEnumOption(kit, option, true); err != nil {
 			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -596,11 +597,11 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 	var err error
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		err = valid.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError)
+		err = attrvalid.ValidFieldTypeString(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeInt:
-		err = valid.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError)
+		err = attrvalid.ValidFieldTypeInt(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeFloat:
-		err = valid.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError)
+		err = attrvalid.ValidFieldTypeFloat(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeDate:
 		if ok := util.IsDate(attribute.Default); !ok {
 			return fmt.Errorf("date default value is not date type, type: %T", attribute.Default)
@@ -622,7 +623,7 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 		blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
 
 	case common.FieldTypeList:
-		err = valid.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError)
+		err = attrvalid.ValidFieldTypeList(kit, attribute.Option, attribute.Default)
 
 	default:
 		if propertyType == common.FieldTypeEnum || propertyType == common.FieldTypeEnumMulti ||
@@ -1416,8 +1417,8 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 	}
 
-	if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
-		kit.CCError); err != nil {
+	err := attrvalid.ValidPropertyOption(kit, propertyType, option, *isMultiple, data[common.BKDefaultFiled])
+	if err != nil {
 		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 		return err
 	}

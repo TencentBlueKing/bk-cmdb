@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 )
 
 // GetHostAttributes TODO
@@ -170,7 +170,7 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	for _, field := range defaultFields {
 		_, ok := host[field.PropertyID]
 		if !ok {
-			if true == valid.IsStrProperty(field.PropertyType) {
+			if true == attrvalid.IsStrProperty(field.PropertyType) {
 				host[field.PropertyID] = ""
 			} else {
 				host[field.PropertyID] = nil

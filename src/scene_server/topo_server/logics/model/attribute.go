@@ -31,7 +31,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 )
 
 // AttributeOperationInterface attribute operation methods
@@ -397,7 +397,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	if isUpdate {
 		if data.IsMultiple != nil {
-			if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+			if err := attrvalid.ValidPropertyTypeIsMultiple(kit,data.PropertyType, *data.IsMultiple); err != nil {
 				return err
 			}
 		}
@@ -439,7 +439,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 }
 
 func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) error {
-	if err := valid.ValidPropertyTypeIsMultiple(data.PropertyType, *data.IsMultiple, kit.CCError); err != nil {
+	if err := attrvalid.ValidPropertyTypeIsMultiple(kit,data.PropertyType, *data.IsMultiple); err != nil {
 		return err
 	}
 
@@ -466,8 +466,8 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		if err := valid.ValidPropertyOption(data.PropertyType, data.Option, *data.IsMultiple, data.Default, kit.Rid,
-			kit.CCError); err != nil {
+		err := attrvalid.ValidPropertyOption(kit,data.PropertyType, data.Option, *data.IsMultiple, data.Default)
+		if  err != nil {
 			return err
 		}
 	}
