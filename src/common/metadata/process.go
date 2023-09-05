@@ -1801,36 +1801,9 @@ type ProcessProperty struct {
 
 // Validate TODO
 func (pt *ProcessProperty) Validate() (field string, err error) {
-	// call all field's Validate method one by one
-	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
-	selfVal := reflect.ValueOf(pt).Elem()
-	selfType := reflect.TypeOf(pt).Elem()
-	fieldCount := selfVal.NumField()
-	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-		field := selfType.Field(fieldIdx)
-		fieldVal := selfVal.Field(fieldIdx)
-		tag := field.Tag.Get("json")
-		fieldName := strings.Split(tag, ",")[0]
-
-		if fieldName == common.BKProcBindInfo {
-			continue
-		}
-		// check implements interface
-		fieldValType := fieldVal.Addr().Type()
-		if !fieldValType.Implements(propertyInterfaceType) {
-			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(),
-				propertyInterfaceType.Name())
-			panic(msg)
-		}
-
-		// call validate method by interface
-		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
-		out := checkResult[0]
-		if !out.IsNil() {
-			err := out.Interface().(error)
-
-			return fieldName, err
-		}
+	field, err = pt.validateFields()
+	if err != nil {
+		return field, err
 	}
 
 	if fieldName, err := pt.BindInfo.Validate(); err != nil {
@@ -1865,6 +1838,41 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 
+	return "", nil
+}
+
+// validateFields call all field's Validate method one by one
+func (pt *ProcessProperty) validateFields() (string, error) {
+	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
+	selfVal := reflect.ValueOf(pt).Elem()
+	selfType := reflect.TypeOf(pt).Elem()
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		field := selfType.Field(fieldIdx)
+		fieldVal := selfVal.Field(fieldIdx)
+		tag := field.Tag.Get("json")
+		fieldName := strings.Split(tag, ",")[0]
+
+		if fieldName == common.BKProcBindInfo {
+			continue
+		}
+		// check implements interface
+		fieldValType := fieldVal.Addr().Type()
+		if !fieldValType.Implements(propertyInterfaceType) {
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(),
+				propertyInterfaceType.Name())
+			panic(msg)
+		}
+
+		// call validate method by interface
+		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
+		out := checkResult[0]
+		if !out.IsNil() {
+			err := out.Interface().(error)
+
+			return fieldName, err
+		}
+	}
 	return "", nil
 }
 

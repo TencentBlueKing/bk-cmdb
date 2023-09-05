@@ -303,13 +303,15 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 func (sh *searchHost) fillHostCloudInfo(hostInfo, searchHostItem mapstr.MapStr) mapstr.MapStr {
 	clouldID, err := hostInfo.Int64(common.BKCloudIDField)
 	if err != nil {
-		blog.Warnf("search host fillHostCloudInfo host get cloud id error, hostinfo:%+v, error:%s, rid:%s", hostInfo, err.Error(), sh.ccRid)
+		blog.Warnf("search host fillHostCloudInfo host get cloud id error, hostinfo:%+v, error:%s, rid:%s", hostInfo,
+			err.Error(), sh.ccRid)
 		hostInfo.Set(common.BKCloudIDField, make([]InstNameAsst, 0))
 		return hostInfo
 	}
 	instAsst, ok := sh.cacheInfoMap.cloudAsstNameInfoMap[clouldID]
 	if !ok {
-		blog.Warnf("search host fillHostCloudInfo host  cloud id not found, cloud id:%d, hostinfo:%+v, rid:%s", clouldID, hostInfo, sh.ccRid)
+		blog.Warnf("search host fillHostCloudInfo host  cloud id not found, cloud id:%d, hostinfo:%+v, rid:%s",
+			clouldID, hostInfo, sh.ccRid)
 		hostInfo.Set(common.BKCloudIDField, make([]InstNameAsst, 0))
 		return hostInfo
 	}
@@ -346,7 +348,8 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors
 
 }
 
-func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID string, instInfo mapstr.MapStr) (*InstNameAsst, errors.CCError) {
+func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID string,
+	instInfo mapstr.MapStr) (*InstNameAsst, errors.CCError) {
 	if val, exist := instInfo[instNameKey]; exist {
 		asstInst := &InstNameAsst{}
 		if name, can := val.(string); can {
@@ -367,7 +370,8 @@ func (sh *searchHost) convInstInfoToAssociateInfo(instIDKey, instNameKey, objID 
 
 /* ** fill host topology data ** */
 
-func (sh *searchHost) fillHostAppInfo(appInfoLevelInst map[int64]*appLevelInfo, searchHostItem mapstr.MapStr) mapstr.MapStr {
+func (sh *searchHost) fillHostAppInfo(appInfoLevelInst map[int64]*appLevelInfo,
+	searchHostItem mapstr.MapStr) mapstr.MapStr {
 
 	appInfoArr := make([]mapstr.MapStr, 0)
 	var err error
@@ -391,7 +395,8 @@ func (sh *searchHost) fillHostAppInfo(appInfoLevelInst map[int64]*appLevelInfo, 
 
 }
 
-func (sh *searchHost) fillHostSetInfo(appInfoLevelInst map[int64]*appLevelInfo, searchHostItem mapstr.MapStr) mapstr.MapStr {
+func (sh *searchHost) fillHostSetInfo(appInfoLevelInst map[int64]*appLevelInfo,
+	searchHostItem mapstr.MapStr) mapstr.MapStr {
 
 	setInfoArr := make([]mapstr.MapStr, 0)
 	for _, appLevelInfo := range appInfoLevelInst {
@@ -408,7 +413,7 @@ func (sh *searchHost) fillHostSetInfo(appInfoLevelInst map[int64]*appLevelInfo, 
 			}
 			setLevelInfo.setID = setID
 			setLevelInfo.setName = setName
-			setInfo.Set(TopoModuleName, appLevelInfo.appName+SplitFlag+setName)
+			setInfo.Set(common.TopoModuleName, appLevelInfo.appName+SplitFlag+setName)
 
 			setInfoArr = append(setInfoArr, setInfo)
 		}
@@ -419,7 +424,8 @@ func (sh *searchHost) fillHostSetInfo(appInfoLevelInst map[int64]*appLevelInfo, 
 	return searchHostItem
 }
 
-func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInfo, searchHostItem mapstr.MapStr) mapstr.MapStr {
+func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInfo,
+	searchHostItem mapstr.MapStr) mapstr.MapStr {
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
 	for _, appLevelInfo := range appInfoLevelInst {
@@ -427,20 +433,23 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 			for mdouleID := range setLevelInfo.moduleInfoMap {
 				moduleInfo, ok := sh.cacheInfoMap.moduleInfoMap[mdouleID]
 				if false == ok {
-					blog.V(5).Infof("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
+					blog.V(5).Infof("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID,
+						sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
 					continue
 				}
 
 				moduleName, err := moduleInfo.String(common.BKModuleNameField)
 				if nil != err {
-					blog.V(5).Infof("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
+					blog.V(5).Infof("hostSearch not found module name, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID,
+						sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
 					continue
 				}
 				datacp := make(map[string]interface{})
 				for key, val := range moduleInfo {
 					datacp[key] = val
 				}
-				datacp[TopoModuleName] = appLevelInfo.appName + SplitFlag + setLevelInfo.setName + SplitFlag + moduleName
+				datacp[common.TopoModuleName] = appLevelInfo.appName + SplitFlag + setLevelInfo.setName + SplitFlag +
+					moduleName
 				moduleInfoArr = append(moduleInfoArr, datacp)
 			}
 		}
@@ -585,7 +594,8 @@ func (sh *searchHost) searchByMainline() errors.CCError {
 
 	// search mainline object by cond
 	if len(sh.conds.mainlineCond.Condition) > 0 {
-		objSetIDArr, err = sh.lgc.GetSetIDByObjectCond(sh.kit, sh.hostSearchParam.AppID, sh.conds.mainlineCond.Condition)
+		objSetIDArr, err = sh.lgc.GetSetIDByObjectCond(sh.kit, sh.hostSearchParam.AppID,
+			sh.conds.mainlineCond.Condition)
 		if err != nil {
 			return err
 		}

@@ -148,7 +148,7 @@ func (m *operationManager) CommonModelStatistic(kit *rest.Kit, inputParam metada
 		return nil, err
 	}
 
-	option, err := metadata.ParseEnumOption(kit.Ctx, attribute.Option)
+	option, err := metadata.ParseEnumOption(attribute.Option)
 	if err != nil {
 		blog.Errorf("count model's instance, parse enum option fail, ObjID: %s, err: %v, rid: %s", inputParam.ObjID,
 			err, kit.Rid)

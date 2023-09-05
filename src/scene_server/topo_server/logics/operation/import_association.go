@@ -78,10 +78,6 @@ func (assoc *association) ImportInstAssociation(kit *rest.Kit, languageIf langua
 	}
 
 	errIdxMsgMap := ia.ImportAssociation()
-	if len(errIdxMsgMap) > 0 {
-		err = kit.CCError.CCError(common.CCErrorTopoImportAssociation)
-	}
-
 	resp := metadata.ResponeImportAssociationData{}
 	for row, msg := range errIdxMsgMap {
 		resp.ErrMsgMap = append(resp.ErrMsgMap, metadata.RowMsgData{

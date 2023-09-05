@@ -111,7 +111,7 @@ func addProcessAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		IsSystem:          false,
 		IsAPI:             false,
 		PropertyType:      common.FieldTypeInt,
-		Option:            metadata.IntOption{Min: "0", Max: "600"},
+		Option:            metadata.PrevIntOption{Min: "0", Max: "600"},
 		Description:       common.CCSystemOperatorUserName,
 		Creator:           common.CCSystemOperatorUserName,
 		LastEditor:        common.CCSystemOperatorUserName,
@@ -119,7 +119,8 @@ func addProcessAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		LastTime:          &now,
 	}
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields, []string{}); err != nil {
+	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields,
+		[]string{}); err != nil {
 		blog.ErrorJSON("addCloudHostAttr failed, Upsert err: %s, attribute: %#v, ", err, row)
 		return err
 	}
@@ -173,7 +174,8 @@ func deleteProcessInstsFields(ctx context.Context, db dal.RDB, conf *upgrader.Co
 				"$in": processIDs[startIdx:endIdx],
 			},
 		}
-		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameBaseProcess).UpdateMany(ctx, filter, doc); err != nil {
+		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameBaseProcess).UpdateMany(ctx,
+			filter, doc); err != nil {
 			blog.Errorf("update process fields failed, filter:%#v, doc:%#v, err:%v", filter, doc, err)
 			return err
 		}
@@ -229,7 +231,8 @@ func deleteProcessTemplateInstsFields(ctx context.Context, db dal.RDB, conf *upg
 				"$in": templateIDs[startIdx:endIdx],
 			},
 		}
-		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameProcessTemplate).UpdateMany(ctx, filter, doc); err != nil {
+		if _, err := mongo.GetDBClient().Database(mongo.GetDBName()).Collection(common.BKTableNameProcessTemplate).UpdateMany(ctx,
+			filter, doc); err != nil {
 			blog.Errorf("update process template fields failed, filter:%#v, doc:%#v, err:%v", filter, doc, err)
 			return err
 		}

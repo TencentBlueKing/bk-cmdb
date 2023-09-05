@@ -42,7 +42,7 @@ var _ = Describe("namespace test", func() {
 	nsName := "nsName"
 
 	It("prepare environment, create business, cluster", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "kube",
@@ -84,7 +84,7 @@ var _ = Describe("namespace test", func() {
 		}
 
 		id, err := kubeClient.CreateCluster(ctx, header, createCluster)
-		util.RegisterResponse(id)
+		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
 
@@ -162,12 +162,13 @@ var _ = Describe("namespace test", func() {
 		updateOpt := types.NsUpdateOption{
 			BizID: bizID,
 			NsUpdateByIDsOption: types.NsUpdateByIDsOption{
-				IDs:  []int64{clusterID},
+				IDs:  []int64{namespaceID},
 				Data: ns,
 			},
 		}
 
 		err := kubeClient.UpdateNamespace(ctx, header, &updateOpt)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

@@ -39,6 +39,9 @@ const (
 
 	// SystemIDIAM TODO
 	SystemIDIAM = "bk_iam"
+
+	// RegisterIamLock defines the lock key for register iam operation
+	RegisterIamLock = "register_iam_lock"
 )
 
 // AuthConfig TODO

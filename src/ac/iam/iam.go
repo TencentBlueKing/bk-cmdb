@@ -16,8 +16,10 @@ package iam
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
@@ -27,9 +29,11 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -85,6 +89,33 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}, nil
 }
 
+// tryLockRegister try lock register iam operation to make sure only one task runs at the same time, retry 3 times.
+func tryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
+	for i := 0; i < 3; i++ {
+		locker := lock.NewLocker(redisCli)
+		locked, err := locker.Lock(RegisterIamLock, 2*time.Minute)
+		if err != nil {
+			blog.Errorf("get register iam lock failed, err: %v, rid: %s", err, rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		if locked {
+			return locker, nil
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return nil, fmt.Errorf("there's another register iam task runing, please retry later")
+}
+
+// RegisterIamOptions defines options to register iam
+type RegisterIamOptions struct {
+	Host    string
+	Objects []metadata.Object
+}
+
 /**
 1. 资源间的依赖关系为 Action 依赖 InstanceSelection 依赖 ResourceType，对资源的增删改操作需要按照这个依赖顺序调整
 2. ActionGroup、ResCreatorAction、CommonAction 依赖于 Action，这些资源的增删操作始终放在最后
@@ -105,16 +136,23 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 */
 
 // Register cc auth resources to iam
-func (i IAM) Register(ctx context.Context, host string, objects []metadata.Object, rid string) error {
+func (i IAM) Register(ctx context.Context, redisCli redis.Client, opt *RegisterIamOptions, rid string) error {
 	if !auth.EnableAuthorize() {
 		return nil
 	}
 
-	registeredInfo, err := i.registerSystem(ctx, host)
+	locker, err := tryLockRegister(redisCli, rid)
+	if err != nil {
+		return err
+	}
+	defer locker.Unlock()
+
+	registeredInfo, err := i.registerSystem(ctx, opt.Host)
 	if err != nil {
 		return err
 	}
 
+	objects := opt.Objects
 	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes, objects)
 	newInstSelections, updateInstSelections, removedInstSelectionIDs := i.crossCompareInstSelections(
 		registeredInfo.InstanceSelections, objects)
@@ -131,11 +169,9 @@ func (i IAM) Register(ctx context.Context, host string, objects []metadata.Objec
 		}
 	}
 
-	if len(newResTypes) > 0 {
-		if err = i.Client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
-			blog.ErrorJSON("register resource types(%s) failed, err: %s, rid: %s", newResTypes, err, rid)
-			return err
-		}
+	if err = i.Client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
+		blog.ErrorJSON("register resource types(%s) failed, err: %s, rid: %s", newResTypes, err, rid)
+		return err
 	}
 
 	for _, instanceSelection := range updateInstSelections {
@@ -145,11 +181,9 @@ func (i IAM) Register(ctx context.Context, host string, objects []metadata.Objec
 		}
 	}
 
-	if len(newInstSelections) > 0 {
-		if err = i.Client.RegisterInstanceSelections(ctx, newInstSelections); err != nil {
-			blog.ErrorJSON("register instance selections(%s) failed, err: %s, rid: %s", newInstSelections, err, rid)
-			return err
-		}
+	if err = i.Client.RegisterInstanceSelections(ctx, newInstSelections); err != nil {
+		blog.ErrorJSON("register instance selections(%s) failed, err: %s, rid: %s", newInstSelections, err, rid)
+		return err
 	}
 
 	for _, resourceAction := range updateResActions {
@@ -159,25 +193,19 @@ func (i IAM) Register(ctx context.Context, host string, objects []metadata.Objec
 		}
 	}
 
-	if len(newResActions) > 0 {
-		if err = i.Client.RegisterActions(ctx, newResActions); err != nil {
-			blog.ErrorJSON("register resource actions(%s) failed, err: %s, rid: %s", newResActions, err, rid)
-			return err
-		}
+	if err = i.Client.RegisterActions(ctx, newResActions); err != nil {
+		blog.ErrorJSON("register resource actions(%s) failed, err: %s, rid: %s", newResActions, err, rid)
+		return err
 	}
 
-	if len(removedInstSelectionIDs) > 0 {
-		if err = i.Client.DeleteInstanceSelections(ctx, removedInstSelectionIDs); err != nil {
-			blog.ErrorJSON("delete instance selections(%s) failed, err: %s, rid: %s", removedInstSelectionIDs, err, rid)
-			return err
-		}
+	if err = i.Client.DeleteInstanceSelections(ctx, removedInstSelectionIDs); err != nil {
+		blog.ErrorJSON("delete instance selections(%s) failed, err: %s, rid: %s", removedInstSelectionIDs, err, rid)
+		return err
 	}
 
-	if len(removedResTypeIDs) > 0 {
-		if err = i.Client.DeleteResourcesTypes(ctx, removedResTypeIDs); err != nil {
-			blog.ErrorJSON("delete resource types(%s) failed, err: %s, rid: %s", removedResTypeIDs, err, rid)
-			return err
-		}
+	if err = i.Client.DeleteResourcesTypes(ctx, removedResTypeIDs); err != nil {
+		blog.ErrorJSON("delete resource types(%s) failed, err: %s, rid: %s", removedResTypeIDs, err, rid)
+		return err
 	}
 
 	if err := i.registerActionGroups(ctx, registeredInfo, objects, rid); err != nil {
@@ -549,38 +577,9 @@ func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
 	for idx, registeredResType := range registeredAction.RelatedResourceTypes {
 		resType := action.RelatedResourceTypes[idx]
 
-		// iam default selection mode is "instance"
-		if resType.SelectionMode == "" {
-			resType.SelectionMode = modeInstance
-		}
-
-		if registeredResType.ID != resType.ID || registeredResType.SelectionMode != resType.SelectionMode {
+		isEqual := i.compareResActionType(resType, registeredResType)
+		if !isEqual {
 			return false
-		}
-
-		if registeredResType.Scope == nil && resType.Scope == nil {
-			continue
-		}
-
-		if registeredResType.Scope == nil && resType.Scope != nil ||
-			registeredResType.Scope != nil && resType.Scope == nil {
-			return false
-		}
-
-		if registeredResType.Scope.Op != resType.Scope.Op {
-			return false
-		}
-
-		if len(registeredResType.Scope.Content) != len(resType.Scope.Content) {
-			return false
-		}
-
-		for index, registeredContent := range registeredResType.Scope.Content {
-			content := resType.Scope.Content[index]
-			if registeredContent.Op != content.Op || registeredContent.Value != content.Value ||
-				registeredContent.Field != content.Field {
-				return false
-			}
 		}
 
 		// TODO since iam returns no related selections & we use matching type & selection, skip this comparison
@@ -596,6 +595,44 @@ func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
 		}
 	}
 
+	return true
+}
+
+// compareResActionType compare if registered and new resource action's related type are the same
+func (i IAM) compareResActionType(resType RelateResourceType, registeredResType RelateResourceType) bool {
+	// iam default selection mode is "instance"
+	if resType.SelectionMode == "" {
+		resType.SelectionMode = modeInstance
+	}
+
+	if registeredResType.ID != resType.ID || registeredResType.SelectionMode != resType.SelectionMode {
+		return false
+	}
+
+	if registeredResType.Scope == nil && resType.Scope == nil {
+		return true
+	}
+
+	if registeredResType.Scope == nil && resType.Scope != nil ||
+		registeredResType.Scope != nil && resType.Scope == nil {
+		return false
+	}
+
+	if registeredResType.Scope.Op != resType.Scope.Op {
+		return false
+	}
+
+	if len(registeredResType.Scope.Content) != len(resType.Scope.Content) {
+		return false
+	}
+
+	for index, registeredContent := range registeredResType.Scope.Content {
+		content := resType.Scope.Content[index]
+		if registeredContent.Op != content.Op || registeredContent.Value != content.Value ||
+			registeredContent.Field != content.Field {
+			return false
+		}
+	}
 	return true
 }
 
@@ -695,7 +732,7 @@ func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *Register
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
+func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, objects []metadata.Object) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
 	// validate the objects
@@ -705,6 +742,12 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 			return errors.New("sync iam instances, but object is invalid")
 		}
 	}
+
+	locker, err := tryLockRegister(redisCli, rid)
+	if err != nil {
+		return err
+	}
+	defer locker.Unlock()
 
 	fields := []SystemQueryField{FieldResourceTypes, FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
@@ -730,46 +773,9 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
 
-	// delete unnecessary actions in iam
-	if len(deletedActions) > 0 {
-		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
-
-		// before deleting action, the dependent action policies must be deleted
-		for _, actionID := range deletedActions {
-			if err = i.Client.DeleteActionPolicies(ctx, actionID); err != nil {
-				blog.Errorf("sync iam sysInstances failed, delete action %s policies err: %s, rid: %s",
-					actionID, err, rid)
-				return err
-			}
-		}
-
-		if err := i.Client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, delete IAM actions error: %s, actions: %s, rid: %s",
-				err, deletedActions, rid)
-			return err
-		}
-	}
-
-	// delete unnecessary InstanceSelections in iam
-	if len(deletedInstanceSelections) > 0 {
-		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
-			len(deletedInstanceSelections), deletedInstanceSelections, rid)
-		if err := i.Client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, delete instanceSelections error: %s, instanceSelections: %s,"+
-				" rid: %s", err, deletedInstanceSelections, rid)
-			return err
-		}
-	}
-
-	// delete unnecessary ResourceTypes in iam
-	if len(deletedResourceTypes) > 0 {
-		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
-			len(deletedResourceTypes), deletedResourceTypes, rid)
-		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, delete resourceType error: %s, resourceType: %s, rid: %s",
-				err, deletedResourceTypes, rid)
-			return err
-		}
+	err = i.deleteIamResources(ctx, deletedActions, deletedInstanceSelections, deletedResourceTypes, rid)
+	if err != nil {
+		return err
 	}
 
 	// add cmdb ResourceTypes in iam
@@ -830,6 +836,51 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 		}
 	}
 
+	return nil
+}
+
+func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
+	deletedInstanceSelections []InstanceSelectionID, deletedResourceTypes []TypeID, rid string) error {
+
+	// delete unnecessary actions in iam
+	if len(deletedActions) > 0 {
+		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
+
+		// before deleting action, the dependent action policies must be deleted
+		for _, actionID := range deletedActions {
+			if err := i.Client.DeleteActionPolicies(ctx, actionID); err != nil {
+				blog.Errorf("delete iam action %s policies failed, err: %v, rid: %s", actionID, err, rid)
+				return err
+			}
+		}
+
+		if err := i.Client.DeleteActions(ctx, deletedActions); err != nil {
+			blog.ErrorJSON("delete IAM actions failed, err: %s, actions: %s, rid: %s", err, deletedActions, rid)
+			return err
+		}
+	}
+
+	// delete unnecessary InstanceSelections in iam
+	if len(deletedInstanceSelections) > 0 {
+		blog.Infof("begin delete instanceSelections, count: %d, detail: %v, rid: %s", len(deletedInstanceSelections),
+			deletedInstanceSelections, rid)
+		if err := i.Client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
+			blog.ErrorJSON("delete instanceSelections failed, err: %s, instanceSelections: %s, rid: %s", err,
+				deletedInstanceSelections, rid)
+			return err
+		}
+	}
+
+	// delete unnecessary ResourceTypes in iam
+	if len(deletedResourceTypes) > 0 {
+		blog.Infof("begin delete resourceTypes, count: %d, detail: %v, rid: %s", len(deletedResourceTypes),
+			deletedResourceTypes, rid)
+		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
+			blog.ErrorJSON("delete resourceType failed, err: %s, resourceType: %s, rid: %s", err, deletedResourceTypes,
+				rid)
+			return err
+		}
+	}
 	return nil
 }
 

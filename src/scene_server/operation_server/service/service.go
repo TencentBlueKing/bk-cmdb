@@ -89,7 +89,8 @@ func (o *OperationServer) WebService() *restful.Container {
 	}
 
 	api := new(restful.WebService)
-	api.Path("/operation/v3").Filter(o.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/operation/v3").Filter(o.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).
+		Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -116,12 +117,18 @@ func (o *OperationServer) newOperationService(web *restful.WebService) {
 	})
 
 	// service category
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}", Handler: o.DeleteOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/operation/chart", Handler: o.SearchOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data", Handler: o.SearchChartData})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart",
+		Handler: o.CreateOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}",
+		Handler: o.DeleteOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart",
+		Handler: o.UpdateOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/operation/chart",
+		Handler: o.SearchOperationChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data",
+		Handler: o.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position",
+		Handler: o.UpdateChartPosition})
 
 	utility.AddToRestfulWebService(web)
 }

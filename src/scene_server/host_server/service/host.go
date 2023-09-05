@@ -721,6 +721,7 @@ func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
 
 		var (
 			wg       sync.WaitGroup
+			lock     sync.Mutex
 			firstErr error
 		)
 		pipeline := make(chan bool, 5)
@@ -779,8 +780,11 @@ func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
 					firstErr = err
 					return
 				}
+
 				// add audit log.
+				lock.Lock()
 				auditContexts = append(auditContexts, auditLog...)
+				lock.Unlock()
 			}(update)
 		}
 
@@ -1336,7 +1340,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	hostIDArr := make([]int64, 0)
 	hosts := make(map[int64]map[string]interface{}, 0)
 	indexHostIDMap := make(map[int64]int64, 0)
-	var errMsg, successMsg []string
+	var errMsg []string
+	var successMsg []int64
 	CCLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
 	for _, index := range util.SortedMapInt64Keys(hostList.HostInfo) {
 		hostInfo := hostList.HostInfo[index]

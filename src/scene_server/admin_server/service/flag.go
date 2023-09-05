@@ -52,7 +52,8 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 
 	err := s.db.Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if nil != err {
-		blog.Errorf("set system configuration on table %s failed, err: %+v, rid: %s", common.BKTableNameSystem, err, rid)
+		blog.Errorf("set system configuration on table %s failed, err: %+v, rid: %s", common.BKTableNameSystem, err,
+			rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommMigrateFailed),
 		}
@@ -93,7 +94,7 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 		"type": metadata.CCSystemUserConfigSwitch,
 	}
 	data := map[string]metadata.SysUserConfigItem{
-		key: metadata.SysUserConfigItem{
+		key: {
 			Flag:     blCanModify,
 			ExpireAt: time.Now().Unix() + int64(userConfigDefaultExpireHour*3600),
 		},

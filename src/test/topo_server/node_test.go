@@ -38,7 +38,7 @@ var _ = Describe("kube cluster test", func() {
 	var bizId, clusterID, hostId1, nodeID, nodeID2 int64
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -48,7 +48,7 @@ var _ = Describe("kube cluster test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
@@ -69,7 +69,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -87,7 +87,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -124,7 +124,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 
 			id, err := kubeClient.CreateCluster(ctx, header, createCluster)
-			util.RegisterResponse(id)
+			util.RegisterResponseWithRid(id, header)
 			Expect(err).NotTo(HaveOccurred())
 			clusterID = id
 		})
@@ -155,7 +155,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			nodeID = result[0]
 		}()
@@ -184,7 +184,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			nodeID2 = result[0]
 		}()
@@ -212,7 +212,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
