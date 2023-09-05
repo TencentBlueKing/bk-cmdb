@@ -333,22 +333,9 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 			instIDs = append(instIDs, topoInst.InstID)
 
 			if withStatistics {
-				if objectID == common.BKInnerObjIDSet {
-					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
-				}
-				if objectID == common.BKInnerObjIDModule {
-					topoInst.ServiceTemplateID, _ = instance.Int64(common.BKServiceTemplateIDField)
-					topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
-					enabled, _ := instance.Bool(common.HostApplyEnabledField)
-					topoInst.HostApplyEnabled = &enabled
-					results.moduleIDs = append(results.moduleIDs, topoInst.InstID)
-				}
-				if results.bizID == 0 {
-					results.bizID, err = instance.Int64(common.BKAppIDField)
-					if err != nil {
-						blog.Errorf("get instance %#v biz id failed, err: %v, rid: %s", instance, err, kit.Rid)
-						return nil, err
-					}
+				err = addTopoInstStatistics(kit, objectID, topoInst, instance, results)
+				if err != nil {
+					return nil, err
 				}
 			}
 			if objectID == objID {
@@ -389,6 +376,31 @@ func (assoc *association) buildTopoInstRst(kit *rest.Kit, instID int64, objID st
 	}
 
 	return results, nil
+}
+
+func addTopoInstStatistics(kit *rest.Kit, objectID string, topoInst *metadata.TopoInstRst,
+	instance mapstr.MapStr, results *buildTopoInstRst) error {
+
+	switch objectID {
+	case common.BKInnerObjIDSet:
+		topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
+	case common.BKInnerObjIDModule:
+		topoInst.ServiceTemplateID, _ = instance.Int64(common.BKServiceTemplateIDField)
+		topoInst.SetTemplateID, _ = instance.Int64(common.BKSetTemplateIDField)
+		enabled, _ := instance.Bool(common.HostApplyEnabledField)
+		topoInst.HostApplyEnabled = &enabled
+		results.moduleIDs = append(results.moduleIDs, topoInst.InstID)
+	}
+
+	if results.bizID == 0 {
+		var err error
+		results.bizID, err = instance.Int64(common.BKAppIDField)
+		if err != nil {
+			blog.Errorf("get instance %#v biz id failed, err: %v, rid: %s", instance, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 func (assoc *association) searchMainlineObjInstForTopo(kit *rest.Kit, objID string, instCond map[string]interface{},

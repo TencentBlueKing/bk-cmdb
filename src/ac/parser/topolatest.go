@@ -308,6 +308,8 @@ const (
 	findObjectAssociationLatestPattern                    = "/api/v3/find/objectassociation"
 	createObjectAssociationLatestPattern                  = "/api/v3/create/objectassociation"
 	findObjectAssociationWithAssociationKindLatestPattern = "/api/v3/find/topoassociationtype"
+	// excel 导入主机专用接口
+	findModelAssociationPattern = "/api/v3/find/instassociation/model"
 )
 
 var (
@@ -321,6 +323,7 @@ var (
 		`^/api/v3/import/instassociation/[^\s/]+$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectAssociationLatest() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -328,70 +331,40 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelAssociation,
-					Action: meta.FindMany,
-				},
-			},
-		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:   meta.ModelAssociation,
+			Action: meta.FindMany,
+		}}}
 		return ps
 	}
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
-		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		objID := val.Value()
-
-		val, err = ps.RequestCtx.getValueFromBody(common.BKAsstObjIDField)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		asstObjID := val.Value()
-
-		filter := mapstr.MapStr{
-			common.BKObjIDField: mapstr.MapStr{
-				common.BKDBIN: []interface{}{
-					objID,
-					asstObjID,
-				},
-			},
-		}
-		models, err := ps.searchModels(filter)
+		objVal, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
+		asstVal, err := ps.RequestCtx.getValueFromBody(common.BKAsstObjIDField)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
 
-		for _, model := range models {
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					BusinessID: bizID,
-					Basic: meta.Basic{
-						Type:       meta.Model,
-						Action:     meta.Update,
-						InstanceID: model.ID,
-					},
-				},
-			)
+		res, err := ps.getModelAsstUpdateResAttr(objVal.Value(), asstVal.Value())
+		if err != nil {
+			ps.err = err
+			return ps
 		}
+		ps.Attribute.Resources = append(ps.Attribute.Resources, res...)
 		return ps
 	}
 
-	// update object association operation
-	if ps.hitRegexp(updateObjectAssociationLatestRegexp, http.MethodPut) {
+	// update/delete object association operation
+	if ps.hitRegexp(updateObjectAssociationLatestRegexp, http.MethodPut) ||
+		ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
+
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("update object association, but got invalid url")
 			return ps
@@ -399,60 +372,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-		asst, err := ps.getModelAssociation(mapstr.MapStr{common.BKFieldID: assoID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		filter := mapstr.MapStr{
-			common.BKObjIDField: mapstr.MapStr{
-				common.BKDBIN: []interface{}{
-					asst[0].ObjectID,
-					asst[0].AsstObjID,
-				},
-			},
-		}
-		models, err := ps.searchModels(filter)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		for _, model := range models {
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       meta.Model,
-						Action:     meta.Update,
-						InstanceID: model.ID,
-					},
-					BusinessID: bizID,
-				})
-		}
-
-		return ps
-	}
-
-	// delete object association operation
-	if ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("delete object association, but got invalid url")
-			return ps
-		}
-
-		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("update object association id %s is invalid", ps.RequestCtx.Elements[4])
 			return ps
 		}
 
@@ -462,37 +382,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		filter := mapstr.MapStr{
-			common.BKObjIDField: mapstr.MapStr{
-				common.BKDBIN: []interface{}{
-					asst[0].ObjectID,
-					asst[0].AsstObjID,
-				},
-			},
-		}
-		models, err := ps.searchModels(filter)
+		res, err := ps.getModelAsstUpdateResAttr(asst[0].ObjectID, asst[0].AsstObjID)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		for _, model := range models {
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					Basic: meta.Basic{
-						Type:       meta.Model,
-						Action:     meta.Update,
-						InstanceID: model.ID,
-					},
-					BusinessID: bizID,
-				})
-		}
+		ps.Attribute.Resources = append(ps.Attribute.Resources, res...)
 		return ps
 	}
 
@@ -504,37 +399,27 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelAssociation,
-					Action: meta.FindMany,
-				},
+		ps.Attribute.Resources = []meta.ResourceAttribute{{BusinessID: bizID,
+			Basic: meta.Basic{
+				Type:   meta.ModelAssociation,
+				Action: meta.FindMany,
 			},
-		}
+		}}
 		return ps
 	}
 
 	// excel 导入关联关系专用接口, 跳过鉴权
-	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: 0,
-				Basic: meta.Basic{
-					Type:   meta.ModelAssociation,
-					Action: meta.SkipAction,
-				},
-			},
-		}
+	if ps.hitRegexp(findAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) ||
+		ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Action: meta.SkipAction}}}
 		return ps
 	}
 
-	// excel 导入关联关系专用接口, 跳过鉴权
-	if ps.hitRegexp(importAssociationByObjectAssociationIDLatestRegexp, http.MethodPost) {
+	// excel 导入主机专用接口, 跳过鉴权
+	if ps.hitPattern(findModelAssociationPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: 0,
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.SkipAction,
@@ -545,6 +430,39 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	}
 
 	return ps
+}
+
+func (ps *parseStream) getModelAsstUpdateResAttr(objID, asstObjID interface{}) ([]meta.ResourceAttribute, error) {
+	filter := mapstr.MapStr{
+		common.BKObjIDField: mapstr.MapStr{
+			common.BKDBIN: []interface{}{
+				objID,
+				asstObjID,
+			},
+		},
+	}
+	models, err := ps.searchModels(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	bizID, err := ps.RequestCtx.getBizIDFromBody()
+	if err != nil {
+		return nil, err
+	}
+
+	resources := make([]meta.ResourceAttribute, 0, len(models))
+	for _, model := range models {
+		resources = append(resources, meta.ResourceAttribute{
+			BusinessID: bizID,
+			Basic: meta.Basic{
+				Type:       meta.Model,
+				Action:     meta.Update,
+				InstanceID: model.ID,
+			},
+		})
+	}
+	return resources, nil
 }
 
 const (
@@ -928,7 +846,8 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		assoID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("delete object instance association, but got invalid association id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("delete object instance association, but got invalid association id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 
@@ -1170,8 +1089,11 @@ var (
 
 	searchObjectInstancesRegexp = regexp.MustCompile(`^/api/v3/search/instances/object/[^\s/]+/?$`)
 	countObjectInstancesRegexp  = regexp.MustCompile(`^/api/v3/count/instances/object/[^\s/]+/?$`)
+	// excel 导入主机专用接口
+	findObjectInstancesForExcelRegexp = regexp.MustCompile(`^/api/v3/find/instance/[^\s/]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectInstanceLatest() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1532,7 +1454,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s", ps.RequestCtx.Elements[7])
+			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s",
+				ps.RequestCtx.Elements[7])
 			return ps
 		}
 
@@ -1726,6 +1649,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   instanceType,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// excel 导入主机专用接口, 跳过鉴权
+	if ps.hitRegexp(findObjectInstancesForExcelRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
 			},
@@ -2082,7 +2017,8 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 
 		classID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("delete object classification, but got invalid object's id %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("delete object classification, but got invalid object's id %s",
+				ps.RequestCtx.Elements[4])
 			return ps
 		}
 
@@ -2114,7 +2050,8 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 
 		classID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update object classification, but got invalid object's  classification id %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("update object classification, but got invalid object's  classification id %s",
+				ps.RequestCtx.Elements[4])
 			return ps
 		}
 
@@ -2351,7 +2288,8 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 
 		groupID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("delete object's attribute group, but got invalid group's id %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("delete object's attribute group, but got invalid group's id %s",
+				ps.RequestCtx.Elements[4])
 			return ps
 		}
 
@@ -2467,7 +2405,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 		attr, err := ps.getModelAttribute(bizID, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
-			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v",
+				mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
 
@@ -2512,7 +2451,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 		attr, err := ps.getModelAttribute(0, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
-			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v",
+				mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
 
@@ -2563,7 +2503,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 		attr, err := ps.getModelAttribute(bizID, mapstr.MapStr{common.BKFieldID: attrID})
 		if err != nil {
-			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v",
+				mapstr.MapStr{common.BKFieldID: attrID}, err)
 			return ps
 		}
 
@@ -2751,7 +2692,8 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("update business custom field, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("update business custom field, but got invalid attribute id %s",
+				ps.RequestCtx.Elements[4])
 			return ps
 		}
 
@@ -2863,7 +2805,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find host apply rule related topo node, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find host apply rule related topo node, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

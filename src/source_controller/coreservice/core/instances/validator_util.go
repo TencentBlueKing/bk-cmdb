@@ -28,65 +28,46 @@ import (
 
 // FillLostFieldValue fill the value in inst map data
 func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) error {
+	var err error
 	for _, field := range propertys {
-		if _, ok := valData[field.PropertyID]; !ok {
-			switch field.PropertyType {
-			case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-				if err := fillLostStringFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeEnum:
-				if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeEnumMulti:
-				if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeEnumQuote:
-				if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeDate:
-				if err := fillLostDateFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeFloat:
-				if err := fillLostFloatFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeInt:
-				if err := fillLostIntFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeTime:
-				if err := fillLostTimeFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeUser:
-				if err := fillLostUserFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeOrganization:
-				if err := fillLostOrganizationFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeTimeZone:
-				if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeList:
-				if err := fillLostListFieldValue(valData, field); err != nil {
-					return err
-				}
-			case common.FieldTypeBool:
-				if err := fillLostBoolFieldValue(valData, field); err != nil {
-					return err
-				}
-			default:
-				valData[field.PropertyID] = nil
-			}
+		if _, ok := valData[field.PropertyID]; ok {
+			continue
 		}
+
+		switch field.PropertyType {
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+			err = fillLostStringFieldValue(valData, field)
+		case common.FieldTypeEnum:
+			err = fillLostEnumFieldValue(ctx, valData, field)
+		case common.FieldTypeEnumMulti:
+			err = fillLostEnumMultiFieldValue(ctx, valData, field)
+		case common.FieldTypeEnumQuote:
+			err = fillLostEnumQuoteFieldValue(ctx, valData, field)
+		case common.FieldTypeDate:
+			err = fillLostDateFieldValue(valData, field)
+		case common.FieldTypeFloat:
+			err = fillLostFloatFieldValue(valData, field)
+		case common.FieldTypeInt:
+			err = fillLostIntFieldValue(valData, field)
+		case common.FieldTypeTime:
+			err = fillLostTimeFieldValue(valData, field)
+		case common.FieldTypeUser:
+			err = fillLostUserFieldValue(valData, field)
+		case common.FieldTypeOrganization:
+			err = fillLostOrganizationFieldValue(valData, field)
+		case common.FieldTypeTimeZone:
+			err = fillLostTimeZoneFieldValue(valData, field)
+		case common.FieldTypeList:
+			err = fillLostListFieldValue(valData, field)
+		case common.FieldTypeBool:
+			err = fillLostBoolFieldValue(valData, field)
+		default:
+			valData[field.PropertyID] = nil
+		}
+	}
+
+	if err != nil {
+		return err
 	}
 	return nil
 }

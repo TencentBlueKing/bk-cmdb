@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
@@ -247,6 +248,26 @@ type DetailFactory interface {
 	WithName() string
 }
 
+var resTypeOpDetailTypeMap = map[ResourceType]DetailFactory{
+	BusinessRes:            new(InstanceOpDetail),
+	BizSetRes:              new(InstanceOpDetail),
+	ProjectRes:             new(InstanceOpDetail),
+	SetRes:                 new(InstanceOpDetail),
+	ModuleRes:              new(InstanceOpDetail),
+	ProcessRes:             new(InstanceOpDetail),
+	HostRes:                new(InstanceOpDetail),
+	CloudAreaRes:           new(InstanceOpDetail),
+	ModelInstanceRes:       new(InstanceOpDetail),
+	MainlineInstanceRes:    new(InstanceOpDetail),
+	ResourceDirRes:         new(InstanceOpDetail),
+	InstanceAssociationRes: new(InstanceAssociationOpDetail),
+	ModelAttributeRes:      new(ModelAttrOpDetail),
+	ModelAttributeGroupRes: new(ModelAttrOpDetail),
+	ServiceInstanceRes:     new(ServiceInstanceOpDetail),
+	QuotedInst:             new(QuotedInstOpDetail),
+	ModelUniqueRes:         new(GenericOpDetail),
+}
+
 // UnmarshalJSON unmarshal AuditLog
 // NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
@@ -292,51 +313,22 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
-		MainlineInstanceRes, ResourceDirRes:
-		operationDetail := new(InstanceOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case InstanceAssociationRes:
-		operationDetail := new(InstanceAssociationOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelAttributeGroupRes:
-		operationDetail := new(ModelAttrOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ServiceInstanceRes:
-		operationDetail := new(ServiceInstanceOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case QuotedInst:
-		operationDetail := new(QuotedInstOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelUniqueRes:
-		operationDetail := new(GenericOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	default:
+	opDetailType, exists := resTypeOpDetailTypeMap[audit.ResourceType]
+	if !exists {
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+		return nil
 	}
+
+	opDetail := reflect.New(reflect.Indirect(reflect.ValueOf(opDetailType)).Type()).Elem().Addr().Interface()
+	if err := json.Unmarshal(audit.OperationDetail, opDetail); err != nil {
+		return err
+	}
+	auditLog.OperationDetail = opDetail.(DetailFactory)
+
 	return nil
 }
 
@@ -385,51 +377,21 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 
-	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
-		MainlineInstanceRes, ResourceDirRes:
-		operationDetail := new(InstanceOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case InstanceAssociationRes:
-		operationDetail := new(InstanceAssociationOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelAttributeGroupRes:
-		operationDetail := new(ModelAttrOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ServiceInstanceRes:
-		operationDetail := new(ServiceInstanceOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case QuotedInst:
-		operationDetail := new(QuotedInstOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelUniqueRes:
-		operationDetail := new(GenericOpDetail)
+	opDetailType, exists := resTypeOpDetailTypeMap[audit.ResourceType]
+	if !exists {
+		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
-	default:
-		operationDetail := new(BasicOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
+		return nil
 	}
+
+	opDetail := reflect.New(reflect.Indirect(reflect.ValueOf(opDetailType)).Type()).Elem().Addr().Interface()
+	if err := bson.Unmarshal(audit.OperationDetail, opDetail); err != nil {
+		return err
+	}
+	auditLog.OperationDetail = opDetail.(DetailFactory)
 	return nil
 }
 

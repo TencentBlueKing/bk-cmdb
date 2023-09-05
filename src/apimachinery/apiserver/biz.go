@@ -109,16 +109,23 @@ func (a *apiServer) UpdateBizPropertyBatch(ctx context.Context, h http.Header,
 }
 
 // DeleteBiz delete archived businesses
-func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) (
-	resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error {
+	resp := new(metadata.Response)
 	subPath := "/deletemany/biz"
-	err = a.client.Post().
+
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(param).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }
