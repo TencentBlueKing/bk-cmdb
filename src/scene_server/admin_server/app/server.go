@@ -87,7 +87,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		syncor := iam.NewSyncor()
 		syncor.SetDB(mongodb.Client())
 		syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
-		go syncor.SyncIAM(iamCli, service.Logics)
+		go syncor.SyncIAM(iamCli, cache, service.Logics)
 	} else {
 		blog.Infof("disable auth center access.")
 	}

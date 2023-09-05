@@ -45,7 +45,7 @@ func (s *coreService) ListModelQuoteRelation(cts *rest.Contexts) {
 		return
 	}
 
-	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
+	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
 
 	if req.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Count(cts.Kit.Ctx)

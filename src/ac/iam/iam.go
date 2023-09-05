@@ -16,8 +16,10 @@ package iam
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
@@ -27,9 +29,11 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/storage/dal/redis"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -85,6 +89,33 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}, nil
 }
 
+// tryLockRegister try lock register iam operation to make sure only one task runs at the same time, retry 3 times.
+func tryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
+	for i := 0; i < 3; i++ {
+		locker := lock.NewLocker(redisCli)
+		locked, err := locker.Lock(RegisterIamLock, 2*time.Minute)
+		if err != nil {
+			blog.Errorf("get register iam lock failed, err: %v, rid: %s", err, rid)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		if locked {
+			return locker, nil
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return nil, fmt.Errorf("there's another register iam task runing, please retry later")
+}
+
+// RegisterIamOptions defines options to register iam
+type RegisterIamOptions struct {
+	Host    string
+	Objects []metadata.Object
+}
+
 /**
 1. 资源间的依赖关系为 Action 依赖 InstanceSelection 依赖 ResourceType，对资源的增删改操作需要按照这个依赖顺序调整
 2. ActionGroup、ResCreatorAction、CommonAction 依赖于 Action，这些资源的增删操作始终放在最后
@@ -105,16 +136,23 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 */
 
 // Register cc auth resources to iam
-func (i IAM) Register(ctx context.Context, host string, objects []metadata.Object, rid string) error {
+func (i IAM) Register(ctx context.Context, redisCli redis.Client, opt *RegisterIamOptions, rid string) error {
 	if !auth.EnableAuthorize() {
 		return nil
 	}
 
-	registeredInfo, err := i.registerSystem(ctx, host)
+	locker, err := tryLockRegister(redisCli, rid)
+	if err != nil {
+		return err
+	}
+	defer locker.Unlock()
+
+	registeredInfo, err := i.registerSystem(ctx, opt.Host)
 	if err != nil {
 		return err
 	}
 
+	objects := opt.Objects
 	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes, objects)
 	newInstSelections, updateInstSelections, removedInstSelectionIDs := i.crossCompareInstSelections(
 		registeredInfo.InstanceSelections, objects)
@@ -693,7 +731,7 @@ func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *Register
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error {
+func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, objects []metadata.Object) error {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
 
 	// validate the objects
@@ -703,6 +741,12 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, objects []metadata.Object)
 			return errors.New("sync iam instances, but object is invalid")
 		}
 	}
+
+	locker, err := tryLockRegister(redisCli, rid)
+	if err != nil {
+		return err
+	}
+	defer locker.Unlock()
 
 	fields := []SystemQueryField{FieldResourceTypes, FieldActions, FieldActionGroups, FieldInstanceSelections}
 	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
