@@ -229,6 +229,7 @@ func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*met
 			"rid: %s", obj.ObjSortNumber, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
+
 	if exist := data.Exists(common.ObjSortNumberField); !exist {
 		obj.ObjSortNumber = -1
 	}
@@ -575,7 +576,9 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	}
 
 	obj.ID = id
-	data.Set(metadata.ModelFieldID, id)
+	// remove unchangeable fields.
+	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
 
 	if err := o.isClassificationValid(kit, data); err != nil {
 		return err

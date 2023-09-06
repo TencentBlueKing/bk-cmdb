@@ -92,15 +92,15 @@ func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (in
 		return 0, nil
 	}
 
-	if model.ObjSortNumber < 0 && len(modelResult) > 0 {
-		return modelResult[0].ObjSortNumber + 1, nil
+	if model.ObjSortNumber >= 0 && model.ObjSortNumber <= modelResult[0].ObjSortNumber {
+		if err := m.objSortNumberAdd(kit, model); err != nil {
+			blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, err
+		}
+		return model.ObjSortNumber, nil
 	}
 
-	if err := m.objSortNumberAdd(kit, model); err != nil {
-		blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-	return model.ObjSortNumber, nil
+	return modelResult[0].ObjSortNumber + 1, nil
 }
 
 // objSortNumberAdd 大于等于model值的obj_sort_number字段值加一
@@ -131,14 +131,10 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	if err := m.setUpdateObjectSortNumber(kit, &data); err != nil {
+	if err := m.setUpdateObjectSortNumber(kit, &data, cond); err != nil {
 		blog.Errorf("set object sort number failed, err: %v, data: %s, rid: %s", err, data, kit.Rid)
 		return 0, err
 	}
-
-	// remove unchangeable fields.
-	data.Remove(metadata.ModelFieldObjectID)
-	data.Remove(metadata.ModelFieldID)
 
 	// 停用模型 pausedFlag 为 true
 	pausedFlag := false
@@ -202,10 +198,19 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 }
 
 // setUpdateObjectSortNumber 根据更新条件设置 obj_sort_number 值
-func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.MapStr) error {
+func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.MapStr,
+	cond universalsql.Condition) error {
+
 	if !data.Exists(metadata.ModelFieldObjSortNumber) && !data.Exists(metadata.ModelFieldObjCls) {
 		return nil
 	}
+
+	idInterface, exist := cond.ToMapStr().Get(common.BKFieldID)
+	if !exist {
+		blog.Errorf("parsing data failed, err: object id not set, condMapStr: %v, rid: %s", cond.ToMapStr(), kit.Rid)
+		return kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed)
+	}
+	data.Set(common.BKFieldID, idInterface)
 
 	object := metadata.Object{}
 	if err := data.ToStructByTag(&object, "field"); err != nil {
@@ -249,10 +254,13 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	}
 	object.ObjCls = clsResult[0].ObjCls
 
-	if err := m.objSortNumberAdd(kit, object); err != nil {
-		blog.Errorf("update object sort number failed, err: %v, ctx:%v, rid: %s", err, kit.Rid)
+	sortNum, err := m.GetModelLastNum(kit, object)
+	if err != nil {
+		blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
 		return err
 	}
+	data.Set(metadata.ModelFieldObjSortNumber, sortNum)
+
 	return nil
 }
 
