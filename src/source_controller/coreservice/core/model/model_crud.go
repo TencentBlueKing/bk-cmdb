@@ -404,7 +404,7 @@ func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID stri
 	// create table object instance collection.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
-		return fmt.Errorf("create object instance sharding table,  %+v", err)
+		return fmt.Errorf("create object instance sharding table, err: %v, rid: %s", err, kit.Rid)
 	}
 	return nil
 }
