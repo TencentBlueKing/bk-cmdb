@@ -168,7 +168,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 
 			count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(nameCond).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("failed to check the validity of the model name, filter:  %v, err: %v, rid: %s",
+				blog.Errorf("failed to check the validity of the model name, filter: %v, err: %v, rid: %s",
 					nameCond, err, kit.Rid)
 				return 0, err
 			}
@@ -310,27 +310,26 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 
 	// delete model property group
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s",
-			err.Error(), delCondMap, kit.Rid)
+		blog.Errorf("delete model attribute group error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model property attribute
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		blog.Errorf("delete model attribute error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model unique
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, delCondMap); err != nil {
-		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		blog.Errorf("delete model unique error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, delCondMap)
 	if err != nil {
-		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
+		blog.Errorf("delete model unique error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 

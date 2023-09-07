@@ -154,15 +154,16 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	locked, err := locker.Lock(redisKey, time.Second*35)
 	defer locker.Unlock()
 	if err != nil {
-		blog.ErrorJSON("create model error. get create look error. err:%s, input:%s, rid:%s", err, inputParam, kit.Rid)
+		blog.ErrorJSON("create model error. get create look error. err: %s, input: %s, rid: %s", err, inputParam,
+			kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommRedisOPErr)
 	}
 	if !locked {
-		blog.ErrorJSON("create model have same task in progress. input:%s, rid:%s", inputParam, kit.Rid)
+		blog.ErrorJSON("create model have same task in progress. input: %s, rid: %s", inputParam, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommOPInProgressErr, fmt.Sprintf("create object(%s)",
 			inputParam.Spec.ObjectID))
 	}
-	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
+	blog.V(5).Infof("create model redis look info. key: %s, bl: %v, err: %v, rid: %s", redisKey, locked, err, kit.Rid)
 
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
@@ -178,15 +179,15 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	// 因为模型名称会用于生成实例和实例关联的mongodb表名，所以需要校验模型对应的实例表和实例关联表名均不超过mongodb的长度限制
 	if !SatisfyMongoCollLimit(common.GetObjectInstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) ||
 		!SatisfyMongoCollLimit(common.GetObjectInstAsstTableName(inputParam.Spec.ObjectID, kit.SupplierAccount)) {
-		blog.Errorf("inputParam.Spec.ObjectID:%s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
+		blog.Errorf("inputParam.Spec.ObjectID: %s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(kit, inputParam.Spec.ObjCls)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s",
-			kit.Rid, inputParam.Spec.ObjCls, err)
+	if err != nil {
+		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info "+
+			"is %s", kit.Rid, inputParam.Spec.ObjCls, err)
 		return nil, err
 	}
 
@@ -201,8 +202,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	_, exists, err := m.isExists(kit, condCheckModel)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", kit.Rid, inputParam.Spec.ObjectID, err)
+	if err != nil {
+		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ",
+			kit.Rid, inputParam.Spec.ObjectID, err)
 		return nil, err
 	}
 	if exists {
@@ -236,7 +238,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	// create new model after checking base informations and sharding table operation.
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	id, err := m.save(kit, &inputParam.Spec)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", kit.Rid, inputParam.Spec,
 			err)
 		return nil, err
