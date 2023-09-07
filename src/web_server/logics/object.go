@@ -15,8 +15,6 @@ package logics
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -26,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -34,130 +31,6 @@ import (
 	"github.com/alexmullins/zip"
 	yl "github.com/ghodss/yaml"
 )
-
-// GetObjectData get object data
-func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID int64) ([]interface{}, error) {
-
-	condition := mapstr.MapStr{
-		"condition": []string{
-			objID,
-		},
-		common.BKAppIDField: modelBizID,
-	}
-
-	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectData(context.Background(), header, condition)
-	if nil != err {
-		return nil, fmt.Errorf("get object data failed, err: %v", err)
-	}
-
-	if !result.Result {
-		return nil, fmt.Errorf("get object data failed, but got err: %s", result.ErrMsg)
-	}
-
-	return result.Data[objID].Attr, nil
-
-}
-
-// GetPropertyFieldType get property field type
-func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
-	var fieldType = map[string]string{
-		"bk_property_id":         lang.Language("val_type_text"), // "文本",
-		"bk_property_name":       lang.Language("val_type_text"), // "文本",
-		"bk_property_type":       lang.Language("val_type_text"), // "文本",
-		"bk_property_group_name": lang.Language("val_type_text"), //  文本
-		"option":                 lang.Language("val_type_text"), // "文本",
-		"unit":                   lang.Language("val_type_text"), // "文本",
-		"description":            lang.Language("val_type_text"), // "文本",
-		"placeholder":            lang.Language("val_type_text"), // "文本",
-		"editable":               lang.Language("val_type_bool"), // "布尔",
-		"isrequired":             lang.Language("val_type_bool"), // "布尔",
-		"isreadonly":             lang.Language("val_type_bool"), // "布尔",
-		"isonly":                 lang.Language("val_type_bool"), // "布尔",
-		"ismultiple":             lang.Language("val_type_bool"), // "布尔",
-		"default":                lang.Language("val_type_text"), // "文本",
-	}
-	return fieldType
-}
-
-// GetPropertyFieldDesc get property field desc
-func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
-
-	var fields = map[string]string{
-		"bk_property_id":         lang.Language("web_en_name_required"),       // "英文名(必填)",
-		"bk_property_name":       lang.Language("web_bk_alias_name_required"), // "中文名(必填)",
-		"bk_property_type":       lang.Language("web_bk_data_type_required"),  // "数据类型(必填)",
-		"bk_property_group_name": lang.Language("property_group"),             //  字段分组
-		"option":                 lang.Language("property_option"),            // "数据配置",
-		"unit":                   lang.Language("unit"),                       // "单位",
-		"description":            lang.Language("desc"),                       // "描述",
-		"placeholder":            lang.Language("placeholder"),                // "提示",
-		"editable":               lang.Language("is_editable"),                // "是否可编辑",
-		"isrequired":             lang.Language("property_is_required"),       // "是否必填",
-		"isreadonly":             lang.Language("property_is_readonly"),       // "是否只读",
-		"isonly":                 lang.Language("property_is_only"),           // "字段值是否唯一",
-		"ismultiple":             lang.Language("property_is_multiple"),       // "字段是否可多选",
-		"default":                lang.Language("property_default"),           // "默认值",
-	}
-
-	return fields
-}
-
-// ConvAttr convert attribute in excel to cmdb attributes
-func ConvAttr(attrItems map[int]map[string]interface{}) {
-	for index, attr := range attrItems {
-		fieldType, ok := attr[common.BKPropertyTypeField].(string)
-		if !ok {
-			continue
-		}
-
-		val, ok := attr[common.BKOptionField].(string)
-		if ok && val == "\"\"" {
-			attrItems[index][common.BKOptionField] = ""
-		}
-
-		switch fieldType {
-		case common.FieldTypeEnum, common.FieldTypeList, common.FieldTypeEnumMulti, common.FieldTypeEnumQuote,
-			common.FieldTypeInnerTable:
-			var iOption interface{}
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
-		case common.FieldTypeInt:
-			iOption := make(map[string]interface{})
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
-
-			var iDefault int64
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
-		case common.FieldTypeFloat:
-			iOption := make(map[string]interface{})
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
-
-			var iDefault float64
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
-		case common.FieldTypeOrganization:
-			iDefault := make([]interface{}, 0)
-			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
-		}
-	}
-}
-
-func unmarshalAttrStrVal(attr map[string]interface{}, field string, value interface{}) map[string]interface{} {
-	val, ok := attr[field].(string)
-	if !ok {
-		return attr
-	}
-
-	if val == "\"\"" {
-		attr[field] = value
-		return attr
-	}
-
-	err := json.Unmarshal([]byte(val), &value)
-	if err != nil {
-		return attr
-	}
-
-	attr[field] = value
-	return attr
-}
 
 // GetObjectCount search object count
 func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond *metadata.ObjectCountParams) (

@@ -86,6 +86,54 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 		cond.Merge(condField)
 	}
 
+	cond, err := s.parseAuditCond(ctx.Kit, condition, cond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// parse operation start time and end time from string to time condition
+	timeCond, err := parseOperationTimeCondition(ctx.Kit, condition.OperationTime)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(timeCond) != 0 {
+		cond[common.BKOperationTimeField] = timeCond
+	}
+
+	// parse audit type condition by category and audit type condition
+	auditTypeCond, notMatch := parseAuditTypeCondition(ctx.Kit, condition)
+	if notMatch {
+		ctx.RespEntity(map[string]interface{}{"count": 0, "info": []interface{}{}})
+		return
+	}
+
+	if auditTypeCond != nil {
+		cond[common.BKAuditTypeField] = auditTypeCond
+	}
+
+	auditQuery := metadata.QueryCondition{
+		Condition: cond,
+		Fields:    fields,
+		Page:      query.Page,
+	}
+	blog.V(5).Infof("AuditQuery, AuditOperation auditQuery: %+v, rid: %s", auditQuery, ctx.Kit.Rid)
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(rsp.Count, rsp.Info)
+}
+
+func (s *Service) parseAuditCond(kit *rest.Kit, condition metadata.AuditQueryCondition, cond mapstr.MapStr) (
+	mapstr.MapStr, error) {
+
 	if condition.User != "" {
 		cond[common.BKUser] = condition.User
 	}
@@ -131,48 +179,10 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 			cond[common.BKOperationDetailField+"."+"src_obj_id"] = condition.ObjID
 		default:
 			blog.Errorf("unsupported resource type %s when query with object id", condition.ResourceType)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField))
-			return
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 		}
 	}
-
-	// parse operation start time and end time from string to time condition
-	timeCond, err := parseOperationTimeCondition(ctx.Kit, condition.OperationTime)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(timeCond) != 0 {
-		cond[common.BKOperationTimeField] = timeCond
-	}
-
-	// parse audit type condition by category and audit type condition
-	auditTypeCond, notMatch := parseAuditTypeCondition(ctx.Kit, condition)
-	if notMatch {
-		ctx.RespEntity(map[string]interface{}{"count": 0, "info": []interface{}{}})
-		return
-	}
-
-	if auditTypeCond != nil {
-		cond[common.BKAuditTypeField] = auditTypeCond
-	}
-
-	auditQuery := metadata.QueryCondition{
-		Condition: cond,
-		Fields:    fields,
-		Page:      query.Page,
-	}
-	blog.V(5).Infof("AuditQuery, AuditOperation auditQuery: %+v, rid: %s", auditQuery, ctx.Kit.Rid)
-
-	ctx.SetReadPreference(common.SecondaryPreferredMode)
-	rsp, err := s.Engine.CoreAPI.CoreService().Audit().SearchAuditLog(ctx.Kit.Ctx, ctx.Kit.Header, auditQuery)
-	if nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	ctx.RespEntityWithCount(rsp.Count, rsp.Info)
+	return cond, nil
 }
 
 // SearchAuditDetail search audit log detail by id
@@ -213,7 +223,8 @@ func (s *Service) SearchAuditDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(rsp.Info)
 }
 
-func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{}, error) {
+func parseOperationTimeCondition(kit *rest.Kit, operationTime metadata.OperationTimeCondition) (map[string]interface{},
+	error) {
 	timeCond := make(map[string]interface{})
 
 	if len(operationTime.Start) != 0 {

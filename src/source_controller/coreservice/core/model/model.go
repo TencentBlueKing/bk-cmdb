@@ -166,8 +166,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	blog.V(5).Infof("create model redis look info. key: %s, bl: %v, err: %v, rid: %s", redisKey, locked, err, kit.Rid)
 
 	// check the model attributes value
-	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("failed to create a new model, err: the modelID is not set, modelID: %s, rid :%s",
+			inputParam.Spec.ObjectID, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
@@ -268,9 +269,9 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	}
 
 	// check the model attributes value
-	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set",
-			kit.Rid, inputParam.Spec.ObjectID)
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("failed to create a new model, err: the modelID is not set, modelID: %s, rid :%s",
+			inputParam.Spec.ObjectID, kit.Rid)
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 

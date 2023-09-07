@@ -92,5 +92,6 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202307171520"
 
 	// v3.11.x
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.11.202309050900"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.11.202309071500"
 )

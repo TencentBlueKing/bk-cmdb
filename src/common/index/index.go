@@ -89,16 +89,19 @@ func ToDBUniqueIndex(objID string, id uint64, keys []metadata.UniqueKey,
 	keyLen := len(keys)
 	for _, key := range keys {
 		attr := propertiesIDMap[int64(key.ID)]
-		if objID == common.BKInnerObjIDHost && attr.PropertyID == common.BKCloudIDField {
-			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
-			attr.PropertyType = common.FieldTypeInt
-		}
-		if objID == common.BKInnerObjIDHost &&
-			(attr.PropertyID == common.BKHostInnerIPField || attr.PropertyID == common.BKHostOuterIPField ||
-				attr.PropertyID == common.BKOperatorField || attr.PropertyID == common.BKBakOperatorField ||
-				attr.PropertyID == common.BKHostInnerIPv6Field || attr.PropertyID == common.BKHostOuterIPv6Field) {
-			// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
-			attr.PropertyType = common.FieldTypeList
+
+		if objID == common.BKInnerObjIDHost {
+			if attr.PropertyID == common.BKCloudIDField {
+				// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未foreignkey 特殊的类型
+				attr.PropertyType = common.FieldTypeInt
+			}
+
+			for _, field := range metadata.HostSpecialFields {
+				if attr.PropertyID == field {
+					// NOTICE: 2021年03月12日 特殊逻辑。 现在主机的字段中类型未innerIP,OuterIP 特殊的类型
+					attr.PropertyType = common.FieldTypeList
+				}
+			}
 		}
 
 		if !ValidateCCFieldType(attr.PropertyType, keyLen) {

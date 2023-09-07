@@ -203,6 +203,17 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 			blog.Errorf("delete module failed, delete operation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
+
+		// 根据模型id删除该模型的主机应用规则
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			ModuleIDs: []int64{moduleID},
+		}
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, deleteRuleOption); err != nil {
+			blog.Errorf("delete host apply rule failed, err: %v, bizID: %d, moduleID: %d, rid: %s", err, bizID,
+				moduleID, ctx.Kit.Rid)
+			return err
+		}
 		return nil
 	})
 
@@ -210,7 +221,6 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 
