@@ -246,31 +246,38 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 // DeleteHostApplyRule delete host apply rule by condition, bizID maybe 0
 func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
 	option metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
-	if len(option.RuleIDs) == 0 {
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_apply_rule_ids")
+
+	if len(option.RuleIDs) == 0 && len(option.ModuleIDs) == 0 && len(option.ServiceTemplateIDs) == 0 {
+		blog.Errorf("HTTP request body data is not set failed, err: params is empty, option: %v, rid: %s",
+			option, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommHTTPBodyEmpty)
 	}
+
 	filter := map[string]interface{}{
 		common.BKOwnerIDField: kit.SupplierAccount,
-		common.BKFieldID: map[string]interface{}{
-			common.BKDBIN: option.RuleIDs,
-		},
 	}
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
+	}
+	if len(option.RuleIDs) > 0 {
+		filter[common.BKFieldID] = map[string]interface{}{
+			common.BKDBIN: option.RuleIDs,
+		}
 	}
 	if len(option.ModuleIDs) > 0 {
 		filter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
-
 	if len(option.ServiceTemplateIDs) > 0 {
 		filter[common.BKServiceTemplateIDField] = map[string]interface{}{
 			common.BKDBIN: option.ServiceTemplateIDs,
 		}
 	}
+
 	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, filter); err != nil {
-		blog.Errorf("DeleteHostApplyRule failed, db remove failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("delete host apply rules failed, db remove failed, err: %v, filter: %v, rid: %s",
+			err, filter, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
 	return nil

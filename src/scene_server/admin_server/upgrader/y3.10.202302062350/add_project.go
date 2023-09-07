@@ -45,7 +45,7 @@ var dataRows = map[string]*attribute{
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeInt,
 		Creator:       common.CCSystemOperatorUserName,
-		Option:        metadata.IntOption{},
+		Option:        metadata.PrevIntOption{},
 	},
 	common.BKProjectIDField: {
 		ObjectID:      common.BKInnerObjIDProject,

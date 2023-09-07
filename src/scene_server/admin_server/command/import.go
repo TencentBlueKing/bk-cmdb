@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
@@ -255,27 +254,32 @@ func (ibt *importerBizTopo) filterBKTopoServiceTemplate(ctx context.Context) err
 	for idx, srvTemp := range ibt.importJSON.ServiceTemplateArr {
 		for _, procName := range srvTemp.BindProcess {
 			if _, ok := ibt.procProcNameInfoMap[procName]; !ok {
-				return fmt.Errorf("service template  index %d, name:%s, bind process name[%s] not found", idx, srvTemp.Name, procName)
+				return fmt.Errorf("service template  index %d, name:%s, bind process name[%s] not found", idx,
+					srvTemp.Name, procName)
 			}
 		}
 		for _, procUUID := range srvTemp.BindProcessUUID {
 			if _, ok := ibt.procUUIDInfoMap[procUUID]; !ok {
-				return fmt.Errorf("service template  index %d, name:%s, bind process uuid[%s] not found", idx, srvTemp.Name, procUUID)
+				return fmt.Errorf("service template  index %d, name:%s, bind process uuid[%s] not found", idx,
+					srvTemp.Name, procUUID)
 			}
 		}
 		if len(srvTemp.ServiceCategoryName) == 0 {
 			srvTemp.ServiceCategoryName = []string{common.DefaultServiceCategoryName, common.DefaultServiceCategoryName}
 		}
 		if len(srvTemp.ServiceCategoryName) != 2 {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category must be tow level. not %d", idx, srvTemp.Name, len(srvTemp.ServiceCategoryName))
+			return fmt.Errorf("ervice template  index %d, name:%s, service category must be tow level. not %d", idx,
+				srvTemp.Name, len(srvTemp.ServiceCategoryName))
 		}
 		srvTempL1ID, ok := ibt.serviceCategoryL1CacheInfo[srvTemp.ServiceCategoryName[0]]
 		if !ok {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category  level1 name[%s] not found", idx, srvTemp.Name, srvTemp.ServiceCategoryName[0])
+			return fmt.Errorf("ervice template  index %d, name:%s, service category  level1 name[%s] not found", idx,
+				srvTemp.Name, srvTemp.ServiceCategoryName[0])
 		}
 		srvTempL2ID, ok := ibt.serviceCategoryL2CacheInfo[srvTempL1ID][srvTemp.ServiceCategoryName[1]]
 		if !ok {
-			return fmt.Errorf("ervice template  index %d, name:%s, service category level2 name[%s] not found", idx, srvTemp.Name, srvTemp.ServiceCategoryName[1])
+			return fmt.Errorf("ervice template  index %d, name:%s, service category level2 name[%s] not found", idx,
+				srvTemp.Name, srvTemp.ServiceCategoryName[1])
 		}
 
 		srvTemp.ServiceCategoryID = srvTempL2ID
@@ -398,7 +402,8 @@ func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int
 		})
 
 		bindProcessLen := len(srvTemp.BindProcess)
-		nextProcTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameProcessTemplate, bindProcessLen+len(srvTemp.BindProcessUUID))
+		nextProcTempIDs, err := ibt.db.NextSequences(ctx, common.BKTableNameProcessTemplate,
+			bindProcessLen+len(srvTemp.BindProcessUUID))
 		if err != nil {
 			return fmt.Errorf("init service template, get next process template ids error. err: %s", err.Error())
 		}
@@ -518,7 +523,8 @@ func (ibt *importerBizTopo) cacheServiceCategory(ctx context.Context, bizID int6
 	searchBuindInCond := condition.CreateCondition()
 	searchBuindInCond.Field("is_built_in").Eq(true)
 	serviceCategoryArr := make([]metadata.ServiceCategory, 0)
-	err := ibt.db.Table(common.BKTableNameServiceCategory).Find(searchBuindInCond.ToMapStr()).All(ctx, &serviceCategoryArr)
+	err := ibt.db.Table(common.BKTableNameServiceCategory).Find(searchBuindInCond.ToMapStr()).All(ctx,
+		&serviceCategoryArr)
 	if err != nil {
 		return fmt.Errorf("find build-in service category error. err:%s", err.Error())
 	}
@@ -555,224 +561,51 @@ func (ibt *importerBizTopo) cacheServiceCategory(ctx context.Context, bizID int6
 	return nil
 }
 
+var processPropertyOp map[common.ProcessPropertyName]processPropertyOpF
+
+func init() {
+	processPropertyOp = make(map[common.ProcessPropertyName]processPropertyOpF)
+
+	processPropertyOp[common.ProcNumName] = procNumOpFunc()
+	processPropertyOp[common.StopCmdName] = stopCmdOpFunc()
+	processPropertyOp[common.RestartCmdName] = restartCmdOpFunc()
+	processPropertyOp[common.FaceStopCmdName] = faceStopCmdOpFunc()
+	processPropertyOp[common.BkFuncNameName] = bkFuncNameOpFunc()
+	processPropertyOp[common.WorkPathName] = workPathOpFunc()
+	processPropertyOp[common.BindIpName] = bindIpOpFunc()
+	processPropertyOp[common.PriorityName] = priorityOpFunc()
+	processPropertyOp[common.ReloadCmdName] = reloadCmdOpFunc()
+	processPropertyOp[common.BkProcessName] = bkProcessNameOpFunc()
+	processPropertyOp[common.PortName] = portOpFunc()
+	processPropertyOp[common.PidFileName] = pidFileOpFunc()
+	processPropertyOp[common.AutoStartName] = autoStartOpFunc()
+	processPropertyOp[common.BkStartCheckSecsName] = bkStartCheckSecsOpFunc()
+	processPropertyOp[common.StartCmdName] = startCmdOpFunc()
+	processPropertyOp[common.PropertyUserName] = userOpFunc()
+	processPropertyOp[common.TimeoutName] = timeoutOpFunc()
+	processPropertyOp[common.ProtocolName] = protocolOpFunc()
+	processPropertyOp[common.DescriptionName] = descriptionOpFunc()
+	processPropertyOp[common.BkStartParamRegexName] = bkStartParamRegexOpFunc()
+}
+
 func convProcTemplateProperty(ctx context.Context, proc map[string]interface{}) (*metadata.ProcessProperty, error) {
 	processProperty := &metadata.ProcessProperty{}
-	blTrue := true
 	for key, val := range proc {
-		switch key {
-		case "proc_num":
-			procNum, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.ProcNum.Value = &procNum
-			processProperty.ProcNum.AsDefaultValue = &blTrue
-			if err := processProperty.ProcNum.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "stop_cmd":
-			stopCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.StopCmd.Value = &stopCmd
-			processProperty.StopCmd.AsDefaultValue = &blTrue
-			if err := processProperty.StopCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "restart_cmd":
-			restartCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.RestartCmd.Value = &restartCmd
-			processProperty.RestartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.RestartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "face_stop_cmd":
-			restartCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.RestartCmd.Value = &restartCmd
-			processProperty.RestartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.RestartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_func_name":
-			funcName, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.FuncName.Value = &funcName
-			processProperty.FuncName.AsDefaultValue = &blTrue
-			if err := processProperty.FuncName.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "work_path":
-			workPath, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.WorkPath.Value = &workPath
-			processProperty.WorkPath.AsDefaultValue = &blTrue
-			if err := processProperty.WorkPath.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bind_ip":
-			/* bindIP, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			bindIPAlias := metadata.SocketBindType(bindIP)
-			processProperty.BindIP.Value = &bindIPAlias
-			processProperty.BindIP.AsDefaultValue = &blTrue
-			if err := processProperty.BindIP.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			} */
-		case "priority":
-			priority, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.Priority.Value = &priority
-			processProperty.Priority.AsDefaultValue = &blTrue
-			if err := processProperty.Priority.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "reload_cmd":
-			reloadCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.ReloadCmd.Value = &reloadCmd
-			processProperty.ReloadCmd.AsDefaultValue = &blTrue
-			if err := processProperty.ReloadCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_process_name":
-			procName, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.ProcessName.Value = &procName
-			processProperty.ProcessName.AsDefaultValue = &blTrue
-			if err := processProperty.ProcessName.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "port":
-		/* 	port, ok := val.(string)
-		if !ok {
-			return nil, fmt.Errorf("%s not string. val:%s", key, val)
-		}
-		processProperty.Port.Value = &port
-		processProperty.Port.AsDefaultValue = &blTrue
-		if err := processProperty.Port.Validate(); err != nil {
-			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-		} */
-		case "pid_file":
-			pidFile, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.PidFile.Value = &pidFile
-			processProperty.PidFile.AsDefaultValue = &blTrue
-			if err := processProperty.PidFile.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "auto_start":
-			autoStart, ok := val.(bool)
-			if !ok {
-				return nil, fmt.Errorf("%s not boolean. val:%s", key, val)
-			}
-			processProperty.AutoStart.Value = &autoStart
-			processProperty.AutoStart.AsDefaultValue = &blTrue
-			if err := processProperty.AutoStart.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_start_check_secs":
-			startCheckSecs, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.StartCheckSecs.Value = &startCheckSecs
-			processProperty.StartCheckSecs.AsDefaultValue = &blTrue
-			if err := processProperty.StartCheckSecs.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "start_cmd":
-			startCmd, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.StartCmd.Value = &startCmd
-			processProperty.StartCmd.AsDefaultValue = &blTrue
-			if err := processProperty.StartCmd.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "user":
-			user, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.User.Value = &user
-			processProperty.User.AsDefaultValue = &blTrue
-			if err := processProperty.User.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "timeout":
-			timeout, err := util.GetInt64ByInterface(val)
-			if err != nil {
-				return nil, fmt.Errorf("%s not integer. val:%s", key, val)
-			}
-			processProperty.TimeoutSeconds.Value = &timeout
-			processProperty.TimeoutSeconds.AsDefaultValue = &blTrue
-			if err := processProperty.TimeoutSeconds.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "protocol":
-		/* 	protocol, ok := val.(string)
-		if !ok {
-			return nil, fmt.Errorf("%s not string. val:%s", key, val)
-		}
-		protocalAlias := metadata.ProtocolType(protocol)
-		processProperty.Protocol.Value = &protocalAlias
-		processProperty.Protocol.AsDefaultValue = &blTrue
-		if err := processProperty.Protocol.Validate(); err != nil {
-			return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-		} */
-		case "description":
-			desc, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.Description.Value = &desc
-			processProperty.Description.AsDefaultValue = &blTrue
-			if err := processProperty.Description.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		case "bk_start_param_regex":
-			regex, ok := val.(string)
-			if !ok {
-				return nil, fmt.Errorf("%s not string. val:%s", key, val)
-			}
-			processProperty.StartParamRegex.Value = &regex
-			processProperty.StartParamRegex.AsDefaultValue = &blTrue
-			if err := processProperty.StartParamRegex.Validate(); err != nil {
-				return nil, fmt.Errorf("%s illegal. val:%s. err:%s", key, val, err.Error())
-			}
-		default:
-			return nil, fmt.Errorf("%s illegal. val:%s", key, val)
+		op, exist := processPropertyOp[common.ProcessPropertyName(key)]
+		if !exist {
+			return nil, fmt.Errorf("%s illegal. val: %s", key, val)
 		}
 
+		if err := op(processProperty, key, val); err != nil {
+			return nil, err
+		}
 	}
 
 	if field, err := processProperty.Validate(); err != nil {
-		return nil, fmt.Errorf("process illegal. field:%s, err:%s", field, err.Error())
+		return nil, fmt.Errorf("process illegal. field: %s, err: %s", field, err.Error())
 	}
-	return processProperty, nil
 
+	return processProperty, nil
 }
 
 // getSetParentID 获取set的parent id， 多个层级这个值不是业务id
@@ -783,7 +616,8 @@ func getSetParentID(ctx context.Context, bizID int64, db dal.DB) (int64, error) 
 	searchCond.Field(common.BKDefaultField).Eq(common.NormalModuleFlag)
 
 	result := make(map[string]int64, 0)
-	err := db.Table(common.BKTableNameBaseSet).Find(searchCond.ToMapStr()).Fields(common.BKParentIDField).One(ctx, &result)
+	err := db.Table(common.BKTableNameBaseSet).Find(searchCond.ToMapStr()).Fields(common.BKParentIDField).One(ctx,
+		&result)
 	if err != nil {
 		return 0, fmt.Errorf("find set parent id error. err:%s", err.Error())
 	}

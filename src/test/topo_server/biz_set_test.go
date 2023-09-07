@@ -34,7 +34,7 @@ var _ = Describe("business set test", func() {
 
 	var sampleBizSetID, bizID3 int64
 	It("prepare environment, create a biz set and biz in it with topo for searching biz and topo in biz set", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "biz_set",
