@@ -42,7 +42,9 @@
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>',
             fullTextSearch: <%= htmlWebpackPlugin.options.config.FULL_TEXT_SEARCH || 'off' %>,
             helpDocUrl: <%= htmlWebpackPlugin.options.config.HELP_DOC_URL || null %>,
-            disableOperationStatistic: <%= htmlWebpackPlugin.options.config.DISABLE_OPERATION_STATISTIC || false %>
+            disableOperationStatistic: <%= htmlWebpackPlugin.options.config.DISABLE_OPERATION_STATISTIC || false %>,
+            cookieDomain: <%= htmlWebpackPlugin.options.config.COOKIE_DOMAIN %>,
+            desktopUrl: <%= htmlWebpackPlugin.options.config.DESKTOP_URL %>
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,

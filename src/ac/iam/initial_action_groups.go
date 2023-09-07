@@ -355,7 +355,7 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "云区域",
+					Name:   "管控区域",
 					NameEn: "Cloud Area",
 					Actions: []ActionWithID{
 						{
@@ -444,15 +444,9 @@ func genModelManageActionGroups() []ActionGroup {
 					Name:   "模型分组",
 					NameEn: "Model Group",
 					Actions: []ActionWithID{
-						{
-							ID: CreateModelGroup,
-						},
-						{
-							ID: EditModelGroup,
-						},
-						{
-							ID: DeleteModelGroup,
-						},
+						{ID: CreateModelGroup},
+						{ID: EditModelGroup},
+						{ID: DeleteModelGroup},
 					},
 				},
 				{
@@ -492,15 +486,19 @@ func genModelManageActionGroups() []ActionGroup {
 					Name:   "关联类型",
 					NameEn: "Association Type",
 					Actions: []ActionWithID{
-						{
-							ID: CreateAssociationType,
-						},
-						{
-							ID: EditAssociationType,
-						},
-						{
-							ID: DeleteAssociationType,
-						},
+						{ID: CreateAssociationType},
+						{ID: EditAssociationType},
+						{ID: DeleteAssociationType},
+					},
+				},
+				{
+					Name:   "字段组合模板",
+					NameEn: "Field Grouping Template",
+					Actions: []ActionWithID{
+						{ID: CreateFieldGroupingTemplate},
+						{ID: ViewFieldGroupingTemplate},
+						{ID: EditFieldGroupingTemplate},
+						{ID: DeleteFieldGroupingTemplate},
 					},
 				},
 			},

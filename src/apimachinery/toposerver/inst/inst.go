@@ -22,7 +22,8 @@ import (
 
 // CreateInst TODO
 // TODO: config this body data struct.
-func (t *instanceClient) CreateInst(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
+func (t *instanceClient) CreateInst(ctx context.Context, objID string, h http.Header,
+	dat interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/create/instance/object/%s"
 
@@ -53,7 +54,8 @@ func (t *instanceClient) CreateManyCommInst(ctx context.Context, objID string, h
 }
 
 // DeleteInst TODO
-func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID int64,
+	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/instance/object/%s/inst/%d"
 
@@ -68,7 +70,8 @@ func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID in
 }
 
 // UpdateInst TODO
-func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID int64, h http.Header,
+	dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/instance/object/%s/inst/%d"
 
@@ -83,7 +86,8 @@ func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID in
 }
 
 // SelectInsts TODO
-func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header,
+	s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/inst/search/%s/%s"
 
@@ -98,7 +102,8 @@ func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID 
 }
 
 // SelectInstsAndAsstDetail TODO
-func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, objID string, h http.Header,
+	s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/find/instance/object/%s"
 
@@ -113,7 +118,8 @@ func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, objID str
 }
 
 // InstSearch TODO
-func (t *instanceClient) InstSearch(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) InstSearch(ctx context.Context, objID string, h http.Header,
+	s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/find/instance/object/%s"
 
@@ -128,7 +134,8 @@ func (t *instanceClient) InstSearch(ctx context.Context, objID string, h http.He
 }
 
 // SelectInstsByAssociation TODO
-func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, objID string, h http.Header,
+	p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/find/instassociation/object/%s"
 
@@ -143,7 +150,8 @@ func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, objID str
 }
 
 // SelectInst TODO
-func (t *instanceClient) SelectInst(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SelectInst(ctx context.Context, objID string, instID int64, h http.Header,
+	p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/find/instdetail/object/%s/inst/%d"
 
@@ -158,7 +166,8 @@ func (t *instanceClient) SelectInst(ctx context.Context, objID string, instID in
 }
 
 // SelectTopo TODO
-func (t *instanceClient) SelectTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error) {
+func (t *instanceClient) SelectTopo(ctx context.Context, objID string, instID int64, h http.Header,
+	p *metadata.SearchParams) (resp *metadata.SearchTopoResult, err error) {
 	resp = new(metadata.SearchTopoResult)
 	subPath := "/find/insttopo/object/%s/inst/%d"
 
@@ -173,7 +182,8 @@ func (t *instanceClient) SelectTopo(ctx context.Context, objID string, instID in
 }
 
 // SelectAssociationTopo TODO
-func (t *instanceClient) SelectAssociationTopo(ctx context.Context, objID string, instID int64, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error) {
+func (t *instanceClient) SelectAssociationTopo(ctx context.Context, objID string, instID int64, h http.Header,
+	p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error) {
 	resp = new(metadata.SearchAssociationTopoResult)
 	subPath := "/find/instassttopo/object/%s/inst/%d"
 
@@ -188,7 +198,8 @@ func (t *instanceClient) SelectAssociationTopo(ctx context.Context, objID string
 }
 
 // SearchInstsNames TODO
-func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header, s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error) {
+func (t *instanceClient) SearchInstsNames(ctx context.Context, h http.Header,
+	s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error) {
 	resp = new(metadata.ArrayResponse)
 	subPath := "/findmany/object/instances/names"
 

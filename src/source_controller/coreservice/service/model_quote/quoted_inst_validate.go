@@ -176,7 +176,7 @@ func getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{
 	case common.FieldTypeEnumMulti:
 		return make([]interface{}, 0)
 	case common.FieldTypeInt, common.FieldTypeFloat:
-		return 0
+		return nil
 	case common.FieldTypeBool:
 		return false
 	}

@@ -26,7 +26,6 @@
           </i18n>
         </div>
       </bk-exception>
-
     </div>
     <div class="content" v-else-if="type === 'permission'">
       <slot name="permission">
@@ -101,7 +100,7 @@
     },
     data() {
       return {
-        permission: this.stuff.payload.permission
+        permission: this.stuff.payload?.permission
       }
     },
     computed: {
@@ -124,7 +123,7 @@
     watch: {
       stuff: {
         handler(value) {
-          this.permission = value.payload.permission
+          this.permission = value.payload?.permission
         },
         deep: true
       }
@@ -147,7 +146,7 @@
             font-size: 14px;
             height: auto;
         }
-        .table-tips{
+        .table-tips {
           margin-top: 15px;
         }
     }

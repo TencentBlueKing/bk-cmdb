@@ -53,7 +53,7 @@ var dataRows = map[string]*metadata.Attribute{
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeInt,
 		Creator:       common.CCSystemOperatorUserName,
-		Option:        metadata.IntOption{},
+		Option:        metadata.PrevIntOption{},
 	},
 	common.BKBizSetDescField: {
 		ObjectID:      common.BKInnerObjIDBizSet,
@@ -322,7 +322,8 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 	filter := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDBizSet}
 	attrs := make([]metadata.Attribute, 0)
 	// 判断是否有bizSet的对象属性表，如果没有需要初始化
-	if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField, common.BKPropertyNameField,
+	if err := db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKPropertyIDField,
+		common.BKPropertyNameField,
 		common.CreatorField).All(ctx, &attrs); err != nil && !db.IsNotFoundError(err) {
 		blog.Errorf("find object attribute describe fail, err: %v", err)
 		return err

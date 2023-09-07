@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package app start auth server
 package app
 
 import (

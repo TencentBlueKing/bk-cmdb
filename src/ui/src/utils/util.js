@@ -93,3 +93,16 @@ export const escapeRegexChar = (str) => {
   const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
   return str.replace(escapeCharRE, '\\$1')
 }
+
+/**
+ * @param {*} event 事件对象
+ * @param {*} cb 回调
+ * @param {*} keyCode 调用回调的键值数组 默认为回车键
+ */
+export const keyupCallMethod = (event, cb, keyCode = [13]) => {
+  if (!event || typeof cb !== 'function' || !keyCode instanceof Array) return
+  const { keyCode: nowKey } = event
+  if (keyCode.includes(nowKey)) {
+    cb?.()
+  }
+}

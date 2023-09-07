@@ -5,5 +5,9 @@
   "process_placeholder_bk_func_name": "The binary name of the program,</br> such as the binary name of zookeeper</br> is java, then fill in java.",
   "process_placeholder_bk_func_id": "Numeric field, a shortcut reference of the process",
   "process_placeholder_bk_port_enable": "Whether to enbale the port, the default value is true",
+  "process_placeholder_work_path": "The working path for performing operations such as process start and stop",
+  "process_placeholder_bk_start_check_secs": "After executing the start command, how long to wait to check the status of the PID alive",
+  "process_placeholder_priority": "Batch start processes are sorted according to priority from small to large, and stop processes are operated in reverse order. Priority value range supports input [ -100 ~ 10000 ]",
+  "process_placeholder_timeout": "The timeout period for executing commands",
   "": ""
 }

@@ -690,6 +690,7 @@
       },
       handleClearFilter() {
         FilterStore.resetAll()
+        FilterStore.setActiveCollection(null)
         this.table.stuff.type = 'default'
       }
     }

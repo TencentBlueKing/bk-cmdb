@@ -35,7 +35,8 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 		tlsConfig.InsecureSkipVerify = esConf.TLSClientConfig.InsecureSkipVerify
 		if !tlsConfig.InsecureSkipVerify && len(esConf.TLSClientConfig.CAFile) != 0 && len(esConf.TLSClientConfig.CertFile) != 0 && len(esConf.TLSClientConfig.KeyFile) != 0 {
 			var err error
-			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile, esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
+			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile,
+				esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
 			if err != nil {
 				return nil, err
 			}

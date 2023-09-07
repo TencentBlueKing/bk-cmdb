@@ -24,7 +24,8 @@ import (
 )
 
 // AddLabel TODO
-func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelAddOption) errors.CCErrorCoder {
+func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string,
+	option selector.LabelAddOption) errors.CCErrorCoder {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ret := new(metadata.BaseResp)
 	subPath := "/createmany/labels"
@@ -54,7 +55,8 @@ func (l *label) AddLabel(ctx context.Context, h http.Header, tableName string, o
 }
 
 // RemoveLabel TODO
-func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
+func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string,
+	option selector.LabelRemoveOption) errors.CCErrorCoder {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ret := new(metadata.BaseResp)
 	subPath := "/deletemany/labels"

@@ -29,7 +29,8 @@ type instanceAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of instance.
-func (i *instanceAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, objID string, data []mapstr.MapStr) (
+func (i *instanceAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, objID string,
+	data []mapstr.MapStr) (
 	[]metadata.AuditLog, error) {
 	return i.generateAuditLog(parameter, objID, data)
 }
@@ -45,7 +46,8 @@ func (i *instanceAuditLog) GenerateAuditLogByCondGetData(parameter *generateAudi
 	return i.generateAuditLog(parameter, objID, data)
 }
 
-func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParameter, objID string, data []mapstr.MapStr) (
+func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParameter, objID string,
+	data []mapstr.MapStr) (
 	[]metadata.AuditLog, error) {
 	auditLogs := make([]metadata.AuditLog, len(data))
 	kit := parameter.kit
@@ -59,7 +61,8 @@ func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParame
 		id, err := util.GetInt64ByInterface(inst[metadata.GetInstIDFieldByObjID(objID)])
 		if err != nil {
 			blog.ErrorJSON("failed to get inst id, error info is %s, inst: %s, rid: %s", err.Error(), inst, kit.Rid)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, metadata.GetInstIDFieldByObjID(objID), "int", err.Error())
+			return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID,
+				metadata.GetInstIDFieldByObjID(objID), "int", err.Error())
 		}
 
 		var bizID int64
@@ -67,7 +70,8 @@ func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParame
 			bizID, err = util.GetInt64ByInterface(inst[common.BKAppIDField])
 			if err != nil {
 				blog.ErrorJSON("failed to get biz id, error info is %s, inst: %s, rid: %s", err.Error(), inst, kit.Rid)
-				return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, common.BKAppIDField, "int", err.Error())
+				return nil, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, objID, common.BKAppIDField,
+					"int", err.Error())
 			}
 		}
 

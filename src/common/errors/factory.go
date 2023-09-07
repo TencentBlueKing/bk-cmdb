@@ -22,7 +22,7 @@ func NewFactory(dir string) (CCErrorIf, error) {
 	tmp := &ccErrorHelper{errCode: make(map[string]ErrorCode)}
 
 	errcode, err := LoadErrorResourceFromDir(dir)
-	if err !=nil  {
+	if err != nil {
 		// blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}

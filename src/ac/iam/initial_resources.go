@@ -27,7 +27,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	BizSet:                   "业务集",
 	Project:                  "项目",
 	BusinessForHostTrans:     "业务主机",
-	SysCloudArea:             "云区域",
+	SysCloudArea:             "管控区域",
 	SysResourcePoolDirectory: "主机池目录",
 	SysHostRscPoolDirectory:  "主机池主机",
 	SysModelGroup:            "模型分组",
@@ -53,6 +53,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	BizSetTemplate:            "集群模板",
 	BizTopology:               "业务拓扑",
 	BizProcessServiceTemplate: "服务模板",
+	FieldGroupingTemplate:     "字段组合模板",
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
@@ -293,7 +294,7 @@ func genPublicResources() []ResourceType {
 			ID:            SysCloudArea,
 			Name:          ResourceTypeIDMap[SysCloudArea],
 			NameEn:        "Cloud Area",
-			Description:   "云区域",
+			Description:   "管控区域",
 			DescriptionEn: "cloud area",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
@@ -475,6 +476,17 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Kube Workload Event",
 			Description:   "容器工作负载事件",
 			DescriptionEn: "kube workload event",
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            FieldGroupingTemplate,
+			Name:          ResourceTypeIDMap[FieldGroupingTemplate],
+			NameEn:        "Field Grouping Template",
+			Description:   "字段组合模板",
+			DescriptionEn: "Field Grouping Template",
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},

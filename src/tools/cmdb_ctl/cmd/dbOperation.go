@@ -96,10 +96,13 @@ func NewDbOperationCommand() *cobra.Command {
 		},
 	}
 	findCmd.Flags().StringVar(&conf.findParam.colName, "collection", "", "collection name,the param must be assigned")
-	findCmd.Flags().StringVar(&conf.findParam.condition, "condition", "", "query conditions ,the parameter must be json format string")
-	findCmd.Flags().StringVar(&conf.findParam.resfilter, "resfilter", "", "display the required fields ,the fieds link with comma")
+	findCmd.Flags().StringVar(&conf.findParam.condition, "condition", "",
+		"query conditions ,the parameter must be json format string")
+	findCmd.Flags().StringVar(&conf.findParam.resfilter, "resfilter", "",
+		"display the required fields ,the fieds link with comma")
 	findCmd.Flags().Int32Var(&conf.findParam.num, "num", 5, "numbers of result to show ,default num is 5 ")
-	findCmd.Flags().BoolVar(&conf.findParam.bPretty, "pretty", false, "query result are displayed in json pretty format")
+	findCmd.Flags().BoolVar(&conf.findParam.bPretty, "pretty", false,
+		"query result are displayed in json pretty format")
 
 	findCmds = append(findCmds, findCmd)
 	for _, fCmd := range findCmds {
@@ -116,7 +119,8 @@ func NewDbOperationCommand() *cobra.Command {
 	}
 
 	delCmd.Flags().StringVar(&conf.delParam.colName, "collection", "", "collection name,the parameter must be assigned")
-	delCmd.Flags().StringVar(&conf.delParam.condition, "condition", "", "conditions for deletion,the parameter must be json format string")
+	delCmd.Flags().StringVar(&conf.delParam.condition, "condition", "",
+		"conditions for deletion,the parameter must be json format string")
 	delCmds = append(delCmds, delCmd)
 	for _, dCmd := range delCmds {
 		cmd.AddCommand(dCmd)

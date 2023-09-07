@@ -44,7 +44,7 @@ func fixesProcessPriorityPattern(ctx context.Context, db dal.RDB, conf *upgrader
 		common.BKPropertyIDField: "priority",
 	}
 	data := map[string]interface{}{
-		"option": metadata.IntOption{Min: "1", Max: "10000"},
+		"option": metadata.PrevIntOption{Min: "1", Max: "10000"},
 	}
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {

@@ -9,7 +9,8 @@ import (
 )
 
 // CreateServiceCategory TODO
-func (s *service) CreateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (s *service) CreateServiceCategory(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/proc/service_category"
 
@@ -24,7 +25,8 @@ func (s *service) CreateServiceCategory(ctx context.Context, h http.Header, data
 }
 
 // DeleteServiceCategory TODO
-func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (s *service) DeleteServiceCategory(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/proc/service_category"
 
@@ -64,7 +66,8 @@ func (s *service) SearchServiceCategory(ctx context.Context, h http.Header, opt 
 }
 
 // UpdateServiceCategory TODO
-func (s *service) UpdateServiceCategory(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (s *service) UpdateServiceCategory(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/service_category"
 

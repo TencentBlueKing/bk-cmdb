@@ -39,7 +39,8 @@ const (
 // parseFilterToMongo TODO
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
-func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy, resourceType iam.TypeID) (map[string]interface{}, error) {
+func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy,
+	resourceType iam.TypeID) (map[string]interface{}, error) {
 	if filter == nil || filter.Operator == "" {
 		return nil, nil
 	}
@@ -55,7 +56,8 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 	if op == operator.And || op == operator.Or {
 		content, ok := filter.Element.(*operator.Content)
 		if !ok {
-			return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(filter.Element).String())
+			return nil, fmt.Errorf("invalid policy with unknown element type: %s",
+				reflect.TypeOf(filter.Element).String())
 		}
 		if content == nil || len(content.Content) == 0 {
 			return nil, fmt.Errorf("filter op %s content can't be empty", op)
@@ -100,6 +102,12 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 	if attribute == sdktypes.IamPathKey {
 		return lgc.parseIamPathToMongo(ctx, header, resourceType, op, value)
 	}
+
+	return lgc.parseOtherFilterCond(op, value, attribute)
+}
+
+func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{}, attribute string) (
+	map[string]interface{}, error) {
 
 	switch op {
 	case operator.Equal, operator.NEqual:
@@ -164,12 +172,60 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 	}
 }
 
-// parseIamPathToMongo TODO
-// parse iam path filter expression to corresponding resource type's mongo query condition
-func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.TypeID, op operator.OperType, value interface{}) (map[string]interface{}, error) {
+// parseIamPathToMongo parse iam path filter expression to corresponding resource type's mongo query condition
+func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.TypeID,
+	op operator.OperType, value interface{}) (map[string]interface{}, error) {
+	cond, err := parseIamPathCond(op, value)
+	if err != nil {
+		return nil, err
+	}
+
+	// resources except for host has their parent id stored in their instance table(currently all resources only
+	// have one layer TODO support multiple layers if needed)
+	if resourceType != iam.Host {
+		return cond, nil
+	}
+
+	// get host ids by path condition from host module config table
+	param := metadata.PullResourceParam{
+		Collection: common.BKTableNameModuleHostConfig,
+		Condition:  cond,
+		Fields:     []string{common.BKHostIDField},
+		Limit:      common.BKNoLimit,
+	}
+	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
+	if err != nil {
+		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
+		return nil, err
+	}
+	if !res.Result {
+		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code,
+			res.ErrMsg, param)
+		return nil, res.Error()
+	}
+	if len(res.Data.Info) == 0 {
+		return nil, nil
+	}
+	hostIDs := make([]int64, len(res.Data.Info))
+	for index, data := range res.Data.Info {
+		hostID, err := util.GetInt64ByInterface(data[common.BKHostIDField])
+		if err != nil {
+			return nil, err
+		}
+		hostIDs[index] = hostID
+	}
+	return map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: hostIDs,
+		},
+	}, nil
+}
+
+func parseIamPathCond(op operator.OperType, value interface{}) (map[string]interface{}, error) {
 	// generate path condition
 	cond := make(map[string]interface{}, 0)
 	var err error
+
 	switch op {
 	case operator.Equal, operator.Contains, operator.StartWith, operator.EndWith:
 		valueStr, ok := value.(string)
@@ -232,47 +288,10 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 		return nil, fmt.Errorf("filter op %s not supported", op)
 	}
 
-	// resources except for host has their parent id stored in their instance table(currently all resources only have one layer TODO support multiple layers if needed)
-	if resourceType != iam.Host {
-		return cond, nil
-	}
-
-	// get host ids by path condition from host module config table
-	param := metadata.PullResourceParam{
-		Collection: common.BKTableNameModuleHostConfig,
-		Condition:  cond,
-		Fields:     []string{common.BKHostIDField},
-		Limit:      common.BKNoLimit,
-	}
-	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
-	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
-		return nil, err
-	}
-	if !res.Result {
-		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code, res.ErrMsg, param)
-		return nil, res.Error()
-	}
-	if len(res.Data.Info) == 0 {
-		return nil, nil
-	}
-	hostIDs := make([]int64, len(res.Data.Info))
-	for index, data := range res.Data.Info {
-		hostID, err := util.GetInt64ByInterface(data[common.BKHostIDField])
-		if err != nil {
-			return nil, err
-		}
-		hostIDs[index] = hostID
-	}
-	return map[string]interface{}{
-		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: hostIDs,
-		},
-	}, nil
+	return cond, nil
 }
 
-// parseIamPathToMongo TODO
-// parse string format iam path to mongo condition
+// parseIamPathToMongo parse string format iam path to mongo condition
 func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, error) {
 	pathItemArr := strings.Split(strings.Trim(iamPath, "/"), "/")
 	cond := make(map[string]interface{}, 0)
@@ -349,7 +368,8 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKHostIDField
 	case iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.InstAsstEvent,
 		iam.MainlineModelEvent, iam.SysAssociationType, iam.BizCustomQuery, iam.BizProcessServiceTemplate,
-		iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.Project:
+		iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.Project,
+		iam.FieldGroupingTemplate:
 		return common.BKFieldID
 	case iam.SysInstance:
 		return common.BKInstIDField
@@ -401,7 +421,7 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 	case iam.BizSet:
 		return common.BKBizSetNameField
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
-		iam.BizProcessServiceInstance, iam.BizSetTemplate:
+		iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.FieldGroupingTemplate:
 		return common.BKFieldName
 	case iam.Project:
 		return common.BKProjectNameField

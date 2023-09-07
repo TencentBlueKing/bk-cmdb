@@ -38,7 +38,8 @@ type synchronizeSrv struct {
 }
 
 // NewSynchronize TODO
-func NewSynchronize(apiMachineryConfig *util.APIMachineryConfig, config chan synchronizeUtil.SychronizeConfig) (SynchronizeClientInterface, error) {
+func NewSynchronize(apiMachineryConfig *util.APIMachineryConfig,
+	config chan synchronizeUtil.SychronizeConfig) (SynchronizeClientInterface, error) {
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
 	if nil != err {

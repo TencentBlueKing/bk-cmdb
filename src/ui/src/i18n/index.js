@@ -13,10 +13,14 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
+import { jsonp } from '@/api'
+import { useSiteConfig } from '@/setup/build-in-vars'
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
 
 Vue.use(VueI18n)
+
+const siteConfig = useSiteConfig()
 
 const langInCookie = Cookies.get(LANG_COOKIE_NAME)
 const matchedLang = LANG_SET.find(lang => lang.id === langInCookie || lang?.alias?.includes(langInCookie))
@@ -33,13 +37,22 @@ const i18n = new VueI18n({
   }
 })
 
-export const changeLocale = (locale) => {
-  Cookies.remove('blueking_language', { path: '' })
+export const changeLocale = async (locale) => {
+  Cookies.remove(LANG_COOKIE_NAME, { path: '' })
   const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
   Cookies.set(LANG_COOKIE_NAME, cookieValue, {
     expires: 3600,
-    domain: window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
+    domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
+
+  if (siteConfig?.desktopUrl) {
+    const url = `${siteConfig.desktopUrl}/api/c/compapi/v2/usermanage/fe_update_user_language/`
+    try {
+      await jsonp(url, { language: cookieValue })
+    } finally {
+      window.location.reload()
+    }
+  }
 
   window.location.reload()
 }

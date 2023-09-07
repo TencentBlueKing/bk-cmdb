@@ -234,21 +234,11 @@
       const handleProcessSliderBeforeClose = () => {
         const hasChanged = processFormEl.value && processFormEl.value.hasChange()
         if (hasChanged) {
-          return new Promise((resolve) => {
-            $bkInfo({
-              title: t('确认退出'),
-              subTitle: t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          processFormEl.value.setChanged(true)
+          processFormEl.value.beforeClose(handleCancelProcess)
+        } else {
+          return true
         }
-        return true
       }
 
       onBeforeUnmount(() => {

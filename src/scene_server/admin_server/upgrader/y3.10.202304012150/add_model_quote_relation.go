@@ -100,7 +100,7 @@ func addHiddenClassification(ctx context.Context, db dal.RDB, conf *upgrader.Con
 func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 	indexes := []types.Index{
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "destModel_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKDestModelField, 1},
 				{common.BKOwnerIDField, 1},
@@ -108,7 +108,7 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "srcModel_bkPropertyID_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKSrcModelField, 1},
 				{common.BKPropertyIDField, 1},
@@ -117,7 +117,7 @@ func addModelQuoteRelationIndex(ctx context.Context, db dal.RDB) error {
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "dest_model_src_model",
+			Name: common.CCLogicIndexNamePrefix + "srcModel_bkSupplierAccount",
 			Keys: bson.D{
 				{common.BKSrcModelField, 1},
 				{common.BKOwnerIDField, 1},

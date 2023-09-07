@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 )
 
@@ -34,7 +35,8 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
 	if err != nil {
-		blog.Error("url parameter bk_biz_id not integer, bizID: %s, rid: %s", req.PathParameter("bk_biz_id"), ctx.Kit.Rid)
+		blog.Error("url parameter bk_biz_id not integer, err: %v, bizID: %s, rid: %s", err,
+			req.PathParameter("bk_biz_id"), ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 		return
 	}
@@ -50,7 +52,8 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 	rawErr := body.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.ErrorJSON("validate request body err: %s, body: %s, rid: %s", rawErr.ToCCError(defErr).Error(), *body, ctx.Kit.Rid)
+		blog.ErrorJSON("validate request body err: %s, body: %s, rid: %s", rawErr.ToCCError(defErr).Error(), *body,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -67,7 +70,8 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 	hostRes, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("findDistinctHostInfo failed, err: %s, distinctHostCond: %s, searchHostCond: %s, rid:%s", err.Error(), *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("find distinct host info failed, err: %v, distinctHostCond: %+v, searchHostCond: %+v, rid: %s",
+			err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -111,7 +115,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDArr},
 	})
 	if err != nil {
-		blog.Errorf("GetModuleMapByCond failed, err: %s, moduleIDArr: %v, rid:%s", err.Error(), moduleIDArr, ctx.Kit.Rid)
+		blog.Errorf("get module map failed, err: %v, moduleIDArr: %v, rid: %s", err, moduleIDArr, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -149,7 +153,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("validate failed, option: %#v, err: %v, rid: %s", *option, rawErr.ToCCError(defErr), ctx.Kit.Rid)
+		blog.Errorf("validate failed, err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -187,7 +191,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 	moduleIDArr, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
 	if err != nil {
-		blog.Errorf("get module failed, cond: %#v, err: %v, rid: %s", moduleCond, err, ctx.Kit.Rid)
+		blog.Errorf("get module id failed, err: %v, cond:%#v, rid: %s", err, moduleCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -208,8 +212,8 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("find host info failed, distinct cond: %#v, search cond: %#v, err: %v, rid:%s",
-			*distinctHostCond, *searchHostCond, err, ctx.Kit.Rid)
+		blog.Errorf("find distinct host info failed, err: %v, distinctHostCond: %#v, searchHostCond: %#v, rid: %s",
+			err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -284,8 +288,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.Errorf("FindHostsBySetTemplates failed, Validate err: %v, option:%#v, rid:%s",
-			rawErr.ToCCError(defErr).Error(), *option, ctx.Kit.Rid)
+		blog.Errorf("validate failed, err: %v, option: %#v, rid: %s", rawErr, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -333,7 +336,7 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	setIDArr, err := s.Logic.GetSetIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: setCond})
 	if err != nil {
-		blog.Errorf("FindHostsBySetTemplates failed, GetSetIDByCond err:%s, cond:%#v, rid:%s", err.Error(), setCond, ctx.Kit.Rid)
+		blog.Errorf("get set id by cond(%#v) failed, err: %v, rid: %s", setCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -353,8 +356,8 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
 	if err != nil {
-		blog.Errorf("FindHostsBySetTemplates failed, findDistinctHostInfo err: %v, distinctHostCond:%#v, "+
-			"searchHostCond:%#v, rid:%s", err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
+		blog.Errorf("find distinct host info failed, err: %v, distinctHostCond: %#v, searchHostCond: %#v, rid: %s",
+			err, *distinctHostCond, *searchHostCond, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -391,7 +394,8 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		}
 	}
 
-	// generate search condition, if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
+	// generate search condition,
+	// if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
 	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{bizID},
 	}
@@ -715,55 +719,28 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// if set filter or module filter is set, search them first to get ids to filter hosts
-	filteredSetIDs := make([]int64, 0)
-	setMap := make(map[int64]string)
-	if parameter.SetPropertyFilter != nil {
-		setFilter, key, err := parameter.SetPropertyFilter.ToMgo()
-		if err != nil {
-			blog.ErrorJSON("set filter %s is invalid, err: %s, rid: %s", parameter.SetPropertyFilter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid,
-				fmt.Sprintf("set_property_filter.%s", key)))
-			return
-		}
-
-		setMap, filteredSetIDs, err = s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDSet, setFilter)
-		if err != nil {
-			blog.ErrorJSON("get set by filter(%s) failed, err: %s, rid: %s", parameter.SetPropertyFilter, err,
-				ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		if len(filteredSetIDs) == 0 {
-			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
-			return
-		}
+	filteredSetIDs, setMap, err := s.parseHostsTopoFilter(ctx.Kit, common.BKInnerObjIDSet, bizID,
+		parameter.SetPropertyFilter)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	filteredModuleIDs := make([]int64, 0)
-	moduleMap := make(map[int64]string)
-	if parameter.ModulePropertyFilter != nil {
-		moduleFilter, key, err := parameter.ModulePropertyFilter.ToMgo()
-		if err != nil {
-			blog.ErrorJSON("set filter %s is invalid, err: %s, rid: %s", parameter.ModulePropertyFilter, err,
-				ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid,
-				fmt.Sprintf("module_property_filter.%s", key)))
-			return
-		}
+	if parameter.SetPropertyFilter != nil && len(filteredSetIDs) == 0 {
+		ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
+		return
+	}
 
-		moduleMap, filteredModuleIDs, err = s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDModule, moduleFilter)
-		if err != nil {
-			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", parameter.ModulePropertyFilter, err,
-				ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	filteredModuleIDs, moduleMap, err := s.parseHostsTopoFilter(ctx.Kit, common.BKInnerObjIDModule, bizID,
+		parameter.ModulePropertyFilter)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
 
-		if len(filteredModuleIDs) == 0 {
-			ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
-			return
-		}
+	if parameter.ModulePropertyFilter != nil && len(filteredModuleIDs) == 0 {
+		ctx.RespEntityWithCount(0, make([]meta.HostTopo, 0))
+		return
 	}
 
 	// search all hosts
@@ -787,14 +764,25 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	hostTopos, err := s.rearrangeBizHostTopo(ctx.Kit, hosts, bizID, setMap, moduleMap)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(hostTopos)
+}
+
+func (s *Service) rearrangeBizHostTopo(kit *rest.Kit, hosts *meta.ListHostResult, bizID int64,
+	setMap, moduleMap map[int64]string) (*meta.HostTopoResult, error) {
+
 	// search all hosts' host module relations
 	hostIDs := make([]int64, 0)
 	for _, host := range hosts.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
-			blog.ErrorJSON("host: %s bk_host_id field invalid, rid: %s", host, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+			blog.ErrorJSON("host: %s bk_host_id field invalid, rid: %s", host, kit.Rid)
+			return nil, err
 		}
 		hostIDs = append(hostIDs, hostID)
 	}
@@ -804,11 +792,10 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		HostIDArr:     hostIDs,
 		Fields:        []string{common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
-	relations, err := s.Logic.GetHostRelations(ctx.Kit, relationCond)
-	if nil != err {
-		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
+	relations, err := s.Logic.GetHostRelations(kit, relationCond)
+	if err != nil {
+		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, kit.Rid)
+		return nil, err
 	}
 
 	// generate host to set and module relation map
@@ -818,70 +805,27 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 	for _, r := range relations {
 		setIDs = append(setIDs, r.SetID)
 		moduleIDs = append(moduleIDs, r.ModuleID)
-		if setModule, ok := relation[r.HostID]; ok {
-			setModule[r.SetID] = append(setModule[r.SetID], r.ModuleID)
-			relation[r.HostID] = setModule
-		} else {
-			setModule := make(map[int64][]int64)
-			setModule[r.SetID] = append(setModule[r.SetID], r.ModuleID)
-			relation[r.HostID] = setModule
+		setModule, ok := relation[r.HostID]
+		if !ok {
+			setModule = make(map[int64][]int64)
 		}
+		setModule[r.SetID] = append(setModule[r.SetID], r.ModuleID)
+		relation[r.HostID] = setModule
 	}
 
 	// search all module and set info that is not already searched before
-	otherSetIDs := make([]int64, 0)
-	if len(filteredSetIDs) == 0 {
-		otherSetIDs = util.IntArrayUnique(setIDs)
-	} else {
-		for _, setID := range setIDs {
-			if _, exists := setMap[setID]; !exists {
-				otherSetIDs = append(otherSetIDs, setID)
-			}
-		}
+	setMap, err = s.getOtherInstInfo(kit, common.BKInnerObjIDSet, setIDs, setMap)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(otherSetIDs) > 0 {
-		setIDs = util.IntArrayUnique(setIDs)
-		setFilter := map[string]interface{}{common.BKSetIDField: map[string]interface{}{common.BKDBIN: otherSetIDs}}
-		otherSetMap, _, err := s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDSet, setFilter)
-		if err != nil {
-			blog.ErrorJSON("get set by filter(%s) failed, err: %s, rid: %s", setFilter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		for key, value := range otherSetMap {
-			setMap[key] = value
-		}
-	}
-
-	otherModuleIDs := make([]int64, 0)
-	if len(filteredModuleIDs) == 0 {
-		otherModuleIDs = util.IntArrayUnique(moduleIDs)
-	} else {
-		for _, moduleID := range moduleIDs {
-			if _, exists := setMap[moduleID]; !exists {
-				otherModuleIDs = append(otherModuleIDs, moduleID)
-			}
-		}
-	}
-
-	if len(otherModuleIDs) > 0 {
-		moduleFilter := map[string]interface{}{
-			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: otherModuleIDs},
-		}
-		otherModuleMap, _, err := s.Logic.GetInstIDNameInfo(ctx.Kit, common.BKInnerObjIDModule, moduleFilter)
-		if err != nil {
-			blog.ErrorJSON("get module by filter(%s) failed, err: %s, rid: %s", moduleFilter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		for key, value := range otherModuleMap {
-			moduleMap[key] = value
-		}
+	moduleMap, err = s.getOtherInstInfo(kit, common.BKInnerObjIDModule, moduleIDs, moduleMap)
+	if err != nil {
+		return nil, err
 	}
 
 	// format the output
-	hostTopos := meta.HostTopoResult{
+	hostTopos := &meta.HostTopoResult{
 		Count: hosts.Count,
 	}
 	for _, host := range hosts.Info {
@@ -911,7 +855,65 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		hostTopo.Topo = topos
 		hostTopos.Info = append(hostTopos.Info, hostTopo)
 	}
-	ctx.RespEntity(hostTopos)
+
+	return hostTopos, nil
+}
+
+func (s *Service) parseHostsTopoFilter(kit *rest.Kit, objID string, bizID int64, filter *querybuilder.QueryFilter) (
+	[]int64, map[int64]string, error) {
+
+	if filter == nil {
+		return make([]int64, 0), make(map[int64]string), nil
+	}
+
+	cond, key, err := filter.ToMgo()
+	if err != nil {
+		blog.ErrorJSON("%s filter %s is invalid, err: %s, rid: %s", objID, filter, err, kit.Rid)
+		return nil, nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid,
+			fmt.Sprintf("%s_property_filter.%s", objID, key))
+	}
+	cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{{common.BKAppIDField: bizID}, cond}}
+
+	instMap, instIDs, err := s.Logic.GetInstIDNameInfo(kit, objID, cond)
+	if err != nil {
+		blog.ErrorJSON("get %s by filter(%s) failed, err: %s, rid: %s", cond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	return instIDs, instMap, nil
+}
+
+func (s *Service) getOtherInstInfo(kit *rest.Kit, objID string, ids []int64, instMap map[int64]string) (
+	map[int64]string, error) {
+
+	otherIDs := make([]int64, 0)
+	if len(instMap) == 0 {
+		otherIDs = ids
+	} else {
+		for _, id := range ids {
+			if _, exists := instMap[id]; !exists {
+				otherIDs = append(otherIDs, id)
+			}
+		}
+	}
+
+	if len(otherIDs) == 0 {
+		return instMap, nil
+	}
+
+	otherIDs = util.IntArrayUnique(otherIDs)
+	filter := map[string]interface{}{meta.GetInstIDFieldByObjID(objID): map[string]interface{}{common.BKDBIN: otherIDs}}
+	otherMap, _, err := s.Logic.GetInstIDNameInfo(kit, objID, filter)
+	if err != nil {
+		blog.ErrorJSON("get %s by filter(%s) failed, err: %s, rid: %s", objID, filter, err, kit.Rid)
+		return instMap, err
+	}
+
+	for key, value := range otherMap {
+		instMap[key] = value
+	}
+
+	return instMap, nil
 }
 
 // ListHostDetailAndTopology obtain host details and corresponding topological relationships.
@@ -996,18 +998,21 @@ func (s *Service) CountTopoNodeHosts(ctx *rest.Contexts) {
 	}
 	topoNodeHostCounts, ccErr := s.countTopoNodeHosts(ctx, bizID, option)
 	if ccErr != nil {
-		blog.ErrorJSON("CountTopoNodeHosts failed, countTopoNodeHosts failed, option: %s, err: %s, rid:%s", option, ccErr.Error(), rid)
+		blog.ErrorJSON("CountTopoNodeHosts failed, countTopoNodeHosts failed, option: %s, err: %s, rid:%s", option,
+			ccErr.Error(), rid)
 		ctx.RespAutoError(defErr.Error(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	ctx.RespEntity(topoNodeHostCounts)
 }
 
-func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64, option meta.CountTopoNodeHostsOption) ([]meta.TopoNodeHostCount, errors.CCErrorCoder) {
+func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64,
+	option meta.CountTopoNodeHostsOption) ([]meta.TopoNodeHostCount, errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
-	topoRoot, ccErr := s.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	topoRoot, ccErr := s.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		false)
 	if ccErr != nil {
-		blog.Errorf("countTopoNodeHosts failed, SearchMainlineInstanceTopo failed, bizID: %d, err: %s, rid: %s", bizID, ccErr.Error(), rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", bizID, ccErr, rid)
 		return nil, ccErr
 	}
 	moduleIDs := make([]int64, 0)
@@ -1032,9 +1037,10 @@ func (s *Service) countTopoNodeHosts(ctx *rest.Contexts, bizID int64, option met
 		},
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
-	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
+	relationResult, err := s.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		&relationOption)
 	if err != nil {
-		blog.Errorf("countTopoNodeHosts failed, GetHostModuleRelation failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), rid)
+		blog.Errorf("get host module relation failed, option: %+v, err: %v, rid: %s", relationOption, err, rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	hostCounts := make([]meta.TopoNodeHostCount, 0)

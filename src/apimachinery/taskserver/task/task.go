@@ -73,8 +73,32 @@ func (t *task) CreateBatch(ctx context.Context, header http.Header, tasks []meta
 	return resp.Data, nil
 }
 
+// CreateFieldTemplateBatch create field template task batch, returns the created task details
+func (t *task) CreateFieldTemplateBatch(ctx context.Context, header http.Header, tasks []metadata.CreateTaskRequest) (
+	[]metadata.APITaskDetail, error) {
+
+	resp := new(metadata.CreateTaskBatchResponse)
+	subPath := "/createmany/field_template/task"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(tasks).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
+}
+
 // ListTask TODO
-func (t *task) ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
+func (t *task) ListTask(ctx context.Context, header http.Header, name string,
+	data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error) {
 	resp = new(metadata.ListAPITaskResponse)
 	subPath := "/task/findmany/list/%s"
 
@@ -112,7 +136,8 @@ func (t *task) ListLatestTask(ctx context.Context, header http.Header, name stri
 }
 
 // TaskDetail TODO
-func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error) {
+func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse,
+	err error) {
 	resp = new(metadata.TaskDetailResponse)
 	subPath := "/task/findone/detail/%s"
 
@@ -198,4 +223,28 @@ func (t *task) ListSyncStatusHistory(ctx context.Context, header http.Header,
 	}
 
 	return resp.Data, nil
+}
+
+// ListFieldTemplateTaskSyncResult get field template task sync result
+func (t *task) ListFieldTemplateTaskSyncResult(ctx context.Context, header http.Header,
+	data *metadata.ListFieldTmplSyncTaskStatusOption) ([]metadata.ListFieldTmplTaskSyncResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListFieldTmplTaskSyncResultResp)
+	subPath := "/task/find/field_template/task_sync_result"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Info, nil
 }

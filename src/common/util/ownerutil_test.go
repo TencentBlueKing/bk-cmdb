@@ -33,7 +33,8 @@ func TestSetQueryOwner(t *testing.T) {
 			"",
 			args{nil, "ownerid"},
 			map[string]interface{}{
-				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
+				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID,
+					"ownerid"}},
 			},
 		},
 		{
@@ -52,8 +53,9 @@ func TestSetQueryOwner(t *testing.T) {
 			"",
 			args{map[string]interface{}{"name": "haha"}, "ownerid"},
 			map[string]interface{}{
-				"name":                "haha",
-				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
+				"name": "haha",
+				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID,
+					"ownerid"}},
 			},
 		},
 	}

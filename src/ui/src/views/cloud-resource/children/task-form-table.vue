@@ -14,11 +14,11 @@
   <bk-table class="form-table"
     v-bkloading="{
       isLoading: $loading(request.createArea),
-      title: this.$t('正在创建云区域')
+      title: this.$t('正在创建管控区域')
     }"
     :row-class-name="getRowClass"
     :data="list">
-    <bk-table-column :label="$t('云区域')" prop="bk_cloud_id" width="200" :resizable="false">
+    <bk-table-column :label="$t('管控区域')" prop="bk_cloud_id" width="200" :resizable="false">
       <template slot-scope="{ row }">
         <task-cloud-area-input v-if="row.bk_cloud_id === -1"
           v-model="row.bk_cloud_name"
@@ -113,7 +113,7 @@
           const oldRow = oldList.find(row => row.bk_vpc_id === vpc.bk_vpc_id)
           newRow.bk_sync_dir = oldRow ? oldRow.bk_sync_dir : vpc.bk_sync_dir
           newRow.bk_cloud_id = oldRow ? oldRow.bk_cloud_id : vpc.bk_cloud_id
-          // bk_cloud_name、bk_cloud_error用于创建新的云区域
+          // bk_cloud_name、bk_cloud_error用于创建新的管控区域
           newRow.bk_cloud_name = oldRow ? oldRow.bk_cloud_name : ''
           newRow.bk_cloud_error = oldRow ? oldRow.bk_cloud_error : false
           return newRow
@@ -150,7 +150,7 @@
         row.bk_cloud_name = cloudName
         row.bk_cloud_error = false
       },
-      // task-form保存时调用，创建新的云区域
+      // task-form保存时调用，创建新的管控区域
       async createCloudArea(accountInfo) {
         try {
           const newAreaList = this.list.filter(row => row.bk_cloud_id === -1)
@@ -199,7 +199,7 @@
         let valid = true
         list.forEach((row) => {
           if (!row.bk_cloud_name) {
-            row.bk_cloud_error = this.$t('请填写云区域')
+            row.bk_cloud_error = this.$t('请填写管控区域')
             valid = false
           }
         })

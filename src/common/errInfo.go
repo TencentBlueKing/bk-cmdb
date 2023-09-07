@@ -509,6 +509,12 @@ const (
 
 	CCErrorTopoObjForbiddenCreateAssociation           = 1101120
 	CCErrorTopoAssociatedObjForbiddenCreateAssociation = 1101121
+	CCErrorTopoFieldTemplateForbiddenDeleteAttr        = 1101122
+	CCErrorTopoFieldTemplateForbiddenDeleteIndex       = 1101123
+	CCErrorTopoFieldTemplateForbiddenPauseModel        = 1101124
+	CCErrTopoFieldTemplateAttrConflict                 = 1101125
+	CCErrTopoFieldTemplateUniqueConflict               = 1101126
+	CCErrTopoBizFieldConflict                          = 1101127
 
 	// object controller 1102XXX
 
@@ -865,6 +871,12 @@ const (
 	CCErrCoreServiceSearchDBUniqueIndex = 1113037
 	// CCErrCoreServiceCreateDBUniqueIndex 创建唯一索引失败,现有数据有重复值
 	CCErrCoreServiceCreateDBUniqueIndexDuplicateValue = 1113039
+	// CCErrCoreServiceFieldTemplateHasAttr 字段组合模版存在属性配置
+	CCErrCoreServiceFieldTemplateHasAttr = 1113040
+	// CCErrCoreServiceFieldTemplateHasUnique 字段组合模版存在唯一校验配置
+	CCErrCoreServiceFieldTemplateHasUnique = 1113041
+	// CCErrCoreServiceFieldTemplateHasRelation 字段组合模版存在与模型的关联关系
+	CCErrCoreServiceFieldTemplateHasRelation = 1113042
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
@@ -899,6 +911,7 @@ const (
 	CCErrTaskUnLockedTaskFail     = 1117006
 	CCErrTaskListTaskFail         = 1117007
 	CCErrTaskCreateConflict       = 1117008
+	CCErrTaskDeleteConflict       = 1117009
 
 	// cloud_server 1118xxx
 	// CCErrCloudVendorNotSupport cloud vendor not support

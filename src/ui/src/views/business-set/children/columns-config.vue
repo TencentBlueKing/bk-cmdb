@@ -20,6 +20,7 @@
     <cmdb-columns-config
       slot="content"
       v-if="isShow"
+      ref="cmdbColumnsConfig"
       :properties="properties"
       :selected="columnsConfig.selected"
       :disabled-columns="columnsConfig.disabledColumns"
@@ -31,7 +32,7 @@
 </template>
 
 <script>
-  import { defineComponent, computed, reactive, toRefs, watchEffect } from 'vue'
+  import { defineComponent, computed, reactive, toRefs, watchEffect, ref } from 'vue'
   import store from '@/store'
   import { getHeaderProperties, getHeaderPropertyName } from '@/utils/tools.js'
   import cmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
@@ -59,6 +60,8 @@
       const customBusinessSetColumns = computed(() => usercustom.value[columnsConfigKey] || [])
       const globalCustomColumns = computed(() =>  globalUsercustom.value?.biz_set_global_custom_table_columns || [])
 
+      const cmdbColumnsConfig = ref(null)
+
       const columnsConfig = reactive({
         selected: [],
         disabledColumns: ['bk_biz_set_id', 'bk_biz_set_name']
@@ -81,17 +84,25 @@
         store.dispatch('userCustom/saveUsercustom', {
           [columnsConfigKey]: properties.map(property => property.bk_property_id)
         })
-        hide()
+        emit('update:show', false)
       }
 
       const handleResetColumnsConfig = () => {
         store.dispatch('userCustom/saveUsercustom', {
           [columnsConfigKey]: []
         })
-        hide()
+        emit('update:show', false)
       }
 
       const hide = () => {
+        const refColumns = cmdbColumnsConfig.value
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            emit('update:show', false)
+          })
+        }
         emit('update:show', false)
       }
 
@@ -100,7 +111,8 @@
         columnsConfig,
         hide,
         handleApplayColumnsConfig,
-        handleResetColumnsConfig
+        handleResetColumnsConfig,
+        cmdbColumnsConfig
       }
     }
   })

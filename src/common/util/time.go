@@ -64,7 +64,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 		if true == ok {
 
 			for key, value := range arrItem {
-				var timeTypeOk bool = false
+				var timeTypeOk = false
 				for _, convTimeKey := range convTimeFields {
 					if key == convTimeKey {
 						timeTypeOk = true

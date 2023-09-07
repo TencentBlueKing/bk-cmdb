@@ -188,7 +188,7 @@
       },
       renderHeader(h, property) {
         if (!this.table.pagination.count || property.bk_property_id !== 'bk_host_innerip') {
-          return this.$tools.getHeaderPropertyName(property)
+          return <div v-bk-overflow-tips class="table-label">{ this.$tools.getHeaderPropertyName(property) }</div>
         }
         const attrs = {
           // eslint-disable-next-line no-underscore-dangle
@@ -248,5 +248,11 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         margin: 0;
+    }
+   :deep(.table-label){
+        overflow: hidden;
+        white-space: nowrap;
+        word-wrap: normal;
+        text-overflow: ellipsis;
     }
 </style>

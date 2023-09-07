@@ -19,8 +19,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
 	"reflect"
+
+	"github.com/apache/thrift/lib/go/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -533,7 +534,8 @@ func (p *CacheAPIClient) Client_() thrift.TClient {
 
 // Parameters:
 //  - RequestInfo
-func (p *CacheAPIClient) GetAgentStatus(ctx context.Context, request_info *AgentStatusRequest) (r *AgentStatusResponse, err error) {
+func (p *CacheAPIClient) GetAgentStatus(ctx context.Context, request_info *AgentStatusRequest) (r *AgentStatusResponse,
+	err error) {
 	var _args3 CacheAPIGetAgentStatusArgs
 	_args3.RequestInfo = request_info
 	var _result4 CacheAPIGetAgentStatusResult
@@ -568,7 +570,8 @@ func NewCacheAPIProcessor(handler CacheAPI) *CacheAPIProcessor {
 	return self5
 }
 
-func (p *CacheAPIProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *CacheAPIProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool,
+	err thrift.TException) {
 	name, _, seqId, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return false, err
@@ -591,7 +594,8 @@ type cacheAPIProcessorGetAgentStatus struct {
 	handler CacheAPI
 }
 
-func (p *cacheAPIProcessorGetAgentStatus) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *cacheAPIProcessorGetAgentStatus) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := CacheAPIGetAgentStatusArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -608,7 +612,8 @@ func (p *cacheAPIProcessorGetAgentStatus) Process(ctx context.Context, seqId int
 	var retval *AgentStatusResponse
 	var err2 error
 	if retval, err2 = p.handler.GetAgentStatus(ctx, args.RequestInfo); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing get_agent_status: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing get_agent_status: "+err2.Error())
 		oprot.WriteMessageBegin("get_agent_status", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()

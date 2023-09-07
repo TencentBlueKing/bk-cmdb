@@ -60,6 +60,67 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 	}, nil
 }
 
+// GenerateAuditLogForBindingFieldTemplate specific generate audit log function for model binding template scenarios.
+func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *generateAuditCommonParameter,
+	objIDs []int64, templateID int64) ([]metadata.AuditLog, error) {
+
+	kit := parameter.kit
+
+	objectLen := len(objIDs)
+	objectTmplIDMap := make(map[int64][]int64)
+
+	auditLogs := make([]metadata.AuditLog, 0)
+	for start := 0; start < objectLen; start += common.BKMaxPageSize {
+		limit := start + common.BKMaxPageSize
+		if limit > objectLen {
+			limit = objectLen
+		}
+		query := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				metadata.ModelFieldID: mapstr.MapStr{
+					common.BKDBIN: objIDs[start:limit],
+				},
+			},
+			DisableCounter: true,
+		}
+		rsp, err := h.clientSet.Model().ReadModel(kit.Ctx, kit.Header, query)
+		if err != nil {
+			blog.Errorf("failed to read model, cond: %+v, err: %v, rid: %s", query, err, kit.Rid)
+			return nil, err
+		}
+
+		if len(rsp.Info) <= 0 {
+			blog.Errorf("no model founded, cond: %+v, rid: %s", query, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrorModelNotFound)
+		}
+		if len(rsp.Info) != limit-start {
+			blog.Errorf("fetching model data does not meet expectations, cond: %+v, rid: %s", query, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		}
+		// todo: 获取关联关系接口
+
+		for _, data := range rsp.Info {
+			obj := data.ToMapStr()
+			objectTmplIDMap[data.ID] = append(objectTmplIDMap[data.ID], templateID)
+			obj[string(metadata.ObjTemplateIDs)] = objectTmplIDMap[data.ID]
+			parameter.updateFields = obj
+			auditLog := metadata.AuditLog{
+				AuditType:    metadata.ModelType,
+				ResourceType: metadata.ModelRes,
+				Action:       parameter.action,
+				ResourceID:   data.ID,
+				ResourceName: data.ObjectName,
+				OperateFrom:  parameter.operateFrom,
+				OperationDetail: &metadata.BasicOpDetail{
+					Details: parameter.NewBasicContent(obj),
+				},
+			}
+			auditLogs = append(auditLogs, auditLog)
+		}
+	}
+	return auditLogs, nil
+}
+
 // NewObjectAuditLog TODO
 func NewObjectAuditLog(clientSet coreservice.CoreServiceClientInterface) *objectAuditLog {
 	return &objectAuditLog{

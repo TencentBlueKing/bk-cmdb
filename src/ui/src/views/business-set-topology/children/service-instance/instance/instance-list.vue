@@ -258,6 +258,7 @@
         row.process_count = newCount
       },
       async handleClearFilter() {
+        this.filters = []
         await this.getList()
         this.table.stuff.type = 'default'
         Bus.$emit('filter-clear')

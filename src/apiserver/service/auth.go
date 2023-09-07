@@ -30,7 +30,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
-// AuthVerify TODO
+// AuthVerify verify if user is authorized.
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -39,14 +39,16 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
 	}
 
 	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
 		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	user := meta.UserInfo{
@@ -73,7 +75,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 			BusinessID:      res.BizID,
 		}
 		for _, item := range res.ParentLayers {
-			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
+			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType),
+				InstanceID: item.ResourceID, InstanceIDEx: item.ResourceIDEx})
 		}
 		// contains exact resource info, need exact authorize
 		if res.ResourceID > 0 || res.ResourceIDEx != "" || res.BizID > 0 || len(res.ParentLayers) > 0 {
@@ -89,8 +92,9 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	if len(needExactAuthAttrs) > 0 {
 		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
 		if err != nil {
-			blog.ErrorJSON("get user's resource auth verify status, but authorize batch failed, err: %s, attrs: %s, rid: %s", err, needExactAuthAttrs, rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			blog.Errorf("authorize batch failed, err: %v, attrs: %+v, rid: %s", err, needExactAuthAttrs, rid)
+			resp.WriteError(http.StatusInternalServerError,
+				&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 			return
 		}
 		index := 0
@@ -106,8 +110,9 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	if len(attrs) > 0 {
 		verifyResults, err := s.authorizer.AuthorizeAnyBatch(ctx, pheader, user, attrs...)
 		if err != nil {
-			blog.ErrorJSON("get user's resource auth verify status, but authorize any batch failed, err: %s, attrs: %s, rid: %s", err, attrs, rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			blog.Errorf("authorize any batch failed, err: %v, attrs: %+v, rid: %s", err, attrs, rid)
+			resp.WriteError(http.StatusInternalServerError,
+				&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 			return
 		}
 		index := 0
@@ -131,7 +136,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
 		return
 	}
 
@@ -148,7 +154,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	authorizedResources, err := s.authorizer.ListAuthorizedResources(req.Request.Context(), pheader, authInput)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 	input := params.SearchParams{}
@@ -177,18 +184,21 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		}
 	}
 
-	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount, req.Request.Header, &input)
+	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount,
+		req.Request.Header, &input)
 	if err != nil {
 		blog.Errorf("get authorized business list, auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
 	if !result.Result {
 		blog.Errorf("get authorized business list,auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, result.ErrMsg, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
@@ -206,14 +216,16 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	err := json.NewDecoder(req.Request.Body).Decode(p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but decode request failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
+		_ = resp.WriteError(http.StatusBadRequest,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
 		return
 	}
 

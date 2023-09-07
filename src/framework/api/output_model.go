@@ -38,7 +38,8 @@ func FindClassificationsByCondition(cond common.Condition) (model.Classification
 }
 
 // FindClassificationsByConditionWithOwner find a array of the classification by the condition
-func FindClassificationsByConditionWithOwner(supplierAccount string, cond common.Condition) (model.ClassificationIterator, error) {
+func FindClassificationsByConditionWithOwner(supplierAccount string,
+	cond common.Condition) (model.ClassificationIterator, error) {
 	return mgr.OutputerMgr.FindClassificationsByCondition(supplierAccount, cond)
 }
 

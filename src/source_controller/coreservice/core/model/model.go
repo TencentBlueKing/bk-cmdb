@@ -164,8 +164,9 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	blog.V(5).Infof("create model redis look info. key:%s, bl:%v, err:%v, rid:%s", redisKey, locked, err, kit.Rid)
 
 	// check the model attributes value
-	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("failed to create a new model, err: the modelID is not set, modelID: %s, rid :%s",
+			inputParam.Spec.ObjectID, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
@@ -258,8 +259,9 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	}
 
 	// check the model attributes value
-	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", kit.Rid, inputParam.Spec.ObjectID)
+	if len(inputParam.Spec.ObjectID) == 0 {
+		blog.Errorf("failed to create a new model, err: the modelID is not set, modelID: %s, rid :%s",
+			inputParam.Spec.ObjectID, kit.Rid)
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
@@ -395,7 +397,7 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
-// CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验
+// CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验/模型继承的模版相关数据
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
 	// NOTE: just single model cascade delete action now.
 	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
@@ -452,7 +454,75 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 		return nil, err
 	}
 
+	if err := m.deleteModelAndFieldTemplateRelation(kit, modelID); err != nil {
+		return nil, err
+	}
+
 	return &metadata.DeletedCount{Count: cnt}, nil
+}
+
+func (m *modelManager) getObjFieldTemplateRelation(kit *rest.Kit, modelID int64) ([]int64, error) {
+
+	result := make([]metadata.ObjFieldTemplateRelation, 0)
+	filter := mapstr.MapStr{
+		common.ObjectIDField: modelID,
+	}
+
+	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(filter).
+		Fields(common.BKTemplateID).All(kit.Ctx, &result); err != nil {
+		blog.Errorf("failed to get object and relation, filter: (%#v), err: %v, rid: %s", filter, err, kit.Rid)
+		return nil, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+	templateIDs := make([]int64, 0)
+
+	if len(result) == 0 {
+		return templateIDs, nil
+	}
+
+	for _, relation := range result {
+		templateIDs = append(templateIDs, relation.TemplateID)
+	}
+	return templateIDs, nil
+}
+
+func (m *modelManager) isExistProcessingTask(kit *rest.Kit, modelID int64, isStop bool) error {
+	if !isStop {
+		return nil
+	}
+
+	templateIDs, err := m.getObjFieldTemplateRelation(kit, modelID)
+	if err != nil {
+		return err
+	}
+
+	if err := dealProcessRunningTasks(kit, templateIDs, modelID, isStop); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *modelManager) deleteModelAndFieldTemplateRelation(kit *rest.Kit, modelID int64) error {
+
+	templateIDs, err := m.getObjFieldTemplateRelation(kit, modelID)
+	if err != nil {
+		return err
+	}
+
+	if err := dealProcessRunningTasks(kit, templateIDs, modelID, false); err != nil {
+		return err
+	}
+
+	filter := mapstr.MapStr{
+		common.ObjectIDField: modelID,
+	}
+
+	// delete object field template relation
+	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, filter); err != nil {
+		blog.Errorf("delete model field template relation failed, cond: %v, err: %v, rid: %s", filter, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
 }
 
 // CascadeDeleteTableModel delete table models in a cascading manner
@@ -496,7 +566,7 @@ func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondi
 
 	totalCount, err := m.count(kit, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to get the count by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("failed to get count by the cond (%#v), err: %v, rid: %s", searchCond.ToMapStr(), err, kit.Rid)
 		return dataResult, err
 	}
 
@@ -524,7 +594,7 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 
 	totalCount, err := m.count(kit, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to get the count by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("failed to get count by the cond (%#v), err: %v, rid: %s", searchCond.ToMapStr(), err, kit.Rid)
 		return dataResult, err
 	}
 
@@ -555,6 +625,87 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 func validIDStartWithBK(kit *rest.Kit, modelID string) error {
 	if strings.HasPrefix(strings.ToLower(modelID), "bk") {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_obj_id value can not start with bk or BK")
+	}
+	return nil
+}
+
+func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop bool) error {
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// 1、get the status of the task
+	cond := mapstr.MapStr{
+		common.BKInstIDField: mapstr.MapStr{
+			common.BKDBIN: ids,
+		},
+		metadata.APITaskExtraField: objectID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{
+				metadata.APITaskStatusExecute, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusNew},
+		},
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
+		Fields(common.BKStatusField, common.BKTaskIDField).
+		All(kit.Ctx, &result); err != nil {
+		blog.Errorf("search task failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+
+	// 2、the possible task status scenarios are: one is executing,
+	// one is waiting or new, but there will be no more than two tasks.
+	if len(result) > metadata.MaxFieldTemplateTaskNum {
+		blog.Errorf("task num incorrect, template IDs: %v, objID: %d, rid: %s", ids, objectID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommGetMultipleObject,
+			fmt.Sprintf("template IDs: %v, objID: %v", ids, objectID))
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	// 3. if it is a deactivated model scenario, deactivation is not allowed as long as
+	// there is a status of running and waiting for execution.
+	if isStop {
+		tasksIDs := make([]string, 0)
+		for _, task := range result {
+			tasksIDs = append(tasksIDs, task.TaskID)
+		}
+		blog.Errorf("there are tasks running, tasksIDs: %v, template IDs: %v, objID: %d, rid: %s", tasksIDs,
+			ids, objectID, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrorTopoFieldTemplateForbiddenPauseModel,
+			fmt.Sprintf("task IDs: %v, objID: %v", tasksIDs, objectID))
+	}
+
+	// 4. if there is a running task in the deleted model scene,
+	// an error is returned. If it is a task status waiting to be
+	// executed, the task needs to be deleted	var taskID string.
+	var taskID string
+	for _, info := range result {
+		if info.Status == metadata.APITaskStatusExecute {
+			blog.Errorf("unbinding failed, sync task(%s) is running, template IDs: %v, objID: %d, rid: %d",
+				info.TaskID, ids, objectID, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrTaskDeleteConflict, info.TaskID)
+		}
+		taskID = info.TaskID
+	}
+
+	// 4、if there is a queued task that needs to be cleared.
+	delCond := mapstr.MapStr{
+		common.BKTaskIDField: taskID,
+		common.BKStatusField: mapstr.MapStr{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusWaitExecute, metadata.APITaskStatusNew},
+		},
+	}
+	err := mongodb.Client().Table(common.BKTableNameAPITask).Delete(kit.Ctx, delCond)
+	if err != nil {
+		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
+		return err
 	}
 	return nil
 }

@@ -466,23 +466,6 @@ eventServer:
 
 # 直接调用gse服务相关配置
 gse:
-  # 调用gse的apigw接口相关配置
-  apiGW:
-    address:
-    appCode:
-    appSecret:
-    username:
-    tls:
-      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-      insecureSkipVerify:
-      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
-      certFile:
-      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
-      keyFile:
-      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
-      caFile:
-      # 用于解密根据RFC1423加密的证书密钥的PEM块
-      password:
   # 调用gse的apiServer服务时相关配置
   apiServer:
     # 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
@@ -529,6 +512,24 @@ tls:
   caFile:
   # 用于解密根据RFC1423加密的证书密钥的PEM块
   password:
+
+# 调用apigw接口相关配置
+apiGW:
+  address:
+  appCode:
+  appSecret:
+  username:
+  tls:
+    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+    insecureSkipVerify:
+    # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+    certFile:
+    # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+    keyFile:
+    # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+    caFile:
+    # 用于解密根据RFC1423加密的证书密钥的PEM块
+    password:
     '''
 
     template = FileTemplate(common_file_template_str)

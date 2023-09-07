@@ -41,7 +41,7 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'Christina'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -51,7 +51,7 @@ var _ = Describe("host abnormal test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
@@ -67,7 +67,7 @@ var _ = Describe("host abnormal test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			bizId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
@@ -155,7 +155,7 @@ var _ = Describe("host abnormal test", func() {
 
 		It("get instance topo", func() {
 			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId1, 10), header)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
@@ -182,7 +182,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false), rsp.ToString())
 		})
@@ -195,7 +195,7 @@ var _ = Describe("host abnormal test", func() {
 			util.RegisterResponse(dirRsp)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(dirRsp.Result).To(Equal(true))
-			Expect(len(dirRsp.Data.Info)).To(Equal(1))
+			Expect(len(dirRsp.Data.Info) >= 1).To(Equal(true))
 
 			defaultDirID, err = commonutil.GetInt64ByInterface(dirRsp.Data.Info[0][common.BKModuleIDField])
 			Expect(err).NotTo(HaveOccurred())
@@ -220,7 +220,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(0))
@@ -237,7 +237,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -253,7 +253,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -269,7 +269,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -285,7 +285,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -301,7 +301,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -311,7 +311,7 @@ var _ = Describe("host abnormal test", func() {
 					"bk_biz_id": bizId,
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -326,7 +326,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -343,8 +343,9 @@ var _ = Describe("host abnormal test", func() {
 						Sort: "bk_host_id",
 					},
 				}
+
 				rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(1))
@@ -361,7 +362,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -377,7 +378,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -393,12 +394,12 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 
 				rsp, err = hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -420,7 +421,7 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -436,8 +437,9 @@ var _ = Describe("host abnormal test", func() {
 						Sort: "bk_host_id",
 					},
 				}
+
 				rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(0))
@@ -455,7 +457,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -472,7 +474,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -489,7 +491,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -506,7 +508,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -523,7 +525,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -534,7 +536,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -550,7 +552,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(false))
 			})
@@ -567,8 +569,9 @@ var _ = Describe("host abnormal test", func() {
 						Sort: "bk_host_id",
 					},
 				}
+
 				rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 				Expect(rsp.Data.Count).To(Equal(1))
@@ -585,7 +588,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -602,7 +605,7 @@ var _ = Describe("host abnormal test", func() {
 					"input_type": "excel",
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -618,12 +621,12 @@ var _ = Describe("host abnormal test", func() {
 					},
 				}
 				rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 
 				rsp, err = hostServerClient.AddHost(context.Background(), header, input)
-				util.RegisterResponse(rsp)
+				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.Result).To(Equal(true))
 			})
@@ -644,14 +647,14 @@ var _ = Describe("host abnormal test", func() {
 
 		It("search host using invalid bk_host_id", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", "eceer", header)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search host using noexist bk_host_id", func() {
 			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", noExistIDStr, header)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -675,8 +678,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -694,8 +698,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -717,8 +722,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -745,7 +751,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -758,7 +764,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -770,7 +776,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -780,7 +786,7 @@ var _ = Describe("host abnormal test", func() {
 				ApplicationID: bizId1,
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -794,7 +800,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -811,7 +817,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -828,7 +834,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -845,7 +851,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -863,7 +869,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -879,7 +885,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -893,7 +899,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -907,7 +913,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -924,7 +930,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -942,7 +948,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 
@@ -966,8 +972,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(0))
@@ -987,7 +994,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -1011,8 +1018,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(2))
@@ -1031,7 +1039,7 @@ var _ = Describe("host abnormal test", func() {
 				"is_increment": false,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 
@@ -1054,8 +1062,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(0))
@@ -1069,7 +1078,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1083,7 +1092,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1096,7 +1105,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1109,7 +1118,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID:      noExistID,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1122,7 +1131,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1135,7 +1144,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1145,7 +1154,7 @@ var _ = Describe("host abnormal test", func() {
 				ApplicationID: bizId1,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1155,7 +1164,7 @@ var _ = Describe("host abnormal test", func() {
 				ApplicationID: bizId1,
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1166,7 +1175,7 @@ var _ = Describe("host abnormal test", func() {
 				HostIDs:       []int64{},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1178,7 +1187,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1191,7 +1200,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1204,7 +1213,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1219,7 +1228,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 
@@ -1239,8 +1248,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(0))
@@ -1251,7 +1261,7 @@ var _ = Describe("host abnormal test", func() {
 				ApplicationID: bizId1,
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1263,7 +1273,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1277,7 +1287,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -1297,8 +1307,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(2))
@@ -1314,7 +1325,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1328,7 +1339,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1343,7 +1354,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1357,7 +1368,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1368,7 +1379,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID:      defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1381,7 +1392,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1395,7 +1406,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -1415,8 +1426,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(2))
@@ -1432,7 +1444,7 @@ var _ = Describe("host abnormal test", func() {
 				ModuleID: defaultDirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -1455,8 +1467,9 @@ var _ = Describe("host abnormal test", func() {
 					Sort: "bk_host_id",
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(3))
@@ -1488,7 +1501,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1501,7 +1514,7 @@ var _ = Describe("host abnormal test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1517,7 +1530,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1534,7 +1547,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id":    bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1553,7 +1566,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1572,7 +1585,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": noExistID,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1591,7 +1604,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1611,7 +1624,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1634,7 +1647,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1657,7 +1670,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1677,7 +1690,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1699,8 +1712,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -1725,7 +1739,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -1745,8 +1759,9 @@ var _ = Describe("host abnormal test", func() {
 					},
 				},
 			}
+
 			rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-			util.RegisterResponse(rsp1)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			Expect(rsp1.Data.Count).To(Equal(2))
@@ -1767,7 +1782,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_biz_id": bizId,
 			}
 			rsp, err := hostServerClient.SyncHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1781,7 +1796,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1793,7 +1808,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1805,7 +1820,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1818,7 +1833,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1831,7 +1846,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1844,7 +1859,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1857,7 +1872,7 @@ var _ = Describe("host abnormal test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1880,7 +1895,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_sn": "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1891,7 +1906,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1902,7 +1917,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1914,7 +1929,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1926,12 +1941,13 @@ var _ = Describe("host abnormal test", func() {
 				"fecfecefrrwdxww": "test",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId1, 10), header)
-			util.RegisterResponse(rsp1)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId1, 10), header)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 			for _, data := range rsp1.Data {
@@ -1948,7 +1964,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_sn":      1,
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -1959,7 +1975,7 @@ var _ = Describe("host abnormal test", func() {
 				"a":          "2",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1970,7 +1986,7 @@ var _ = Describe("host abnormal test", func() {
 				"a":          "",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1981,12 +1997,13 @@ var _ = Describe("host abnormal test", func() {
 				"bk_host_id": fmt.Sprintf("%v,abc", hostId4),
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
-			util.RegisterResponse(rsp1)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId4, 10), header)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(true))
 		})
@@ -1997,12 +2014,13 @@ var _ = Describe("host abnormal test", func() {
 				"bk_host_id": fmt.Sprintf("%v,%v", hostId4, noExistID),
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
-			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId4, 10), header)
-			util.RegisterResponse(rsp1)
+			rsp1, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId4, 10), header)
+			util.RegisterResponseWithRid(rsp1, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp1.Result).To(Equal(false))
 		})
@@ -2026,7 +2044,7 @@ func prepareData() {
 		},
 	}
 	rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-	util.RegisterResponse(rsp)
+	util.RegisterResponseWithRid(rsp, header)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp.Result).To(Equal(true))
 
@@ -2036,8 +2054,10 @@ func prepareData() {
 			Sort: "bk_host_id",
 		},
 	}
+
 	rsp1, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input1)
-	util.RegisterResponse(rsp1)
+	util.RegisterResponseWithRid(rsp1, header)
+
 	Expect(err).NotTo(HaveOccurred())
 	Expect(rsp1.Result).To(Equal(true))
 	Expect(rsp1.Data.Count).To(Equal(2))
@@ -2137,8 +2157,9 @@ func clearData() {
 				Sort: "bk_host_id",
 			},
 		}
+
 		rsp, err := hostServerClient.SearchHostWithNoAuth(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		hostIds := []int64{}
@@ -2147,7 +2168,8 @@ func clearData() {
 			hostIdInt, err := commonutil.GetInt64ByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"])
 			Expect(err).NotTo(HaveOccurred())
 			hostIds = append(hostIds, hostIdInt)
-			hostIds2 = append(hostIds2, commonutil.GetStrByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"]))
+			hostIds2 = append(hostIds2,
+				commonutil.GetStrByInterface(hostInfo["host"].(map[string]interface{})["bk_host_id"]))
 		}
 
 		if len(hostIds) > 0 {
@@ -2158,7 +2180,7 @@ func clearData() {
 					HostIDs:       hostIds,
 				}
 				rsp1, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input1)
-				util.RegisterResponse(rsp1)
+				util.RegisterResponseWithRid(rsp1, header)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp1.Result).To(Equal(true))
 

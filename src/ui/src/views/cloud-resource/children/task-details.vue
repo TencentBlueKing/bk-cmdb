@@ -19,6 +19,7 @@
       </bk-tab-panel>
     </bk-tab>
     <component class="details-component" :is="component"
+      ref="component"
       :container="this"
       :task="task"
       :id="id">
@@ -30,6 +31,8 @@
   import TaskDetailsInfo from './task-details-info.vue'
   import TaskDetailsHistory from './task-details-history.vue'
   import TaskForm from './task-form.vue'
+  import useSideslider from '@/hooks/use-sideslider'
+
   export default {
     name: 'task-details',
     components: {
@@ -69,6 +72,9 @@
     },
     created() {
       this.getTaskDetails()
+      const { beforeClose, setChanged  } = useSideslider()
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       async getTaskDetails() {
@@ -92,6 +98,20 @@
       hide(eventType) {
         eventType && this.$emit(eventType)
         this.container.hide()
+      },
+      changedValues() {
+        const { changedValues } = this.$refs.component
+        if (changedValues) {
+          return changedValues()
+        }
+        return null
+      },
+      changedVpcValues() {
+        const { changedVpcValues } = this.$refs.component
+        if (changedVpcValues) {
+          return changedVpcValues()
+        }
+        return null
       }
     }
   }

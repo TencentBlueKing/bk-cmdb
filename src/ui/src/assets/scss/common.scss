@@ -353,3 +353,51 @@ input.cmdb-form-input {
         left: 0;
     }
 }
+
+.cmdb-config-sticky-layout {
+    max-height: 100%;
+    @include scrollbar-y;
+    .layout-footer {
+        display: flex;
+        align-items: center;
+        height: 52px;
+        padding: 0 20px;
+        .bk-button {
+            min-width: 86px;
+
+            & + .bk-button {
+                margin-left: 8px;
+            }
+        }
+        .auth-box {
+            & + .bk-button,
+            & + .auth-box {
+                margin-left: 8px;
+            }
+        }
+        &.is-sticky {
+            background-color: #fff;
+            border-top: 1px solid $borderColor;
+        }
+    }
+  }
+
+// siderslider抽屉组件标题文案过长样式
+.bk-sideslider:not(.filter-form-sideslider) {
+    .bk-sideslider-title {
+        padding-left: 20px !important;
+        cursor: pointer;
+        @include ellipsis;
+    }
+}
+
+.property-name-text {
+    &.required:after{
+        position: absolute;
+        left: calc(100% + 2px) !important;
+        top: 0;
+        margin: 0 0 0 -10px;
+        content: "*";
+        color: #ff5656;
+    }
+}

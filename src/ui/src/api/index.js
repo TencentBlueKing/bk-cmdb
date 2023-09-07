@@ -139,10 +139,10 @@ async function getPromise(method, url, data, userConfig = {}) {
 const PermissionCode = 9900403
 function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
-  const { bk_error_msg: message, permission } = transformedResponse
-  if (transformedResponse.bk_error_code === PermissionCode) {
-    config.globalPermission && popupPermissionModal(transformedResponse.permission)
-    return reject({ message, permission, code: PermissionCode })
+  const { bk_error_msg: message, bk_error_code: code, permission } = transformedResponse
+  if (code === PermissionCode) {
+    config.globalPermission && popupPermissionModal(permission)
+    return reject({ message, permission, code })
   }
   if (!transformedResponse.result && config.globalError) {
     reject({ message })
@@ -305,5 +305,9 @@ async function download(options = {}) {
     return Promise.reject(error)
   }
 }
+
+export * from './jsonp'
+
+export const useHttp = () => $http
 
 export default $http

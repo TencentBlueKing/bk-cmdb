@@ -231,7 +231,7 @@
       async handleShowDetails(row) {
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         const properties = this.propertyList
-        // 云区域数据
+        // 管控区域数据
         row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
         row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
         try {

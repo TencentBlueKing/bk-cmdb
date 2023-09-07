@@ -144,6 +144,20 @@ func (exp *Expression) UnmarshalBSON(raw []byte) error {
 	return nil
 }
 
+// String convert expression to string, used for log
+func (exp *Expression) String() string {
+	if exp == nil {
+		return "null"
+	}
+
+	jsonVal, err := exp.MarshalJSON()
+	if err != nil {
+		return fmt.Sprintf("marshal json failed, err: %v", err)
+	}
+
+	return string(jsonVal)
+}
+
 func parseJsonRule(raw []byte) (RuleFactory, error) {
 	// rule with 'condition' key means that it is a combined rule
 	if gjson.GetBytes(raw, "condition").Exists() {

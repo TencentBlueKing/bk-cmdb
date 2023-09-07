@@ -48,9 +48,12 @@ type ModelClientInterface interface {
 	DeleteTableModelCascade(ctx context.Context, h http.Header, input *metadata.DeleteTableOption) error
 	ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (
 		resp *metadata.ReadModelWithAttributeResult, err error)
-	// ReadModel TODO
-	// TODO replace the calling of ReadModelWithAttribute that do not need the object's attributes with this
+	// ReadModel read model
+	// Deprecated: this api do not support paging, replace it with ListModel
 	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
+		error)
+	// TODO replace the calling of ReadModelWithAttribute and ReadModel with this
+	ListModel(ctx context.Context, h http.Header, input *metadata.CommonQueryOption) (*metadata.QueryModelDataResult,
 		error)
 	CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (
 		*metadata.CreateManyDataResult, error)

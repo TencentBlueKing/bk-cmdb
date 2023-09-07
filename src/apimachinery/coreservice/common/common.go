@@ -24,7 +24,8 @@ import (
 
 // CommonInterface TODO
 type CommonInterface interface {
-	GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder)
+	GetDistinctField(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) ([]interface{},
+		errors.CCErrorCoder)
 	GetDistinctCount(ctx context.Context, h http.Header, option *metadata.DistinctFieldOption) (int64,
 		errors.CCErrorCoder)
 }

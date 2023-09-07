@@ -253,7 +253,7 @@
           width: 520,
           extCls: 'confirm-edit-service-template-name-infobox',
           async confirmFn() {
-            saveName()
+            await saveName()
           },
           cancelFn() {
             resetEditState()
@@ -472,21 +472,11 @@
       const handleProcessSliderBeforeClose = () => {
         const hasChanged = processFormEl.value && processFormEl.value.hasChange()
         if (hasChanged) {
-          return new Promise((resolve) => {
-            $bkInfo({
-              title: t('确认退出'),
-              subTitle: t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          processFormEl.value.setChanged(true)
+          processFormEl.value.beforeClose(handleCancelProcess)
+        } else {
+          return true
         }
-        return true
       }
 
       const handleGoToEdit = () => {
@@ -579,7 +569,7 @@
               </div>
             </grid-item>
             <grid-item
-              label="服务分类"
+              :label="$t('服务分类')"
               direction="row"
               :label-width="160">
               <div class="editable-content">

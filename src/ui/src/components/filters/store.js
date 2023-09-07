@@ -497,6 +497,7 @@ const FilterStore = new Vue({
       const { ipv4 = [], assetList = [] } = transformedIP.data
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
+        // assetList存放非法ip，当查询非法ip时，支持模糊查询和精确查询
         ip: {
           data: [...ipv4, ...assetList], // 兼容ip模糊搜索
           exact: this.IP.exact ? 1 : 0,

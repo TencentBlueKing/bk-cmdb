@@ -16,6 +16,8 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	"configcenter/src/scene_server/topo_server/service/capability"
+	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -31,7 +33,9 @@ func (s *Service) initAssociation(web *restful.WebService) {
 		Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}",
 		Handler: s.SearchBriefBizTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation", Handler: s.GetBriefTopologyNodeRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/topo/biz/brief_node_relation",
+		Handler: s.GetBriefTopologyNodeRelation})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/topopath", Handler: s.SearchHostTopoPath})
 
@@ -289,6 +293,13 @@ func (s *Service) initProject(web *restful.WebService) {
 }
 
 func (s *Service) initService(web *restful.WebService) {
+	c := &capability.Capability{
+		Utility:     rest.NewRestUtility(rest.Config{ErrorIf: s.Engine.CCErr, Language: s.Engine.Language}),
+		Logics:      s.Logics,
+		AuthManager: s.AuthManager,
+		ClientSet:   s.Engine.CoreAPI,
+	}
+
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
@@ -320,4 +331,8 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initKube(web)
 
 	s.initModelQuote(web)
+
+	fieldtmpl.InitFieldTemplate(c)
+
+	c.Utility.AddToRestfulWebService(web)
 }

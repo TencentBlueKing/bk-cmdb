@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"encoding/json"
+	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
@@ -96,7 +97,8 @@ type AuditQueryCondition struct {
 // Validate is a AuditQueryCondition validator to validate user resource_name condition whether exist at the same time
 func (a *AuditQueryCondition) Validate() error {
 	if (len(a.User) != 0 || len(a.ResourceName) != 0) && len(a.Condition) != 0 {
-		return errors.New(common.CCErrCommParamsInvalid, "condition, user and resource_name cannot exist at the same time")
+		return errors.New(common.CCErrCommParamsInvalid,
+			"condition, user and resource_name cannot exist at the same time")
 	}
 	return nil
 }
@@ -246,7 +248,28 @@ type DetailFactory interface {
 	WithName() string
 }
 
-// UnmarshalJSON TODO
+var resTypeOpDetailTypeMap = map[ResourceType]DetailFactory{
+	BusinessRes:            new(InstanceOpDetail),
+	BizSetRes:              new(InstanceOpDetail),
+	ProjectRes:             new(InstanceOpDetail),
+	SetRes:                 new(InstanceOpDetail),
+	ModuleRes:              new(InstanceOpDetail),
+	ProcessRes:             new(InstanceOpDetail),
+	HostRes:                new(InstanceOpDetail),
+	CloudAreaRes:           new(InstanceOpDetail),
+	ModelInstanceRes:       new(InstanceOpDetail),
+	MainlineInstanceRes:    new(InstanceOpDetail),
+	ResourceDirRes:         new(InstanceOpDetail),
+	InstanceAssociationRes: new(InstanceAssociationOpDetail),
+	ModelAttributeRes:      new(ModelAttrOpDetail),
+	ModelAttributeGroupRes: new(ModelAttrOpDetail),
+	ServiceInstanceRes:     new(ServiceInstanceOpDetail),
+	QuotedInst:             new(QuotedInstOpDetail),
+	ModelUniqueRes:         new(GenericOpDetail),
+}
+
+// UnmarshalJSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	audit := jsonAuditLog{}
 	if err := json.Unmarshal(data, &audit); err != nil {
@@ -281,7 +304,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 
 	switch audit.AuditType {
-	case KubeType:
+	case KubeType, FieldTemplateType:
 		operationDetail := new(GenericOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -290,49 +313,27 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
-		MainlineInstanceRes, ResourceDirRes:
-		operationDetail := new(InstanceOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case InstanceAssociationRes:
-		operationDetail := new(InstanceAssociationOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelAttributeGroupRes:
-		operationDetail := new(ModelAttrOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ServiceInstanceRes:
-		operationDetail := new(ServiceInstanceOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case QuotedInst:
-		operationDetail := new(QuotedInstOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	default:
+	opDetailType, exists := resTypeOpDetailTypeMap[audit.ResourceType]
+	if !exists {
 		operationDetail := new(BasicOpDetail)
 		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+		return nil
 	}
+
+	opDetail := reflect.New(reflect.Indirect(reflect.ValueOf(opDetailType)).Type()).Elem().Addr().Interface()
+	if err := json.Unmarshal(audit.OperationDetail, opDetail); err != nil {
+		return err
+	}
+	auditLog.OperationDetail = opDetail.(DetailFactory)
+
 	return nil
 }
 
-// UnmarshalBSON TODO
+// UnmarshalBSON unmarshal AuditLog
+// NOCC:golint/fnsize(设计如此)
 func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	audit := bsonAuditLog{}
 	if err := bson.Unmarshal(data, &audit); err != nil {
@@ -367,7 +368,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 
 	switch audit.AuditType {
-	case KubeType:
+	case KubeType, FieldTemplateType:
 		operationDetail := new(GenericOpDetail)
 		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
@@ -376,45 +377,21 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 		return nil
 	}
 
-	switch audit.ResourceType {
-	case BusinessRes, BizSetRes, ProjectRes, SetRes, ModuleRes, ProcessRes, HostRes, CloudAreaRes, ModelInstanceRes,
-		MainlineInstanceRes, ResourceDirRes:
-		operationDetail := new(InstanceOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case InstanceAssociationRes:
-		operationDetail := new(InstanceAssociationOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ModelAttributeRes, ModelAttributeGroupRes:
-		operationDetail := new(ModelAttrOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case ServiceInstanceRes:
-		operationDetail := new(ServiceInstanceOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	case QuotedInst:
-		operationDetail := new(QuotedInstOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
-			return err
-		}
-		auditLog.OperationDetail = operationDetail
-	default:
+	opDetailType, exists := resTypeOpDetailTypeMap[audit.ResourceType]
+	if !exists {
 		operationDetail := new(BasicOpDetail)
-		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail
+		return nil
 	}
+
+	opDetail := reflect.New(reflect.Indirect(reflect.ValueOf(opDetailType)).Type()).Elem().Addr().Interface()
+	if err := bson.Unmarshal(audit.OperationDetail, opDetail); err != nil {
+		return err
+	}
+	auditLog.OperationDetail = opDetail.(DetailFactory)
 	return nil
 }
 
@@ -674,6 +651,13 @@ const (
 
 	// QuotedInstType is quoted instance related audit type
 	QuotedInstType AuditType = "quoted_inst"
+
+	// FieldTemplateType is field template audit type
+	FieldTemplateType AuditType = "field_template"
+
+	// ObjTemplateIDs In the context of audit logging, the tags of the
+	// binding field templates that correspond to the models
+	ObjTemplateIDs AuditType = "bk_template_ids"
 )
 
 // ResourceType TODO
@@ -768,6 +752,15 @@ const (
 
 	// QuotedInst is quoted instance related audit resource type
 	QuotedInst ResourceType = "quoted_inst"
+
+	// FieldTemplateRes is field template related audit resource type
+	FieldTemplateRes ResourceType = "field_template"
+
+	// FieldTemplateAttrRes is field template attribute related audit resource type
+	FieldTemplateAttrRes ResourceType = "field_template_attribute"
+
+	// FieldTemplateUniqueRes is field template unique related audit resource type
+	FieldTemplateUniqueRes ResourceType = "field_template_unique"
 )
 
 // OperateFromType TODO
@@ -890,7 +883,8 @@ func GetAuditTypesByCategory(category string) []AuditType {
 	case "host":
 		return []AuditType{HostType}
 	case "other":
-		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType}
+		return []AuditType{ModelType, AssociationKindType, EventPushType, DynamicGroupType, PlatFormSettingType,
+			FieldTemplateType}
 	}
 	return []AuditType{}
 }
@@ -986,7 +980,7 @@ var auditDict = []resourceTypeInfo{
 	},
 	{
 		ID:   CloudAreaRes,
-		Name: "云区域",
+		Name: "管控区域",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -1087,6 +1081,33 @@ var auditDict = []resourceTypeInfo{
 	{
 		ID:   PlatFormSettingRes,
 		Name: "平台管理",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateRes,
+		Name: "字段组合模版",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateAttrRes,
+		Name: "字段组合模版字段",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateUniqueRes,
+		Name: "字段组合模版唯一校验",
 		Operations: []actionTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
@@ -1323,6 +1344,33 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   PlatFormSettingRes,
 		Name: "Platform Management",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateRes,
+		Name: "Field Grouping Template",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateAttrRes,
+		Name: "Field Grouping Template Attribute",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   FieldTemplateUniqueRes,
+		Name: "Field Grouping Template Unique",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

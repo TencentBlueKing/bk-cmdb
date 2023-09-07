@@ -186,7 +186,8 @@ func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) 
 		}
 	}
 	if v.IsSet("datacollection.hostsnap.timeWindow.checkIntervalHours") {
-		if err := cc.isConfigNotIntVal("datacollection.hostsnap.timeWindow.checkIntervalHours", fileName, v); err != nil {
+		if err := cc.isConfigNotIntVal("datacollection.hostsnap.timeWindow.checkIntervalHours", fileName,
+			v); err != nil {
 			return err
 		}
 	}
@@ -227,8 +228,10 @@ func (cc *ConfCenter) isMonitorConfigOK(v *viper.Viper, fileName string) error {
 				return err
 			}
 			if dataID := v.GetInt64("monitor.dataID"); dataID <= 0 {
-				blog.Errorf("The configuration file is %s, the %s must be an integer >0 when plugin name is blueking !", fileName, "monitor.dataID")
-				return fmt.Errorf("The configuration file is %s, the %s must be an integer >0 when plugin name is blueking !", fileName, "monitor.dataID")
+				blog.Errorf("The configuration file is %s, the %s must be an integer >0 when plugin name is blueking !",
+					fileName, "monitor.dataID")
+				return fmt.Errorf("the configuration file is %s, the %s must be an integer >0 when plugin name is "+
+					"blueking ", fileName, "monitor.dataID")
 			}
 		}
 	}

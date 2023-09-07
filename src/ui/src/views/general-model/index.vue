@@ -183,14 +183,16 @@
         </cmdb-form-multiple>
       </template>
     </bk-sideslider>
-    <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
+    <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')"
+      :before-close="handleColumnsConfigSliderBeforeClose">
       <cmdb-columns-config slot="content"
         v-if="columnsConfig.show"
+        ref="cmdbColumnsConfig"
         :properties="properties"
         :selected="columnsConfig.selected"
         :disabled-columns="columnsConfig.disabledColumns"
         @on-apply="handleApplyColumnsConfig"
-        @on-cancel="columnsConfig.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
@@ -739,7 +741,7 @@
             })
           }
           const { filter, filter_adv: filterAdv } = this.$route.query
-          this.table.stuff.type = (filter && filter.length > 0) || filterAdv ? 'search' : 'default'
+          this.table.stuff.type = (filter && String(filter).length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
         } catch (err) {
@@ -894,20 +896,12 @@
       handleSliderBeforeClose() {
         if (this.tab.active === 'attribute') {
           const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
+          const confirmFn = () => {
+            this.attribute.type === 'multiple' ? this.handleMultipleCancel : this.handleCancel
+          }
           if ($form.hasChange) {
-            return new Promise((resolve) => {
-              this.$bkInfo({
-                title: this.$t('确认退出'),
-                subTitle: this.$t('退出会导致未保存信息丢失'),
-                extCls: 'bk-dialog-sub-header-center',
-                confirmFn: () => {
-                  resolve(true)
-                },
-                cancelFn: () => {
-                  resolve(false)
-                }
-              })
-            })
+            $form.setChanged(true)
+            return $form.beforeClose(confirmFn)
           }
           return true
         }
@@ -935,7 +929,8 @@
               bk_obj_id: this.objId
             })
           },
-          success: () => RouterQuery.set({ _t: Date.now() })
+          success: () => RouterQuery.set({ _t: Date.now() }),
+          error: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
       },
@@ -987,6 +982,20 @@
       },
       getColumnSortable(property) {
         return this.$tools.isPropertySortable(property) ? 'custom' : false
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        if (!refColumns) {
+          return
+        }
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues?.()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.columnsConfig.show = false
+          })
+        }
+        this.columnsConfig.show = false
       }
     }
   }

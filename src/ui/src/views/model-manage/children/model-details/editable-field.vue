@@ -22,7 +22,7 @@
     :class="{ 'is-error': isError, 'is-editing': isEditing, 'is-readonly': !editable }">
     <template v-if="!editable">{{ label || value }}</template>
     <div v-else class="editable-field-container">
-      <div class="editable-field-content">
+      <div class="editable-field-content" v-bk-overflow-tips="{ content: label || value }">
         <span class="editable-field-text" v-show="!isEditing">{{ label || value }}</span>
         <div class="editable-field-control" v-show="isEditing">
           <cmdb-singlechar

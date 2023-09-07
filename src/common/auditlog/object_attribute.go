@@ -24,6 +24,47 @@ type objectAttributeAuditLog struct {
 	audit
 }
 
+// BatchGenerateAuditLog generate log content about model attributes in batches, where
+// the parameter attrs must be obtained by the caller
+func (h *objectAttributeAuditLog) BatchGenerateAuditLog(parameter *generateAuditCommonParameter, objID string,
+	attrs []metadata.Attribute) ([]metadata.AuditLog, error) {
+
+	if len(attrs) == 0 {
+		return []metadata.AuditLog{}, nil
+	}
+
+	kit := parameter.kit
+
+	objName, err := h.getObjNameByObjID(kit, objID)
+	if err != nil {
+		return nil, err
+	}
+	logs := make([]metadata.AuditLog, len(attrs))
+	for index, attr := range attrs {
+		if attr.ObjectID != objID {
+			return nil, kit.CCError.CCError(common.CCErrCommParamsIsInvalid)
+		}
+
+		logs[index] = metadata.AuditLog{
+			AuditType:    metadata.ModelType,
+			ResourceType: metadata.ModelAttributeRes,
+			Action:       parameter.action,
+			BusinessID:   attr.BizID,
+			ResourceID:   attr.ID,
+			ResourceName: attr.PropertyName,
+			OperateFrom:  parameter.operateFrom,
+			OperationDetail: &metadata.ModelAttrOpDetail{
+				BkObjID:   objID,
+				BkObjName: objName,
+				BasicOpDetail: metadata.BasicOpDetail{
+					Details: parameter.NewBasicContent(attr.ToMapStr()),
+				},
+			},
+		}
+	}
+	return logs, nil
+}
+
 // GenerateAuditLog generate audit of model attribute, if data is nil, will auto get current model attribute data by id.
 func (h *objectAttributeAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, id int64,
 	data *metadata.Attribute) (*metadata.AuditLog, error) {

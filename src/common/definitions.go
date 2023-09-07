@@ -251,6 +251,9 @@ const (
 
 	// BKDBLimit the db operator to limit return number of doc
 	BKDBLimit = "$limit"
+
+	// BKDBUnwind used to split values contained in an array field into separate doc
+	BKDBUnwind = "$unwind"
 )
 
 const (
@@ -775,6 +778,9 @@ const (
 	BKSrcModelField = "src_model"
 	// BKDestModelField destination model field in the model relationship table.
 	BKDestModelField = "dest_model"
+
+	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
+	ObjectIDField = "object_id"
 )
 
 const (
@@ -854,8 +860,8 @@ const DefaultAppFlag int = 1
 // DefaultAppName the default app name
 const DefaultAppName string = "资源池"
 
-// DefaultCloudName TODO
-const DefaultCloudName string = "default area"
+// DefaultCloudName default area
+const DefaultCloudName string = "Default Area"
 
 // DefaultInstName TODO
 const DefaultInstName string = "实例名"
@@ -902,6 +908,10 @@ const (
 	// DefaultModuleType TODO
 	DefaultModuleType string = "1"
 )
+
+var FieldTypes = []string{FieldTypeSingleChar, FieldTypeLongChar, FieldTypeInt, FieldTypeFloat, FieldTypeEnum,
+	FieldTypeEnumMulti, FieldTypeDate, FieldTypeTime, FieldTypeUser, FieldTypeOrganization, FieldTypeTimeZone,
+	FieldTypeBool, FieldTypeList, FieldTypeTable, FieldTypeInnerTable, FieldTypeEnumQuote}
 
 const (
 	// FieldTypeSingleChar the single char filed type
@@ -1548,7 +1558,8 @@ const (
 	SyncSetTaskFlag = "set_template_sync"
 	// SyncModuleTaskFlag TODO
 	SyncModuleTaskFlag = "service_template_sync"
-
+	// SyncFieldTemplateTaskFlag field template synchronization task flag
+	SyncFieldTemplateTaskFlag = "field_template_sync"
 	// SyncModuleHostApplyTaskFlag module dimension host auto-apply async task flag.
 	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
 	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.
@@ -1642,4 +1653,93 @@ type ModelQuoteType string
 
 const (
 	Table ModelQuoteType = "table"
+)
+
+const (
+	// BKTemplateID template id field
+	BKTemplateID = "bk_template_id"
+)
+
+// ProcessPropertyName process property name
+type ProcessPropertyName string
+
+const (
+	// ProcNumName process property procNum name
+	ProcNumName ProcessPropertyName = "proc_num"
+
+	// StopCmdName process property stopCmd name
+	StopCmdName ProcessPropertyName = "stop_cmd"
+
+	// RestartCmdName process property restartCmd name
+	RestartCmdName ProcessPropertyName = "restart_cmd"
+
+	// FaceStopCmdName process property faceStopCmd name
+	FaceStopCmdName ProcessPropertyName = "face_stop_cmd"
+
+	// BkFuncNameName process property bkFuncName name
+	BkFuncNameName ProcessPropertyName = "bk_func_name"
+
+	// WorkPathName process property workPath name
+	WorkPathName ProcessPropertyName = "work_path"
+
+	// BindIpName process property bindIp name
+	BindIpName ProcessPropertyName = "bind_ip"
+
+	// PriorityName process property priority name
+	PriorityName ProcessPropertyName = "priority"
+
+	// ReloadCmdName process property reloadCmd name
+	ReloadCmdName ProcessPropertyName = "reload_cmd"
+
+	// BkProcessName process property bkProcessNam
+	BkProcessName ProcessPropertyName = "bk_process_name"
+
+	// PortName process property port name
+	PortName ProcessPropertyName = "port"
+
+	// PidFileName process property pidFile name
+	PidFileName ProcessPropertyName = "pid_file"
+
+	// AutoStartName process property autoStart name
+	AutoStartName ProcessPropertyName = "auto_start"
+
+	// BkStartCheckSecsName process property autoStart name
+	BkStartCheckSecsName ProcessPropertyName = "bk_start_check_secs"
+
+	// StartCmdName process property startCmd name
+	StartCmdName ProcessPropertyName = "start_cmd"
+
+	// PropertyUserName process property user
+	PropertyUserName ProcessPropertyName = "user"
+
+	// TimeoutName process property timeout name
+	TimeoutName ProcessPropertyName = "timeout"
+
+	// ProtocolName process property protocol name
+	ProtocolName ProcessPropertyName = "protocol"
+
+	// DescriptionName process property description name
+	DescriptionName ProcessPropertyName = "description"
+
+	// BkStartParamRegexName process property bkStartParamRegex name
+	BkStartParamRegexName ProcessPropertyName = "bk_start_param_regex"
+)
+
+const (
+	// Field query field define
+	Field = "field"
+
+	// Operator query operator define
+	Operator = "operator"
+
+	// Value query value define
+	Value = "value"
+
+	// Condition query condition define
+	Condition = "condition"
+)
+
+const (
+	// TopoModuleName topo path name
+	TopoModuleName = "topo_module_name"
 )

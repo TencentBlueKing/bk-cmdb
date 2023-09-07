@@ -88,10 +88,10 @@ var ActionIDNameMap = map[ActionID]string{
 	EditProject:                         "项目编辑",
 	DeleteProject:                       "项目删除",
 	ViewProject:                         "项目查看",
-	ViewCloudArea:                       "云区域查看",
-	CreateCloudArea:                     "云区域创建",
-	EditCloudArea:                       "云区域编辑",
-	DeleteCloudArea:                     "云区域删除",
+	ViewCloudArea:                       "管控区域查看",
+	CreateCloudArea:                     "管控区域创建",
+	EditCloudArea:                       "管控区域编辑",
+	DeleteCloudArea:                     "管控区域删除",
 	CreateCloudAccount:                  "云账户新建",
 	EditCloudAccount:                    "云账户编辑",
 	DeleteCloudAccount:                  "云账户删除",
@@ -126,7 +126,7 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
-	WatchPlatEvent:                      "云区域事件监听",
+	WatchPlatEvent:                      "管控区域事件监听",
 	WatchKubeClusterEvent:               "容器集群事件监听",
 	WatchKubeNodeEvent:                  "容器节点事件监听",
 	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
@@ -150,6 +150,10 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateContainerPod:                  "容器Pod新建",
 	DeleteContainerPod:                  "容器Pod删除",
 	UseFulltextSearch:                   "全文检索",
+	CreateFieldGroupingTemplate:         "字段组合模板新建",
+	ViewFieldGroupingTemplate:           "字段组合模板查看",
+	EditFieldGroupingTemplate:           "字段组合模板编辑",
+	DeleteFieldGroupingTemplate:         "字段组合模板删除",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -194,6 +198,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
+	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
 
 	return resourceActionList
 }
@@ -1677,4 +1682,51 @@ func genFulltextSearchActions() []ResourceAction {
 		Version: 1,
 	})
 	return actions
+}
+
+func genFieldGroupingTemplateActions() []ResourceAction {
+	templateResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       FieldGroupingTemplate,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       FieldGroupingTemplateSelection,
+		}},
+	}
+
+	return []ResourceAction{
+		{
+			ID:      CreateFieldGroupingTemplate,
+			Name:    ActionIDNameMap[CreateFieldGroupingTemplate],
+			NameEn:  "Create Field Grouping Template",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:                   ViewFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[ViewFieldGroupingTemplate],
+			NameEn:               "View Field Grouping Template",
+			Type:                 View,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			Version:              1,
+		},
+		{
+			ID:                   EditFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[EditFieldGroupingTemplate],
+			NameEn:               "Edit Field Grouping Template",
+			Type:                 Edit,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
+		},
+		{
+			ID:                   DeleteFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[DeleteFieldGroupingTemplate],
+			NameEn:               "Delete Field Grouping Template",
+			Type:                 Delete,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
+		},
+	}
 }

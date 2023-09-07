@@ -1210,6 +1210,7 @@ common:
     ## webserver common config site parameters
     ## @param common.webServer.site.domainUrl bk-cmdb web domain address
     ## @param common.webServer.site.httpsDomainUrl bk-cmdb web https domain address
+    ## @param common.webServer.site.bkDomain bk-cmdb web bk domain address
     ## @param common.webServer.site.appCode bk-cmdb app code
     ## @param common.webServer.site.checkUrl bk-login user check url
     ## @param common.webServer.site.resourcesPath bk-cmdb frontend resource path
@@ -1225,6 +1226,7 @@ common:
       htmlRoot: /data/cmdb/cmdb_webserver/web
       authScheme: internal
       helpDocUrl:
+      bkDomain:
     ## webserver common config session parameters
     ## @param common.webServer.session.name bk-cmdb session name
     ## @param common.webServer.session.multipleOwner Enable one user with multiple logins at the same time
@@ -1347,7 +1349,7 @@ common:
       ##
       startUp: false
       # 可选值为v1或v2, v1表示采用的是使用thrift方式连接gse，需要配置gse.apiServer和gse.taskServer
-      # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置gse.apiGW
+      # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置apiGW相关配置
       version: v1
       ## @param common.eventServer.hostIdentifier.batchSyncIntervalHours batch sync interval hours
       ## 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
@@ -1396,23 +1398,6 @@ common:
   ## gse server config
   ##
   gse:
-    # 调用gse的apigw接口相关配置
-    apiGW:
-      address: http://bkapi.example.com
-      appCode: bk_cmdb
-      appSecret:
-      username: admin
-      tls:
-        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-        insecureSkipVerify:
-        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
-        certFile:
-        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
-        keyFile:
-        # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
-        caFile:
-        # 用于解密根据RFC1423加密的证书密钥的PEM块
-        password:
     ## 调用gse的apiServer服务时相关配置
     apiServer:
       ## @param common.gse.apiServer.endpoints the endpoints about gse api server
@@ -1485,6 +1470,25 @@ common:
     keyFile:
     caFile:
     password:
+  ## api gateway config
+  ##
+  ## 调用apigw接口相关配置
+  apiGW:
+    address: http://bkapi.example.com/api/{api_name}
+    appCode: bk_cmdb
+    appSecret:
+    username: admin
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify:
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile:
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile:
+      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+      caFile:
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password:
 
 ## @section zookeeper parameters
 ##

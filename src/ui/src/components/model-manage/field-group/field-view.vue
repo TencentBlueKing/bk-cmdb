@@ -94,7 +94,13 @@
             <bk-table-column
               :label="$t('字段ID')"
               prop="bk_property_id"
-              :show-overflow-tooltip="true" />
+              :show-overflow-tooltip="true">
+              <template #default="{ row }">
+                <div class="property-name-text" :class="{ required: row.isrequired }">
+                  {{row.bk_property_id}}
+                </div>
+              </template>
+            </bk-table-column>
             <bk-table-column
               :label="$t('字段名称')"
               prop="bk_property_name"
@@ -152,7 +158,9 @@
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
       <div class="btns" :class="{ 'is-sticky': sticky }">
         <bk-button class="mr10" theme="primary" @click="handleEdit">{{$t('编辑')}}</bk-button>
-        <bk-button class="delete-btn" v-if="!field.ispre" @click="handleDelete">{{$t('删除')}}</bk-button>
+        <bk-button class="delete-btn" v-if="!field.ispre && !isTemplateField" @click="handleDelete">
+          {{$t('删除')}}
+        </bk-button>
       </div>
     </template>
   </cmdb-sticky-layout>
@@ -209,6 +217,9 @@
       isTableType() {
         return this.type === PROPERTY_TYPES.INNER_TABLE
       },
+      isTemplateField() {
+        return this.field.bk_template_id > 0
+      },
       defaultValue() {
         if ([PROPERTY_TYPES.ENUMQUOTE].includes(this.type)) {
           return  this.field.option.map(item => item.bk_inst_id)
@@ -253,6 +264,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .property-name-text {
+      display: inline-block;
+      position: relative;
+      padding-right: 10px;
+    }
     .field-view-layout {
         height: 100%;
         @include scrollbar-y;

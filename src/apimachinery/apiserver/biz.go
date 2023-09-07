@@ -23,7 +23,8 @@ import (
 )
 
 // CreateBiz TODO
-func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header,
+	params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/biz/%s"
 
@@ -38,7 +39,8 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 }
 
 // UpdateBiz TODO
-func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/biz/%s/%s"
 	err = a.client.Put().
@@ -77,7 +79,8 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 }
 
 // SearchBiz TODO
-func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"
 	err = a.client.Post().
@@ -106,16 +109,23 @@ func (a *apiServer) UpdateBizPropertyBatch(ctx context.Context, h http.Header,
 }
 
 // DeleteBiz delete archived businesses
-func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) (
-	resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error {
+	resp := new(metadata.Response)
 	subPath := "/deletemany/biz"
-	err = a.client.Post().
+
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(param).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }

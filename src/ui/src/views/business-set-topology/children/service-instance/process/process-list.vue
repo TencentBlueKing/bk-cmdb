@@ -185,6 +185,7 @@
         row.process_ids = list.map(process => process.process_id)
       },
       async handleClearFilter() {
+        this.filter = ''
         await this.getProcessList()
         this.table.stuff.type = 'default'
         Bus.$emit('filter-clear')

@@ -60,7 +60,7 @@ func (m *modelManager) deleteModelAndAttributes(kit *rest.Kit, targetObjIDS []st
 	// delete the attributes of the model
 	deleteAttributeCond := mongo.NewCondition()
 	deleteAttributeCond.Element(&mongo.In{Key: metadata.AttributeFieldObjectID, Val: targetObjIDS})
-	cnt, err := m.modelAttribute.delete(kit, deleteAttributeCond)
+	cnt, err := m.modelAttribute.delete(kit, deleteAttributeCond, true)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to delete the attribute by the condition (%#v), error info is %s", kit.Rid, deleteAttributeCond.ToMapStr(), err.Error())
 		return cnt, err

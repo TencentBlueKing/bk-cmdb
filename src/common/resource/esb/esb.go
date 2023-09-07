@@ -25,7 +25,7 @@ import (
 
 var (
 	esbClient esbserver.EsbClientInterface
-	cfgChan   chan esbutil.EsbConfig = make(chan esbutil.EsbConfig, 10)
+	cfgChan   = make(chan esbutil.EsbConfig, 10)
 
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
@@ -43,21 +43,24 @@ func ParseEsbConfig() (*esbutil.EsbConfig, errors.CCErrorCoder) {
 	esbAddr, err := cc.String("esb.addr")
 	if err != nil {
 		blog.Infof("esb addr not found, unable to call esb service")
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.addr] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing [esb.addr] configuration item")
 		return nil, lastConfigErr
 	}
 
 	esbAppCode, err := cc.String("esb.appCode")
 	if err != nil {
 		blog.Errorf("esb appCode not found, unable to call esb service")
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.esbAppCode] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing [esb.esbAppCode] configuration item")
 		return nil, lastConfigErr
 	}
 
 	esbAppSecret, err := cc.String("esb.appSecret")
 	if err != nil {
 		blog.Errorf("esb appSecretOk not found,unable to call esb service")
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem, "Configuration file missing [esb.appSecret] configuration item")
+		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
+			"Configuration file missing [esb.appSecret] configuration item")
 		return nil, lastConfigErr
 	}
 

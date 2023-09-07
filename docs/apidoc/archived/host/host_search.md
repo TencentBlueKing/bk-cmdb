@@ -140,7 +140,7 @@ page 参数说明：
                             "bk_obj_icon":"",
                             "bk_inst_id":0,
                             "bk_obj_name":"",
-                            "bk_inst_name":"default area"
+                            "bk_inst_name":"Default Area"
                         }
                     ],
                     "bk_comment":"",

@@ -121,7 +121,7 @@
             }
           })
           Bus.$emit('refresh-expand-list', this.selection.process)
-          this.$success('修改成功')
+          this.$success(this.$t('修改成功'))
         } catch (error) {
           console.error(error)
         }

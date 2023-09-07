@@ -165,7 +165,9 @@ func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Cli
 // so the caller must check the bool, and use session only when the bool is true.
 // otherwise the caller should not use the session, should call the mongodb command directly.
 // Note: this function is always used with mongo.CmdbReleaseSession(ctx, sessCtx) to release the session connection.
-func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (context.Context, mongo.Session, bool, error) {
+func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (context.Context, mongo.Session, bool,
+	error) {
+
 	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
 	if err != nil {
 		return ctx, nil, false, err
@@ -278,7 +280,7 @@ func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
 	key := sessionID.genErrKey()
 	errorType, err := t.cache.Get(context.Background(), key).Result()
-	if err != nil {
+	if err != nil && redis.IsNilErr(err) {
 		blog.Errorf("get txn error failed, err: %v, session id: %s", err, sessionID)
 		return UnknownType
 	}

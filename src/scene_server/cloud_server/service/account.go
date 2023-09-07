@@ -36,10 +36,12 @@ func (s *Service) VerifyConnectivity(ctx *rest.Contexts) {
 		return
 	}
 
-	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID, SecretKey: account.SecretKey}
+	conf := metadata.CloudAccountConf{VendorName: account.CloudVendor, SecretID: account.SecretID,
+		SecretKey: account.SecretKey}
 	err := s.Logics.AccountVerify(ctx.Kit, conf)
 	if err != nil {
-		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err, ctx.Kit.Rid)
+		blog.ErrorJSON("cloud account verify failed, cloudvendor:%s, err :%v, rid: %s", account.CloudVendor, err,
+			ctx.Kit.Rid)
 		errStr := err.Error()
 		if strings.Contains(strings.ToLower(errStr), "authfailure") {
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCloudAccoutIDSecretWrong))
@@ -256,7 +258,8 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		// generate audit log.
 		audit := auditlog.NewCloudAccountAuditLog(s.CoreAPI.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).WithUpdateFields(option)
+		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit,
+			metadata.AuditUpdate).WithUpdateFields(option)
 		auditLog, auditErr := audit.GenerateAuditLog(generateAuditParameter, accountID, nil)
 		if auditErr != nil {
 			blog.Errorf("generate audit log failed before update cloud account, accountID: %d, err: %v, rid: %s",
@@ -267,7 +270,8 @@ func (s *Service) UpdateAccount(ctx *rest.Contexts) {
 		// to update.
 		err = s.CoreAPI.CoreService().Cloud().UpdateAccount(ctx.Kit.Ctx, ctx.Kit.Header, accountID, option)
 		if err != nil {
-			blog.Errorf("UpdateAccount failed, UpdateAccount err:%s, accountID:%d, option:%#v, rid:%s", err, accountID, option, ctx.Kit.Rid)
+			blog.Errorf("UpdateAccount failed, UpdateAccount err:%s, accountID:%d, option:%#v, rid:%s", err, accountID,
+				option, ctx.Kit.Rid)
 			return err
 		}
 

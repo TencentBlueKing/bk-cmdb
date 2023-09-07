@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div :class="['data-stuff', type]">
+  <div :class="['data-empty', type]">
     <div class="content" v-if="type === 'search'">
       <bk-exception type="search-empty" scene="part">
         <p>{{ $t('搜索结果为空') }}</p>
@@ -26,7 +26,6 @@
           </i18n>
         </div>
       </bk-exception>
-
     </div>
     <div class="content" v-else-if="type === 'permission'">
       <slot name="permission">
@@ -68,10 +67,9 @@
                     </bk-button>
                   </cmdb-auth>
                 </template>
-                <template #skip>
-                  <a class="empty-link" href="javascript:void(0)" @click="$emit('skip')">{{skipText}}</a>
+                <template #empty-link>
+                  <a class="empty-link" href="javascript:void(0)" @click="$emit('empty-link')">{{emptyLinkText}}</a>
                 </template>
-
               </i18n>
             </bk-exception>
           </div>
@@ -108,69 +106,65 @@
     },
     data() {
       return {
-        permission: this.stuff.payload.permission
+        permission: this.stuff.payload?.permission || ''
       }
     },
     computed: {
       type() {
-        return this.stuff.type
+        return this.stuff?.type || ''
       },
       action() {
         return this.stuff.payload.action || this.$t('创建')
       },
       resource() {
-        return this.stuff.payload.resource
+        return this.stuff.payload?.resource || ''
       },
       emptyText() {
-        return this.stuff.payload.emptyText
+        return this.stuff.payload?.emptyText || ''
       },
       payload() {
-        return this.stuff.payload
+        return this.stuff?.payload || ''
       },
       defaultText() {
-        return this.stuff.payload.defaultText
+        return this.stuff.payload?.defaultText || ''
       },
       path() {
-        return this.stuff.payload.path
+        return this.stuff.payload?.path || ''
       },
-      skipText() {
-        return this.stuff.payload.skipText
+      emptyLinkText() {
+        return this.stuff.payload?.emptyLinkText || ''
       }
     },
     watch: {
       stuff: {
         handler(value) {
-          this.permission = value.payload.permission
+          this.permission = value.payload?.permission
         },
         deep: true
       }
-    },
-    mounted() {
-    },
-    methods: {
     }
   }
 </script>
 
 <style lang="scss" scoped>
-    .data-stuff {
-        color: #63656e;
-        font-size: 14px;
-        .img-empty {
-            width: 90px;
-        }
-        .text-btn {
-            font-size: 14px;
-            height: auto;
-        }
-        .search-text{
-          margin: 0 3px;
-        }
-        .data-tips{
-          margin-top: 15px;
-        }
-    }
-    .empty-link {
-         color: #3A84FF;
-     }
+.data-empty {
+  color: #63656e;
+  font-size: 14px;
+  .img-empty {
+    width: 90px;
+  }
+  .text-btn {
+    font-size: 14px;
+    height: auto;
+  }
+  .search-text{
+    margin: 0 3px;
+  }
+  .data-tips{
+    margin-top: 15px;
+  }
+}
+.empty-link {
+  color: #3A84FF;
+}
 </style>
