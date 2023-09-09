@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -108,7 +107,6 @@ func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) er
 	incCond := mapstr.MapStr{
 		metadata.ModelFieldObjCls:        model.ObjCls,
 		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: model.ObjSortNumber},
-		metadata.ModelFieldID:            mapstr.MapStr{common.BKDBNE: model.ID},
 	}
 
 	incData := mapstr.MapStr{metadata.ModelFieldObjSortNumber: int64(1)}
@@ -205,13 +203,6 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		return nil
 	}
 
-	idInterface, exist := cond.ToMapStr().Get(common.BKFieldID)
-	if !exist {
-		blog.Errorf("parsing data failed, err: object id not set, condMapStr: %v, rid: %s", cond.ToMapStr(), kit.Rid)
-		return kit.CCError.CCError(common.CCErrorTopoPathParamPaserFailed)
-	}
-	data.Set(common.BKFieldID, idInterface)
-
 	object := metadata.Object{}
 	if err := data.ToStructByTag(&object, "field"); err != nil {
 		blog.Errorf("parsing data failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
@@ -230,7 +221,7 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		}
 		sortNum, err := m.GetModelLastNum(kit, object)
 		if err != nil {
-			blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
+			blog.Errorf("set object sort number failed, err: %v, object: %v, rid: %s", err, object, kit.Rid)
 			return err
 		}
 		data.Set(metadata.ModelFieldObjSortNumber, sortNum)
@@ -240,23 +231,22 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	// 如果未传递了 bk_classification_id 字段，传递了 obj_sort_number 字段,则表示在当前分组下更新模型顺序
 	// 更新当前模型 obj_sort_number 前先更新当前分组下其它模型 obj_sort_number
 	// 查询当前模型的分组信息
-	clsInput := map[string]interface{}{metadata.ModelFieldID: object.ID}
 	clsResult := make([]metadata.Object, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(clsInput).Fields(metadata.ModelFieldObjCls).
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Fields(metadata.ModelFieldObjCls).
 		All(kit.Ctx, &clsResult); err != nil {
-		blog.Error("get object classification failed, err: %v, objID: %d, rid: %s", err, object.ID, kit.Rid)
+		blog.Error("get object classification failed, err: %v, cond: %v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return err
 	}
 	if len(clsResult) <= 0 {
-		blog.Errorf("no model classification id founded, err: model classification no founded, objID: %d, rid: %s",
-			object.ID, kit.Rid)
+		blog.Errorf("no model classification id founded, err: model classification no founded, cond: %v, rid: %s",
+			cond.ToMapStr(), kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
 	object.ObjCls = clsResult[0].ObjCls
 
 	sortNum, err := m.GetModelLastNum(kit, object)
 	if err != nil {
-		blog.Errorf("set object sort number failed, err: %v, objectId: %s, rid: %s", err, model.ObjectID, kit.Rid)
+		blog.Errorf("set object sort number failed, err: %v, object: %v, rid: %s", err, object, kit.Rid)
 		return err
 	}
 	data.Set(metadata.ModelFieldObjSortNumber, sortNum)
