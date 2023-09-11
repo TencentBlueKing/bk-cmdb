@@ -244,10 +244,7 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		}
 	}
 
-	if cmp.Equal(expectValue, propertyValue) {
-		return true, nil
-	}
-	return false, nil
+	return cmp.Equal(expectValue, propertyValue), nil
 }
 
 func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attrMap map[int64]metadata.Attribute,

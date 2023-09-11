@@ -449,8 +449,8 @@ func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, ass
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	auditList := make([]metadata.AuditLog, 0)
-	for i, asstID := range asstIDList {
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, objID, &data.Info[i])
+	for _, asst := range data.Info {
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asst.ID, objID, &asst)
 		if err != nil {
 			blog.Errorf("delete instance association failed, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
@@ -530,7 +530,8 @@ func (assoc *association) CheckAssociations(kit *rest.Kit, objectID string, inst
 			Opt: metadata.DeleteOption{Condition: mapstr.MapStr{
 				common.BKDBOR: []mapstr.MapStr{
 					{common.BKObjIDField: asstObjID, common.BKInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
-					{common.BKAsstObjIDField: asstObjID, common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
+					{common.BKAsstObjIDField: asstObjID,
+						common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
 				},
 			}},
 			ObjID: asstObjID,
