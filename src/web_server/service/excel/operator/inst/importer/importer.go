@@ -394,8 +394,8 @@ func (i *Importer) getPropertyMap(reader *excel.Reader) (map[int]PropWithTable, 
 		blog.Errorf("get property failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, err
 	}
-
-	if i.param.GetHandleType() == core.UpdateHost {
+	handleType := i.param.GetHandleType()
+	if handleType == core.UpdateHost || handleType == core.AddInst {
 		lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
 		colProps = append(colProps, core.GetIDProp(core.PropDefaultColIdx, i.GetObjID(), lang))
 	}
