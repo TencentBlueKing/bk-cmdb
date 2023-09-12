@@ -1826,5 +1826,7 @@
     "校验类型": "Check type",
     "保存&退出": "Save & Exit",
     "保存&下一步": "Save & Next",
-    "字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板": "The field conflicts. The field has been bound to {other}. Delete the model or modify the template"
+    "字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板": "The field conflicts. The field has been bound to {other}. Delete the model or modify the template",
+    "继续": "Continue",
+    "已被模型绑定，不能删除": "Already bound to the model, can't delete"
 }
