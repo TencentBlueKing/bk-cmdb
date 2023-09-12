@@ -62,7 +62,7 @@
         class="cmdb-form-item" :class="{ 'is-error': errors.has('name') }">
         <bk-input
           data-vv-validate-on="change"
-          v-validate="`required|length:256|remoteDuplicate:${dupCheckId},${originName},${$t('模板名称已存在')}`"
+          v-validate="`required|length:128|remoteDuplicate:${dupCheckId},${originName},${$t('模板名称已存在')}`"
           name="name"
           :placeholder="$t('请输入模板名称')"
           v-model="formData.name"
