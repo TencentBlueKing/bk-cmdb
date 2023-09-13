@@ -113,6 +113,14 @@ const FilterStore = new Vue({
         containerProperty: Symbol()
       }
     },
+    isDynamicGroup() {
+      const { type } = this.config
+      return type === 'dynamic-group'
+    },
+    isDynamicGroupSet() {
+      const { mode } = this.config
+      return this.isDynamicGroup && mode === 'set'
+    },
     isContainerTopo() {
       return this.topoMode === TOPO_MODE_KEYS.CONTAINER
     },
@@ -155,6 +163,7 @@ const FilterStore = new Vue({
       let key
       let properties
       const hostProperties = this.getModelProperties('host')
+      const setProperties = this.getModelProperties('set')
       if (this.isContainerMode) {
         // 容器拓扑中的自定义字段使用独立的key
         key = this.config.header && this.config.header.customContainer
@@ -162,6 +171,10 @@ const FilterStore = new Vue({
         const nodeProperties = this.getModelProperties(CONTAINER_OBJECTS.NODE)
 
         properties = [...hostProperties, ...nodeProperties]
+      } else if (this.isDynamicGroupSet) {
+        // 动态分组的集群字段配置
+        key = this.config.header && this.config.header.cluster
+        properties = [...setProperties]
       } else {
         key = this.config.header && this.config.header.custom
         const moduleNameProperty = Utils.findPropertyByPropertyId('bk_module_name', this.properties, 'module')
@@ -169,21 +182,25 @@ const FilterStore = new Vue({
         const bizNameProperty = Utils.findPropertyByPropertyId('bk_biz_name', this.properties, 'biz')
         properties = [...hostProperties, moduleNameProperty, setNameProperty, bizNameProperty]
       }
-
       return getStorageHeader('usercustom', key, properties)
     },
     presetHeader() {
-      const hostProperties = this.getModelProperties('host')
+      const isDynamicSet = this.isDynamicGroupSet
+      const model = isDynamicSet ? 'set' : 'host'
+      const hostProperties = this.getModelProperties(model)
 
       // 初始化属性为前6个
       const headerProperties = Utils.getInitialProperties(hostProperties)
 
       // 固定在前的几个属性
-      const fixedProperties = this.fixedPropertyIds
-        .map(propertyId => Utils.findPropertyByPropertyId(propertyId, hostProperties))
-
-      // 资源-主机
+      const fixedProperties = isDynamicSet ? this.fixedPropertyIds
+        .map(propertyId => Utils.findPropertyByPropertyId(propertyId, hostProperties)) : []
+      if (isDynamicSet) {
+        // 动态分组 集群
+        return headerProperties
+      }
       if (!this.bizId) {
+        // 资源-主机
         const topologyProperty = Utils.findPropertyByPropertyId('__bk_host_topology__', hostProperties)
         fixedProperties.push(topologyProperty)
       } else if (this.isContainerTopo) {
@@ -233,6 +250,9 @@ const FilterStore = new Vue({
 
         return properties
       }
+      if (this.isDynamicGroupSet) {
+        return this.getModelProperties('set')
+      }
 
       const properties = FilterStore.properties.filter((property) => {
         const { bk_obj_id: objId, bk_property_id: propId } = property
@@ -263,6 +283,12 @@ const FilterStore = new Vue({
     }
   },
   methods: {
+    // 设置动态分组查询对象选中值
+    setDynamicGroupModel(mode) {
+      const isDynamic = this.isDynamicGroup
+      if (!isDynamic || !mode) return
+      this.config.mode = mode
+    },
     setupPropertyQuery() {
       const query = QS.parse(RouterQuery.get('filter'))
       const properties = []
@@ -336,6 +362,7 @@ const FilterStore = new Vue({
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
       this.IP = data.IP || this.IP
+      if (this.isDynamicGroup) return
       this.throttleSearch()
     },
     updateCondition(property, operator, value) {
@@ -403,7 +430,9 @@ const FilterStore = new Vue({
     },
     dispatchSearch() {
       this.setHeader()
-      this.setQuery()
+      if (!this.isDynamicGroup) {
+        this.setQuery()
+      }
       // eslint-disable-next-line vue/no-use-computed-property-like-method
       this.searchHandler(this.condition)
       this.resetPage(false)
@@ -432,11 +461,15 @@ const FilterStore = new Vue({
     },
     setHeader() {
       const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
-      const suffixProperties = this.properties.filter(property => suffixPropertyId.includes(String(property.id)))
+      const suffixProperties = this.isDynamicGroup ? []
+        : this.properties.filter(property => suffixPropertyId.includes(String(property.id)))
 
       // 默认的配置加上条件属性
       const header = [...this.defaultHeader, ...suffixProperties]
-
+      if (this.isDynamicGroupSet) {
+        this.header = header
+        return
+      }
       // 固定显示的属性
       const presetProperty = this.fixedPropertyIds
         .map(propertyId => this.properties.find(property => property.bk_property_id === propertyId))
@@ -481,10 +514,27 @@ const FilterStore = new Vue({
         this.$error(i18n.t('应用收藏条件失败提示'))
       }
     },
+    // 设置动态分组预览的conditon 和 selected
+    setDynamicCollection(data) {
+      if (!data) {
+        return
+      }
+      const condition = {}
+      const selected = []
+      Object.keys(data).forEach((key) => {
+        const item = data[key]
+        selected.push(item?.property)
+        condition[item?.property?.id] = {
+          operator: item?.operator,
+          value: item?.value
+        }
+      })
+      this.updateSelected(selected)
+      this.setCondition({ condition })
+    },
     getHeader() {
       // 取之前先设置为最新的值
       this.setHeader()
-
       // 由于属性数据异步加载，可能会存在无效的数据，过滤后返回
       return this.header.filter(header => header)
     },
@@ -623,7 +673,6 @@ const FilterStore = new Vue({
         })
         this.properties = [...commonProperties, hostIdProperty, serviceTemplateProperty, topologyProperty]
       }
-
       return this.properties
     },
     async getPropertyGroups() {
@@ -729,6 +778,7 @@ const FilterStore = new Vue({
 */
 
 export async function setupFilterStore(config = {}) {
+  const { type } = config
   FilterStore.config = config
   FilterStore.selected = []
   FilterStore.condition = {}
@@ -740,6 +790,9 @@ export async function setupFilterStore(config = {}) {
     FilterStore.getProperties(),
     FilterStore.getPropertyGroups(),
   ])
+
+  // 如果type=dynamic-group 说明是动态分组的预览结果。不走下面的方法
+  if (type === 'dynamic-group') return
 
   // 暂不支持
   // await FilterStore.getContainerPropertyMapValue()

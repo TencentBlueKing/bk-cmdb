@@ -112,7 +112,6 @@
   import { mapGetters } from 'vuex'
   import RouterQuery from '@/router/query'
   import DynamicGroupForm from './form/form.js'
-  import DynmaicGroupPreview from './preview/preview.js'
   export default {
     data() {
       return {
@@ -246,8 +245,10 @@
         })
       },
       handlePreview(row) {
-        DynmaicGroupPreview.show({
-          id: row.id
+        DynamicGroupForm.show({
+          id: row.id,
+          title: this.$t('动态分组详情', { name: row.name }),
+          isPreview: true
         })
       },
       handlePageChange(page) {
