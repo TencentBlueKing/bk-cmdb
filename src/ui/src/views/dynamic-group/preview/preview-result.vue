@@ -218,13 +218,11 @@
           await handleApplyColumnsConfig(properties)
           // 获取最新的表头，内部会读取到上方保存的配置
           tableHeader.value = FilterStore.getHeader()
-          FilterStore.setHeader()
           getHostList()
         },
         reset: async () => {
           await handleApplyColumnsConfig()
           tableHeader.value = FilterStore.getHeader()
-          FilterStore.setHeader()
           getHostList()
         }
       }
