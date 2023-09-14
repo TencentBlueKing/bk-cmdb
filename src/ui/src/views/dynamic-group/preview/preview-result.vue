@@ -15,17 +15,23 @@
     <div class="header">
       <div class="title">
         {{$t('结果预览')}}
-        <span class="date">
+        <span class="date" v-if="haveCondition">
           (
           {{ $t('生成时间xx', { date: getTime }) }}
           )
         </span>
       </div>
-      <bk-button theme="default" icon="refresh" class="mr10 refresh" size="small" @click="refresh">
+      <bk-button
+        theme="default"
+        icon="refresh"
+        class="mr10 refresh"
+        size="small"
+        v-if="haveCondition"
+        @click="handleRefresh">
         {{$t('刷新')}}
       </bk-button>
     </div>
-    <bk-table class="host-table" v-test-id.businessHostAndService="'hostList'"
+    <bk-table v-if="haveCondition" class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
@@ -60,12 +66,14 @@
       <bk-table-column type="setting" :tippy-options="{ zIndex: -1 }"></bk-table-column>
       <cmdb-table-empty
         slot="empty"
-        :stuff="table.stuff"
-        @clear="handleClearFilter">
+        :stuff="table.stuff">
       </cmdb-table-empty>
     </bk-table>
-    <div class="collpase" @click="closePreview">
-      <i class="icon-cc-angle-left"></i>
+    <div class="no-condition" v-else>
+      <cmdb-data-empty
+        slot="empty"
+        :stuff="dataEmpty">
+      </cmdb-data-empty>
     </div>
   </div>
 </template>
@@ -73,26 +81,31 @@
 <script setup>
   import hostValueFilter from '@/filters/host'
   import tableMixin from '@/mixins/table'
-  import { computed, ref, watch, reactive, getCurrentInstance } from 'vue'
+  import { computed, ref, watch, reactive, h } from 'vue'
   import store from '@/store'
   import { t } from '@/i18n'
   import {
     MENU_BUSINESS_HOST_DETAILS,
   } from '@/dictionary/menu-symbol'
   import { time } from '@/filters/formatter'
-  import FilterStore, { setupFilterStore } from '@/components/filters/store'
+  import FilterStore, { setupFilterStore } from '../form/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
-  import { CONTAINER_OBJECTS, TOPO_MODE_KEYS } from '@/dictionary/container.js'
-
-  const vm = getCurrentInstance()?.proxy
-  const emit = defineEmits(['input', 'update:multiple'])
+  import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
+  import routerActions from '@/router/actions'
+  import { getDefaultPaginationConfig,
+           isPropertySortable,
+           getHeaderPropertyName,
+           getHeaderPropertyMinWidth,
+           isUseComplexValueType,
+           getSort,
+           getPageParams
+  } from '@/utils/tools'
 
   const props = defineProps({
     condition: {
       type: Object,
       default: {}
     },
-    showPreview: Boolean,
     mode: String
   })
 
@@ -100,11 +113,17 @@
   const filtersTagHeight = ref(0)
   const tableHeader = ref([])
 
+  const dataEmpty = reactive({
+    type: 'empty',
+    payload: {
+      defaultText: t('请先在左侧设置分组条件')
+    }
+  })
   const table = reactive({
     data: [],
     selection: [],
     sort: 'bk_host_id',
-    pagination: vm.$tools.getDefaultPaginationConfig(),
+    pagination: getDefaultPaginationConfig(),
     stuff: {
       type: 'default',
       payload: {
@@ -118,7 +137,7 @@
     moveToIdleModule: Symbol('moveToIdleModule')
   })
 
-  const topoMode = computed(() => TOPO_MODE_KEYS.NORMAL)
+  const haveCondition = computed(() => Object.keys(props.condition)?.length || 0)
   const getTime = computed(() => time(now.value))
   const customInstanceColumnKey = computed(() => {
     if (props.mode === 'set') return 'dynamic_group_search_object_cluster'
@@ -127,74 +146,55 @@
   const bizId = computed(() => store.getters['objectBiz/bizId'])
   const getModelById = computed(() => store.getters['objectModelClassify/getModelById'])
 
-  watch(() => props.condition, (val) => {
-    now.value = new Date()
-    tableHeader.value = FilterStore.getHeader()
-    FilterStore.setDynamicCollection(val)
-    getHostList()
-  }, {
-    deep: true
-  })
-  watch(() => table.pagination.current, () => {
-    getHostList()
-  })
-
-  const refresh = (() => {
+  const handleRefresh = (() => {
     table.pagination.current = 1
     now.value = new Date()
-  })
-  const closePreview = (() => {
-    emit('update:showPreview', false)
   })
   const initFilterStore = (async () => {
     await setupFilterStore({
       bizId: bizId.value,
-      type: 'dynamic-group',
       mode: props.mode,
       header: {
         custom: 'business_topology_table_column_config',
-        customContainer: 'business_topology_container_table_column_config',
         cluster: 'dynamic_group_search_object_cluster'  // 集群字段
       }
     })
-
-    tableHeader.value = FilterStore.getHeader()
   })
-  const getColumnSortable = (column => (vm.$tools.isPropertySortable(column) ? 'custom' : false))
+  const getColumnSortable = (column => (isPropertySortable(column) ? 'custom' : false))
   const renderHeader = ((property) => {
-    const content = [vm.$tools.getHeaderPropertyName(property)]
+    const content = [getHeaderPropertyName(property)]
     const modelId = property.bk_obj_id
     if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById.value(modelId)
-      const suffix = vm.$createElement('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
+      const suffix = h('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
       content.push(suffix)
     }
-    return vm.$createElement('span', {}, content)
+    return h('span', {}, content)
   })
   const getColumnMinWidth = ((property) => {
-    let name = vm.$tools.getHeaderPropertyName(property)
+    let name = getHeaderPropertyName(property)
     const modelId = property.bk_obj_id
     if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById.value(modelId)
       name = `${name}(${model.bk_obj_name})`
     }
-    return vm.$tools.getHeaderPropertyMinWidth(property, {
+    return getHeaderPropertyMinWidth(property, {
       name,
-      hasSort: vm.$tools.isPropertySortable(property)
+      hasSort: isPropertySortable(property)
     })
   })
-  const getTableCellPropertyValueRefId = (property => (vm.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
+  const getTableCellPropertyValueRefId = (property => (isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
   const handlePageChange = ((current = 1) => table.pagination.current = current)
   const handleLimitChange = ((limit) => {
     table.pagination.limit = limit
     table.pagination.current = 1
   })
-  const handleSortChange = (sort => table.sort = vm.$tools.getSort(sort))
+  const handleSortChange = (sort => table.sort = getSort(sort))
   const handleValueClick = ((row, column) => {
     if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
       return
     }
-    vm.$routerActions.open({
+    routerActions.open({
       name: MENU_BUSINESS_HOST_DETAILS,
       params: {
         bizId: bizId.value,
@@ -218,19 +218,19 @@
           await handleApplyColumnsConfig(properties)
           // 获取最新的表头，内部会读取到上方保存的配置
           tableHeader.value = FilterStore.getHeader()
-          FilterStore.dispatchSearch()
+          FilterStore.setHeader()
           getHostList()
         },
         reset: async () => {
           await handleApplyColumnsConfig()
           tableHeader.value = FilterStore.getHeader()
-          FilterStore.dispatchSearch()
+          FilterStore.setHeader()
           getHostList()
         }
       }
     })
   })
-  const handleApplyColumnsConfig = ((properties = []) => vm.$store.dispatch('userCustom/saveUsercustom', {
+  const handleApplyColumnsConfig = ((properties = []) => store.dispatch('userCustom/saveUsercustom', {
     [customInstanceColumnKey.value]: properties.map(property => property.bk_property_id)
   }))
   const getSearchRequest = (() => {
@@ -239,7 +239,7 @@
       requestId: request.table,
       cancelPrevious: true
     }
-    return vm.$store.dispatch('hostSearch/searchHost', { params, config })
+    return store.dispatch('hostSearch/searchHost', { params, config })
   })
   const getHostList = (async () => {
     try {
@@ -256,18 +256,28 @@
     const params = {
       ...FilterStore.getSearchParams(),
       page: {
-        ...vm.$tools.getPageParams(table.pagination),
+        ...getPageParams(table.pagination),
         sort: table.sort
       }
     }
     return params
   })
-  const handleClearFilter = (() => {
-    FilterStore.resetAll()
-    FilterStore.setActiveCollection(null)
+
+  watch(() => props.condition, (val) => {
+    now.value = new Date()
+    tableHeader.value = FilterStore.getHeader()
+    FilterStore.setDynamicCollection(val)
+    if (haveCondition.value) {
+      getHostList()
+    }
+  }, {
+    deep: true,
+    immediate: true
+  })
+  watch(() => table.pagination.current, () => {
+    getHostList()
   })
 
-  FilterStore.setTopoMode(topoMode.value)
   initFilterStore()
 </script>
 
@@ -286,22 +296,11 @@
         height: 100%;
         position: relative;
 
-        .collpase {
-          width: 16px;
-          height: 64px;
-          line-height: 64px;
-          background: #DCDEE5;
-          border-radius: 0 4px 4px 0;
+        .no-condition {
           position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          cursor: pointer;
-
-          .icon-cc-angle-left {
-            color: white;
-            font-weight: bold;
-          }
+          top: 40%;
+          left: 50%;
+          transform: translate(-50%);
         }
         .header {
           height: 40px;

@@ -177,6 +177,7 @@
         }
       },
       handleRemove(property) {
+        if (this.disabled) return
         this.$emit('remove', property)
       },
       getComponentType(property) {

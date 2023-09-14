@@ -30,7 +30,7 @@
         v-model.trim="filter"
         right-icon="icon-search"
         clearable
-        :placeholder="$t('快速查询')">
+        :placeholder="$t('动态分组查询')">
       </bk-input>
     </div>
     <div class="dynamic-group-table">

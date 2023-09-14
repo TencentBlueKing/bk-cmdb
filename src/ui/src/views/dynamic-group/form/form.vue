@@ -13,13 +13,18 @@
 <template>
   <bk-sideslider
     :transfer="true"
-    :width="showPreview ? 1202 : 412"
+    :width="1202"
     :title="title"
     :is-show.sync="isShow"
     :before-close="handleSliderBeforeClose"
+    class="dynamic-slidebar"
     @hidden="handleHidden">
-    <template slot="content">
-      <div class="dynamic-group-info">
+    <bk-resize-layout
+      :collapsible="true"
+      :initial-divide="412"
+      slot="content"
+      style="height: 100%;">
+      <div slot="aside" class="dynamic-group-info">
         <bk-form
           class="dynamic-group-form"
           ref="form"
@@ -55,7 +60,8 @@
             <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
               icon="icon-plus-circle"
               :text="true"
-              @click="showPropertySelector">
+              :disabled="isPreviewProp"
+              @click="handleShowPropertySelector">
               {{$t('添加条件')}}
             </bk-button>
             <input type="hidden"
@@ -97,12 +103,12 @@
           </bk-button>
         </div>
       </div>
-      <div :class="['dynamic-group-preview', { 'show-preview': showPreview }]">
+      <div slot="main" class="dynamic-group-preview">
         <preview-result class="preview-result"
-          :show-preview.sync="showPreview" :condition="previewCondition" :mode="bkObjId">
+          :condition="previewCondition" :mode="bkObjId">
         </preview-result>
       </div>
-    </template>
+    </bk-resize-layout>
   </bk-sideslider>
 </template>
 
@@ -117,7 +123,7 @@
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import PreviewResult from '../preview/preview-result.vue'
-  import FilterStore from '@/components/filters/store'
+  import FilterStore from './store'
 
   export default {
     components: {
@@ -142,7 +148,6 @@
       return {
         isPreviewData: false,
         bkObjId: 'host',
-        showPreview: false,
         previewCondition: {},
         isShow: false,
         details: null,
@@ -207,7 +212,7 @@
       this.beforeClose = beforeClose
       this.setChanged = setChanged
       this.isPreviewData = this.isPreview
-      if (this.isPreview) {
+      if (this.isPreview || this.id) {
         setTimeout(() => {
           this.initPreviewParams()
         }, 300)
@@ -290,7 +295,7 @@
           this.formData.bk_obj_id = transformedDetails.bk_obj_id
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
-          setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
+          setTimeout(this.$refs.propertyList?.setDetailsCondition, 0)
         } catch (error) {
           console.error(error)
         }
@@ -380,7 +385,7 @@
       handleClearCondition() {
         this.selectedProperties = []
       },
-      showPropertySelector(event) {
+      handleShowPropertySelector(event) {
         this.formPropertySelector = FormPropertySelector.show({
           selected: this.selectedProperties,
           handler: this.handlePropertySelected
@@ -405,8 +410,7 @@
       initPreviewParams() {
         this.bkObjId = this.formData.bk_obj_id
         FilterStore.setDynamicGroupModel(this.formData.bk_obj_id)
-        this.previewCondition = this.$tools.clone(this.$refs.propertyList.condition)
-        this.showPreview = true
+        this.previewCondition = this.$tools.clone(this.$refs.propertyList?.condition)
       },
       async handleConfirm() {
         try {
@@ -550,21 +554,22 @@
 </script>
 
 <style lang="scss" scoped>
+    .dynamic-slidebar {
+      :deep(.bk-sideslider-content) {
+        overflow-x: hidden;
+      }
+    }
     .dynamic-group-info {
       width: 412px;
       float: left;
       height: calc(100% - 53px);
     }
     .dynamic-group-preview {
-      width: 0;
+      width: 100%;
       float: right;
       height: 100%;
       padding-bottom: 11px;
       background: #F5F7FA;
-    }
-    .show-preview {
-      width: calc(100% - 412px);
-      transition: width .5s ease 0s;
     }
     .dynamic-group-form {
         padding: 18px 16px;
