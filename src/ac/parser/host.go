@@ -365,8 +365,7 @@ const (
 	updateHostPropertyBatchPattern = "/api/v3/hosts/property/batch"
 	cloneHostPropertyBatchPattern  = "/api/v3/hosts/property/clone"
 
-	findHostRelationWithObjInstPattern = "/api/v3/findmany/hosts/relation/with_topo"
-	listHostDetailAndTopologyPattern   = "/api/v3/findmany/hosts/detail_topo"
+	listHostDetailAndTopologyPattern = "/api/v3/findmany/hosts/detail_topo"
 
 	findHostsServiceTemplatesPattern = "/api/v3/findmany/hosts/service_template"
 
@@ -396,10 +395,8 @@ var (
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
 
-	findHostsByServiceTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_service_templates/biz/\d+$`)
-	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
-	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
-	findHostsByTopoRegex             = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
+	findHostsBySetTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
+	findHostsByTopoRegex         = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
 
 	// find host by biz set regex, authorize by biz set access permission, **only for ui**
 	findHostsByBizSetPattern = regexp.MustCompile(`^/api/v3/findmany/hosts/biz_set/[0-9]+/?$`)
@@ -421,60 +418,6 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
-		return ps
-	}
-
-	if ps.hitRegexp(findHostsByServiceTemplatesRegex, http.MethodPost) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s",
-				ps.RequestCtx.Elements[6])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.ViewBusinessResource,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
-		bizStr := ps.RequestCtx.Elements[5]
-		bizID, err := strconv.ParseInt(bizStr, 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s", bizStr)
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.ViewBusinessResource,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find host relations with custom object instances
-	if ps.hitPattern(findHostRelationWithObjInstPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
 		return ps
 	}
 

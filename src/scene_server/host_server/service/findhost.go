@@ -45,6 +45,14 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+		BusinessID: bizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	body := new(meta.FindModuleHostRelationParameter)
 	if err := ctx.DecodeInto(body); err != nil {
 		ctx.RespAutoError(err)
@@ -167,6 +175,14 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	if bizID == 0 {
 		ccErr := defErr.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		ctx.RespAutoError(ccErr)
+		return
+	}
+
+	// authorize
+	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+		BusinessID: bizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

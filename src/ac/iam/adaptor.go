@@ -188,21 +188,30 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		convertAction = meta.Update
 	}
 
-	if resourceType == meta.ModelAttribute || resourceType == meta.ModelAttributeGroup {
-		if convertAction == meta.Delete || convertAction == meta.Update || convertAction == meta.Create {
+	switch resourceType {
+	case meta.ModelAttribute, meta.ModelAttributeGroup:
+		switch convertAction {
+		case meta.Delete, meta.Update, meta.Create:
 			if businessID > 0 {
 				return EditBusinessCustomField, nil
 			} else {
 				return EditSysModel, nil
 			}
 		}
-	}
-
-	if resourceType == meta.HostInstance && convertAction == meta.Update {
-		if businessID > 0 {
-			return EditBusinessHost, nil
-		} else {
-			return EditResourcePoolHost, nil
+	case meta.HostInstance:
+		switch convertAction {
+		case meta.Update:
+			if businessID > 0 {
+				return EditBusinessHost, nil
+			} else {
+				return EditResourcePoolHost, nil
+			}
+		case meta.Find:
+			if businessID > 0 {
+				return ViewBusinessResource, nil
+			} else {
+				return ViewResourcePoolHost, nil
+			}
 		}
 	}
 

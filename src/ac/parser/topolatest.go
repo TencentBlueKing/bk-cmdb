@@ -317,7 +317,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}

@@ -700,6 +700,16 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 		return []types.Resource{r}, nil
 	}
 
+	// find business host
+	if act == ViewBusinessResource {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.BusinessID, 10),
+		}
+		return []types.Resource{r}, nil
+	}
+
 	return []types.Resource{}, nil
 }
 
