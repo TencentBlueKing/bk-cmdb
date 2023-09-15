@@ -51,12 +51,18 @@ spec:
             port: {{ .Values.datacollection.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.datacollection.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.datacollection.resources }}
         resources: {{ toYaml .Values.datacollection.resources | nindent 10 }}
