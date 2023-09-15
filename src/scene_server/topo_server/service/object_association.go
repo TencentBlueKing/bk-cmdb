@@ -15,11 +15,13 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // CreateObjectAssociation create a new object association
@@ -47,7 +49,7 @@ func (s *Service) CreateObjectAssociation(ctx *rest.Contexts) {
 	ctx.RespEntity(association)
 }
 
-// SearchObjectAssociation search  object association by object id
+// SearchObjectAssociation search object association by object id
 func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 	data := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&data); err != nil {
@@ -60,11 +62,9 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		// compatible with new query structures
 		// the new condition format:
 		// { "condition":{}}
-
 		cond, err := data.MapStr("condition")
-		if nil != err {
-			blog.Errorf("search object association, failed to get the condition, error info is %s, rid: %s",
-				err.Error(), ctx.Kit.Rid)
+		if err != nil {
+			blog.Errorf("get the condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsIsInvalid, err.Error()))
 			return
 		}
@@ -74,16 +74,25 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 			return
 		}
 
-		input := &metadata.QueryCondition{Condition: cond}
-		resp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
-			input)
-		if err != nil {
-			blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
+		needAuth := true
+		condFields := []string{common.BKObjIDField, common.BKAsstObjIDField}
+		for _, field := range condFields {
+			if val, exist := cond.Get(field); exist {
+				authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{util.GetStrByInterface(val)})
+				if err != nil {
+					ctx.RespAutoError(err)
+					return
+				}
+				if !authorized {
+					ctx.RespNoAuth(authResp)
+					return
+				}
+				needAuth = false
+				break
+			}
 		}
 
-		ctx.RespEntity(resp.Info)
+		s.searchObjAssociationWithCond(ctx, cond, needAuth)
 		return
 	}
 
@@ -120,6 +129,79 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(resp.Info)
+}
+
+func (s *Service) searchObjAssociationWithCond(ctx *rest.Contexts, cond mapstr.MapStr, needAuth bool) {
+	input := &metadata.QueryCondition{Condition: cond}
+	resp, err := s.Engine.CoreAPI.CoreService().Association().ReadModelAssociation(ctx.Kit.Ctx, ctx.Kit.Header,
+		input)
+	if err != nil {
+		blog.Errorf("search object association with cond[%v] failed, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if !needAuth {
+		ctx.RespEntity(resp.Info)
+		return
+	}
+
+	authInput := meta.ListAuthorizedResourcesParam{
+		UserName:     ctx.Kit.User,
+		ResourceType: meta.Model,
+		Action:       meta.Find,
+	}
+	authorizedRes, err := s.AuthManager.Authorizer.ListAuthorizedResources(ctx.Kit.Ctx, ctx.Kit.Header, authInput)
+	if err != nil {
+		blog.Errorf("list authorized resources failed, user: %s, err: %v, rid: %s", ctx.Kit.User, err, ctx.Kit.Rid)
+		ctx.RespErrorCodeOnly(common.CCErrorTopoGetAuthorizedBusinessListFailed, "")
+		return
+	}
+
+	if authorizedRes.IsAny {
+		ctx.RespEntity(resp.Info)
+		return
+	}
+
+	ids := make([]int64, 0)
+	result := make([]metadata.Association, 0)
+	for _, resourceID := range authorizedRes.Ids {
+		id, err := strconv.ParseInt(resourceID, 10, 64)
+		if err != nil {
+			blog.Errorf("get authorized object id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	if len(ids) == 0 {
+		ctx.RespEntity(result)
+		return
+	}
+
+	queryCond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}}
+	query := &metadata.QueryCondition{Condition: queryCond, DisableCounter: true}
+	modelResp, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	authMap := make(map[string]struct{})
+	for _, model := range modelResp.Info {
+		authMap[model.ObjectID] = struct{}{}
+	}
+
+	for _, association := range resp.Info {
+		_, haveObjIDAuth := authMap[association.ObjectID]
+		_, haveAsstObjIDAuth := authMap[association.AsstObjID]
+		if haveObjIDAuth || haveAsstObjIDAuth {
+			result = append(result, association)
+		}
+	}
+
+	ctx.RespEntity(result)
+	return
 }
 
 // DeleteObjectAssociation delete object association
