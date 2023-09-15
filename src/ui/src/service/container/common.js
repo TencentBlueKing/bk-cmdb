@@ -32,6 +32,7 @@ export const getContainerObjectNames = type => (
 // 与传统模型字段类型的映射，原则上在交互形态完全一致的情况下才可以转换
 export const typeMapping = {
   string: 'singlechar',
+  enum: 'singlechar',
   numeric: 'float',
   mapString: 'map',
   array: 'array',

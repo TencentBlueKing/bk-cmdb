@@ -268,6 +268,7 @@
         // 选中指定的节点
         const queryNodeId = RouterQuery.get('node', '')
         if (queryNodeId) {
+          // 未加载的容器节点会找不到，导致无法复原节点的选中，暂无理想的解决方式
           const node = this.$refs.tree.getNodeById(queryNodeId)
           if (node) {
             return node
