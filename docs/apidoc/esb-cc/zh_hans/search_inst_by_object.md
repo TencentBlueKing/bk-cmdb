@@ -70,7 +70,7 @@ condition 参数为查询的目标实例对应的模型定义的所有字段
         "info": [
             {
                 "bk_inst_id": 0,
-                "bk_inst_name": "default area",
+                "bk_inst_name": "Default Area",
                 "bk_supplier_account": "123456789"
             }
         ]

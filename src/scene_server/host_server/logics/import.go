@@ -37,15 +37,19 @@ import (
 )
 
 // AddHost TODO
-func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
+func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerID string,
+	hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string,
+	[]string, error) {
 	if len(moduleIDs) == 0 {
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 		return nil, nil, nil, nil, err
 	}
 	var err error
-	defaultModule, err := lgc.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(kit.Ctx, kit.Header, appID)
+	defaultModule, err := lgc.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(kit.Ctx, kit.Header,
+		appID)
 	if err != nil {
-		blog.Errorf("AddHost failed, get biz default module info failed, appID:%d, err:%s, rid:%s", appID, err.Error(), kit.Rid)
+		blog.Errorf("AddHost failed, get biz default module info failed, appID:%d, err:%s, rid:%s", appID, err.Error(),
+			kit.Rid)
 		return nil, nil, nil, nil, err
 	}
 	isInternalModule := make([]bool, 0)
@@ -133,8 +137,10 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 			var err error
 
 			// generate audit log before really change it.
-			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(host)
-			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, appID, []mapstr.MapStr{existsHostMap[intHostID]})
+			generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit,
+				metadata.AuditUpdate).WithUpdateFields(host)
+			auditLog, err = audit.GenerateAuditLog(generateAuditParameter, appID,
+				[]mapstr.MapStr{existsHostMap[intHostID]})
 			if err != nil {
 				blog.Errorf("generate host audit log failed before update host, hostID: %d, bizID: %d, err: %v, rid: %s",
 					intHostID, innerIP, err, kit.Rid)
@@ -150,7 +156,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 		} else {
 			intHostID, err = instance.addHostInstance(iSubAreaVal, index, appID, moduleIDs, toInternalModule, host)
 			if err != nil {
-				errMsg = append(errMsg, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
+				errMsg = append(errMsg,
+					fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error())
 				continue
 			}
 			host[common.BKHostIDField] = intHostID
@@ -178,7 +185,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	// to save audit log.
 	if len(logContents) > 0 {
 		if err := audit.SaveAuditLog(kit, logContents...); err != nil {
-			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("save audit log failed, but add host success, err: %v", err)
+			return hostIDs, successMsg, updateErrMsg, errMsg, fmt.Errorf("save audit log failed, but add host success, err: %v",
+				err)
 		}
 	}
 
@@ -203,7 +211,7 @@ func getIpField(host map[string]interface{}) (string, string, string) {
 // UpdateHostByExcel update host by excel
 // NOCC:golint/fnsize(后续重构，和实例合在一起)
 func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]interface{}, hostIDArr []int64,
-	indexHostIDMap map[int64]int64) ([]string, []string, error) {
+	indexHostIDMap map[int64]int64) ([]int64, []string, error) {
 
 	relRes, err := lgc.getHostRelationDestMsg(kit)
 	if err != nil {
@@ -240,7 +248,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 		hostBizMap[relation.HostID] = relation.AppID
 	}
 
-	successMsg := make([]string, 0)
+	successMsg := make([]int64, 0)
 	errMsg := make([]string, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
@@ -258,6 +266,8 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 			continue
 		}
 
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
 		_ = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(host, relRes)
 			if err != nil {
@@ -293,7 +303,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 				return err
 			}
 
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+			successMsg = append(successMsg, index)
 			return nil
 		})
 	}
@@ -304,7 +314,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 // AddHostByExcel add host by import excel
 // NOCC:golint/fnsize(后续重构，和实例的合成一个函数)
 func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string,
-	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg, errMsg []string, err error) {
+	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg []int64, errMsg []string, err error) {
 
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
 	if err != nil {
@@ -353,6 +363,8 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
 
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
 		_ = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(host, relRes)
 			if err != nil {
@@ -393,7 +405,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 			}
 
 			// add current host operate result to batch add result
-			successMsg = append(successMsg, strconv.FormatInt(index, 10))
+			successMsg = append(successMsg, index)
 
 			// add audit log
 			if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
@@ -523,7 +535,8 @@ func (lgc *Logics) updateTableData(kit *rest.Kit, tableData *metadata.TableData,
 }
 
 // AddHostToResourcePool TODO
-func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHostToResourcePoolHostList) ([]int64, *metadata.AddHostToResourcePoolResult, error) {
+func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHostToResourcePoolHostList) ([]int64,
+	*metadata.AddHostToResourcePoolResult, error) {
 	bizID, err := lgc.GetDefaultAppIDWithSupplier(kit)
 	if err != nil {
 		blog.ErrorJSON("add host, but get default biz id failed, err: %s, input: %s, rid: %s", err, hostList, kit.Rid)

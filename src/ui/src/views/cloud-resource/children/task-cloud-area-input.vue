@@ -22,12 +22,12 @@
           'has-tips': hasTips,
           'has-error': error
         }"
-        :placeholder="$t('请输入xx', { name: $t('云区域') })">
+        :placeholder="$t('请输入xx', { name: $t('管控区域') })">
     </cmdb-auth>
     <i class="tips-icon icon icon-cc-tips"
       v-if="readonly"
       v-bk-tooltips="{
-        content: $t('VPC已绑定云区域')
+        content: $t('VPC已绑定管控区域')
       }">
     </i>
     <i class="tips-icon bk-icon icon-exclamation-circle-shape"

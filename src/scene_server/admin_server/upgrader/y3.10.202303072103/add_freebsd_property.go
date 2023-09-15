@@ -69,7 +69,7 @@ func addFreeBSDProperty(ctx context.Context, db dal.RDB) error {
 		return err
 	}
 
-	enumOpts, err := metadata.ParseEnumOption(ctx, ostypeProperty.Option)
+	enumOpts, err := metadata.ParseEnumOption(ostypeProperty.Option)
 	if err != nil {
 		return err
 	}

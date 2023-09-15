@@ -20,7 +20,8 @@ import (
 )
 
 // SearchPackage TODO
-func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error) {
+func (p *nodeman) SearchPackage(ctx context.Context, h http.Header,
+	processname string) (resp *SearchPluginPackageResult, err error) {
 	resp = new(SearchPluginPackageResult)
 	subPath := "/v2/nodeman/%s/package/"
 	err = p.client.Get().
@@ -35,7 +36,8 @@ func (p *nodeman) SearchPackage(ctx context.Context, h http.Header, processname 
 }
 
 // SearchProcess TODO
-func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error) {
+func (p *nodeman) SearchProcess(ctx context.Context, h http.Header,
+	processname string) (resp *SearchPluginProcessResult, err error) {
 	resp = new(SearchPluginProcessResult)
 	subPath := "/v2/nodeman/process/%s/"
 	err = p.client.Get().
@@ -50,7 +52,8 @@ func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname 
 }
 
 // SearchProcessInfo TODO
-func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error) {
+func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header,
+	processname string) (resp *SearchPluginProcessInfoResult, err error) {
 	resp = new(SearchPluginProcessInfoResult)
 	subPath := "/v2/nodeman/process_info/%s/"
 	err = p.client.Get().
@@ -65,7 +68,8 @@ func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processn
 }
 
 // UpgradePlugin TODO
-func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error) {
+func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string,
+	data *UpgradePluginRequest) (resp *UpgradePluginResult, err error) {
 	resp = new(UpgradePluginResult)
 	subPath := "/v2/nodeman/%s/tasks/"
 
@@ -86,7 +90,8 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 }
 
 // SearchTask TODO
-func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error) {
+func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult,
+	err error) {
 	resp = new(SearchTaskResult)
 	subPath := "/v2/nodeman/%d/tasks/%d/"
 	err = p.client.Get().
@@ -101,7 +106,8 @@ func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, ta
 }
 
 // SearchPluginHost TODO
-func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error) {
+func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header,
+	processname string) (resp *SearchPluginHostResult, err error) {
 	resp = new(SearchPluginHostResult)
 	subPath := "/v2/nodeman/0/host_status/get_host/"
 	err = p.client.Get().

@@ -442,7 +442,8 @@ func (c *ConfigAdmin) Validate() error {
 			vf := field.MethodByName(fn)
 			errVal := vf.Call(make([]reflect.Value, 0))
 			if errVal[0].Interface() != nil {
-				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn, errVal[0].Interface().(error).Error())
+				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
 			}
 		}
 	}
@@ -649,7 +650,8 @@ func (v ValidationRulesCfg) Validate() error {
 			vf := bcr.MethodByName(fn)
 			errVal := vf.Call(make([]reflect.Value, 0))
 			if errVal[0].Interface() != nil {
-				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn, errVal[0].Interface().(error).Error())
+				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
 			}
 		}
 	}

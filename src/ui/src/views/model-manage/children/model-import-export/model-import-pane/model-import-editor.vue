@@ -551,7 +551,8 @@
         t,
         setCurrentModel,
         isModelExistedInImportData,
-        handleModelSwitchChange
+        handleModelSwitchChange,
+        emitValue
       }
     }
   })

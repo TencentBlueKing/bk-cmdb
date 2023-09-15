@@ -9,7 +9,8 @@ import (
 )
 
 // CreateProcessInstance TODO
-func (p *process) CreateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) CreateProcessInstance(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/proc/process_instance"
 
@@ -71,7 +72,8 @@ func (p *process) SearchProcessInstance(ctx context.Context, h http.Header, data
 }
 
 // UpdateProcessInstance TODO
-func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/process_instance"
 
@@ -86,7 +88,8 @@ func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, data
 }
 
 // ListProcessRelatedInfo TODO
-func (p *process) ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error) {
+func (p *process) ListProcessRelatedInfo(ctx context.Context, h http.Header, bizID int64,
+	data metadata.ListProcessRelatedInfoOption) (resp *metadata.ListProcessRelatedInfoResponse, err error) {
 	resp = new(metadata.ListProcessRelatedInfoResponse)
 	subPath := "/findmany/proc/process_related_info/biz/%d"
 
@@ -101,7 +104,8 @@ func (p *process) ListProcessRelatedInfo(ctx context.Context, h http.Header, biz
 }
 
 // ListProcessInstancesNameIDsInModule TODO
-func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/proc/process_instance/name_ids"
 
@@ -116,7 +120,8 @@ func (p *process) ListProcessInstancesNameIDsInModule(ctx context.Context, h htt
 }
 
 // ListProcessInstancesDetailsByIDs TODO
-func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/proc/process_instance/detail/by_ids"
 
@@ -131,7 +136,8 @@ func (p *process) ListProcessInstancesDetailsByIDs(ctx context.Context, h http.H
 }
 
 // ListProcessInstancesDetails TODO
-func (p *process) ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64, data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error) {
+func (p *process) ListProcessInstancesDetails(ctx context.Context, h http.Header, bizID int64,
+	data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/proc/process_instance/detail/biz/%d"
 
@@ -146,7 +152,8 @@ func (p *process) ListProcessInstancesDetails(ctx context.Context, h http.Header
 }
 
 // UpdateProcessInstancesByIDs TODO
-func (p *process) UpdateProcessInstancesByIDs(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) UpdateProcessInstancesByIDs(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/process_instance/by_ids"
 

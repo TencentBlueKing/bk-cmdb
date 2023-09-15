@@ -16,6 +16,8 @@
     :value="value"
     :disabled="disabled"
     :precision="precision"
+    :max="max"
+    :min="min"
     v-model.number="localValue"
     v-bind="$attrs"
     @blur="handleInput"
@@ -60,6 +62,16 @@
       precision: {
         type: Number,
         default: 5
+      },
+      options: {
+        type: Object,
+        default: {}
+      }
+    },
+    data() {
+      return {
+        max: 99999999999,
+        min: -999999999
       }
     },
     computed: {
@@ -74,6 +86,11 @@
           this.$emit('on-change', emitValue)
         }
       }
+    },
+    mounted() {
+      const { min = -999999999, max = 99999999999 } = this.options
+      this.max = max === '' ? 99999999999 : max
+      this.min = min  === '' ? -999999999 : min
     },
     methods: {
       handleInput(value, event) {

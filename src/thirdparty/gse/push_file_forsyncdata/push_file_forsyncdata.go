@@ -19,8 +19,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/thrift/lib/go/thrift"
 	"reflect"
+
+	"github.com/apache/thrift/lib/go/thrift"
 )
 
 // (needed to ensure safety because of naive import list construction.)
@@ -273,13 +274,16 @@ func (p *API_CommRsp) Read(iprot thrift.TProtocol) error {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
 	if !issetMErrcode {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MErrcode is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MErrcode is not set"))
 	}
 	if !issetMErrmsg {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MErrmsg is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MErrmsg is not set"))
 	}
 	if !issetMContent {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MContent is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MContent is not set"))
 	}
 	return nil
 }
@@ -470,10 +474,12 @@ func (p *API_MapRsp) Read(iprot thrift.TProtocol) error {
 		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 	}
 	if !issetMErrcode {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MErrcode is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MErrcode is not set"))
 	}
 	if !issetMErrmsg {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MErrmsg is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MErrmsg is not set"))
 	}
 	if !issetMRsp {
 		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MRsp is not set"))
@@ -801,10 +807,12 @@ func (p *API_BaseFileInfo) Read(iprot thrift.TProtocol) error {
 		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MPath is not set"))
 	}
 	if !issetMDestName {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MDestName is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MDestName is not set"))
 	}
 	if !issetMDestPath {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MDestPath is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MDestPath is not set"))
 	}
 	return nil
 }
@@ -1209,7 +1217,8 @@ func (p *API_FileInfoV2) Read(iprot thrift.TProtocol) error {
 		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MFile is not set"))
 	}
 	if !issetMHostlist {
-		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("Required field MHostlist is not set"))
+		return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA,
+			fmt.Errorf("Required field MHostlist is not set"))
 	}
 	return nil
 }
@@ -1510,7 +1519,8 @@ func (p *DoSomeCmdClient) GetPushFileRst(ctx context.Context, seqno string) (r *
 // Parameters:
 //  - Seqno
 //  - IpList
-func (p *DoSomeCmdClient) GetPushFileRstByIp(ctx context.Context, seqno string, ipList []string) (r *API_MapRsp, err error) {
+func (p *DoSomeCmdClient) GetPushFileRstByIp(ctx context.Context, seqno string, ipList []string) (r *API_MapRsp,
+	err error) {
 	var _args9 DoSomeCmdGetPushFileRstByIpArgs
 	_args9.Seqno = seqno
 	_args9.IpList = ipList
@@ -1524,7 +1534,8 @@ func (p *DoSomeCmdClient) GetPushFileRstByIp(ctx context.Context, seqno string, 
 // Parameters:
 //  - Seqno
 //  - CondList
-func (p *DoSomeCmdClient) GetPushFileRstByCond(ctx context.Context, seqno string, condList []string) (r *API_MapRsp, err error) {
+func (p *DoSomeCmdClient) GetPushFileRstByCond(ctx context.Context, seqno string, condList []string) (r *API_MapRsp,
+	err error) {
 	var _args11 DoSomeCmdGetPushFileRstByCondArgs
 	_args11.Seqno = seqno
 	_args11.CondList = condList
@@ -1538,7 +1549,8 @@ func (p *DoSomeCmdClient) GetPushFileRstByCond(ctx context.Context, seqno string
 // Parameters:
 //  - Seqno
 //  - HostList
-func (p *DoSomeCmdClient) GetPushFileRstByIpV2(ctx context.Context, seqno string, hostList []*API_Host) (r *API_MapRsp, err error) {
+func (p *DoSomeCmdClient) GetPushFileRstByIpV2(ctx context.Context, seqno string, hostList []*API_Host) (r *API_MapRsp,
+	err error) {
 	var _args13 DoSomeCmdGetPushFileRstByIpV2Args
 	_args13.Seqno = seqno
 	_args13.HostList = hostList
@@ -1578,7 +1590,8 @@ func NewDoSomeCmdProcessor(handler DoSomeCmd) *DoSomeCmdProcessor {
 	return self15
 }
 
-func (p *DoSomeCmdProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *DoSomeCmdProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool,
+	err thrift.TException) {
 	name, _, seqId, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return false, err
@@ -1601,7 +1614,8 @@ type doSomeCmdProcessorPushFileV2 struct {
 	handler DoSomeCmd
 }
 
-func (p *doSomeCmdProcessorPushFileV2) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *doSomeCmdProcessorPushFileV2) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := DoSomeCmdPushFileV2Args{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -1618,7 +1632,8 @@ func (p *doSomeCmdProcessorPushFileV2) Process(ctx context.Context, seqId int32,
 	var retval *API_CommRsp
 	var err2 error
 	if retval, err2 = p.handler.PushFileV2(ctx, args.FileList); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing pushFileV2: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing pushFileV2: "+err2.Error())
 		oprot.WriteMessageBegin("pushFileV2", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
@@ -1649,7 +1664,8 @@ type doSomeCmdProcessorGetPushFileRst struct {
 	handler DoSomeCmd
 }
 
-func (p *doSomeCmdProcessorGetPushFileRst) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *doSomeCmdProcessorGetPushFileRst) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := DoSomeCmdGetPushFileRstArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -1666,7 +1682,8 @@ func (p *doSomeCmdProcessorGetPushFileRst) Process(ctx context.Context, seqId in
 	var retval *API_MapRsp
 	var err2 error
 	if retval, err2 = p.handler.GetPushFileRst(ctx, args.Seqno); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getPushFileRst: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing getPushFileRst: "+err2.Error())
 		oprot.WriteMessageBegin("getPushFileRst", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
@@ -1697,7 +1714,8 @@ type doSomeCmdProcessorGetPushFileRstByIp struct {
 	handler DoSomeCmd
 }
 
-func (p *doSomeCmdProcessorGetPushFileRstByIp) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *doSomeCmdProcessorGetPushFileRstByIp) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := DoSomeCmdGetPushFileRstByIpArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -1714,7 +1732,8 @@ func (p *doSomeCmdProcessorGetPushFileRstByIp) Process(ctx context.Context, seqI
 	var retval *API_MapRsp
 	var err2 error
 	if retval, err2 = p.handler.GetPushFileRstByIp(ctx, args.Seqno, args.IpList); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getPushFileRstByIp: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing getPushFileRstByIp: "+err2.Error())
 		oprot.WriteMessageBegin("getPushFileRstByIp", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
@@ -1745,7 +1764,8 @@ type doSomeCmdProcessorGetPushFileRstByCond struct {
 	handler DoSomeCmd
 }
 
-func (p *doSomeCmdProcessorGetPushFileRstByCond) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *doSomeCmdProcessorGetPushFileRstByCond) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := DoSomeCmdGetPushFileRstByCondArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -1762,7 +1782,8 @@ func (p *doSomeCmdProcessorGetPushFileRstByCond) Process(ctx context.Context, se
 	var retval *API_MapRsp
 	var err2 error
 	if retval, err2 = p.handler.GetPushFileRstByCond(ctx, args.Seqno, args.CondList); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getPushFileRstByCond: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing getPushFileRstByCond: "+err2.Error())
 		oprot.WriteMessageBegin("getPushFileRstByCond", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()
@@ -1793,7 +1814,8 @@ type doSomeCmdProcessorGetPushFileRstByIpV2 struct {
 	handler DoSomeCmd
 }
 
-func (p *doSomeCmdProcessorGetPushFileRstByIpV2) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *doSomeCmdProcessorGetPushFileRstByIpV2) Process(ctx context.Context, seqId int32,
+	iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	args := DoSomeCmdGetPushFileRstByIpV2Args{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
@@ -1810,7 +1832,8 @@ func (p *doSomeCmdProcessorGetPushFileRstByIpV2) Process(ctx context.Context, se
 	var retval *API_MapRsp
 	var err2 error
 	if retval, err2 = p.handler.GetPushFileRstByIpV2(ctx, args.Seqno, args.HostList); err2 != nil {
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing getPushFileRstByIpV2: "+err2.Error())
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR,
+			"Internal error processing getPushFileRstByIpV2: "+err2.Error())
 		oprot.WriteMessageBegin("getPushFileRstByIpV2", thrift.EXCEPTION, seqId)
 		x.Write(oprot)
 		oprot.WriteMessageEnd()

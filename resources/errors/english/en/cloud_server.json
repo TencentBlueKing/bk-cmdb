@@ -17,7 +17,7 @@
   "1118016": "Cloud sync dir ID %d is not exist",
   "1118017": "No cloud ID was provided",
   "1118018": "Cloud ID %d is not exist",
-  "1118019": "Default cloud area can't be used",
+  "1118019": "Default bk-network area can't be used",
   "1118020": "Cloud account create failed",
   "1118021": "Cloud account configures get in batch failed",
   "1118022": "Delete destroyed cloud hosts related resource failed",

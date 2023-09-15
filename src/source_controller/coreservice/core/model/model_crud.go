@@ -14,6 +14,7 @@ package model
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"configcenter/src/common"
@@ -74,42 +75,61 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	if objName, exist := data[common.BKObjNameField]; exist == true && len(util.GetStrByInterface(objName)) > 0 {
+	// 停用模型 pausedFlag 为 true
+	pausedFlag := false
+
+	paused, exist := data[metadata.ModelFieldIsPaused]
+	if exist {
+		flag, ok := paused.(bool)
+		if exist && !ok {
+			blog.Errorf("attr(%v) type error, type: %v, rid: %s", metadata.ModelFieldIsPaused,
+				reflect.TypeOf(paused), kit.Rid)
+			return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldIsPaused)
+		}
+		pausedFlag = flag
+	}
+
+	objName, objNameExist := data[common.BKObjNameField]
+
+	if (objNameExist && len(util.GetStrByInterface(objName)) > 0) || pausedFlag {
 		for _, model := range models {
-			modelName := data[common.BKObjNameField]
+			if err := m.isExistProcessingTask(kit, model.ID, pausedFlag); err != nil {
+				return 0, err
+			}
 
 			// 检查模型名称重复
-			modelNameUniqueFilter := map[string]interface{}{
-				common.BKObjNameField: modelName,
+			nameCond := map[string]interface{}{
+				common.BKObjNameField: objName,
 				common.BKFieldID: map[string]interface{}{
 					common.BKDBNE: model.ID,
 				},
 			}
 
-			sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+			count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(nameCond).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("check whether same name model exists failed, name: %s, filter: %+v, err: %s, rid: %s", modelName, modelNameUniqueFilter, err.Error(), kit.Rid)
+				blog.Errorf("failed to check the validity of the model name, filter: %+v, err: %v, rid: %s",
+					nameCond, err, kit.Rid)
 				return 0, err
 			}
-			if sameNameCount > 0 {
-				blog.Warnf("update model failed, field `%s` duplicated, rid: %s", modelName, kit.Rid)
-				return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, modelName)
+			if count > 0 {
+				blog.Warnf("update model failed, field `%s` duplicated, rid: %s", objName, kit.Rid)
+				return 0, kit.CCError.Errorf(common.CCErrCommDuplicateItem, objName)
 			}
-
 			// 一次更新多个模型的时候，唯一校验需要特别小心
 			filter := map[string]interface{}{common.BKFieldID: model.ID}
 			cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, data)
-			if nil != err {
-				blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+			if err != nil {
+				blog.Errorf("failed to update table (%s), err: %v, cond: %+v, data: %+v, err: %v,rid: %s",
+					common.BKTableNameObjDes, filter, data, err, kit.Rid)
 				return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 			}
+			return cnt, nil
 		}
-		return cnt, nil
 	}
 
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database update operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjDes, err.Error())
+	if err != nil {
+		blog.Errorf("failed to update the table (%s), err: %s, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -158,26 +178,26 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	// delete model property group
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model attribute group error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model property attribute
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model attribute error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model unique
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, delCondMap); err != nil {
 		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, delCondMap)
 	if err != nil {
 		blog.ErrorJSON("delete model unique error. err:%s, cond:%s, rid:%s", err.Error(), delCondMap, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
+		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	return cnt, nil

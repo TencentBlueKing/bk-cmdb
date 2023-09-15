@@ -354,7 +354,7 @@ type HostSyncInfo struct {
 	LastTime      time.Time `json:"last_time" bson:"last_time"`
 }
 
-// CloudArea 云区域
+// CloudArea 管控区域
 type CloudArea struct {
 	CloudID     int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName   string    `json:"bk_cloud_name" bson:"bk_cloud_name"`

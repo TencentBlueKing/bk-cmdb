@@ -194,6 +194,16 @@ func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.Ra
 	return cErr.RawErrorInfo{}
 }
 
+// SyncServiceTemplateOption sync service template to some hosts in a module.
+type SyncServiceTemplateOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+	ModuleID          int64   `json:"bk_module_id"`
+	HostIDs           []int64 `json:"bk_host_ids,omitempty"`
+	// IsSyncModule defines if module attributes needs to be synced, or if hosts needs to be synced
+	IsSyncModule bool `json:"is_sync_module"`
+}
+
 // ListDiffServiceInstancesOption list service instances request.
 type ListDiffServiceInstancesOption struct {
 	BizID             int64 `json:"bk_biz_id"`
@@ -711,7 +721,8 @@ func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 		if o.ProcessPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules", querybuilder.MaxDeep)},
+				Args: []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules",
+					querybuilder.MaxDeep)},
 			}
 		}
 	}
@@ -751,9 +762,12 @@ type ModuleDetailOfP struct {
 
 // HostDetailOfP TODO
 type HostDetailOfP struct {
-	HostID  int64  `json:"bk_host_id"`
-	CloudID int64  `json:"bk_cloud_id"`
-	InnerIP string `json:"bk_host_innerip"`
+	HostID     int64  `json:"bk_host_id"`
+	CloudID    int64  `json:"bk_cloud_id"`
+	InnerIP    string `json:"bk_host_innerip"`
+	InnerIPv6  string `json:"bk_host_innerip_v6"`
+	Addressing string `json:"bk_addressing"`
+	AgentID    string `json:"bk_agent_id"`
 }
 
 // ServiceInstanceDetailOfP TODO
@@ -1092,7 +1106,8 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 		return "name", errors.New("name can't be empty")
 	}
 	if common.ServiceCategoryMaxLength < utf8.RuneCountInString(sc.Name) {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name), common.ServiceCategoryMaxLength)
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name),
+			common.ServiceCategoryMaxLength)
 	}
 	match, err := regexp.MatchString(common.FieldTypeServiceCategoryRegexp, sc.Name)
 	if nil != err {
@@ -1786,35 +1801,9 @@ type ProcessProperty struct {
 
 // Validate TODO
 func (pt *ProcessProperty) Validate() (field string, err error) {
-	// call all field's Validate method one by one
-	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
-	selfVal := reflect.ValueOf(pt).Elem()
-	selfType := reflect.TypeOf(pt).Elem()
-	fieldCount := selfVal.NumField()
-	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-		field := selfType.Field(fieldIdx)
-		fieldVal := selfVal.Field(fieldIdx)
-		tag := field.Tag.Get("json")
-		fieldName := strings.Split(tag, ",")[0]
-
-		if fieldName == common.BKProcBindInfo {
-			continue
-		}
-		// check implements interface
-		fieldValType := fieldVal.Addr().Type()
-		if !fieldValType.Implements(propertyInterfaceType) {
-			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(), propertyInterfaceType.Name())
-			panic(msg)
-		}
-
-		// call validate method by interface
-		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
-		out := checkResult[0]
-		if !out.IsNil() {
-			err := out.Interface().(error)
-
-			return fieldName, err
-		}
+	field, err = pt.validateFields()
+	if err != nil {
+		return field, err
 	}
 
 	if fieldName, err := pt.BindInfo.Validate(); err != nil {
@@ -1849,6 +1838,41 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 
+	return "", nil
+}
+
+// validateFields call all field's Validate method one by one
+func (pt *ProcessProperty) validateFields() (string, error) {
+	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
+	selfVal := reflect.ValueOf(pt).Elem()
+	selfType := reflect.TypeOf(pt).Elem()
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		field := selfType.Field(fieldIdx)
+		fieldVal := selfVal.Field(fieldIdx)
+		tag := field.Tag.Get("json")
+		fieldName := strings.Split(tag, ",")[0]
+
+		if fieldName == common.BKProcBindInfo {
+			continue
+		}
+		// check implements interface
+		fieldValType := fieldVal.Addr().Type()
+		if !fieldValType.Implements(propertyInterfaceType) {
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(),
+				propertyInterfaceType.Name())
+			panic(msg)
+		}
+
+		// call validate method by interface
+		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
+		out := checkResult[0]
+		if !out.IsNil() {
+			err := out.Interface().(error)
+
+			return fieldName, err
+		}
+	}
 	return "", nil
 }
 

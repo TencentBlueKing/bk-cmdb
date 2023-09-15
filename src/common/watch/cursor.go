@@ -50,7 +50,39 @@ func init() {
 	// cursor should be:
 	// MQ0xDTVlYTZkM2YzOTRjMWY1ZDk4NmU5YmQ4Ng1ub0V2ZW50DTENMQ==
 	NoEventCursor = cursor
+
+	for cursorType, intVal := range cursorTypeIntMap {
+		intCursorTypeMap[intVal] = cursorType
+	}
 }
+
+var (
+	cursorTypeIntMap = map[CursorType]int{
+		NoEvent:                 1,
+		Host:                    2,
+		ModuleHostRelation:      3,
+		Biz:                     4,
+		Set:                     5,
+		Module:                  6,
+		ObjectBase:              8,
+		Process:                 9,
+		ProcessInstanceRelation: 10,
+		HostIdentifier:          11,
+		MainlineInstance:        12,
+		InstAsst:                13,
+		BizSet:                  14,
+		BizSetRelation:          15,
+		Plat:                    16,
+		KubeCluster:             17,
+		KubeNode:                18,
+		KubeNamespace:           19,
+		KubeWorkload:            20,
+		KubePod:                 21,
+		Project:                 22,
+	}
+
+	intCursorTypeMap = make(map[int]CursorType)
+)
 
 // CursorType TODO
 type CursorType string
@@ -107,102 +139,23 @@ const (
 
 // ToInt TODO
 func (ct CursorType) ToInt() int {
-	switch ct {
-	case NoEvent:
-		return 1
-	case Host:
-		return 2
-	case ModuleHostRelation:
-		return 3
-	case Biz:
-		return 4
-	case Set:
-		return 5
-	case Module:
-		return 6
-	case ObjectBase:
-		return 8
-	case Process:
-		return 9
-	case ProcessInstanceRelation:
-		return 10
-	case HostIdentifier:
-		return 11
-	case MainlineInstance:
-		return 12
-	case InstAsst:
-		return 13
-	case BizSet:
-		return 14
-	case BizSetRelation:
-		return 15
-	case Plat:
-		return 16
-	case KubeCluster:
-		return 17
-	case KubeNode:
-		return 18
-	case KubeNamespace:
-		return 19
-	case KubeWorkload:
-		return 20
-	case KubePod:
-		return 21
-	case Project:
-		return 22
-	default:
+	intVal, exists := cursorTypeIntMap[ct]
+	if !exists {
 		return -1
 	}
+
+	return intVal
 }
 
 // ParseInt TODO
 func (ct *CursorType) ParseInt(typ int) {
-	switch typ {
-	case 1:
-		*ct = NoEvent
-	case 2:
-		*ct = Host
-	case 3:
-		*ct = ModuleHostRelation
-	case 4:
-		*ct = Biz
-	case 5:
-		*ct = Set
-	case 6:
-		*ct = Module
-	case 8:
-		*ct = ObjectBase
-	case 9:
-		*ct = Process
-	case 10:
-		*ct = ProcessInstanceRelation
-	case 11:
-		*ct = HostIdentifier
-	case 12:
-		*ct = MainlineInstance
-	case 13:
-		*ct = InstAsst
-	case 14:
-		*ct = BizSet
-	case 15:
-		*ct = BizSetRelation
-	case 16:
-		*ct = Plat
-	case 17:
-		*ct = KubeCluster
-	case 18:
-		*ct = KubeNode
-	case 19:
-		*ct = KubeNamespace
-	case 20:
-		*ct = KubeWorkload
-	case 21:
-		*ct = KubePod
-	case 22:
-		*ct = Project
-	default:
+	cursorType, exists := intCursorTypeMap[typ]
+	if !exists {
 		*ct = UnknownType
+		return
 	}
+
+	*ct = cursorType
 }
 
 // ListCursorTypes returns all support CursorTypes.
@@ -373,47 +326,31 @@ func (c *Cursor) Decode(cur string) error {
 	return nil
 }
 
-// GetEventCursor TODO
+var collEventCursorTypeMap = map[string]CursorType{
+	common.BKTableNameBaseHost:                Host,
+	common.BKTableNameModuleHostConfig:        ModuleHostRelation,
+	common.BKTableNameBaseApp:                 Biz,
+	common.BKTableNameBaseSet:                 Set,
+	common.BKTableNameBaseModule:              Module,
+	common.BKTableNameBaseInst:                ObjectBase,
+	common.BKTableNameMainlineInstance:        MainlineInstance,
+	common.BKTableNameBaseProcess:             Process,
+	common.BKTableNameProcessInstanceRelation: ProcessInstanceRelation,
+	common.BKTableNameInstAsst:                InstAsst,
+	common.BKTableNameBaseBizSet:              BizSet,
+	common.BKTableNameBasePlat:                Plat,
+	kubetypes.BKTableNameBaseCluster:          KubeCluster,
+	kubetypes.BKTableNameBaseNode:             KubeNode,
+	kubetypes.BKTableNameBaseNamespace:        KubeNamespace,
+	kubetypes.BKTableNameBaseWorkload:         KubeWorkload,
+	kubetypes.BKTableNameBasePod:              KubePod,
+	common.BKTableNameBaseProject:             Project,
+}
+
+// GetEventCursor get event cursor.
 func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
-	curType := UnknownType
-	switch coll {
-	case common.BKTableNameBaseHost:
-		curType = Host
-	case common.BKTableNameModuleHostConfig:
-		curType = ModuleHostRelation
-	case common.BKTableNameBaseApp:
-		curType = Biz
-	case common.BKTableNameBaseSet:
-		curType = Set
-	case common.BKTableNameBaseModule:
-		curType = Module
-	case common.BKTableNameBaseInst:
-		curType = ObjectBase
-	case common.BKTableNameMainlineInstance:
-		curType = MainlineInstance
-	case common.BKTableNameBaseProcess:
-		curType = Process
-	case common.BKTableNameProcessInstanceRelation:
-		curType = ProcessInstanceRelation
-	case common.BKTableNameInstAsst:
-		curType = InstAsst
-	case common.BKTableNameBaseBizSet:
-		curType = BizSet
-	case common.BKTableNameBasePlat:
-		curType = Plat
-	case kubetypes.BKTableNameBaseCluster:
-		curType = KubeCluster
-	case kubetypes.BKTableNameBaseNode:
-		curType = KubeNode
-	case kubetypes.BKTableNameBaseNamespace:
-		curType = KubeNamespace
-	case kubetypes.BKTableNameBaseWorkload:
-		curType = KubeWorkload
-	case kubetypes.BKTableNameBasePod:
-		curType = KubePod
-	case common.BKTableNameBaseProject:
-		curType = Project
-	default:
+	curType, exists := collEventCursorTypeMap[coll]
+	if !exists {
 		blog.Errorf("unsupported cursor type collection: %s, oid: %s", e.ID())
 		return "", fmt.Errorf("unsupported cursor type collection: %s", coll)
 	}

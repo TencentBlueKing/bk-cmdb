@@ -49,20 +49,23 @@
                 @confirm="handleModelNameUpdateConfirm"
                 :editable="isEditable"
                 validate="required|singlechar|length:256|reservedWord"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              >
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                 <template #append>
                   <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
                 </template>
               </editable-field>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing">
+            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
           <div class="model-group-name">
-            <span class="model-group-name-label">{{$t('所属分组')}}：</span>
+            <span :class="['model-group-name-label', { 'model-group-name-label-editing': modelGroupIsEditing }]">
+              {{$t('所属分组')}}
+            </span>
             <editable-field
+              :editing.sync="modelGroupIsEditing"
+              class="model-group-name-edit"
               v-model="activeModel.bk_classification_id"
               :label="modelClassificationName"
               :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
@@ -70,6 +73,7 @@
               @confirm="handleModelGroupUpdateConfirm"
               type="enum"
               font-size="12px"
+              style="width: calc(100% - 60px)"
               :options="classifications
                 .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
             >
@@ -77,13 +81,59 @@
           </div>
           <div class="instance-count"
             v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
-            <span>{{$t('实例数量')}}：</span>
-            <span class="instance-count-text" @click="handleGoInstance">
-              <cmdb-loading :loading="$loading(request.instanceCount)">
-                {{modelInstanceCount || 0}}
-              </cmdb-loading>
-              <i class="icon-cc-share instance-count-link-icon"></i>
-            </span>
+            <span class="instance-count-label">{{$t('实例数量')}}</span>
+            <div>
+              <span class="instance-count-text" @click="handleGoInstance">
+                <cmdb-loading :loading="$loading(request.instanceCount)">
+                  {{modelInstanceCount || 0}}
+                </cmdb-loading>
+              </span>
+            </div>
+          </div>
+          <div class="field-template"
+            v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
+            <span class="field-template-label">{{$t('绑定的字段组合模板')}}</span>
+            <flex-tag
+              v-if="templateList.length"
+              class="field-template-tag"
+              :max-width="'355px'"
+              :list="templateList"
+              :is-link-style="true"
+              :popover-options="{
+                boundary: 'scrollParent',
+                appendTo: 'parent'
+              }"
+              @click-text="handleViewTemplate">
+              <template #append="template">
+                <cmdb-auth
+                  tag="i"
+                  class="unbind-icon icon-cc-unbind"
+                  v-bk-tooltips="$t('解绑模版')"
+                  :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                  @click="handleUnbindTemplate(template)">
+                </cmdb-auth>
+              </template>
+              <template #text-append="template">
+                <i class="reddot"
+                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
+                  v-bk-tooltips="{
+                    allowHTML: true,
+                    theme: 'light template-diff-sync',
+                    content: `#template-diff-sync-tooltips-${template.id}`
+                  }">
+                </i>
+                <div :id="`template-diff-sync-tooltips-${template.id}`"
+                  class="diff-sync-content"
+                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync">
+                  <i18n path="模型信息与模板信息有差异提示语" tag="div" class="content-tips">
+                    <template #link>
+                      <bk-link theme="primary" @click="handleGoSync(template)">{{ $t('去同步') }}</bk-link>
+                    </template>
+                  </i18n>
+                </div>
+              </template>
+            </flex-tag>
+            <div v-else>--</div>
           </div>
           <cmdb-auth class="restart-btn"
             v-if="!isMainLineModel && activeModel.bk_ispaused"
@@ -96,20 +146,6 @@
             </bk-button>
           </cmdb-auth>
           <div class="btn-group">
-            <template v-if="canBeImport">
-              <cmdb-auth tag="label" class="label-btn"
-                v-if="tab.active === 'field' && hideImport"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-                :class="{ 'disabled': isReadOnly }"
-                @click="handleImportField">
-                <i class="icon-cc-import"></i>
-                <span class="label-btn-text">{{$t('导入')}}</span>
-              </cmdb-auth>
-              <label class="label-btn" @click="exportField">
-                <i class="icon-cc-derivation"></i>
-                <span class="label-btn-text">{{$t('导出')}}</span>
-              </label>
-            </template>
             <template v-if="isShowOperationButton">
               <cmdb-auth class="label-btn"
                 v-if="!isMainLineModel && !activeModel['bk_ispaused']"
@@ -145,7 +181,16 @@
       :active.sync="tab.active"
       @tab-change="handleTabChange">
       <bk-tab-panel name="field" :label="$t('模型字段')">
-        <the-field-group ref="field" v-if="tab.active === 'field'"></the-field-group>
+        <the-field-group
+          ref="field"
+          v-if="tab.active === 'field'"
+          :is-read-only-import="isReadOnly"
+          :can-be-import="canBeImport"
+          :hide-import="hideImport"
+          :import-auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+          @handleImportField="handleImportField"
+          @exportField="exportField">
+        </the-field-group>
       </bk-tab-panel>
       <bk-tab-panel name="relation" :label="$t('模型关联')" :visible="!!activeModel">
         <the-relation v-if="tab.active === 'relation'" :model-id="modelId"></the-relation>
@@ -231,13 +276,18 @@
   import cmdbImport from '@/components/import/import'
   import { mapActions, mapGetters, mapMutations } from 'vuex'
   import RouterQuery from '@/router/query'
+  import CombineRequest from '@/api/combine-request.js'
   import modelImportExportService from '@/service/model/import-export'
   import {
     MENU_MODEL_MANAGEMENT,
-    MENU_RESOURCE_INSTANCE
+    MENU_RESOURCE_INSTANCE,
+    MENU_MODEL_FIELD_TEMPLATE,
+    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
-  import EditableField from './editable-field.vue'
+  import EditableField from '@/components/ui/details/editable-field.vue'
+  import FlexTag from '@/components/ui/flex-tag'
+  import fieldTemplateService from '@/service/field-template'
 
   export default {
     name: 'ModelDetails',
@@ -248,7 +298,8 @@
       theChooseIcon,
       cmdbImport,
       cmdbLoading,
-      EditableField
+      EditableField,
+      FlexTag
     },
     data() {
       return {
@@ -273,7 +324,10 @@
         request: {
           instanceCount: Symbol('instanceCount')
         },
-        modelNameIsEditing: false
+        modelNameIsEditing: false,
+        modelGroupIsEditing: false,
+        templateList: [],
+        templateDiffStatus: {}
       }
     },
     computed: {
@@ -330,12 +384,39 @@
       },
       hideImport() {
         // 项目模型中隐藏导入按钮
-        return this.$route.params.modelId !== BUILTIN_MODELS.PROJECT
+        return this.tab.active === 'field' && this.$route.params.modelId !== BUILTIN_MODELS.PROJECT
       }
     },
     watch: {
       '$route.params.modelId'() {
         this.initObject()
+      },
+      async templateList(list) {
+        if (!list?.length) {
+          return
+        }
+        const templateIds = list.map(item => item.id)
+        const allResult = await CombineRequest.setup(Symbol(), (params) => {
+          const [templateId] = params
+          return fieldTemplateService.getModelDiffStatus({
+            bk_template_id: templateId,
+            object_ids: [this.activeModel.id]
+          })
+        }, { segment: 1, concurrency: 5 }).add(templateIds)
+
+        let groupIndex = 0
+        for (const result of allResult) {
+          const results = await result
+          for (let i = 0; i < results.length; i++) {
+            const { status, reason, value } = results[i]
+            if (status === 'rejected') {
+              console.error(reason?.message)
+              continue
+            }
+            this.$set(this.templateDiffStatus, templateIds[(groupIndex * 5) + i], value?.[0] ?? {})
+          }
+          groupIndex += 1
+        }
       }
     },
     created() {
@@ -463,9 +544,25 @@
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.activeModel = model
+          const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
+          this.$store.commit('setTitle', `${menuI18n}【${this.activeModel.bk_obj_name}】`)
           this.getModelInstanceCount()
+          this.getModelBindTemplate()
         } else {
           this.$routerActions.redirect({ name: 'status404' })
+        }
+      },
+      async getModelBindTemplate() {
+        const templateList = await fieldTemplateService.getModelBindTemplate({
+          object_id: this.activeModel.id
+        })
+        if (templateList?.info?.length) {
+          this.templateList = templateList.info.map(item => ({
+            id: item.id,
+            name: item.name
+          }))
+        } else {
+          this.templateList = []
         }
       },
       async getModelInstanceCount() {
@@ -594,6 +691,44 @@
       handleImportField() {
         if (this.isReadOnly) return
         this.importField.show = true
+      },
+      handleUnbindTemplate(template) {
+        this.$bkInfo({
+          type: 'warning',
+          title: this.$t('确认解绑该模板'),
+          subTitle: this.$t('解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理'),
+          okText: this.$t('解绑'),
+          cancelText: this.$t('取消'),
+          confirmLoading: true,
+          confirmFn: async () => {
+            const params = {
+              bk_template_id: template.id,
+              object_id: this.activeModel.id
+            }
+            await fieldTemplateService.unbind(params)
+            this.$success(this.$t('解绑成功'))
+            this.getModelBindTemplate()
+            return true
+          }
+        })
+      },
+      handleViewTemplate(template) {
+        this.$routerActions.open({
+          name: MENU_MODEL_FIELD_TEMPLATE,
+          query: {
+            id: template.id,
+            action: 'view'
+          }
+        })
+      },
+      handleGoSync(template) {
+        this.$routerActions.redirect({
+          name: MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+          params: {
+            id: template.id,
+            modelId: this.activeModel.id
+          }
+        })
       }
     }
   }
@@ -602,11 +737,11 @@
 <style lang="scss" scoped>
     .model-info {
         &-wrapper{
-          padding: 20px 24px;
+          padding: 0;
         }
 
         display: flex;
-        height: 80px;
+        height: 100px;
         background: #fff;
         font-size: 14px;
         box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
@@ -616,14 +751,12 @@
             position: relative;
             margin-left: 32px;
             .model-type {
-                $builtinColor:#ffb23a;
-                $customizeColor: #dcfde2;
                 position: absolute;
                 left: 30px;
                 top: -16px;
                 padding: 0 8px;
                 border-radius: 4px;
-                background-color: $customizeColor;
+                background-color: #dcfde2;
                 font-size: 20px;
                 line-height: 32px;
                 color: #34ce5c;
@@ -639,15 +772,15 @@
                     left: 50%;
                     width: 0;
                     height: 0;
-                    border-top: 8px solid $customizeColor;
+                    border-top: 8px solid #dcfde2;
                     border-right: 14px solid transparent;
                     transform: translateX(-50%);
                 }
                 &.is-builtin {
-                    background-color: $builtinColor;
+                    background-color: #ffb23a;
                     color: #fff;
                     &::after{
-                      border-top-color: $builtinColor;
+                      border-top-color: #ffb23a;
                     }
                 }
             }
@@ -683,9 +816,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            $iconSize:56px;
-            width: $iconSize;
-            height: $iconSize;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: #e7f0ff;
             text-align: center;
@@ -711,7 +843,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                line-height: $iconSize;
+                line-height: 56px;
                 font-size: 12px;
                 border-radius: 50%;
                 text-align: center;
@@ -731,9 +863,12 @@
         .model-identity {
           width: 225px;
           margin-left: 10px;
+          margin-right: 10px;
 
           .model-name {
             font-weight: 700;
+            color: #313238;
+            line-height: 26px;
 
             .bk-tag {
               font-weight: normal;
@@ -746,6 +881,7 @@
           .model-id {
             font-size: 12px;
             color: #979ba5;
+            @include ellipsis;
           }
         }
 
@@ -754,27 +890,68 @@
           font-size: 12px;
           color: #63656e;
           display: flex;
-          align-items: center;
+          flex-direction: column;
 
           &-label {
             flex: 0 0 auto;
+            line-height: 26px;
+            color: #979BA5;
+          }
+          &-label-editing {
+            margin-top: 13px;
           }
         }
 
         .instance-count {
+            width: 250px;
             display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
             font-size: 12px;
             color: #63656e;
+            &-label {
+              line-height: 26px;
+              color: #979BA5;
+            }
             &-text {
               color: #3a84ff;
               cursor: pointer;
               display: flex;
               align-items: center;
             }
-            &-link-icon {
-              margin-left: 6px;
-            }
          }
+         .field-template {
+            max-width: 400px;
+            font-size: 12px;
+            color: #63656e;
+          }
+          .field-template-label {
+            line-height: 26px;
+            color: #979BA5;
+          }
+          .field-template-tag {
+            line-height: 26px;
+            .unbind-icon {
+              font-size: 12px !important;
+              margin: 0 4px;
+              padding: 0;
+            }
+
+            :deep(.tag-item-text) {
+              position: relative;
+              @include ellipsis;
+              .reddot {
+                position: relative;
+                right: 0px;
+                top: -6px;
+                width: 6px;
+                height: 6px;
+                background: #EA3636;
+                border-radius: 50%;
+                display: inline-block;
+              }
+            }
+          }
         .restart-btn {
             display: inline-block;
         }
@@ -840,18 +1017,15 @@
         }
     }
     /deep/ .model-details-tab {
-        height: calc(100% - 120px);
-        margin: 0 20px;
-        background-color: #fff;
-        border-radius: 2px;
-        box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
-        .bk-tab-header {
-            padding: 0;
-            margin: 0 10px;
-        }
-        .bk-tab-section {
-            padding: 0;
-        }
+      height: calc(100% - 100px);
+      .bk-tab-header {
+        padding: 0 18px;
+        background: #fff;
+        box-shadow: 0 2px 4px 0 #1919290d;
+      }
+      .bk-tab-section {
+        padding: 0;
+      }
     }
     .editable-field {
       width: 100%;
@@ -860,4 +1034,16 @@
 
 <style lang="scss">
 @import '@/assets/scss/model-manage.scss';
+
+.template-diff-sync-theme {
+  .diff-sync-content {
+    .content-tips {
+      display: flex;
+      align-items: center;
+    }
+    .bk-link-text {
+      font-size: 12px;
+    }
+  }
+}
 </style>

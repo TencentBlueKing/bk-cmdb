@@ -27,7 +27,8 @@ type syncTaskAuditLog struct {
 }
 
 // GenerateAuditLog generate audit log of cloud sync task, if data is nil, will auto get data by taskID.
-func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, taskID int64, data *metadata.CloudSyncTask) (
+func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter, taskID int64,
+	data *metadata.CloudSyncTask) (
 	*metadata.AuditLog, error) {
 	kit := parameter.kit
 

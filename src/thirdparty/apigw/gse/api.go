@@ -53,7 +53,8 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 }
 
 // AsyncPushFile push file to target host
-func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp, error) {
+func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp,
+	error) {
 
 	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(AsyncPushFileResp)

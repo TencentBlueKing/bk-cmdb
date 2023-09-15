@@ -97,7 +97,8 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 	}
 
 	if !exists {
-		if err = s.watchDB.CreateTable(s.ctx, common.BKTableNameWatchToken); err != nil && !s.watchDB.IsDuplicatedError(err) {
+		err = s.watchDB.CreateTable(s.ctx, common.BKTableNameWatchToken)
+		if err != nil && !s.watchDB.IsDuplicatedError(err) {
 			blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, rid)
 			return err
 		}
@@ -119,110 +120,123 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 		}
 
 		if !exists {
-			if err = s.watchDB.CreateTable(s.ctx, key.ChainCollection()); err != nil && !s.watchDB.IsDuplicatedError(err) {
+			err = s.watchDB.CreateTable(s.ctx, key.ChainCollection())
+			if err != nil && !s.watchDB.IsDuplicatedError(err) {
 				blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
 				return err
 			}
 		}
 
-		indexes := []daltypes.Index{
-			{Name: "index_id", Keys: bson.D{{common.BKFieldID, -1}}, Background: true, Unique: true},
-			{Name: "index_cursor", Keys: bson.D{{common.BKCursorField, -1}}, Background: true, Unique: true},
-			{Name: "index_cluster_time", Keys: bson.D{{common.BKClusterTimeField, -1}}, Background: true,
-				ExpireAfterSeconds: dbChainTTLTime},
-		}
-
-		if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance || cursorType == watch.InstAsst {
-
-			subResourceIndex := daltypes.Index{
-				Name: "index_sub_resource", Keys: bson.D{{common.BKSubResourceField, 1}}, Background: true,
-			}
-			indexes = append(indexes, subResourceIndex)
-		}
-
-		existIndexArr, err := s.watchDB.Table(key.ChainCollection()).Indexes(s.ctx)
-		if err != nil {
-			blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+		if err = s.createWatchIndexes(cursorType, key, rid); err != nil {
 			return err
 		}
 
-		existIdxMap := make(map[string]bool)
-		for _, index := range existIndexArr {
-			existIdxMap[index.Name] = true
-		}
-
-		for _, index := range indexes {
-			if _, exist := existIdxMap[index.Name]; exist {
-				continue
-			}
-
-			err = s.watchDB.Table(key.ChainCollection()).CreateIndex(s.ctx, index)
-			if err != nil && !s.watchDB.IsDuplicatedError(err) {
-				blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
-				return err
-			}
-		}
-
-		filter := map[string]interface{}{
-			"_id": key.Collection(),
-		}
-
-		count, err := s.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
-		if err != nil {
-			blog.Errorf("check if last watch token exists failed, err: %v, filter: %+v", err, filter)
-			return err
-		}
-
-		if count > 0 {
-			continue
-		}
-
-		if key.Collection() == event.HostIdentityKey.Collection() {
-			// host identity's watch token is different with other identity.
-			// only set coll is ok, the other fields is useless
-			data := mapstr.MapStr{
-				"_id":                              key.Collection(),
-				common.BKTableNameBaseHost:         watch.LastChainNodeData{Coll: common.BKTableNameBaseHost},
-				common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
-				common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
-			}
-			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
-				blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
-				return err
-			}
-			continue
-		}
-
-		if key.Collection() == event.BizSetRelationKey.Collection() {
-			// biz set relation's watch token is generated in the same way with the host identity's watch token
-			data := mapstr.MapStr{
-				"_id":                        key.Collection(),
-				common.BKTableNameBaseApp:    watch.LastChainNodeData{Coll: common.BKTableNameBaseApp},
-				common.BKTableNameBaseBizSet: watch.LastChainNodeData{Coll: common.BKTableNameBaseBizSet},
-				common.BKFieldID:             0,
-				common.BKTokenField:          "",
-			}
-			if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
-				blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
-				return err
-			}
-			continue
-		}
-
-		data := watch.LastChainNodeData{
-			Coll:  key.Collection(),
-			Token: "",
-			StartAtTime: streamtypes.TimeStamp{
-				Sec:  uint32(time.Now().Unix()),
-				Nano: 0,
-			},
-		}
-		if err := s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
-			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+		if err = s.createWatchToken(key); err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
+func (s *Service) createWatchIndexes(cursorType watch.CursorType, key event.Key, rid string) error {
+	indexes := []daltypes.Index{
+		{Name: "index_id", Keys: bson.D{{common.BKFieldID, -1}}, Background: true, Unique: true},
+		{Name: "index_cursor", Keys: bson.D{{common.BKCursorField, -1}}, Background: true, Unique: true},
+		{Name: "index_cluster_time", Keys: bson.D{{common.BKClusterTimeField, -1}}, Background: true,
+			ExpireAfterSeconds: dbChainTTLTime},
+	}
+
+	if cursorType == watch.ObjectBase || cursorType == watch.MainlineInstance || cursorType == watch.InstAsst {
+		subResourceIndex := daltypes.Index{
+			Name: "index_sub_resource", Keys: bson.D{{common.BKSubResourceField, 1}}, Background: true,
+		}
+		indexes = append(indexes, subResourceIndex)
+	}
+
+	existIndexArr, err := s.watchDB.Table(key.ChainCollection()).Indexes(s.ctx)
+	if err != nil {
+		blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+		return err
+	}
+
+	existIdxMap := make(map[string]bool)
+	for _, index := range existIndexArr {
+		existIdxMap[index.Name] = true
+	}
+
+	for _, index := range indexes {
+		if _, exist := existIdxMap[index.Name]; exist {
+			continue
+		}
+
+		err = s.watchDB.Table(key.ChainCollection()).CreateIndex(s.ctx, index)
+		if err != nil && !s.watchDB.IsDuplicatedError(err) {
+			blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) createWatchToken(key event.Key) error {
+	filter := map[string]interface{}{
+		"_id": key.Collection(),
+	}
+
+	count, err := s.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
+	if err != nil {
+		blog.Errorf("check if last watch token exists failed, err: %v, filter: %+v", err, filter)
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	if key.Collection() == event.HostIdentityKey.Collection() {
+		// host identity's watch token is different with other identity.
+		// only set coll is ok, the other fields is useless
+		data := mapstr.MapStr{
+			"_id":                              key.Collection(),
+			common.BKTableNameBaseHost:         watch.LastChainNodeData{Coll: common.BKTableNameBaseHost},
+			common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
+			common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
+		}
+		if err = s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+			return err
+		}
+		return nil
+	}
+
+	if key.Collection() == event.BizSetRelationKey.Collection() {
+		// biz set relation's watch token is generated in the same way with the host identity's watch token
+		data := mapstr.MapStr{
+			"_id":                        key.Collection(),
+			common.BKTableNameBaseApp:    watch.LastChainNodeData{Coll: common.BKTableNameBaseApp},
+			common.BKTableNameBaseBizSet: watch.LastChainNodeData{Coll: common.BKTableNameBaseBizSet},
+			common.BKFieldID:             0,
+			common.BKTokenField:          "",
+		}
+		if err = s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+			blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
+			return err
+		}
+		return nil
+	}
+
+	data := watch.LastChainNodeData{
+		Coll:  key.Collection(),
+		Token: "",
+		StartAtTime: streamtypes.TimeStamp{
+			Sec:  uint32(time.Now().Unix()),
+			Nano: 0,
+		},
+	}
+	if err = s.watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+		blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+		return err
+	}
 	return nil
 }
 
@@ -244,7 +258,8 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 	}
 
 	if input.CommitID != version.CCGitHash {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})
+		_ = resp.WriteError(http.StatusOK,
+			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "commit_id")})
 		return
 	}
 
@@ -301,7 +316,8 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	if input.ConfigName != "" {
 		if ok := allConfigNames[input.ConfigName]; !ok {
 			blog.Errorf("refreshConfig failed, config_name is wrong, %s, input:%#v, rid:%s", configHelpInfo, input, rid)
-			resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
+			resp.WriteError(http.StatusOK,
+				&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
 			return
 		}
 		configName = input.ConfigName
@@ -321,7 +337,8 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 		err = s.ConfigCenter.WriteAllConfs2Center(s.Config.Configures.Dir, s.Config.Errors.Res, s.Config.Language.Res)
 	default:
 		blog.Errorf("refreshConfig failed, config_name is wrong, %s, input:%#v, rid:%s", configHelpInfo, input, rid)
-		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
+		resp.WriteError(http.StatusOK,
+			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
 		return
 	}
 

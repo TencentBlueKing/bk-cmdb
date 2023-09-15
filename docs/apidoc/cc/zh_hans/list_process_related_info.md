@@ -104,7 +104,10 @@
                 "host": {
                     "bk_host_id": 4,
                     "bk_cloud_id": 0,
-                    "bk_host_innerip": "192.168.15.22"
+                    "bk_host_innerip": "192.168.15.22",
+                    "bk_host_innerip_v6":"1::1",
+                    "bk_addressing":"dynamic",
+                    "bk_agent_id":"xxxxxx"
                 },
                 "service_instance": {
                     "id": 4,

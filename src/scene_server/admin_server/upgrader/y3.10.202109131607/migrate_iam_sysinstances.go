@@ -27,11 +27,13 @@ import (
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 // migrateIAMSysInstances migrate iam system instances
-func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, conf *upgrader.Config) error {
+func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client, iam *iamtype.IAM,
+	conf *upgrader.Config) error {
 	if !auth.EnableAuthorize() {
 		return nil
 	}
@@ -84,7 +86,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, iam *iamtype.IAM, c
 	}
 
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(ctx, objects); err != nil {
+	if err := iam.SyncIAMSysInstances(ctx, cache, objects); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}

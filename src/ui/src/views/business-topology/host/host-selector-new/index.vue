@@ -56,7 +56,7 @@
                   <div class="ip" v-bk-overflow-tips="{ placement: 'left' }">
                     {{row.host.bk_host_innerip || row.host.bk_host_innerip_v6 || '--'}}
                     <span class="repeat-tag" v-if="repeatSelected.includes(row)"
-                      v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
+                      v-bk-tooltips="{ content: `${$t('管控区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
                       {{$t('IP重复')}}
                     </span>
                   </div>

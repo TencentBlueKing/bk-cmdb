@@ -374,4 +374,9 @@ router.onError((error) => {
     $error(i18n.t('资源请求失败提示'))
   }
 })
+
+export const useRouter = () => router
+
+export const useRoute = () => router.app.$route
+
 export default router

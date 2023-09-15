@@ -20,7 +20,8 @@ import (
 )
 
 // CreateObjectUnique TODO
-func (t *object) CreateObjectUnique(ctx context.Context, objID string, h http.Header, data *metadata.CreateUniqueRequest) (resp *metadata.Response, err error) {
+func (t *object) CreateObjectUnique(ctx context.Context, objID string, h http.Header,
+	data *metadata.CreateUniqueRequest) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/objectunique/object/%s"
 
@@ -35,7 +36,8 @@ func (t *object) CreateObjectUnique(ctx context.Context, objID string, h http.He
 }
 
 // SearchObjectUnique TODO
-func (t *object) SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *object) SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objectunique/object/%s"
 
@@ -50,7 +52,8 @@ func (t *object) SearchObjectUnique(ctx context.Context, objID string, h http.He
 }
 
 // UpdateObjectUnique TODO
-func (t *object) UpdateObjectUnique(ctx context.Context, objID string, h http.Header, uniqueID uint64, data *metadata.UpdateUniqueRequest) (resp *metadata.Response, err error) {
+func (t *object) UpdateObjectUnique(ctx context.Context, objID string, h http.Header, uniqueID uint64,
+	data *metadata.UpdateUniqueRequest) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/objectunique/object/%s/unique/%d"
 
@@ -65,7 +68,8 @@ func (t *object) UpdateObjectUnique(ctx context.Context, objID string, h http.He
 }
 
 // DeleteObjectUnique TODO
-func (t *object) DeleteObjectUnique(ctx context.Context, objID string, h http.Header, uniqueID uint64) (resp *metadata.Response, err error) {
+func (t *object) DeleteObjectUnique(ctx context.Context, objID string, h http.Header,
+	uniqueID uint64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/delete/objectunique/object/%s/unique/%d"
 

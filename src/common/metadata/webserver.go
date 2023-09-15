@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 
@@ -265,4 +266,63 @@ type ExcelImportUpdateHostInput struct {
 	// 用来限定当前操作对象导出数据的时候，需要使用的唯一校验关系，
 	// 自关联的时候，规定左边对象使用到的唯一索引
 	ObjectUniqueID int64 `json:"object_unique_id"`
+}
+
+// ListFieldTmplWithObjOption list field template with object condition option
+type ListFieldTmplWithObjOption struct {
+	TemplateFilter *filter.Expression `json:"template_filter"`
+	ObjectFilter   *filter.Expression `json:"object_filter"`
+	Page           BasePage           `json:"page"`
+	Fields         []string           `json:"fields"`
+}
+
+// Validate list field template with object condition option
+func (l *ListFieldTmplWithObjOption) Validate() errors.RawErrorInfo {
+	if err := l.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
+		return err
+	}
+
+	opt := filter.NewDefaultExprOpt(nil)
+	opt.IgnoreRuleFields = true
+
+	if l.ObjectFilter != nil {
+		if err := l.ObjectFilter.Validate(opt); err != nil {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{err.Error()}}
+		}
+	}
+
+	if l.TemplateFilter != nil {
+		if err := l.TemplateFilter.Validate(opt); err != nil {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{err.Error()}}
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// CountFieldTmplResOption list field templates' related resource count option
+type CountFieldTmplResOption struct {
+	TemplateIDs []int64 `json:"bk_template_ids"`
+}
+
+// Validate list field templates' related resource count option
+func (c *CountFieldTmplResOption) Validate() errors.RawErrorInfo {
+	if len(c.TemplateIDs) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"bk_template_ids"}}
+	}
+
+	if len(c.TemplateIDs) > common.BKMaxLimitSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_template_ids", common.BKMaxLimitSize},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// FieldTmplResCount field template related resource count info
+type FieldTmplResCount struct {
+	TemplateID int64 `json:"bk_template_id"`
+	Count      int   `json:"count"`
 }

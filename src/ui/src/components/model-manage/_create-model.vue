@@ -37,14 +37,14 @@
                 name="modelGroup"
                 :value="modelDialog.data.bk_classification_id"
                 :scroll-height="200">
-                <bk-option v-for="(option, index) in classifications"
-                  :key="index"
+                <bk-option v-for="(option) in classifications"
+                  :key="option.bk_classification_id"
                   :id="option.bk_classification_id"
                   :name="option.bk_classification_name">
                   <cmdb-auth class="group-auth" tag="div" style="display: block;"
                     :auth="{ type: $OPERATION.C_MODEL, relation: [option.id] }"
                     @click.native.stop
-                    @click="handleSelectGroup(option)">
+                    @click="handleSelectGroup(option)" v-bk-overflow-tips>
                     {{option.bk_classification_name}}
                   </cmdb-auth>
                 </bk-option>
@@ -271,6 +271,7 @@
     .group-auth {
         margin: 0 -16px;
         padding: 0 16px;
+        @include ellipsis;
         &.disabled {
             background-color: #fff;
             color: $textDisabledColor;

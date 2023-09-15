@@ -38,25 +38,29 @@ func (lgc *Logics) GetBizHostCount(kit *rest.Kit) ([]metadata.StringIDCount, err
 			common.BKDBNE: common.DefaultAppFlag,
 		},
 	}}
-	BizResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp, bizFilter)
+	BizResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseApp,
+		bizFilter)
 	if err != nil {
 		blog.ErrorJSON("search biz count failed, err: %s, filter: %s, rid: %s", err, bizFilter, kit.Rid)
 		return nil, err
 	}
 	if len(BizResult) != 1 {
-		blog.ErrorJSON("search biz count failed, the length of count result must be 1, filter: %s, rid: %s", bizFilter, kit.Rid)
+		blog.ErrorJSON("search biz count failed, the length of count result must be 1, filter: %s, rid: %s", bizFilter,
+			kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 	}
 
 	// get host count
 	hostFilter := []map[string]interface{}{{}}
-	hostResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, common.BKTableNameBaseHost, hostFilter)
+	hostResult, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseHost, hostFilter)
 	if err != nil {
 		blog.ErrorJSON("search host count failed, err: %s, filter: %s, rid: %s", err, hostFilter, kit.Rid)
 		return nil, err
 	}
 	if len(hostResult) != 1 {
-		blog.ErrorJSON("search host count failed, the length of count result must be 1, filter: %s, rid: %s", hostFilter, kit.Rid)
+		blog.ErrorJSON("search host count failed, the length of count result must be 1, filter: %s, rid: %s",
+			hostFilter, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 	}
 

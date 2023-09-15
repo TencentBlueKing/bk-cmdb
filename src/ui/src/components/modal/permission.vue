@@ -85,7 +85,7 @@
         }
 
         // 批量鉴权的场景下从permission中过滤掉有权限实例
-        const batchInstTypes = [IAM_VIEWS.INSTANCE, IAM_VIEWS.HOST] // 通用模型实例和主机
+        const batchInstTypes = [IAM_VIEWS.INSTANCE, IAM_VIEWS.HOST, IAM_VIEWS.PROJECT] // 通用模型实例和主机
         permission.actions.forEach((action) => {
           const { related_resource_types: relatedResourceTypes = [] } = action
           const newInstances = []

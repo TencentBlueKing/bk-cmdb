@@ -157,7 +157,7 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 		},
 		{
 			ID:     SysCloudAreaSelection,
-			Name:   "云区域列表",
+			Name:   "管控区域列表",
 			NameEn: "Cloud Area List",
 			ResourceTypeChain: []ResourceChain{
 				{
@@ -273,6 +273,17 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				{
 					SystemID: SystemIDCMDB,
 					ID:       KubeWorkloadEvent,
+				},
+			},
+		},
+		{
+			ID:     FieldGroupingTemplateSelection,
+			Name:   "字段组合模板列表",
+			NameEn: "Field Grouping Template List",
+			ResourceTypeChain: []ResourceChain{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       FieldGroupingTemplate,
 				},
 			},
 		},

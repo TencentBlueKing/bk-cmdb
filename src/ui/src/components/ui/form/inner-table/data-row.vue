@@ -8,7 +8,7 @@
     <bk-table-column
       v-for="prop in header"
       :key="prop.bk_property_id"
-      :label="$tools.getHeaderPropertyName(prop)"
+      :render-header="() => getHeadPropName(prop)"
       :min-width="$tools.getHeaderPropertyMinWidth(prop, { min: 120 })">
       <template #default="{ row, $index }">
         <!-- 只读模式 -->
@@ -29,6 +29,7 @@
           :size="'small'"
           :font-size="'normal'"
           :row="1"
+          @keyup.native="(event) => keyupCallMethod(event, () => handleSaveRow($index))"
           error-display-type="tooltips"
           v-model="editState.row[$index][prop.bk_property_id]" />
       </template>
@@ -114,11 +115,12 @@
   import { nextTick, ref, set, watch, reactive, computed, getCurrentInstance, onMounted } from 'vue'
   import { t } from '@/i18n'
   import cloneDeep from 'lodash/cloneDeep'
-  import { formatValues } from '@/utils/tools'
+  import { formatValues, getHeaderPropertyName } from '@/utils/tools'
   import PropertyFormElement from '../property-form-element.vue'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import { $success } from '@/magicbox/index.js'
   import instanceTableService from '@/service/instance/table'
+  import { keyupCallMethod } from '@/utils/util'
 
   const props = defineProps({
     type: {
@@ -197,6 +199,13 @@
     index: [],
     row: {}
   })
+
+  const getHeadPropName = (prop) => {
+    const { isrequired } = prop
+    return <div class={[{ required: isrequired }, 'property-name-text']}>
+              {getHeaderPropertyName(prop)}
+           </div>
+  }
 
   const scrollAddButton = () => {
     if (tableEmptyAddButtonRef.value) {
@@ -369,6 +378,10 @@
 
 <style lang="scss" scoped>
 .data-row {
+  :deep(.property-name-text) {
+    position: relative;
+    padding-right: 10px;
+  }
   &.is-on-empty-add {
     :deep(.bk-table-empty-block) {
       display: none;

@@ -170,9 +170,9 @@
           const assetSearch = () => this.handleAssetSearch(assetList)
 
           const ipSearch = () => {
-            // 不同云区域+IP的混合搜索
+            // 不同管控区域+IP的混合搜索
             if (cloudIdSet.size > 1) {
-              return this.$warn(this.$t('暂不支持不同云区域的混合搜索'))
+              return this.$warn(this.$t('暂不支持不同管控区域的混合搜索'))
             }
 
             this.handleIPSearch(IPs)

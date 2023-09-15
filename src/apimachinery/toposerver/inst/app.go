@@ -22,7 +22,8 @@ import (
 )
 
 // CreateApp TODO
-func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header, params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.Header,
+	params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/app/%s"
 
@@ -37,7 +38,8 @@ func (t *instanceClient) CreateApp(ctx context.Context, ownerID string, h http.H
 }
 
 // DeleteApp TODO
-func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID string,
+	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/app/%s/%s"
 
@@ -52,7 +54,8 @@ func (t *instanceClient) DeleteApp(ctx context.Context, ownerID string, appID st
 }
 
 // UpdateApp TODO
-func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/app/%s/%s"
 	err = t.client.Put().
@@ -66,7 +69,8 @@ func (t *instanceClient) UpdateApp(ctx context.Context, ownerID string, appID st
 }
 
 // UpdateAppDataStatus TODO
-func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag,
+	appID string, h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/app/%s/%s/%s"
 	err = t.client.Put().
@@ -80,7 +84,8 @@ func (t *instanceClient) UpdateAppDataStatus(ctx context.Context, ownerID string
 }
 
 // SearchApp TODO
-func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/app/search/%s"
 	err = t.client.Post().
@@ -94,7 +99,8 @@ func (t *instanceClient) SearchApp(ctx context.Context, ownerID string, h http.H
 }
 
 // GetAppBasicInfo TODO
-func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, bizID int64) (resp *metadata.AppBasicInfoResult, err error) {
+func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header,
+	bizID int64) (resp *metadata.AppBasicInfoResult, err error) {
 	resp = new(metadata.AppBasicInfoResult)
 	subPath := "/app/%d/basic_info"
 	err = t.client.Get().
@@ -107,7 +113,8 @@ func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header, biz
 }
 
 // GetDefaultApp TODO
-func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string,
+	h http.Header) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/app/default/%s/search"
 	err = t.client.Post().
@@ -121,7 +128,8 @@ func (t *instanceClient) GetDefaultApp(ctx context.Context, ownerID string, h ht
 }
 
 // CreateDefaultApp TODO
-func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+func (t *instanceClient) CreateDefaultApp(ctx context.Context, ownerID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/app/default/%s"
 	err = t.client.Post().

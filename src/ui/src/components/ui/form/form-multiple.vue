@@ -108,6 +108,7 @@
 <script>
   import formMixins from '@/mixins/form'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSideslider from '@/hooks/use-sideslider'
 
   export default {
     name: 'cmdb-form-multiple',
@@ -194,6 +195,9 @@
     created() {
       this.initValues()
       this.initEditableStatus()
+      const { beforeClose, setChanged } = useSideslider(this.values)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       initValues() {

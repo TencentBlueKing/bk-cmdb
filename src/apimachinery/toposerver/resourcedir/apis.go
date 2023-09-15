@@ -22,10 +22,14 @@ import (
 
 // ResourceDirectoryInterface TODO
 type ResourceDirectoryInterface interface {
-	CreateResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
-	UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64, data map[string]interface{}) (resp *metadata.Response, err error)
-	SearchResourceDirectory(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.SearchResp, err error)
-	DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response, err error)
+	CreateResourceDirectory(ctx context.Context, header http.Header,
+		data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
+	UpdateResourceDirectory(ctx context.Context, header http.Header, moduleID int64,
+		data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchResourceDirectory(ctx context.Context, header http.Header,
+		data map[string]interface{}) (resp *metadata.SearchResp, err error)
+	DeleteResourceDirectory(ctx context.Context, header http.Header, moduleID int64) (resp *metadata.Response,
+		err error)
 }
 
 // NewResourceDirectoryInterface TODO

@@ -37,14 +37,16 @@ func (lgc *Logics) findInstance(ctx context.Context, objID string, input *metada
 	return result, nil
 }
 
-func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
+func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo,
+	errors.CCError) {
 	result, err := lgc.CoreAPI.CoreService().Synchronize().SynchronizeFind(ctx, lgc.header, input)
 	if err != nil {
 		blog.Errorf("find http do error. err:%s,input:%#v,rid:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("find http reply error. err code:%d,err msg:%s,input:%#v,rid:%s", result.Code, result.ErrMsg, input, lgc.rid)
+		blog.Errorf("find http reply error. err code:%d,err msg:%s,input:%#v,rid:%s", result.Code, result.ErrMsg, input,
+			lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
@@ -52,7 +54,8 @@ func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfo
 }
 
 // Find TODO
-func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
+func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo,
+	errors.CCError) {
 	switch input.DataType {
 	case metadata.SynchronizeOperateDataTypeInstance:
 		return lgc.findInstance(ctx, input.DataClassify, SynchronizeFindInfoParameterToQuerycondition(input))

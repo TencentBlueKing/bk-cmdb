@@ -43,6 +43,8 @@
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== BUILTIN_MODELS.HOST"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>

@@ -22,21 +22,37 @@ import (
 
 // AssociationInterface TODO
 type AssociationInterface interface {
-	SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
-	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
-	UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
-	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
-	SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
-	CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
-	UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
-	DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
-	SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
-	SearchAssociationRelatedInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
-	CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	CreateManyInstAssociation(ctx context.Context, header http.Header, request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResult, error)
-	DeleteInst(ctx context.Context, h http.Header, objID string, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
-	DeleteInstBatch(ctx context.Context, h http.Header, assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult, err error)
-	SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error)
+	SearchType(ctx context.Context, h http.Header,
+		request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
+	CreateType(ctx context.Context, h http.Header,
+		request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
+	UpdateType(ctx context.Context, h http.Header, asstTypeID int,
+		request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
+	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult,
+		err error)
+	SearchObject(ctx context.Context, h http.Header,
+		request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
+	CreateObject(ctx context.Context, h http.Header,
+		request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
+	UpdateObject(ctx context.Context, h http.Header, asstID int,
+		request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
+	DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult,
+		err error)
+	SearchInst(ctx context.Context, h http.Header,
+		request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	SearchAssociationRelatedInst(ctx context.Context, h http.Header,
+		request *metadata.SearchAssociationRelatedInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	CreateInst(ctx context.Context, h http.Header,
+		request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	CreateManyInstAssociation(ctx context.Context, header http.Header,
+		request *metadata.CreateManyInstAsstRequest) (*metadata.CreateManyInstAsstResult, error)
+	DeleteInst(ctx context.Context, h http.Header, objID string,
+		assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInstBatch(ctx context.Context, h http.Header,
+		assoIDs *metadata.DeleteAssociationInstBatchRequest) (resp *metadata.DeleteAssociationInstBatchResult,
+		err error)
+	SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header,
+		assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error)
 
 	SearchInstAssocAndInstDetail(ctx context.Context, header http.Header, objID string,
 		input *metadata.InstAndAssocRequest) (*metadata.InstAndAssocDetailResult, error)

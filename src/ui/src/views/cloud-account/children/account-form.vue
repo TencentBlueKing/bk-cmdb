@@ -121,6 +121,9 @@
   import { mapGetters } from 'vuex'
   import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
   import RouterQuery from '@/router/query'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
+
   const DEFAULT_FORM = {
     bk_account_name: '',
     bk_cloud_vendor: '',
@@ -180,9 +183,10 @@
         return changed || !this.verifyResult.connected
       },
       vendors() {
+        const onlyShowId = ['1', '2'] // 1和2分别对应亚马逊云和腾讯云的ID
         const vendorProperty = this.properties.find(property => property.bk_property_id === 'bk_cloud_vendor')
         if (vendorProperty) {
-          return vendorProperty.option || []
+          return (vendorProperty.option || [])?.filter(cloud => onlyShowId.includes(cloud.id))
         }
         return []
       },
@@ -217,6 +221,9 @@
           connected: true
         }
       }
+      const { beforeClose, setChanged } = useSideslider(this.form)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       async getCloudAreaProperties() {
@@ -362,7 +369,7 @@
               requestId: this.request.update
             }
           })
-          this.$success('修改成功')
+          this.$success(this.$t('修改成功'))
           this.handleCancel()
           RouterQuery.set({
             _t: Date.now(),
@@ -396,6 +403,14 @@
         } else {
           this.$warn('No link provided')
         }
+      },
+      changeValue() {
+        if (this.mode === 'create') {
+          return !isEqual(this.form, DEFAULT_FORM)
+        }
+        const originForm = {}
+        Object.keys(DEFAULT_FORM).forEach(key => originForm[key] = this.account[key])
+        return !isEqual(this.form, originForm)
       }
     }
   }

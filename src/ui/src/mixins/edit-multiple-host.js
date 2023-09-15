@@ -12,6 +12,7 @@
 
 import RouterQuery from '@/router/query'
 import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+import isEqual from 'lodash/isEqual'
 export default {
   props: {
     properties: {
@@ -112,21 +113,13 @@ export default {
     },
     handleSliderBeforeClose() {
       const $form = this.$refs.multipleForm
-      if (Object.keys($form.changedValues).length) {
-        return new Promise((resolve) => {
-          this.$bkInfo({
-            title: this.$t('确认退出'),
-            subTitle: this.$t('退出会导致未保存信息丢失'),
-            extCls: 'bk-dialog-sub-header-center',
-            confirmFn: () => {
-              this.slider.show = false
-              this.slider.component = null
-              resolve(true)
-            },
-            cancelFn: () => {
-              resolve(false)
-            }
-          })
+      const { values, refrenceValues } = $form
+      const changedValues =  !isEqual(values, refrenceValues)
+      if (changedValues) {
+        $form.setChanged(true)
+        return $form.beforeClose(() => {
+          this.slider.component = null
+          this.slider.show = false
         })
       }
       this.slider.component = null

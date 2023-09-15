@@ -149,7 +149,8 @@ func (c *CC) run() error {
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon,
+			cur.Err)
 		return
 	}
 
@@ -171,7 +172,8 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 
 func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureExtra,
+			cur.Err)
 		return
 	}
 
@@ -196,7 +198,8 @@ func (c *CC) onExtraChange(cur *crd.DiscoverEvent) {
 
 func (c *CC) onMongodbChange(cur *crd.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon,
+			cur.Err)
 		return
 	}
 	now := ParseConfigWithData(cur.Data)
@@ -216,7 +219,8 @@ func (c *CC) onMongodbChange(cur *crd.DiscoverEvent) {
 
 func (c *CC) onRedisChange(cur *crd.DiscoverEvent) {
 	if cur.Err != nil {
-		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon, cur.Err)
+		blog.Errorf("config center received event that %s config has changed, but got err: %v", types.CCConfigureCommon,
+			cur.Err)
 		return
 	}
 	now := ParseConfigWithData(cur.Data)

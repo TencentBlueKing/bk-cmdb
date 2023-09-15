@@ -15,6 +15,7 @@ package main
 import (
 	"context"
 	"fmt"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 
@@ -26,8 +27,6 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/spf13/pflag"
-
-	_ "net/http/pprof"
 )
 
 func main() {

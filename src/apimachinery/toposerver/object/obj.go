@@ -16,11 +16,13 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 // CreateObjectBatch TODO
-func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) CreateObjectBatch(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/object"
 
@@ -35,7 +37,8 @@ func (t *object) CreateObjectBatch(ctx context.Context, h http.Header, data map[
 }
 
 // SearchObjectBatch TODO
-func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) SearchObjectBatch(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/findmany/object"
 
@@ -50,7 +53,8 @@ func (t *object) SearchObjectBatch(ctx context.Context, h http.Header, data map[
 }
 
 // CreateObject TODO
-func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.CreateModelResult, err error) {
+func (t *object) CreateObject(ctx context.Context, h http.Header,
+	obj metadata.Object) (resp *metadata.CreateModelResult, err error) {
 	resp = new(metadata.CreateModelResult)
 	subPath := "/create/object"
 
@@ -65,7 +69,8 @@ func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.O
 }
 
 // SelectObjectWithParams TODO
-func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/object"
 
@@ -80,7 +85,8 @@ func (t *object) SelectObjectWithParams(ctx context.Context, h http.Header, data
 }
 
 // SelectObjectTopo TODO
-func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) SelectObjectTopo(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/find/objecttopology"
 
@@ -95,7 +101,8 @@ func (t *object) SelectObjectTopo(ctx context.Context, h http.Header, data map[s
 }
 
 // UpdateObject TODO
-func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/object/%s"
 
@@ -109,17 +116,24 @@ func (t *object) UpdateObject(ctx context.Context, objID string, h http.Header, 
 	return
 }
 
-// DeleteObject TODO
-func (t *object) DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+// DeleteObject delete object
+func (t *object) DeleteObject(ctx context.Context, objID string, h http.Header) error {
+	resp := new(metadata.Response)
 	subPath := "/delete/object/%s"
 
-	err = t.client.Delete().
+	err := t.client.Delete().
 		WithContext(ctx).
-		Body(data).
+		Body(nil).
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }

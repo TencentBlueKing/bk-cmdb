@@ -151,7 +151,8 @@ func (cli *business) Update() error {
 		cli.datas.Remove(BusinessID)
 
 		// fmt.Println("the new:", existItem)
-		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Business().UpdateBusiness(cli.datas, bizID)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Business().UpdateBusiness(cli.datas,
+			bizID)
 		if nil != err {
 			return err
 		}

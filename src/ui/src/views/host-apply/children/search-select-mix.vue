@@ -12,6 +12,7 @@
 
 <template>
   <bk-search-select
+    ref="bkSearchSelect"
     :data="searchOptions"
     :filter="true"
     :filter-menu-method="filterMenuMethod"
@@ -89,6 +90,7 @@
     mounted() {
       Bus.$on('host-apply-clear-search', (value) => {
         this.searchValue = value
+        this.clearInputAll()
       })
     },
     methods: {
@@ -134,7 +136,11 @@
       },
       handleClear() {
         this.searchValue = []
+        this.clearInputAll()
         Bus.$emit(this.searchEventName, { query_filter: { rules: [] } })
+      },
+      clearInputAll() {
+        this.$refs.bkSearchSelect.inputOutSideClear()
       },
       handleSearch() {
         Bus.$emit(this.searchEventName, this.getSearchValue())
@@ -207,7 +213,7 @@
 <style lang="scss" scoped>
   .icon-close-circle-shape {
     font-size: 14px;
-    margin-right: 6px;
+    margin: 0 6px;
     cursor: pointer;
   }
   .icon-search {

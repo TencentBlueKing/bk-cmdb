@@ -128,7 +128,8 @@ func (cli *model) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().UpdateObject(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Model().UpdateObject(item,
+			cond); nil != err {
 			return err
 		}
 	}

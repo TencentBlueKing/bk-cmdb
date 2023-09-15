@@ -24,12 +24,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -147,6 +149,13 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		}
 	}
 
+	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
+	if attribute.Default != nil && (attribute.PropertyType == common.FieldTypeEnum ||
+		attribute.PropertyType == common.FieldTypeEnumMulti || attribute.PropertyType == common.FieldTypeEnumQuote) {
+
+		attribute.Default = nil
+	}
+
 	if err = m.saveCheck(kit, attribute); err != nil {
 		return 0, err
 	}
@@ -155,7 +164,8 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 	return id, err
 }
 
-func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string, modelBizID int64) error {
+func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string,
+	modelBizID int64) error {
 	cond := map[string]interface{}{
 		common.BKObjIDField: objID,
 	}
@@ -378,8 +388,8 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, common.AttributeNameMaxLength)
 		}
 
-		if err := valid.ValidTableFieldOption(header[index].PropertyType, header[index].Option, header[index].Default,
-			header[index].IsMultiple, kit.CCError); err != nil {
+		if err = attrvalid.ValidTableFieldOption(kit, header[index].PropertyType, header[index].Option,
+			header[index].Default, header[index].IsMultiple); err != nil {
 			return nil, err
 		}
 		propertyAttr[header[index].PropertyID] = &header[index]
@@ -443,28 +453,30 @@ func (m *modelAttribute) checkTableAttr(kit *rest.Kit, propertyID, objectID stri
 	return nil
 }
 
+var validAttrPropertyTypes = map[string]struct{}{
+	common.FieldTypeSingleChar:   {},
+	common.FieldTypeLongChar:     {},
+	common.FieldTypeInt:          {},
+	common.FieldTypeFloat:        {},
+	common.FieldTypeEnum:         {},
+	common.FieldTypeEnumMulti:    {},
+	common.FieldTypeDate:         {},
+	common.FieldTypeTime:         {},
+	common.FieldTypeUser:         {},
+	common.FieldTypeOrganization: {},
+	common.FieldTypeTimeZone:     {},
+	common.FieldTypeBool:         {},
+	common.FieldTypeList:         {},
+	common.FieldTypeEnumQuote:    {},
+}
+
 func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
 	language := util.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
-		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
-		if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"),
-				common.AttributeIDMaxLength)
-		}
-
-		if !SatisfyMongoFieldLimit(attribute.PropertyID) {
-			blog.Errorf("attribute.PropertyID:%s not SatisfyMongoFieldLimit", attribute.PropertyID)
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
-		}
-
-		// check only preset attribute's property id can start with bk_ or _bk
-		if !attribute.IsPre {
-			if strings.HasPrefix(attribute.PropertyID, "bk_") ||
-				strings.HasPrefix(attribute.PropertyID, "_bk") {
-				return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
-			}
+		if err := m.validateAttrPropertyID(kit, attribute, lang); err != nil {
+			return err
 		}
 	}
 
@@ -497,18 +509,14 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	}
 
 	if attribute.PropertyType != "" {
-		switch attribute.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
-			common.FieldTypeEnum, common.FieldTypeEnumMulti, common.FieldTypeDate, common.FieldTypeTime,
-			common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool,
-			common.FieldTypeList, common.FieldTypeEnumQuote:
-		default:
+		if _, exists := validAttrPropertyTypes[attribute.PropertyType]; !exists {
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
 
-	if attribute.Default != nil {
-		// 枚举，枚举多选，枚举引用字段,默认值是放在option中的，如果default的值不为nil,进入该逻辑，枚举，枚举多选，枚举引用的默认值设置错误
+	if attribute.Default != nil && propertyType != common.FieldTypeEnum && propertyType != common.FieldTypeEnumMulti &&
+		propertyType != common.FieldTypeEnumQuote {
+
 		if err := m.checkAttributeDefaultValue(kit, attribute, propertyType); err != nil {
 			return err
 		}
@@ -524,20 +532,43 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	return nil
 }
 
+func (m *modelAttribute) validateAttrPropertyID(kit *rest.Kit, attribute metadata.Attribute,
+	lang language.DefaultCCLanguageIf) error {
+
+	attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
+	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
+		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_bk_property_id"),
+			common.AttributeIDMaxLength)
+	}
+
+	if !SatisfyMongoFieldLimit(attribute.PropertyID) {
+		blog.Errorf("attribute.PropertyID: %s not satisfy mongo field limit", attribute.PropertyID)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+	}
+
+	// check only preset attribute's property id can start with bk_ or _bk
+	if !attribute.IsPre {
+		if strings.HasPrefix(attribute.PropertyID, "bk_") || strings.HasPrefix(attribute.PropertyID, "_bk") {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+		}
+	}
+	return nil
+}
+
 func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, defautValue interface{},
 	propertyType string) error {
 
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := valid.ValidFieldTypeString(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeString(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeInt:
-		if err := valid.ValidFieldTypeInt(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeInt(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeFloat:
-		if err := valid.ValidFieldTypeFloat(option, defautValue, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeFloat(kit, option, defautValue); err != nil {
 			return err
 		}
 	case common.FieldTypeBool:
@@ -547,7 +578,7 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 		}
 	case common.FieldTypeEnumMulti:
 		// 默认值相关的检查都是按照最宽松的进行校验
-		if err := valid.ValidFieldTypeEnumOption(option, true, kit.Rid, kit.CCError); err != nil {
+		if err := attrvalid.ValidFieldTypeEnumOption(kit, option, true); err != nil {
 			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -559,21 +590,18 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 	return nil
 }
 
+// checkAttributeDefaultValue 校验属性的default字段，对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，不能调用该函数校验
 func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
+
+	var err error
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := valid.ValidFieldTypeString(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
-			return err
-		}
+		err = attrvalid.ValidFieldTypeString(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeInt:
-		if err := valid.ValidFieldTypeInt(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
-			return err
-		}
+		err = attrvalid.ValidFieldTypeInt(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeFloat:
-		if err := valid.ValidFieldTypeFloat(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
-			return err
-		}
+		err = attrvalid.ValidFieldTypeFloat(kit, attribute.Option, attribute.Default)
 	case common.FieldTypeDate:
 		if ok := util.IsDate(attribute.Default); !ok {
 			return fmt.Errorf("date default value is not date type, type: %T", attribute.Default)
@@ -583,32 +611,30 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 			return fmt.Errorf("time default value formart is not time string, type: %T", attribute.Default)
 		}
 	case common.FieldTypeUser:
-		if err := m.checkUserTypeDefaultValue(kit, attribute); err != nil {
-			return err
-		}
+		err = m.checkUserTypeDefaultValue(kit, attribute)
 	case common.FieldTypeOrganization:
-		if err := m.checkOrganizationTypeDefaultValue(kit, attribute); err != nil {
-			return err
-		}
+		err = m.checkOrganizationTypeDefaultValue(kit, attribute)
 	case common.FieldTypeTimeZone:
 		if ok := util.IsTimeZone(attribute.Default); !ok {
 			return fmt.Errorf("time zone default value is not time zone type, type: %T", attribute.Default)
 		}
 	case common.FieldTypeBool:
-		if err := valid.ValidateBoolType(attribute.Default); err != nil {
-			blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
-			return err
-		}
+		err = valid.ValidateBoolType(attribute.Default)
+		blog.Errorf("bool type default value not bool, err: %v, rid: %s", err, kit.Rid)
+
 	case common.FieldTypeList:
-		if err := valid.ValidFieldTypeList(attribute.Option, attribute.Default, kit.Rid, kit.CCError); err != nil {
-			return err
-		}
+		err = attrvalid.ValidFieldTypeList(kit, attribute.Option, attribute.Default)
+
 	default:
 		if propertyType == common.FieldTypeEnum || propertyType == common.FieldTypeEnumMulti ||
 			propertyType == common.FieldTypeEnumQuote {
 			return fmt.Errorf("enum, enummulti, enumquote type default field is nil")
 		}
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -660,8 +686,10 @@ func (m *modelAttribute) checkOrganizationTypeDefaultValue(kit *rest.Kit, attrib
 	return nil
 }
 
-func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
-	err = m.checkUpdate(kit, data, cond)
+func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition, isSync bool) (
+	cnt uint64, err error) {
+
+	err = m.checkUpdate(kit, data, cond, isSync)
 	if err != nil {
 		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
 		return cnt, err
@@ -681,29 +709,35 @@ func (m *modelAttribute) newSearch(kit *rest.Kit, cond mapstr.MapStr) (resultAtt
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
+func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute,
+	err error) {
 	resultAttrs = []metadata.Attribute{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute, err error) {
+func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondition) (resultAttrs []metadata.Attribute,
+	err error) {
 	resultAttrs = []metadata.Attribute{}
 
 	instHandler := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.Condition)
-	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx, &resultAttrs)
+	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx,
+		&resultAttrs)
 
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []mapstr.MapStr, err error) {
+func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []mapstr.MapStr,
+	err error) {
 
 	resultAttrs = []mapstr.MapStr{}
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
 	return resultAttrs, err
 }
 
-func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
+// delete delete the model scene isMode is true, no need to check whether
+// the isFromModel field inherits from the field template
+func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFromModel bool) (cnt uint64, err error) {
 
 	resultAttrs := make([]metadata.Attribute, 0)
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
@@ -726,6 +760,10 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition) (cnt
 		if attr.PropertyType == common.FieldTypeInnerTable {
 			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
 			return 0, kit.CCError.New(common.CCErrTopoObjectSelectFailed, common.BKPropertyTypeField)
+		}
+
+		if !isFromModel && attr.TemplateID != 0 {
+			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
 		}
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
@@ -1016,7 +1054,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 	for start := uint64(0); start < hostCount; start += pageSize {
 		hostList := make([]hostInst, 0)
-		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).Limit(pageSize).Fields(common.BKHostIDField).All(ctx, &hostList)
+		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).Limit(pageSize).Fields(common.BKHostIDField).All(ctx,
+			&hostList)
 		if err != nil {
 			return err
 		}
@@ -1034,7 +1073,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 			common.BKHostIDField: mapstr.MapStr{common.BKDBIN: ids},
 			common.BKDBOR:        existConds,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter, info.fields); err != nil {
+		if err := mongodb.Client().Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter,
+			info.fields); err != nil {
 			return fmt.Errorf("clean host biz attribute %v failed, err: %v", info.fields, err)
 		}
 	}
@@ -1043,7 +1083,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 }
 
-func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string, hostApplyFields map[int64][]int64) error {
+func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string,
+	hostApplyFields map[int64][]int64) error {
 	orCond := make([]map[string]interface{}, 0)
 	for bizID, attrIDs := range hostApplyFields {
 		attrCond := map[string]interface{}{
@@ -1176,6 +1217,7 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
 		return err
 	}
+
 	if err = m.checkTableAttributeValidity(kit, attr); err != nil {
 		blog.Errorf("check attribute validity failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -1193,8 +1235,171 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
+	data.Remove(common.BKTemplateID)
+
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
 	return err
+}
+
+func getObjectAttrTemplateID(kit *rest.Kit, attrID int64) (int64, error) {
+	cond := mapstr.MapStr{
+		common.BKFieldID: attrID,
+	}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+	attrs := make([]metadata.Attribute, 0)
+
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Fields(common.BKTemplateID).
+		All(kit.Ctx, &attrs); err != nil {
+		blog.Errorf("find attrs failed, attrID: %d, err: %v, rid: %s", attrID, err, kit.Rid)
+		return 0, err
+	}
+
+	attrsNum := len(attrs)
+	if attrsNum <= 0 || attrsNum > 1 {
+		blog.Errorf("attributes num error, attID: %d, num: %d, rid: %s", attrID, attrsNum, kit.Rid)
+		return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, attrID)
+	}
+
+	return attrs[0].TemplateID, nil
+}
+
+func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*metadata.FieldTemplateAttr, error) {
+
+	attrCond := mapstr.MapStr{
+		common.BKFieldID: templateID,
+	}
+	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
+
+	templateAttr := make([]metadata.FieldTemplateAttr, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(fields...).
+		All(kit.Ctx, &templateAttr); err != nil {
+		blog.Errorf("find field template attr failed, cond: %v, err: %v, rid: %s", attrCond, err, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	templateAttrNum := len(templateAttr)
+	if templateAttrNum > 1 {
+		blog.Errorf("attributes num error, attID: %d, num: %d, rid: %s", templateID, templateAttrNum, kit.Rid)
+		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKTemplateID)
+	}
+	// here is the scenario of releasing the management
+	if templateAttrNum == 0 {
+		return nil, nil
+	}
+
+	return &templateAttr[0], nil
+}
+
+// checkAttrTemplateInfo the topo server has similar judgment logic. If it needs to be modified,
+// both sides need to be modified at the same time. The function name in topo is: canAttrsUpdate
+func checkAttrTemplateInfo(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool) error {
+	// 1. 来自字段组合模版同步操作，都可以进行修改，直接正常返回
+	if isSync {
+		return nil
+	}
+
+	// 2. 不是同步操作，更新属性的bk_template_id为非0时，需要报错
+	data := input.Clone()
+	if newTmplID, ok := data[common.BKTemplateID]; ok {
+		id, err := util.GetIntByInterface(newTmplID)
+		if err != nil {
+			blog.Errorf("get int by interface failed, val: %v, err: %s, rid: %s", newTmplID, err, kit.Rid)
+			return err
+		}
+
+		if id != 0 {
+			blog.Errorf("modify field %s forbidden, val: %s, rid: %s", common.BKTemplateID, newTmplID, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, common.BKTemplateID)
+		}
+	}
+
+	// 3. 不是同步操作，更新模型自己的属性，正常返回
+	tmplID, err := getObjectAttrTemplateID(kit, attrID)
+	if err != nil {
+		return err
+	}
+	if tmplID == 0 {
+		return nil
+	}
+
+	// 4. 验证来自模版的属性，是否可以正常更新
+	return validTmplAttrCanUpdate(kit, data, tmplID)
+}
+
+func validTmplAttrCanUpdate(kit *rest.Kit, data mapstr.MapStr, tmplID int64) error {
+	fields := make([]string, 0)
+	if _, ok := data[metadata.AttributeFieldIsRequired].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsRequired)
+	}
+	if _, ok := data[metadata.AttributeFieldIsEditable].(bool); ok {
+		fields = append(fields, metadata.AttributeFieldIsEditable)
+	}
+
+	if _, ok := data[metadata.AttributeFieldPlaceHolder].(string); ok {
+		fields = append(fields, metadata.AttributeFieldPlaceHolder)
+	}
+
+	// AttributeFieldIsRequired\AttributeFieldIsEditable\AttributeFieldPlaceHolder may be allowed
+	// to be modified, the update operation does not have the above attributes to return an error
+	if len(fields) == 0 {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+
+	templateAttr, err := getTemplateAttrByID(kit, tmplID, fields)
+	if err != nil {
+		return err
+	}
+	if templateAttr == nil {
+		return nil
+	}
+
+	// whether the corresponding lock in the attribute is false, if it is false,
+	// it can be updated, otherwise it cannot be updated
+	for _, field := range fields {
+		switch field {
+		case metadata.AttributeFieldPlaceHolder:
+			if templateAttr.Placeholder.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldPlaceHolder)
+			}
+		case metadata.AttributeFieldIsEditable:
+			if templateAttr.Editable.Lock {
+				blog.Errorf("validate attr  failed, data: %+v, field: %v, rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsEditable)
+			}
+		case metadata.AttributeFieldIsRequired:
+			if templateAttr.Required.Lock {
+				blog.Errorf("validate attr failed, data: %+v, field: %v rid: %s", data, field, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, metadata.AttributeFieldIsRequired)
+			}
+		}
+		data.Remove(field)
+	}
+
+	removeIrrelevantValues(data)
+
+	// After removing the above irrelevant key, check whether there is a value, and report an error if there is a value.
+	if len(data) > 0 {
+		blog.Errorf("validate attr failed, data: %+v, rid: %s", data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommModifyFieldForbidden, "data")
+	}
+
+	return nil
+}
+
+func removeIrrelevantValues(data mapstr.MapStr) {
+	// delete irrelevant keys
+	data.Remove(common.CreatorField)
+	data.Remove(common.CreateTimeField)
+	data.Remove(common.ModifierField)
+	data.Remove(common.LastTimeField)
+	data.Remove(common.BkSupplierAccount)
+	data.Remove(common.BKTemplateID)
+	data.Remove(common.BKFieldID)
+	data.Remove(common.BKPropertyTypeField)
+	data.Remove(common.BKPropertyIDField)
+	data.Remove(common.BKObjIDField)
 }
 
 func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadata.Attribute) error {
@@ -1225,8 +1430,8 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 	}
 
-	if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
-		kit.CCError); err != nil {
+	err := attrvalid.ValidPropertyOption(kit, propertyType, option, *isMultiple, data[common.BKDefaultFiled])
+	if err != nil {
 		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 		return err
 	}
@@ -1239,6 +1444,10 @@ func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []meta
 	grp, exists := data.Get(metadata.AttributeFieldPropertyGroup)
 	if !exists {
 		return nil
+	}
+
+	if grp == "" {
+		data.Remove(metadata.AttributeFieldPropertyGroup)
 	}
 
 	// check if property group exists in object
@@ -1269,7 +1478,8 @@ func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []meta
 }
 
 // checkUpdate delete the field that cannot be updated, check whether the field is repeated
-func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (err error) {
+func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition,
+	isSync bool) (err error) {
 
 	dbAttributeArr, err := m.search(kit, cond)
 	if err != nil {
@@ -1293,10 +1503,8 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	// 预定义字段，只能更新分组、分组内排序、单位、提示语和option
 	if hasIsPreProperty {
 		_ = data.ForEach(func(key string, val interface{}) error {
-			if key != metadata.AttributeFieldPropertyGroup &&
-				key != metadata.AttributeFieldPropertyIndex &&
-				key != metadata.AttributeFieldUnit &&
-				key != metadata.AttributeFieldPlaceHolder &&
+			if key != metadata.AttributeFieldPropertyGroup && key != metadata.AttributeFieldPropertyIndex &&
+				key != metadata.AttributeFieldUnit && key != metadata.AttributeFieldPlaceHolder &&
 				key != metadata.AttributeFieldOption {
 				data.Remove(key)
 			}
@@ -1304,35 +1512,20 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 		})
 	}
 
-	if option, exists := data.Get(metadata.AttributeFieldOption); exists {
-		propertyType := dbAttributeArr[0].PropertyType
-		for _, dbAttribute := range dbAttributeArr {
-			if dbAttribute.PropertyType != propertyType {
-				blog.Errorf("update option, but property type not the same, db attributes: %s, rid:%s",
-					dbAttributeArr, kit.Ctx)
-				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, "cond")
-			}
-		}
+	if err := checkAttrOption(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
 
-		// 属性更新时，如果没有传入ismultiple参数，则使用数据库中的ismultiple值进行校验，如果传了ismultiple参数，则使用更新时的参数
-		isMultiple := dbAttributeArr[0].IsMultiple
-		if val, ok := data.Get(common.BKIsMultipleField); ok {
-			ismultiple, ok := val.(bool)
-			if !ok {
-				return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
-			}
-			isMultiple = &ismultiple
-		}
+	if err = checkPropertyGroup(kit, data, dbAttributeArr); err != nil {
+		return err
+	}
 
-		if isMultiple == nil {
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
-		}
+	propertyType := dbAttributeArr[0].PropertyType
+	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
+	if data[metadata.AttributeFieldDefault] != nil && (propertyType == common.FieldTypeEnum ||
+		propertyType == common.FieldTypeEnumMulti || propertyType == common.FieldTypeEnumQuote) {
 
-		if err := valid.ValidPropertyOption(propertyType, option, *isMultiple, data[common.BKDefaultFiled], kit.Rid,
-			kit.CCError); err != nil {
-			blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
-			return err
-		}
+		data.Remove(metadata.AttributeFieldDefault)
 	}
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
@@ -1342,38 +1535,22 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
-	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
-	if grp, exists := data.Get(metadata.AttributeFieldPropertyGroup); exists {
-		if grp == "" {
-			data.Remove(metadata.AttributeFieldPropertyGroup)
-		}
-		// check if property group exists in object
-		objIDs := make([]string, 0)
-		for _, dbAttribute := range dbAttributeArr {
-			objIDs = append(objIDs, dbAttribute.ObjectID)
-		}
-		objIDs = util.StrArrayUnique(objIDs)
-		cond := map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBIN: objIDs,
-			},
-			common.BKPropertyGroupIDField: grp,
-		}
-		cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
-		if err != nil {
-			blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
-			return err
-		}
-		if cnt != uint64(len(objIDs)) {
-			blog.Errorf("property group invalid, objIDs: %s have %d property groups, rid: %s", objIDs, cnt, kit.Rid)
-			return kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyGroup)
-		}
-	}
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
 
 	attribute := metadata.Attribute{}
 	if err = data.MarshalJSONInto(&attribute); err != nil {
 		blog.Errorf("marshal json into attribute failed, data: %+v, err: %v, rid: %s", data, err, kit.Rid)
+		return err
+	}
+
+	// 更新default字段时，需要使用option对default进行数据校验，当没传时需要使用当前数据库里的数据进行校验
+	if attribute.Default != nil && attribute.Option == nil {
+		attribute.Option = dbAttributeArr[0].Option
+	}
+
+	if err = checkAttrTemplateInfo(kit, data, dbAttributeArr[0].ID, isSync); err != nil {
+		blog.Errorf("check attribute template info failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -1383,9 +1560,10 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	for _, dbAttribute := range dbAttributeArr {
-		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName, attribute.BizID)
+		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName,
+			attribute.BizID)
 		if err != nil {
-			blog.ErrorJSON("save attribute check unique err:%s, input:%s, rid:%s", err.Error(), attribute, kit.Rid)
+			blog.Errorf("save attribute check unique attribute: %+v, err: %v, rid:%s", attribute, err, kit.Rid)
 			return err
 		}
 		if err = m.checkChangeField(kit, dbAttribute, data); err != nil {
@@ -1394,7 +1572,6 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	}
 
 	return err
-
 }
 
 // checkAttributeInUnique 检查属性是否存在唯一校验中  objIDPropertyIDArr  属性的bk_obj_id和表中ID的集合
@@ -1491,7 +1668,8 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 
 	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx, &attrs); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx,
+		&attrs); err != nil {
 		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}

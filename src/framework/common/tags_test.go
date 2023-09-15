@@ -13,9 +13,10 @@
 package common_test
 
 import (
+	"testing"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/types"
-	"testing"
 )
 
 type testObj struct {

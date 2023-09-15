@@ -46,7 +46,7 @@ var _ = BeforeSuite(func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			bizId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
@@ -70,7 +70,7 @@ var _ = BeforeSuite(func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -79,8 +79,9 @@ var _ = BeforeSuite(func() {
 			input := &metadata.HostCommonSearch{
 				AppID: bizId,
 			}
+
 			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))

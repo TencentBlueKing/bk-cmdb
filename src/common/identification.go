@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/version"
 )
 
-var identification string = "unknown"
+var identification = "unknown"
 var server *types.ServerInfo
 
 // SetIdentification TODO

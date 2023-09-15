@@ -20,7 +20,8 @@ import (
 	"configcenter/src/common/universalsql"
 )
 
-func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputCondMapStr mapstr.MapStr) (outputCond *mongoCondition, err error) {
+func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string,
+	inputCondMapStr mapstr.MapStr) (outputCond *mongoCondition, err error) {
 
 	outputCond = inputCond
 	err = inputCondMapStr.ForEach(func(operatorKey string, val interface{}) error {
@@ -158,7 +159,8 @@ func convertToElement(key, operator string, val interface{}) (universalsql.Condi
 
 }
 
-func parseAnd(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr) (outputCond *mongoCondition, err error) {
+func parseAnd(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr) (outputCond *mongoCondition,
+	err error) {
 
 	outputCond = targetCond
 	for _, targetValMapStr := range vals {
@@ -188,7 +190,8 @@ func parseAnd(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr
 	return outputCond, nil
 }
 
-func parseOr(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr) (outputCond *mongoCondition, err error) {
+func parseOr(targetCond *mongoCondition, embedName string, vals []mapstr.MapStr) (outputCond *mongoCondition,
+	err error) {
 
 	outputCond = targetCond
 	for _, targetValMapStr := range vals {

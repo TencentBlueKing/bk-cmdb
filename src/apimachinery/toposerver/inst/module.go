@@ -123,7 +123,8 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 }
 
 // SearchModuleByCondition TODO
-func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID string, h http.Header,
+	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/findmany/module/biz/%s"
 
@@ -138,7 +139,8 @@ func (t *instanceClient) SearchModuleByCondition(ctx context.Context, appID stri
 }
 
 // SearchModuleBatch TODO
-func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header, s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
+func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h http.Header,
+	s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error) {
 	resp = new(metadata.MapArrayResponse)
 	subPath := "/findmany/module/bk_biz_id/%s"
 
@@ -153,7 +155,8 @@ func (t *instanceClient) SearchModuleBatch(ctx context.Context, appID string, h 
 }
 
 // SearchModuleWithRelation TODO
-func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
+func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID string, h http.Header,
+	dat map[string]interface{}) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
 	subPath := "/findmany/module/with_relation/biz/%s"
 

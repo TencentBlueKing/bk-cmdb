@@ -308,7 +308,8 @@ func init() {
 
 	// object instance index.
 	indexObjInstMetadata := newESIndexMetadata(config)
-	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance, indexObjInstMetadata)
+	indexObjectInstance = meta.NewESIndex(meta.IndexNameObjectInstance, indexVersionObjectInstance,
+		indexObjInstMetadata)
 	indexList = append(indexList, indexObjectInstance)
 
 	// init table properties
@@ -929,7 +930,12 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 		}
 	}
 
+	return mapping(input)
+}
+
+func mapping(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutput, error) {
 	output := new(monstachemap.MapperPluginOutput)
+
 	switch input.Collection {
 	case common.BKTableNameBaseBizSet:
 		if err := indexingBizSet(input, output); err != nil {

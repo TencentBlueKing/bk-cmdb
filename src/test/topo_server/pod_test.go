@@ -54,7 +54,7 @@ var _ = Describe("pod test", func() {
 	containerName := "containerName"
 	containerUID := "containerUID"
 	It("prepare environment, create business, cluster, namespace", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		// create business
 		biz := map[string]interface{}{
@@ -85,7 +85,7 @@ var _ = Describe("pod test", func() {
 			},
 		}
 		rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		searchOpt := &metadata.HostCommonSearch{
@@ -96,8 +96,9 @@ var _ = Describe("pod test", func() {
 				Flag:  "bk_host_innerip|bk_host_outerip",
 			},
 		}
+
 		hostRep, err := hostServerClient.SearchHostWithBiz(context.Background(), header, searchOpt)
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRep.Result).To(Equal(true))
 		Expect(hostRep.Data.Count).To(Equal(2))
@@ -129,7 +130,7 @@ var _ = Describe("pod test", func() {
 
 		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
 
-		util.RegisterResponse(id)
+		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
 

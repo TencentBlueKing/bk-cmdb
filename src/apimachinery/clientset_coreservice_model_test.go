@@ -32,8 +32,10 @@ func TestCreateManyModelClassification(t *testing.T) {
 		return
 	}
 
-	mockAPI.MockDo(resp).CoreService().Model().CreateManyModelClassification(nil, nil, &metadata.CreateManyModelClassifiaction{})
-	rtn, err := mockAPI.CoreService().Model().CreateManyModelClassification(nil, nil, &metadata.CreateManyModelClassifiaction{})
+	mockAPI.MockDo(resp).CoreService().Model().CreateManyModelClassification(nil, nil,
+		&metadata.CreateManyModelClassifiaction{})
+	rtn, err := mockAPI.CoreService().Model().CreateManyModelClassification(nil, nil,
+		&metadata.CreateManyModelClassifiaction{})
 	if err != nil {
 		t.Errorf("get  logics service create many model classification result failed, err: %v", err)
 		return
@@ -59,8 +61,10 @@ func TestCreateModelClassification(t *testing.T) {
 		return
 	}
 
-	mockAPI.MockDo(resp).CoreService().Model().CreateModelClassification(nil, nil, &metadata.CreateOneModelClassification{})
-	rtn, err := mockAPI.CoreService().Model().CreateModelClassification(nil, nil, &metadata.CreateOneModelClassification{})
+	mockAPI.MockDo(resp).CoreService().Model().CreateModelClassification(nil, nil,
+		&metadata.CreateOneModelClassification{})
+	rtn, err := mockAPI.CoreService().Model().CreateModelClassification(nil, nil,
+		&metadata.CreateOneModelClassification{})
 	if err != nil {
 		t.Errorf("get  logics service create  model classification result failed, err: %v", err)
 		return
@@ -86,8 +90,10 @@ func TestSetManyModelClassification(t *testing.T) {
 		return
 	}
 
-	mockAPI.MockDo(resp).CoreService().Model().SetManyModelClassification(nil, nil, &metadata.SetManyModelClassification{})
-	rtn, err := mockAPI.CoreService().Model().SetManyModelClassification(nil, nil, &metadata.SetManyModelClassification{})
+	mockAPI.MockDo(resp).CoreService().Model().SetManyModelClassification(nil, nil,
+		&metadata.SetManyModelClassification{})
+	rtn, err := mockAPI.CoreService().Model().SetManyModelClassification(nil, nil,
+		&metadata.SetManyModelClassification{})
 	if err != nil {
 		t.Errorf("get  logics service set many model classification result failed, err: %v", err)
 		return

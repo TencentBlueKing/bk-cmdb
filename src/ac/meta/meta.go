@@ -44,6 +44,22 @@ type ResourceAttribute struct {
 	Layers Layers `json:"layers"`
 }
 
+// GenResAttrByIDs generate auth resource attributes by instance ids
+func GenResAttrByIDs(resType ResourceType, action Action, businessID int64, ids []int64) []ResourceAttribute {
+	attributes := make([]ResourceAttribute, len(ids))
+	for i, id := range ids {
+		attributes[i] = ResourceAttribute{
+			Basic: Basic{
+				Type:       resType,
+				Action:     action,
+				InstanceID: id,
+			},
+			BusinessID: businessID,
+		}
+	}
+	return attributes
+}
+
 // Basic defines the basic info for a resource.
 type Basic struct {
 	// the name of the affiliated resource, which could be a model name.

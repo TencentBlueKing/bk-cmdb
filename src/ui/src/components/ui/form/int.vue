@@ -17,6 +17,8 @@
     :disabled="disabled"
     v-bind="$attrs"
     v-model.number="localValue"
+    :max="max"
+    :min="min"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">
@@ -59,6 +61,16 @@
       inputType: {
         type: String,
         default: 'text'
+      },
+      options: {
+        type: Object,
+        default: {}
+      }
+    },
+    data() {
+      return {
+        max: 99999999999,
+        min: -999999999
       }
     },
     computed: {
@@ -73,6 +85,11 @@
           this.$emit('on-change', emitValue)
         }
       }
+    },
+    mounted() {
+      const { min = -999999999, max = 99999999999 } = this.options
+      this.max = max === '' ? 99999999999 : max
+      this.min = min  === '' ? -999999999 : min
     },
     methods: {
       handleInput(value, event) {

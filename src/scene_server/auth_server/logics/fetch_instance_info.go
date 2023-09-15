@@ -28,8 +28,7 @@ import (
 
 var resourceParentMap = iam.GetResourceParentMap()
 
-// FetchInstanceInfo TODO
-// fetch resource instances' specified attributes info using instance ids
+// FetchInstanceInfo fetch resource instances' specified attributes info using instance ids
 func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter,
 	extraCond map[string]interface{}) ([]map[string]interface{}, error) {
 
@@ -67,9 +66,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 
 	cond := make(map[string]interface{})
 	if isResourceIDStringType(resourceType) {
-		cond[idField] = map[string]interface{}{
-			common.BKDBIN: filter.IDs,
-		}
+		cond[idField] = map[string]interface{}{common.BKDBIN: filter.IDs}
 	} else {
 		ids := make([]int64, len(filter.IDs))
 		for idx, idStr := range filter.IDs {
@@ -86,17 +83,10 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 	}
 
 	if len(extraCond) > 0 {
-		cond = map[string]interface{}{
-			common.BKDBAND: []map[string]interface{}{cond, extraCond},
-		}
+		cond = map[string]interface{}{common.BKDBAND: []map[string]interface{}{cond, extraCond}}
 	}
 
-	param := metadata.PullResourceParam{
-		Condition: cond,
-		Fields:    attrs,
-		Limit:     common.BKNoLimit,
-		Offset:    0,
-	}
+	param := metadata.PullResourceParam{Condition: cond, Fields: attrs, Limit: common.BKNoLimit, Offset: 0}
 	instances, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
 		blog.ErrorJSON("search auth resource failed, error: %s, param: %s, rid: %s", err.Error(), param, kit.Rid)
@@ -112,7 +102,8 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iam.TypeID, fil
 		if needPath {
 			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
 			if err != nil {
-				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), instance, kit.Rid)
+				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), instance,
+					kit.Rid)
 				return nil, err
 			}
 		}
@@ -195,6 +186,12 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 		return hosts, nil
 	}
 
+	return lgc.enrichHostInfo(kit, hosts, hasName, needPath)
+}
+
+func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{}, hasName bool, needPath bool) (
+	[]map[string]interface{}, error) {
+
 	cnt := len(hosts)
 	cloudIDList := make([]int64, cnt)
 	hostIDList := make([]int64, cnt)
@@ -229,7 +226,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iam.TypeID, filter 
 
 	var hostPathMap map[int64][]string
 	if needPath {
-		hostPathMap, err = lgc.getHostIamPath(kit, resourceType, hostIDList)
+		hostPathMap, err = lgc.getHostIamPath(kit, iam.Host, hostIDList)
 		if err != nil {
 			return nil, err
 		}
@@ -351,10 +348,12 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iam.TypeID, filt
 }
 
 // ValidateFetchInstanceInfoRequest TODO
-func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
+func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit,
+	req *types.PullResourceReq) (*types.FetchInstanceInfoFilter, error) {
 	filter, ok := req.Filter.(types.FetchInstanceInfoFilter)
 	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
+		blog.ErrorJSON("request filter %s is not the right type for fetch_instance_info method, rid: %s", req.Filter,
+			kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 
@@ -367,7 +366,8 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit, req *types.Pu
 
 // getResourceIamPath TODO
 // get resource iam path
-func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, instance map[string]interface{}) ([]string, error) {
+func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID,
+	instance map[string]interface{}) ([]string, error) {
 	if resourceType == iam.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
@@ -375,7 +375,8 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iam.TypeID, in
 	iamPath := make([]string, 0)
 	// currently all resources only have one layer TODO support multiple layers if needed
 	for _, parent := range resourceParentMap[resourceType] {
-		iamPath = append(iamPath, "/"+string(parent)+","+util.GetStrByInterface(instance[GetResourceIDField(parent)])+"/")
+		iamPath = append(iamPath,
+			"/"+string(parent)+","+util.GetStrByInterface(instance[GetResourceIDField(parent)])+"/")
 	}
 	return iamPath, nil
 }

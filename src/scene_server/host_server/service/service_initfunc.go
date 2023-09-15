@@ -36,10 +36,14 @@ func (s *Service) initCloudarea(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea", Handler: s.FindManyCloudArea})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/cloudarea", Handler: s.CreatePlatBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloudarea", Handler: s.CreatePlat})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloudarea/{bk_cloud_id}", Handler: s.UpdatePlat})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloudarea/{bk_cloud_id}", Handler: s.DeletePlat})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field", Handler: s.UpdateHostCloudAreaField})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount", Handler: s.FindCloudAreaHostCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloudarea/{bk_cloud_id}",
+		Handler: s.UpdatePlat})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloudarea/{bk_cloud_id}",
+		Handler: s.DeletePlat})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field",
+		Handler: s.UpdateHostCloudAreaField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount",
+		Handler: s.FindCloudAreaHostCount})
 
 	utility.AddToRestfulWebService(web)
 
@@ -52,11 +56,15 @@ func (s *Service) initFavourite(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/favorites/search", Handler: s.ListHostFavourites})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/favorites/search",
+		Handler: s.ListHostFavourites})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/favorites", Handler: s.AddHostFavourite})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/favorites/{id}", Handler: s.UpdateHostFavouriteByID})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/favorites/{id}", Handler: s.DeleteHostFavouriteByID})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/favorites/{id}/incr", Handler: s.IncrHostFavouritesCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/favorites/{id}",
+		Handler: s.UpdateHostFavouriteByID})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/favorites/{id}",
+		Handler: s.DeleteHostFavouriteByID})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/favorites/{id}/incr",
+		Handler: s.IncrHostFavouritesCount})
 
 	utility.AddToRestfulWebService(web)
 
@@ -106,11 +114,14 @@ func (s *Service) initHost(web *restful.WebService) {
 		Language: s.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/batch", Handler: s.DeleteHostBatchFromResourcePool})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}", Handler: s.GetHostInstanceProperties})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/batch",
+		Handler: s.DeleteHostBatchFromResourcePool})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}",
+		Handler: s.GetHostInstanceProperties})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add", Handler: s.AddHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource", Handler: s.AddHostToResourcePool})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource",
+		Handler: s.AddHostToResourcePool})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/findmany/hosts/search/with_biz",
 		Handler: s.SearchHost})
@@ -124,24 +135,22 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/findmany/hosts/search/noauth",
 		Handler: s.SearchHostWithNoAuth})
-
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/business_idle",
 		Handler: s.AddHostToBusinessIdle})
 
 	// search host by biz set, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/biz_set/{bk_biz_set_id}",
 		Handler: s.SearchHostWithBizSet})
-	// 目前版本没有用到这个接口，先不动
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/search/asstdetail",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search/asstdetail",
 		Handler: s.SearchHostWithAsstDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/batch", Handler: s.UpdateHostBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/hosts/property/batch",
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/batch",
 		Handler: s.UpdateHostPropertyBatch})
 	// TODO: Deprecated, delete this api, used in framework
-	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host", Handler: s.NewHostSyncAppTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set", Handler: s.MoveSetHost2IdleModule})
+	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host",
+	//Handler: s.NewHostSyncAppTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set",
+		Handler: s.MoveSetHost2IdleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/clone", Handler: s.CloneHostProperty})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/update", Handler: s.UpdateImportHosts})
 	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
@@ -162,20 +171,16 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 
 	// 主机属性自动应用
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/create/host_apply_rule/bk_biz_id/{bk_biz_id}",
-		Handler: s.CreateHostApplyRule})
+		Path: "/create/host_apply_rule/bk_biz_id/{bk_biz_id}", Handler: s.CreateHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}",
-		Handler: s.UpdateHostApplyRule})
+		Path: "/update/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}", Handler: s.UpdateHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
 		Path:    "/host/deletemany/module/host_apply_rule/bk_biz_id/{bk_biz_id}",
 		Handler: s.DeleteHostApplyRule})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
-		Path:    "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/",
-		Handler: s.GetHostApplyRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}",
+		Path: "/find/host_apply_rule/{host_apply_rule_id}/bk_biz_id/{bk_biz_id}/", Handler: s.GetHostApplyRule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}",
 		Handler: s.ListHostApplyRule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/createmany/host_apply_rule/bk_biz_id/{bk_biz_id}/batch_create_or_update",
@@ -242,26 +247,21 @@ func (s *Service) initModule(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules", Handler: s.TransferHostModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle", Handler: s.MoveHost2IdleModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/fault",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle",
+		Handler: s.MoveHost2IdleModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/fault",
 		Handler: s.MoveHost2FaultModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/recycle",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/recycle",
 		Handler: s.MoveHost2RecycleModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/resource",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/resource",
 		Handler: s.MoveHostToResourcePool})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/resource/idle",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/resource/idle",
 		Handler: s.AssignHostToApp})
 	// get host module relation in app
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/read",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/read",
 		Handler: s.GetHostModuleRelation})
 	// transfer host to other business
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/hosts/modules/across/biz",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/across/biz",
 		Handler: s.TransferHostAcrossBusiness})
 
 	// transfer resource host(multi business) to other business.
@@ -272,12 +272,10 @@ func (s *Service) initModule(web *restful.WebService) {
 	// TODO: Deprecated, delete this api. delete host from business, used for framework
 	// utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/module/biz/delete",
 	// 	Handler: s.DeleteHostFromBusiness})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/host/topo/relation/read",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/topo/relation/read",
 		Handler: s.GetAppHostTopoRelation})
 	// 主机在资源池目录之间转移
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/host/transfer/resource/directory",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory",
 		Handler: s.TransferHostResourceDirectory})
 
 	utility.AddToRestfulWebService(web)
@@ -292,8 +290,8 @@ func (s *Service) initSpecial(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/install/bk", Handler: s.BKSystemInstall})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path: "/system/config/user_config/blueking_modify", Handler: s.FindSystemUserConfigBKSwitch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/system/config/user_config/blueking_modify",
+		Handler: s.FindSystemUserConfigBKSwitch})
 
 	utility.AddToRestfulWebService(web)
 
@@ -377,8 +375,10 @@ func (s *Service) initUsercustom(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom", Handler: s.SaveUserCustom})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/user/search", Handler: s.GetUserCustom})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model", Handler: s.GetModelDefaultCustom})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model/{obj_id}", Handler: s.SaveModelDefaultCustom})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model",
+		Handler: s.GetModelDefaultCustom})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/usercustom/default/model/{obj_id}",
+		Handler: s.SaveModelDefaultCustom})
 
 	utility.AddToRestfulWebService(web)
 

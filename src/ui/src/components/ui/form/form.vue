@@ -112,6 +112,7 @@
   import FormAppend from './form-append.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+  import useSideslider from '@/hooks/use-sideslider'
 
   export default {
     name: 'cmdb-form',
@@ -200,6 +201,9 @@
     },
     created() {
       this.initValues()
+      const { beforeClose, setChanged } = useSideslider(this.values)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       initValues() {

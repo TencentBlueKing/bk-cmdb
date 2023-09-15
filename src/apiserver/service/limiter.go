@@ -176,7 +176,8 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 		if r.Url != "" {
 			match, err := regexp.MatchString(r.Url, req.Request.RequestURI)
 			if err != nil {
-				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s", r.Url, req.Request.RequestURI, err.Error())
+				blog.Errorf("MatchString failed, r.Url:%s, reqURI:%s, err:%s", r.Url, req.Request.RequestURI,
+					err.Error())
 				continue
 			}
 			if !match {

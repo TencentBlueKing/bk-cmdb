@@ -31,7 +31,8 @@ export default [
     component: () => import('./children/model-details/index.vue'),
     meta: new Meta({
       menu: {
-        i18n: '模型详情'
+        i18n: '模型详情',
+        relative: MENU_MODEL_MANAGEMENT
       },
       layout: {},
       checkAvailable: (to, from, app) => {

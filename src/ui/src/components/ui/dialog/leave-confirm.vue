@@ -72,9 +72,11 @@
             closeIcon: false,
             confirmFn: () => {
               this.confirmResolve(this.reverse)
+              this.$emit('leave')
               this.destroy()
             },
             cancelFn: () => {
+              this.$emit('stay')
               this.confirmResolve(!this.reverse)
             }
           })

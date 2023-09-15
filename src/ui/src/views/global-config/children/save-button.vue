@@ -11,9 +11,9 @@
 -->
 
 <template>
-  <bk-popconfirm trigger="click" :disabled="loading" :title="$t('确认保存配置？')"
+  <bk-popconfirm trigger="click" :disabled="loading || disabled" :title="$t('确认保存配置？')"
     :content="$t('保存后将会立即生效，请谨慎操作！')" @confirm="handleConfirm">
-    <bk-button theme="primary" class="action-button" :loading="loading">{{$t('保存')}}</bk-button>
+    <bk-button theme="primary" class="action-button" :loading="loading" :disabled="disabled">{{$t('保存')}}</bk-button>
   </bk-popconfirm>
 </template>
 
@@ -21,6 +21,10 @@
   export default {
     props: {
       loading: {
+        type: Boolean,
+        default: false
+      },
+      disabled: {
         type: Boolean,
         default: false
       }
