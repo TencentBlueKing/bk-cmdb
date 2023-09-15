@@ -278,22 +278,22 @@
 </script>
 
 <style lang="scss" scoped>
-    .dynamic-group-layout {
-        padding: 20px;
-    }
-    .dynamic-group-options {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        .options-filter {
-            width: 320px;
-        }
-    }
-    .dynamic-group-table {
-        margin-top: 15px;
-        .name-text {
-            cursor: pointer;
-            color: $primaryColor;
-        }
-    }
+.dynamic-group-layout {
+  padding: 20px;
+}
+.dynamic-group-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  .options-filter {
+    width: 320px;
+  }
+}
+.dynamic-group-table {
+  margin-top: 15px;
+  .name-text {
+    cursor: pointer;
+    color: $primaryColor;
+  }
+}
 </style>

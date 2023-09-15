@@ -92,13 +92,14 @@
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
   import routerActions from '@/router/actions'
-  import { getDefaultPaginationConfig,
-           isPropertySortable,
-           getHeaderPropertyName,
-           getHeaderPropertyMinWidth,
-           isUseComplexValueType,
-           getSort,
-           getPageParams
+  import {
+    getDefaultPaginationConfig,
+    isPropertySortable,
+    getHeaderPropertyName,
+    getHeaderPropertyMinWidth,
+    isUseComplexValueType,
+    getSort,
+    getPageParams
   } from '@/utils/tools'
 
   const props = defineProps({
@@ -289,53 +290,53 @@
 </script>
 
 <style lang="scss" scoped>
-    .list-layout {
-        overflow: hidden;
-        height: 100%;
-        position: relative;
+.list-layout {
+  overflow: hidden;
+  height: 100%;
+  position: relative;
 
-        .no-condition {
-          position: absolute;
-          top: 40%;
-          left: 50%;
-          transform: translate(-50%);
-        }
-        .header {
-          height: 40px;
-          background: #FFFFFF;
-          border-bottom: 1px solid #DCDEE5;
-          border-left: 1px solid #DCDEE5;
-          padding: 0 16px;
-          @include space-between;
+  .no-condition {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%);
+  }
+  .header {
+    height: 40px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #DCDEE5;
+    border-left: 1px solid #DCDEE5;
+    padding: 0 16px;
+    @include space-between;
 
-          .title {
-            font-size: 14px;
-            color: #313238;
-            line-height: 22px;
-            font-weight: bold;
-          }
-          .date {
-            font-size: 12px;
-            color: #C4C6CC;
-            line-height: 16px;
-            font-weight: normal;
-            display: inline-block;
-            margin-left: 5px;
-          }
-          .refresh {
-            :deep(>div) {
-              @include space-between;
-            }
-            :deep(.icon-refresh) {
-              font-size: 12px;
-              margin-right: 5px;
-            }
-          }
-        }
-        .host-table {
-          margin: 12px 15px 0 24px;
-          width: calc(100% - 39px);
-        }
+    .title {
+      font-size: 14px;
+      color: #313238;
+      line-height: 22px;
+      font-weight: bold;
     }
+    .date {
+      font-size: 12px;
+      color: #C4C6CC;
+      line-height: 16px;
+      font-weight: normal;
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .refresh {
+      :deep(>div) {
+        @include space-between;
+      }
+      :deep(.icon-refresh) {
+        font-size: 12px;
+        margin-right: 5px;
+      }
+    }
+  }
+  .host-table {
+    margin: 12px 15px 0 24px;
+    width: calc(100% - 39px);
+  }
+}
 
 </style>

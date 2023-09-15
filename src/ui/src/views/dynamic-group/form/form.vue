@@ -554,83 +554,83 @@
 </script>
 
 <style lang="scss" scoped>
-    .dynamic-slidebar {
-      :deep(.bk-sideslider-content) {
-        overflow-x: hidden;
+.dynamic-slidebar {
+  :deep(.bk-sideslider-content) {
+    overflow-x: hidden;
+  }
+}
+.dynamic-group-info {
+  width: 412px;
+  float: left;
+  height: calc(100% - 53px);
+}
+.dynamic-group-preview {
+  width: 100%;
+  float: right;
+  height: 100%;
+  padding-bottom: 11px;
+  background: #F5F7FA;
+}
+.dynamic-group-form {
+  padding: 18px 16px;
+  height: 100%;
+  @include scrollbar-y;
+  .form-item {
+    width: 100%;
+  }
+  .form-error {
+    position: absolute;
+    top: 100%;
+    font-size: 12px;
+    line-height: 14px;
+    color: $dangerColor;
+  }
+  .form-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #313238;
+    line-height: 22px;
+    margin-bottom: 10px;
+  }
+  :deep(.bk-form-item) {
+    margin-bottom: 20px;
+    margin-top: 0 !important;
+  }
+  .form-condition-button {
+    /deep/ > div {
+      display: flex;
+      align-items: center;
+      .bk-icon {
+        top: 0;
       }
     }
-    .dynamic-group-info {
-      width: 412px;
-      float: left;
-      height: calc(100% - 53px);
-    }
-    .dynamic-group-preview {
-      width: 100%;
-      float: right;
-      height: 100%;
-      padding-bottom: 11px;
-      background: #F5F7FA;
-    }
-    .dynamic-group-form {
-        padding: 18px 16px;
-        height: 100%;
-        @include scrollbar-y;
-        .form-item {
-            width: 100%;
-        }
-        .form-error {
-            position: absolute;
-            top: 100%;
-            font-size: 12px;
-            line-height: 14px;
-            color: $dangerColor;
-        }
-        .form-title {
-            font-weight: 700;
-            font-size: 14px;
-            color: #313238;
-            line-height: 22px;
-            margin-bottom: 10px;
-        }
-        :deep(.bk-form-item) {
-          margin-bottom: 20px;
-          margin-top: 0 !important;
-        }
-        .form-condition-button {
-            /deep/ > div {
-                display: flex;
-                align-items: center;
-                .bk-icon {
-                    top: 0;
-                }
-            }
-        }
-    }
-    .dynamic-group-options {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        padding: 10px 16px;
-        border-top: 1px solid $borderColor;
-        background: #FAFBFD;
-        :deep(.bk-button) {
-          width: 88px;
-          padding: 0 !important;
-          &.btn-cancel {
-            position: relative;
+  }
+}
+.dynamic-group-options {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  border-top: 1px solid $borderColor;
+  background: #FAFBFD;
+  :deep(.bk-button) {
+    width: 88px;
+    padding: 0 !important;
+    &.btn-cancel {
+      position: relative;
 
-            &::before {
-              content: '';
-              width: 1px;
-              height: 16px;
-              background: #C4C6CC;
-              display: inline-block;
-              position: absolute;
-              left: -6PX;
-              top: 50%;
-              transform: translateY(-50%);
-            }
-          }
-        }
+      &::before {
+        content: '';
+        width: 1px;
+        height: 16px;
+        background: #C4C6CC;
+        display: inline-block;
+        position: absolute;
+        left: -6PX;
+        top: 50%;
+        transform: translateY(-50%);
+      }
     }
+  }
+}
 </style>
