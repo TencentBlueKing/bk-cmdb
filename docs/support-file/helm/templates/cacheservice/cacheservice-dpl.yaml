@@ -49,12 +49,18 @@ spec:
             port: {{ .Values.cacheservice.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.cacheservice.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.cacheservice.resources }}
         resources: {{ toYaml .Values.cacheservice.resources | nindent 10 }}
