@@ -105,7 +105,7 @@
   const props = defineProps({
     condition: {
       type: Object,
-      default: {}
+      default: () => ({})
     },
     mode: String
   })
