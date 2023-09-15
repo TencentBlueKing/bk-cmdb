@@ -499,91 +499,10 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 	// get details in collection by oids, need to get _id to do mapping
 	oidDetailMap := make(map[int]string)
 	if len(oids) > 0 {
-		filter := map[string]interface{}{
-			"_id": map[string]interface{}{common.BKDBIN: oids},
-		}
-
-		findOpts := daltypes.NewFindOpts().SetWithObjectID(true)
-
-		fields := fields
-		if len(fields) > 0 {
-			fields = append(fields, "_id")
-		}
-
-		if coll == common.BKTableNameBaseHost {
-			detailArr := make([]metadata.HostMapStr, 0)
-			if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
-				blog.Errorf("get details from db failed, err: %s, oids: %+v, rid: %s", err, oids, kit.Rid)
-				return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
-			}
-
-			for _, detailMap := range detailArr {
-				objectID, ok := detailMap["_id"].(primitive.ObjectID)
-				if !ok {
-					return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
-				}
-				oid := objectID.Hex()
-				delete(detailMap, "_id")
-				detailJson, _ := json.Marshal(detailMap)
-				for _, index := range oidIndexMap[oid] {
-					oidDetailMap[index] = string(detailJson)
-				}
-			}
-		} else if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
-			instObjMappings, err := instancemapping.GetInstanceObjectMapping(instIDs)
-			if err != nil {
-				blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
-				return nil, err
-			}
-
-			objIDOwnerIDInstIDsMap := make(map[string]map[string][]int64, 0)
-			for _, row := range instObjMappings {
-				if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
-					objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
-				}
-				objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID] =
-					append(objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID], row.ID)
-			}
-
-			for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {
-				for ownerID, instIDs := range ownerIDInstMap {
-					detailArr := make([]mapStrWithOid, 0)
-					filter = map[string]interface{}{
-						common.BKInstIDField: map[string]interface{}{
-							common.BKDBIN: instIDs,
-						},
-					}
-
-					objColl := common.GetInstTableName(objID, ownerID)
-					if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
-						blog.Errorf("get details from db failed, err: %s, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
-						return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
-					}
-
-					for _, detailMap := range detailArr {
-						oid := detailMap.Oid.Hex()
-						detailJson, _ := json.Marshal(detailMap.MapStr)
-						for _, index := range oidIndexMap[oid] {
-							oidDetailMap[index] = string(detailJson)
-						}
-					}
-				}
-
-			}
-		} else {
-			detailArr := make([]mapStrWithOid, 0)
-			if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
-				blog.Errorf("get details from db failed, err: %s, oids: %+v, rid: %s", err, oids, kit.Rid)
-				return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
-			}
-
-			for _, detailMap := range detailArr {
-				oid := detailMap.Oid.Hex()
-				detailJson, _ := json.Marshal(detailMap.MapStr)
-				for _, index := range oidIndexMap[oid] {
-					oidDetailMap[index] = string(detailJson)
-				}
-			}
+		var err error
+		oidDetailMap, err = c.getDetailsByOids(kit, oids, fields, coll, oidIndexMap, instIDs)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -594,10 +513,102 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 	oidDetailMap, err := c.searchDeletedEventDetailsFromMongo(kit, coll, deletedOids, fields, deleteInstIDs,
 		oidIndexMap, oidDetailMap)
 	if err != nil {
-		blog.Errorf("get delete details from db failed, err: %s, oids: %+v, rid: %s", err, deletedOids, kit.Rid)
+		blog.Errorf("get delete details from db failed, err: %v, oids: %+v, rid: %s", err, deletedOids, kit.Rid)
 		return nil, err
 	}
 
+	return oidDetailMap, nil
+}
+
+func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fields []string, coll string,
+	oidIndexMap map[string][]int, instIDs []int64) (map[int]string, error) {
+
+	oidDetailMap := make(map[int]string)
+
+	filter := map[string]interface{}{"_id": map[string]interface{}{common.BKDBIN: oids}}
+	findOpts := daltypes.NewFindOpts().SetWithObjectID(true)
+
+	if len(fields) > 0 {
+		fields = append(fields, "_id")
+	}
+
+	switch coll {
+	case common.BKTableNameBaseHost:
+		detailArr := make([]metadata.HostMapStr, 0)
+		if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+			blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
+			return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+		}
+
+		for _, detailMap := range detailArr {
+			objectID, ok := detailMap["_id"].(primitive.ObjectID)
+			if !ok {
+				return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
+			}
+			delete(detailMap, "_id")
+			detailJson, _ := json.Marshal(detailMap)
+			for _, index := range oidIndexMap[objectID.Hex()] {
+				oidDetailMap[index] = string(detailJson)
+			}
+		}
+		return oidDetailMap, nil
+
+	case common.BKTableNameBaseInst, common.BKTableNameMainlineInstance:
+		instObjMappings, err := instancemapping.GetInstanceObjectMapping(instIDs)
+		if err != nil {
+			blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
+			return nil, err
+		}
+
+		objIDOwnerIDInstIDsMap := make(map[string]map[string][]int64, 0)
+		for _, row := range instObjMappings {
+			if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
+				objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
+			}
+			objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID] =
+				append(objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID], row.ID)
+		}
+
+		for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {
+			for ownerID, instIDs := range ownerIDInstMap {
+				detailArr := make([]mapStrWithOid, 0)
+				filter = map[string]interface{}{
+					common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
+				}
+
+				objColl := common.GetInstTableName(objID, ownerID)
+				if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx,
+					&detailArr); err != nil {
+					blog.Errorf("get details from db failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
+					return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+				}
+
+				for _, detailMap := range detailArr {
+					oid := detailMap.Oid.Hex()
+					detailJson, _ := json.Marshal(detailMap.MapStr)
+					for _, index := range oidIndexMap[oid] {
+						oidDetailMap[index] = string(detailJson)
+					}
+				}
+			}
+		}
+
+		return oidDetailMap, nil
+	}
+
+	detailArr := make([]mapStrWithOid, 0)
+	if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+		blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
+		return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+	}
+
+	for _, detailMap := range detailArr {
+		oid := detailMap.Oid.Hex()
+		detailJson, _ := json.Marshal(detailMap.MapStr)
+		for _, index := range oidIndexMap[oid] {
+			oidDetailMap[index] = string(detailJson)
+		}
+	}
 	return oidDetailMap, nil
 }
 

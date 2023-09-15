@@ -196,6 +196,8 @@
           console.error(e)
           this.instances = []
           this.pagination.count = 0
+        } finally {
+          this.emptyStuff.type = this.searchSelectData.length === 0 ? 'default' : 'search'
         }
       },
       getSelectorParams() {
@@ -354,7 +356,7 @@
           })
           return
         }
-        this.emptyStuff.type = this.searchSelectData.length === 0 ? 'default' : 'search'
+
         this.handlePageChange(1)
       },
       handlePageChange(page) {
@@ -392,7 +394,7 @@
       },
       handleFilterClear() {
         this.searchSelectData = []
-        this.emptyStuff.type = 'default'
+        this.handlePageChange(1)
       }
     }
   }

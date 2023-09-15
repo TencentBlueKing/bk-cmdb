@@ -23,7 +23,7 @@ var _ = Describe("host test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -33,7 +33,7 @@ var _ = Describe("host test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
@@ -92,7 +92,7 @@ var _ = Describe("host test", func() {
 				"bk_module_name": "test",
 			}
 			rsp, err := dirClient.CreateResourceDirectory(context.Background(), header, dir)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -114,7 +114,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -132,7 +132,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -156,7 +156,7 @@ var _ = Describe("host test", func() {
 				"input_type": "excel",
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -174,7 +174,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -202,7 +202,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -218,7 +218,7 @@ var _ = Describe("host test", func() {
 		// 		},
 		// 	}
 		// 	rsp, err := hostServerClient.AddHostFromAgent(context.Background(), header, input)
-		// 	util.RegisterResponse(rsp)
+		// 	util.RegisterResponseWithRid(rsp, header)
 		// 	Expect(err).NotTo(HaveOccurred())
 		// 	Expect(rsp.Result).To(Equal(true))
 		// })
@@ -236,7 +236,7 @@ var _ = Describe("host test", func() {
 		// 		},
 		// 	}
 		// 	rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-		// 	util.RegisterResponse(rsp)
+		// 	util.RegisterResponseWithRid(rsp, header)
 		// 	Expect(err).NotTo(HaveOccurred())
 		// 	Expect(rsp.Result).To(Equal(true))
 		// 	Expect(rsp.Data.Count).To(Equal(1))
@@ -255,7 +255,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -281,7 +281,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -292,8 +292,9 @@ var _ = Describe("host test", func() {
 		})
 
 		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId, 10), header)
-			util.RegisterResponse(rsp)
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId, 10), header)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			for _, data := range rsp.Data {
@@ -307,7 +308,7 @@ var _ = Describe("host test", func() {
 		It("get host count in multi cloud area", func() {
 			opt := metadata.CloudAreaHostCount{CloudIDs: []int64{0, 100}}
 			rsp, err := hostServerClient.FindCloudAreaHostCount(context.Background(), header, opt)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(len(rsp.Data)).To(Equal(2))
@@ -323,7 +324,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -339,7 +340,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -352,7 +353,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
@@ -370,7 +371,7 @@ var _ = Describe("host test", func() {
 				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -383,7 +384,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -403,7 +404,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -420,7 +421,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -446,7 +447,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -476,7 +477,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -488,7 +489,7 @@ var _ = Describe("host test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -516,7 +517,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -528,7 +529,7 @@ var _ = Describe("host test", func() {
 
 		It("get instance topo", func() {
 			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId, 10), header)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
@@ -561,7 +562,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -579,7 +580,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -602,7 +603,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -616,7 +617,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -639,7 +640,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -665,7 +666,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -683,7 +684,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -706,7 +707,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -722,7 +723,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -748,13 +749,14 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
+			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)),
+				Equal(data1["bk_host_innerip"].(string))))
 		})
 
 		It("search fault host", func() {
@@ -775,7 +777,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -802,7 +804,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -816,7 +818,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -842,7 +844,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
@@ -871,7 +873,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
@@ -898,7 +900,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -916,7 +918,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -942,7 +944,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -964,7 +966,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -981,7 +983,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
@@ -1004,7 +1006,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -1031,7 +1033,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1048,7 +1050,7 @@ var _ = Describe("host test", func() {
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1071,7 +1073,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -1095,7 +1097,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1107,7 +1109,7 @@ var _ = Describe("host test", func() {
 				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1130,7 +1132,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1146,7 +1148,7 @@ var _ = Describe("host test", func() {
 				"bk_supplier_account": "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -1172,7 +1174,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -1182,7 +1184,7 @@ var _ = Describe("host test", func() {
 
 var _ = Describe("list_hosts_topo test", func() {
 	It("list_hosts_topo", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		By("create biz cc_biz_test")
 		bizInput := map[string]interface{}{
@@ -1253,7 +1255,7 @@ var _ = Describe("list_hosts_topo test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
@@ -1265,7 +1267,7 @@ var _ = Describe("list_hosts_topo test", func() {
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
@@ -1291,8 +1293,10 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(transferRsp.Result).To(Equal(true))
 
 		By("list hosts topo")
-		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10}, Fields: []string{"bk_host_id"}})
-		util.RegisterResponse(rsp)
+		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId,
+			&metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10},
+				Fields: []string{"bk_host_id"}})
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
@@ -1307,7 +1311,7 @@ var _ = Describe("list_hosts_topo test", func() {
 
 var _ = Describe("batch_update_host test", func() {
 	It("batch_update_host", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add host using api")
 		hostInput := map[string]interface{}{
@@ -1321,7 +1325,7 @@ var _ = Describe("batch_update_host test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
@@ -1332,7 +1336,7 @@ var _ = Describe("batch_update_host test", func() {
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
@@ -1367,7 +1371,7 @@ var _ = Describe("batch_update_host test", func() {
 
 		By("search updated host property")
 		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_asset_id"].(string)).To(Equal(""))
@@ -1381,7 +1385,7 @@ var _ = Describe("batch_update_host test", func() {
 
 var _ = Describe("multiple ip host validation test", func() {
 	It("multiple ip host validation", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts with different ip using api")
 		hostInput := map[string]interface{}{
@@ -1395,7 +1399,7 @@ var _ = Describe("multiple ip host validation test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
@@ -1406,7 +1410,7 @@ var _ = Describe("multiple ip host validation test", func() {
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1418,7 +1422,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 
@@ -1429,7 +1434,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 	})
@@ -1437,7 +1443,7 @@ var _ = Describe("multiple ip host validation test", func() {
 
 var _ = Describe("add_host_to_resource_pool test", func() {
 	It("add_host_to_resource_pool", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts to resource pool default module")
 		hostInput := metadata.AddHostToResourcePoolHostList{
@@ -1453,7 +1459,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 		js, err := json.Marshal(hostRsp.Data)
@@ -1474,7 +1480,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 
 		By("search hosts")
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{})
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1507,13 +1513,13 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			Directory: 1000,
 		}
 		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(false))
 
 		By("search hosts")
 		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{})
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1532,7 +1538,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			},
 		}
 		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(false))
 		js, err = json.Marshal(hostRsp.Data)
@@ -1551,7 +1557,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 				Sort: common.BKHostIDField,
 			},
 		})
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(3))
@@ -1766,7 +1772,7 @@ var _ = Describe("cloud host test", func() {
 				"bk_account_id":   2,
 				"creator":         "admin",
 			})
-			util.RegisterResponse(resp)
+			util.RegisterResponseWithRid(resp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.Result).To(Equal(true))
 			cloudID = int64(resp.Data.Created.ID)

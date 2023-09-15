@@ -138,7 +138,8 @@ func compare(tableName string, srcData, tarData map[string]interface{}, ignores 
 			}
 		}
 		if !equal {
-			log.Fatalf("not equal!! tablename: %s, key %s , expect %#v, actual %#v", tableName, key, tarData[key], srcData[key])
+			log.Fatalf("not equal!! tablename: %s, key %s , expect %#v, actual %#v", tableName, key, tarData[key],
+				srcData[key])
 		}
 	}
 }
@@ -159,8 +160,9 @@ type tableKey struct {
 }
 
 var tableKeysCache = map[string]*tableKey{
-	"cc_ApplicationBase":   {keys: []string{"bk_biz_name"}, ignores: []string{"bk_biz_id"}},
-	"cc_ModuleBase":        {keys: []string{"bk_module_name"}, ignores: []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
+	"cc_ApplicationBase": {keys: []string{"bk_biz_name"}, ignores: []string{"bk_biz_id"}},
+	"cc_ModuleBase": {keys: []string{"bk_module_name"},
+		ignores: []string{"bk_module_id", "bk_biz_id", "bk_set_id", "bk_parent_id"}},
 	"cc_ObjAttDes":         {keys: []string{"bk_obj_id", "bk_property_id"}, ignores: []string{"id"}},
 	"cc_ObjClassification": {keys: []string{"bk_classification_id"}, ignores: []string{"id"}},
 	"cc_ObjDes":            {keys: []string{"bk_obj_id"}, ignores: []string{"id"}},
@@ -170,7 +172,8 @@ var tableKeysCache = map[string]*tableKey{
 	"cc_PropertyGroup":     {keys: []string{"bk_obj_id", "bk_group_id"}, ignores: []string{}},
 	"cc_SetBase":           {keys: []string{"bk_set_name", "bk_biz_id"}, ignores: []string{"bk_set_id"}},
 	"cc_OperationLog":      {keys: []string{"op_type", "inst_id"}, ignores: []string{"op_time"}},
-	"cc_ObjAsst":           {keys: []string{"bk_obj_id", "bk_object_att_id", "bk_asst_obj_id"}, ignores: []string{"id"}},
+	"cc_ObjAsst": {keys: []string{"bk_obj_id", "bk_object_att_id", "bk_asst_obj_id"},
+		ignores: []string{"id"}},
 }
 
 func tableKeys(tableName string) *tableKey {

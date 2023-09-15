@@ -36,17 +36,98 @@ import (
 	"configcenter/src/thirdparty/monitor"
 )
 
-// Run TODO
+// Run start server
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
-	svrInfo, err := types.NewServerInfo(op.ServConf)
+	process, err := parseSeverConfig(ctx, op)
 	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
+		return err
 	}
 
+	// adminserver conf not depend discovery
+	err = process.ConfigCenter.Start(process.Config.Configures.Dir, process.Config.Errors.Res,
+		process.Config.Language.Res)
+
+	if err != nil {
+		return err
+	}
+
+	service := svc.NewService(ctx)
+	service.Engine = process.Core
+	service.Config = *process.Config
+	service.ConfigCenter = process.ConfigCenter
+	process.Service = service
+
+	if dbErr := mongodb.InitClient("", &process.Config.MongoDB); dbErr != nil {
+		return fmt.Errorf("connect mongo server failed %s", dbErr.Error())
+	}
+	db := mongodb.Client()
+	process.Service.SetDB(db)
+
+	watchDB, err := local.NewMgo(process.Config.WatchDB.GetMongoConf(), time.Minute)
+	if err != nil {
+		return fmt.Errorf("connect watch mongo server failed, err: %v", err)
+	}
+	process.Service.SetWatchDB(watchDB)
+
+	cache, err := redis.NewFromConfig(process.Config.Redis)
+	if err != nil {
+		return fmt.Errorf("connect redis server failed, err: %s", err.Error())
+	}
+	process.Service.SetCache(cache)
+
+	if auth.EnableAuthorize() {
+		blog.Info("enable auth center access.")
+
+		iamCli, err := iamcli.NewIAM(process.Config.IAM, process.Core.Metric().Registry())
+		if err != nil {
+			return fmt.Errorf("new iam client failed: %v", err)
+		}
+		process.Service.SetIam(iamCli)
+
+		syncor := iam.NewSyncor()
+		syncor.SetDB(mongodb.Client())
+		syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
+		go syncor.SyncIAM(iamCli, cache, service.Logics)
+	} else {
+		blog.Infof("disable auth center access.")
+	}
+
+	if esbConfig, err := esb.ParseEsbConfig(); err == nil {
+		esb.UpdateEsbConfig(*esbConfig)
+	}
+
+	process.Service.Logics = logics.NewLogics(process.Core)
+
+	// init esb client
+	esb.InitEsbClient(nil)
+
+	if err := service.BackgroundTask(*process.Config); err != nil {
+		return err
+	}
+	err = backbone.StartServer(ctx, cancel, process.Core, service.WebService(), true)
+	if err != nil {
+		return err
+	}
+
+	errors.SetGlobalCCError(process.Core.CCErr)
+
+	select {
+	case <-ctx.Done():
+	}
+	blog.V(0).Info("process stopped")
+	return nil
+}
+
+func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateServer, error) {
 	process := new(MigrateServer)
 	process.Config = new(options.Config)
 	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
-		return fmt.Errorf("parse config file error %s", err.Error())
+		return nil, fmt.Errorf("parse config file error %s", err.Error())
+	}
+
+	svrInfo, err := types.NewServerInfo(op.ServConf)
+	if err != nil {
+		return nil, fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
 	process.Config.Errors.Res, _ = cc.String("errors.res")
@@ -60,58 +141,58 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo
 	if err := cc.SetMongodbFromFile(mongodbPath); err != nil {
-		return fmt.Errorf("parse mongodb config from file[%s] failed, err: %v", mongodbPath, err)
+		return nil, fmt.Errorf("parse mongodb config from file[%s] failed, err: %v", mongodbPath, err)
 	}
 
 	redisPath := process.Config.Configures.Dir + "/" + types.CCConfigureRedis
 	if err := cc.SetRedisFromFile(redisPath); err != nil {
-		return fmt.Errorf("parse redis config from file[%s] failed, err: %v", redisPath, err)
+		return nil, fmt.Errorf("parse redis config from file[%s] failed, err: %v", redisPath, err)
 	}
 
 	commonPath := process.Config.Configures.Dir + "/" + types.CCConfigureCommon
 	if err := cc.SetCommonFromFile(commonPath); err != nil {
-		return fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
+		return nil, fmt.Errorf("parse common config from file[%s] failed, err: %v", commonPath, err)
 	}
 
 	process.Config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
 	process.Config.SnapKafka, _ = cc.Kafka("kafka.snap")
 
 	if err := monitor.InitMonitor(); err != nil {
-		return fmt.Errorf("init monitor failed, err: %v", err)
+		return nil, fmt.Errorf("init monitor failed, err: %v", err)
 	}
 
 	mongoConf, err := cc.Mongo("mongodb")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	process.Config.MongoDB = mongoConf
 
 	watchDBConf, err := cc.Mongo("watch")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	process.Config.WatchDB = watchDBConf
 
 	redisConf, err := cc.Redis("redis")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	process.Config.Redis = redisConf
 
 	snapRedisConf, err := cc.Redis("redis.snap")
 	if err != nil {
-		return fmt.Errorf("get host snapshot redis configuration failed, err: %v", err)
+		return nil, fmt.Errorf("get host snapshot redis configuration failed, err: %v", err)
 	}
 	process.Config.SnapRedis = snapRedisConf
 
 	process.Config.IAM, err = iamcli.ParseConfigFromKV("authServer", nil)
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
-		return err
+		return nil, err
 	}
 
-	if err := parseShardingTableConfig(process); err != nil {
-		return err
+	if err = parseShardingTableConfig(process); err != nil {
+		return nil, err
 	}
 
 	input := &backbone.BackboneParameter{
@@ -122,99 +203,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
+		return nil, fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	process.Core = engine
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
-
-	// adminserver conf not depend discovery
-	err = process.ConfigCenter.Start(
-		process.Config.Configures.Dir,
-		process.Config.Errors.Res,
-		process.Config.Language.Res,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	service := svc.NewService(ctx)
-	service.Engine = engine
-	service.Config = *process.Config
-	service.ConfigCenter = process.ConfigCenter
-	process.Service = service
-	var iamCli *iamcli.IAM
-
-	for {
-		if process.Config == nil {
-			time.Sleep(time.Second * 2)
-			blog.V(3).Info("config not found, retry 2s later")
-			continue
-		}
-
-		dbErr := mongodb.InitClient("", &process.Config.MongoDB)
-		if dbErr != nil {
-			return fmt.Errorf("connect mongo server failed %s", dbErr.Error())
-		}
-		db := mongodb.Client()
-		process.Service.SetDB(db)
-
-		watchDB, err := local.NewMgo(process.Config.WatchDB.GetMongoConf(), time.Minute)
-		if err != nil {
-			return fmt.Errorf("connect watch mongo server failed, err: %v", err)
-		}
-		process.Service.SetWatchDB(watchDB)
-
-		cache, err := redis.NewFromConfig(process.Config.Redis)
-		if err != nil {
-			return fmt.Errorf("connect redis server failed, err: %s", err.Error())
-		}
-		process.Service.SetCache(cache)
-
-		if auth.EnableAuthorize() {
-			blog.Info("enable auth center access.")
-
-			iamCli, err = iamcli.NewIAM(process.Config.IAM, engine.Metric().Registry())
-			if err != nil {
-				return fmt.Errorf("new iam client failed: %v", err)
-			}
-			process.Service.SetIam(iamCli)
-		} else {
-			blog.Infof("disable auth center access.")
-		}
-
-		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
-			esb.UpdateEsbConfig(*esbConfig)
-		}
-
-		process.Service.Logics = logics.NewLogics(engine)
-		break
-	}
-
-	// init esb client
-	esb.InitEsbClient(nil)
-
-	if err := service.BackgroundTask(*process.Config); err != nil {
-		return err
-	}
-	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
-	if err != nil {
-		return err
-	}
-
-	errors.SetGlobalCCError(engine.CCErr)
-
-	syncor := iam.NewSyncor()
-	syncor.SetDB(mongodb.Client())
-	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
-	go syncor.SyncIAM(iamCli, service.Logics)
-
-	select {
-	case <-ctx.Done():
-	}
-	blog.V(0).Info("process stopped")
-	return nil
+	return process, nil
 }
 
 // MigrateServer TODO

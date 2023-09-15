@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/valid"
+	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -137,8 +137,8 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 			return
 		}
 
-		err := valid.ValidPropertyOption(attrs[idx].PropertyType, attrs[idx].Option, attrs[idx].IsMultiple,
-			attrs[idx].Default, ctx.Kit.Rid, ctx.Kit.CCError)
+		err = attrvalid.ValidPropertyOption(ctx.Kit, attrs[idx].PropertyType, attrs[idx].Option, attrs[idx].IsMultiple,
+			attrs[idx].Default)
 		if err != nil {
 			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attrs[idx], err,
 				ctx.Kit.Rid)
@@ -312,8 +312,7 @@ func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attr
 			return err.ToCCError(kit.CCError)
 		}
 
-		err := valid.ValidPropertyOption(attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default, kit.Rid,
-			kit.CCError)
+		err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default)
 		if err != nil {
 			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attr, err,
 				kit.Rid)
