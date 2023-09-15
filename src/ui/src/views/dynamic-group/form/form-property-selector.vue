@@ -272,19 +272,19 @@
       }
 
       /deep/ {
-         .bk-checkbox {
-             flex: 16px 0 0;
-             opacity: 0;
-             position: absolute;
-         }
-         .bk-checkbox-text {
-             font-size: 12px;
-             padding-right: 10px;
-             margin: 0;
-             width: 100%;
-             @include space-between;
-             @include ellipsis;
-         }
+        .bk-checkbox {
+          flex: 16px 0 0;
+          opacity: 0;
+          position: absolute;
+        }
+        .bk-checkbox-text {
+          font-size: 12px;
+          padding-right: 10px;
+          margin: 0;
+          width: 100%;
+          @include space-between;
+          @include ellipsis;
+        }
       }
     }
   }
