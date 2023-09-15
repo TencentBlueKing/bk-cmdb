@@ -123,7 +123,7 @@
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import PreviewResult from '../preview/preview-result.vue'
-  import FilterStore from './store'
+  import FilterStore from '../store'
 
   export default {
     components: {

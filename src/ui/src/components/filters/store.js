@@ -484,6 +484,7 @@ const FilterStore = new Vue({
     getHeader() {
       // 取之前先设置为最新的值
       this.setHeader()
+
       // 由于属性数据异步加载，可能会存在无效的数据，过滤后返回
       return this.header.filter(header => header)
     },

@@ -88,7 +88,7 @@
     MENU_BUSINESS_HOST_DETAILS,
   } from '@/dictionary/menu-symbol'
   import { time } from '@/filters/formatter'
-  import FilterStore, { setupFilterStore } from '../form/store'
+  import FilterStore, { setupFilterStore } from '../store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
   import routerActions from '@/router/actions'

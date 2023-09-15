@@ -38,8 +38,7 @@ const FilterStore = new Vue({
       propertyGroups: [],
       request() {
         return {
-          property: Symbol('property'),
-          propertyGroup: Symbol('propertyGroup')
+          property: Symbol('property')
         }
       },
     }
@@ -82,8 +81,7 @@ const FilterStore = new Vue({
       return getStorageHeader('usercustom', key, properties)
     },
     presetHeader() {
-      const isDynamicSet = this.isDynamicGroupSet
-      const model = isDynamicSet ? 'set' : 'host'
+      const model = this.isDynamicGroupSet ? 'set' : 'host'
       const hostProperties = this.getModelProperties(model)
       // 初始化属性为前6个
       return Utils.getInitialProperties(hostProperties)
@@ -102,9 +100,6 @@ const FilterStore = new Vue({
       })
       return map
     },
-  },
-  watch: {
-
   },
   methods: {
     // 设置动态分组查询对象选中值
@@ -181,7 +176,6 @@ const FilterStore = new Vue({
         requestId: this.request.property
       })
 
-      const commonProperties = [...properties]
       const hostIdProperty = Utils.defineProperty({
         id: 'bk_host_id',
         bk_obj_id: 'host',
@@ -191,16 +185,9 @@ const FilterStore = new Vue({
         bk_property_type: 'int'
       })
 
-      this.properties = [...commonProperties, hostIdProperty]
+      this.properties = [...properties, hostIdProperty]
       return this.properties
-    },
-    async getPropertyGroups() {
-      const groups = await api.post('find/objectattgroup/object/host', {}, {
-        requestId: this.request.propertyGroup
-      })
-      this.propertyGroups = groups
-      return groups
-    },
+    }
   }
 })
 
@@ -208,10 +195,7 @@ export async function setupFilterStore(config = {}) {
   FilterStore.config = config
   FilterStore.selected = []
   FilterStore.condition = {}
-  await Promise.all([
-    FilterStore.getProperties(),
-    FilterStore.getPropertyGroups(),
-  ])
+  await FilterStore.getProperties()
 
   FilterStore.setHeader()
   return FilterStore
