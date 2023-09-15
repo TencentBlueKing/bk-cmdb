@@ -240,59 +240,59 @@
 </script>
 
 <style lang="scss" scoped>
-    .form-property-list {
-        /deep/ .bk-form-item {
-          padding: 8px;
-          margin: -8px;
-          margin-bottom: 4px !important;
+.form-property-list {
+  /deep/ .bk-form-item {
+    padding: 8px;
+    margin: -8px;
+    margin-bottom: 4px !important;
 
-          .bk-label {
-            cursor: pointer;
-          }
-
-          &:hover {
-            background: #F0F1F5;
-
-            .item-remove {
-                visibility: visible;
-            }
-          }
-        }
-        :deep(.bk-select-tag-container.is-focus) {
-          max-height: 200px;
-          @include scrollbar;
-        }
-        .form-property-item {
-            display: flex;
-            align-items: center;
-            .item-operator {
-                flex: 110px 0 0;
-                margin-right: 10px;
-            }
-            .item-value {
-                flex: 1;
-                margin: 0 10px 0 0;
-                width: calc(100% - 150px);
-                display: flex;
-                align-items: center;
-
-                .form-element {
-                  width: 100%;
-                }
-            }
-            .item-remove {
-                font-size: 20px;
-                visibility: hidden;
-                cursor: pointer;
-                position: absolute;
-                right: 0;
-                top: -32px;
-            }
-        }
-        .form-error {
-            font-size: 12px;
-            line-height: 14px;
-            color: $dangerColor;
-        }
+    .bk-label {
+      cursor: pointer;
     }
+
+    &:hover {
+      background: #F0F1F5;
+
+      .item-remove {
+        visibility: visible;
+      }
+    }
+  }
+  :deep(.bk-select-tag-container.is-focus) {
+    max-height: 200px;
+    @include scrollbar;
+  }
+  .form-property-item {
+    display: flex;
+    align-items: center;
+    .item-operator {
+      flex: 110px 0 0;
+      margin-right: 10px;
+    }
+    .item-value {
+      flex: 1;
+      margin: 0 10px 0 0;
+      width: calc(100% - 150px);
+      display: flex;
+      align-items: center;
+
+      .form-element {
+        width: 100%;
+      }
+    }
+    .item-remove {
+      font-size: 20px;
+      visibility: hidden;
+      cursor: pointer;
+      position: absolute;
+      right: 0;
+      top: -32px;
+    }
+  }
+  .form-error {
+    font-size: 12px;
+    line-height: 14px;
+    color: $dangerColor;
+  }
+}
 </style>
