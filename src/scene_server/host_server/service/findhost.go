@@ -187,16 +187,8 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	moduleCond := []meta.ConditionItem{
-		{
-			Field:    common.BKAppIDField,
-			Operator: common.BKDBEQ,
-			Value:    bizID,
-		},
-		{
-			Field:    common.BKServiceTemplateIDField,
-			Operator: common.BKDBIN,
-			Value:    option.ServiceTemplateIDs,
-		},
+		{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: bizID},
+		{Field: common.BKServiceTemplateIDField, Operator: common.BKDBIN, Value: option.ServiceTemplateIDs},
 	}
 	if len(option.ModuleIDs) > 0 {
 		moduleCond = append(moduleCond, meta.ConditionItem{

@@ -202,7 +202,7 @@ func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
 	}
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
 
-	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

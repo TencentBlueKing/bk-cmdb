@@ -104,6 +104,7 @@ var ccIamResTypeMap = map[meta.ResourceType]TypeID{
 	meta.KubePod:                  TypeID(""),
 	meta.KubeContainer:            TypeID(""),
 	meta.FieldTemplate:            FieldGroupingTemplate,
+	meta.FulltextSearch:           TypeID(""),
 }
 
 // ConvertResourceType convert resource type from CMDB to IAM
@@ -119,41 +120,6 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 		}
 		return &iamResourceType, nil
 	case meta.NetDataCollector:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
-	case meta.ProcessServiceTemplate:
-		iamResourceType = BizProcessServiceTemplate
-	case meta.ProcessServiceCategory:
-		iamResourceType = BizProcessServiceCategory
-	case meta.ProcessServiceInstance:
-		iamResourceType = BizProcessServiceInstance
-	case meta.BizTopology:
-		iamResourceType = BizTopology
-	case meta.SetTemplate:
-		iamResourceType = BizSetTemplate
-	case meta.OperationStatistic:
-		iamResourceType = SysOperationStatistic
-	case meta.HostApply:
-		iamResourceType = BizHostApply
-	case meta.ResourcePoolDirectory:
-		iamResourceType = SysResourcePoolDirectory
-	case meta.CloudAccount:
-		iamResourceType = SysCloudAccount
-	case meta.CloudResourceTask:
-		iamResourceType = SysCloudResourceTask
-	case meta.EventWatch:
-		iamResourceType = SysEventWatch
-	case meta.ConfigAdmin:
-	case meta.SystemConfig:
-	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
-		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
-		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
-	case meta.FulltextSearch:
-	default:
-		if IsCMDBSysInstance(resourceType) {
-			iamResourceType = TypeID(resourceType)
-			return &iamResourceType, nil
-		}
-
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
 
