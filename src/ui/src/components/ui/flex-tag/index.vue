@@ -272,7 +272,7 @@
       '--maxWidth': maxWidth,
       '--height': height
     }">
-    <li class="tag-item" v-bk-overflow-tips
+    <li class="tag-item"
       v-for="(tag, index) in tags"
       :key="tag.id || index"
       @click="handleClick(index)">

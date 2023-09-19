@@ -76,122 +76,41 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
 
+	topoPrefixes := []string{"/search/instances", "/count/instances", "/search/instance_associations",
+		"/count/instance_associations", "/topo/", "/identifier/", "/inst/", "/module/", "/object/", "/set/",
+		"/find/audit", "/find/inst_audit"}
+
+	for _, prefix := range topoPrefixes {
+		if strings.HasPrefix(string(*u), rootPath+prefix) {
+			from, to, isHit = rootPath, topoRoot, true
+			u.revise(req, from, to)
+			return true
+		}
+	}
+
+	topoURLComponents := []string{"/objectclassification", "/classificationobject", "/objectattr", "/objectunique",
+		"/objectattgroup", "/objectattgroupproperty", "/objectattgroupasst", "/objecttopo", "/topomodelmainline",
+		"/topoinst", "/topopath", "/instassttopo", "/objecttopology", "/topoassociationtype", "/objectassociation",
+		"/instassociation", "/insttopo", "/instance", "/instassociationdetail", "/associationtype", "/find/full_text",
+		"/find/audit_dict", "/findmany/audit_list"}
+
+	for _, component := range topoURLComponents {
+		if strings.Contains(string(*u), component) {
+			from, to, isHit = rootPath, topoRoot, true
+			u.revise(req, from, to)
+			return true
+		}
+	}
+
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/search/instances"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/count/instances"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/search/instance_associations"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/count/instance_associations"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case strings.HasPrefix(string(*u), rootPath+"/biz/"):
 		from, to, isHit = rootPath+"/biz", topoRoot+"/app", true
-
-	case strings.HasPrefix(string(*u), rootPath+"/topo/"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case topoURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
-
 	case objectURLRegexp.MatchString(string(*u)):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/identifier/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/inst/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/module/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/object/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/set/"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objectclassification"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/classificationobject"):
-		from, to, isHit = rootPath, topoRoot, true
-	case strings.Contains(string(*u), "/objectattr"):
-		from, to, isHit = rootPath, topoRoot, true
-	case strings.Contains(string(*u), "/objectunique"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objectattgroup"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objectattgroupproperty"):
 		from, to, isHit = rootPath, topoRoot, true
 	case kubeURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
-
-	// TODO remove it
-	case strings.Contains(string(*u), "/objectattgroupasst"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objecttopo"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/topomodelmainline"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/topoinst"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/topopath"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/instassttopo"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objecttopology"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/topoassociationtype"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/objectassociation"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/instassociation"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/insttopo"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/instance"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/instassociationdetail"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/associationtype"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/find/full_text"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/find/audit_dict"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.Contains(string(*u), "/findmany/audit_list"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/find/audit"):
-		from, to, isHit = rootPath, topoRoot, true
-
-	case strings.HasPrefix(string(*u), rootPath+"/find/inst_audit"):
-		from, to, isHit = rootPath, topoRoot, true
-
 	case topoURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
 

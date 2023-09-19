@@ -29,9 +29,11 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
+	"configcenter/src/web_server/capability"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
+	"configcenter/src/web_server/service/excel"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -83,18 +85,10 @@ func (s *Service) WebService() *gin.Engine {
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html",
 		s.Config.Site.HtmlRoot+"/"+webCommon.InaccessibleHtml)
 
-	ws.POST("/hosts/import", s.ImportHost)
-	ws.POST("/hosts/export", s.ExportHost)
-	ws.POST("/hosts/update", s.UpdateHosts)
 	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
-	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
-	ws.POST("/insts/object/:bk_obj_id/import", s.ImportInst)
-	ws.POST("/insts/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
 	ws.GET("/login", s.Login)
 	ws.POST("/login", s.LoginUser)
-	ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
-	ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
 	ws.POST("/object/exportmany", s.BatchExportObject)
 	ws.POST("/object/importmany/analysis", s.BatchImportObjectAnalysis)
 	ws.POST("/object/importmany", s.BatchImportObject)
@@ -134,6 +128,13 @@ func (s *Service) WebService() *gin.Engine {
 
 	// field template, only for ui
 	s.initFieldTemplate(ws)
+
+	c := &capability.Capability{
+		Ws:     ws,
+		Engine: s.Engine,
+	}
+	// init excel func
+	excel.Init(c)
 
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {

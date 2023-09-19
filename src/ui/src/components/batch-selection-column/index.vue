@@ -240,9 +240,9 @@
         }
       },
       handleRowSelectionChange(row) {
-        const rowHostId = row.host.bk_host_id
+        const rowHostId = row?.host?.bk_host_id
         // 如果是取消单个勾选并且取消勾选的项在结果预览中没有，直接返回
-        if (!row.checked && !this.selectedRows?.some(item => item?.host.bk_host_id === rowHostId)) return
+        if (rowHostId && !row.checked && !this.selectedRows?.some(item => item?.host?.bk_host_id === rowHostId)) return
         if (this.onCrossPageMode) {
           this.setReservedRow(this.reservedUnselectedRows, row, false)
         } else {

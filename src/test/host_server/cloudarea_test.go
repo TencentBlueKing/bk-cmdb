@@ -70,7 +70,7 @@ var _ = Describe("cloud area test", func() {
 		It("create with normal data", func() {
 			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, NewTmpCloudArea())
 			cloudIDTmp = int64(rsp.Data.Created.ID)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -79,7 +79,7 @@ var _ = Describe("cloud area test", func() {
 			tmpTestData := NewTmpCloudArea()
 			tmpTestData["bk_cloud_name"] = testData1["bk_cloud_name"]
 			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -89,7 +89,7 @@ var _ = Describe("cloud area test", func() {
 			tmpTestData["bk_cloud_name"] = "best mind"
 			tmpTestData["bk_cloud_vendor"] = "hello"
 			rsp, err := hostServerClient.CreateCloudArea(context.Background(), header, tmpTestData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -99,8 +99,9 @@ var _ = Describe("cloud area test", func() {
 	var _ = Describe("cloud area test batch create", func() {
 
 		It("batch create with normal data", func() {
-			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data": []interface{}{NewTmpCloudArea()}})
-			util.RegisterResponse(rsp)
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header,
+				map[string]interface{}{"data": []interface{}{NewTmpCloudArea()}})
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -108,8 +109,9 @@ var _ = Describe("cloud area test", func() {
 		It("batch create with cloud area which is already exist", func() {
 			tmpTestData := NewTmpCloudArea()
 			tmpTestData["bk_cloud_name"] = testData1["bk_cloud_name"]
-			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data": []interface{}{tmpTestData}})
-			util.RegisterResponse(rsp)
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header,
+				map[string]interface{}{"data": []interface{}{tmpTestData}})
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -118,8 +120,9 @@ var _ = Describe("cloud area test", func() {
 			tmpTestData := NewTmpCloudArea()
 			tmpTestData["bk_cloud_name"] = "best mind"
 			tmpTestData["bk_cloud_vendor"] = "hello"
-			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header, map[string]interface{}{"data": []interface{}{tmpTestData}})
-			util.RegisterResponse(rsp)
+			rsp, err := hostServerClient.CreateManyCloudArea(context.Background(), header,
+				map[string]interface{}{"data": []interface{}{tmpTestData}})
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -132,7 +135,7 @@ var _ = Describe("cloud area test", func() {
 			cloudID := cloudID1
 			data := map[string]interface{}{"bk_cloud_name": "LPL200区"}
 			rsp, err := hostServerClient.UpdateCloudArea(context.Background(), header, cloudID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -141,7 +144,7 @@ var _ = Describe("cloud area test", func() {
 			cloudID := cloudID2
 			data := map[string]interface{}{"bk_cloud_name": testData1["bk_cloud_name"]}
 			rsp, err := hostServerClient.UpdateCloudArea(context.Background(), header, cloudID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -150,7 +153,7 @@ var _ = Describe("cloud area test", func() {
 			cloudID := cloudID1
 			data := map[string]interface{}{"bk_cloud_vendor": "hello"}
 			rsp, err := hostServerClient.UpdateCloudArea(context.Background(), header, cloudID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -159,7 +162,7 @@ var _ = Describe("cloud area test", func() {
 			cloudID := int64(99999)
 			data := map[string]interface{}{"bk_cloud_name": "cloudIDNotExist"}
 			rsp, err := hostServerClient.UpdateCloudArea(context.Background(), header, cloudID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -171,7 +174,7 @@ var _ = Describe("cloud area test", func() {
 		It("search with default query condition", func() {
 			cond := make(map[string]interface{})
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, cond)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
@@ -180,7 +183,7 @@ var _ = Describe("cloud area test", func() {
 		It("search with configured condition", func() {
 			queryData := map[string]interface{}{"condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(1)))
@@ -190,7 +193,7 @@ var _ = Describe("cloud area test", func() {
 		It("search with configured sort", func() {
 			queryData := map[string]interface{}{"page": map[string]interface{}{"sort": "create_time"}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
@@ -201,23 +204,25 @@ var _ = Describe("cloud area test", func() {
 		It("search with configured limit", func() {
 			queryData := map[string]interface{}{"page": map[string]interface{}{"limit": 1}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(len(rsp.Data.Info)).To(Equal(int(1)))
 		})
 
 		It("search with configured is_fuzzy is false", func() {
-			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
+			queryData := map[string]interface{}{"is_fuzzy": false,
+				"condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
+			queryData = map[string]interface{}{"is_fuzzy": false,
+				"condition": map[string]interface{}{"bk_cloud_name": testData2["bk_cloud_name"]}}
 			rsp, err = hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(1)))
@@ -225,9 +230,10 @@ var _ = Describe("cloud area test", func() {
 		})
 
 		It("search with configured is_fuzzy is true", func() {
-			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
+			queryData := map[string]interface{}{"is_fuzzy": true,
+				"condition": map[string]interface{}{"bk_cloud_name": "LPL"}}
 			rsp, err := hostServerClient.SearchCloudArea(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
@@ -240,7 +246,7 @@ var _ = Describe("cloud area test", func() {
 		It("delete with normal data", func() {
 			cloudID := cloudID1
 			rsp, err := hostServerClient.DeleteCloudArea(context.Background(), header, cloudID)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -257,13 +263,13 @@ func prepareCloudData() {
 	// 准备数据
 	resp, err := hostServerClient.CreateCloudArea(context.Background(), header, testData1)
 	cloudID1 = int64(resp.Data.Created.ID)
-	util.RegisterResponse(resp)
+	util.RegisterResponseWithRid(resp, header)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.Result).To(Equal(true))
 
 	resp, err = hostServerClient.CreateCloudArea(context.Background(), header, testData2)
 	cloudID2 = int64(resp.Data.Created.ID)
-	util.RegisterResponse(resp)
+	util.RegisterResponseWithRid(resp, header)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.Result).To(Equal(true))
 }

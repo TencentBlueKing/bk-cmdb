@@ -930,7 +930,12 @@ func Map(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutpu
 		}
 	}
 
+	return mapping(input)
+}
+
+func mapping(input *monstachemap.MapperPluginInput) (*monstachemap.MapperPluginOutput, error) {
 	output := new(monstachemap.MapperPluginOutput)
+
 	switch input.Collection {
 	case common.BKTableNameBaseBizSet:
 		if err := indexingBizSet(input, output); err != nil {

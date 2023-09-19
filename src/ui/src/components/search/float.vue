@@ -46,7 +46,7 @@
       },
       options: {
         type: Object,
-        default: () => {}
+        default: () => ({})
       }
     },
     data() {
@@ -66,7 +66,7 @@
       },
       localValue: {
         get() {
-          return this.value
+          return String(this.value) === 'NaN' ? '' : this.value
         },
         set(value) {
           let newValue
