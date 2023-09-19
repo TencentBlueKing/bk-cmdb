@@ -13,8 +13,10 @@
 package params
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"configcenter/src/common"
@@ -95,13 +97,15 @@ func ParseHostParams(input []metadata.ConditionItem) (map[string]interface{}, er
 }
 
 // ParseHostIPParams parses the IP address information into query statement
-func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo,
-	output map[string]interface{}) (map[string]interface{}, error) {
+func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, output map[string]interface{}) (
+	map[string]interface{}, error) {
+
 	var err error
 	exactOr := make([]map[string]interface{}, 0)
 	embeddedIPv4Addrs := make([]string, 0)
+
 	if len(ipv6Cond.Data) != 0 {
-		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr)
+		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr, &output)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add ipv6 addresses to condition, err: %v", err)
 		}
@@ -114,12 +118,15 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo,
 		return output, nil
 	}
 
+	ipv4CloudIDMap, err := splitIPv4Data(ipArr, &output)
+	if err != nil {
+		return nil, err
+	}
+
 	if exact == 1 {
 		// exact search
 		// filter out illegal IPv4 addresses
-		ipArr = filterHostIP(ipArr)
-		exactIP := map[string]interface{}{common.BKDBIN: deduplication(ipArr)}
-		exactOr, err = addExactSearchCondition(exactOr, exactIP, flag, "ipv4")
+		exactOr, err = addIPv4ExactSearchCondition(exactOr, ipv4CloudIDMap, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +134,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo,
 	} else {
 		// not exact search
 		orCond := make([]map[string]map[string]interface{}, 0)
-		orCond, err = addInexactSearchCondition(orCond, ipArr, flag)
+		orCond, err = addFuzzyCondition(orCond, ipv4CloudIDMap, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -138,42 +145,19 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo,
 
 // parseIPv6Condition parse IPv6 conditions to full Ipv6 addresses and embedded IPv4 addresses
 // only full or abbreviated IPv6 addresses can be used for exact queries, not exact search is not supported
-func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}) ([]map[string]interface{},
-	[]string, error) {
-	ipArr := ipCond.Data
-	legalIpArr := filterHostIP(ipArr)
+func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}, output *map[string]interface{}) (
+	[]map[string]interface{}, []string, error) {
+
 	flag := ipCond.Flag
-	if len(legalIpArr) == 0 || ipCond.Exact != 1 {
+	if ipCond.Exact != 1 {
 		return exactOr, nil, nil
 	}
 
-	fullIpv6Addrs := make([]string, 0)
-	embeddedIPv4Addrs := make([]string, 0)
-	for _, address := range legalIpArr {
-		ip, err := common.GetIPv4IfEmbeddedInIPv6(address)
-		if err != nil {
-			continue
-		}
-		// 对于兼容IPv4的嵌入式IPv6地址，::127.0.0.1和::ffff:127.0.0.1这两种格式的地址，存放于ipv4字段中，所以使用ipv4的字段查询
-		if !strings.Contains(ip, ":") {
-			embeddedIPv4Addrs = append(embeddedIPv4Addrs, ip)
-			continue
-		}
-		fullIpv6Addr, err := common.ConvertIPv6ToStandardFormat(ip)
-		if err != nil {
-			continue
-		}
-		fullIpv6Addrs = append(fullIpv6Addrs, fullIpv6Addr)
+	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPv6Data(ipCond.Data, output)
+	if err != nil {
+		return nil, nil, err
 	}
-
-	if len(fullIpv6Addrs) == 0 {
-		return exactOr, embeddedIPv4Addrs, nil
-	}
-
-	// exact search ipv6 addr
-	var err error
-	exactIP := map[string]interface{}{common.BKDBIN: deduplication(fullIpv6Addrs)}
-	exactOr, err = addExactSearchCondition(exactOr, exactIP, flag, "ipv6")
+	exactOr, err = addIPv6ExactSearchCondition(exactOr, ipv6CloudIDMap, flag)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -229,6 +213,7 @@ func addExactSearchCondition(exactOr []map[string]interface{}, exactIP map[strin
 // addInexactSearchCondition combine query statements based on inexact ip conditions
 func addInexactSearchCondition(orCond []map[string]map[string]interface{},
 	ipArr []string, flag string) ([]map[string]map[string]interface{}, error) {
+
 	for _, ip := range ipArr {
 		c := make(map[string]interface{})
 		c[common.BKDBLIKE] = SpecialCharChange(ip)
@@ -262,4 +247,398 @@ func deduplication(arr []string) []string {
 		}
 	}
 	return result
+}
+
+// splitIPv4Data split ipv4 data
+func splitIPv4Data(ipData []string, output *map[string]interface{}) (map[int64]map[string][]string, error) {
+	// 创建一个 map 用于存储结果
+	cloudIDMap := make(map[int64]map[string][]string)
+
+	outputCloudIDMap, err := getCloudIDMapByOutput(*output)
+	if err != nil {
+		return nil, err
+	}
+
+	// 遍历切片中的每个字符串
+	for _, ipString := range ipData {
+		// 去除空格
+		ipString = strings.TrimSpace(ipString)
+
+		// 分割管控区域 ID 和 IP 地址
+		colonIndex := strings.Index(ipString, ":")
+		ipPart := ipString[colonIndex+1:]
+		// 去掉 IP 地址中的方括号，只保留 IP 部分
+		ipAddress := strings.Trim(ipPart, "[]")
+		if legalIP := net.ParseIP(ipAddress); legalIP == nil {
+			continue
+		}
+
+		if colonIndex == -1 {
+			if legalIP := net.ParseIP(ipString); legalIP == nil {
+				continue
+			}
+
+			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定
+			if outputCloudIDMap != nil {
+				for operator, cloudIDArr := range outputCloudIDMap {
+					for _, cloudID := range cloudIDArr {
+						// 初始化内部的 map
+						if _, ok := cloudIDMap[cloudID]; !ok {
+							cloudIDMap[cloudID] = make(map[string][]string)
+						}
+						cloudIDMap[cloudID][operator] = append(cloudIDMap[cloudID][operator], ipString)
+						delete(*output, common.BKCloudIDField)
+					}
+				}
+				continue
+			}
+
+			// 如果没有冒号，且 output 条件未指定管控区域则直接添加到 "-1" 键下
+			// 初始化内部的 map
+			if _, ok := cloudIDMap[-1]; !ok {
+				cloudIDMap[-1] = make(map[string][]string)
+			}
+			cloudIDMap[-1][common.BKDBIN] = append(cloudIDMap[-1][common.BKDBIN], ipString)
+			continue
+		}
+
+		// 转换管控区域 ID 为 int64 类型
+		cloudIDStr := ipString[:colonIndex]
+		cloudID, err := strconv.ParseInt(cloudIDStr, 10, 64)
+		if err != nil {
+			continue
+		}
+		// 初始化内部的 map
+		if _, ok := cloudIDMap[cloudID]; !ok {
+			cloudIDMap[cloudID] = make(map[string][]string)
+		}
+		cloudIDMap[cloudID][common.BKDBIN] = append(cloudIDMap[cloudID][common.BKDBIN], ipAddress)
+	}
+	return cloudIDMap, nil
+}
+
+// splitIPv6Data split ipv6 data
+func splitIPv6Data(ipData []string, output *map[string]interface{}) (map[int64]map[string][]string, []string, error) {
+	// 创建一个 map 用于存储结果
+	cloudIDMap := make(map[int64]map[string][]string)
+	embeddedIPv4Addrs := make([]string, 0)
+
+	outputCloudIDMap, err := getCloudIDMapByOutput(*output)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 遍历切片中的每个字符串
+	for _, ipString := range ipData {
+		// 去除空格
+		ipString = strings.TrimSpace(ipString)
+
+		// 分割管控区域 ID 和 IP 地址
+		colonIndex := strings.Index(ipString, ":[")
+		ipPart := ipString[colonIndex+1:]
+		// 去掉 IP 地址中的方括号，只保留 IP 部分
+		ipAddress := strings.Trim(ipPart, "[]")
+		if legalIP := net.ParseIP(ipAddress); legalIP == nil {
+			continue
+		}
+
+		ipAddr, err := common.GetIPv4IfEmbeddedInIPv6(ipAddress)
+		if err != nil {
+			continue
+		}
+		// 对于兼容IPv4的嵌入式IPv6地址，::127.0.0.1和::ffff:127.0.0.1这两种格式的地址，存放于ipv4字段中，所以使用ipv4的字段查询
+		if !strings.Contains(ipAddr, ":") {
+			embeddedIPv4Addrs = append(embeddedIPv4Addrs, ipString)
+			continue
+		}
+
+		fullIpv6Addr, err := common.ConvertIPv6ToStandardFormat(ipAddr)
+		if err != nil {
+			continue
+		}
+
+		if colonIndex == -1 {
+			if legalIP := net.ParseIP(ipString); legalIP == nil {
+				continue
+			}
+
+			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定
+			if outputCloudIDMap != nil {
+				for operator, cloudIDArr := range outputCloudIDMap {
+					for _, cloudID := range cloudIDArr {
+						// 初始化内部的 map
+						if _, ok := cloudIDMap[cloudID]; !ok {
+							cloudIDMap[cloudID] = make(map[string][]string)
+						}
+						cloudIDMap[cloudID][operator] = append(cloudIDMap[cloudID][operator], ipString)
+						delete(*output, common.BKCloudIDField)
+					}
+				}
+				continue
+			}
+
+			// 如果没有冒号，则直接添加到 "-1" 键下
+			// 初始化内部的 map
+			if _, ok := cloudIDMap[-1]; !ok {
+				cloudIDMap[-1] = make(map[string][]string)
+			}
+			cloudIDMap[-1][common.BKDBIN] = append(cloudIDMap[-1][common.BKDBIN], ipString)
+			continue
+		}
+
+		// 转换管控区域 ID 为 int64 类型
+		cloudIDStr := ipString[:colonIndex]
+		cloudID, err := strconv.ParseInt(cloudIDStr, 10, 64)
+		if err != nil {
+			continue
+		}
+
+		// 初始化内部的 map
+		if _, ok := cloudIDMap[cloudID]; !ok {
+			cloudIDMap[cloudID] = make(map[string][]string)
+		}
+		cloudIDMap[cloudID][common.BKDBIN] = append(cloudIDMap[cloudID][common.BKDBIN], fullIpv6Addr)
+	}
+	return cloudIDMap, embeddedIPv4Addrs, nil
+}
+
+func getCloudIDMapByOutput(output map[string]interface{}) (map[string][]int64, error) {
+	outputCloudIDMap := make(map[string][]int64)
+
+	cloudIDCond, ok := output[common.BKCloudIDField].(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	hasOperator := false
+	if cloudIDArray, ok := cloudIDCond[common.BKDBIN].([]interface{}); ok {
+		for _, cloudID := range cloudIDArray {
+			cloudIDStr, ok := cloudID.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf("conversion to type 'json.Number' failed")
+			}
+
+			cloudIDInt64, err := cloudIDStr.Int64()
+			if err != nil {
+				return nil, fmt.Errorf("conversion to type int64 failed")
+			}
+
+			outputCloudIDMap[common.BKDBIN] = append(outputCloudIDMap[common.BKDBIN], cloudIDInt64)
+			hasOperator = true
+		}
+	}
+
+	if cloudIDArray, ok := cloudIDCond[common.BKDBNIN].([]interface{}); ok {
+		for _, cloudID := range cloudIDArray {
+			cloudIDStr, ok := cloudID.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf("conversion to type 'json.Number' failed")
+			}
+
+			cloudIDInt64, err := cloudIDStr.Int64()
+			if err != nil {
+				return nil, fmt.Errorf("conversion to type int64 failed")
+			}
+
+			outputCloudIDMap[common.BKDBIN] = append(outputCloudIDMap[common.BKDBIN], cloudIDInt64)
+			hasOperator = true
+		}
+	}
+
+	if hasOperator == false {
+		return nil, fmt.Errorf("cloudID query condition is not equal to '$in' or '$nin' failed")
+	}
+	return outputCloudIDMap, nil
+}
+
+// addExactSearchCondition combine query statements based on exact ipv4 conditions
+func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMap map[int64]map[string][]string,
+	flag string) ([]map[string]interface{}, error) {
+
+	for cloudID, ipv4OperatorMap := range ipv4CloudIDMap {
+		for operator, ipv4Arr := range ipv4OperatorMap {
+			//去重
+			exactIP := map[string]interface{}{operator: deduplication(ipv4Arr)}
+			switch flag {
+			case INNERONLY:
+				if cloudID == -1 {
+					exactOr = append(exactOr, mapstr.MapStr{
+						common.BKHostInnerIPField: exactIP,
+					})
+					continue
+				}
+				exactOr = append(exactOr, mapstr.MapStr{
+					common.BKCloudIDField:     cloudID,
+					common.BKHostInnerIPField: exactIP,
+				})
+
+			case OUTERONLY:
+				if cloudID == -1 {
+					exactOr = append(exactOr, mapstr.MapStr{
+						common.BKHostOuterIPField: exactIP,
+					})
+					continue
+				}
+				exactOr = append(exactOr, mapstr.MapStr{
+					common.BKCloudIDField:     cloudID,
+					common.BKHostOuterIPField: exactIP,
+				})
+
+			case IOBOTH:
+				if cloudID == -1 {
+					exactOr = append(exactOr,
+						mapstr.MapStr{
+							common.BKHostInnerIPField: exactIP,
+						},
+						mapstr.MapStr{
+							common.BKHostOuterIPField: exactIP,
+						})
+					continue
+				}
+				exactOr = append(exactOr,
+					mapstr.MapStr{
+						common.BKCloudIDField:     cloudID,
+						common.BKHostInnerIPField: exactIP,
+					},
+					mapstr.MapStr{
+						common.BKCloudIDField:     cloudID,
+						common.BKHostOuterIPField: exactIP,
+					})
+
+			default:
+				return exactOr, fmt.Errorf("unsupported ip.flag %s", flag)
+			}
+		}
+	}
+
+	return exactOr, nil
+}
+
+// addIPv6ExactSearchCondition combine query statements based on exact ipv6 conditions
+func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMap map[int64]map[string][]string,
+	flag string) ([]map[string]interface{}, error) {
+
+	for cloudID, ipv6OperatorMap := range ipv6CloudIDMap {
+		for operator, ipv6Arr := range ipv6OperatorMap {
+			//去重
+			exactIP := map[string]interface{}{operator: deduplication(ipv6Arr)}
+			switch flag {
+			case INNERONLY:
+				if cloudID == -1 {
+					exactOr = append(exactOr, mapstr.MapStr{
+						common.BKHostInnerIPv6Field: exactIP,
+					})
+					continue
+				}
+				exactOr = append(exactOr, mapstr.MapStr{
+					common.BKCloudIDField:       cloudID,
+					common.BKHostInnerIPv6Field: exactIP,
+				})
+
+			case OUTERONLY:
+				if cloudID == -1 {
+					exactOr = append(exactOr, mapstr.MapStr{
+						common.BKHostOuterIPv6Field: exactIP,
+					})
+					continue
+				}
+				exactOr = append(exactOr, mapstr.MapStr{
+					common.BKCloudIDField:       cloudID,
+					common.BKHostOuterIPv6Field: exactIP,
+				})
+
+			case IOBOTH:
+				if cloudID == -1 {
+					exactOr = append(exactOr,
+						mapstr.MapStr{
+							common.BKHostInnerIPv6Field: exactIP,
+						},
+						mapstr.MapStr{
+							common.BKHostOuterIPv6Field: exactIP,
+						})
+					continue
+				}
+				exactOr = append(exactOr,
+					mapstr.MapStr{
+						common.BKCloudIDField:       cloudID,
+						common.BKHostInnerIPv6Field: exactIP,
+					},
+					mapstr.MapStr{
+						common.BKCloudIDField:       cloudID,
+						common.BKHostOuterIPv6Field: exactIP,
+					})
+
+			default:
+				return exactOr, fmt.Errorf("unsupported ip.flag %s", flag)
+			}
+		}
+	}
+
+	return exactOr, nil
+}
+
+// addFuzzyCondition combine query statements based on inexact ip conditions
+func addFuzzyCondition(orCond []map[string]map[string]interface{}, ipCloudIDMap map[int64]map[string][]string,
+	flag string) ([]map[string]map[string]interface{}, error) {
+
+	for cloudID, ipOperatorMap := range ipCloudIDMap {
+		cloudIDOperator := make(map[string]interface{})
+		cloudIDOperator[common.BKDBEQ] = cloudID
+		for _, ipArr := range ipOperatorMap {
+			for _, ip := range ipArr {
+				c := make(map[string]interface{})
+				c[common.BKDBLIKE] = SpecialCharChange(ip)
+				switch flag {
+				case INNERONLY:
+					if cloudID == -1 {
+						orCond = append(orCond, map[string]map[string]interface{}{
+							common.BKHostInnerIPField: c,
+						})
+						continue
+					}
+					orCond = append(orCond, map[string]map[string]interface{}{
+						common.BKCloudIDField:     cloudIDOperator,
+						common.BKHostInnerIPField: c,
+					})
+
+				case OUTERONLY:
+					if cloudID == -1 {
+						orCond = append(orCond, map[string]map[string]interface{}{
+							common.BKHostOuterIPField: c,
+						})
+						continue
+					}
+					orCond = append(orCond, map[string]map[string]interface{}{
+						common.BKCloudIDField:     cloudIDOperator,
+						common.BKHostOuterIPField: c,
+					})
+
+				case IOBOTH:
+					if cloudID == -1 {
+						orCond = append(orCond, []map[string]map[string]interface{}{
+							{
+								common.BKHostOuterIPField: c,
+							},
+							{
+								common.BKHostInnerIPField: c,
+							}}...)
+						continue
+					}
+					orCond = append(orCond, []map[string]map[string]interface{}{
+						{
+							common.BKCloudIDField:     cloudIDOperator,
+							common.BKHostOuterIPField: c,
+						},
+						{
+							common.BKCloudIDField:     cloudIDOperator,
+							common.BKHostInnerIPField: c,
+						}}...)
+
+				default:
+					return orCond, fmt.Errorf("unsupported ip.flag %s", flag)
+				}
+			}
+		}
+	}
+	return orCond, nil
 }

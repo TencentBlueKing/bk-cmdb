@@ -523,8 +523,8 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, err := s.Logic.SearchHost(ctx.Kit, body)
 	if err != nil {
-		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		blog.Errorf("search host failed, err: %v,input: %v, rid:%s", err, body, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -1639,6 +1639,12 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		blog.Errorf("parse host IP condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
+	}
+	if cloudIDCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		cloudAreaCount := len(cloudIDCond)
+		if (req.Ipv4Ip.Flag == hostParse.IOBOTH && (cloudAreaCount/2) > 50) || cloudAreaCount > 50 {
+			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 50"))
+		}
 	}
 
 	// 3. find host by condition

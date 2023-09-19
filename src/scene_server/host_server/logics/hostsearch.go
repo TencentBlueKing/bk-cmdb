@@ -704,6 +704,13 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		return err
 	}
 
+	if cloudIDCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		cloudAreaCount := len(cloudIDCond)
+		if (sh.hostSearchParam.Ipv4Ip.Flag == hostParse.IOBOTH && (cloudAreaCount/2) > 50) || cloudAreaCount > 50 {
+			return errors.NewCCError(1199081, "cloudArea count more than 50")
+		}
+	}
+
 	query := &metadata.QueryInput{
 		Condition:     condition,
 		TimeCondition: sh.conds.hostCond.TimeCondition,
