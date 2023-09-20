@@ -1,3 +1,7 @@
+## [Version: v3.11.2-alpha4] - 2023-09-20
+**缺陷修复**
+- 修复启动adminserver时，由于Service.Logics还没赋值导致panic的问题
+
 ## [Version: v3.11.2-alpha3] - 2023-09-18
 **功能优化**
 - 优化了一些前端的显示问题

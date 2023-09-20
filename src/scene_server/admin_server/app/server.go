@@ -75,19 +75,15 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Service.SetCache(cache)
 
+	var iamCli *iamcli.IAM
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access.")
 
-		iamCli, err := iamcli.NewIAM(process.Config.IAM, process.Core.Metric().Registry())
+		iamCli, err = iamcli.NewIAM(process.Config.IAM, process.Core.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
 		process.Service.SetIam(iamCli)
-
-		syncor := iam.NewSyncor()
-		syncor.SetDB(mongodb.Client())
-		syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
-		go syncor.SyncIAM(iamCli, cache, service.Logics)
 	} else {
 		blog.Infof("disable auth center access.")
 	}
@@ -110,6 +106,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	errors.SetGlobalCCError(process.Core.CCErr)
+
+	syncor := iam.NewSyncor()
+	syncor.SetDB(mongodb.Client())
+	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
+	go syncor.SyncIAM(iamCli, cache, service.Logics)
 
 	select {
 	case <-ctx.Done():
