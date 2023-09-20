@@ -12,7 +12,10 @@
 
 <script setup>
   import { computed, ref, watch } from 'vue'
+  import { useHttp, jsonp } from '@/api'
   import { t } from '@/i18n'
+  import { useStore } from '@/store'
+  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     defaultFilter: {
@@ -21,6 +24,8 @@
     }
   })
 
+  const http = useHttp()
+  const store = useStore()
   const emit = defineEmits(['search'])
 
   const searchSelectComp = ref(null)
@@ -33,7 +38,9 @@
     },
     {
       id: 'name',
-      name: t('名称')
+      name: t('名称'),
+      multiable: true,
+      remote: true
     },
     {
       id: 'bk_obj_id',
@@ -51,10 +58,13 @@
       ]
     }, {
       id: 'modify_user',
-      name: t('更新人')
+      name: t('更新人'),
+      multiable: true,
+      remote: true
     }
   ]
   const filter = ref([])
+  const bizId = computed(() => store.getters['objectBiz/bizId'])
 
   watch(() => props.defaultFilter, (defaultFilter) => {
     filter.value = defaultFilter.map(item => ({
@@ -81,6 +91,82 @@
       searchSelectComp.value?.getInputInstance()?.click()
     }, 300)
   })
+
+  const fetchOptions = async (val, menu) => {
+    const fetchs = {
+      name: fetchDynamicGroup,
+      modify_user: fetchMember
+    }
+    return fetchs[menu.id](val, menu)
+  }
+  const fetchDynamicGroup = async (val, menu) => {
+    const params = {
+      condition: {
+        [menu.id]: escapeRegexChar(val)
+      },
+      page: {
+        start: 0,
+        limit: 100,
+        sort: 'id'
+      }
+    }
+    if (!isTyeing.value || !val?.length || val === `${menu.name}：`) {
+      Reflect.deleteProperty(params, 'condition')
+    }
+    const { info } = await store.dispatch('dynamicGroup/search', {
+      bizId: bizId.value,
+      params,
+      config: {
+        cancelPrevious: true,
+        globalPermission: false
+      }
+    })
+    return info
+  }
+  const fetchMember = async (val, menu) => {
+    let query = val
+    if (!isTyeing.value || !query?.length || query === `${menu.name}：`) {
+      query = 'a'
+    }
+
+    let result = []
+    if (window.ESB.userManage) {
+      const url = new URL(window.ESB.userManage)
+      const params = {
+        app_code: 'bk-magicbox',
+        page: 1,
+        page_size: 100,
+        fuzzy_lookups: query
+      }
+      const api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
+      const response = await jsonp(api, params)
+      if (response.code !== 0) {
+        console.error(response?.message)
+        return []
+      }
+      result = (response?.data?.results || []).map(item => ({
+        id: item.id,
+        username: item.username,
+        name: item.username
+      }))
+    } else {
+      const data = await http.get(`${window.API_HOST}user/list`, {
+        params: {
+          fuzzy_lookups: val
+        },
+        config: {
+          cancelPrevious: true
+        }
+      })
+      result = (data || []).map(user => ({
+        id: user.english_name,
+        username: user.english_name,
+        name: user.chinese_name
+      }))
+    }
+
+    return result
+  }
   const handleSearchSelectChange = (list) => {
     const ids = filterMenus.map(item => item.id)
     list.forEach((item) => {
@@ -121,6 +207,7 @@
     :show-popover-tag-change="false"
     :data="displayFilterMenus"
     v-model="filter"
+    :remote-method="fetchOptions"
     @input-change="handleInputChange"
     @input-focus="handleInputFocus"
     @input-click-outside="handleInputClickOutside"
