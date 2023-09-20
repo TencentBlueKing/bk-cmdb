@@ -26,12 +26,10 @@
           {{$t('新建')}}
         </bk-button>
       </cmdb-auth>
-      <bk-input class="options-filter"
-        v-model.trim="filter"
-        right-icon="icon-search"
-        clearable
-        :placeholder="$t('动态分组查询')">
-      </bk-input>
+      <search-select
+        :default-filter="filter"
+        @search="handleSearch">
+      </search-select>
     </div>
     <div class="dynamic-group-table">
       <bk-table
@@ -112,10 +110,21 @@
   import { mapGetters } from 'vuex'
   import RouterQuery from '@/router/query'
   import DynamicGroupForm from './form/form.js'
+  import SearchSelect from './children/search-select.vue'
+  import { escapeRegexChar } from '@/utils/util'
+
+  const bkObjKey = {
+    集群: 'set',
+    主机: 'host'
+  }
+
   export default {
+    components: {
+      SearchSelect
+    },
     data() {
       return {
-        filter: '',
+        filter: [],
         table: {
           list: [],
           sort: '-last_time',
@@ -135,48 +144,70 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters('objectModelClassify', ['getModelById'])
+      ...mapGetters('objectModelClassify', ['getModelById']),
+      getSearchParams() {
+        const params = {
+          condition: {},
+          page: {
+            ...this.$tools.getPageParams(this.table.pagination),
+            sort: this.table.sort
+          }
+        }
+        this.filter.forEach((item) => {
+          const key = item?.id
+          const itemValue = item.value?.split(',').map(escapeRegexChar)
+          const value = itemValue?.length > 1 ? {
+            $in: itemValue
+          } : itemValue[0]
+          // 区分查询对象和其他选项
+          const finalVal = key === 'bk_obj_id' ? (bkObjKey[value] || 'no_match') : value
+          params.condition[item?.id] = finalVal
+        })
+
+        return params
+      },
     },
     created() {
-      this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, filter, action }) => {
+      this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, action, id, name, bk_obj_id, modify_user  }) => {
         this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
         this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
         this.table.sort = sort || this.table.sort
-        this.filter = filter
+        const queryFilter = [
+          { id: 'id', value: id },
+          { id: 'name', value: name },
+          { id: 'bk_obj_id', value: bk_obj_id },
+          { id: 'modify_user', value: modify_user }
+        ]
+        this.filter = queryFilter.filter(item => item.value?.length)
         if (action === 'create') {
           this.handleCreate()
         }
         this.getList()
       }, { immediate: true })
-      this.unwatchFilter = this.$watch(() => this.filter, (filter) => {
-        this.filterTimer && clearTimeout(this.filterTimer)
-        this.filterTimer = setTimeout(() => {
-          RouterQuery.set({
-            filter,
-            page: 1,
-            _t: Date.now()
-          })
-        }, 500)
-      })
     },
     beforeDestroy() {
       this.unwatchQuery && this.unwatchQuery()
-      this.unwatchFilter && this.unwatchFilter()
     },
     methods: {
+      handleSearch(filter) {
+        const query = {
+          name: '',
+          id: '',
+          modify_user: '',
+          bk_obj_id: '',
+          _t: Date.now()
+        }
+        filter.forEach((item) => {
+          query[item.id] = item.values.map(val => val.name).join(',')
+        })
+        RouterQuery.set(query)
+      },
       async getList() {
         try {
+          const params = this.getSearchParams
           const { info, count } = await this.$store.dispatch('dynamicGroup/search', {
             bizId: this.bizId,
-            params: {
-              condition: {
-                name: this.filter || undefined
-              },
-              page: {
-                ...this.$tools.getPageParams(this.table.pagination),
-                sort: this.table.sort
-              }
-            },
+            params,
             config: {
               requestId: this.request.search,
               cancelPrevious: true
@@ -184,7 +215,7 @@
           })
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.filter ? 'search' : 'default'
+          this.table.stuff.type = this.filter[0] ? 'search' : 'default'
         } catch (error) {
           console.error(error)
           if (error.permission) {
