@@ -1076,7 +1076,7 @@
       },
       handleDeleteField({ property: field, index, fieldIndex }) {
         this.$bkInfo({
-          title: this.$t('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
+          title: this.$t('确定删除字段？'),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
           confirmLoading: this.$loading('deleteObjectAttribute'),
           confirmFn: async () => {
