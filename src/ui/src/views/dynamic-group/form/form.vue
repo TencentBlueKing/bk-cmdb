@@ -376,8 +376,8 @@
             property && properties.push(property)
           })
         })
-        this.selectedProperties = properties
-        this.originProperties = properties
+        this.selectedProperties = this.$tools.clone(properties)
+        this.originProperties = this.$tools.clone(properties)
       },
       handleModelChange() {
         this.selectedProperties = []
