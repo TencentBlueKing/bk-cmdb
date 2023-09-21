@@ -231,7 +231,7 @@
             requestId: this.request.moveToIdleModule
           })
           HostStore.clear()
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           RouterQuery.set({
             _t: Date.now(),
             page: 1
@@ -269,7 +269,7 @@
             }
           })
           HostStore.clear()
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           RouterQuery.set({
             _t: Date.now(),
             page: 1
@@ -309,7 +309,7 @@
         })
           .then(() => {
             HostStore.clear()
-            this.$success('转移成功')
+            this.$success(this.$t('转移成功'))
             RouterQuery.set({
               _t: Date.now(),
               page: 1

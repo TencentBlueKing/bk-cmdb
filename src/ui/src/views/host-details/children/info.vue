@@ -314,7 +314,7 @@
             requestId: this.request.moveToIdleModule
           })
           this.dialog.show = false
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           this.$emit('change')
         } catch (e) {
           console.error(e)
@@ -349,7 +349,7 @@
           })
 
           this.dialog.show = false
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
 
           // 跳转刷新
           const routeParams = {
