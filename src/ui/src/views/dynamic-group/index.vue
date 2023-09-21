@@ -113,11 +113,6 @@
   import SearchSelect from './children/search-select.vue'
   import { escapeRegexChar } from '@/utils/util'
 
-  const bkObjKey = {
-    集群: 'set',
-    主机: 'host'
-  }
-
   export default {
     components: {
       SearchSelect
@@ -160,7 +155,7 @@
             $in: itemValue
           } : itemValue[0]
           // 区分查询对象和其他选项
-          const finalVal = key === 'bk_obj_id' ? (bkObjKey[value] || 'no_match') : value
+          const finalVal = key === 'bk_obj_id' ? this.getObjIdVal(value) : value
           params.condition[item?.id] = finalVal
         })
 
@@ -189,6 +184,11 @@
       this.unwatchQuery && this.unwatchQuery()
     },
     methods: {
+      getObjIdVal(value) {
+        if (value === '集群') return 'set'
+        if (value === '主机') return 'host'
+        return 'no_match'
+      },
       handleSearch(filter) {
         const query = {
           name: '',

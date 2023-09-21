@@ -102,9 +102,6 @@
     getPageParams
   } from '@/utils/tools'
 
-  const page = {
-    current: 1
-  }
   const props = defineProps({
     condition: {
       type: Object,
@@ -189,8 +186,11 @@
   })
   const getTableCellPropertyValueRefId = (property => (isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
   const pageCurrentChange = ((current = 1) => {
+    if (table.pagination.current === current) {
+      getHostList()
+      return
+    }
     table.pagination.current = current
-    page.current = current
   })
   const handlePageChange = ((current = 1) => pageCurrentChange(current))
   const handleLimitChange = ((limit) => {
@@ -274,19 +274,16 @@
     tableHeader.value = FilterStore.getHeader()
     FilterStore.setDynamicCollection(val)
     if (haveCondition.value) {
-      getHostList()
+      pageCurrentChange()
     }
   }, {
     deep: true,
     immediate: true
   })
-
-  // 主要兼容在第一页点击刷新 和 在第一页换每页条数 watch无法监听到 两个场景
-  Reflect.defineProperty(page, 'current', {
-    set() {
-      getHostList()
-    }
+  watch(() => table.pagination.current, () => {
+    getHostList()
   })
+
   initFilterStore()
 </script>
 
