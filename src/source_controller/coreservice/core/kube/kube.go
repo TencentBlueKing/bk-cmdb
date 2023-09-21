@@ -214,6 +214,19 @@ func (p *kubeOperation) getSharedClusterInfo(kit *rest.Kit, podsInfos []types.Po
 		})
 	}
 
+	clusterPlatBizMap, err := p.getSharedClusterInfoByCond(kit, sharedNsCond, matchingNsClusterIDMap,
+		mismatchNsBizIDMap, matchingNsIDMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterPlatBizMap, nil
+}
+
+func (p *kubeOperation) getSharedClusterInfoByCond(kit *rest.Kit, sharedNsCond []mapstr.MapStr,
+	matchingNsClusterIDMap, mismatchNsBizIDMap map[int64]int64, matchingNsIDMap map[int64][]int64) (map[int64]int64,
+	ccErr.CCErrorCoder) {
+
 	sharedRelCond := mapstr.MapStr{common.BKDBOR: sharedNsCond}
 	sharedRel := make([]types.NsSharedClusterRel, 0)
 	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(sharedRelCond).All(kit.Ctx, &sharedRel)
@@ -255,7 +268,6 @@ func (p *kubeOperation) getSharedClusterInfo(kit *rest.Kit, podsInfos []types.Po
 			}
 		}
 	}
-
 	return clusterPlatBizMap, nil
 }
 

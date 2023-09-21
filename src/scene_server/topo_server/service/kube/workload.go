@@ -59,33 +59,12 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	var data *metadata.RspIDs
-	var err error
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		data, err = s.ClientSet.CoreService().Kube().CreateWorkload(ctx.Kit.Ctx, ctx.Kit.Header, kind, req.Data)
+		res, err := s.createWorkload(ctx.Kit, kind, req)
 		if err != nil {
-			blog.Errorf("create workload failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
-
-		// audit log.
-		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
-		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
-		for idx := range req.Data {
-			wlBase := req.Data[idx].GetWorkloadBase()
-			wlBase.BizID = req.BizID
-			wlBase.ID = data.IDs[idx]
-			wlBase.SupplierAccount = ctx.Kit.SupplierAccount
-			req.Data[idx].SetWorkloadBase(wlBase)
-		}
-		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, req.Data, kind)
-		if err != nil {
-			blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
-			return err
-		}
-		if err = audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
-			return err
-		}
+		data = res
 		return nil
 	})
 
@@ -95,6 +74,40 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(data)
+}
+
+func (s *service) createWorkload(kit *rest.Kit, kind types.WorkloadType, req types.WlCreateOption) (*metadata.RspIDs,
+	error) {
+
+	data, err := s.ClientSet.CoreService().Kube().CreateWorkload(kit.Ctx, kit.Header, kind, req.Data)
+	if err != nil {
+		blog.Errorf("create workload failed, data: %v, err: %v, rid: %s", req, err, kit.Rid)
+		return nil, err
+	}
+
+	// audit log.
+	audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
+	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	for idx := range req.Data {
+		wlBase := req.Data[idx].GetWorkloadBase()
+		wlBase.BizID = req.BizID
+		wlBase.ID = data.IDs[idx]
+		wlBase.SupplierAccount = kit.SupplierAccount
+		req.Data[idx].SetWorkloadBase(wlBase)
+	}
+
+	auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, req.Data, kind)
+	if err != nil {
+		blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, kit.Rid)
+		return nil, err
+	}
+
+	if err = audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, kit.Rid)
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // UpdateWorkload update workload
@@ -125,25 +138,15 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: map[string]interface{}{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
-	}
-
-	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
+	wlData, err := s.checkWorkloadData(ctx.Kit, req.BizID, req.IDs, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, data: %v, err: %v, rid: %s", req.BizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if len(resp.Info) == 0 {
+	if len(wlData) == 0 {
 		blog.Errorf("no workload founded, bizID: %s, data: %v, rid: %s", req.BizID, req, ctx.Kit.Rid)
 		ctx.RespAutoError(errors.New("no workload founded"))
-		return
-	}
-
-	if err := s.checkWlSharedNs(ctx.Kit, resp.Info, req.BizID); err != nil {
-		ctx.RespAutoError(err)
 		return
 	}
 
@@ -163,13 +166,13 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 			return goErr
 		}
 		auditParam.WithUpdateFields(updateFields)
-		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, resp.Info, kind)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, wlData, kind)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", wlData, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", wlData, err, ctx.Kit.Rid)
 			return err
 		}
 
@@ -230,24 +233,15 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
-	}
-	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(ctx.Kit.Ctx, ctx.Kit.Header, query, kind)
+	wlData, err := s.checkWorkloadData(ctx.Kit, req.BizID, req.IDs, kind)
 	if err != nil {
-		blog.Errorf("list workload failed, bizID: %s, req: %v, err: %v, rid: %s", req.BizID, req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	// if all workloads are already deleted, return
-	if len(resp.Info) == 0 {
+	if len(wlData) == 0 {
 		ctx.RespEntity(nil)
-		return
-	}
-
-	if err := s.checkWlSharedNs(ctx.Kit, resp.Info, req.BizID); err != nil {
-		ctx.RespAutoError(err)
 		return
 	}
 
@@ -271,13 +265,13 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 
 		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, resp.Info, kind)
+		auditLogs, err := audit.GenerateWorkloadAuditLog(auditParam, wlData, kind)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", wlData, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Info, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", wlData, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -289,6 +283,29 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+func (s *service) checkWorkloadData(kit *rest.Kit, bizID int64, ids []int64, kind types.WorkloadType) (
+	[]types.WorkloadInterface, error) {
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+	}
+	resp, err := s.ClientSet.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query, kind)
+	if err != nil {
+		blog.Errorf("list workload failed, bizID: %s, ids: %+v, err: %v, rid: %s", bizID, ids, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(resp.Info) == 0 {
+		return nil, nil
+	}
+
+	if err := s.checkWlSharedNs(kit, resp.Info, bizID); err != nil {
+		return nil, err
+	}
+
+	return resp.Info, nil
 }
 
 // ListWorkload list workload

@@ -279,65 +279,15 @@ func (s *service) getTopoHostNumber(kit *rest.Kit, resourceInfos []types.KubeRes
 				wg.Done()
 				<-pipeline
 			}()
-			// determine whether this node is a folder If it is a folder, then you need to check the node table.
-			if resourceInfos[id].Kind == types.KubeFolder {
-				hostMap, err := s.getHostIDsInNodeByCond(kit, bizID, filter)
-				if err != nil {
-					firstErr = err
-					return
-				}
-				lock.Lock()
-				result = append(result, types.KubeTopoCountRsp{
-					Kind:  resourceInfos[id].Kind,
-					ID:    resourceInfos[id].ID,
-					Count: int64(len(hostMap)),
-				})
-				lock.Unlock()
-				return
-			}
 
-			// what counts here is the number of hosts in the pod table excluding folders.
-			hostMap, err := s.getHostIDsInPodsByCond(kit, bizID, filter)
+			res, err := s.getTopoHostNumByFilter(kit, bizID, id, filter, resourceInfos)
 			if err != nil {
 				firstErr = err
 				return
-			}
-
-			workloadType := types.WorkloadType(util.GetStrByInterface(filter[types.RefKindField]))
-			// the scenario dealt with here is the workload type calculation number.
-			if err := workloadType.Validate(); err == nil {
-				id, err := util.GetInt64ByInterface(filter[types.RefIDField])
-				if err != nil {
-					firstErr = err
-					return
-				}
-
-				lock.Lock()
-				result = append(result, types.KubeTopoCountRsp{
-					Kind:  util.GetStrByInterface(filter[types.RefKindField]),
-					ID:    id,
-					Count: int64(len(hostMap)),
-				})
-				lock.Unlock()
-				return
-			}
-
-			resultHostMap, err := s.getClusterNumFromFolder(kit, bizID, filter)
-			if err != nil {
-				firstErr = err
-				return
-			}
-
-			for id := range hostMap {
-				resultHostMap[id] = struct{}{}
 			}
 
 			lock.Lock()
-			result = append(result, types.KubeTopoCountRsp{
-				Kind:  resourceInfos[id].Kind,
-				ID:    resourceInfos[id].ID,
-				Count: int64(len(resultHostMap)),
-			})
+			result = append(result, res)
 			lock.Unlock()
 		}(id, filter)
 	}
@@ -347,6 +297,60 @@ func (s *service) getTopoHostNumber(kit *rest.Kit, resourceInfos []types.KubeRes
 		return nil, firstErr
 	}
 	return result, nil
+}
+
+func (s *service) getTopoHostNumByFilter(kit *rest.Kit, bizID int64, id int, filter map[string]interface{},
+	resourceInfos []types.KubeResourceInfo) (types.KubeTopoCountRsp, error) {
+
+	// determine whether this node is a folder If it is a folder, then you need to check the node table.
+	if resourceInfos[id].Kind == types.KubeFolder {
+		hostMap, err := s.getHostIDsInNodeByCond(kit, bizID, filter)
+		if err != nil {
+			return types.KubeTopoCountRsp{}, err
+		}
+
+		return types.KubeTopoCountRsp{
+			Kind:  resourceInfos[id].Kind,
+			ID:    resourceInfos[id].ID,
+			Count: int64(len(hostMap)),
+		}, nil
+	}
+
+	// what counts here is the number of hosts in the pod table excluding folders.
+	hostMap, err := s.getHostIDsInPodsByCond(kit, bizID, filter)
+	if err != nil {
+		return types.KubeTopoCountRsp{}, err
+	}
+
+	workloadType := types.WorkloadType(util.GetStrByInterface(filter[types.RefKindField]))
+	// the scenario dealt with here is the workload type calculation number.
+	if err := workloadType.Validate(); err == nil {
+		refID, err := util.GetInt64ByInterface(filter[types.RefIDField])
+		if err != nil {
+			return types.KubeTopoCountRsp{}, err
+		}
+
+		return types.KubeTopoCountRsp{
+			Kind:  util.GetStrByInterface(filter[types.RefKindField]),
+			ID:    refID,
+			Count: int64(len(hostMap)),
+		}, nil
+	}
+
+	resultHostMap, err := s.getClusterNumFromFolder(kit, bizID, filter)
+	if err != nil {
+		return types.KubeTopoCountRsp{}, err
+	}
+
+	for hostID := range hostMap {
+		resultHostMap[hostID] = struct{}{}
+	}
+
+	return types.KubeTopoCountRsp{
+		Kind:  resourceInfos[id].Kind,
+		ID:    resourceInfos[id].ID,
+		Count: int64(len(resultHostMap)),
+	}, nil
 }
 
 // getClusterNumFromFolder for the calculation of the number of hosts under the cluster,

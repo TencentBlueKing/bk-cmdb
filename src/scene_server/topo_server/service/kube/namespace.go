@@ -50,30 +50,12 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 	}
 
 	var data *metadata.RspIDs
-	var err error
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		data, err = s.ClientSet.CoreService().Kube().CreateNamespace(ctx.Kit.Ctx, ctx.Kit.Header, req.Data)
+		res, err := s.creatNamespace(ctx.Kit, req)
 		if err != nil {
-			blog.Errorf("create namespace failed, data: %v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 			return err
 		}
-
-		// audit log.
-		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
-		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
-		for idx := range req.Data {
-			req.Data[idx].ID = data.IDs[idx]
-			req.Data[idx].SupplierAccount = ctx.Kit.SupplierAccount
-		}
-		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, req.Data)
-		if err != nil {
-			blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
-			return err
-		}
-		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, ctx.Kit.Rid)
-			return err
-		}
+		data = res
 		return nil
 	})
 
@@ -83,6 +65,33 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(data)
+}
+
+func (s *service) creatNamespace(kit *rest.Kit, req *types.NsCreateOption) (*metadata.RspIDs, error) {
+	data, err := s.ClientSet.CoreService().Kube().CreateNamespace(kit.Ctx, kit.Header, req.Data)
+	if err != nil {
+		blog.Errorf("create namespace failed, data: %v, err: %v, rid: %s", req, err, kit.Rid)
+		return nil, err
+	}
+
+	// audit log.
+	audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
+	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	for idx := range req.Data {
+		req.Data[idx].ID = data.IDs[idx]
+		req.Data[idx].SupplierAccount = kit.SupplierAccount
+	}
+	auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, req.Data)
+	if err != nil {
+		blog.Errorf("generate audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, kit.Rid)
+		return nil, err
+	}
+
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		blog.Errorf("save audit log failed, ids: %v, err: %v, rid: %s", data.IDs, err, kit.Rid)
+		return nil, err
+	}
+	return data, nil
 }
 
 // UpdateNamespace update namespace
@@ -106,40 +115,10 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
-		},
-		DisableCounter: true,
-	}
-	resp, err := s.ClientSet.CoreService().Kube().ListNamespace(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	namespaces, err := s.checkNsData(ctx.Kit, req.BizID, req.IDs)
 	if err != nil {
-		blog.Errorf("list namespace failed, bizID: %d, data: %v, err: %v, rid: %s", req.BizID, req, err,
-			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-
-	if len(resp.Data) == 0 {
-		blog.Errorf("no namespace founded, bizID: %d, query: %+v, rid: %s", req.BizID, query, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	// checks if namespace is a shared namespace and if its biz id is not the same with the input biz id
-	mismatchIDs := make([]int64, 0)
-	for _, namespace := range resp.Data {
-		if namespace.BizID != req.BizID {
-			mismatchIDs = append(mismatchIDs, namespace.ID)
-		}
-	}
-
-	if len(mismatchIDs) > 0 {
-		mismatchNsMap := map[int64][]int64{req.BizID: mismatchIDs}
-		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
 	}
 
 	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -157,13 +136,13 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 			return goErr
 		}
 		auditParam.WithUpdateFields(updateFields)
-		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, resp.Data)
+		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, namespaces)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -175,6 +154,41 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+func (s *service) checkNsData(kit *rest.Kit, bizID int64, ids []int64) ([]types.Namespace, error) {
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids},
+		},
+		DisableCounter: true,
+	}
+	resp, err := s.ClientSet.CoreService().Kube().ListNamespace(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("list namespace failed, bizID: %d, ids: %+v, err: %v, rid: %s", bizID, ids, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(resp.Data) == 0 {
+		blog.Errorf("no namespace founded, bizID: %d, query: %+v, rid: %s", bizID, query, kit.Rid)
+		return nil, err
+	}
+
+	// checks if namespace is a shared namespace and if its biz id is not the same with the input biz id
+	mismatchIDs := make([]int64, 0)
+	for _, namespace := range resp.Data {
+		if namespace.BizID != bizID {
+			mismatchIDs = append(mismatchIDs, namespace.ID)
+		}
+	}
+
+	if len(mismatchIDs) > 0 {
+		mismatchNsMap := map[int64][]int64{bizID: mismatchIDs}
+		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(kit, mismatchNsMap); err != nil {
+			return nil, err
+		}
+	}
+	return resp.Data, nil
 }
 
 // DeleteNamespace delete namespace
@@ -198,36 +212,10 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs}},
-	}
-
-	resp, err := s.ClientSet.CoreService().Kube().ListNamespace(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	namespaces, err := s.checkNsData(ctx.Kit, req.BizID, req.IDs)
 	if err != nil {
-		blog.Errorf("list namespace failed, bizID: %d, data: %v, err: %v, rid: %s", req.BizID, req, err,
-			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-	if len(resp.Data) == 0 {
-		ctx.RespEntity(nil)
-		return
-	}
-
-	// checks if namespace is a shared namespace and if its biz id is not the same with the input biz id
-	mismatchIDs := make([]int64, 0)
-	for _, namespace := range resp.Data {
-		if namespace.BizID != req.BizID {
-			mismatchIDs = append(mismatchIDs, namespace.ID)
-		}
-	}
-
-	if len(mismatchIDs) > 0 {
-		mismatchNsMap := map[int64][]int64{req.BizID: mismatchIDs}
-		if err := s.Logics.KubeOperation().CheckPlatBizSharedNs(ctx.Kit, mismatchNsMap); err != nil {
-			ctx.RespAutoError(err)
-			return
-		}
 	}
 
 	hasRes, rawErr := s.hasNextLevelResource(ctx.Kit, types.KubeNamespace, req.IDs)
@@ -250,13 +238,13 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 		// audit log.
 		audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 		auditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, resp.Data)
+		auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, namespaces)
 		if err != nil {
-			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
+			blog.Errorf("generate audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
 			return err
 		}
 		if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
-			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", resp.Data, err, ctx.Kit.Rid)
+			blog.Errorf("save audit log failed, data: %v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil

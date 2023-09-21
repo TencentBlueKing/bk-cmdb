@@ -333,44 +333,22 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 
-	// get to delete pods and containers in them
-	ids := make([]int64, 0)
-	idBizMap := make(map[int64]int64)
-
-	for _, delData := range opt.Data {
-		ids = append(ids, delData.PodIDs...)
-		for _, id := range delData.PodIDs {
-			idBizMap[id] = delData.BizID
-		}
-	}
-
-	query := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{types.BKIDField: mapstr.MapStr{common.BKDBIN: ids}},
-		Page:      metadata.BasePage{Limit: common.BKNoLimit},
-	}
-
-	podResp, err := s.ClientSet.CoreService().Kube().ListPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	ids, pods, err := s.checkDelPodData(ctx.Kit, opt)
 	if err != nil {
-		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
 	// if all pods are already deleted, return
-	if len(podResp.Info) == 0 {
+	if len(pods) == 0 {
 		ctx.RespEntity(nil)
-		return
-	}
-
-	if err := s.checkDeletePodSharedNs(ctx.Kit, podResp.Info, idBizMap); err != nil {
-		ctx.RespAutoError(err)
 		return
 	}
 
 	// generate audit logs
 	audit := auditlog.NewKubeAudit(s.ClientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditDelete)
-	auditLogs, err := audit.GeneratePodAuditLog(generateAuditParameter, podResp.Info)
+	auditLogs, err := audit.GeneratePodAuditLog(generateAuditParameter, pods)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -398,6 +376,40 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+func (s *service) checkDelPodData(kit *rest.Kit, opt *types.DeletePodsOption) ([]int64, []types.Pod, error) {
+	// get to delete pods and containers in them
+	ids := make([]int64, 0)
+	idBizMap := make(map[int64]int64)
+
+	for _, delData := range opt.Data {
+		ids = append(ids, delData.PodIDs...)
+		for _, id := range delData.PodIDs {
+			idBizMap[id] = delData.BizID
+		}
+	}
+
+	query := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{types.BKIDField: mapstr.MapStr{common.BKDBIN: ids}},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	podResp, err := s.ClientSet.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find pod failed, cond: %v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	// if all pods are already deleted, return
+	if len(podResp.Info) == 0 {
+		return nil, nil, nil
+	}
+
+	if err := s.checkDeletePodSharedNs(kit, podResp.Info, idBizMap); err != nil {
+		return nil, nil, err
+	}
+	return ids, podResp.Info, nil
 }
 
 // checkDeletePodSharedNs checks if pod's ns is a shared ns and if its biz id is not the same with the input biz id
