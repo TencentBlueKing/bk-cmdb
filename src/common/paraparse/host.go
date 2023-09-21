@@ -111,14 +111,14 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 		}
 	}
 
-	ipArr := append(ipv4Cond.Data, embeddedIPv4Addrs...)
+	ipv4Cond.Data = append(ipv4Cond.Data, embeddedIPv4Addrs...)
 	exact := ipv4Cond.Exact
 	flag := ipv4Cond.Flag
-	if len(ipArr) == 0 && len(exactOr) == 0 {
+	if len(ipv4Cond.Data) == 0 && len(exactOr) == 0 {
 		return output, nil
 	}
 
-	ipv4CloudIDMap, err := splitIPv4Data(ipArr, &output)
+	ipv4CloudIDMap, err := splitIPv4Data(ipv4Cond, &output)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}
 		return exactOr, nil, nil
 	}
 
-	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPv6Data(ipCond.Data, output)
+	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPv6Data(ipCond, output)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -250,7 +250,7 @@ func deduplication(arr []string) []string {
 }
 
 // splitIPv4Data split ipv4 data
-func splitIPv4Data(ipData []string, output *map[string]interface{}) (map[int64]map[string][]string, error) {
+func splitIPv4Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[int64]map[string][]string, error) {
 	// 创建一个 map 用于存储结果
 	cloudIDMap := make(map[int64]map[string][]string)
 
@@ -260,7 +260,7 @@ func splitIPv4Data(ipData []string, output *map[string]interface{}) (map[int64]m
 	}
 
 	// 遍历切片中的每个字符串
-	for _, ipString := range ipData {
+	for _, ipString := range ipCond.Data {
 		// 去除空格
 		ipString = strings.TrimSpace(ipString)
 
@@ -269,13 +269,17 @@ func splitIPv4Data(ipData []string, output *map[string]interface{}) (map[int64]m
 		ipPart := ipString[colonIndex+1:]
 		// 去掉 IP 地址中的方括号，只保留 IP 部分
 		ipAddress := strings.Trim(ipPart, "[]")
-		if legalIP := net.ParseIP(ipAddress); legalIP == nil {
-			continue
+		if ipCond.Exact == 1 {
+			if legalIP := net.ParseIP(ipAddress); legalIP == nil {
+				continue
+			}
 		}
 
 		if colonIndex == -1 {
-			if legalIP := net.ParseIP(ipString); legalIP == nil {
-				continue
+			if ipCond.Exact == 1 {
+				if legalIP := net.ParseIP(ipString); legalIP == nil {
+					continue
+				}
 			}
 
 			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定
@@ -318,7 +322,7 @@ func splitIPv4Data(ipData []string, output *map[string]interface{}) (map[int64]m
 }
 
 // splitIPv6Data split ipv6 data
-func splitIPv6Data(ipData []string, output *map[string]interface{}) (map[int64]map[string][]string, []string, error) {
+func splitIPv6Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[int64]map[string][]string, []string, error) {
 	// 创建一个 map 用于存储结果
 	cloudIDMap := make(map[int64]map[string][]string)
 	embeddedIPv4Addrs := make([]string, 0)
@@ -329,7 +333,7 @@ func splitIPv6Data(ipData []string, output *map[string]interface{}) (map[int64]m
 	}
 
 	// 遍历切片中的每个字符串
-	for _, ipString := range ipData {
+	for _, ipString := range ipCond.Data {
 		// 去除空格
 		ipString = strings.TrimSpace(ipString)
 
@@ -338,8 +342,10 @@ func splitIPv6Data(ipData []string, output *map[string]interface{}) (map[int64]m
 		ipPart := ipString[colonIndex+1:]
 		// 去掉 IP 地址中的方括号，只保留 IP 部分
 		ipAddress := strings.Trim(ipPart, "[]")
-		if legalIP := net.ParseIP(ipAddress); legalIP == nil {
-			continue
+		if ipCond.Exact == 1 {
+			if legalIP := net.ParseIP(ipAddress); legalIP == nil {
+				continue
+			}
 		}
 
 		ipAddr, err := common.GetIPv4IfEmbeddedInIPv6(ipAddress)
@@ -358,8 +364,10 @@ func splitIPv6Data(ipData []string, output *map[string]interface{}) (map[int64]m
 		}
 
 		if colonIndex == -1 {
-			if legalIP := net.ParseIP(ipString); legalIP == nil {
-				continue
+			if ipCond.Exact == 1 {
+				if legalIP := net.ParseIP(ipString); legalIP == nil {
+					continue
+				}
 			}
 
 			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定

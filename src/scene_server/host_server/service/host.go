@@ -1642,7 +1642,10 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 	}
 	if cloudIDCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
 		cloudAreaCount := len(cloudIDCond)
-		if (req.Ipv4Ip.Flag == hostParse.IOBOTH && (cloudAreaCount/2) > 50) || cloudAreaCount > 50 {
+		if req.Ipv4Ip.Flag == hostParse.IOBOTH {
+			cloudAreaCount = cloudAreaCount / 2
+		}
+		if cloudAreaCount > 100 {
 			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 50"))
 		}
 	}
