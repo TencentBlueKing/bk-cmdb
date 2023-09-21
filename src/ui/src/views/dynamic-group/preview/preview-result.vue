@@ -102,6 +102,9 @@
     getPageParams
   } from '@/utils/tools'
 
+  const page = {
+    current: 1
+  }
   const props = defineProps({
     condition: {
       type: Object,
@@ -148,7 +151,7 @@
   const getModelById = computed(() => store.getters['objectModelClassify/getModelById'])
 
   const handleRefresh = (() => {
-    table.pagination.current = 1
+    pageCurrentChange()
     now.value = new Date()
   })
   const initFilterStore = (async () => {
@@ -185,10 +188,14 @@
     })
   })
   const getTableCellPropertyValueRefId = (property => (isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
-  const handlePageChange = ((current = 1) => table.pagination.current = current)
+  const pageCurrentChange = ((current = 1) => {
+    table.pagination.current = current
+    page.current = current
+  })
+  const handlePageChange = ((current = 1) => pageCurrentChange(current))
   const handleLimitChange = ((limit) => {
     table.pagination.limit = limit
-    table.pagination.current = 1
+    pageCurrentChange()
   })
   const handleSortChange = (sort => table.sort = getSort(sort))
   const handleValueClick = ((row, column) => {
@@ -273,10 +280,13 @@
     deep: true,
     immediate: true
   })
-  watch(() => table.pagination.current, () => {
-    getHostList()
-  })
 
+  // 主要兼容在第一页点击刷新 和 在第一页换每页条数 watch无法监听到 两个场景
+  Reflect.defineProperty(page, 'current', {
+    set() {
+      getHostList()
+    }
+  })
   initFilterStore()
 </script>
 
