@@ -151,9 +151,8 @@
               requestId: 'diffTemplateAndInstances'
             }
           })
-          const diff = data.difference ? (data.difference || {}).module_diffs : []
-          const len = diff.filter(_module => _module.diff_type !== 'unchanged').length
-          return !!len
+
+          return data?.difference?.need_sync
         } catch (e) {
           console.error(e)
           return false

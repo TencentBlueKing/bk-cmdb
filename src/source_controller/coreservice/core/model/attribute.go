@@ -475,25 +475,6 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 				return err
 			}
 		}
-
-		header, err := getTableAttributesOption(kit, inputParam.UpdateData)
-		if err != nil {
-			return err
-		}
-
-		for _, data := range inputParam.CreateData.Data {
-			d, ok := data.Option.(map[string]interface{})
-			if !ok {
-				return err
-			}
-			dataTbale := new(metadata.TableAttributesOption)
-			if err := mapstruct.Decode2Struct(d, dataTbale); err != nil {
-				return err
-			}
-
-			header.Header = append(header.Header, dataTbale.Header...)
-		}
-		inputParam.UpdateData[metadata.AttributeFieldOption] = header
 	}
 
 	inputParam.UpdateData = assignmentUnchangeableFields(inputParam.UpdateData, attrs[0])
