@@ -48,11 +48,11 @@
       multiable: false,
       children: [
         {
-          name: '主机',
+          name: t('主机'),
           id: 'host'
         },
         {
-          name: '集群',
+          name: t('集群'),
           id: 'set'
         }
       ]
