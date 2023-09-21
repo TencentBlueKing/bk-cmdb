@@ -19,7 +19,7 @@
           v-model="isCheckAll"
           :disabled="!instances.length"
           :title="$t('全选本页')"
-          @change="handleCheckALL">
+          @change="handleCheckAll">
         </bk-checkbox>
         <cmdb-auth :auth="HOST_AUTH.D_SERVICE_INSTANCE">
           <bk-button slot-scope="{ disabled }"
@@ -93,10 +93,35 @@
     MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
   import { mapState } from 'vuex'
+  import { t } from '@/i18n'
   import serviceInstanceTable from './service-instance-table.vue'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
   import { historyLabelProxy, hostServiceInstancesProxy } from '../service-proxy'
+
+  const defaultSearchSelect = () => ([
+    {
+      name: t('服务实例名'),
+      id: 0
+    },
+    {
+      name: t('标签值'),
+      id: 1,
+      children: [{
+        id: '',
+        name: ''
+      }],
+      conditions: []
+    },
+    {
+      name: t('标签键'),
+      id: 2,
+      children: [{
+        id: '',
+        name: ''
+      }]
+    }
+  ])
 
   export default {
     components: {
@@ -105,29 +130,7 @@
     mixins: [authMixin, readonlyMixin],
     data() {
       return {
-        searchSelect: [
-          {
-            name: this.$t('服务实例名'),
-            id: 0
-          },
-          {
-            name: this.$t('标签值'),
-            id: 1,
-            children: [{
-              id: '',
-              name: ''
-            }],
-            conditions: []
-          },
-          {
-            name: this.$t('标签键'),
-            id: 2,
-            children: [{
-              id: '',
-              name: ''
-            }]
-          }
-        ],
+        searchSelect: defaultSearchSelect(),
         searchSelectData: [],
         pagination: {
           current: 1,
@@ -285,7 +288,7 @@
       handleCancelEditName(instance) {
         instance.editing.name = false
       },
-      handleCheckALL(checked) {
+      handleCheckAll(checked) {
         this.searchSelectData = []
         this.isCheckAll = checked
         this.$refs.serviceInstanceTable.forEach((table) => {
@@ -394,6 +397,7 @@
       },
       handleFilterClear() {
         this.searchSelectData = []
+        this.searchSelect = defaultSearchSelect()
         this.handlePageChange(1)
       }
     }
