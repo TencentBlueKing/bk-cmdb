@@ -10,7 +10,7 @@
     "object_bk_router": "Router",
     "object_bk_load_balance": "Load Balance",
     "object_bk_firewall": "Firewall",
-    "object_bk_biz_set_obj": "Business set",
+    "object_bk_biz_set_obj": "Business-Set",
     "object_bk_project": "Project",
     "": ""
 }
