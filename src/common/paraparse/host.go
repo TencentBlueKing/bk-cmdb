@@ -269,19 +269,8 @@ func splitIPv4Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[
 		ipPart := ipString[colonIndex+1:]
 		// 去掉 IP 地址中的方括号，只保留 IP 部分
 		ipAddress := strings.Trim(ipPart, "[]")
-		if ipCond.Exact == 1 {
-			if legalIP := net.ParseIP(ipAddress); legalIP == nil {
-				continue
-			}
-		}
 
 		if colonIndex == -1 {
-			if ipCond.Exact == 1 {
-				if legalIP := net.ParseIP(ipString); legalIP == nil {
-					continue
-				}
-			}
-
 			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定
 			if outputCloudIDMap != nil {
 				for operator, cloudIDArr := range outputCloudIDMap {
@@ -342,11 +331,6 @@ func splitIPv6Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[
 		ipPart := ipString[colonIndex+1:]
 		// 去掉 IP 地址中的方括号，只保留 IP 部分
 		ipAddress := strings.Trim(ipPart, "[]")
-		if ipCond.Exact == 1 {
-			if legalIP := net.ParseIP(ipAddress); legalIP == nil {
-				continue
-			}
-		}
 
 		ipAddr, err := common.GetIPv4IfEmbeddedInIPv6(ipAddress)
 		if err != nil {
@@ -364,11 +348,6 @@ func splitIPv6Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[
 		}
 
 		if colonIndex == -1 {
-			if ipCond.Exact == 1 {
-				if legalIP := net.ParseIP(ipString); legalIP == nil {
-					continue
-				}
-			}
 
 			// 如果没有冒号代表未指定管控区域，判断hostcond里面是否有指定
 			if outputCloudIDMap != nil {
@@ -465,7 +444,8 @@ func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMa
 
 	for cloudID, ipv4OperatorMap := range ipv4CloudIDMap {
 		for operator, ipv4Arr := range ipv4OperatorMap {
-			//去重
+			// 校验、去重
+			ipv4Arr = filterHostIP(ipv4Arr)
 			exactIP := map[string]interface{}{operator: deduplication(ipv4Arr)}
 			switch flag {
 			case INNERONLY:
@@ -528,7 +508,8 @@ func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMa
 
 	for cloudID, ipv6OperatorMap := range ipv6CloudIDMap {
 		for operator, ipv6Arr := range ipv6OperatorMap {
-			//去重
+			// 校验、去重
+			ipv6Arr = filterHostIP(ipv6Arr)
 			exactIP := map[string]interface{}{operator: deduplication(ipv6Arr)}
 			switch flag {
 			case INNERONLY:

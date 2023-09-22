@@ -709,8 +709,8 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		if sh.hostSearchParam.Ipv4Ip.Flag == hostParse.IOBOTH {
 			cloudAreaCount = cloudAreaCount / 2
 		}
-		if cloudAreaCount > 100 {
-			return errors.NewCCError(1199081, "cloudArea count more than 100")
+		if cloudAreaCount > 30 {
+			return errors.NewCCError(1199081, "cloudArea count more than 30")
 		}
 	}
 

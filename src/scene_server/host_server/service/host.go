@@ -1645,8 +1645,8 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		if req.Ipv4Ip.Flag == hostParse.IOBOTH {
 			cloudAreaCount = cloudAreaCount / 2
 		}
-		if cloudAreaCount > 100 {
-			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 100"))
+		if cloudAreaCount > 30 {
+			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 30"))
 		}
 	}
 
