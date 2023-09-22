@@ -66,14 +66,6 @@
   const filter = ref([])
   const bizId = computed(() => store.getters['objectBiz/bizId'])
 
-  watch(() => props.defaultFilter, (defaultFilter) => {
-    filter.value = defaultFilter.map(item => ({
-      id: item.id,
-      name: filterMenus.find(menu => menu.id === item.id)?.name,
-      values: (item.value?.split(',') || []).map(val => ({ name: val }))
-    }))
-  }, { immediate: true })
-
   const displayFilterMenus = computed(() => {
     if (filter.value?.length) {
       return filterMenus.filter(menu => !filter.value.some(item => item.id === menu.id))
@@ -81,17 +73,13 @@
     return filterMenus.slice()
   })
 
-  watch(displayFilterMenus, () => {
-    if (!isFocus.value) {
-      return
+  const getFormatVal = (value, id) => {
+    if (id === 'bk_obj_id') {
+      if (value === 'set') return t('集群')
+      if (value === 'host') return t('主机')
     }
-    // fix菜单项丢失
-    searchSelectComp.value?.showMenu()
-    setTimeout(() => {
-      searchSelectComp.value?.getInputInstance()?.click()
-    }, 300)
-  })
-
+    return value
+  }
   const fetchOptions = async (val, menu) => {
     const fetchs = {
       name: fetchDynamicGroup,
@@ -169,8 +157,8 @@
   }
   const handleSearchSelectChange = (list) => {
     const ids = filterMenus.map(item => item.id)
+    const nameItem = list.find(searchItem => searchItem.id === 'name')
     list.forEach((item) => {
-      const nameItem = list.find(searchItem => searchItem.id === 'name')
       if (!ids.includes(item.id)) {
         // 存在多个就合并
         if (nameItem) {
@@ -194,6 +182,24 @@
   const handleInputClickOutside = () => {
     isFocus.value = false
   }
+
+  watch(() => props.defaultFilter, (defaultFilter) => {
+    filter.value = defaultFilter.map(item => ({
+      id: item.id,
+      name: filterMenus.find(menu => menu.id === item.id)?.name,
+      values: (getFormatVal(item.value, item.id)?.split(',') || []).map(val => ({ name: val, id: item.value }))
+    }))
+  }, { immediate: true })
+  watch(displayFilterMenus, () => {
+    if (!isFocus.value) {
+      return
+    }
+    // fix菜单项丢失
+    searchSelectComp.value?.showMenu()
+    setTimeout(() => {
+      searchSelectComp.value?.getInputInstance()?.click()
+    }, 300)
+  })
 </script>
 
 <template>

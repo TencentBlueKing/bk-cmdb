@@ -15,9 +15,9 @@
     <div class="header">
       <div class="title">
         {{$t('结果预览')}}
-        <span class="date" v-if="haveCondition">
+        <span class="date" v-if="hasCondition">
           (
-          {{ $t('生成时间xx', { date: getTime }) }}
+          {{ $t('生成时间xx', { date: time(now) }) }}
           )
         </span>
       </div>
@@ -26,12 +26,12 @@
         icon="refresh"
         class="mr10 refresh"
         size="small"
-        v-if="haveCondition"
+        v-if="hasCondition"
         @click="handleRefresh">
         {{$t('刷新')}}
       </bk-button>
     </div>
-    <bk-table v-if="haveCondition" class="host-table" v-test-id.businessHostAndService="'hostList'"
+    <bk-table v-if="hasCondition" class="host-table" v-test-id.businessHostAndService="'hostList'"
       ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
@@ -138,8 +138,7 @@
     moveToIdleModule: Symbol('moveToIdleModule')
   })
 
-  const haveCondition = computed(() => Object.keys(props.condition)?.length || 0)
-  const getTime = computed(() => time(now.value))
+  const hasCondition = computed(() => Object.keys(props.condition)?.length > 0)
   const customInstanceColumnKey = computed(() => {
     if (props.mode === 'set') return 'dynamic_group_search_object_cluster'
     return 'business_topology_table_column_config'
@@ -273,7 +272,7 @@
     now.value = new Date()
     tableHeader.value = FilterStore.getHeader()
     FilterStore.setDynamicCollection(val)
-    if (haveCondition.value) {
+    if (hasCondition.value) {
       pageCurrentChange()
     }
   }, {

@@ -149,14 +149,11 @@
           }
         }
         this.filter.forEach((item) => {
-          const key = item?.id
           const itemValue = item.value?.split(',').map(escapeRegexChar)
           const value = itemValue?.length > 1 ? {
             $in: itemValue
           } : itemValue[0]
-          // 区分查询对象和其他选项
-          const finalVal = key === 'bk_obj_id' ? this.getObjIdVal(value) : value
-          params.condition[item?.id] = finalVal
+          params.condition[item?.id] = value
         })
 
         return params
@@ -184,11 +181,6 @@
       this.unwatchQuery && this.unwatchQuery()
     },
     methods: {
-      getObjIdVal(value) {
-        if (value === '集群') return 'set'
-        if (value === '主机') return 'host'
-        return 'no_match'
-      },
       handleSearch(filter) {
         const query = {
           name: '',
@@ -197,8 +189,10 @@
           bk_obj_id: '',
           _t: Date.now()
         }
+        // 处理 如果是bk_obj_id 将路由上的中文name 换成 id
         filter.forEach((item) => {
-          query[item.id] = item.values.map(val => val.name).join(',')
+          const key = item.id === 'bk_obj_id' ? 'id' : 'name'
+          query[item.id] = item.values.map(val => val[key]).join(',')
         })
         RouterQuery.set(query)
       },
