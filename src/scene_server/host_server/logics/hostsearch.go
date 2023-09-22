@@ -710,7 +710,7 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 			cloudAreaCount = cloudAreaCount / 2
 		}
 		if cloudAreaCount > 100 {
-			return errors.NewCCError(1199081, "cloudArea count more than 50")
+			return errors.NewCCError(1199081, "cloudArea count more than 100")
 		}
 	}
 
