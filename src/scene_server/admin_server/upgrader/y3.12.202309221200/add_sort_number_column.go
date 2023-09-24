@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_11_202309071500
+package y3_12_202309221200
 
 import (
 	"context"
@@ -69,7 +69,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 			doc := map[string]int64{
 				common.ObjSortNumberField: int64(index),
 			}
-			err = db.Table(common.BKTableNameObjDes).Upsert(ctx, filter, doc)
+			err = db.Table(common.BKTableNameObjDes).Update(ctx, filter, doc)
 			if err != nil {
 				blog.Errorf("add column to table failed, err: %v, column: %s, table: %s", err,
 					common.ObjSortNumberField, common.BKTableNameObjDes)

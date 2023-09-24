@@ -75,7 +75,7 @@ type Object struct {
 	Modifier      string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
 	CreateTime    *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime      *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
-	ObjSortNumber int64  `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
+	ObjSortNumber *int64 `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
 }
 
 // GetDefaultInstPropertyName get default inst

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/index"
 	dbindex "configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
@@ -58,7 +59,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		return id, err
 	}
 
-	model.ObjSortNumber = sortNum
+	model.ObjSortNumber = &sortNum
 	model.ID = int64(id)
 	model.OwnerID = kit.SupplierAccount
 
@@ -81,8 +82,8 @@ func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (in
 	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: model.ObjCls}
 	modelResult := make([]metadata.Object, 0)
 	sortCond := "-obj_sort_number"
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).
-		Fields(metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).All(kit.Ctx, &modelResult); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).Fields(
+		metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).Limit(1).All(kit.Ctx, &modelResult); err != nil {
 		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, err
 	}
@@ -91,22 +92,22 @@ func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (in
 		return 0, nil
 	}
 
-	if model.ObjSortNumber >= 0 && model.ObjSortNumber <= modelResult[0].ObjSortNumber {
+	if (model.ObjSortNumber != nil) && (*(model.ObjSortNumber) <= *(modelResult[0].ObjSortNumber)) {
 		if err := m.objSortNumberAdd(kit, model); err != nil {
 			blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
 		}
-		return model.ObjSortNumber, nil
+		return *(model.ObjSortNumber), nil
 	}
 
-	return modelResult[0].ObjSortNumber + 1, nil
+	return *(modelResult[0].ObjSortNumber) + 1, nil
 }
 
 // objSortNumberAdd 大于等于model值的obj_sort_number字段值加一
 func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) error {
 	incCond := mapstr.MapStr{
 		metadata.ModelFieldObjCls:        model.ObjCls,
-		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: model.ObjSortNumber},
+		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: *(model.ObjSortNumber)},
 	}
 
 	incData := mapstr.MapStr{metadata.ModelFieldObjSortNumber: int64(1)}
@@ -204,21 +205,19 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 	}
 
 	object := metadata.Object{}
-	if err := data.ToStructByTag(&object, "field"); err != nil {
+	if err := mapstruct.Decode2Struct(*data, &object); err != nil {
 		blog.Errorf("parsing data failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
 		return err
 	}
-	if object.ObjSortNumber < 0 {
+
+	if object.ObjSortNumber != nil && *(object.ObjSortNumber) < 0 {
 		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
-			"rid: %s", object.ObjSortNumber, kit.Rid)
+			"rid: %s", *(object.ObjSortNumber), kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 
 	// 如果传递了 bk_classification_id 字段,按照更新模型所属分组处理
 	if data.Exists(metadata.ModelFieldObjCls) {
-		if !data.Exists(metadata.ModelFieldObjSortNumber) {
-			object.ObjSortNumber = -1
-		}
 		sortNum, err := m.GetModelLastNum(kit, object)
 		if err != nil {
 			blog.Errorf("set object sort number failed, err: %v, object: %v, rid: %s", err, object, kit.Rid)
