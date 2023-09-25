@@ -207,7 +207,7 @@
     ref="searchSelectComp"
     class="search-select"
     :clearable="false"
-    :placeholder="$t('动态分组查询')"
+    :placeholder="$t('请输入关键字或选择条件搜索')"
     :filter="true"
     :show-condition="false"
     :show-popover-tag-change="false"

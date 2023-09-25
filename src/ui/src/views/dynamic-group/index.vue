@@ -140,7 +140,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),
-      getSearchParams() {
+      searchParams() {
         const params = {
           condition: {},
           page: {
@@ -198,7 +198,7 @@
       },
       async getList() {
         try {
-          const params = this.getSearchParams
+          const params = this.searchParams
           const { info, count } = await this.$store.dispatch('dynamicGroup/search', {
             bizId: this.bizId,
             params,

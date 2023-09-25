@@ -144,7 +144,7 @@
     return 'business_topology_table_column_config'
   })
   const bizId = computed(() => store.getters['objectBiz/bizId'])
-  const getModelById = computed(() => store.getters['objectModelClassify/getModelById'])
+  const getModelById = store.getters['objectModelClassify/getModelById']
 
   const handleRefresh = (() => {
     pageCurrentChange()
@@ -165,7 +165,7 @@
     const content = [getHeaderPropertyName(property)]
     const modelId = property.bk_obj_id
     if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
-      const model = getModelById.value(modelId)
+      const model = getModelById(modelId)
       const suffix = h('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
       content.push(suffix)
     }
@@ -175,7 +175,7 @@
     let name = getHeaderPropertyName(property)
     const modelId = property.bk_obj_id
     if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
-      const model = getModelById.value(modelId)
+      const model = getModelById(modelId)
       name = `${name}(${model.bk_obj_name})`
     }
     return getHeaderPropertyMinWidth(property, {
@@ -238,17 +238,20 @@
   const handleApplyColumnsConfig = ((properties = []) => store.dispatch('userCustom/saveUsercustom', {
     [customInstanceColumnKey.value]: properties.map(property => property.bk_property_id)
   }))
-  const getSearchRequest = (() => {
-    const params = getNormalParams()
-    const config = {
-      requestId: request.table,
-      cancelPrevious: true
-    }
-    return store.dispatch('hostSearch/searchHost', { params, config })
-  })
   const getHostList = (async () => {
     try {
-      const result = await getSearchRequest()
+      const params = {
+        ...FilterStore.getSearchParams(),
+        page: {
+          ...getPageParams(table.pagination),
+          sort: table.sort
+        }
+      }
+      const config = {
+        requestId: request.table,
+        cancelPrevious: true
+      }
+      const result = await store.dispatch('hostSearch/searchHost', { params, config })
       table.data = result.info || []
       table.pagination.count = result.count
     } catch (e) {
@@ -256,16 +259,6 @@
       table.data = []
       table.pagination.count = 0
     }
-  })
-  const getNormalParams = (() => {
-    const params = {
-      ...FilterStore.getSearchParams(),
-      page: {
-        ...getPageParams(table.pagination),
-        sort: table.sort
-      }
-    }
-    return params
   })
 
   watch(() => props.condition, (val) => {

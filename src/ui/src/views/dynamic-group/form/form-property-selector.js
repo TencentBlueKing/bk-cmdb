@@ -46,7 +46,7 @@ const Component = Vue.extend({
         placement: 'top',
         animateFill: false,
         sticky: true,
-        theme: 'light bound-model-popover',
+        theme: 'light',
         boundary: 'window',
         trigger: 'click', // 'manual mouseenter',
         arrow: true,
