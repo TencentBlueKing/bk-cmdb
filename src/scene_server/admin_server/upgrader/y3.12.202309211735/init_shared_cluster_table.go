@@ -257,9 +257,13 @@ func updateBizRelatedIndex(ctx context.Context, db dal.RDB) error {
 			createIndexes = append(createIndexes, index)
 		}
 
+		if len(createIndexes) == 0 {
+			continue
+		}
+
 		err = db.Table(table).BatchCreateIndexes(ctx, createIndexes)
 		if err != nil && !db.IsDuplicatedError(err) {
-			blog.Errorf("create %s table indexes %+v failed, err: %v", createIndexes, err)
+			blog.Errorf("create %s table indexes %+v failed, err: %v", table, createIndexes, err)
 			return err
 		}
 
