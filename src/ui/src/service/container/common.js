@@ -32,6 +32,7 @@ export const getContainerObjectNames = type => (
 // 与传统模型字段类型的映射，原则上在交互形态完全一致的情况下才可以转换
 export const typeMapping = {
   string: 'singlechar',
+  enum: 'singlechar',
   numeric: 'float',
   mapString: 'map',
   array: 'array',
@@ -43,7 +44,7 @@ export const getPropertyType = type => typeMapping[type] || type
 
 export const getPropertyName = (id, objId, locale) => {
   const lang = locale === 'en' ? 'en' : 'zh'
-  return propertyNameI18n[objId]?.[id]?.[lang]
+  return propertyNameI18n[objId]?.[id]?.[lang] ?? id
 }
 
 export const isContainerObject = objId => Object.values(CONTAINER_OBJECTS).includes(objId)

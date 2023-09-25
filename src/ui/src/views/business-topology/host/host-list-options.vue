@@ -179,7 +179,8 @@
     <edit-multiple-host ref="editMultipleHost" v-test-id
       :properties="hostProperties"
       :selection="$parent.table.selection"
-      :is-container-host="isContainerHost">
+      :is-container-host="isContainerHost"
+      :biz-id="bizId">
     </edit-multiple-host>
 
     <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="750">
