@@ -13,11 +13,15 @@
 <template>
   <span class="filter-tag" @click="handleClick"
     v-bk-tooltips="{
+      theme: 'filter-tag',
       disabled: value.length < 3,
       content: value.join('<br>'),
-      interactive: false,
+      interactive: true,
       hideOnClick: false,
-      allowHTML: true
+      allowHTML: true,
+      onShow(inst) {
+        inst.setContent(value.join('<br>'))
+      }
     }"
   >
     <label class="tag-name">{{label}}</label>
@@ -102,4 +106,14 @@
             }
         }
     }
+</style>
+<style lang="scss">
+.tippy-tooltip.filter-tag-theme {
+  padding: 7px;
+  .tippy-content {
+    max-height: 300px;
+    padding: 0 8px;
+    @include scrollbar-y;
+  }
+}
 </style>

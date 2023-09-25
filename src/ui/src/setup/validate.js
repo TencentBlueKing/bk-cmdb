@@ -22,6 +22,9 @@ import store from '@/store'
 import { PARAMETER_TYPES } from '@/dictionary/parameter-types'
 import { splitIP, parseIP } from '@/components/filters/utils'
 
+export const IP_SEARCH_MAX_COUNT = 10000
+export const IP_SEARCH_MAX_CLOUD = 50
+
 /**
  * 前端内置的验证规则，不包含用户自定义的规则
  */
@@ -106,11 +109,11 @@ const buildInVaidationRules = {
   ipSearchMaxCloud: {
     validate: (value) => {
       const { cloudIdSet } = parseIP(splitIP(value))
-      return cloudIdSet.size <= 50
+      return cloudIdSet.size <= IP_SEARCH_MAX_CLOUD
     }
   },
   ipSearchMaxCount: {
-    validate: value => splitIP(value)?.length <= 10
+    validate: value => splitIP(value)?.length <= IP_SEARCH_MAX_COUNT
   },
   validRegExp: {
     validate: (value) => {
