@@ -2,19 +2,44 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "bk-cmdb.fullname" . }}-bootstrap
+  name: {{ template "bk-cmdb.fullname" . }}-bootstrap-{{ .Release.Revision }}
   labels:
     app: {{ template "bk-cmdb.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation
 spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
   template:
     spec:
+      initContainers:
+        - name: check-admin
+          image: {{ template "cmdb.basicImagesAddress" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              /bin/bash <<'EOF'
+
+              # test adminserver alive
+              while :
+              do
+                  res=$(curl -s -X GET \
+                  -H 'Content-Type:application/json' \
+                  -H 'BK_USER:migrate' \
+                  -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
+                  "http://{{ template "bk-cmdb.adminserver" . }}:80/migrate/v3/healthz"
+                  )
+                  echo "$res"
+                  if [[ $(echo "$res" | jq -r .result) = "true" ]]; then
+                    break
+                  fi
+
+                  sleep 1
+              done
+
+              echo "check admin done"
+              EOF
       containers:
       - name: cmdb-migrate
         image: {{ template "cmdb.basicImagesAddress" . }}
