@@ -29,68 +29,59 @@ import (
 
 // KubeClientInterface the kube client interface
 type KubeClientInterface interface {
+	CreateCluster(ctx context.Context, h http.Header, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
+	UpdateClusterFields(ctx context.Context, header http.Header,
+		data *types.UpdateClusterByIDsOption) errors.CCErrorCoder
+	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.ResponseCluster,
+		errors.CCErrorCoder)
+	DeleteCluster(ctx context.Context, header http.Header, option *types.DeleteClusterByIDsOption) errors.CCErrorCoder
 
 	// CreateNamespace create namespace
-	CreateNamespace(ctx context.Context, header http.Header, bizID int64, option *types.NsCreateOption) (
-		*metadata.RspIDs, errors.CCErrorCoder)
-
+	CreateNamespace(ctx context.Context, header http.Header, data []types.Namespace) (*metadata.RspIDs,
+		errors.CCErrorCoder)
 	// UpdateNamespace update namespace
-	UpdateNamespace(ctx context.Context, header http.Header, bizID int64,
-		option *types.NsUpdateOption) errors.CCErrorCoder
-
+	UpdateNamespace(ctx context.Context, header http.Header, option *types.NsUpdateByIDsOption) errors.CCErrorCoder
 	// DeleteNamespace delete namespace
-	DeleteNamespace(ctx context.Context, header http.Header, bizID int64,
-		option *types.NsDeleteOption) errors.CCErrorCoder
-
+	DeleteNamespace(ctx context.Context, header http.Header, option *types.NsDeleteByIDsOption) errors.CCErrorCoder
 	// ListNamespace list namespace
 	ListNamespace(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.NsDataResp,
 		errors.CCErrorCoder)
 
 	// CreateWorkload create workload
-	CreateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlCreateOption) (*metadata.RspIDs, errors.CCErrorCoder)
-
+	CreateWorkload(ctx context.Context, header http.Header, kind types.WorkloadType, data []types.WorkloadInterface) (
+		*metadata.RspIDs, errors.CCErrorCoder)
 	// UpdateWorkload update workload
-	UpdateWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlUpdateOption) errors.CCErrorCoder
-
+	UpdateWorkload(ctx context.Context, header http.Header, kind types.WorkloadType,
+		option *types.WlUpdateByIDsOption) errors.CCErrorCoder
 	// DeleteWorkload delete workload
-	DeleteWorkload(ctx context.Context, header http.Header, bizID int64, kind types.WorkloadType,
-		option *types.WlDeleteOption) errors.CCErrorCoder
-
+	DeleteWorkload(ctx context.Context, header http.Header, kind types.WorkloadType,
+		option *types.WlDeleteByIDsOption) errors.CCErrorCoder
 	// ListWorkload list workload
 	ListWorkload(ctx context.Context, header http.Header, input *metadata.QueryCondition, kind types.WorkloadType) (
 		*types.WlDataResp, errors.CCErrorCoder)
 
+	BatchCreateNode(ctx context.Context, header http.Header, data []types.OneNodeCreateOption) (
+		*types.CreateNodesResult, errors.CCErrorCoder)
+	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.SearchNodeRsp,
+		errors.CCErrorCoder)
+	UpdateNodeFields(ctx context.Context, header http.Header, data *types.UpdateNodeByIDsOption) errors.CCErrorCoder
+	BatchDeleteNode(ctx context.Context, header http.Header,
+		option *types.BatchDeleteNodeByIDsOption) errors.CCErrorCoder
+
+	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) ([]types.Pod,
+		errors.CCErrorCoder)
 	// ListPod list pod
 	ListPod(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.PodDataResp,
 		errors.CCErrorCoder)
+	// DeletePods delete pods
+	DeletePods(ctx context.Context, h http.Header, opt *types.DeletePodsByIDsOption) errors.CCErrorCoder
 
 	// ListContainer list container
 	ListContainer(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.ContainerDataResp,
 		errors.CCErrorCoder)
 
-	// DeletePods delete pods
-	DeletePods(ctx context.Context, h http.Header, opt *types.DeletePodsByIDsOption) errors.CCErrorCoder
-
-	CreateCluster(ctx context.Context, h http.Header, bizID int64, option *types.Cluster) (
-		*types.CreateClusterResult, errors.CCErrorCoder)
-	UpdateClusterFields(ctx context.Context, header http.Header, bizID int64,
-		data *types.UpdateClusterOption) errors.CCErrorCoder
-	UpdateNodeFields(ctx context.Context, header http.Header, bizID int64,
-		data *types.UpdateNodeOption) errors.CCErrorCoder
-	SearchCluster(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-		*types.ResponseCluster, errors.CCErrorCoder)
-	DeleteCluster(ctx context.Context, header http.Header, bizID int64,
-		option *types.DeleteClusterOption) errors.CCErrorCoder
-	BatchDeleteNode(ctx context.Context, header http.Header, bizID int64,
-		option *types.BatchDeleteNodeOption) errors.CCErrorCoder
-	BatchCreateNode(ctx context.Context, header http.Header, bizID int64,
-		data *types.CreateNodesOption) (*types.CreateNodesResult, errors.CCErrorCoder)
-	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) (
-		[]types.Pod, errors.CCErrorCoder)
-	SearchNode(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
-		*types.SearchNodeRsp, errors.CCErrorCoder)
+	ListNsSharedClusterRel(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
+		*types.NsSharedClusterRelData, errors.CCErrorCoder)
 }
 
 // NewKubeClientInterface new kube client interface
