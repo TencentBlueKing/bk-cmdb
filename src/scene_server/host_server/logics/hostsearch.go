@@ -704,13 +704,19 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		return err
 	}
 
-	if cloudIDCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
-		cloudAreaCount := len(cloudIDCond)
+	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
+			if _, ok := cloudIDCond[common.BKDBIN]; ok {
+				delete(condition, common.BKCloudIDField)
+			}
+		}
+
+		cloudAreaCount := len(ipCond)
 		if sh.hostSearchParam.Ipv4Ip.Flag == hostParse.IOBOTH {
 			cloudAreaCount = cloudAreaCount / 2
 		}
-		if cloudAreaCount > 30 {
-			return errors.NewCCError(1199081, "cloudArea count more than 30")
+		if cloudAreaCount > 50 {
+			return errors.NewCCError(1199081, "cloudArea count more than 50")
 		}
 	}
 

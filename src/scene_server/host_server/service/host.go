@@ -1650,6 +1650,22 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		}
 	}
 
+	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
+			if _, ok := cloudIDCond[common.BKDBIN]; ok {
+				delete(condition, common.BKCloudIDField)
+			}
+		}
+
+		cloudAreaCount := len(ipCond)
+		if req.Ipv4Ip.Flag == hostParse.IOBOTH {
+			cloudAreaCount = cloudAreaCount / 2
+		}
+		if cloudAreaCount > 50 {
+			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 50"))
+		}
+	}
+
 	// 3. find host by condition
 	query := &meta.QueryInput{
 		Condition:     condition,
