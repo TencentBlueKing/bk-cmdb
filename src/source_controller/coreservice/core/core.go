@@ -130,10 +130,9 @@ type InstanceOperation interface {
 
 // KubeOperation crud operations on kube data.
 type KubeOperation interface {
-	CreateCluster(kit *rest.Kit, bizID int64, option *types.Cluster) (*types.Cluster, errors.CCErrorCoder)
-	BatchCreateNode(kit *rest.Kit, bizID int64, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
-	GetSysSpecInfoByCond(kit *rest.Kit, spec types.SpecSimpleInfo, bizID int64,
-		hostID int64) (*types.SysSpec, bool, errors.CCErrorCoder)
+	BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
+	GetSysSpecInfoByCond(kit *rest.Kit, podsInfos []types.PodsInfoArray) ([]types.SysSpec, []int64, errors.CCErrorCoder)
+	CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][]int64) errors.CCErrorCoder
 }
 
 // AssociationKind association kind methods

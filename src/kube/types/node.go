@@ -152,12 +152,29 @@ func (option *Node) updateValidate() ccErr.RawErrorInfo {
 
 // BatchDeleteNodeOption delete nodes option.
 type BatchDeleteNodeOption struct {
-	IDs []int64 `json:"ids"`
+	BizID int64 `json:"bk_biz_id"`
+	BatchDeleteNodeByIDsOption
 }
 
 // Validate validate the BatchDeleteNodeOption
 func (option *BatchDeleteNodeOption) Validate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
+	return option.BatchDeleteNodeByIDsOption.Validate()
+}
+
+// BatchDeleteNodeByIDsOption delete nodes by ids option.
+type BatchDeleteNodeByIDsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate the BatchDeleteNodeByIDsOption
+func (option *BatchDeleteNodeByIDsOption) Validate() ccErr.RawErrorInfo {
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -176,6 +193,7 @@ func (option *BatchDeleteNodeOption) Validate() ccErr.RawErrorInfo {
 
 // OneNodeCreateOption node request parameter details.
 type OneNodeCreateOption struct {
+	BizID int64 `json:"bk_biz_id"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
@@ -183,8 +201,14 @@ type OneNodeCreateOption struct {
 	Node      `json:",inline" bson:",inline"`
 }
 
-// validateCreate validate the OneNodeCreateOption
-func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
+// ValidateCreate validate the OneNodeCreateOption
+func (option *OneNodeCreateOption) ValidateCreate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
 	if option.ClusterID == 0 {
 		return ccErr.RawErrorInfo{
@@ -200,6 +224,7 @@ func (option *OneNodeCreateOption) validateCreate() ccErr.RawErrorInfo {
 
 // CreateNodesOption create node requests in batches.
 type CreateNodesOption struct {
+	BizID int64                 `json:"bk_biz_id"`
 	Nodes []OneNodeCreateOption `json:"data"`
 }
 
@@ -212,6 +237,12 @@ type CreateNodesRsp struct {
 
 // ValidateCreate validate the create nodes request
 func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
 	if len(option.Nodes) == 0 {
 		return ccErr.RawErrorInfo{
@@ -227,8 +258,9 @@ func (option *CreateNodesOption) ValidateCreate() ccErr.RawErrorInfo {
 		}
 	}
 
-	for _, node := range option.Nodes {
-		if err := node.validateCreate(); err.ErrCode != 0 {
+	for i := range option.Nodes {
+		option.Nodes[i].BizID = option.BizID
+		if err := option.Nodes[i].ValidateCreate(); err.ErrCode != 0 {
 			return err
 		}
 	}
@@ -243,6 +275,7 @@ type CreateNodesResult struct {
 
 // QueryNodeOption query node by query builder
 type QueryNodeOption struct {
+	BizID  int64              `json:"bk_biz_id"`
 	Filter *filter.Expression `json:"filter"`
 	Page   metadata.BasePage  `json:"page"`
 	Fields []string           `json:"fields"`
@@ -250,6 +283,13 @@ type QueryNodeOption struct {
 
 // Validate validate the param QueryNodeReq
 func (option *QueryNodeOption) Validate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if err := option.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
 		return err
 	}
@@ -275,6 +315,7 @@ type SearchNodeRsp struct {
 
 // NodeKubeOption information about the node itself.
 type NodeKubeOption struct {
+	BizID      int64  `json:"bk_biz_id"`
 	ClusterUID string `json:"cluster_uid"`
 	Name       string `json:"name"`
 }
@@ -287,13 +328,30 @@ type UpdateNodeInfo struct {
 
 // UpdateNodeOption update node field option
 type UpdateNodeOption struct {
-	IDs  []int64 `json:"ids"`
-	Data Node    `json:"data"`
+	BizID int64 `json:"bk_biz_id"`
+	UpdateNodeByIDsOption
 }
 
 // UpdateValidate check whether the request parameters for updating the node are legal.
 func (option *UpdateNodeOption) UpdateValidate() ccErr.RawErrorInfo {
+	if option.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
 
+	return option.UpdateNodeByIDsOption.Validate()
+}
+
+// UpdateNodeByIDsOption update node field by ids option
+type UpdateNodeByIDsOption struct {
+	IDs  []int64 `json:"ids"`
+	Data Node    `json:"data"`
+}
+
+// Validate check whether the request parameters for updating the node are legal.
+func (option *UpdateNodeByIDsOption) Validate() ccErr.RawErrorInfo {
 	if len(option.IDs) == 0 {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,

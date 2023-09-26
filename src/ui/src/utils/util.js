@@ -106,3 +106,24 @@ export const keyupCallMethod = (event, cb, keyCode = [13]) => {
     cb?.()
   }
 }
+
+/**
+ * 将内容下载为文件
+ * @param {string} content 内容
+ * @param {string} filename 文件名
+ */
+export const downloadFile = (content, filename) => {
+  const blob = new Blob([content])
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.style.display = 'none'
+  a.href = url
+  a.download = filename
+
+  document.body.appendChild(a)
+  a.click()
+
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}

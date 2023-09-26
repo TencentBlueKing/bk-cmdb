@@ -27,6 +27,11 @@
     "@babel/plugin-transform-async-to-generator",
     ["import-bk-magic-vue", {
       "baseLibName": "bk-magic-vue"
+    }],
+    ["prismjs", {
+      "languages": ["javascript", "json"],
+      "plugins": ["line-numbers"],
+      "css": true
     }]
   ]
 }

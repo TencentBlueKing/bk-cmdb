@@ -58,6 +58,15 @@
     :instance="instance"
     v-bind="$attrs">
   </inner-table-value>
+  <json-value
+    v-else-if="[PROPERTY_TYPES.OBJECT, PROPERTY_TYPES.ARRAY].includes(property.bk_property_type)"
+    ref="complexTypeComp"
+    :value="value"
+    :property="property"
+    :show-on="showOn"
+    :instance="instance"
+    v-bind="$attrs">
+  </json-value>
   <component
     class="value-container"
     :is="tag"
@@ -83,6 +92,7 @@
   import EnumquoteValue from './enumquote-value.vue'
   import OrgValue from './org-value.vue'
   import InnerTableValue from './inner-table-value.vue'
+  import JsonValue from './json-value.vue'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { isUseComplexValueType } from '@/utils/tools'
 
@@ -95,7 +105,8 @@
       MapstringValue,
       EnumquoteValue,
       OrgValue,
-      InnerTableValue
+      InnerTableValue,
+      JsonValue
     },
     props: {
       value: {

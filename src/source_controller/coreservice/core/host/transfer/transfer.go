@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -208,13 +209,15 @@ func (t *genericTransfer) validParameterModule(kit *rest.Kit) errors.CCErrorCode
 	bizID := t.bizID
 
 	t.moduleIDArr = util.IntArrayUnique(t.moduleIDArr)
-	moduleInfoArr, err := t.getModuleInfoByModuleID(kit, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
+	moduleInfoArr, err := t.getModuleInfoByModuleID(kit, bizID, t.moduleIDArr,
+		[]string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
 	if err != nil {
 		return err
 	}
 	//  存在不属于当前业务的模块
 	if len(moduleInfoArr) != len(t.moduleIDArr) {
-		blog.Errorf("validParameterModule not found module info. moduleID:%#v,bizID:%d,rid:%s", t.moduleIDArr, bizID, kit.Rid)
+		blog.Errorf("validParameterModule not found module info. moduleID:%#v,bizID:%d,rid:%s", t.moduleIDArr, bizID,
+			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, t.moduleIDArr, bizID)
 	}
 
@@ -228,23 +231,30 @@ func (t *genericTransfer) validParameterModule(kit *rest.Kit) errors.CCErrorCode
 			// 转移目标模块为多模块时，不允许包含内置模块(空闲机/故障机等)
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
-				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, kit.Rid)
-				return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
+				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s",
+					err.Error(), moduleInfo, kit.Rid)
+				return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule,
+					common.BKDefaultField, "int", err.Error())
 			}
 			if defaultVal != 0 {
-				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s", defaultVal, kit.Rid)
+				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s",
+					defaultVal, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleContainDefaultModuleErr)
 			}
 		}
 		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
 		if err != nil {
-			blog.ErrorJSON("validParameter module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
+			blog.ErrorJSON("validParameter module info field module id not integer. err:%s, moduleInfo:%s,rid:%s",
+				err.Error(), moduleInfoArr, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule,
+				common.BKModuleIDField, "int", err.Error())
 		}
 		setID, err := moduleInfo.Int64(common.BKSetIDField)
 		if err != nil {
-			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())
+			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s",
+				err.Error(), moduleInfoArr, kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDModule,
+				common.BKSetIDField, "int", err.Error())
 		}
 		t.moduleIDSetIDMap[moduleID] = setID
 
@@ -280,7 +290,15 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 	}
 
-	return t.validHostsBelongBiz(kit, hostIDs)
+	if ccErr := t.validHostsBelongBiz(kit, hostIDs); ccErr != nil {
+		return ccErr
+	}
+
+	if ccErr := t.validHostsRelatedToKube(kit, hostIDs); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
 }
 
 // validHostsBelongBiz check if hosts not belongs to other biz
@@ -310,6 +328,33 @@ func (t *genericTransfer) validHostsBelongBiz(kit *rest.Kit, hostIDs []int64) er
 		blog.Errorf("delete host, but some hosts belongs to other biz, biz IDs: %v, host ID: %v, rid: %s", bizIDs,
 			hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostIDs, bizIDs)
+	}
+
+	return nil
+}
+
+// validHostsRelatedToKube check if hosts has related kube resources.
+func (t *genericTransfer) validHostsRelatedToKube(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
+	if !t.crossBizTransfer {
+		return nil
+	}
+
+	cond := mapstr.MapStr{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
+	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
+
+	cnt, err := mongodb.Client().Table(kubetypes.BKTableNameBaseNode).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count hosts related nodes failed, err: %v, host IDs: %+v, rid: %s", err, hostIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt > 0 {
+		blog.Errorf("some hosts has related kube resources, host IDs: %+v, rid: %s", hostIDs, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCoreServiceHostRelateToKube)
 	}
 
 	return nil
@@ -387,7 +432,8 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).Fields(common.BKHostIDField,
 		common.BKModuleIDField).All(kit.Ctx, &relationArr)
 	if err != nil {
-		blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, kit.Rid)
+		blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap,
+			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -437,7 +483,8 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 
 func (t *genericTransfer) autoCreateServiceInstance(kit *rest.Kit, hostIDs []int64) errors.CCErrorCoder {
 	if err := t.dependent.AutoCreateServiceInstanceModuleHost(kit, hostIDs, t.moduleIDArr); err != nil {
-		blog.Warnf("autoCreateServiceInstance failed, hostIDs: %+v, moduleID: %+v, rid: %s", hostIDs, t.moduleIDArr, kit.Rid)
+		blog.Warnf("autoCreateServiceInstance failed, hostIDs: %+v, moduleID: %+v, rid: %s", hostIDs, t.moduleIDArr,
+			kit.Rid)
 	}
 	return nil
 }
@@ -464,9 +511,11 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).All(kit.Ctx, &instances)
+	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).All(kit.Ctx,
+		&instances)
 	if err != nil {
-		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s", err, serviceInstanceFilter, kit.Rid)
+		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s",
+			err, serviceInstanceFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if len(instances) == 0 {
@@ -487,8 +536,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		},
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx, &relations); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx,
+		&relations); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s",
+			err, processRelationFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	processIDs := make([]int64, 0)
@@ -498,8 +549,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 
 	// delete all process relations and instances
 	if len(processIDs) > 0 {
-		if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx, processRelationFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s", err, processRelationFilter, kit.Rid)
+		if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx,
+			processRelationFilter); nil != err {
+			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s",
+				err, processRelationFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 
@@ -535,7 +588,8 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 
 		// delete processes
 		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s", err, processFilter, kit.Rid)
+			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s",
+				err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 	}
@@ -546,8 +600,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 			common.BKDBIN: serviceInstanceIDs,
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Delete(kit.Ctx, serviceInstanceIDFilter); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s", err, serviceInstanceIDFilter, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Delete(kit.Ctx,
+		serviceInstanceIDFilter); nil != err {
+		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s",
+			err, serviceInstanceIDFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -626,27 +682,32 @@ func (t *genericTransfer) HasInnerModule(kit *rest.Kit) (bool, error) {
 	return false, nil
 }
 
-func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, moduleID []int64,
+	fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(appID)
 	moduleConds.Field(common.BKModuleIDField).In(moduleID)
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), kit.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx, &moduleInfoArr)
+	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx,
+		&moduleInfoArr)
 	if err != nil {
-		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond, kit.Rid)
+		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond,
+			kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	return moduleInfoArr, nil
 }
 
-func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
+func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableName string) (uint64,
+	errors.CCErrorCoder) {
 	conds = util.SetQueryOwner(conds, kit.SupplierAccount)
 	cnt, err := mongodb.Client().Table(tableName).Find(conds).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds, kit.Rid)
+		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds,
+			kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 

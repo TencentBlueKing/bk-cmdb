@@ -34,7 +34,7 @@ type service struct {
 }
 
 // InitFieldTemplate init field template service
-func InitFieldTemplate(c *capability.Capability) {
+func InitFieldTemplate(utility *rest.RestUtility, c *capability.Capability) {
 	s := &service{
 		clientSet: c.ClientSet,
 		logics:    c.Logics,
@@ -42,67 +42,69 @@ func InitFieldTemplate(c *capability.Capability) {
 	}
 
 	// field template
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template",
 		Handler: s.ListFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template",
 		Handler: s.CreateFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/field_template/{id}",
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/field_template/{id}",
 		Handler: s.FindFieldTemplateByID})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/bind/object",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/bind/object",
 		Handler: s.FieldTemplateBindObject})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/unbind/object",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/field_template/unbind/object",
 		Handler: s.FieldTemplateUnbindObject})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/field_template",
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/field_template",
 		Handler: s.DeleteFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template/clone",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/field_template/clone",
 		Handler: s.CloneFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template",
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template",
 		Handler: s.UpdateFieldTemplate})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template/info",
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/field_template/info",
 		Handler: s.UpdateFieldTemplateInfo})
 
 	// field template attribute
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute",
 		Handler: s.ListFieldTemplateAttr})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute/count",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/attribute/count",
 		Handler: s.CountFieldTemplateAttr})
 
 	// field template unique
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/unique",
 		Handler: s.ListFieldTemplateUnique})
 
 	// field template sync to object
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/topo/field_template/sync",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/topo/field_template/sync",
 		Handler: s.SyncFieldTemplateInfoToObjects})
 	// field template relation
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/relation",
 		Handler: s.ListObjFieldTmplRel})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/by_object",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/by_object",
 		Handler: s.ListFieldTmplByObj})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
 		Handler: s.ListObjByFieldTmpl})
 
 	// field template task
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",
 		Handler: s.SyncFieldTemplateToObjectTask})
 
 	// compare field template with object
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/attribute/difference",
 		Handler: s.CompareFieldTemplateAttr})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/unique/difference",
 		Handler: s.CompareFieldTemplateUnique})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/tasks_status",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/tasks_status",
 		Handler: s.ListFieldTemplateTasksStatus})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/sync/status",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/sync/status",
 		Handler: s.ListFieldTemplateSyncStatus})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_unique_template_id",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/field_template/simplify/by_unique_template_id",
 		Handler: s.ListFieldTmplByUniqueTmplIDForUI})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/simplify/by_attr_template_id",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/field_template/simplify/by_attr_template_id",
 		Handler: s.ListFieldTmplByObjectTmplIDForUI})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/model/status",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/field_template/model/status",
 		Handler: s.ListFieldTemplateModelStatus})
 }
