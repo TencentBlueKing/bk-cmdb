@@ -348,7 +348,10 @@
             <cmdb-auth
               :key="modelIndex"
               tag="div"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+              :auth="[
+                { type: $OPERATION.U_MODEL, relation: [model.id] },
+                { type: $OPERATION.R_MODEL, relation: [model.id] }
+              ]"
               @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"
