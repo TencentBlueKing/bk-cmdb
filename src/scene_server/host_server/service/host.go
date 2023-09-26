@@ -1634,15 +1634,6 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
 	}
-	if cloudIDCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
-		cloudAreaCount := len(cloudIDCond)
-		if req.Ipv4Ip.Flag == hostParse.IOBOTH {
-			cloudAreaCount = cloudAreaCount / 2
-		}
-		if cloudAreaCount > 30 {
-			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 30"))
-		}
-	}
 
 	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
 		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
