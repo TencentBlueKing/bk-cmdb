@@ -268,9 +268,6 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 		colonIndex := strings.Index(ipString, ":")
 		// 如果没有 ":" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
 		if colonIndex == NOTEXISTSIGN {
-			//if _, ok := cloudIDMap[NOCLOUDID]; !ok {
-			//	cloudIDMap[NOCLOUDID] = make([]string, 0)
-			//}
 			cloudIDMap[NOCLOUDID] = append(cloudIDMap[NOCLOUDID], ipString)
 			continue
 		}
@@ -284,10 +281,6 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 			continue
 		}
 
-		//// 初始化内部的 []string
-		//if _, ok := cloudIDMap[cloudIDInt64]; !ok {
-		//	cloudIDMap[cloudIDInt64] = make([]string, 0)
-		//}
 		cloudIDMap[cloudIDInt64] = append(cloudIDMap[cloudIDInt64], ipAddress)
 	}
 	return cloudIDMap, nil
@@ -330,9 +323,6 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 
 		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
 		if colonIndex == NOTEXISTSIGN {
-			//if _, ok := cloudIDMap[NOCLOUDID]; !ok {
-			//	cloudIDMap[NOCLOUDID] = make([]string, 0)
-			//}
 			cloudIDMap[NOCLOUDID] = append(cloudIDMap[NOCLOUDID], ipString)
 			continue
 		}
@@ -344,10 +334,6 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 			continue
 		}
 
-		//// 初始化内部的 []string
-		//if _, ok := cloudIDMap[cloudIDInt64]; !ok {
-		//	cloudIDMap[cloudIDInt64] = make([]string, 0)
-		//}
 		cloudIDMap[cloudIDInt64] = append(cloudIDMap[cloudIDInt64], fullIpv6Addr)
 	}
 	return cloudIDMap, embeddedIPv4Addrs, nil
