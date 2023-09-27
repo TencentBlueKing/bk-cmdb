@@ -32,6 +32,10 @@ const (
 	OUTERONLY string = "bk_host_outerip"
 	// IOBOTH TODO
 	IOBOTH string = "bk_host_innerip|bk_host_outerip"
+	// NOCLOUDID 未指定云区域时map的键
+	NOCLOUDID int64 = -1
+	// NOTEXISTSIGN 分割符不存在
+	NOTEXISTSIGN int = -1
 )
 
 // ParseHostParams parses the host condition into query statement
@@ -262,12 +266,12 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 
 		// 分割管控区域ID 和 IP地址
 		colonIndex := strings.Index(ipString, ":")
-		// 如果没有 ":" 代表未直接指定管控区域，则直接添加到 -1 键下
-		if colonIndex == -1 {
-			if _, ok := cloudIDMap[-1]; !ok {
-				cloudIDMap[-1] = make([]string, 0)
-			}
-			cloudIDMap[-1] = append(cloudIDMap[-1], ipString)
+		// 如果没有 ":" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
+		if colonIndex == NOTEXISTSIGN {
+			//if _, ok := cloudIDMap[NOCLOUDID]; !ok {
+			//	cloudIDMap[NOCLOUDID] = make([]string, 0)
+			//}
+			cloudIDMap[NOCLOUDID] = append(cloudIDMap[NOCLOUDID], ipString)
 			continue
 		}
 
@@ -280,10 +284,10 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 			continue
 		}
 
-		// 初始化内部的 []string
-		if _, ok := cloudIDMap[cloudIDInt64]; !ok {
-			cloudIDMap[cloudIDInt64] = make([]string, 0)
-		}
+		//// 初始化内部的 []string
+		//if _, ok := cloudIDMap[cloudIDInt64]; !ok {
+		//	cloudIDMap[cloudIDInt64] = make([]string, 0)
+		//}
 		cloudIDMap[cloudIDInt64] = append(cloudIDMap[cloudIDInt64], ipAddress)
 	}
 	return cloudIDMap, nil
@@ -301,12 +305,10 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 		ipString = strings.TrimSpace(ipString)
 
 		// 分割管控区域 ID 和 IP 地址
-		var ipPart string
 		colonIndex := strings.Index(ipString, ":[")
-		if colonIndex == -1 {
+		ipPart := ipString[colonIndex+1:]
+		if colonIndex == NOTEXISTSIGN {
 			ipPart = ipString
-		} else {
-			ipPart = ipString[colonIndex+1:]
 		}
 		// 去掉 IP 地址中的方括号，只保留 IP
 		ipAddress := strings.Trim(ipPart, "[]")
@@ -326,12 +328,12 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 			continue
 		}
 
-		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 -1 键下
-		if colonIndex == -1 {
-			if _, ok := cloudIDMap[-1]; !ok {
-				cloudIDMap[-1] = make([]string, 0)
-			}
-			cloudIDMap[-1] = append(cloudIDMap[-1], ipString)
+		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
+		if colonIndex == NOTEXISTSIGN {
+			//if _, ok := cloudIDMap[NOCLOUDID]; !ok {
+			//	cloudIDMap[NOCLOUDID] = make([]string, 0)
+			//}
+			cloudIDMap[NOCLOUDID] = append(cloudIDMap[NOCLOUDID], ipString)
 			continue
 		}
 
@@ -342,60 +344,62 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 			continue
 		}
 
-		// 初始化内部的 []string
-		if _, ok := cloudIDMap[cloudIDInt64]; !ok {
-			cloudIDMap[cloudIDInt64] = make([]string, 0)
-		}
+		//// 初始化内部的 []string
+		//if _, ok := cloudIDMap[cloudIDInt64]; !ok {
+		//	cloudIDMap[cloudIDInt64] = make([]string, 0)
+		//}
 		cloudIDMap[cloudIDInt64] = append(cloudIDMap[cloudIDInt64], fullIpv6Addr)
 	}
 	return cloudIDMap, embeddedIPv4Addrs, nil
 }
 
+// getCloudIDMapByOutput 从output中获取管控区域id添加到outputCloudIDMap
 func getCloudIDMapByOutput(output map[string]interface{}) (map[string][]int64, error) {
+
 	outputCloudIDMap := make(map[string][]int64)
+	var err error
 
 	cloudIDCond, ok := output[common.BKCloudIDField].(map[string]interface{})
 	if !ok {
 		return nil, nil
 	}
-
 	hasOperator := false
+
 	if cloudIDArray, ok := cloudIDCond[common.BKDBIN].([]interface{}); ok {
 		hasOperator = true
-		for _, cloudID := range cloudIDArray {
-			cloudIDStr, ok := cloudID.(json.Number)
-			if !ok {
-				return nil, fmt.Errorf("conversion to type 'json.Number' failed")
-			}
-
-			cloudIDInt64, err := cloudIDStr.Int64()
-			if err != nil {
-				return nil, fmt.Errorf("conversion to type int64 failed")
-			}
-
-			outputCloudIDMap[common.BKDBIN] = append(outputCloudIDMap[common.BKDBIN], cloudIDInt64)
+		outputCloudIDMap, err = addCloudIDInMap(cloudIDArray, outputCloudIDMap)
+		if err != nil {
+			return nil, err
 		}
 	}
-
 	if cloudIDArray, ok := cloudIDCond[common.BKDBNIN].([]interface{}); ok {
 		hasOperator = true
-		for _, cloudID := range cloudIDArray {
-			cloudIDStr, ok := cloudID.(json.Number)
-			if !ok {
-				return nil, fmt.Errorf("conversion to type 'json.Number' failed")
-			}
-
-			cloudIDInt64, err := cloudIDStr.Int64()
-			if err != nil {
-				return nil, fmt.Errorf("conversion to type int64 failed")
-			}
-
-			outputCloudIDMap[common.BKDBNIN] = append(outputCloudIDMap[common.BKDBNIN], cloudIDInt64)
+		outputCloudIDMap, err = addCloudIDInMap(cloudIDArray, outputCloudIDMap)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	if hasOperator == false {
+	if !hasOperator {
 		return nil, fmt.Errorf("cloudID query condition is not equal to '$in' or '$nin' failed")
+	}
+	return outputCloudIDMap, nil
+}
+
+// addCloudIDInMap 添加管控区域id到outputCloudIDMap
+func addCloudIDInMap(cloudIDArray []interface{}, outputCloudIDMap map[string][]int64) (map[string][]int64, error) {
+	for _, cloudID := range cloudIDArray {
+		cloudIDStr, ok := cloudID.(json.Number)
+		if !ok {
+			return nil, fmt.Errorf("conversion to type 'json.Number' failed")
+		}
+
+		cloudIDInt64, err := cloudIDStr.Int64()
+		if err != nil {
+			return nil, err
+		}
+
+		outputCloudIDMap[common.BKDBNIN] = append(outputCloudIDMap[common.BKDBNIN], cloudIDInt64)
 	}
 	return outputCloudIDMap, nil
 }
@@ -424,85 +428,6 @@ func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMa
 	return exactOr, nil
 }
 
-// getIPv4MapCond 获取ipv4相关的查询条件
-func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
-	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
-
-	switch flag {
-	case INNERONLY:
-		// 存在未直接指定管控区域的IP
-		if cloudID == -1 {
-			// 在hostCond中有指定
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPField: exactIP,
-				}}, nil
-			}
-			// 在hostCond中未指定
-			return []map[string]interface{}{{
-				common.BKHostInnerIPField: exactIP,
-			}}, nil
-		}
-
-		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
-			common.BKHostInnerIPField: exactIP,
-		}}, nil
-
-	case OUTERONLY:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPField: exactIP,
-				}}, nil
-			}
-			return []map[string]interface{}{{
-				common.BKHostOuterIPField: exactIP,
-			}}, nil
-		}
-
-		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
-			common.BKHostOuterIPField: exactIP,
-		}}, nil
-
-	case IOBOTH:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPField: exactIP,
-				}, {
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPField: exactIP,
-				}}, nil
-			}
-
-			return []map[string]interface{}{{
-				common.BKHostInnerIPField: exactIP,
-			}, {
-				common.BKHostOuterIPField: exactIP,
-			}}, nil
-		}
-
-		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
-			common.BKHostInnerIPField: exactIP,
-		}, {
-			common.BKCloudIDField:     cloudID,
-			common.BKHostOuterIPField: exactIP,
-		}}, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported ip.flag %s", flag)
-	}
-}
-
 // addIPv6ExactSearchCondition combine query statements based on exact ipv6 conditions
 func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMap map[int64][]string,
 	output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
@@ -527,77 +452,157 @@ func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMa
 	return exactOr, nil
 }
 
+// getIPv4MapCond 获取ipv4相关的查询条件
+func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
+	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
+
+	cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]
+	if ok {
+		cloudIDArr = util.IntArrayUnique(cloudIDArr)
+	}
+	switch flag {
+	case INNERONLY:
+		// 直接指定管控区域的IP
+		if cloudID != NOCLOUDID {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
+				common.BKHostInnerIPField: exactIP,
+			}}, nil
+		}
+
+		// 在hostCond中有指定
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPField: exactIP,
+			}}, nil
+		}
+		// 在hostCond中未指定
+		return []map[string]interface{}{{
+			common.BKHostInnerIPField: exactIP,
+		}}, nil
+
+	case OUTERONLY:
+		if cloudID != NOCLOUDID {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
+				common.BKHostOuterIPField: exactIP,
+			}}, nil
+		}
+
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostOuterIPField: exactIP,
+			}}, nil
+		}
+		return []map[string]interface{}{{
+			common.BKHostOuterIPField: exactIP,
+		}}, nil
+
+	case IOBOTH:
+		if cloudID != NOCLOUDID {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
+				common.BKHostInnerIPField: exactIP,
+			}, {
+				common.BKCloudIDField:     cloudID,
+				common.BKHostOuterIPField: exactIP,
+			}}, nil
+
+		}
+
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPField: exactIP,
+			}, {
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostOuterIPField: exactIP,
+			}}, nil
+		}
+		return []map[string]interface{}{{
+			common.BKHostInnerIPField: exactIP,
+		}, {
+			common.BKHostOuterIPField: exactIP,
+		}}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported ip.flag %s", flag)
+	}
+}
+
 // getIPv6MapStrCond 获取ipv6相关的查询条件
 func getIPv6MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
+	cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]
+	if ok {
+		cloudIDArr = util.IntArrayUnique(cloudIDArr)
+	}
 	switch flag {
 	case INNERONLY:
-		// 存在未直接指定管控区域的IP
-		if cloudID == -1 {
-			// 在hostCond中有指定
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPv6Field: exactIP,
-				}}, nil
-			}
-			// 在hostCond中未指定
+		// 直接指定管控区域的IP
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:       cloudID,
 				common.BKHostInnerIPv6Field: exactIP,
 			}}, nil
 		}
 
+		// 在hostCond中有指定
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPv6Field: exactIP,
+			}}, nil
+		}
+		// 在hostCond中未指定
 		return []map[string]interface{}{{
-			common.BKCloudIDField:       cloudID,
 			common.BKHostInnerIPv6Field: exactIP,
 		}}, nil
 
 	case OUTERONLY:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPv6Field: exactIP,
-				}}, nil
-			}
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:       cloudID,
 				common.BKHostOuterIPv6Field: exactIP,
 			}}, nil
 		}
 
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostOuterIPv6Field: exactIP,
+			}}, nil
+		}
 		return []map[string]interface{}{{
-			common.BKCloudIDField:       cloudID,
 			common.BKHostOuterIPv6Field: exactIP,
 		}}, nil
 
 	case IOBOTH:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPv6Field: exactIP,
-				}, {
-					common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPv6Field: exactIP,
-				}}, nil
-			}
-
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:       cloudID,
 				common.BKHostInnerIPv6Field: exactIP,
 			}, {
+				common.BKCloudIDField:       cloudID,
 				common.BKHostOuterIPv6Field: exactIP,
 			}}, nil
 		}
 
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPv6Field: exactIP,
+			}, {
+				common.BKCloudIDField:       map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostOuterIPv6Field: exactIP,
+			}}, nil
+		}
 		return []map[string]interface{}{{
-			common.BKCloudIDField:       cloudID,
 			common.BKHostInnerIPv6Field: exactIP,
 		}, {
-			common.BKCloudIDField:       cloudID,
 			common.BKHostOuterIPv6Field: exactIP,
 		}}, nil
 
@@ -636,70 +641,70 @@ func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][
 func getFuzzyCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	ipRegex map[string]interface{}) ([]map[string]interface{}, error) {
 
+	cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]
+	if ok {
+		cloudIDArr = util.IntArrayUnique(cloudIDArr)
+	}
 	switch flag {
 	case INNERONLY:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPField: ipRegex,
-				}}, nil
-			}
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
 				common.BKHostInnerIPField: ipRegex,
 			}}, nil
 		}
-
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPField: ipRegex,
+			}}, nil
+		}
 		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
 			common.BKHostInnerIPField: ipRegex,
 		}}, nil
 
 	case OUTERONLY:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPField: ipRegex,
-				}}, nil
-			}
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
+				common.BKHostOuterIPField: ipRegex,
+			}}, nil
+
+		}
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
 				common.BKHostOuterIPField: ipRegex,
 			}}, nil
 		}
-
 		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
 			common.BKHostOuterIPField: ipRegex,
 		}}, nil
 
 	case IOBOTH:
-		if cloudID == -1 {
-			if cloudIDArr, ok := outputCloudIDMap[common.BKDBIN]; ok {
-				cloudIDArr = util.IntArrayUnique(cloudIDArr)
-				return []map[string]interface{}{{
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostInnerIPField: ipRegex,
-				}, {
-					common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
-					common.BKHostOuterIPField: ipRegex,
-				}}, nil
-			}
-
+		if cloudID != NOCLOUDID {
 			return []map[string]interface{}{{
+				common.BKCloudIDField:     cloudID,
 				common.BKHostInnerIPField: ipRegex,
 			}, {
+				common.BKCloudIDField:     cloudID,
+				common.BKHostOuterIPField: ipRegex,
+			}}, nil
+
+		}
+
+		if ok {
+			return []map[string]interface{}{{
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
+				common.BKHostInnerIPField: ipRegex,
+			}, {
+				common.BKCloudIDField:     map[string]interface{}{common.BKDBIN: cloudIDArr},
 				common.BKHostOuterIPField: ipRegex,
 			}}, nil
 		}
-
 		return []map[string]interface{}{{
-			common.BKCloudIDField:     cloudID,
 			common.BKHostInnerIPField: ipRegex,
 		}, {
-			common.BKCloudIDField:     cloudID,
 			common.BKHostOuterIPField: ipRegex,
 		}}, nil
 

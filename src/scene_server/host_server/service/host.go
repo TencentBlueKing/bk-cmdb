@@ -1647,7 +1647,7 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 			cloudAreaCount = cloudAreaCount / 2
 		}
 		if cloudAreaCount > 50 {
-			ctx.RespAutoError(errors.NewCCError(1199081, "cloudArea count more than 50"))
+			ctx.RespAutoError(errors.NewCCError(common.CCErrHostGetFail, "cloudArea count more than 50"))
 		}
 	}
 
