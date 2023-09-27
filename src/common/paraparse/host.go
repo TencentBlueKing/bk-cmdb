@@ -105,7 +105,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	embeddedIPv4Addrs := make([]string, 0)
 
 	if len(ipv6Cond.Data) != 0 {
-		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr, &output)
+		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr, output)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add ipv6 addresses to condition, err: %v", err)
 		}
@@ -118,7 +118,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 		return output, nil
 	}
 
-	ipv4CloudIDMap, err := splitIPv4Data(ipv4Cond, &output)
+	ipv4CloudIDMap, err := splitIPv4Data(ipv4Cond)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	if exact == 1 {
 		// exact search
 		// filter out illegal IPv4 addresses
-		exactOr, err = addIPv4ExactSearchCondition(exactOr, ipv4CloudIDMap, &output, flag)
+		exactOr, err = addIPv4ExactSearchCondition(exactOr, ipv4CloudIDMap, output, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	} else {
 		// not exact search
 		orCond := make([]map[string]interface{}, 0)
-		orCond, err = addFuzzyCondition(orCond, ipv4CloudIDMap, &output, flag)
+		orCond, err = addFuzzyCondition(orCond, ipv4CloudIDMap, output, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 
 // parseIPv6Condition parse IPv6 conditions to full Ipv6 addresses and embedded IPv4 addresses
 // only full or abbreviated IPv6 addresses can be used for exact queries, not exact search is not supported
-func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}, output *map[string]interface{}) (
+func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}, output map[string]interface{}) (
 	[]map[string]interface{}, []string, error) {
 
 	flag := ipCond.Flag
@@ -251,7 +251,7 @@ func deduplication(arr []string) []string {
 }
 
 // splitIPv4Data split ipv4 data
-func splitIPv4Data(ipCond metadata.IPInfo, output *map[string]interface{}) (map[int64][]string, error) {
+func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 	// 创建一个 map 用于存储分割结果
 	cloudIDMap := make(map[int64][]string)
 
@@ -402,9 +402,9 @@ func getCloudIDMapByOutput(output map[string]interface{}) (map[string][]int64, e
 
 // addExactSearchCondition combine query statements based on exact ipv4 conditions
 func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMap map[int64][]string,
-	output *map[string]interface{}, flag string) ([]map[string]interface{}, error) {
+	output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
 
-	outputCloudIDMap, err := getCloudIDMapByOutput(*output)
+	outputCloudIDMap, err := getCloudIDMapByOutput(output)
 	if err != nil {
 		return nil, err
 	}
@@ -414,18 +414,18 @@ func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMa
 		ipv4Arr = filterHostIP(ipv4Arr)
 		exactIP := map[string]interface{}{common.BKDBIN: deduplication(ipv4Arr)}
 
-		ipv4MapStrCond, err := getIPv4MapStrCond(flag, cloudID, outputCloudIDMap, exactIP)
+		ipv4MapCond, err := getIPv4MapCond(flag, cloudID, outputCloudIDMap, exactIP)
 		if err != nil {
 			return nil, err
 		}
-		exactOr = append(exactOr, ipv4MapStrCond...)
+		exactOr = append(exactOr, ipv4MapCond...)
 	}
 
 	return exactOr, nil
 }
 
-// getIPv4MapStrCond 获取ipv4相关的查询条件
-func getIPv4MapStrCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
+// getIPv4MapCond 获取ipv4相关的查询条件
+func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
 	switch flag {
@@ -505,9 +505,9 @@ func getIPv4MapStrCond(flag string, cloudID int64, outputCloudIDMap map[string][
 
 // addIPv6ExactSearchCondition combine query statements based on exact ipv6 conditions
 func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMap map[int64][]string,
-	output *map[string]interface{}, flag string) ([]map[string]interface{}, error) {
+	output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
 
-	outputCloudIDMap, err := getCloudIDMapByOutput(*output)
+	outputCloudIDMap, err := getCloudIDMapByOutput(output)
 	if err != nil {
 		return nil, err
 	}
@@ -517,18 +517,18 @@ func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMa
 		ipv6Arr = filterHostIP(ipv6Arr)
 		exactIP := map[string]interface{}{common.BKDBIN: deduplication(ipv6Arr)}
 
-		ipv6MapStrCond, err := getIPv6MapStrCond(flag, cloudID, outputCloudIDMap, exactIP)
+		ipv6MapCond, err := getIPv6MapCond(flag, cloudID, outputCloudIDMap, exactIP)
 		if err != nil {
 			return nil, err
 		}
-		exactOr = append(exactOr, ipv6MapStrCond...)
+		exactOr = append(exactOr, ipv6MapCond...)
 	}
 
 	return exactOr, nil
 }
 
 // getIPv6MapStrCond 获取ipv6相关的查询条件
-func getIPv6MapStrCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
+func getIPv6MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
 	switch flag {
@@ -608,9 +608,9 @@ func getIPv6MapStrCond(flag string, cloudID int64, outputCloudIDMap map[string][
 
 // addFuzzyCondition combine query statements based on inexact ip conditions
 func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][]string,
-	output *map[string]interface{}, flag string) ([]map[string]interface{}, error) {
+	output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
 
-	outputCloudIDMap, err := getCloudIDMapByOutput(*output)
+	outputCloudIDMap, err := getCloudIDMapByOutput(output)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +622,7 @@ func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][
 			ipRegex := make(map[string]interface{})
 			ipRegex[common.BKDBLIKE] = SpecialCharChange(ip)
 
-			fuzzySearchCond, err := getFuzzyMapStrCond(flag, cloudID, outputCloudIDMap, ipRegex)
+			fuzzySearchCond, err := getFuzzyCond(flag, cloudID, outputCloudIDMap, ipRegex)
 			if err != nil {
 				return nil, err
 			}
@@ -633,7 +633,7 @@ func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][
 }
 
 // getFuzzyMapStrCond 获取模糊查询条件
-func getFuzzyMapStrCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
+func getFuzzyCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	ipRegex map[string]interface{}) ([]map[string]interface{}, error) {
 
 	switch flag {
