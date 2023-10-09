@@ -27,7 +27,7 @@
       @header-click="handleHeaderClick">
       <bk-table-column type="selection" width="50" align="center" fixed></bk-table-column>
       <bk-table-column v-for="column in tableHeader"
-        :show-overflow-tooltip="column.bk_property_type !== 'map'"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column)"
         :min-width="getColumnMinWidth(column)"
         :key="column.bk_property_id"
         :sortable="getColumnSortable(column)"
@@ -36,16 +36,24 @@
         :render-header="() => renderHeader(column)">
         <template slot-scope="{ row }">
           <cmdb-property-value
+            :ref="getTableCellPropertyValueRefId(column)"
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
             :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <cmdb-dialog v-model="dialog.show" :width="dialog.width" :height="dialog.height">
       <component
@@ -108,7 +116,13 @@
           data: [],
           selection: [],
           sort: 'bk_host_id',
-          pagination: this.$tools.getDefaultPaginationConfig()
+          pagination: this.$tools.getDefaultPaginationConfig(),
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         dialog: {
           width: 830,
@@ -237,9 +251,7 @@
         this.tableHeader = FilterStore.getHeader()
       },
       getColumnSortable(column) {
-        const isHostProperty = column.bk_obj_id === 'host'
-        const isForeignKey = column.bk_property_type === 'foreignkey'
-        return (isHostProperty && !isForeignKey) ? 'custom' : false
+        return this.$tools.isPropertySortable(column) ? 'custom' : false
       },
       renderHeader(property) {
         const content = [this.$tools.getHeaderPropertyName(property)]
@@ -258,7 +270,13 @@
           const model = this.getModelById(modelId)
           name = `${name}(${model.bk_obj_name})`
         }
-        return this.$tools.getHeaderPropertyMinWidth(property, { name, hasSort: this.getColumnSortable(property) })
+        return this.$tools.getHeaderPropertyMinWidth(property, {
+          name,
+          hasSort: this.$tools.isPropertySortable(property)
+        })
+      },
+      getTableCellPropertyValueRefId(property) {
+        return this.$tools.isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null
       },
       handlePageChange(current = 1) {
         RouterQuery.set({
@@ -355,7 +373,10 @@
         if (this.isContainerHost) {
           return containerHostService.findAll(params, config)
         }
-
+        this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+        if (params.ip.data.length > 0) {
+          this.table.stuff.type = 'search'
+        }
         return this.$store.dispatch('hostSearch/searchHost', { params, config })
       },
       getParams() {
@@ -585,7 +606,7 @@
             target: internalModule
           })
           this.table.selection = []
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           RouterQuery.set({
             _t: Date.now(),
             page: 1
@@ -655,7 +676,7 @@
           hosts: [...this.table.selection]
         })
         this.table.selection = []
-        this.$success('转移成功')
+        this.$success(this.$t('转移成功'))
         RouterQuery.set({
           _t: Date.now(),
           page: 1
@@ -663,6 +684,11 @@
       },
       doLayoutTable() {
         this.$refs?.table?.doLayout()
+      },
+      handleClearFilter() {
+        FilterStore.resetAll()
+        FilterStore.setActiveCollection(null)
+        this.table.stuff.type = 'default'
       }
     }
   }

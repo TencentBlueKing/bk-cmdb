@@ -17,100 +17,119 @@
       :key="index">
       <h2 class="group-name">{{group.bk_group_name}}</h2>
       <ul class="property-list">
-        <li class="property-item"
+        <li :class="['property-item', property.bk_property_type]"
           v-for="property in group.properties"
           :key="property.id"
           :id="`property-item-${property.id}`">
           <span class="property-name" v-bk-overflow-tips>
             {{property.bk_property_name}}
           </span>
-          <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-            v-bk-overflow-tips
-            v-if="property !== editState.property">
-            <cmdb-property-value
-              :ref="`property-value-${property.id}`"
-              :value="host[property.bk_property_id]"
-              :property="property">
-            </cmdb-property-value>
-          </span>
-          <template v-if="!loadingState.includes(property)">
-            <template v-if="!readonly">
-              <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
-                <span :id="`rule-${property.id}`">
-                  <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
-                    <template #link>
-                      <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
-                    </template>
-                  </i18n>
-                  <span v-else>{{$t('系统限定不可修改')}}</span>
-                </span>
-                <i class="is-related property-edit icon-cc-edit"
-                  v-bk-tooltips="{
-                    allowHtml: true,
-                    content: `#rule-${property.id}`,
-                    placement: 'top',
-                    onShow: () => {
-                      setFocus(`#property-item-${property.id}`, true)
-                    },
-                    onHide: () => {
-                      setFocus(`#property-item-${property.id}`, false)
-                    }
-                  }">
-                </i>
-              </template>
-              <template v-else>
-                <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;"
-                  :auth="HOST_AUTH.U_HOST"
-                  v-show="property !== editState.property">
-                  <bk-button slot-scope="{ disabled }"
-                    text
-                    theme="primary"
-                    class="property-edit-btn"
-                    :disabled="disabled"
-                    @click="setEditState(property)">
-                    <i class="property-edit icon-cc-edit"></i>
-                  </bk-button>
-                </cmdb-auth>
-                <div class="property-form" v-if="property === editState.property">
-                  <div :class="['form-component', property.bk_property_type]">
-                    <component
-                      :is="`cmdb-form-${property.bk_property_type}`"
-                      :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
-                      :unit="property.unit"
-                      :options="property.option || []"
-                      :data-vv-name="property.bk_property_id"
-                      :data-vv-as="property.bk_property_name"
-                      :placeholder="getPlaceholder(property)"
-                      :auto-check="false"
-                      v-bind="$tools.getValidateEvents(property)"
-                      v-validate="$tools.getValidateRules(property)"
-                      v-model.trim="editState.value"
-                      @enter="confirm"
-                      :ref="`component-${property.bk_property_id}`">
-                    </component>
+          <template v-if="!readonly">
+            <span :id="`rule-${property.id}`" v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+              <i18n path="已配置属性自动应用提示" v-if="hasRelatedRules(property)">
+                <template #link>
+                  <bk-button text @click="handleViewRules(property)">{{$t('点击跳转查看配置详情')}}</bk-button>
+                </template>
+              </i18n>
+              <span v-else>{{$t('系统限定不可修改')}}</span>
+            </span>
+          </template>
+          <!-- 非表格字段 -->
+          <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
+            <span :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
+              v-bk-overflow-tips
+              v-if="property !== editState.property">
+              <cmdb-property-value
+                :ref="`property-value-${property.id}`"
+                :value="host[property.bk_property_id]"
+                :property="property">
+              </cmdb-property-value>
+            </span>
+            <template v-if="!loadingState.includes(property)">
+              <template v-if="!readonly">
+                <template v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
+                  <i class="is-related property-edit icon-cc-edit"
+                    v-bk-tooltips="{
+                      allowHtml: true,
+                      content: `#rule-${property.id}`,
+                      placement: 'top',
+                      onShow: () => {
+                        setFocus(`#property-item-${property.id}`, true)
+                      },
+                      onHide: () => {
+                        setFocus(`#property-item-${property.id}`, false)
+                      }
+                    }">
+                  </i>
+                </template>
+                <template v-else>
+                  <cmdb-auth style="margin: 8px 0 0 8px; font-size: 0;"
+                    :auth="HOST_AUTH.U_HOST"
+                    v-show="property !== editState.property">
+                    <bk-button slot-scope="{ disabled }"
+                      text
+                      theme="primary"
+                      class="property-edit-btn"
+                      :disabled="disabled"
+                      @click="setEditState(property)">
+                      <i class="property-edit icon-cc-edit"></i>
+                    </bk-button>
+                  </cmdb-auth>
+                  <div class="property-form" v-if="property === editState.property">
+                    <div :class="['form-component', property.bk_property_type]">
+                      <component
+                        :is="`cmdb-form-${property.bk_property_type}`"
+                        :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
+                        :unit="property.unit"
+                        :options="property.option || []"
+                        :data-vv-name="property.bk_property_id"
+                        :data-vv-as="property.bk_property_name"
+                        :placeholder="$tools.getPropertyPlaceholder(property)"
+                        :auto-check="false"
+                        :multiple="property.ismultiple"
+                        v-bind="$tools.getValidateEvents(property)"
+                        v-validate="$tools.getValidateRules(property)"
+                        v-model.trim="editState.value"
+                        @enter="confirm"
+                        :ref="`component-${property.bk_property_id}`">
+                      </component>
+                    </div>
+                    <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                    <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    <span class="form-error"
+                      v-if="errors.has(property.bk_property_id)">
+                      {{errors.first(property.bk_property_id)}}
+                    </span>
                   </div>
-                  <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                  <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                  <span class="form-error"
-                    v-if="errors.has(property.bk_property_id)">
-                    {{errors.first(property.bk_property_id)}}
-                  </span>
+                </template>
+              </template>
+
+              <template v-if="host[property.bk_property_id] && property !== editState.property">
+                <div class="copy-box">
+                  <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+                  <transition name="fade">
+                    <span class="copy-tips"
+                      :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
+                      v-if="showCopyTips === property.id">
+                      {{$t('复制成功')}}
+                    </span>
+                  </transition>
                 </div>
               </template>
             </template>
-
-            <template v-if="host[property.bk_property_id] && property !== editState.property">
-              <div class="copy-box">
-                <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
-                <transition name="fade">
-                  <span class="copy-tips"
-                    :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                    v-if="showCopyTips === property.id">
-                    {{$t('复制成功')}}
-                  </span>
-                </transition>
-              </div>
-            </template>
+          </template>
+          <!-- 表格字段 -->
+          <template v-else>
+            <cmdb-form-innertable
+              class="form-component-innertable"
+              :disabled="hasRelatedRules(property) || !isPropertyEditable(property)"
+              :disabled-tips="`#rule-${property.id}`"
+              :property="property"
+              :mode="'update'"
+              :obj-id="objId"
+              :instance-id="host.bk_host_id"
+              :auth="HOST_AUTH.U_HOST"
+              :ref="`component-${property.bk_property_id}`" />
           </template>
         </li>
       </ul>
@@ -160,6 +179,8 @@
   import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   export default {
     name: 'cmdb-host-property',
     filters: {
@@ -180,6 +201,7 @@
     },
     data() {
       return {
+        objId: BUILTIN_MODELS.HOST,
         editState: {
           property: null,
           value: null
@@ -189,7 +211,8 @@
         hostRelatedRules: [],
         request: {
           rules: Symbol('rules')
-        }
+        },
+        PROPERTY_TYPES
       }
     },
     computed: {
@@ -238,10 +261,6 @@
           this.hostRelatedRules = []
           console.error(e)
         }
-      },
-      getPlaceholder(property) {
-        const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
-        return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
       isPropertyEditable(property) {
         const isSystemLimited = property.editable && !property.bk_isapi
@@ -335,8 +354,7 @@
         }
     }
     .property-list {
-        width: 1208px;
-        margin: 25px 0 0 0;
+        margin: 24px 0 0 0;
         color: #63656e;
         display: flex;
         flex-wrap: wrap;
@@ -354,9 +372,21 @@
                     display: inline-block;
                 }
             }
+            &.innertable {
+              flex: 0 0 100%;
+              max-width: 100%;
+              .property-name {
+                flex: none;
+              }
+              .form-component-innertable {
+                flex: none;
+                width: calc(100% - 260px);
+                margin-top: 6px;
+              }
+            }
             .property-name {
                 position: relative;
-                width: 260px;
+                width: 160px;
                 line-height: 32px;
                 padding: 0 16px 0 36px;
                 font-size: 14px;
@@ -371,7 +401,7 @@
             }
             .property-value {
                 margin: 6px 0 0 4px;
-                max-width: 286px;
+                max-width: calc(100% - 160px - 60px);
                 font-size: 14px;
                 color: #313237;
                 word-break: break-all;
@@ -515,5 +545,19 @@
                 vertical-align: top;
             }
         }
+    }
+
+    @media (min-width: 1600px) {
+      .property-list {
+        .property-item {
+          .property-name {
+            width: 260px;
+          }
+
+          .property-value {
+            max-width: calc(100% - 260px - 60px);
+          }
+        }
+      }
     }
 </style>

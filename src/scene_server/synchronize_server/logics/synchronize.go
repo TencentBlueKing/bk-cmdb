@@ -106,21 +106,25 @@ func (lgc *Logics) SynchronizeItem(ctx context.Context, syncConfig *options.Conf
 
 	exceptionMap["model"], err = synchronizeItem.synchronizeModelTask(ctx)
 	if err != nil {
-		blog.Errorf("SynchronizeItem model error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(), version, lgc.rid)
+		blog.Errorf("SynchronizeItem model error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(),
+			version, lgc.rid)
 	}
 
 	exceptionMap["instance"], err = synchronizeItem.synchronizeInstanceTask(ctx)
 	if err != nil {
-		blog.Errorf("SynchronizeItem instance error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(), version, lgc.rid)
+		blog.Errorf("SynchronizeItem instance error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(),
+			version, lgc.rid)
 	}
 
 	exceptionMap["association"], err = synchronizeItem.synchronizeAssociationTask(ctx)
 	if err != nil {
-		blog.Errorf("SynchronizeItem association error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(), version, lgc.rid)
+		blog.Errorf("SynchronizeItem association error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(),
+			version, lgc.rid)
 	}
 	exceptionMapClear, err := synchronizeItem.synchronizeItemClearData(ctx)
 	if err != nil {
-		blog.Errorf("SynchronizeItem synchronizeItemClearData error, config:%#v,err:%s,version:%d,rid:%s", syncConfig, err.Error(), version, lgc.rid)
+		blog.Errorf("SynchronizeItem synchronizeItemClearData error, config:%#v,err:%s,version:%d,rid:%s", syncConfig,
+			err.Error(), version, lgc.rid)
 	}
 	for key, val := range exceptionMapClear {
 		exceptionMap[key] = val

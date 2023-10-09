@@ -13,7 +13,7 @@
 <template>
   <div class="cloud-area-layout">
     <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
-      <i18n path="云区域提示语">
+      <i18n path="管控区域提示语">
         <template #resource>
           <bk-button text size="small" style="padding: 0" @click="linkResource">
             {{$t('云资源发现')}}
@@ -30,7 +30,7 @@
       <bk-input class="options-filter" clearable
         v-model.trim="filter"
         right-icon="icon-search"
-        :placeholder="$t('请输入xx', { name: $t('云区域名称') })">
+        :placeholder="$t('请输入xx', { name: $t('管控区域名称') })">
       </bk-input>
     </div>
     <bk-table class="cloud-area-table"
@@ -44,7 +44,7 @@
       <bk-table-column
         sortable="custom"
         prop="bk_cloud_name"
-        :label="$t('云区域名称')">
+        :label="$t('管控区域名称')">
         <template slot-scope="{ row }">
           <cmdb-auth class="cell-name" v-show="row !== rowInEdit"
             :auth="{ type: $OPERATION.U_CLOUD_AREA, relation: [row.bk_cloud_id] }"
@@ -120,6 +120,11 @@
           </loading>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -149,7 +154,15 @@
         },
         scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
         debounceUpdateName: debounce(this.handleUpdateName, 100, { leading: true, trailing: false }),
-        rowInEdit: null
+        rowInEdit: null,
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
+        }
       }
     },
     watch: {
@@ -227,7 +240,7 @@
             try {
               await this.$store.dispatch('cloud/area/delete', { id: row.bk_cloud_id })
               infoInstance.buttonLoading = true
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {
@@ -254,6 +267,7 @@
             params.condition.bk_cloud_name = this.filter
             params.is_fuzzy = true
           }
+          this.table.stuff.type = this.filter ? 'search' : 'default'
           const data = await this.$store.dispatch('cloud/area/findMany', {
             params,
             config: {
@@ -341,6 +355,10 @@
             this.$warn(this.$t('未配置节点管理地址'))
           }
         }
+      },
+      handleClearFilter() {
+        this.filter = ''
+        this.getData()
       }
     }
   }

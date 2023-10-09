@@ -18,7 +18,7 @@
     </template>
     <template v-else>
       <i class="icon icon-cc-arrow fl" v-if="(from && current)" @click="handleClick"></i>
-      <h1 class="current fl">{{current}}</h1>
+      <h1 class="current fl" v-bk-overflow-tips>{{current}}</h1>
     </template>
   </div>
 </template>

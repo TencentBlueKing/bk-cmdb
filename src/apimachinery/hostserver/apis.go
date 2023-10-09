@@ -18,12 +18,12 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
 	"configcenter/src/kube/types"
 )
 
 // DeleteHostBatch TODO
-func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/batch"
 
@@ -38,7 +38,8 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat in
 }
 
 // GetHostInstanceProperties TODO
-func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string, h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
+func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string,
+	h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
 	subPath := "/hosts/%s/%s"
 
 	resp = new(metadata.HostInstancePropertiesResult)
@@ -53,7 +54,8 @@ func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID str
 }
 
 // AddHost TODO
-func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/add"
 
@@ -68,7 +70,8 @@ func (hs *hostServer) AddHost(ctx context.Context, h http.Header, dat interface{
 }
 
 // AddHostToResourcePool TODO
-func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header, dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header,
+	dat metadata.AddHostToResourcePoolHostList) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/add/resource"
 
@@ -83,7 +86,8 @@ func (hs *hostServer) AddHostToResourcePool(ctx context.Context, h http.Header, 
 }
 
 // AddHostFromAgent TODO
-func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/host/add/agent"
 
@@ -98,7 +102,8 @@ func (hs *hostServer) AddHostFromAgent(ctx context.Context, h http.Header, dat i
 }
 
 // SyncHost TODO
-func (hs *hostServer) SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) SyncHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/sync/new/host"
 
@@ -113,7 +118,8 @@ func (hs *hostServer) SyncHost(ctx context.Context, h http.Header, data interfac
 }
 
 // GetHostFavourites TODO
-func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
+func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header,
+	dat interface{}) (resp *metadata.GetHostFavoriteResult, err error) {
 	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "hosts/favorites/search"
 
@@ -128,7 +134,8 @@ func (hs *hostServer) GetHostFavourites(ctx context.Context, h http.Header, dat 
 }
 
 // AddHostFavourite TODO
-func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *metadata.FavouriteParms) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header,
+	dat *metadata.FavouriteParms) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "hosts/favorites"
 
@@ -143,7 +150,8 @@ func (hs *hostServer) AddHostFavourite(ctx context.Context, h http.Header, dat *
 }
 
 // UpdateHostFavouriteByID TODO
-func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header, data *metadata.FavouriteParms) (resp *metadata.Response, err error) {
+func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h http.Header,
+	data *metadata.FavouriteParms) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "hosts/favorites/%s"
 
@@ -158,7 +166,8 @@ func (hs *hostServer) UpdateHostFavouriteByID(ctx context.Context, id string, h 
 }
 
 // DeleteHostFavouriteByID TODO
-func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h http.Header) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "hosts/favorites/%s"
 
@@ -173,7 +182,8 @@ func (hs *hostServer) DeleteHostFavouriteByID(ctx context.Context, id string, h 
 }
 
 // IncrHostFavouritesCount TODO
-func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h http.Header) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/favorites/%s/incr"
 
@@ -188,7 +198,8 @@ func (hs *hostServer) IncrHostFavouritesCount(ctx context.Context, id string, h 
 }
 
 // AddHistory TODO
-func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHistory(ctx context.Context, h http.Header,
+	dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/history"
 
@@ -203,7 +214,8 @@ func (hs *hostServer) AddHistory(ctx context.Context, h http.Header, dat map[str
 }
 
 // GetHistorys TODO
-func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string, h http.Header) (resp *metadata.Response, err error) {
+func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit string,
+	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/history/%s/%s"
 
@@ -218,7 +230,8 @@ func (hs *hostServer) GetHistorys(ctx context.Context, start string, limit strin
 }
 
 // AddHostMultiAppModuleRelation TODO
-func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.Header, dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.Header,
+	dat *metadata.CloudHostModuleParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/biz/mutiple"
 
@@ -233,7 +246,8 @@ func (hs *hostServer) AddHostMultiAppModuleRelation(ctx context.Context, h http.
 }
 
 // TransferHostModule TODO
-func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header,
+	params map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules"
 
@@ -248,7 +262,8 @@ func (hs *hostServer) TransferHostModule(ctx context.Context, h http.Header, par
 }
 
 // MoveHost2EmptyModule TODO
-func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/idle"
 
@@ -263,7 +278,8 @@ func (hs *hostServer) MoveHost2EmptyModule(ctx context.Context, h http.Header, d
 }
 
 // MoveHost2FaultModule TODO
-func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/fault"
 
@@ -278,7 +294,8 @@ func (hs *hostServer) MoveHost2FaultModule(ctx context.Context, h http.Header, d
 }
 
 // MoveHostToResourcePool TODO
-func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) MoveHostToResourcePool(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/resource"
 
@@ -319,7 +336,8 @@ func (hs *hostServer) TransferHostAcrossBusiness(ctx context.Context, header htt
 }
 
 // AssignHostToApp TODO
-func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header,
+	dat *metadata.DefaultModuleHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/resource/idle"
 
@@ -334,7 +352,8 @@ func (hs *hostServer) AssignHostToApp(ctx context.Context, h http.Header, dat *m
 }
 
 // SaveUserCustom TODO
-func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/usercustom"
 
@@ -379,7 +398,8 @@ func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp
 }
 
 // CloneHostProperty TODO
-func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header, dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header,
+	dat *metadata.CloneHostPropertyParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/property/clone"
 
@@ -394,7 +414,8 @@ func (hs *hostServer) CloneHostProperty(ctx context.Context, h http.Header, dat 
 }
 
 // MoveSetHost2IdleModule TODO
-func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error) {
+func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
+	dat *metadata.SetHostConfigParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/modules/idle/set"
 
@@ -409,7 +430,8 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 }
 
 // SearchHost TODO
-func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHost(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search"
 
@@ -424,7 +446,8 @@ func (hs *hostServer) SearchHost(ctx context.Context, h http.Header, dat *params
 }
 
 // SearchHostWithAsstDetail TODO
-func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Header,
+	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
 	resp = new(metadata.SearchHostResult)
 	subPath := "/hosts/search/asstdetail"
 
@@ -439,7 +462,8 @@ func (hs *hostServer) SearchHostWithAsstDetail(ctx context.Context, h http.Heade
 }
 
 // UpdateHostBatch TODO
-func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response,
+	err error) {
 	resp = new(metadata.Response)
 	subPath := "/hosts/batch"
 
@@ -454,18 +478,29 @@ func (hs *hostServer) UpdateHostBatch(ctx context.Context, h http.Header, dat in
 }
 
 // UpdateHostPropertyBatch TODO
-func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header,
+	data map[string]interface{}) errors.CCErrorCoder {
+
+	resp := new(metadata.Response)
 	subPath := "/hosts/property/batch"
 
-	err = hs.client.Put().
+	err := hs.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
 }
 
 // CreateDynamicGroup is dynamic group create action api machinery.
@@ -571,7 +606,8 @@ func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string,
 }
 
 // HostSearch TODO
-func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header,
+	params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := "hosts/search"
@@ -587,7 +623,8 @@ func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *met
 }
 
 // ListBizHostsTopo TODO
-func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64, params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error) {
+func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID int64,
+	params *metadata.ListHostsWithNoBizParameter) (resp *metadata.SuccessResponse, err error) {
 
 	resp = new(metadata.SuccessResponse)
 	subPath := "/hosts/app/%d/list_hosts_topo"
@@ -603,7 +640,8 @@ func (hs *hostServer) ListBizHostsTopo(ctx context.Context, h http.Header, bizID
 }
 
 // CreateCloudArea TODO
-func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
 
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/cloudarea"
@@ -619,7 +657,8 @@ func (hs *hostServer) CreateCloudArea(ctx context.Context, h http.Header, data m
 }
 
 // CreateManyCloudArea TODO
-func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
+func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.CreateManyCloudAreaResult, err error) {
 
 	resp = new(metadata.CreateManyCloudAreaResult)
 	subPath := "/createmany/cloudarea"
@@ -635,7 +674,8 @@ func (hs *hostServer) CreateManyCloudArea(ctx context.Context, h http.Header, da
 }
 
 // UpdateCloudArea TODO
-func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudID int64,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 
 	resp = new(metadata.Response)
 	subPath := "/update/cloudarea/%d"
@@ -651,7 +691,8 @@ func (hs *hostServer) UpdateCloudArea(ctx context.Context, h http.Header, cloudI
 }
 
 // SearchCloudArea TODO
-func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header, params map[string]interface{}) (resp *metadata.SearchResp, err error) {
+func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header,
+	params map[string]interface{}) (resp *metadata.SearchResp, err error) {
 
 	resp = new(metadata.SearchResp)
 	subPath := "/findmany/cloudarea"
@@ -667,7 +708,8 @@ func (hs *hostServer) SearchCloudArea(ctx context.Context, h http.Header, params
 }
 
 // DeleteCloudArea TODO
-func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response, err error) {
+func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudID int64) (resp *metadata.Response,
+	err error) {
 
 	resp = new(metadata.Response)
 	subPath := "/delete/cloudarea/%d"
@@ -683,7 +725,8 @@ func (hs *hostServer) DeleteCloudArea(ctx context.Context, h http.Header, cloudI
 }
 
 // FindCloudAreaHostCount TODO
-func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+func (hs *hostServer) FindCloudAreaHostCount(ctx context.Context, header http.Header,
+	option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
 	resp = new(metadata.CloudAreaHostCountResult)
 	subPath := "/findmany/cloudarea/hostcount"
 
@@ -772,5 +815,53 @@ func (hs *hostServer) DeleteCloudHostFromBiz(ctx context.Context, header http.He
 		return err
 	}
 
+	return nil
+}
+
+// BindAgent bind agent to host
+func (hs *hostServer) BindAgent(ctx context.Context, h http.Header,
+	params *metadata.BindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/bind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}
+
+// UnbindAgent unbind agent to host
+func (hs *hostServer) UnbindAgent(ctx context.Context, h http.Header,
+	params *metadata.UnbindAgentParam) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/unbind/agent"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
 	return nil
 }

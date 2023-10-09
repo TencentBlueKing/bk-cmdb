@@ -16,6 +16,8 @@
     :value="value"
     :disabled="disabled"
     :precision="precision"
+    :max="max"
+    :min="min"
     v-model.number="localValue"
     v-bind="$attrs"
     @blur="handleInput"
@@ -28,8 +30,10 @@
 </template>
 
 <script>
+  import numberFormTypeMixin from '@/mixins/number-form-type'
   export default {
     name: 'cmdb-form-float',
+    mixins: [numberFormTypeMixin],
     props: {
       value: {
         default: null,

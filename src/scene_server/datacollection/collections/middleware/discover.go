@@ -72,7 +72,7 @@ func (d *Discover) Mock() string {
 }
 
 // Analyze analyze discover data
-func (d *Discover) Analyze(msg *string) (bool, error) {
+func (d *Discover) Analyze(msg *string, sourceType string) (bool, error) {
 	err := d.UpdateOrCreateInst(msg)
 	if err != nil {
 		return false, fmt.Errorf("create inst err: %v, raw: %s", err, msg)
@@ -90,6 +90,6 @@ var MockMessage = `{
     },
     "data": {
         "bk_inst_name": "apache",
-        "bk_ip": "192.168.0.1"
+        "bk_ip": "127.0.0.1"
     }
 }`

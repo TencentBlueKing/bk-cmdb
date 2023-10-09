@@ -42,8 +42,8 @@
       isClone: Boolean
     },
     setup(props, { emit }) {
-      const $processForm = ref(null)
-      const $propertyConfig = ref(null)
+      const processFormEl = ref(null)
+      const propertyConfigEl = ref(null)
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
       const localProcessTemplate = computed(() => store.getters['serviceProcess/localProcessTemplate'])
@@ -162,7 +162,7 @@
           templateName: formData.value.templateName,
           primaryCategory: formData.value.primaryCategory,
           secCategory: formData.value.secCategory,
-          propertyConfig: $propertyConfig.value?.getData(),
+          propertyConfig: propertyConfigEl.value?.getData(),
           processList: formData.value.processList
         }
         return !isEqual(formDataCopy, formDataLatest)
@@ -232,23 +232,13 @@
       }
 
       const handleProcessSliderBeforeClose = () => {
-        const hasChanged = $processForm.value && $processForm.value.hasChange()
+        const hasChanged = processFormEl.value && processFormEl.value.hasChange()
         if (hasChanged) {
-          return new Promise((resolve) => {
-            $bkInfo({
-              title: t('确认退出'),
-              subTitle: t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          processFormEl.value.setChanged(true)
+          processFormEl.value.beforeClose(handleCancelProcess)
+        } else {
+          return true
         }
-        return true
       }
 
       onBeforeUnmount(() => {
@@ -258,8 +248,8 @@
       return {
         ...toRefs(state),
         formData,
-        $processForm,
-        $propertyConfig,
+        processFormEl,
+        propertyConfigEl,
         requestIds,
         auth,
         excludeModuleProperties,
@@ -275,13 +265,14 @@
     },
     methods: {
       getData() {
-        const propertyConfigData = this.$refs.$propertyConfig.getData()
+        const propertyConfigData = this.$refs.propertyConfigEl.getData()
 
         const attributes = []
         for (const [key, value] of Object.entries(propertyConfigData)) {
+          const property = this.moduleProperties.find(prop => prop.id === Number(key))
           attributes.push({
             bk_attribute_id: Number(key),
-            bk_property_value: value
+            bk_property_value: formatValue(value, property)
           })
         }
 
@@ -309,7 +300,7 @@
         const basicValid = await this.$validator.validateAll()
 
         // 属性设置校验
-        const configValid = await this.$refs.$propertyConfig.validateAll()
+        const configValid = await this.$refs.propertyConfigEl.validateAll()
 
         const result = basicValid && configValid
 
@@ -324,7 +315,7 @@
         }
 
         const basicValid = basicResults.every(valid => valid)
-        const configValid = this.$refs.$propertyConfig.validate()
+        const configValid = this.$refs.propertyConfigEl.validate()
 
         return basicValid && configValid
       },
@@ -428,7 +419,7 @@
       <cmdb-collapse :label="$t('属性设置')" arrow-type="filled">
         <div class="form-content">
           <property-config
-            ref="$propertyConfig"
+            ref="propertyConfigEl"
             :properties="moduleProperties"
             :property-groups="modulePropertyGroup"
             :config="formData.propertyConfig"
@@ -482,7 +473,7 @@
       :before-close="handleProcessSliderBeforeClose">
       <template slot="content" v-if="processSlider.show">
         <process-form v-test-id.businessServiceTemplate="'processForm'"
-          ref="$processForm"
+          ref="processFormEl"
           :auth="auth"
           :properties="processProperties"
           :property-groups="processPropertyGroup"

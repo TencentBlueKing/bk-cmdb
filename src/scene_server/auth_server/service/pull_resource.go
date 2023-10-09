@@ -47,107 +47,121 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 	}
 
 	// get response data for each iam query method, if callback method is not set, returns empty data
+	var res interface{}
 	switch query.Method {
 	case types.ListAttrMethod:
-		if method.ListAttr == nil {
-			ctx.RespBkEntity([]types.AttrResource{})
-			return
-		}
-
-		res, err := method.ListAttr(ctx.Kit, query.Type)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-		ctx.RespBkEntity(res)
-		return
-
+		res, err = s.listAttr(ctx.Kit, method, query)
 	case types.ListAttrValueMethod:
-		if method.ListAttrValue == nil {
-			ctx.RespBkEntity(types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}})
-			return
-		}
-
-		filter, err := s.lgc.ValidateListAttrValueRequest(ctx.Kit, query)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-
-		res, err := method.ListAttrValue(ctx.Kit, query.Type, filter, query.Page)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-		ctx.RespBkEntity(res)
-		return
-
+		res, err = s.listAttrValue(ctx.Kit, method, query)
 	case types.ListInstanceMethod, types.SearchInstanceMethod:
-		if method.ListInstance == nil {
-			ctx.RespBkEntity(types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}})
-			return
-		}
-
-		filter, err := s.lgc.ValidateListInstanceRequest(ctx.Kit, query)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-
-		res, err := method.ListInstance(ctx.Kit, query.Type, filter, query.Page)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-		ctx.RespBkEntity(res)
-
+		res, err = s.listInstance(ctx.Kit, method, query)
 	case types.FetchInstanceInfoMethod:
-		if method.FetchInstanceInfo == nil {
-			ctx.RespBkEntity([]map[string]interface{}{})
-			return
-		}
-
-		filter, err := s.lgc.ValidateFetchInstanceInfoRequest(ctx.Kit, query)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-
-		if len(filter.IDs) > common.BKMaxPageSize {
-			ctx.RespBkError(types.UnprocessableEntityErrorCode, fmt.Sprintf("filter.ids length exceeds maximum limit %d", common.BKMaxPageSize))
-			return
-		}
-
-		res, err := method.FetchInstanceInfo(ctx.Kit, query.Type, filter)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-		ctx.RespBkEntity(res)
-		return
-
+		res, err = s.fetchInstanceInfo(ctx.Kit, method, query)
 	case types.ListInstanceByPolicyMethod:
-		if method.ListInstanceByPolicy == nil {
-			ctx.RespBkEntity(types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}})
-			return
-		}
-
-		filter, err := s.lgc.ValidateListInstanceByPolicyRequest(ctx.Kit, query)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-
-		res, err := method.ListInstanceByPolicy(ctx.Kit, query.Type, filter, query.Page)
-		if err != nil {
-			ctx.RespBkError(types.InternalServerErrorCode, err.Error())
-			return
-		}
-		ctx.RespBkEntity(res)
-		return
-
+		res, err = s.listInstanceByPolicy(ctx.Kit, method, query)
 	default:
 		ctx.RespBkError(types.NotFoundErrorCode, fmt.Sprintf("method %s not found", query.Method))
 		return
 	}
+
+	if err != nil {
+		ctx.RespBkError(types.InternalServerErrorCode, err.Error())
+		return
+	}
+
+	ctx.RespBkEntity(res)
+}
+
+func (s *AuthService) listAttr(kit *rest.Kit, method types.ResourcePullMethod, query *types.PullResourceReq) (
+	[]types.AttrResource, error) {
+
+	if method.ListAttr == nil {
+		return make([]types.AttrResource, 0), nil
+	}
+
+	res, err := method.ListAttr(kit, query.Type)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *AuthService) listAttrValue(kit *rest.Kit, method types.ResourcePullMethod, query *types.PullResourceReq) (
+	*types.ListAttrValueResult, error) {
+
+	if method.ListAttrValue == nil {
+		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
+	}
+
+	filter, err := s.lgc.ValidateListAttrValueRequest(kit, query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := method.ListAttrValue(kit, query.Type, filter, query.Page)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *AuthService) listInstance(kit *rest.Kit, method types.ResourcePullMethod, query *types.PullResourceReq) (
+	*types.ListInstanceResult, error) {
+
+	if method.ListInstance == nil {
+		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+	}
+
+	filter, err := s.lgc.ValidateListInstanceRequest(kit, query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := method.ListInstance(kit, query.Type, filter, query.Page)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *AuthService) fetchInstanceInfo(kit *rest.Kit, method types.ResourcePullMethod, query *types.PullResourceReq) (
+	[]map[string]interface{}, error) {
+
+	if method.FetchInstanceInfo == nil {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	filter, err := s.lgc.ValidateFetchInstanceInfoRequest(kit, query)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filter.IDs) > common.BKMaxPageSize {
+		return nil, fmt.Errorf("filter.ids length exceeds maximum limit %d", common.BKMaxPageSize)
+	}
+
+	res, err := method.FetchInstanceInfo(kit, query.Type, filter)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (s *AuthService) listInstanceByPolicy(kit *rest.Kit, method types.ResourcePullMethod,
+	query *types.PullResourceReq) (*types.ListInstanceResult, error) {
+
+	if method.ListInstanceByPolicy == nil {
+		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
+	}
+
+	filter, err := s.lgc.ValidateListInstanceByPolicyRequest(kit, query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := method.ListInstanceByPolicy(kit, query.Type, filter, query.Page)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

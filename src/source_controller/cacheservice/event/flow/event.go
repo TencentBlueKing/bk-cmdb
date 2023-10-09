@@ -118,6 +118,11 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		blog.Errorf("run kube pod event flow failed, err: %v", err)
 		return err
 	}
+
+	if err := e.runProject(context.Background()); err != nil {
+		blog.Errorf("run project event flow failed, err: %v", err)
+	}
+
 	gc := &gc{
 		ccDB:     ccDB,
 		isMaster: isMaster,
@@ -341,4 +346,17 @@ func (e *Event) runKubePod(ctx context.Context) error {
 	}
 
 	return newFlow(ctx, opts, getDeleteEventDetails, parsePodEvent)
+}
+
+func (e *Event) runProject(ctx context.Context) error {
+	opts := flowOptions{
+		key:         event.ProjectKey,
+		watch:       e.watch,
+		watchDB:     e.watchDB,
+		ccDB:        e.ccDB,
+		isMaster:    e.isMaster,
+		EventStruct: new(map[string]interface{}),
+	}
+
+	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
 }

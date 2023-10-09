@@ -38,6 +38,10 @@ import businessTopology from '@/views/business-topology/router.config'
 import cloudArea from '@/views/cloud-area/router.config'
 import cloudAccount from '@/views/cloud-account/router.config'
 import cloudResource from '@/views/cloud-resource/router.config'
+import project from '@/views/project/router.config'
+
+// 字段组合模板
+import fieldTemplate from '@/views/field-template/router.config'
 
 // 业务集实例
 import businessSet from '@/views/business-set/router.config'
@@ -114,13 +118,15 @@ export const resourceViews = injectStatusComponents(flatternViews([
   resourceManagement,
   cloudArea,
   cloudAccount,
-  cloudResource
+  cloudResource,
+  project
 ]))
 
 export const modelViews = injectStatusComponents(flatternViews([
   model,
   modelAssociation,
-  modelTopology
+  modelTopology,
+  fieldTemplate
 ]))
 
 export const analysisViews = injectStatusComponents(flatternViews([

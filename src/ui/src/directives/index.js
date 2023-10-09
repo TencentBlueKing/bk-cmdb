@@ -15,10 +15,12 @@ import vClickOutside from 'v-click-outside'
 import cursor from './cursor.js'
 import transferDom from './transfer-dom.js'
 import setTestId from './set-test-id.js'
+import { autofocus } from './autofocus.js'
 
 Vue.use(vClickOutside)
 Vue.use(cursor)
 Vue.use(setTestId)
+Vue.directive('autofocus', autofocus)
 Vue.directive('transfer-dom', transferDom)
 
 export default {

@@ -21,6 +21,44 @@ import (
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
 
+var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.ResourceAttribute) ([]types.Resource, error){
+	meta.Business:                 genBusinessResource,
+	meta.BizSet:                   genBizSetResource,
+	meta.Project:                  genProjectResource,
+	meta.DynamicGrouping:          genDynamicGroupingResource,
+	meta.EventWatch:               genResourceWatch,
+	meta.ProcessServiceTemplate:   genServiceTemplateResource,
+	meta.ProcessTemplate:          genServiceTemplateResource,
+	meta.SetTemplate:              genSetTemplateResource,
+	meta.OperationStatistic:       genOperationStatisticResource,
+	meta.AuditLog:                 genAuditLogResource,
+	meta.CloudAreaInstance:        genPlat,
+	meta.HostApply:                genHostApplyResource,
+	meta.CloudAccount:             genCloudAccountResource,
+	meta.CloudResourceTask:        genCloudResourceTaskResource,
+	meta.ResourcePoolDirectory:    genResourcePoolDirectoryResource,
+	meta.ProcessServiceInstance:   genProcessServiceInstanceResource,
+	meta.Process:                  genProcessServiceInstanceResource,
+	meta.ModelModule:              genBusinessTopologyResource,
+	meta.ModelSet:                 genBusinessTopologyResource,
+	meta.MainlineInstance:         genBusinessTopologyResource,
+	meta.MainlineInstanceTopology: genBusinessTopologyResource,
+	meta.Model:                    genModelResource,
+	meta.ModelAssociation:         genModelResource,
+	meta.ModelUnique:              genModelRelatedResource,
+	meta.ModelClassification:      genModelClassificationResource,
+	meta.AssociationType:          genAssociationTypeResource,
+	meta.ModelInstanceTopology:    genSkipResource,
+	meta.MainlineModelTopology:    genSkipResource,
+	meta.UserCustom:               genSkipResource,
+	meta.ConfigAdmin:              genGlobalConfigResource,
+	meta.MainlineModel:            genBusinessLayerResource,
+	meta.ModelTopology:            genModelTopologyViewResource,
+	meta.HostInstance:             genHostInstanceResource,
+	meta.ProcessServiceCategory:   genProcessServiceCategoryResource,
+	meta.FieldTemplate:            genFieldTemplateResource,
+}
+
 // GenIamResource TODO
 func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
 	// skip actions do not need to relate to resources
@@ -29,80 +67,34 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 	}
 
 	switch a.Basic.Type {
-	case meta.Business:
-		return genBusinessResource(act, rscType, a)
-	case meta.BizSet:
-		return genBizSetResource(act, rscType, a)
-	case meta.DynamicGrouping:
-		return genDynamicGroupingResource(act, rscType, a)
-	case meta.EventWatch:
-		return genResourceWatch(act, rscType, a)
-	case meta.ProcessServiceTemplate, meta.ProcessTemplate:
-		return genServiceTemplateResource(act, rscType, a)
-	case meta.SetTemplate:
-		return genSetTemplateResource(act, rscType, a)
-	case meta.OperationStatistic:
-		return genOperationStatisticResource(act, rscType, a)
-	case meta.AuditLog:
-		return genAuditLogResource(act, rscType, a)
-	case meta.CloudAreaInstance:
-		return genPlat(act, rscType, a)
-	case meta.HostApply:
-		return genHostApplyResource(act, rscType, a)
-	case meta.CloudAccount:
-		return genCloudAccountResource(act, rscType, a)
-	case meta.CloudResourceTask:
-		return genCloudResourceTaskResource(act, rscType, a)
-	case meta.ResourcePoolDirectory:
-		return genResourcePoolDirectoryResource(act, rscType, a)
-	case meta.ProcessServiceInstance, meta.Process:
-		return genProcessServiceInstanceResource(act, rscType, a)
-	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
-		return genBusinessTopologyResource(act, rscType, a)
-	case meta.Model, meta.ModelAssociation:
-		return genModelResource(act, rscType, a)
-	case meta.ModelUnique:
-		return genModelRelatedResource(act, rscType, a)
 	case meta.ModelAttributeGroup:
 		if a.BusinessID > 0 {
 			return genBizModelAttributeResource(act, rscType, a)
 		} else {
 			return genModelRelatedResource(act, rscType, a)
 		}
-	case meta.ModelClassification:
-		return genModelClassificationResource(act, rscType, a)
-	case meta.AssociationType:
-		return genAssociationTypeResource(act, rscType, a)
 	case meta.ModelAttribute:
 		if a.BusinessID > 0 {
 			return genBizModelAttributeResource(act, rscType, a)
 		} else {
 			return genModelAttributeResource(act, rscType, a)
 		}
-	case meta.ModelInstanceTopology, meta.MainlineModelTopology, meta.UserCustom:
-		return genSkipResource(act, rscType, a)
-	case meta.ConfigAdmin:
-		return genGlobalConfigResource(act, rscType, a)
-	case meta.MainlineModel:
-		return genBusinessLayerResource(act, rscType, a)
-	case meta.ModelTopology:
-		return genModelTopologyViewResource(act, rscType, a)
-	case meta.HostInstance:
-		return genHostInstanceResource(act, rscType, a)
 	case meta.SystemBase:
 		return make([]types.Resource, 0), nil
-	case meta.ProcessServiceCategory:
-		return genProcessServiceCategoryResource(act, rscType, a)
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
 		return make([]types.Resource, 0), nil
-	default:
-		if IsCMDBSysInstance(a.Basic.Type) {
-			return genSysInstanceResource(act, rscType, a)
-		}
 	}
 
+	genIamResourceFunc, exists := genIamResFuncMap[a.Basic.Type]
+	if exists {
+		return genIamResourceFunc(act, rscType, a)
+	}
+
+	if IsCMDBSysInstance(a.Basic.Type) {
+		return genSysInstanceResource(act, rscType, a)
+	}
 	return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", a.Type)
 }
 
@@ -139,6 +131,26 @@ func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribu
 
 	// create biz set do not related to instance authorize
 	if act == CreateBizSet {
+		return make([]types.Resource, 0), nil
+	}
+
+	// compatible for authorize any
+	if attribute.InstanceID > 0 {
+		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
+
+	return []types.Resource{r}, nil
+}
+
+func genProjectResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System:    SystemIDCMDB,
+		Type:      types.ResourceType(typ),
+		Attribute: nil,
+	}
+
+	// create project do not related to instance authorize
+	if act == CreateProject {
 		return make([]types.Resource, 0), nil
 	}
 
@@ -704,6 +716,24 @@ func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 		System:    SystemIDCMDB,
 		Type:      types.ResourceType(typ),
 		Attribute: nil,
+	}
+
+	// create action do not related to instance authorize
+	if att.Action == meta.Create || att.Action == meta.CreateMany {
+		return make([]types.Resource, 0), nil
+	}
+
+	if att.InstanceID > 0 {
+		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
+
+	return []types.Resource{r}, nil
+}
+
+func genFieldTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System: SystemIDCMDB,
+		Type:   types.ResourceType(FieldGroupingTemplate),
 	}
 
 	// create action do not related to instance authorize

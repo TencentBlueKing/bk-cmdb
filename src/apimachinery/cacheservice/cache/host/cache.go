@@ -21,8 +21,11 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// SearchHostWithInnerIP TODO
-func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error) {
+// SearchHostWithInnerIPForStatic Note: This function is only used to query the host through ip+cloud in the static IP
+// scenario of the host snapshot !!!
+func (b *baseCache) SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header,
+	opt *metadata.SearchHostWithInnerIPOption) (
+	jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -43,8 +46,32 @@ func (b *baseCache) SearchHostWithInnerIP(ctx context.Context, h http.Header, op
 	return resp.Data, nil
 }
 
+// SearchHostWithAgentID Note: find host information by agentID only for data collection api !!!.
+func (b *baseCache) SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithAgentID) (
+	jsonString string, err error) {
+
+	resp, err := b.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/find/cache/host/with_agent_id").
+		WithHeaders(h).
+		Do().
+		IntoJsonString()
+
+	if err != nil {
+		return "", err
+	}
+
+	if !resp.Result {
+		return "", errors.New(resp.Code, resp.ErrMsg)
+	}
+
+	return resp.Data, nil
+}
+
 // SearchHostWithHostID TODO
-func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
+func (b *baseCache) SearchHostWithHostID(ctx context.Context, h http.Header,
+	opt *metadata.SearchHostWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).
@@ -89,7 +116,8 @@ func (b *baseCache) ListHostWithPage(ctx context.Context, h http.Header, opt *me
 }
 
 // ListHostWithHostID TODO
-func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error) {
+func (b *baseCache) ListHostWithHostID(ctx context.Context, h http.Header,
+	opt *metadata.ListWithIDOption) (jsonString string, err error) {
 
 	resp, err := b.client.Post().
 		WithContext(ctx).

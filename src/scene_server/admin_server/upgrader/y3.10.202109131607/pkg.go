@@ -19,16 +19,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/redis"
 )
 
 func init() {
 	upgrader.RegisterUpgraderWithIAM("y3.10.202109131607", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, iam *iam.IAM, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, iam *iam.IAM, conf *upgrader.Config) (err error) {
 	blog.Info("y3.10.202109131607, migrate iam system instances")
 
-	if err := migrateIAMSysInstances(ctx, db, iam, conf); err != nil {
+	if err := migrateIAMSysInstances(ctx, db, cache, iam, conf); err != nil {
 		blog.Errorf("[upgrade y3.10.202109131607] migrate iam system instances failed, error:%s", err.Error())
 		return err
 	}

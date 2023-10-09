@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/rs/xid"
 )
@@ -74,8 +76,10 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	dbTask.InstID = input.InstID
 	dbTask.Header = GetDBHTTPHeader(kit.Header)
 	dbTask.Status = metadata.APITaskStatusNew
+	dbTask.Extra = input.Extra
 	dbTask.CreateTime = time.Now()
 	dbTask.LastTime = time.Now()
+	dbTask.SupplierAccount = kit.SupplierAccount
 	for _, taskItem := range input.Data {
 		dbTask.Detail = append(dbTask.Detail, metadata.APISubTaskDetail{
 			SubTaskID: getStrTaskID("sid"),
@@ -97,6 +101,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 		Creator:         kit.User,
 		CreateTime:      dbTask.CreateTime,
 		LastTime:        dbTask.LastTime,
+		Extra:           input.Extra,
 		SupplierAccount: kit.SupplierAccount,
 	}
 
@@ -108,8 +113,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 }
 
 // CreateBatch create task batch
-func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail,
-	error) {
+func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail, error) {
 
 	if len(tasks) == 0 {
 		return make([]metadata.APITaskDetail, 0), nil
@@ -117,11 +121,12 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 
 	now := time.Now()
 	dbTask := metadata.APITaskDetail{
-		User:       kit.User,
-		Header:     GetDBHTTPHeader(kit.Header),
-		Status:     metadata.APITaskStatusNew,
-		CreateTime: now,
-		LastTime:   now,
+		User:            kit.User,
+		Header:          GetDBHTTPHeader(kit.Header),
+		Status:          metadata.APITaskStatusNew,
+		CreateTime:      now,
+		LastTime:        now,
+		SupplierAccount: kit.SupplierAccount,
 	}
 
 	taskHistory := metadata.APITaskSyncStatus{
@@ -168,6 +173,123 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 		taskHistories[index] = taskHistory
 	}
 
+	if err := lgc.isDuplicateTaskInProgress(kit, taskTypes, instIDs); err != nil {
+		return nil, err
+	}
+	if err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
+		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+	return dbTasks, nil
+}
+
+// CreateFieldTemplateBatch create field template task batch
+func (lgc *Logics) CreateFieldTemplateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest) (
+	[]metadata.APITaskDetail, error) {
+
+	if len(tasks) == 0 {
+		return make([]metadata.APITaskDetail, 0), nil
+	}
+
+	now := time.Now()
+	dbTask := metadata.APITaskDetail{
+		User:            kit.User,
+		Header:          GetDBHTTPHeader(kit.Header),
+		Status:          metadata.APITaskStatusNew,
+		CreateTime:      now,
+		LastTime:        now,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	taskHistory := metadata.APITaskSyncStatus{
+		Status:          metadata.APITaskStatusNew,
+		Creator:         kit.User,
+		CreateTime:      now,
+		LastTime:        now,
+		SupplierAccount: kit.SupplierAccount,
+	}
+
+	dbTasks := make([]metadata.APITaskDetail, len(tasks))
+	taskHistories := make([]metadata.APITaskSyncStatus, len(tasks))
+	for index, task := range tasks {
+		task.TaskType = strings.TrimSpace(task.TaskType)
+		if task.TaskType == "" {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKTaskTypeField)
+		}
+
+		if len(task.Data) == 0 {
+			return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "data")
+		}
+
+		dbTask.TaskID = getStrTaskID("id")
+		dbTask.TaskType = task.TaskType
+		dbTask.InstID = task.InstID
+		dbTask.Extra = task.Extra
+		dbTask.Detail = make([]metadata.APISubTaskDetail, 0)
+		for _, taskItem := range task.Data {
+			dbTask.Detail = append(dbTask.Detail, metadata.APISubTaskDetail{
+				SubTaskID: getStrTaskID("sid"),
+				Data:      taskItem,
+				Status:    metadata.APITaskStatusNew,
+			})
+		}
+		dbTasks[index] = dbTask
+
+		taskHistory.TaskID = dbTask.TaskID
+		taskHistory.TaskType = task.TaskType
+		taskHistory.InstID = task.InstID
+		taskHistory.Extra = task.Extra
+		taskHistories[index] = taskHistory
+
+		if err := lgc.isDuplicateFieldTmplTaskInProgress(kit, task.TaskType, task.InstID, task.Extra); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
+		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
+		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+	}
+	return dbTasks, nil
+}
+
+func (lgc *Logics) isDuplicateFieldTmplTaskInProgress(kit *rest.Kit, taskType string, instID int64,
+	extra interface{}) error {
+
+	cond := mapstr.MapStr{
+		common.BKTaskTypeField:     taskType,
+		common.BKInstIDField:       instID,
+		metadata.APITaskExtraField: extra,
+		common.BKStatusField: map[string]interface{}{
+			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusNew, metadata.APITaskStatusWaitExecute,
+				metadata.APITaskStatusExecute},
+		},
+	}
+
+	cnt, err := lgc.db.Table(common.BKTableNameAPITask).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	if cnt > metadata.APITaskFieldTemplateMaxNum {
+		return kit.CCError.Errorf(common.CCErrTaskCreateConflict,
+			fmt.Sprintf("template id: %d,object id:%v", instID, extra))
+	}
+	return nil
+}
+
+func (lgc *Logics) isDuplicateTaskInProgress(kit *rest.Kit, taskTypes []string, instIDs []int64) error {
 	// check if there is another unfinished task already created, forbidden create duplicate tasks
 	// TODO: replace with index when partial filter supports $in operator
 	duplicateCond := mapstr.MapStr{
@@ -182,23 +304,13 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 	duplicateIDs, err := lgc.db.Table(common.BKTableNameAPITask).Distinct(kit.Ctx, common.BKInstIDField, duplicateCond)
 	if err != nil {
 		blog.Errorf("get duplicate tasks failed, err: %v, cond: %#v, rid: %s", err, duplicateCond, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
+		return kit.CCError.Error(common.CCErrCommDBInsertFailed)
 	}
 
 	if len(duplicateIDs) > 0 {
-		return nil, kit.CCError.Errorf(common.CCErrTaskCreateConflict, duplicateIDs)
+		return kit.CCError.Errorf(common.CCErrTaskCreateConflict, duplicateIDs)
 	}
-
-	if err = lgc.db.Table(common.BKTableNameAPITask).Insert(kit.Ctx, dbTasks); err != nil {
-		blog.Errorf("create tasks(%#v) failed, err: %v, rid: %s", dbTasks, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
-	}
-
-	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistories); err != nil {
-		blog.Errorf("create task sync history failed, data: %#v, err: %v, rid: %s", taskHistories, err, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrCommDBInsertFailed)
-	}
-	return dbTasks, nil
+	return nil
 }
 
 // List list task
@@ -350,6 +462,7 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 		}},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
 	}
+	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 
 	var err error
 	if input.TimeCondition != nil {
@@ -382,6 +495,139 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 	return result, nil
 }
 
+// ListFieldTemplateSyncStatus this function is used in the field template scenario
+// to obtain the latest two task statuses of the specified model ID
+func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, input mapstr.MapStr) (
+	[]metadata.APITaskSyncStatus, error) {
+
+	aggrCond := []map[string]interface{}{
+		{common.BKDBSort: map[string]interface{}{metadata.APITaskExtraField: 1, common.CreateTimeField: -1}},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id":  "$extra",
+			"docs": map[string]interface{}{common.BKDBPush: "$$ROOT"},
+		}},
+		{common.BKDBProject: map[string]interface{}{
+			"_id": 1,
+			"docs": map[string]interface{}{
+				"$slice": []interface{}{
+					"$docs", 2,
+				},
+			},
+		}},
+		{common.BKDBUnwind: "$docs"},
+		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
+	}
+
+	input = util.SetQueryOwner(input, kit.SupplierAccount)
+	aggrCond = append([]map[string]interface{}{{common.BKDBMatch: input}}, aggrCond...)
+
+	result := make([]metadata.APITaskSyncStatus, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, aggrCond, &result); err != nil {
+		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", aggrCond, err, kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+// ListFieldTemplateSyncResult list field template sync result, if the task can be queried in the cc_APITask table,
+// cc_APITaskSyncHistory table will not be queried.
+func (lgc *Logics) ListFieldTemplateSyncResult(kit *rest.Kit, templateID int64, objIDs []int64) (
+	map[int64]metadata.APITaskDetail, map[int64]metadata.APITaskSyncStatus, error) {
+
+	objIDMap := make(map[int64]struct{})
+	extraIDs := make([]int64, 0)
+	for _, objID := range objIDs {
+		if _, exist := objIDMap[objID]; exist {
+			continue
+		}
+		extraIDs = append(extraIDs, objID)
+		objIDMap[objID] = struct{}{}
+	}
+
+	query := mapstr.MapStr{
+		common.BKInstIDField:       templateID,
+		metadata.APITaskExtraField: mapstr.MapStr{common.BKDBIN: extraIDs},
+		common.BKTaskTypeField:     common.SyncFieldTemplateTaskFlag,
+	}
+	aggrCond := []map[string]interface{}{
+		{common.BKDBSort: map[string]interface{}{metadata.APITaskExtraField: 1, common.CreateTimeField: -1}},
+		{common.BKDBGroup: map[string]interface{}{
+			"_id":  "$extra",
+			"docs": map[string]interface{}{common.BKDBPush: "$$ROOT"},
+		}},
+		{common.BKDBProject: map[string]interface{}{
+			"_id": 1,
+			"docs": map[string]interface{}{
+				"$slice": []interface{}{
+					"$docs", 2,
+				},
+			},
+		}},
+		{common.BKDBUnwind: "$docs"},
+		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
+	}
+
+	query = util.SetQueryOwner(query, kit.SupplierAccount)
+
+	return lgc.listFieldTemplateSyncResult(kit, aggrCond, query, objIDMap)
+}
+
+func (lgc *Logics) listFieldTemplateSyncResult(kit *rest.Kit, aggrCond []map[string]interface{}, query mapstr.MapStr,
+	objIDMap map[int64]struct{}) (map[int64]metadata.APITaskDetail, map[int64]metadata.APITaskSyncStatus, error) {
+
+	taskAggrCond := append([]map[string]interface{}{{common.BKDBMatch: query}}, aggrCond...)
+	taskDetails := make([]metadata.APITaskDetail, 0)
+	if err := lgc.db.Table(common.BKTableNameAPITask).AggregateAll(kit.Ctx, taskAggrCond, &taskDetails); err != nil {
+		blog.Errorf("list sync result failed, cond: %#v, err: %v, rid: %v", taskAggrCond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	taskDetailMap := make(map[int64]metadata.APITaskDetail)
+	for _, task := range taskDetails {
+		objID, err := util.GetInt64ByInterface(task.Extra)
+		if err != nil {
+			blog.Errorf("get instance id failed, objID: %+v, err: %v, rid: %s", objID, err, kit.Rid)
+			return nil, nil, err
+		}
+		_, ok := taskDetailMap[objID]
+		if ok && task.Status != metadata.APITaskStatusExecute {
+			continue
+		}
+		delete(objIDMap, objID)
+		taskDetailMap[objID] = task
+	}
+
+	extraIDs := make([]int64, 0)
+	for id := range objIDMap {
+		extraIDs = append(extraIDs, id)
+	}
+	query[metadata.APITaskExtraField] = mapstr.MapStr{common.BKDBIN: extraIDs}
+	taskHistoryCond := append([]map[string]interface{}{{common.BKDBMatch: query}}, aggrCond...)
+	taskHistories := make([]metadata.APITaskSyncStatus, 0)
+	err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).AggregateAll(kit.Ctx, taskHistoryCond, &taskHistories)
+	if err != nil {
+		blog.Errorf("list sync status failed, cond: %#v, err: %v, rid: %v", taskHistoryCond, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	taskHistoryMap := make(map[int64]metadata.APITaskSyncStatus)
+	for _, task := range taskHistories {
+		objID, err := util.GetInt64ByInterface(task.Extra)
+		if err != nil {
+			blog.Errorf("get instance id failed, objID: %+v, err: %v, rid: %s", objID, err, kit.Rid)
+			return nil, nil, err
+		}
+		_, ok := taskHistoryMap[objID]
+		if ok && task.Status != metadata.APITaskStatusExecute {
+			continue
+		}
+		delete(objIDMap, objID)
+		taskHistoryMap[objID] = task
+	}
+
+	return taskDetailMap, taskHistoryMap, nil
+}
+
 // ListSyncStatusHistory list api task sync status history
 func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCondition) (
 	*metadata.ListAPITaskSyncStatusResult, error) {
@@ -395,6 +641,7 @@ func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCon
 		}
 	}
 
+	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 	dbQuery := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Find(input.Condition)
 
 	if input.Page.Start != 0 {
@@ -502,7 +749,8 @@ func (lgc *Logics) UpdateTaskStatus(ctx context.Context, cond mapstr.MapStr, sta
 
 	err = lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Update(ctx, cond, updateData)
 	if err != nil {
-		blog.Errorf("update task history status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err, rid)
+		blog.Errorf("update task history status failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, updateData, err,
+			rid)
 		return err
 	}
 

@@ -53,6 +53,27 @@ const findById = async (id, config = {}) => {
 
 const findOne = async (params, config = {}) => findById(params[MODEL_ID_KEY], config)
 
+const findByIds = async (ids, config = {}) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post('findmany/biz_set', enableCount({
+      bk_biz_set_filter: {
+        condition: 'AND',
+        rules: [{
+          field: MODEL_ID_KEY,
+          operator: 'in',
+          value: ids
+        }]
+      },
+      page: { start: 0, limit: ids.length }
+    }, false), config)
+
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
 const getAuthorized = async (config) => {
   try {
     const { info: list = [] } = await http.get('findmany/biz_set/with_reduced?sort=bk_biz_set_id', config)
@@ -115,5 +136,6 @@ export default {
   previewOfBeforeCreate,
   previewOfAfterCreate,
   getAuthorized,
-  getAuthorizedWithCache
+  getAuthorizedWithCache,
+  findByIds
 }

@@ -61,6 +61,9 @@
 </template>
 
 <script>
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSideslider from '@/hooks/use-sideslider'
+
   export default {
     props: {
       ruleList: {
@@ -81,8 +84,19 @@
       return {
         ruleType: 'single',
         rules: '',
-        singleRuleTypes: Object.freeze(['singlechar', 'int', 'float']),
-        unionRuleTypes: Object.freeze(['singlechar', 'int', 'float', 'enum', 'date', 'list']),
+        singleRuleTypes: Object.freeze([
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT
+        ]),
+        unionRuleTypes: Object.freeze([
+          PROPERTY_TYPES.SINGLECHAR,
+          PROPERTY_TYPES.INT,
+          PROPERTY_TYPES.FLOAT,
+          PROPERTY_TYPES.ENUM,
+          PROPERTY_TYPES.DATE,
+          PROPERTY_TYPES.LIST
+        ]),
         validateResult: null,
         SET_TYPE: Object.freeze({
           subset: Symbol('subset'),
@@ -148,6 +162,9 @@
     },
     created() {
       this.setupInitialRules()
+      const { beforeClose, setChanged } = useSideslider(this.submitRules)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       /**
@@ -253,7 +270,7 @@
               requestId: this.request.update
             }
           })
-          this.$success('修改成功')
+          this.$success(this.$t('修改成功'))
           this.$emit('save')
         } catch (error) {
           console.error(error)

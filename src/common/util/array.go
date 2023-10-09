@@ -132,6 +132,23 @@ func StrArrDiff(slice1 []string, slice2 []string) []string {
 	return diffStr
 }
 
+// IntArrDiff 返回slice1与slice2的差集,存在于slice1，不存在于slice2，使用该方法要注意参数的传入顺序
+func IntArrDiff(slice1 []int64, slice2 []int64) []int64 {
+	diffInt := make([]int64, 0)
+
+	intMap2 := make(map[int64]struct{})
+	for _, num2 := range slice2 {
+		intMap2[num2] = struct{}{}
+	}
+
+	for _, num1 := range slice1 {
+		if _, found := intMap2[num1]; !found {
+			diffInt = append(diffInt, num1)
+		}
+	}
+	return diffInt
+}
+
 // IntArrIntersection TODO
 func IntArrIntersection(slice1 []int64, slice2 []int64) []int64 {
 	intersectInt := make([]int64, 0)

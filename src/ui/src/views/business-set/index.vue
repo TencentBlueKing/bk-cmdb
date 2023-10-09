@@ -33,7 +33,7 @@
         <cmdb-property-selector
           class="filter-selector fl"
           v-model="filter.field"
-          :properties="properties"
+          :properties="fastSearchProperties"
           @change="handleFilterFieldChange">
         </cmdb-property-selector>
         <component class="filter-value fl"
@@ -58,7 +58,7 @@
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange">
       <bk-table-column v-for="column in table.header"
-        sortable="custom"
+        :sortable="getColumnSortable(column.property) ? 'custom' : false"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
@@ -70,6 +70,8 @@
             :value="row[column.id]"
             :show-unit="false"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -115,21 +117,27 @@
       </bk-table-column>
       <cmdb-table-empty
         slot="empty"
-        :stuff="table.stuff">
-        <i18n path="业务集列表提示语" class="table-empty-tips">
-          <template #auth><bk-link theme="primary" @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link></template>
-          <template #create>
-            <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }">
-              <bk-button slot-scope="{ disabled }" text
-                theme="primary"
-                class="text-btn"
-                :disabled="disabled"
-                @click="handleCreate">
-                {{$t('立即创建')}}
-              </bk-button>
-            </cmdb-auth>
-          </template>
-        </i18n>
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+        <bk-exception type="403" scene="part">
+          <i18n path="业务集列表提示语" class="table-empty-tips">
+            <template #auth>
+              <bk-link theme="primary"
+                @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
+            </template>
+            <template #create>
+              <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS_SET }">
+                <bk-button slot-scope="{ disabled }" text
+                  theme="primary"
+                  class="text-btn"
+                  :disabled="disabled"
+                  @click="handleCreate">
+                  {{$t('立即创建')}}
+                </bk-button>
+              </cmdb-auth>
+            </template>
+          </i18n>
+        </bk-exception>
       </cmdb-table-empty>
     </bk-table>
 
@@ -162,12 +170,13 @@
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
   import Utils from '@/components/filters/utils'
-  import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
+  import { getDefaultPaginationConfig, getSort, isPropertySortable } from '@/utils/tools.js'
   import applyPermission from '@/utils/apply-permission.js'
   import businessSetService from '@/service/business-set/index.js'
   import propertyService from '@/service/property/property.js'
   import propertyGroupService from '@/service/property/group.js'
   import { MENU_RESOURCE_BUSINESS_SET_DETAILS } from '@/dictionary/menu-symbol.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default defineComponent({
     components: {
@@ -310,6 +319,9 @@
       const filterPlaceholder = computed(() => Utils.getPlaceholder(filterProperty.value))
       const filterComponentProps = computed(() => Utils.getBindProps(filterProperty.value))
 
+      const fastSearchProperties = computed(() => properties.value
+        .filter(property => property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE))
+
       // 更新filter数据，无值状态时则使用默认数据初始化
       const updateFilter = (field, value = '', operator = '') => {
         if (field) {
@@ -343,6 +355,8 @@
         }
         return value
       }
+
+      const getColumnSortable = property => (isPropertySortable(property) ? 'custom' : false)
 
       // 切换条件字段时初始化字段对应的默认值
       const handleFilterFieldChange = () => updateFilter()
@@ -474,9 +488,14 @@
         handleCreate()
       }
 
+      const handleClearFilter = () => {
+        RouterQuery.clear()
+      }
+
       return  {
         properties,
         propertyGroups,
+        fastSearchProperties,
         filterType,
         filterPlaceholder,
         filterComponentProps,
@@ -500,7 +519,9 @@
         handleValueClick,
         handleSaveSuccess,
         handleUpdateHeader,
-        handleFilterFieldChange
+        handleFilterFieldChange,
+        handleClearFilter,
+        getColumnSortable
       }
     }
   })

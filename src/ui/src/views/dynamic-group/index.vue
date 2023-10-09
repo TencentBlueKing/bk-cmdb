@@ -44,7 +44,7 @@
         @page-change="handlePageChange"
         @page-limit-change="handlePageLimitChange"
         @sort-change="handleSortChange">
-        <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed>
+        <bk-table-column prop="name" :label="$t('查询名称')" sortable="custom" fixed show-overflow-tooltip>
           <span class="name-text" slot-scope="{ row }">{{row.name}}</span>
         </bk-table-column>
         <bk-table-column prop="id" label="ID" show-overflow-tooltip></bk-table-column>
@@ -100,7 +100,8 @@
           slot="empty"
           :stuff="table.stuff"
           :auth="{ type: $OPERATION.C_CUSTOM_QUERY, relation: [bizId] }"
-          @create="handleCreate">
+          @create="() => handleCreate('create')"
+          @clear="handleClearFilter">
         </cmdb-table-empty>
       </bk-table>
     </div>
@@ -138,19 +139,22 @@
       ...mapGetters('objectModelClassify', ['getModelById'])
     },
     created() {
-      this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, filter }) => {
+      this.unwatchQuery = RouterQuery.watch('*', ({ page, limit, sort, filter, action }) => {
         this.table.pagination.current = parseInt(page || this.table.pagination.current, 10)
         this.table.pagination.limit = parseInt(limit || this.table.pagination.limit, 10)
         this.table.sort = sort || this.table.sort
-        this.filter = filter || this.filter
+        this.filter = filter
+        if (action === 'create') {
+          this.handleCreate()
+        }
         this.getList()
       }, { immediate: true })
       this.unwatchFilter = this.$watch(() => this.filter, (filter) => {
         this.filterTimer && clearTimeout(this.filterTimer)
         this.filterTimer = setTimeout(() => {
           RouterQuery.set({
-            page: 1,
             filter,
+            page: 1,
             _t: Date.now()
           })
         }, 500)
@@ -181,7 +185,7 @@
           })
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.filter.length ? 'search' : 'default'
+          this.table.stuff.type = this.filter ? 'search' : 'default'
         } catch (error) {
           console.error(error)
           if (error.permission) {
@@ -192,7 +196,10 @@
           }
         }
       },
-      handleCreate() {
+      handleCreate(type = '') {
+        if (type) {
+          RouterQuery.set({ action: 'create' })
+        }
         DynamicGroupForm.show({
           title: this.$t('新建动态分组')
         })
@@ -261,6 +268,9 @@
           sort: this.$tools.getSort(sort, '-last_time'),
           _t: Date.now()
         })
+      },
+      handleClearFilter() {
+        RouterQuery.clear()
       }
     }
   }

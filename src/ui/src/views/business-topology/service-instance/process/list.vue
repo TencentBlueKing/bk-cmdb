@@ -36,6 +36,11 @@
     <bk-table-column :label="$t('实例数量')">
       <template slot-scope="{ row }">{{row.process_ids.length}}</template>
     </bk-table-column>
+    <cmdb-table-empty
+      slot="empty"
+      :stuff="table.stuff"
+      @clear="handleClearFilter">
+    </cmdb-table-empty>
   </bk-table>
 </template>
 
@@ -55,6 +60,14 @@
         pagination: this.$tools.getDefaultPaginationConfig(),
         request: {
           getProcessList: Symbol('getProcessList')
+        },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            },
+          }
         }
       }
     },
@@ -79,14 +92,24 @@
       Bus.$on('expand-all-change', this.handleExpandAllChange)
       Bus.$on('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$on('filter-list', this.handleFilterList)
+      Bus.$on('filter-change', this.handleFilterChange)
     },
     beforeDestroy() {
       this.unwatch()
       Bus.$off('expand-all-change', this.handleExpandAllChange)
       Bus.$off('update-reserve-selection', this.handleReserveSelectionChange)
       Bus.$off('filter-list', this.handleFilterList)
+      Bus.$off('filter-change', this.handleFilterChange)
     },
     methods: {
+      handleFilterChange(filter) {
+        this.filter = filter
+        RouterQuery.set({
+          node: this.selectedNode.id,
+          page: 1,
+          _t: Date.now()
+        })
+      },
       handleFilterList(value) {
         this.filter = value
         RouterQuery.set({
@@ -110,6 +133,7 @@
           })
           this.list = info.map(item => ({ ...item, pending: true, reserved: [] }))
           this.pagination.count = count
+          this.table.stuff.type = this.filter ? 'search' : 'default'
         } catch (error) {
           this.list = []
           this.pagination.count = 0
@@ -157,6 +181,12 @@
       handleExpandResolved(row, list) {
         row.pending = false
         row.process_ids = list.map(process => process.process_id)
+      },
+      async handleClearFilter() {
+        this.filter = ''
+        await  this.getProcessList()
+        this.table.stuff.type = 'default'
+        Bus.$emit('filter-clear')
       }
     }
   }

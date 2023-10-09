@@ -15,7 +15,7 @@
     <div class="toolbar">
       <p class="title">{{$t('枚举值')}}</p>
       <i
-        v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
+        v-bk-tooltips.top-start="$t('通过枚举项的值按照0-9，a-z排序')"
         :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
         @click="handleSort">
       </i>
@@ -67,23 +67,47 @@
     </vue-draggable>
     <div class="default-setting">
       <p class="title mb10">{{$t('默认值设置')}}</p>
-      <bk-select style="width: 100%;"
-        :clearable="false"
-        :disabled="isReadOnly"
-        v-model="defaultValue"
-        @change="handleSettingDefault">
-        <bk-option v-for="option in settingList"
-          :key="option.id"
-          :id="option.id"
-          :name="option.name">
-        </bk-option>
-      </bk-select>
+      <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
+        <div class="form-item-row">
+          <bk-select style="width: 100%;"
+            :key="defaultCompKey"
+            :scroll-height="150"
+            :clearable="false"
+            :disabled="isReadOnly"
+            :multiple="isDefaultCompMultiple"
+            name="defaultValueSelect"
+            data-vv-validate-on="change"
+            :popover-options="{
+              appendTo: 'parent'
+            }"
+            v-validate="`maxSelectLength:${ multiple ? -1 : 1 }`"
+            v-model="defaultValue"
+            @change="handleSettingDefault">
+            <bk-option v-for="option in settingList"
+              :key="option.id"
+              :id="option.id"
+              :name="option.name">
+            </bk-option>
+          </bk-select>
+          <bk-checkbox
+            v-if="isDefaultCompMultiple"
+            class="checkbox"
+            v-model="isMultiple"
+            :disabled="isReadOnly">
+            <span>{{$t('可多选')}}</span>
+          </bk-checkbox>
+        </div>
+        <p class="form-error">{{errors.first('defaultValueSelect')}}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import isEqual from 'lodash/isEqual'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
     components: {
       vueDraggable
@@ -96,14 +120,18 @@
       isReadOnly: {
         type: Boolean,
         default: false
-      }
+      },
+      multiple: {
+        type: Boolean,
+        default: false
+      },
+      type: String
     },
     data() {
       return {
         enumList: [this.generateEnum()],
-        defaultIndex: 0,
         settingList: [],
-        defaultValue: '',
+        defaultValue: this.multiple ? [] : '',
         dragOptions: {
           animation: 300,
           disabled: false,
@@ -111,7 +139,22 @@
           preventOnFilter: false,
           ghostClass: 'ghost'
         },
-        order: 1
+        order: 1,
+        defaultCompKey: null
+      }
+    },
+    computed: {
+      isDefaultCompMultiple() {
+        // 通过类型指定默认值组件是否可多选，用于与可多选配置区分开
+        return this.type === PROPERTY_TYPES.ENUMMULTI
+      },
+      isMultiple: {
+        get() {
+          return this.multiple
+        },
+        set(val) {
+          this.$emit('update:multiple', val)
+        }
       }
     },
     watch: {
@@ -121,11 +164,53 @@
       enumList: {
         deep: true,
         handler(value) {
-          this.settingList = (value || []).filter(item => item.id && item.name)
-          if (this.settingList.length && this.defaultIndex > -1) {
-            this.defaultValue = this.settingList[this.defaultIndex].id
+          // 解决在id或name全部清空的情况下，重新填写的name在下拉框中显示的为上一次name值
+          this.defaultCompKey = Date.now()
+
+          // 重复的选项不允许加入的选择列表
+          const enumList = []
+          if (value.length) {
+            enumList.push(value[0])
+            value.forEach((data) => {
+              if (!enumList.some(item => item.id === data.id || item.name === data.name)) {
+                enumList.push(data)
+              }
+            })
+          }
+          this.settingList = enumList.filter(item => item.id && item.name)
+
+          // 无默认值选择第0项，有默认值则需要验证值是否存在（列表中可能将其删除）
+          if (!this.defaultValue?.length) {
+            if (this.isDefaultCompMultiple) {
+              this.defaultValue = this.settingList.length ? [this.settingList[0].id] : []
+            } else {
+              this.defaultValue = this.settingList.length ? this.settingList[0].id : ''
+            }
+          } else {
+            if (this.isDefaultCompMultiple) {
+              this.defaultValue = this.settingList.length
+                ? this.settingList.filter(item => this.defaultValue.includes(item.id)).map(item => item.id)
+                : []
+            } else {
+              this.defaultValue = this.settingList.length
+                ? this.settingList.find(item => this.defaultValue === item.id)?.id ?? ''
+                : ''
+            }
           }
         }
+      },
+      defaultValue(val, old) {
+        // 检测选中值变化，需要修正is_default
+        if (val && !isEqual(val, old)) {
+          this.enumList.forEach((item) => {
+            item.is_default = val.includes(item.id)
+          })
+          this.$emit('input', this.enumList)
+        }
+      },
+      multiple() {
+        // 多选变化时校验默认值设置
+        this.$nextTick(async () => this.$validator.validate('defaultValueSelect'))
       }
     },
     created() {
@@ -151,11 +236,13 @@
         return nameList.join(',')
       },
       initValue() {
-        if (this.value === '') {
+        // 枚举多选默认值是空数组
+        if (this.value === '' || (Array.isArray(this.value) && !this.value.length)) {
           this.enumList = [this.generateEnum()]
         } else {
-          this.enumList = this.value.map(data => ({ ...data, type: 'text' }))
-          this.defaultIndex = this.enumList.findIndex(({ is_default: isDefault }) => isDefault)
+          this.enumList = this.value.map(data => (this.generateEnum(data)))
+          const defaultValues = this.enumList.filter(item => item.is_default).map(item => item.id)
+          this.defaultValue = this.isDefaultCompMultiple ? defaultValues : defaultValues[0]
         }
       },
       handleInput() {
@@ -169,10 +256,6 @@
       },
       deleteEnum(index) {
         this.enumList.splice(index, 1)
-        if (this.defaultIndex === index) {
-          this.defaultIndex = 0
-          this.enumList[0].is_default = true
-        }
         this.handleInput()
       },
       generateEnum(settings = {}) {
@@ -188,14 +271,20 @@
         return this.$validator.validateAll()
       },
       handleSettingDefault(id) {
-        const itemIndex = this.enumList.findIndex(item => item.id === id)
-        if (itemIndex > -1) {
-          this.defaultIndex = itemIndex
+        if (this.multiple) {
           this.enumList.forEach((item) => {
-            item.is_default = item.id === id
+            item.is_default = id.includes(item.id)
           })
-
           this.$emit('input', this.enumList)
+        } else {
+          const itemIndex = this.enumList.findIndex(item => item.id === id)
+          if (itemIndex > -1) {
+            this.enumList.forEach((item) => {
+              item.is_default = item.id === id
+            })
+
+            this.$emit('input', this.enumList)
+          }
         }
       },
       handleDragEnd() {
@@ -303,5 +392,14 @@
 
     .ghost {
         border: 1px dashed $cmdbBorderFocusColor;
+    }
+
+    .form-item-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      .checkbox {
+        flex: none;
+      }
     }
 </style>

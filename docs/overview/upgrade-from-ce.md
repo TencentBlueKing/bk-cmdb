@@ -8,9 +8,9 @@
 为了解决社区版不能CMDB不能快速迭代的问题，本文在此提出一种使用开源CMDB替换社区版CMDB的方案，开源版本CMDB从issue提出到pr合入主干链路相比社区版本省去了很多耗时的流程，可以做到快速迭代。
 
 ### 1.1 开源版CMDB与社区版CMDB
-开源版本指的是github上的[开源CMDB项目](https://github.com/Tencent/bk-cmdb)，社区版指的是伴随[蓝鲸智云](https://bk.tencent.com/)产品一起发布出去的社区版。
+开源版本指的是github上的[开源CMDB项目](https://github.com/TencentBlueKing/bk-cmdb)，社区版指的是伴随[蓝鲸智云](https://bk.tencent.com/)产品一起发布出去的社区版。
 
-两者采用的源代码是一致的，比如您在蓝鲸智云[下载页面](https://bk.tencent.com/download/)看到的 CMDB 最新版本是 `3.2.21`，它跟github上 [release-v3.2.21](https://github.com/Tencent/bk-cmdb/releases/tag/release-v3.2.2) 采用相同代码编译结果。
+两者采用的源代码是一致的，比如您在蓝鲸智云[下载页面](https://bk.tencent.com/download/)看到的 CMDB 最新版本是 `3.2.21`，它跟github上 [release-v3.2.21](https://github.com/TencentBlueKing/bk-cmdb/releases/tag/release-v3.2.2) 采用相同代码编译结果。
 
 主要区别在于两者的配置文件，社区版本CMDB是蓝鲸社区版的一部分，启动配置文件对接的也是蓝鲸社区版，比如登录对接的蓝鲸统一登录，比如即将推出的细粒度权限版本也会对接蓝鲸权限中心。相对而言，开源版本独立部署，没有蓝鲸统一登录与蓝鲸权限中心等依赖环境，因此二进制包中默认的配置是采用的无登录和内置鉴权方案。
 
@@ -50,7 +50,7 @@ release=v3.2.8
 mkdir -p ${workspace}
 cd ${workspace}
 export GOPATH=$(pwd)
-wget https://github.com/Tencent/bk-cmdb/archive/release-${release}.tar.gz
+wget https://github.com/TencentBlueKing/bk-cmdb/archive/release-${release}.tar.gz
 tar -xf release-${release}.tar.gz
 mkdir src
 mv bk-cmdb-release-${release} src/configcenter

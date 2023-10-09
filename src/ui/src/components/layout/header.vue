@@ -51,7 +51,6 @@
       <bk-popover class="info-item"
         theme="light header-info-popover"
         animation="fade"
-        placement="bottom-end"
         ref="popover"
         :arrow="false"
         :tippy-options="{
@@ -63,7 +62,7 @@
           <a class="link-item" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
           <a class="link-item" target="_blank" @click="handleChangeLog()" style="cursor:pointer">{{$t('版本日志')}}</a>
           <a class="link-item" target="_blank" href="https://bk.tencent.com/s-mart/community">{{$t('问题反馈')}}</a>
-          <a class="link-item" target="_blank" href="https://github.com/Tencent/bk-cmdb">{{$t('开源社区')}}</a>
+          <a class="link-item" target="_blank" href="https://github.com/TencentBlueKing/bk-cmdb">{{$t('开源社区')}}</a>
         </template>
       </bk-popover>
       <bk-popover class="info-item"
@@ -82,8 +81,7 @@
         <template slot="content">
           <a class="link-item" href="javascript:void(0)"
             @click="handleLogout">
-            <i class="icon-cc-logout"></i>
-            {{$t('注销')}}
+            {{$t('退出登录')}}
           </a>
         </template>
       </bk-popover>
@@ -152,13 +150,14 @@
         return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
       }
     },
-    async  mounted() {
+    async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
       const versionList = await this.getLogList()
-      this.versionList = versionList.map(item => ({
+      const formatData = versionList.map(item => ({
         title: item.version,
         date: item.time
       }))
+      this.versionList = this.$tools.versionSort(formatData, 'title')
       this.currentVersion = versionList.find(item => item.is_current === true)?.version || ''
       if (oldCurrentVersion !== this.currentVersion) {
         this.isShowChangeLogs = true

@@ -2,6 +2,10 @@
     "host_search_fail": "查询主机信息失败",
     "host_search_fail_with_errmsg": "查询主机信息失败,错误信息;%s",
     "host_import_innerip_empty": "%d行内网ip为空",
+    "host_import_innerip_v4_v6_empty": "%d行动态寻址方式内网ipv4和ipv6地址同时为空",
+    "host_import_innerip_v6_transfer_fail": "%d行内网ipv6地址转化成完整ipv6地址失败",
+    "host_import_innerip_v4_fail": "%d行静态寻址方式ipv4地址已存在，导入主机失败",
+    "host_import_innerip_v6_fail": "%d行静态寻址方式ipv6地址已存在，导入主机失败",
     "host_import_property_need_set": "%d行内网%s必填",
     "host_import_update_fail": "%d行%s更新失败%v",
     "host_import_add_fail": "%d行%s新加失败%s",
@@ -24,8 +28,8 @@
     "host_asst_property_str_not_found": "主机关联属性%s格式错误",
     "host_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
     "host_str_asst_str_query_data_format_error": "获取%s关联对象%s数据格式",
-    "plat_id_not_exist": "云区域id不存在",
-    "plat_get_str_err": "查询云区域失败",
+    "plat_id_not_exist": "管控区域id不存在",
+    "plat_get_str_err": "查询管控区域失败",
     "host_module_config_not_found":"主机与模块关系不存在",
     "": ""
 }

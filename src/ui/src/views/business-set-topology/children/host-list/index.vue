@@ -43,11 +43,18 @@
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== BUILTIN_MODELS.HOST"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -82,13 +89,18 @@
     },
     data() {
       this.BUILTIN_MODELS = BUILTIN_MODELS
-
       return {
         table: {
           data: [],
           selection: [],
           sort: 'bk_host_id',
-          pagination: this.$tools.getDefaultPaginationConfig()
+          pagination: this.$tools.getDefaultPaginationConfig(),
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         requestIds: {
           table: Symbol('table')
@@ -119,7 +131,6 @@
 
           this.table.pagination.current = parseInt(page, 10)
           this.table.pagination.limit = parseInt(limit, 10)
-
           if (tab === 'hostList' && node && this.selectedNode) {
             this.getHostList()
           }
@@ -249,7 +260,7 @@
             requestId: this.requestIds.table,
             cancelPrevious: true
           })
-
+          this.table.stuff.type = FilterStore.hasCondition ? 'search' : 'default'
           this.table.data = result.info
           this.table.pagination.count = result.count
         } catch (e) {
@@ -286,6 +297,10 @@
       },
       doLayoutTable() {
         this.$refs.table.doLayout()
+      },
+      handleClearFilter() {
+        this.table.stuff.type = 'default'
+        FilterStore.resetAll()
       }
     }
   }

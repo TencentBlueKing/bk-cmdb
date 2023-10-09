@@ -1,5 +1,5 @@
 # Bug提单
-如果你在使用cmdb的过程中幸运的发现了一个bug，社区欢迎你通过[提交issue](https://github.com/Tencent/bk-cmdb/issues/new)
+如果你在使用cmdb的过程中幸运的发现了一个bug，社区欢迎你通过[提交issue](https://github.com/TencentBlueKing/bk-cmdb/issues/new)
 将这个bug反馈给社区来进行定位和修复。针对你提交的bug，还需要你提供一些具体的信息来帮助社区来定位、修复这个问题。
 
 社区需要你提供下面这些基础信息：
@@ -22,7 +22,7 @@
 <列出如何重现的方法或操作步骤>
 
 
-**重要提醒**: 请优先尝试最新发布的版本 (发布清单： https://github.com/Tencent/bk-cmdb/releases), 如果问题不能在最新发布的版本里重现，说明此问题已经被修复。
+**重要提醒**: 请优先尝试最新发布的版本 (发布清单： https://github.com/TencentBlueKing/bk-cmdb/releases), 如果问题不能在最新发布的版本里重现，说明此问题已经被修复。
 
 
 关键信息

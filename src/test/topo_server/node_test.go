@@ -24,7 +24,6 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/test"
@@ -39,7 +38,7 @@ var _ = Describe("kube cluster test", func() {
 	var bizId, clusterID, hostId1, nodeID, nodeID2 int64
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -49,7 +48,7 @@ var _ = Describe("kube cluster test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
@@ -70,25 +69,25 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search host created using api", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Ip: params.IPInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Ipv4Ip: metadata.IPInfo{
 					Data:  []string{"127.0.0.1"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -124,7 +123,7 @@ var _ = Describe("kube cluster test", func() {
 			}
 
 			id, err := kubeClient.CreateCluster(ctx, header, bizId, createCLuster)
-			util.RegisterResponse(id)
+			util.RegisterResponseWithRid(id, header)
 			Expect(err).NotTo(HaveOccurred())
 			clusterID = id
 		})
@@ -154,7 +153,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			nodeID = result[0]
 		}()
@@ -182,7 +181,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			nodeID2 = result[0]
 		}()
@@ -209,7 +208,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.BatchCreateNode(ctx, header, bizId, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 
@@ -226,7 +225,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, createNode)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Result).To(Equal(true))
 		}()
@@ -241,7 +240,7 @@ var _ = Describe("kube cluster test", func() {
 				},
 			}
 			result, err := kubeClient.UpdateNodeFields(ctx, header, bizId, option)
-			util.RegisterResponse(result)
+			util.RegisterResponseWithRid(result, header)
 			Expect(err.Error()).Should(ContainSubstring("name"))
 		}()
 

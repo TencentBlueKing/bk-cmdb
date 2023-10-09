@@ -29,6 +29,8 @@
 
 <script>
   import TableValue from '@/components/ui/other/table-value'
+  import { PROCESS_BIND_IP_ALL_MAP } from '@/dictionary/process-bind-ip.js'
+
   export default {
     components: {
       TableValue
@@ -64,12 +66,7 @@
     },
     methods: {
       ipText(value) {
-        const map = {
-          1: '127.0.0.1',
-          2: '0.0.0.0',
-          3: this.$t('第一内网IP'),
-          4: this.$t('第一外网IP')
-        }
+        const map = PROCESS_BIND_IP_ALL_MAP
         return map[value] || value || '--'
       },
       setPopoverList() {
@@ -90,11 +87,11 @@
         const total = list.length
         const showCount = total > 1
         return (
-                    <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
-                        <span>{newList.join(', ')}</span>
-                        {showCount ? <span class="count">{total}</span> : ''}
-                    </div>
-                )
+          <div class={`bind-info-value${showCount ? ' show-count' : ''}`}>
+            <span>{newList.join(', ')}</span>
+            {showCount ? <span class="count">{total}</span> : ''}
+          </div>
+        )
       }
     }
   }

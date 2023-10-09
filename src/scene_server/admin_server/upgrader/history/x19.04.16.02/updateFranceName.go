@@ -38,7 +38,7 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
-	enums, err := metadata.ParseEnumOption(ctx, state.Option)
+	enums, err := metadata.ParseEnumOption(state.Option)
 	if err != nil {
 		return err
 	}
@@ -48,5 +48,6 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		}
 	}
 
-	return db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), mapstr.MapStr{common.BKOptionField: enums})
+	return db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(),
+		mapstr.MapStr{common.BKOptionField: enums})
 }

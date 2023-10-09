@@ -209,6 +209,7 @@
       Bus.$on('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$on('update-labels', this.updateHistoryLabels)
       Bus.$on('delete-complete', this.checkDifference)
+      Bus.$on('filter-clear', this.filterClear)
       this.setFilter()
       this.updateHistoryLabels()
     },
@@ -217,6 +218,7 @@
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
       Bus.$off('update-labels', this.updateHistoryLabels)
       Bus.$off('delete-complete', this.checkDifference)
+      Bus.$off('filter-clear', this.filterClear)
 
       if (this.syncStatusTimer) {
         clearTimeout(this.syncStatusTimer)
@@ -463,6 +465,10 @@
           },
           history: true
         })
+      },
+      filterClear() {
+        this.searchValue = []
+        this.$refs.searchSelect.inputOutSideClear()
       }
     }
   }

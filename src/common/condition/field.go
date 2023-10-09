@@ -92,7 +92,7 @@ func (cli *field) Like(val interface{}) Condition {
 // In in a array
 func (cli *field) In(val interface{}) Condition {
 	cli.opeartor = BKDBIN
-	cli.fieldValue = util.ConverToInterfaceSlice(val)
+	cli.fieldValue = util.ConvertToInterfaceSlice(val)
 	return cli.condition
 }
 

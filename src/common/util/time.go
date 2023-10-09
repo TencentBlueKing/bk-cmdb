@@ -64,7 +64,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 		if true == ok {
 
 			for key, value := range arrItem {
-				var timeTypeOk bool = false
+				var timeTypeOk = false
 				for _, convTimeKey := range convTimeFields {
 					if key == convTimeKey {
 						timeTypeOk = true
@@ -82,7 +82,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 					arr := value.([]interface{})
 					for index, tsValue := range arr {
 						ts, err := convInterfaceToTime(tsValue)
-						if nil != err {
+						if err != nil {
 							continue
 						}
 						arr[index] = ts
@@ -92,7 +92,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 					arr := value.(map[string]interface{})
 					for mapKey, mapVal := range arr {
 						ts, err := convInterfaceToTime(mapVal)
-						if nil != err {
+						if err != nil {
 							continue
 						}
 						arr[mapKey] = ts
@@ -114,7 +114,7 @@ func convTimeItem(item interface{}) (interface{}, error) {
 		if true == ok {
 			for index, value := range arrItem {
 				newValue, err := convTimeItem(value)
-				if nil != err {
+				if err != nil {
 					return nil, err
 
 				}
@@ -135,7 +135,7 @@ func convInterfaceToTime(val interface{}) (interface{}, error) {
 		var ret []interface{}
 		for _, itemVal := range arrVal {
 			ts, err := convItemToTime(itemVal)
-			if nil != err {
+			if err != nil {
 				ret = append(ret, itemVal)
 			} else {
 				ret = append(ret, ts)

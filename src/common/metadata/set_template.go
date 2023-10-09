@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // SetTemplate 集群模板
@@ -36,7 +36,7 @@ type SetTemplate struct {
 
 // Validate TODO
 func (st SetTemplate) Validate(errProxy errors.DefaultCCErrorIf) (key string, err error) {
-	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
 		return "name", err
 	}

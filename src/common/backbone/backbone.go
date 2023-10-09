@@ -80,7 +80,8 @@ func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClie
 	return nil, err
 }
 
-func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
+func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface,
+	apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
 
 	machinery, err := apimachinery.NewApiMachinery(apiMachineryConfig, discovery)
 	if err != nil {
@@ -131,13 +132,14 @@ func validateParameter(input *BackboneParameter) error {
 	return nil
 }
 
-// NewBackbone TODO
+// NewBackbone new backbone.
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
 	if err := validateParameter(input); err != nil {
 		return nil, err
 	}
 
-	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(), ProcessInstance: input.SrvInfo.Instance()})
+	metricService := metrics.NewService(metrics.Config{ProcessName: common.GetIdentification(),
+		ProcessInstance: input.SrvInfo.Instance()})
 
 	common.SetServerInfo(input.SrvInfo)
 	client, err := newSvcManagerClient(ctx, input.Regdiscv)
@@ -184,15 +186,13 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	cc.AddConfigCenter(configCenter)
 
 	// get the real configuration center.
-	curentConfigCenter := cc.CurrentConfigCenter()
+	currentConfigCenter := cc.CurrentConfigCenter()
 
-	err = cc.NewConfigCenter(ctx, curentConfigCenter, input.ConfigPath, handler)
-	if err != nil {
+	if err = cc.NewConfigCenter(ctx, currentConfigCenter, input.ConfigPath, handler); err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
 
-	err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance())
-	if err != nil {
+	if err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance()); err != nil {
 		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}
 
@@ -229,7 +229,8 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 }
 
 // StartServer TODO
-func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler, pprofEnabled bool) error {
+func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTPHandler http.Handler,
+	pprofEnabled bool) error {
 	tlsConf, err := getTLSConf()
 	if err != nil {
 		blog.Errorf("get tls config error, err: %v", err)

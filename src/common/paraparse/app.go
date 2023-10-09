@@ -59,7 +59,8 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 				if !ok {
 					return fmt.Errorf("operator %s only support for string array", common.BKDBMULTIPLELike)
 				}
-				fields = append(fields, mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr, common.BKDBOPTIONS: "i"}})
+				fields = append(fields,
+					mapstr.MapStr{i.Field: mapstr.MapStr{common.BKDBLIKE: mstr, common.BKDBOPTIONS: "i"}})
 			}
 			if len(fields) != 0 {
 				// only when the fields is none empty, then the fields is valid.

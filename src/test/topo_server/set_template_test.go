@@ -142,7 +142,8 @@ var _ = Describe("create normal set template test", func() {
 					Limit: common.BKNoLimit,
 				},
 			}
-			rsp, err := topoServerClient.SetTemplate().ListSetTplRelatedSetsWeb(ctx, header, bizID, setTemplateID, option)
+			rsp, err := topoServerClient.SetTemplate().ListSetTplRelatedSetsWeb(ctx, header, bizID, setTemplateID,
+				option)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Count).Should(Equal(1))
 			Expect(rsp.Info).Should(HaveLen(1))
@@ -191,7 +192,8 @@ var _ = Describe("create normal set template test", func() {
 			option := metadata.DiffSetTplWithInstOption{
 				SetID: setID,
 			}
-			setTplDiffResult, err := topoServerClient.SetTemplate().DiffSetTplWithInst(ctx, header, bizID, setTemplateID, option)
+			setTplDiffResult, err := topoServerClient.SetTemplate().DiffSetTplWithInst(ctx, header, bizID,
+				setTemplateID, option)
 			Expect(err).NotTo(HaveOccurred())
 			setDiff := setTplDiffResult.Difference
 			Expect(setDiff.SetID).To(Equal(setID))
@@ -1043,26 +1045,7 @@ func prepareSetTemplateData() {
 			}
 		}
 
-		biz := new(metadata.BizInst)
-		err = test.GetDB().Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{"bk_biz_name": "set_Template_biz"}).
-			One(ctx, biz)
-		if test.GetDB().IsNotFoundError(err) {
-			return
-		}
-		Expect(err).NotTo(HaveOccurred())
-
-		delCond := mapstr.MapStr{common.BKAppIDField: biz.BizID}
-		err = test.GetDB().Table(common.BKTableNameObjAttDes).Delete(ctx, delCond)
-		Expect(err).NotTo(HaveOccurred())
-
-		err = apiServerClient.UpdateBizDataStatus(ctx, "0", common.DataStatusDisabled, biz.BizID, header)
-		testutil.RegisterResponseWithRid(err, header)
-		Expect(err).NotTo(HaveOccurred())
-
-		rsp, err := apiServerClient.DeleteBiz(ctx, header, metadata.DeleteBizParam{BizID: []int64{biz.BizID}})
-		testutil.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.BaseResp.Result).To(Equal(true))
+		test.DeleteAllBizs()
 	}()
 
 	By("create business")

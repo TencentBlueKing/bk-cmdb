@@ -13,6 +13,7 @@
 <script lang="ts">
   import { computed, defineComponent, PropType, ref, nextTick } from 'vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   interface IProperty {
     id: number,
@@ -51,7 +52,7 @@
       formElementSize: String
     },
     setup(props, { emit }) {
-      const $propertyFormElement = ref(null)
+      const propertyFormEl = ref(null)
 
       const isEditable = computed(() => props.property.editable && !props.property.bk_isapi)
 
@@ -63,7 +64,7 @@
         const value = (props.value === null || props.value === undefined) ? '' : props.value
         emit('update:editState', { value, property })
         nextTick(() => {
-          const component = $propertyFormElement.value.$refs[`component-${property.bk_property_id}`]
+          const component = propertyFormEl.value.$refs[`component-${property.bk_property_id}`]
           component?.focus?.()
         })
       }
@@ -77,7 +78,7 @@
           eventName = 'enter'
         }
 
-        if (['list', 'enum'].includes(type)) {
+        if (['list', 'enum', PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(type)) {
           eventName = 'on-selected'
         }
 
@@ -93,7 +94,7 @@
       })
 
       const confirmEdit = async () => {
-        const valid = await $propertyFormElement.value?.$validator?.validate?.()
+        const valid = await propertyFormEl.value?.$validator?.validate?.()
 
         if (!valid) {
           return
@@ -103,7 +104,10 @@
         emit('confirm', changed)
       }
 
-      const clickOutSideMiddleware = event => !event.path.some(node => node.className === 'bk-picker-panel-body-wrapper')
+      const clickOutSideMiddleware = (event) => {
+        const path = event.composedPath ? event.composedPath() : event.path
+        return !path?.some?.(node => node.className === 'bk-picker-panel-body-wrapper')
+      }
 
       const handleClickOutSide = () => {
         if (isEditing.value) {
@@ -116,7 +120,7 @@
         isEditing,
         setEditState,
         handleClickOutSide,
-        $propertyFormElement,
+        propertyFormEl,
         confirmEvents,
         formElementFontSize,
         clickOutSideMiddleware
@@ -158,7 +162,7 @@
 
       <!-- 编辑态，显示表单项 -->
       <div class="property-form" v-if="isEditing">
-        <property-form-element ref="$propertyFormElement"
+        <property-form-element ref="propertyFormEl"
           @click.stop
           v-click-outside="{
             handler: handleClickOutSide,

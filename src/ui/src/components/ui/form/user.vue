@@ -17,6 +17,7 @@
     </div>
     <blueking-user-selector class="cmdb-form-objuser"
       ref="userSelector"
+      :placeholder="localPlaceholder"
       display-list-tips
       v-bind="props"
       v-model="localValue"
@@ -42,7 +43,11 @@
         type: String,
         default: ''
       },
-      fastSelect: Boolean
+      fastSelect: Boolean,
+      placeholder: {
+        type: String,
+        default: ''
+      }
     },
     computed: {
       ...mapGetters(['userName']),
@@ -73,6 +78,9 @@
           props.pasteValidator = this.pasteValidator
         }
         return props
+      },
+      localPlaceholder() {
+        return this.placeholder || this.$t('请输入用户')
       }
     },
     mounted() {

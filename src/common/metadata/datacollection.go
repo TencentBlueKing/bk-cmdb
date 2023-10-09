@@ -12,6 +12,13 @@
 
 package metadata
 
+const (
+	// HostSnapDataSourcesDelayQueue host snap data comes from the delay queue.
+	HostSnapDataSourcesDelayQueue = "delay_queue"
+	// HostSnapDataSourcesChannel the source of host snap data is channels such as redis or kafka.
+	HostSnapDataSourcesChannel = "channel"
+)
+
 // AddDeviceResult TODO
 type AddDeviceResult struct {
 	DeviceID uint64 `json:"device_id"`

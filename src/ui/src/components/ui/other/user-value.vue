@@ -14,7 +14,8 @@
   <blueking-user-selector ref="userSelector" type="info"
     v-if="localValue.length"
     :api="api"
-    :value="localValue">
+    :value="localValue"
+    v-bk-overflow-tips>
   </blueking-user-selector>
   <span v-else>--</span>
 </template>
@@ -58,8 +59,21 @@
     },
     methods: {
       getCopyValue() {
-        return this.$refs?.userSelector?.userInfo
+        return this.$refs?.userSelector?.userInfo || '--'
       }
     }
   }
 </script>
+
+<style lang="scss" scoped>
+    .bk-table{
+        .user-selector{
+            width: 100%;
+            overflow: hidden;
+            display: block;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+
+</style>

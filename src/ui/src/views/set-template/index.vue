@@ -59,7 +59,7 @@
           {{row.id}}
         </div>
       </bk-table-column>
-      <bk-table-column :label="$t('模板名称')" prop="name" sortable="custom"></bk-table-column>
+      <bk-table-column :label="$t('模板名称')" prop="name" sortable="custom" show-overflow-tooltip></bk-table-column>
       <bk-table-column :label="$t('应用数量')" prop="set_instance_count" sortable></bk-table-column>
       <bk-table-column :label="$t('修改人')" prop="modifier" sortable="custom"></bk-table-column>
       <bk-table-column :label="$t('修改时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
@@ -98,6 +98,7 @@
         :stuff="table.stuff"
         :auth="{ type: $OPERATION.C_SET_TEMPLATE, relation: [bizId] }"
         @create="handleCreate"
+        @clear="handleClearFilter"
       ></cmdb-table-empty>
     </bk-table>
   </div>
@@ -105,6 +106,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import RouterQuery from '@/router/query'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_BUSINESS_SERVICE_TEMPLATE,
@@ -134,7 +136,10 @@
       }
     },
     computed: {
-      ...mapGetters('objectBiz', ['bizId'])
+      ...mapGetters('objectBiz', ['bizId']),
+      query() {
+        return RouterQuery.getAll()
+      },
     },
     watch: {
       originList() {
@@ -142,9 +147,20 @@
       }
     },
     async created() {
-      await this.getSetTemplates()
+      await this.getQueryList()
     },
     methods: {
+      async getQueryList() {
+        const params = this.query
+        const { searchName = '',  sort = '-last_time' } = params
+        this.table.sort = sort
+        this.searchName = searchName
+        await this.getSetTemplates()
+        this.setRoute()
+      },
+      setRoute() {
+        RouterQuery.set({ sort: this.table.sort, searchName: this.searchName })
+      },
       async getSetTemplates() {
         const data = await this.$store.dispatch('setTemplate/getSetTemplates', {
           bizId: this.bizId,
@@ -164,6 +180,9 @@
         }))
         this.list = list
         this.originList = list
+        if (this.searchName) {
+          this.handleFilterTemplate()
+        }
       },
       async getSyncStatus() {
         try {
@@ -218,10 +237,13 @@
           ? originList.filter(template => template.name.indexOf(this.searchName) !== -1)
           : originList
         this.table.stuff.type = this.searchName ? 'search' : 'default'
+        this.setRoute()
       },
       handleClearFilter() {
         this.list = this.originList
         this.table.stuff.type = 'default'
+        this.searchName = ''
+        this.setRoute()
       },
       handleSelectable(row) {
         return !row.set_instance_count
@@ -252,6 +274,8 @@
           return
         }
         this.table.sort = this.$tools.getSort(sort, '-last_time')
+        this.searchName = ''
+        this.setRoute()
         this.getSetTemplates()
       },
       handleGoBusinessTopo() {
@@ -263,6 +287,11 @@
         this.$routerActions.redirect({
           name: MENU_BUSINESS_SERVICE_TEMPLATE
         })
+      },
+      handleFilterClear() {
+        this.searchName = ''
+        this.table.stuff.type = 'default'
+        this.setRoute()
       }
     }
   }

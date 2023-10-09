@@ -21,7 +21,8 @@ import (
 )
 
 // CreateManyModelClassification TODO
-func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
+func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header,
+	input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
 	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/model/classification"
 
@@ -62,7 +63,8 @@ func (m *model) CreateModelClassification(ctx context.Context, h http.Header,
 }
 
 // SetManyModelClassification TODO
-func (m *model) SetManyModelClassification(ctx context.Context, h http.Header, input *metadata.SetManyModelClassification) (resp *metadata.SetOptionResult, err error) {
+func (m *model) SetManyModelClassification(ctx context.Context, h http.Header,
+	input *metadata.SetManyModelClassification) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/model/classification"
 
@@ -77,7 +79,8 @@ func (m *model) SetManyModelClassification(ctx context.Context, h http.Header, i
 }
 
 // SetModelClassification TODO
-func (m *model) SetModelClassification(ctx context.Context, h http.Header, input *metadata.SetOneModelClassification) (resp *metadata.SetOptionResult, err error) {
+func (m *model) SetModelClassification(ctx context.Context, h http.Header,
+	input *metadata.SetOneModelClassification) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/classification"
 
@@ -169,6 +172,32 @@ func (m *model) ReadModelClassification(ctx context.Context, h http.Header, inpu
 	return &resp.Data, nil
 }
 
+// CreateTableModel create object for inner table
+func (m *model) CreateTableModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
+	*metadata.CreateOneDataResult, error) {
+
+	resp := new(metadata.CreatedOneOptionResult)
+	subPath := "/create/table/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // CreateModel create object
 func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.CreateModel) (
 	*metadata.CreateOneDataResult, error) {
@@ -196,7 +225,8 @@ func (m *model) CreateModel(ctx context.Context, h http.Header, input *metadata.
 }
 
 // SetModel TODO
-func (m *model) SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult, err error) {
+func (m *model) SetModel(ctx context.Context, h http.Header, input *metadata.SetModel) (resp *metadata.SetOptionResult,
+	err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model"
 
@@ -236,7 +266,8 @@ func (m *model) UpdateModel(ctx context.Context, h http.Header, input *metadata.
 }
 
 // DeleteModel TODO
-func (m *model) DeleteModel(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteModel(ctx context.Context, h http.Header,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model"
 
@@ -274,8 +305,34 @@ func (m *model) DeleteModelCascade(ctx context.Context, h http.Header, modelID i
 	return &resp.Data, err
 }
 
+// DeleteTableModelCascade delete table object, attrs, group
+func (m *model) DeleteTableModelCascade(ctx context.Context, h http.Header, input *metadata.DeleteTableOption) error {
+
+	resp := new(metadata.DeletedOptionResult)
+	subPath := "/delete/table/model/cascade"
+
+	err := m.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return err
+}
+
 // ReadModelWithAttribute TODO
-func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelWithAttributeResult, err error) {
+func (m *model) ReadModelWithAttribute(ctx context.Context, h http.Header,
+	input *metadata.QueryCondition) (resp *metadata.ReadModelWithAttributeResult, err error) {
 	resp = new(metadata.ReadModelWithAttributeResult)
 	subPath := "/read/model/with/attribute"
 
@@ -295,6 +352,32 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 
 	resp := new(metadata.ReadModelResult)
 	subPath := "/read/model"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, err
+}
+
+// ListModel list object, this api supports paging.
+func (m *model) ListModel(ctx context.Context, h http.Header, input *metadata.CommonQueryOption) (
+	*metadata.QueryModelDataResult, error) {
+
+	resp := new(metadata.ReadModelResult)
+	subPath := "/findmany/model"
 
 	err := m.client.Post().
 		WithContext(ctx).
@@ -367,30 +450,30 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return &resp.Data, nil
 }
 
-// UpdateModelAttrsIndex update object attrs index
-func (m *model) UpdateModelAttrsIndex(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-	*metadata.UpdateAttrIndexData, error) {
+// UpdateModelAttrIndex update object attribute index
+func (m *model) UpdateModelAttrIndex(ctx context.Context, h http.Header, objID string, id int64,
+	input *metadata.UpdateAttrIndexInput) error {
 
-	resp := new(metadata.UpdatedAttrIndexResult)
-	subPath := "/update/model/%s/attributes/index"
+	resp := new(metadata.BaseResp)
+	subPath := "/update/model/%s/attribute/%d/index"
 
 	err := m.client.Post().
 		WithContext(ctx).
 		Body(input).
-		SubResourcef(subPath, objID).
+		SubResourcef(subPath, objID, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 
 	if err = resp.CCError(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return resp.Data, nil
+	return nil
 }
 
 // UpdateModelAttrsByCondition update object attrs by condition
@@ -419,8 +502,35 @@ func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, 
 	return &resp.Data, nil
 }
 
+// UpdateTableModelAttrsByCondition update table object table attrs by condition
+func (m *model) UpdateTableModelAttrsByCondition(ctx context.Context, h http.Header,
+	input *metadata.UpdateTableOption) error {
+
+	resp := new(metadata.UpdatedOptionResult)
+	subPath := "/update/table/model/attributes"
+
+	err := m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // SetModelAttrs TODO
-func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
+func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string,
+	input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/%s/attributes"
 
@@ -435,7 +545,8 @@ func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, 
 }
 
 // DeleteModelAttr TODO
-func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model/%s/attributes"
 
@@ -486,6 +597,33 @@ func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header, inp
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// ReadModelAttrsWithTableByCondition search object attrs by condition for web
+// NOTICE: include table attributes
+func (m *model) ReadModelAttrsWithTableByCondition(ctx context.Context, h http.Header, bizID int64,
+	input *metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+
+	resp := new(metadata.ReadModelAttrResult)
+	subPath := "/read/%d/model/attributes/with_table"
+
+	err := m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -580,7 +718,8 @@ func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID s
 }
 
 // UpdateAttributeGroup TODO
-func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
+func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string,
+	input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
 	subPath := "/update/model/%s/group"
 
 	err = m.client.Put().
@@ -620,7 +759,8 @@ func (m *model) UpdateAttributeGroupByCondition(ctx context.Context, h http.Head
 }
 
 // SetAttributeGroup TODO
-func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error) {
+func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string,
+	input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error) {
 	subPath := "/set/model/%s/group"
 
 	err = m.client.Post().
@@ -634,7 +774,8 @@ func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID stri
 }
 
 // DeleteAttributeGroup TODO
-func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string,
+	input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
 	subPath := "/delete/model/%s/group"
 
 	err = m.client.Delete().
@@ -796,6 +937,31 @@ func (m *model) CreateModelTables(ctx context.Context, h http.Header,
 
 	resp := new(metadata.Response)
 	subPath := "/create/model/tables"
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateTableModelTables create tabular model instance table
+func (m *model) CreateTableModelTables(ctx context.Context, h http.Header,
+	input *metadata.CreateModelTable) (err error) {
+
+	resp := new(metadata.Response)
+	subPath := "/create/table/model/tables"
 
 	err = m.client.Post().
 		WithContext(ctx).

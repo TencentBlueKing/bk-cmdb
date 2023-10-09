@@ -23,13 +23,78 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
+func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
+	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	instIDFieldName := common.GetInstIDField(objID)
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, instTableName, len(params))
+	if err != nil {
+		return nil, err
+	}
+	mappings := make([]mapstr.MapStr, 0)
+	ts := time.Now()
+
+	for idx := range params {
+		if objID == common.BKInnerObjIDHost {
+			params[idx], err = metadata.ConvertHostSpecialStringToArray(params[idx])
+			if err != nil {
+				blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, err
+			}
+		}
+
+		// build new object instance data.
+		if !valid.IsInnerObject(objID) {
+			params[idx][common.BKObjIDField] = objID
+		}
+		params[idx].Set(instIDFieldName, ids[idx])
+		params[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+		params[idx].Set(common.CreateTimeField, ts)
+		params[idx].Set(common.LastTimeField, ts)
+
+		if !metadata.IsCommon(objID) {
+			continue
+		}
+		// build new object mapping data for inner object instance.
+		mapping := make(mapstr.MapStr, 0)
+		mapping[instIDFieldName] = ids[idx]
+		mapping[common.BKObjIDField] = objID
+		mapping[common.BkSupplierAccount] = kit.SupplierAccount
+
+		mappings = append(mappings, mapping)
+	}
+
+	if len(mappings) != 0 {
+		// save new object mappings data for inner object instance.
+		if err := instancemapping.Create(kit.Ctx, mappings); err != nil {
+			return nil, err
+		}
+	}
+
+	// save object instances.
+	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, params)
+	if err != nil {
+		blog.Errorf("save instances failed, rid: %s, err: %v, objID: %s, instances: %v", kit.Rid, err, objID, params)
+		if mongodb.Client().IsDuplicatedError(err) {
+			return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+		}
+		return nil, err
+	}
+
+	return ids, nil
+}
+
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
 	if objID == common.BKInnerObjIDHost {
-		inputParam = metadata.ConvertHostSpecialStringToArray(inputParam)
+		var err error
+		inputParam, err = metadata.ConvertHostSpecialStringToArray(inputParam)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -41,7 +106,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	// build new object instance data.
 	instIDFieldName := common.GetInstIDField(objID)
 	inputParam[instIDFieldName] = id
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		inputParam[common.BKObjIDField] = objID
 	}
 	ts := time.Now()
@@ -78,10 +143,14 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {
 	if objID == common.BKInnerObjIDHost {
-		data = metadata.ConvertHostSpecialStringToArray(data)
+		var err error
+		data, err = metadata.ConvertHostSpecialStringToArray(data)
+		if err != nil {
+			return err
+		}
 	}
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
 	ts := time.Now()
@@ -102,7 +171,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
-	if !util.IsInnerObject(objID) {
+	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
 	if objID == common.BKInnerObjIDHost {

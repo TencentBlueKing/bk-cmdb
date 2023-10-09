@@ -37,17 +37,39 @@
       PropertyConfigDetails
     },
     setup(props, { emit }) {
-      const $this = getCurrentInstance()
-      const $processForm = ref(null)
-      const $templateName = ref(null)
-      const $secCategory = ref(null)
+      const instanceSelf = getCurrentInstance()
+      const processFormEl = ref(null)
+      const templateNameEl = ref(null)
+      const secCategoryEl = ref(null)
       const loading = ref(true)
-
-      const createElement = h.bind($this)
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
       const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
+
+      const tipsLink = h('bk-link', {
+        slot: 'link',
+        props: { theme: 'primary' },
+        on: {
+          click() {
+            emit('active-change', 'instance')
+          }
+        }
+      }, t('同步功能'))
+      const tipsProcessMessage = h('i18n', {
+        class: 'process-success-message',
+        props: {
+          path: '成功更新模板进程，您可以通过XXX',
+          tag: 'div',
+        }
+      }, [tipsLink])
+      const tipsConfigMessage = h('i18n', {
+        class: 'process-success-message',
+        props: {
+          path: '成功更新模板，您可以通过XXX',
+          tag: 'div',
+        }
+      }, [tipsLink])
 
       const state = reactive({
         moduleProperties: [],
@@ -183,11 +205,11 @@
         let $component = null
         if (property === basicProperties.templateName) {
           editState.value.value = state.basic.templateName
-          $component = $templateName
+          $component = templateNameEl
         }
         if (property === basicProperties.categorty) {
           editState.value.value = state.basic.secCategory
-          $component = $secCategory
+          $component = secCategoryEl
         }
         editState.value.property = property
 
@@ -215,7 +237,7 @@
       }
 
       const confirmSaveName = async () => {
-        const valid = await $this?.proxy?.$validator.validate('templateName')
+        const valid = await instanceSelf?.proxy?.$validator.validate('templateName')
         if (!valid) {
           return
         }
@@ -231,7 +253,7 @@
           width: 520,
           extCls: 'confirm-edit-service-template-name-infobox',
           async confirmFn() {
-            saveName()
+            await saveName()
           },
           cancelFn() {
             resetEditState()
@@ -244,7 +266,7 @@
       }
       const saveName = async () => {
         try {
-          const valid = await $this?.proxy?.$validator.validate('templateName')
+          const valid = await instanceSelf?.proxy?.$validator.validate('templateName')
           if (!valid) {
             return
           }
@@ -274,7 +296,7 @@
       }
       const saveCategory = async () => {
         try {
-          const valid = await $this?.proxy?.$validator.validate('secCategory')
+          const valid = await instanceSelf?.proxy?.$validator.validate('secCategory')
           if (!valid) {
             return
           }
@@ -308,26 +330,12 @@
       }
 
       // 显示同步提示的方法
-      const showSyncInstanceTips = (text = '成功更新模板进程，您可以通过XXX') => {
-        const link = createElement('bk-link', {
-          slot: 'link',
-          props: { theme: 'primary' },
-          on: {
-            click() {
-              emit('active-change', 'instance')
-            }
-          }
-        }, t('同步功能'))
-
-        const message = createElement('i18n', {
-          class: 'process-success-message',
-          props: {
-            path: text,
-            tag: 'div',
-          }
-        }, [link])
-
-        $success(message)
+      const showSyncInstanceTips = (from = 'process') => {
+        const messages = {
+          config: tipsConfigMessage,
+          process: tipsProcessMessage
+        }
+        $success(messages[from])
         emit('sync-change')
       }
 
@@ -348,14 +356,14 @@
             bk_biz_id: bizId.value,
             attributes: [{
               bk_attribute_id: property.id,
-              bk_property_value: value
+              bk_property_value: formatValue(value, property)
             }]
           }
           await serviceTemplateService.updateProperty(data)
 
           state.propertyConfig[property.id] = value
 
-          showSyncInstanceTips('成功更新模板，您可以通过XXX')
+          showSyncInstanceTips('config')
         } finally {
           propertyConfigLoadingState.value = propertyConfigLoadingState.value.filter(item => item !== property)
         }
@@ -372,7 +380,7 @@
 
         del(state.propertyConfig, property.id)
 
-        showSyncInstanceTips('成功更新模板，您可以通过XXX')
+        showSyncInstanceTips('config')
       }
 
       const handleCreateProcess = () => {
@@ -462,23 +470,13 @@
       }
 
       const handleProcessSliderBeforeClose = () => {
-        const hasChanged = $processForm.value && $processForm.value.hasChange()
+        const hasChanged = processFormEl.value && processFormEl.value.hasChange()
         if (hasChanged) {
-          return new Promise((resolve) => {
-            $bkInfo({
-              title: t('确认退出'),
-              subTitle: t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          processFormEl.value.setChanged(true)
+          processFormEl.value.beforeClose(handleCancelProcess)
+        } else {
+          return true
         }
-        return true
       }
 
       const handleGoToEdit = () => {
@@ -503,9 +501,9 @@
         templateDetailRequestId,
         serviceCategory,
         propertyConfigLoadingState,
-        $templateName,
-        $secCategory,
-        $processForm,
+        templateNameEl,
+        secCategoryEl,
+        processFormEl,
         hasPropertyConfig,
         setEditState,
         categoryClickOutsideMiddleware,
@@ -554,7 +552,7 @@
                   </cmdb-auth>
                   <div class="property-form" v-if="basicProperties.templateName === editState.property">
                     <bk-input type="text"
-                      ref="$templateName"
+                      ref="templateNameEl"
                       name="templateName"
                       size="small"
                       font-size="normal"
@@ -571,7 +569,7 @@
               </div>
             </grid-item>
             <grid-item
-              label="服务分类"
+              :label="$t('服务分类')"
               direction="row"
               :label-width="160">
               <div class="editable-content">
@@ -622,7 +620,7 @@
                     </div>
                     <div class="category-item" :class="['cmdb-form-item', { 'is-error': errors.has('secCategory') }]">
                       <cmdb-selector
-                        ref="$secCategory"
+                        ref="secCategoryEl"
                         display-key="displayName"
                         size="small"
                         font-size="normal"
@@ -737,7 +735,7 @@
       :before-close="handleProcessSliderBeforeClose">
       <template slot="content" v-if="processSlider.show">
         <process-form v-test-id.businessServiceTemplate="'processForm'"
-          ref="$processForm"
+          ref="processFormEl"
           :auth="auth"
           :properties="processProperties"
           :property-groups="processPropertyGroup"

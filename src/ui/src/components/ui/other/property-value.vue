@@ -14,7 +14,7 @@
   <user-value
     :value="value"
     ref="complexTypeComp"
-    v-if="isUser">
+    v-if="property.bk_property_type === PROPERTY_TYPES.OBJUSER">
   </user-value>
   <table-value
     ref="complexTypeComp"
@@ -22,20 +22,44 @@
     :show-on="showOn"
     :format-cell-value="formatCellValue"
     :property="property"
-    v-else-if="isTable">
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.TABLE">
   </table-value>
   <service-template-value
-    v-else-if="isServiceTemplate"
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.SERVICE_TEMPLATE"
     ref="complexTypeComp"
     :value="value"
     display-type="info">
   </service-template-value>
   <mapstring-value
-    v-else-if="isMapstring"
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.MAP"
     ref="complexTypeComp"
     :value="value">
   </mapstring-value>
+  <enumquote-value
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.ENUMQUOTE"
+    ref="complexTypeComp"
+    :value="value"
+    :property="property">
+  </enumquote-value>
+  <org-value
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.ORGANIZATION"
+    ref="complexTypeComp"
+    :value="value"
+    :property="property"
+    :show-on="showOn"
+    v-bind="$attrs">
+  </org-value>
+  <inner-table-value
+    v-else-if="property.bk_property_type === PROPERTY_TYPES.INNER_TABLE"
+    ref="complexTypeComp"
+    :value="value"
+    :property="property"
+    :show-on="showOn"
+    :instance="instance"
+    v-bind="$attrs">
+  </inner-table-value>
   <component
+    class="value-container"
     :is="tag"
     v-bind="attrs"
     v-bk-overflow-tips
@@ -43,6 +67,7 @@
     {{displayValue}}
   </component>
   <component
+    class="value-container"
     :is="tag"
     v-bind="attrs"
     v-else>
@@ -55,14 +80,22 @@
   import TableValue from './table-value'
   import ServiceTemplateValue from '@/components/search/service-template'
   import MapstringValue from './mapstring-value.vue'
-  const ORG_CACHES = {}
+  import EnumquoteValue from './enumquote-value.vue'
+  import OrgValue from './org-value.vue'
+  import InnerTableValue from './inner-table-value.vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { isUseComplexValueType } from '@/utils/tools'
+
   export default {
     name: 'cmdb-property-value',
     components: {
       UserValue,
       TableValue,
       ServiceTemplateValue,
-      MapstringValue
+      MapstringValue,
+      EnumquoteValue,
+      OrgValue,
+      InnerTableValue
     },
     props: {
       value: {
@@ -105,11 +138,16 @@
       },
       formatCellValue: Function,
       multiple: Boolean,
-      isShowOverflowTips: Boolean
+      isShowOverflowTips: Boolean,
+      instance: {
+        type: Object,
+        default: () => ({})
+      }
     },
     data() {
       return {
-        displayValue: ''
+        displayValue: '',
+        PROPERTY_TYPES
       }
     },
     computed: {
@@ -118,22 +156,6 @@
           class: `value-${this.theme}-theme`
         }
         return attrs
-      },
-      isUser() {
-        const type = typeof this.property === 'object' ? this.property.bk_property_type : this.property
-        return type === 'objuser'
-      },
-      isTable() {
-        return this.property.bk_property_type === 'table'
-      },
-      isServiceTemplate() {
-        return this.property.bk_property_type === 'service-template'
-      },
-      isOrg() {
-        return this.property.bk_property_type === 'organization'
-      },
-      isMapstring() {
-        return this.property.bk_property_type === 'map'
       }
     },
     watch: {
@@ -146,9 +168,12 @@
     },
     methods: {
       async setDisplayValue(value) {
-        if (this.isUser || this.isTable) return
+        if (isUseComplexValueType(this.property)) {
+          return
+        }
+
         let displayQueue
-        if (this.multiple && Array.isArray(value) && !this.isOrg) {
+        if (this.multiple && Array.isArray(value)) {
           displayQueue = value.map(subValue => this.getDisplayValue(subValue))
         } else {
           displayQueue = [this.getDisplayValue(value)]
@@ -157,48 +182,14 @@
         this.displayValue = result.join(', ')
       },
       async getDisplayValue(value) {
-        let displayValue
-        const isPropertyObject = Object.prototype.toString.call(this.property) === '[object Object]'
-        const type = isPropertyObject ? this.property.bk_property_type : this.property
-        const unit = isPropertyObject ? this.property.unit : ''
-        if (type === 'organization') {
-          displayValue = await this.getOrganization(value)
-        } else {
-          displayValue = this.$options.filters.formatter(value, this.property, this.options)
-        }
-        // eslint-disable-next-line no-nested-ternary
-        return (this.showUnit && unit && displayValue !== '--')
-          ? `${displayValue}${unit}`
-          : String(displayValue).length
-            ? displayValue
-            : '--'
-      },
-      async getOrganization(value) {
-        let displayValue
-        const cacheKey = Array.isArray(value) ? value.join('_') : String(value)
-        if (ORG_CACHES[cacheKey]) {
-          return ORG_CACHES[cacheKey]
+        const unit = this.property.unit || ''
+        const displayValue = this.$options.filters.formatter(value, this.property, this.options)
+
+        if ((this.showUnit && unit && displayValue !== '--')) {
+          return `${displayValue}${unit}`
         }
 
-        if (!value || !value.length) {
-          displayValue = '--'
-        } else {
-          const res = await this.$store.dispatch('organization/getDepartment', {
-            params: {
-              lookup_field: 'id',
-              exact_lookups: value.join(',')
-            },
-            config: {
-              fromCache: true,
-              requestId: `get_department_id_${cacheKey}`
-            }
-          })
-          const names = (res.results || []).map(item => item.full_name)
-          displayValue = names.join('; ') || '--'
-        }
-
-        ORG_CACHES[cacheKey] = displayValue
-        return displayValue
+        return String(displayValue).length ? displayValue : '--'
       },
       getCopyValue() {
         if (this.$refs?.complexTypeComp) {
@@ -211,6 +202,9 @@
 </script>
 
 <style lang="scss" scoped>
+  .value-container {
+    display: block;
+  }
   .value-primary-theme {
     color: $primaryColor;
     cursor: pointer;

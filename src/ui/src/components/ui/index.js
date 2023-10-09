@@ -30,6 +30,8 @@ import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
+import enummulti from './form/enummulti.vue'
+import enumquote from './form/enumquote.vue'
 import objuser from './form/user.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
@@ -44,6 +46,7 @@ import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import authOption from './auth/auth-option.vue'
 import tableEmpty from './table-empty/table-empty.vue'
+import dataEmpty from './data-empty/data-empty.vue'
 import list from './form/list.vue'
 import table from './form/table.vue'
 import leaveConfirm from './dialog/leave-confirm.vue'
@@ -54,6 +57,8 @@ import routerSubview from './other/router-subview.vue'
 import organization from './form/organization.vue'
 import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
+import innertable from './form/inner-table/index.vue'
+import steps from './other/steps.vue'
 const install = (Vue) => {
   const components = [
     businessSelector,
@@ -74,6 +79,8 @@ const install = (Vue) => {
     singlechar,
     timezone,
     enumeration,
+    enummulti,
+    enumquote,
     objuser,
     resize,
     collapseTransition,
@@ -90,6 +97,7 @@ const install = (Vue) => {
     auth,
     authOption,
     tableEmpty,
+    dataEmpty,
     list,
     table,
     leaveConfirm,
@@ -99,7 +107,9 @@ const install = (Vue) => {
     routerSubview,
     organization,
     propertyValue,
-    tagInput
+    tagInput,
+    innertable,
+    steps
   ]
   components.forEach((component) => {
     Vue.component(component.name, component)
@@ -126,6 +136,8 @@ export default {
   singlechar,
   timezone,
   enumeration,
+  enummulti,
+  enumquote,
   objuser,
   resize,
   collapseTransition,
@@ -141,6 +153,7 @@ export default {
   auth,
   authOption,
   tableEmpty,
+  dataEmpty,
   list,
   table,
   leaveConfirm,

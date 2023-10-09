@@ -17,18 +17,39 @@
       'is-dragging': isDragging,
       'is-readonly': !updateAuth
     }"
-    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }"
-  >
+    v-bkloading="{ isLoading: $loading(Object.values(requestIds)), extCls: 'field-loading' }">
     <div class="field-options">
-      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
+      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button theme="primary" :disabled="disabled"
+          <bk-button theme="primary" :disabled="disabled || activeModel.bk_ispaused"
             @click="handleAddField(displayGroupedProperties[0])">{{$t('新建字段')}}</bk-button>
         </template>
       </cmdb-auth>
-      <cmdb-auth :auth="authResources" @update-auth="handleReceiveAuth">
+      <bk-dropdown-menu class="dropdown-menu" :align="'left'" v-if="canBeImport">
+        <template slot="dropdown-trigger">
+          <bk-button class="import-btn">{{$t('导入')}}
+            <i :class="['bk-icon icon-angle-down']"></i>
+          </bk-button>
+        </template>
+        <ul class="bk-dropdown-list" slot="dropdown-content">
+          <li class="bk-dropdown-item" v-if="hideImport">
+            <cmdb-auth tag="label" class="label-btn"
+              :auth="importAuth"
+              :class="{ 'disabled': isReadOnlyImport }"
+              @click="handleImport">
+              <span class="label-btn-text">{{$t('导入字段')}}</span>
+            </cmdb-auth>
+          </li>
+          <li class="bk-dropdown-item" @click="handleExport">
+            <label class="label-btn">
+              <span class="label-btn-text">{{$t('导出字段')}}</span>
+            </label>
+          </li>
+        </ul>
+      </bk-dropdown-menu>
+      <cmdb-auth v-if="isShowOptionBtn" :auth="authResources" @update-auth="handleReceiveAuth">
         <template #default="{ disabled }">
-          <bk-button :disabled="disabled" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
+          <bk-button :disabled="disabled || activeModel.bk_ispaused" @click="handleAddGroup">{{$t('新建分组')}}</bk-button>
         </template>
       </cmdb-auth>
       <bk-button @click="previewShow = true" :disabled="!properties.length">{{
@@ -42,13 +63,9 @@
         v-model.trim="keyword"
       >
       </bk-input>
-      <bk-button
-        text
-        class="setting-btn"
-        icon="cog"
-        v-if="canEditSort"
-        @click="configProperty.show = true"
-      ></bk-button>
+      <div class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
+        <img src="@/assets/images/icon/icon-model-setting.png">
+      </div>
     </div>
     <div class="group-wrapper">
       <draggable
@@ -63,8 +80,7 @@
         @start="handleGroupDragStart"
         @end="handleGroupDragEnd"
         @change="handleGroupDragChange"
-        v-model="displayGroupedProperties"
-      >
+        v-model="displayGroupedProperties">
         <div
           class="group-item"
           v-for="(group, groupIndex) in displayGroupedProperties"
@@ -101,7 +117,7 @@
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
-              class="field-list clearfix"
+              class="field-list"
               v-show="!groupCollapseState[group.info.bk_group_id]"
               tag="ul"
               v-model="group.properties"
@@ -116,81 +132,67 @@
               }"
               @start="handleModelDragStart"
               @end="handleModelDragEnd"
-              @change="handleModelDragChange"
-            >
+              @change="handleModelDragChange">
               <li
-                class="field-item fl"
+                class="field-item"
                 v-for="(property, fieldIndex) in group.properties"
-                :class="{
-                  'only-ready': !updateAuth || !isFieldEditable(property)
-                }"
                 :key="fieldIndex"
-                @click="
-                  handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })
-                "
-              >
-                <span class="drag-icon"></span>
-                <div class="drag-content">
-                  <div class="field-name">
-                    <span :title="property.bk_property_name">{{
-                      property.bk_property_name
-                    }}</span>
-                    <i v-if="property.isrequired">*</i>
-                  </div>
-                  <p>
-                    {{ fieldTypeMap[property.bk_property_type] }}
-                    <span class="field-id">{{ property.bk_property_id }}</span>
-                  </p>
-                </div>
-                <template v-if="isGlobalView || isBizCustomData(property)">
-                  <cmdb-auth
-                    class="mr10"
-                    :auth="authResources"
-                    @update-auth="handleReceiveAuth"
-                    @click.native.stop
-                  >
-                    <bk-button
-                      slot-scope="{ disabled }"
-                      class="field-button"
-                      :text="true"
-                      :disabled="disabled || !isFieldEditable(property, false)"
-                      @click.stop="handleEditField(group, property)"
-                    >
-                      <i class="field-button-icon icon-cc-edit-shape"></i>
-                    </bk-button>
-                  </cmdb-auth>
-                  <cmdb-auth
-                    class="mr10"
-                    @update-auth="handleReceiveAuth"
-                    :auth="authResources"
-                    @click.native.stop
-                    v-if="!property.ispre"
-                  >
-                    <bk-button
-                      slot-scope="{ disabled }"
-                      class="field-button"
-                      :text="true"
-                      :disabled="disabled || !isFieldEditable(property)"
-                      @click.stop="
-                        handleDeleteField({ property, index: groupIndex, fieldIndex })
-                      "
-                    >
-                      <i class="field-button-icon bk-icon icon-cc-del"></i>
-                    </bk-button>
-                  </cmdb-auth>
-                </template>
+                @click="handleFieldDetailsView({ group, index: groupIndex, fieldIndex, property })">
+                <field-card
+                  :class="['field-card-container',{ 'only-ready': (!updateAuth || !isFieldEditable(property)) }]"
+                  :field="property"
+                  :field-unique="getFieldUnique(property)"
+                  :deletable="false"
+                  :only-ready="!updateAuth || !isFieldEditable(property)"
+                  @remove-field="handleDeleteField({ property, index: groupIndex, fieldIndex })">
+                  <template #action-append>
+                    <cmdb-auth
+                      class="mr10"
+                      :auth="authResources"
+                      @update-auth="handleReceiveAuth"
+                      @click.native.stop>
+                      <bk-button
+                        slot-scope="{ disabled }"
+                        class="field-button"
+                        :text="true"
+                        :disabled="disabled || !isFieldEditable(property, false)"
+                        @click.stop="handleEditField(group, property)">
+                        <i class="field-button-icon icon-cc-edit-shape"></i>
+                      </bk-button>
+                    </cmdb-auth>
+                    <cmdb-auth
+                      class="mr10"
+                      @update-auth="handleReceiveAuth"
+                      :auth="authResources"
+                      @click.native.stop
+                      v-if="!property.ispre">
+                      <bk-button
+                        slot-scope="{ disabled }"
+                        class="field-button"
+                        :text="true"
+                        :disabled="disabled || !isFieldEditable(property) || isTemplateField(property)"
+                        @click.stop="handleDeleteField({ property, index: groupIndex, fieldIndex })">
+                        <i class="field-button-icon bk-icon icon-cc-del"></i>
+                      </bk-button>
+                    </cmdb-auth>
+                  </template>
+                  <template #tag-append v-if="isTemplateField(property)">
+                    <div @mouseenter="(event) => handleTemplateTagHover(event, property)">
+                      <mini-tag :text="$t('模板')" hover-bg-color="#C9F5E2" />
+                    </div>
+                  </template>
+                </field-card>
               </li>
               <li class="field-add fl" v-if="isEditable(group.info)">
-                <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
+                <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources" tag="div">
                   <bk-button
                     slot-scope="{ disabled }"
                     class="field-add-btn"
                     :text="true"
                     :disabled="disabled"
-                    @click.stop="handleAddField(group)"
-                  >
+                    @click.stop="handleAddField(group)">
                     <i class="bk-icon icon-plus"></i>
-                    {{customObjId ? $t('新建业务字段') : $t('添加')}}
+                    {{customObjId ? $t('新建业务字段') : $t('添加字段')}}
                   </bk-button>
                 </cmdb-auth>
               </li>
@@ -199,7 +201,7 @@
           </bk-transition>
         </div>
         <div class="add-group">
-          <cmdb-auth @update-auth="handleReceiveAuth" :auth="authResources">
+          <cmdb-auth v-if="isShowOptionBtn" @update-auth="handleReceiveAuth" :auth="authResources">
             <bk-button slot-scope="{ disabled }"
               class="add-group-trigger"
               :text="true"
@@ -211,6 +213,12 @@
           </cmdb-auth>
         </div>
       </draggable>
+      <cmdb-data-empty
+        v-if="displayGroupedProperties.length === 0"
+        slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
 
     <bk-dialog class="bk-dialog-no-padding"
@@ -288,8 +296,10 @@
     </bk-dialog>
 
     <bk-sideslider
+      ref="sidesliderComp"
+      class="sides-slider"
       v-transfer-dom
-      :width="540"
+      :width="640"
       :title="slider.title"
       :is-show.sync="slider.isShow"
       :before-close="slider.beforeClose"
@@ -311,6 +321,7 @@
         :is-main-line-model="isMainLineModel"
         :is-read-only="isReadOnly"
         :is-edit-field="slider.isEditField"
+        :properties="properties"
         :field="slider.curField"
         :group="slider.curGroup"
         :groups="groupedProperties.map(item => item.info)"
@@ -321,6 +332,7 @@
     </bk-sideslider>
 
     <bk-sideslider
+      ref="sidesliderComp"
       v-transfer-dom
       :width="676"
       :title="$t('字段预览')"
@@ -333,21 +345,39 @@
     </bk-sideslider>
 
     <bk-sideslider
+      ref="sidesliderComp"
       v-transfer-dom
       :is-show.sync="configProperty.show"
       :width="676"
-      :title="$t('实例表格字段排序设置')">
+      :title="$t('实例表格字段排序设置')"
+      :before-close="handleColumnsConfigSliderBeforeClose">
       <cmdb-columns-config slot="content"
+        ref="cmdbColumnsConfig"
         v-if="configProperty.show"
         :properties="properties"
         :selected="configProperty.selected"
         :disabled-columns="disabledConfig"
         :show-reset="false"
         :confirm-text="$t('确定')"
-        @on-cancel="configProperty.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-apply="handleApplyConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <div class="field-bind-template-popover-content" ref="fieldBindTemplateRef"
+      v-bkloading="{
+        isLoading: $loading(bindTemplatePopover.requestId),
+        size: 'mini',
+        theme: 'primary',
+        mode: 'spin'
+      }">
+      <i18n path="xx模板的字段" v-if="bindTemplatePopover.template.name">
+        <template #template>
+          <span class="template-name" @click.stop="handleViewTemplate(bindTemplatePopover.template.id)">
+            {{ bindTemplatePopover.template.name }}
+          </span>
+        </template>
+      </i18n>
+    </div>
   </div>
 </template>
 
@@ -360,9 +390,16 @@
   import fieldDetailsView from './field-view'
   import CmdbColumnsConfig from '@/components/columns-config/columns-config.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
-  import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS, MENU_MODEL_FIELD_TEMPLATE } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import { v4 as uuidv4 } from 'uuid'
   import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
+  import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
+  import FieldCard from '@/components/model-manage/field-card.vue'
+  import useUnique from '@/views/field-template/children/use-unique.js'
+  import fieldTemplateService from '@/service/field-template'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
+  import { escapeRegexChar } from '@/utils/util'
 
   export default {
     name: 'FieldGroup',
@@ -373,9 +410,15 @@
       fieldDetailsView,
       CmdbColumnsConfig,
       CollapseGroupTitle,
+      FieldCard,
+      MiniTag
     },
     props: {
-      customObjId: String
+      customObjId: String,
+      canBeImport: Boolean,
+      hideImport: Boolean,
+      isReadOnlyImport: Boolean,
+      importAuth: Object
     },
     data() {
       return {
@@ -389,20 +432,7 @@
         keyword: '',
         groupCollapseState: {},
         initGroupState: {},
-        fieldTypeMap: {
-          singlechar: this.$t('短字符'),
-          int: this.$t('数字'),
-          float: this.$t('浮点'),
-          enum: this.$t('枚举'),
-          date: this.$t('日期'),
-          time: this.$t('时间'),
-          longchar: this.$t('长字符'),
-          objuser: this.$t('用户'),
-          timezone: this.$t('时区'),
-          bool: 'bool',
-          list: this.$t('列表'),
-          organization: this.$t('组织')
-        },
+        fieldTypeMap: PROPERTY_TYPE_NAMES,
         dialog: {
           isShow: false,
           group: null,
@@ -441,6 +471,16 @@
         requestIds: {
           properties: Symbol(),
           propertyGroups: Symbol()
+        },
+        dataEmpty: {
+          type: 'search',
+        },
+        uniqueList: [],
+        bindTemplatePopover: {
+          show: false,
+          instance: null,
+          template: {},
+          requestId: ''
         }
       }
     },
@@ -518,6 +558,9 @@
       },
       canEditSort() {
         return !this.customObjId
+      },
+      isShowOptionBtn() {
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {
@@ -533,10 +576,19 @@
     },
     async created() {
       this.handleFilter = debounce(this.filterField, 300)
-      const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+      const [properties, groups, uniqueList] = await Promise.all([
+        this.getProperties(),
+        this.getPropertyGroups(),
+        this.getVerification()
+      ])
       this.properties = properties
       this.groups = groups
+      this.uniqueList = uniqueList
       this.init(properties, groups)
+    },
+    beforeDestroy() {
+      // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
+      this.$refs?.sidesliderComp?.handleClose?.()
     },
     methods: {
       ...mapActions('objectModelFieldGroup', [
@@ -549,6 +601,9 @@
         'updatePropertySort'
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+      ...mapActions('objectUnique', [
+        'searchObjectUniqueConstraints',
+      ]),
       toggleGroup(group) {
         this.groupCollapseState[`${group.info.bk_group_id}`] = !this.groupCollapseState[`${group.info.bk_group_id}`]
       },
@@ -579,6 +634,9 @@
         }
         return this.isBizCustomData(group)
       },
+      isTemplateField(field) {
+        return field.bk_template_id > 0
+      },
       canRiseGroup(index, group) {
         if (this.isGlobalView) {
           return index !== 0
@@ -594,7 +652,11 @@
         return customDataIndex !== (this.bizGroupedProperties.length - 1)
       },
       async resetData(filedId) {
-        const [properties, groups] = await Promise.all([this.getProperties(), this.getPropertyGroups()])
+        const [properties, groups, uniqueList] = await Promise.all([
+          this.getProperties(),
+          this.getPropertyGroups(),
+          this.getVerification()
+        ])
         if (filedId && this.slider.isShow) {
           const field = properties.find(property => property.bk_property_id === filedId)
           if (field) {
@@ -605,6 +667,7 @@
         }
         this.properties = properties
         this.groups = groups
+        this.uniqueList = uniqueList
         this.init(properties, groups)
       },
       init(properties, groups) {
@@ -632,7 +695,7 @@
       },
       filterField() {
         if (this.keyword) {
-          const reg = new RegExp(this.keyword, 'i')
+          const reg = new RegExp(escapeRegexChar(this.keyword), 'i')
           const displayGroupedProperties = []
           this.groupedProperties.forEach((group) => {
             const matchedProperties = []
@@ -681,6 +744,35 @@
             cancelPrevious: true
           }
         })
+      },
+      getVerification() {
+        return this.searchObjectUniqueConstraints({
+          objId: this.objId,
+          params: {},
+          config: {
+            requestId: 'searchObjectUniqueConstraints'
+          }
+        })
+      },
+      getFieldUnique(property) {
+        if (this.uniqueList.length > 0) {
+          const uniqueList = this.uniqueList.map(item => ({
+            ...item,
+            keys: item.keys.map(key => key.key_id)
+          }))
+          const { getUniqueByField } =  useUnique([], uniqueList)
+          const { list: fieldUniqueList, type: fieldUniqueType } = getUniqueByField(property)
+          const fieldUniqueWithNameList = fieldUniqueList
+            .filter(item => item.keys.every(key => this.properties.find(({ id }) => id === key)))
+            .map(item => ({
+              ...item,
+              names: item.keys.map(key => this.properties.find(field => field.id === key)?.bk_property_name)
+            }))
+          return {
+            list: fieldUniqueWithNameList,
+            type: fieldUniqueType
+          }
+        }
       },
       separateBizCustomGroups(groups) {
         const publicGroups = []
@@ -984,7 +1076,7 @@
       },
       handleDeleteField({ property: field, index, fieldIndex }) {
         this.$bkInfo({
-          title: this.$tc('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
+          title: this.$t('确定删除字段？'),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
           confirmLoading: this.$loading('deleteObjectAttribute'),
           confirmFn: async () => {
@@ -1003,6 +1095,7 @@
                 this.displayGroupedProperties[index].properties.splice(fieldIndex, 1)
                 this.handleSliderHidden()
                 this.$success(this.$t('删除成功'))
+                this.resetData()
               }
             } catch (error) {
               console.log(error)
@@ -1023,25 +1116,7 @@
         }
       },
       handleSliderBeforeClose() {
-        const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
-        if (hasChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.handleBackView()
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
-        }
-        this.handleBackView()
-        return true
+        return this.$refs.fieldForm.beforeClose(this.handleBackView)
       },
       handleSliderHidden() {
         this.slider.isShow = false
@@ -1088,7 +1163,74 @@
       handleGroupDragEnd() {
         this.isDragging = false
       },
-    },
+      handleClearFilter() {
+        this.keyword = ''
+      },
+      handleImport() {
+        this.$emit('handleImportField')
+      },
+      handleExport() {
+        this.$emit('exportField')
+      },
+      async handleTemplateTagHover(event, property) {
+        this.bindTemplatePopover.instance?.destroy?.()
+        this.bindTemplatePopover.template = {}
+        this.bindTemplatePopover.instance = this.$bkPopover(event.target, {
+          allowHTML: true,
+          boundary: 'window',
+          trigger: 'mouseenter',
+          arrow: true,
+          distance: 18,
+          theme: 'light',
+          interactive: true,
+          animateFill: false,
+          hideOnClick: false,
+          content: this.$refs.fieldBindTemplateRef,
+          onShow: () => {
+            this.bindTemplatePopover.show = true
+          },
+          onHidden: () => {
+            this.bindTemplatePopover.show = false
+          }
+        })
+
+        this.bindTemplatePopover.instance.show()
+
+        this.bindTemplatePopover.requestId = `${this.modelId}_${property.id}_${property.bk_template_id}`
+        const params = {
+          bk_template_id: property.bk_template_id,
+          bk_attribute_id: property.id
+        }
+        const bindTemplate = await fieldTemplateService.getFieldBindTemplate(params, {
+          requestId: this.bindTemplatePopover.requestId,
+          fromCache: true
+        })
+        this.bindTemplatePopover.template = bindTemplate || {}
+      },
+      handleViewTemplate(id) {
+        this.$routerActions.open({
+          name: MENU_MODEL_FIELD_TEMPLATE,
+          query: {
+            id,
+            action: 'view'
+          }
+        })
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        if (!refColumns) {
+          return
+        }
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues?.()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.configProperty.show = false
+          })
+        }
+        this.configProperty.show = false
+      }
+    }
   }
 </script>
 
@@ -1107,19 +1249,24 @@ $modelHighlightColor: #3c96ff;
     margin-right: 10px;
   }
   .filter-input {
-    width: 240px;
+    width: 480px;
     margin-left: auto;
   }
   .setting-btn {
     margin-left: 10px;
     height: 32px;
-    line-height: 32px;
     color: #979ba5;
     border: 1px solid #c4c6cc;
     border-radius: 2px;
-    /deep/ .icon-cog {
-      font-size: 16px;
-      vertical-align: 2px;
+    width: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    cursor: pointer;
+    img {
+      width: 16px;
+      height: 16px;
     }
   }
 }
@@ -1152,70 +1299,25 @@ $modelHighlightColor: #3c96ff;
 .field-list {
   $ghostBorderColor: #dcdee5;
   $ghostBackgroundColor:#f5f7fa;
-
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  width: 100%;
+  align-content: flex-start;
   margin-top: 7px;
   font-size: 14px;
   position: relative;
-  &.empty {
-    min-height: 70px;
-  }
-  &.disabled {
-    .field-item {
-      cursor: pointer;
-      &::before {
-        display: none !important;
-      }
-    }
-  }
   .field-item {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    position: relative;
-    width: 246px;
-    height: 58px;
-    margin: 0 12px 12px 0;
-    border: 1px solid #dcdee5;
-    border-radius: 2px;
-    background-color: #ffffff;
+    height: 60px;
     user-select: none;
     cursor: pointer;
-    &.only-ready {
-      background-color: #f4f6f9;
-    }
-    &:hover {
-      border-color: #3a84ff;
-      background-color: #f0f5ff;
-      .drag-icon {
-        visibility: visible;
-        @at-root .is-dragging & {
-          visibility: hidden;
-        }
-        @at-root .is-readonly & {
-          visibility: hidden;
-        }
-      }
-      .field-button {
-        visibility: visible;
-        @at-root .is-dragging & {
-          visibility: hidden;
-        }
-      }
-      &::before {
-        display: block;
-      }
-      @at-root .is-dragging & {
-        border-color: #dcdee5;
-        background-color: #fff;
-      }
-    }
     &-ghost {
-      background-color: $ghostBackgroundColor !important;
-      border: 1px dashed $ghostBorderColor;
+      background-color: #f5f7fa !important;
+      border: 1px dashed #dcdee5;
 
       &:hover {
-        border-color: $ghostBorderColor;
-        background-color: $ghostBackgroundColor;
+        border-color: #dcdee5;
+        background-color: #f5f7fa;
         box-shadow: none;
       }
 
@@ -1223,59 +1325,9 @@ $modelHighlightColor: #3c96ff;
         display: none !important;
       }
     }
-    .drag-icon {
-      @include dragIcon;
-      visibility: hidden;
-      margin: 0 4px;
-    }
-    .drag-content {
-      flex: 1;
-      width: 0;
-      color: #737987;
-      .field-name {
-        display: flex;
-        align-items: center;
-        font-size: 12px;
-        span {
-          line-height: 21px;
-          @include ellipsis;
-        }
-        i {
-          font-size: 16px;
-          font-style: normal;
-          font-weight: bold;
-          margin: 4px 4px 0;
-          line-height: 7px;
-        }
-      }
-      p {
-        font-size: 12px;
-        color: #c4c6cc;
-        @include ellipsis;
-      }
-      .field-id {
-        margin-left: 4px;
-      }
-    }
-    .field-button {
-      font-size: 0;
-      visibility: hidden;
-      color: #63656e;
-      &:hover {
-        color: #3a84ff;
-      }
-      .field-button-icon {
-        font-size: 14px;
-      }
-      &.is-disabled {
-        color: #c4c6cc;
-      }
-    }
   }
   .field-add {
-    width: 246px;
-    height: 58px;
-    margin: 0 12px 12px 0;
+    height: 60px;
     .auth-box{
       display: block;
       height: 100%;
@@ -1313,7 +1365,7 @@ $modelHighlightColor: #3c96ff;
   margin: 15px 0 0 0;
   font-size: 0;
   .add-group-trigger {
-    color: #63656E;
+    color: #3A84FF;
     font-size: 14px;
     height: 30px;
     padding-right: 30px;
@@ -1331,10 +1383,10 @@ $modelHighlightColor: #3c96ff;
       margin: -4px 2px 0 0;
       display: inline-block;
       vertical-align: middle;
-      font-size: 18px;
+      font-size: 16px;
     }
     &:not(.is-disabled):hover {
-      background-color: #f0f1f5;
+      color: #699df4;
     }
   }
 }
@@ -1408,8 +1460,82 @@ $modelHighlightColor: #3c96ff;
   }
 }
 .group-dialog-footer {
-  .bk-button + .bk-button{
+  .bk-button + .bk-button {
     margin-left: 10px;
+  }
+}
+.sides-slider {
+  :deep(.slider-main) {
+    padding:20px 40px;
+  }
+}
+.dropdown-menu {
+  .import-btn {
+    font-size: 14px;
+  }
+}
+.bk-dropdown-list {
+  .bk-dropdown-item {
+    display: block;
+    height: 32px;
+    line-height: 33px;
+    padding: 0 16px;
+    color: #63656e;
+    font-size: var(--font-size);
+    text-decoration: none;
+    white-space: nowrap;
+    &:hover {
+      color: #3a84ff;
+      background: #f0f1f5;
+      cursor: pointer;
+    }
+    .label-btn-text {
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .disabled {
+      color: #c4c6cc;
+    }
+  }
+}
+
+.field-card-container {
+  &:hover {
+    .field-button {
+      visibility: visible;
+    }
+  }
+  .field-button {
+    font-size: 0;
+    visibility: hidden;
+    color: #63656e;
+    &:hover {
+      color: #3a84ff;
+    }
+    .field-button-icon {
+      font-size: 14px;
+    }
+    &.is-disabled {
+      color: #c4c6cc;
+    }
+  }
+  .flag-append {
+    margin-left: 2px;
+  }
+  &.only-ready {
+    background-color: #EAEBF0;
+  }
+}
+.field-bind-template-popover-content {
+  min-width: 120px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  .template-name {
+    color: #3A84FF;
+    cursor: pointer;
   }
 }
 </style>

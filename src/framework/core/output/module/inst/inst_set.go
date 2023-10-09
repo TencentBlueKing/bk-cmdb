@@ -153,7 +153,8 @@ func (cli *set) IsExists() (bool, error) {
 // Create TODO
 func (cli *set) Create() error {
 
-	setID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().CreateSet(cli.bizID, cli.datas)
+	setID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().CreateSet(cli.bizID,
+		cli.datas)
 	if nil != err {
 		return err
 	}
@@ -197,7 +198,8 @@ func (cli *set) Update() error {
 		updateCond := common.CreateCondition()
 		updateCond.Field(SetID).Eq(instID)
 
-		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Set().UpdateSet(cli.bizID, cli.datas, updateCond)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Set().UpdateSet(cli.bizID,
+			cli.datas, updateCond)
 		if nil != err {
 			return err
 		}

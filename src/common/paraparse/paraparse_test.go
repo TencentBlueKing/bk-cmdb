@@ -13,80 +13,80 @@ func TestSpecialCharChange(t *testing.T) {
 	}
 
 	testUnits := []testUnit{
-		testUnit{
+		{
 			src: ".",
 			dst: `\.`,
 		},
-		testUnit{
+		{
 			src: "(",
 			dst: `\(`,
 		},
-		testUnit{
+		{
 			src: ")",
 			dst: `\)`,
 		},
-		testUnit{
+		{
 			src: "\\",
 			dst: `\\`,
 		},
-		testUnit{
+		{
 			src: "|",
 			dst: `\|`,
 		},
-		testUnit{
+		{
 			src: "[",
 			dst: `\[`,
 		},
-		testUnit{
+		{
 			src: "]",
 			dst: `\]`,
 		},
-		testUnit{
+		{
 			src: "-",
 			dst: `\-`,
 		},
-		testUnit{
+		{
 			src: "*",
 			dst: `\*`,
 		},
-		testUnit{
+		{
 			src: "{",
 			dst: `\{`,
 		},
-		testUnit{
+		{
 			src: "}",
 			dst: `\}`,
 		},
-		testUnit{
+		{
 			src: "^",
 			dst: `\^`,
 		},
-		testUnit{
+		{
 			src: "$",
 			dst: `\$`,
 		},
-		testUnit{
+		{
 			src: "?",
 			dst: `\?`,
 		},
 
-		testUnit{
+		{
 			src: "aaa",
 			dst: `aaa`,
 		},
-		testUnit{
+		{
 			src: "12345",
 			dst: `12345`,
 		},
-		testUnit{
+		{
 			src: "12345",
 			dst: `12345`,
 		},
-		testUnit{
+		{
 			src: "!@#%&_+=,<>/`~",
 			dst: "!@#%&_+=,<>/`~",
 		},
-		testUnit{
+		{
 			src: "12345676890qwertyuiopasdfghjklzxcvbnm QWERTYUIOPASDFGHJKLZXCVBNM",
 			dst: "12345676890qwertyuiopasdfghjklzxcvbnm QWERTYUIOPASDFGHJKLZXCVBNM",
 		},

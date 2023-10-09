@@ -47,7 +47,7 @@
 
 **答疑：** 
 > 1. 对于大陆用户需要经过特殊配置才可以使用nodejs 进行编译。
-> 2. 源码编译请参考：https://github.com/Tencent/bk-cmdb/blob/master/docs/overview/source_compile.md
+> 2. 源码编译请参考：https://github.com/TencentBlueKing/bk-cmdb/blob/master/docs/overview/source_compile.md
 
 
 ### 可以在虚拟机里安装吗？
@@ -129,7 +129,7 @@ fail to watch children for path(/cc/services/endpoints/XXXX), err:zk: node does 
 **答疑：** 
 > 1. option --listen_portd not recognized 参数为非指定参数，不能被识别
 > 2. usage 是正确的参数列表及参数含义
-> 3. 详细的使用请参考：https://github.com/Tencent/bk-cmdb/blob/master/docs/overview/installation.md
+> 3. 详细的使用请参考：https://github.com/TencentBlueKing/bk-cmdb/blob/master/docs/overview/installation.md
 
 ### 日志里看到以下内容如何处理？
 
@@ -137,7 +137,7 @@ fail to watch children for path(/cc/services/endpoints/XXXX), err:zk: node does 
 fail to get configure, will get again
 ```
 
-**参考：** https://github.com/Tencent/bk-cmdb/issues/67
+**参考：** https://github.com/TencentBlueKing/bk-cmdb/issues/67
 
 ### 除了chrome 浏览器之外，其他浏览器会支持吗？
 

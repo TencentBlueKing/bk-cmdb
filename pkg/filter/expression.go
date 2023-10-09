@@ -57,8 +57,8 @@ type ExprOption struct {
 func NewDefaultExprOpt(ruleFields map[string]enumor.FieldType) *ExprOption {
 	return &ExprOption{
 		RuleFields:    ruleFields,
-		MaxInLimit:    200,
-		MaxNotInLimit: 200,
+		MaxInLimit:    500,
+		MaxNotInLimit: 500,
 		MaxRulesLimit: 50,
 		MaxRulesDepth: MaxRulesDepth,
 	}
@@ -142,6 +142,20 @@ func (exp *Expression) UnmarshalBSON(raw []byte) error {
 
 	exp.RuleFactory = rule
 	return nil
+}
+
+// String convert expression to string, used for log
+func (exp *Expression) String() string {
+	if exp == nil {
+		return "null"
+	}
+
+	jsonVal, err := exp.MarshalJSON()
+	if err != nil {
+		return fmt.Sprintf("marshal json failed, err: %v", err)
+	}
+
+	return string(jsonVal)
 }
 
 func parseJsonRule(raw []byte) (RuleFactory, error) {

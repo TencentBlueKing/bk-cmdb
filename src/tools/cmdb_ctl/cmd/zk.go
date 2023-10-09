@@ -14,11 +14,12 @@ package cmd
 
 import (
 	"bytes"
-	"configcenter/src/tools/cmdb_ctl/app/config"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+
+	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
 )

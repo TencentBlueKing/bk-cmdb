@@ -128,12 +128,14 @@
         this.allExpanded = false
       })
       Bus.$on('instance-selection-change', this.handleInstanceSelectionChange)
+      Bus.$on('filter-clear', this.filterClear)
       this.setFilter()
       this.updateHistoryLabels()
     },
     beforeDestroy() {
       this.unwatch()
       Bus.$off('instance-selection-change', this.handleInstanceSelectionChange)
+      Bus.$off('filter-clear', this.filterClear)
     },
     methods: {
       updateHistoryLabels() {
@@ -242,6 +244,9 @@
       },
       handleExpandAll(expanded) {
         Bus.$emit('expand-all-change', expanded)
+      },
+      filterClear() {
+        this.searchValue = []
       }
     }
   }

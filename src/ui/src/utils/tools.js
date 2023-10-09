@@ -13,9 +13,11 @@
 import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
+import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
-import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
 /**
  * 获取实例中某个属性的展示值
@@ -51,13 +53,6 @@ export function getPropertyText(property, item) {
   return propertyValue.toString()
 }
 
-/**
- * 获取实例的真实值
- * @param {Array} properties - 模型属性
- * @param {Object} inst - 原始实例
- * @return {Object} 实例真实值
- */
-
 function getDefaultOptionValue(property) {
   const defaultOption = (property.option || []).find(option => option.is_default)
   if (defaultOption) {
@@ -66,19 +61,38 @@ function getDefaultOptionValue(property) {
   return ''
 }
 
+function getDefaultOptionMultiValue(property) {
+  const defaultOptions = (property.option || []).filter(option => option.is_default)
+  return defaultOptions.map(option => option.id)
+}
+
+function getDefaultOptionEnumQuoteValue(property) {
+  return (property.option || []).map(option => option.bk_inst_id)
+}
+
+/**
+ * 获取实例的真实值
+ * @param {Array} properties - 模型属性
+ * @param {Object} inst - 原始实例
+ * @param {Boolean} autoSelect - 是否查找默认值作为选中项
+ * @return {Object} 实例真实值
+ */
 export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   const values = {}
   properties.forEach((property) => {
     const propertyId = property.bk_property_id
     const propertyType = property.bk_property_type
+    const propertyDefault = property.default
     if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
       const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-      values[propertyId] = formatedTime || null
+      const  value = has(inst, propertyId) ? formatedTime : propertyDefault
+      values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? '' : inst[propertyId]
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      values[propertyId] = value || ''
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
         values[propertyId] = typeof property.option === 'boolean' ? property.option : false
@@ -86,21 +100,32 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
         values[propertyId] = !!inst[propertyId]
       }
     } else if (['enum'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? getDefaultOptionValue(property) : '') : inst[propertyId]
+      const defaultValue = autoSelect ? getDefaultOptionValue(property) : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMMULTI].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionMultiValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
+    } else if ([PROPERTY_TYPES.ENUMQUOTE].includes(propertyType)) {
+      const defaultValue = autoSelect ? getDefaultOptionEnumQuoteValue(property) : []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['timezone'].includes(propertyType)) {
-      // eslint-disable-next-line no-nested-ternary,max-len
-      values[propertyId] = [null, undefined].includes(inst[propertyId]) ? (autoSelect ? 'Asia/Shanghai' : '') : inst[propertyId]
+      const defaultValue = autoSelect ? propertyDefault : ''
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
-      values[propertyId] = inst[propertyId] || null
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      values[propertyId] = value || null
     } else if (['table'].includes(propertyType)) {
       // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
       // 接口需要过滤掉不允许编辑及内置的字段
       const tableColumns = property.option?.filter(property => property.editable && !property.bk_isapi)
       // eslint-disable-next-line max-len
       values[propertyId] = (inst[propertyId] || []).map(row => getInstFormValues(tableColumns || [], row, autoSelect))
+    } else if (propertyType === PROPERTY_TYPES.INNER_TABLE) {
+      const defaultValue = property.option.default || []
+      values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else {
-      values[propertyId] = has(inst, propertyId) ? inst[propertyId] : ''
+      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      values[propertyId] = value || ''
     }
   })
   return { ...inst, ...values }
@@ -110,9 +135,14 @@ export function isEmptyValue(value) {
   return value === '' || value === null || value === void 0
 }
 
+export function isNullish(value) {
+  return [null, undefined].includes(value)
+}
+
+
 export function formatValue(value, property) {
   if (!(isEmptyValue(value) && property)) {
-    return value
+    return formatPropertyValue(value, property)
   }
   const type = property.bk_property_type
   let formattedValue = value
@@ -122,6 +152,7 @@ export function formatValue(value, property) {
     case 'float':
     case 'list':
     case 'time':
+    case PROPERTY_TYPES.ENUMMULTI:
       formattedValue = null
       break
     case 'bool':
@@ -131,6 +162,22 @@ export function formatValue(value, property) {
       break
   }
   return formattedValue
+}
+
+export function getPropertyDefaultValue(property, value) {
+  const propertyValue = formatPropertyValue(value, property)
+  const defaultValue = getInstFormValues([property])?.[property.bk_property_id]
+  // undefined 认为没有传递属性值，与 null 等假值明确区分开
+  return value === undefined ? defaultValue : propertyValue
+}
+
+export function formatPropertyValue(value, property) {
+  // 枚举引用/多选和组织类型的字段保存时必须转换为数组，在作为form的值使用时如果是单选值不是数组格式在这里统一转换
+  const arrayValueTypes = [PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ORGANIZATION]
+  if (arrayValueTypes.includes(property?.bk_property_type)) {
+    return !Array.isArray(value) ? [value] : value
+  }
+  return value
 }
 
 export function formatValues(values, properties) {
@@ -252,14 +299,14 @@ export function getHeaderProperties(properties, customColumns, fixedPropertyIds 
 }
 
 export function getHeaderPropertyName(property) {
-  if (!property.bk_property_name.endsWith(`(${property.unit})`) && property.unit) {
+  if (!property?.bk_property_name?.endsWith(`(${property.unit})`) && property.unit) {
     return `${property.bk_property_name}(${property.unit})`
   }
   return property.bk_property_name
 }
 
 export function getHeaderPropertyMinWidth(property, options = {}) {
-  const { fontSize = 12, hasSort = false, offset = 30, name, preset = {} } = options
+  const { fontSize = 12, hasSort = false, offset = 30, name, min = 0, preset = {} } = options
 
   // 预设的固定宽度不需要计算直接使用
   const presetMinWidth = { ...PRESET_TABLE_HEADER_MIN_WIDTH, ...preset }
@@ -282,7 +329,7 @@ export function getHeaderPropertyMinWidth(property, options = {}) {
 
   const finalWidth = baseWidth + (hasSort ? 22 : 0) + offset
 
-  return Math.ceil(finalWidth)
+  return Math.ceil(Math.max(finalWidth, min))
 }
 
 /**
@@ -298,9 +345,10 @@ export function getValidateEvents(property) {
   const type = property.bk_property_type
   const isChar = ['singlechar', 'longchar'].includes(type)
   const hasRegular = !!property.option
-  if (isChar && hasRegular) {
+  const isSelectType = [PROPERTY_TYPES.ENUMMULTI, PROPERTY_TYPES.ENUMQUOTE, PROPERTY_TYPES.ORGANIZATION].includes(type)
+  if ((isChar && hasRegular) || isSelectType) {
     return {
-      'data-vv-validate-on': 'blur|change'
+      'data-vv-validate-on': 'change|blur'
     }
   }
   return {}
@@ -319,11 +367,20 @@ export function getValidateRules(property) {
   const {
     bk_property_type: propertyType,
     option,
-    isrequired
+    isrequired,
+    ismultiple
   } = property
+
   if (isrequired) {
     rules.required = true
   }
+
+  const isSelectType = [
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION
+  ].includes(propertyType)
+
   if (option) {
     if (['int', 'float'].includes(propertyType)) {
       if (has(option, 'min') && !['', null, undefined].includes(option.min)) {
@@ -345,7 +402,10 @@ export function getValidateRules(property) {
     rules.float = true
   } else if (propertyType === 'objuser') {
     rules.length = 2000
+  } else if (isSelectType) {
+    rules.maxSelectLength = ismultiple ? -1 : 1
   }
+
   return rules
 }
 
@@ -411,6 +471,24 @@ export function localSort(data, compareKey) {
 
 export function sort(data, compareKey) {
   return [...data].sort((A, B) => A[compareKey] - B[compareKey])
+}
+
+export function versionSort(data, compareKey) {
+  return data.sort((a, b) => {
+    let i = 0
+    const arr1 = a[compareKey].split('.')
+    const arr2 = b[compareKey].split('.')
+    while (true) {
+      const s1 = arr1[i]
+      const s2 = arr2[i]
+      i = i + 1
+      if (s1 === undefined || s2 === undefined) {
+        return arr2.length - arr1.length
+      }
+      if (s1 === s2) continue
+      return s2 - s1
+    }
+  })
 }
 
 /**
@@ -488,10 +566,64 @@ export function getPropertyCopyValue(originalValue, propertyType) {
       value = pair.join('\n')
       break
     }
+    case 'enum':
+      value =  propertyType.option.find(item => item.id === originalValue).name
+      break
+    case 'enummulti':
+      value = originalValue.map(value => propertyType.option.find(item => item.id === value).name).join('\n')
+      break
     default:
       value = originalValue
   }
   return value
+}
+
+// 使用独立组件展示value的类型
+export function isUseComplexValueType(property) {
+  const types = [
+    PROPERTY_TYPES.OBJUSER,
+    PROPERTY_TYPES.TABLE,
+    PROPERTY_TYPES.SERVICE_TEMPLATE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.MAP,
+    PROPERTY_TYPES.ENUMQUOTE
+  ]
+  return types.includes(property.bk_property_type)
+}
+
+export function isShowOverflowTips(property) {
+  const otherTypes = [PROPERTY_TYPES.TOPOLOGY]
+  return !isUseComplexValueType(property) && !otherTypes.includes(property.bk_property_type)
+}
+
+export function getPropertyPlaceholder(property) {
+  if (!property) {
+    return ''
+  }
+  const placeholderTxt = [
+    PROPERTY_TYPES.ENUM,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.ENUMQUOTE,
+    PROPERTY_TYPES.ORGANIZATION,
+    PROPERTY_TYPES.LIST,
+    PROPERTY_TYPES.DATE,
+    PROPERTY_TYPES.TIME,
+    PROPERTY_TYPES.TIMEZONE
+  ].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
+  return t(placeholderTxt, { name: property.bk_property_name })
+}
+
+export function getPropertyDefaultEmptyValue(_property) {
+  return ''
+}
+
+export function isPropertySortable(property) {
+  if (property.bk_obj_id === BUILTIN_MODELS.HOST) {
+    return ![PROPERTY_TYPES.FOREIGNKEY, PROPERTY_TYPES.TOPOLOGY, PROPERTY_TYPES.INNER_TABLE]
+      .includes(property.bk_property_type)
+  }
+
+  return ![PROPERTY_TYPES.INNER_TABLE].includes(property.bk_property_type)
 }
 
 export default {
@@ -519,5 +651,11 @@ export default {
   sort,
   getPropertyCopyValue,
   isEmptyPropertyValue,
-  getHeaderPropertyMinWidth
+  getHeaderPropertyMinWidth,
+  isShowOverflowTips,
+  isUseComplexValueType,
+  getPropertyPlaceholder,
+  getPropertyDefaultValue,
+  versionSort,
+  isPropertySortable
 }

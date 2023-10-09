@@ -122,7 +122,7 @@ type SynchronizeClearDataParameter struct {
 func (s *SynchronizeClearDataParameter) GenerateSign(key string) {
 	m := md5.New()
 	m.Write([]byte(s.signContext(key)))
-	s.Sign = base64.StdEncoding.EncodeToString((m.Sum(nil)))
+	s.Sign = base64.StdEncoding.EncodeToString(m.Sum(nil))
 }
 
 // Legality TODO
@@ -131,7 +131,7 @@ func (s *SynchronizeClearDataParameter) Legality(key string) bool {
 	m := md5.New()
 	m.Write([]byte(s.signContext(key)))
 	// tamestamp need legality
-	return s.Sign == base64.StdEncoding.EncodeToString((m.Sum(nil)))
+	return s.Sign == base64.StdEncoding.EncodeToString(m.Sum(nil))
 }
 
 // signContext TODO

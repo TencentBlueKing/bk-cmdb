@@ -28,6 +28,7 @@
 </template>
 
 <script>
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   export default {
     props: {
       value: {
@@ -55,7 +56,8 @@
         this.classifications.forEach((classification) => {
           displayModelList.push({
             ...classification,
-            bk_objects: classification.bk_objects.filter(model => !model.bk_ispaused && !model.bk_ishidden)
+            bk_objects: classification.bk_objects.filter(model => model.bk_obj_id !== BUILTIN_MODELS.PROJECT
+              && (!model.bk_ispaused && !model.bk_ishidden))
           })
         })
         return displayModelList.filter(item => item.bk_objects.length > 0)

@@ -25,15 +25,18 @@
             v-model="condition[property.id].operator"
             @selected="handleOperatorChange(property, ...arguments)">
           </form-operator-selector>
-          <component class="item-value"
-            :is="getComponentType(property)"
-            :placeholder="getPlaceholder(property)"
-            :data-vv-name="property.bk_property_id"
-            :data-vv-as="property.bk_property_name"
-            v-bind="getBindProps(property)"
-            v-model="condition[property.id].value"
-            v-validate="'required'">
-          </component>
+          <div class="item-value">
+            <component
+              class="form-element"
+              :is="getComponentType(property)"
+              :placeholder="getPlaceholder(property)"
+              :data-vv-name="property.bk_property_id"
+              :data-vv-as="property.bk_property_name"
+              v-bind="getBindProps(property)"
+              v-model="condition[property.id].value"
+              v-validate="'required'">
+            </component>
+          </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </div>
         <p class="form-error" v-if="errors.has(property.bk_property_id)">{{errors.first(property.bk_property_id)}}</p>
@@ -197,7 +200,7 @@
       },
       getNormalProps(property) {
         const type = property.bk_property_type
-        if (['list', 'enum'].includes(type)) {
+        if (['list', 'enum', 'enumquote', 'enummulti'].includes(type)) {
           return {
             options: property.option || []
           }
@@ -216,7 +219,7 @@
         return `${modelName} - ${propertyName}`
       },
       getPlaceholder(property) {
-        const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time']
+        const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time', 'enumquote', 'enummulti']
         if (selectTypes.includes(property.bk_property_type)) {
           return this.$t('请选择xx', { name: property.bk_property_name })
         }
@@ -243,6 +246,13 @@
             .item-value {
                 flex: 1;
                 margin: 0 10px 0 0;
+                width: calc(100% - 150px);
+                display: flex;
+                align-items: center;
+
+                .form-element {
+                  width: 100%;
+                }
             }
             .item-remove {
                 font-size: 20px;

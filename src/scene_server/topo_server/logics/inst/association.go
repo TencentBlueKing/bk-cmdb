@@ -163,6 +163,10 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 	for instObjID, instIDArr := range objIDInstIDMap {
 
 		idField := metadata.GetInstIDFieldByObjID(instObjID)
+		fields := []string{metadata.GetInstNameFieldName(instObjID), idField}
+		if instObjID == common.BKInnerObjIDHost {
+			fields = append(fields, common.BKHostInnerIPv6Field)
+		}
 		input := &metadata.QueryCondition{
 			Condition: mapstr.MapStr{
 				idField: mapstr.MapStr{common.BKDBIN: instIDArr},
@@ -171,7 +175,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 				Start: 0,
 				Limit: common.BKNoLimit,
 			},
-			Fields: []string{metadata.GetInstNameFieldName(instObjID), idField},
+			Fields: fields,
 		}
 		instResp, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, instObjID, input)
 		if err != nil {
@@ -445,8 +449,8 @@ func (assoc *association) DeleteInstAssociation(kit *rest.Kit, objID string, ass
 	audit := auditlog.NewInstanceAssociationAudit(assoc.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
 	auditList := make([]metadata.AuditLog, 0)
-	for i, asstID := range asstIDList {
-		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asstID, objID, &data.Info[i])
+	for _, asst := range data.Info {
+		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, asst.ID, objID, &asst)
 		if err != nil {
 			blog.Errorf("delete instance association failed, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
@@ -526,7 +530,8 @@ func (assoc *association) CheckAssociations(kit *rest.Kit, objectID string, inst
 			Opt: metadata.DeleteOption{Condition: mapstr.MapStr{
 				common.BKDBOR: []mapstr.MapStr{
 					{common.BKObjIDField: asstObjID, common.BKInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
-					{common.BKAsstObjIDField: asstObjID, common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
+					{common.BKAsstObjIDField: asstObjID,
+						common.BKAsstInstIDField: mapstr.MapStr{common.BKDBIN: asstInstIDs}},
 				},
 			}},
 			ObjID: asstObjID,

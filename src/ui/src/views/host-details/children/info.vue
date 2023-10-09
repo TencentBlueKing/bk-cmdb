@@ -141,14 +141,14 @@
       },
       hostIp() {
         if (Object.keys(this.host).length) {
-          const hostList = this.host.bk_host_innerip.split(',')
+          const hostList = this.host.bk_host_innerip ? this.host.bk_host_innerip.split(',') : this.host.bk_host_innerip_v6.split(',')
           const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
           return host
         }
         return ''
       },
       cloudArea() {
-        return (this.host.bk_cloud_id || []).map(cloud => `${this.$t('云区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`).join('\n')
+        return (this.host.bk_cloud_id || []).map(cloud => `${this.$t('管控区域')}：${cloud.bk_inst_name} (ID：${cloud.bk_inst_id})`).join('\n')
       },
       topologyList() {
         const modules = this.info.module || []
@@ -314,7 +314,7 @@
             requestId: this.request.moveToIdleModule
           })
           this.dialog.show = false
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           this.$emit('change')
         } catch (e) {
           console.error(e)
@@ -349,7 +349,7 @@
           })
 
           this.dialog.show = false
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
 
           // 跳转刷新
           const routeParams = {

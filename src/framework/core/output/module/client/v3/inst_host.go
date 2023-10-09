@@ -82,7 +82,8 @@ func newHost(cli *Client) *Host {
 }
 
 // TransferHostToBusinessModule transfer hosts to another modules in the same business
-func (h *Host) TransferHostToBusinessModule(bizID int64, hostIDS []int64, newModuleIDS []int64, isIncrement bool) error {
+func (h *Host) TransferHostToBusinessModule(bizID int64, hostIDS []int64, newModuleIDS []int64,
+	isIncrement bool) error {
 
 	params := types.MapStr{}
 	params.Set(BusinessID, bizID)

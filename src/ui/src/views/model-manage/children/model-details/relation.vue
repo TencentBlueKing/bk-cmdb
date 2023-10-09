@@ -13,7 +13,10 @@
 <template>
   <div class="model-relation-wrapper">
     <div class="options">
-      <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }" @update-auth="handleReceiveAuth">
+      <cmdb-auth
+        v-if="isShowOptionBtn"
+        :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+        @update-auth="handleReceiveAuth">
         <bk-button slot-scope="{ disabled }"
           class="create-btn"
           theme="primary"
@@ -39,7 +42,7 @@
             :class="['relation-pre', $i18n.locale]">
             {{$t('内置')}}
           </span>
-          <span class="relation-id">{{row['bk_obj_asst_id']}}</span>
+          <span class="relation-id" v-bk-overflow-tips>{{row['bk_obj_asst_id']}}</span>
         </template>
       </bk-table-column>
       <bk-table-column prop="bk_asst_name" :label="$t('关联类型')" show-overflow-tooltip>
@@ -104,6 +107,7 @@
 <script>
   import theRelationDetail from './relation-detail'
   import { mapGetters, mapActions } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   export default {
     components: {
       theRelationDetail
@@ -152,6 +156,9 @@
           return this.activeModel.bk_ispaused
         }
         return false
+      },
+      isShowOptionBtn() {
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {
@@ -281,20 +288,10 @@
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
         if (hasChanged) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.slider.isShow = false
-                resolve(true)
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
-          })
+          const confirmFn = () => {
+            this.slider.isShow = false
+          }
+          return this.$refs.relationForm.beforeClose(confirmFn)
         }
         this.slider.isShow = false
         return true
@@ -330,6 +327,9 @@
     .relation-id {
         vertical-align: middle;
         line-height: 18px;
+        width: 100%;
+        display: inline-block;
+        @include ellipsis;
     }
     .text-primary {
         cursor: pointer;

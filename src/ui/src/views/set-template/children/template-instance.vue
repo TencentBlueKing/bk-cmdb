@@ -114,17 +114,12 @@
             </cmdb-auth>
           </template>
         </bk-table-column>
-        <cmdb-table-empty slot="empty" :stuff="table.stuff">
-          <div>
-            <i18n path="空集群模板实例提示" tag="div">
-              <template #link>
-                <bk-button style="font-size: 14px;" text @click="handleLinkServiceTopo">
-                  {{$t('业务拓扑')}}
-                </bk-button>
-              </template>
-            </i18n>
-          </div>
-        </cmdb-table-empty>
+        <cmdb-data-empty
+          slot="empty"
+          :stuff="dataEmpty.stuff"
+          @clear="handleClearFilter"
+          @create="handleLinkServiceTopo">
+        </cmdb-data-empty>
       </bk-table>
     </div>
   </div>
@@ -176,10 +171,13 @@
           current: 1,
           ...this.$tools.getDefaultPaginationConfig()
         },
-        table: {
+        dataEmpty: {
           stuff: {
             type: 'default',
-            payload: {}
+            payload: {
+              path: '空集群模板实例提示',
+              action: this.$t('业务拓扑')
+            }
           }
         },
         listSort: 'last_time',
@@ -385,7 +383,7 @@
         await this.getData()
 
         const searchStatus = this.statusFilter !== 'all' || !!this.filterName
-        this.table.stuff.type = event && searchStatus ? 'search' : 'default'
+        this.dataEmpty.stuff.type = event && searchStatus ? 'search' : 'default'
 
         if (this.list.length) {
           this.getSetInstancesWithTopo()
@@ -502,6 +500,11 @@
             node: `set-${row.bk_set_id}`
           }
         })
+      },
+      handleClearFilter() {
+        this.statusFilter = 'all'
+        this.filterName = ''
+        this.handleFilter()
       }
     }
   }

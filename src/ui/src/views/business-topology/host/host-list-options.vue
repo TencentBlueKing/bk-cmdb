@@ -170,7 +170,7 @@
     <div class="options options-right">
       <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
       <filter-collection class="option-collection ml10" v-test-id></filter-collection>
-      <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
+      <icon-button :class="['option-filter', 'ml10', { active: hasCondition }]" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
@@ -182,7 +182,7 @@
       :is-container-host="isContainerHost">
     </edit-multiple-host>
 
-    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="650">
+    <cmdb-dialog :mask-close="false" v-model="dialog.show" v-bind="dialog.props" :height="750">
       <component
         :is="dialog.component"
         v-bind="dialog.componentProps"
@@ -219,6 +219,8 @@
   import FilterUtils from '@/components/filters/utils'
   import { update as updateHost } from '@/service/host/import'
   import RouterQuery from '@/router/query'
+  import { isUseComplexValueType } from '@/utils/tools'
+
   export default {
     components: {
       FilterCollection,
@@ -236,7 +238,7 @@
         dialog: {
           show: false,
           props: {
-            width: 1100
+            width: 1280
           },
           component: null,
           componentProps: {}
@@ -309,7 +311,7 @@
           id: this.IPWithCloudSymbol,
           bk_obj_id: 'host',
           bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('云区域')}ID:IP`,
+          bk_property_name: `${this.$t('管控区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
         const clipboardList = this.$parent.tableHeader.slice()
@@ -318,6 +320,9 @@
       },
       tableHeaderPropertyIdList() {
         return this.$parent.tableHeader.map(item => item.bk_property_id)
+      },
+      hasCondition() {
+        return FilterStore.hasCondition
       }
     },
     methods: {
@@ -458,9 +463,15 @@
         showImport()
       },
       handleCopy(property) {
-        const copyText = this.selection.map((data) => {
+        const copyText = this.selection.map((data, index) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
+
+          if (isUseComplexValueType(property)) {
+            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[index]?.getCopyValue()
+            return value
+          }
+
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
@@ -539,7 +550,8 @@
         .option-collection,
         .option-filter {
             flex: 32px 0 0;
-            &:hover {
+            &:hover,
+            .active {
                 color: $primaryColor;
             }
         }

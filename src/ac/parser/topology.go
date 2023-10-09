@@ -42,7 +42,8 @@ func (ps *parseStream) topology() *parseStream {
 		fullTextSearch().
 		cloudArea().
 		businessSet().
-		kube()
+		kube().
+		project()
 
 	return ps
 }
@@ -66,34 +67,14 @@ const (
 	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
 )
 
+// NOCC:golint/fnsize(整体属于business操作需要放在一起)
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	// find reduced business list for the user with any business resources
-	if ps.hitPattern(findReducedBusinessListPattern, http.MethodGet) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find simplified business list with limited fields return
-	if ps.hitPattern(findSimplifiedBusinessListPattern, http.MethodGet) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
+	ps = ps.findBiz()
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -124,146 +105,8 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
-	// update business, this is not a normalize api.
-	// TODO: update this api format.
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("invalid update business request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("udpate business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Update,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// update business enable status, this is not a normalize api.
-	// TODO: update this api format.
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 7 {
-			ps.err = errors.New("invalid update business enable status request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("udpate business enable status, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Update,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// delete business, this is not a normalize api.
-	// TODO: update this api format
-	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 5 {
-			ps.err = errors.New("invalid delete business request uri")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Delete,
-					InstanceID: bizID,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find business, this is not a normalize api.
-	// TODO: update this api format
-	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// find resource pool business
-	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// update business status to `disabled` or `enable`
-	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.Business,
-					Action:     meta.Archive,
-					InstanceID: bizID,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
-	// batch update business properties
-	if ps.hitPattern(updatemanyBizPropertyPattern, http.MethodPut) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-			},
-		}
+	ps = ps.updateBiz()
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -319,6 +162,156 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+func (ps *parseStream) findBiz() *parseStream {
+	// find reduced business list for the user with any business resources
+	if ps.hitPattern(findReducedBusinessListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find simplified business list with limited fields return
+	if ps.hitPattern(findSimplifiedBusinessListPattern, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find business, this is not a normalize api.
+	// TODO: update this api format
+	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
+	// find resource pool business
+	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+func (ps *parseStream) updateBiz() *parseStream {
+	// update business, this is not a normalize api. TODO: update this api format.
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("invalid update business request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("udpate business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Update,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// update business enable status, this is not a normalize api. TODO: update this api format.
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
+		if len(ps.RequestCtx.Elements) != 7 {
+			ps.err = errors.New("invalid update business enable status request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("udpate biz enable status, but got invalid biz id %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Update,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// delete business, this is not a normalize api. TODO: update this api format
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("invalid delete business request uri")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Delete,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// update business status to `disabled` or `enable`
+	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:       meta.Business,
+			Action:     meta.Archive,
+			InstanceID: bizID,
+		}}}
+		return ps
+	}
+
+	// batch update business properties
+	if ps.hitPattern(updatemanyBizPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
+			Type:   meta.Business,
+			Action: meta.SkipAction,
+		}}}
+		return ps
+	}
 	return ps
 }
 
@@ -649,6 +642,7 @@ const (
 	findHostTopoPath              = "/api/v3/find/host/topopath"
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) mainline() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -663,7 +657,8 @@ func (ps *parseStream) mainline() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -688,7 +683,8 @@ func (ps *parseStream) mainline() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find mainline idle and fault module with statistics, but got invalid business id %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find mainline idle and fault module with statistics, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -834,6 +830,7 @@ var (
 	findModuleByServiceTemplateRegexp = regexp.MustCompile(`^/api/v3/module/bk_biz_id/(?P<bk_biz_id>[0-9]+)/service_template_id/(?P<service_template_id>[0-9]+)/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectModule() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1042,7 +1039,8 @@ func (ps *parseStream) objectModule() *parseStream {
 		}
 		bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr, ps.RequestCtx.URI, err)
+			ps.err = fmt.Errorf("find module, but parse bk_biz_id failed, bizIDStr: %s, uri: %s, err: %+v", bizIDStr,
+				ps.RequestCtx.URI, err)
 			return ps
 		}
 
@@ -1149,6 +1147,7 @@ var (
 	findSetBatchRegexp   = regexp.MustCompile(`^/api/v3/findmany/set/bk_biz_id/[0-9]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) objectSet() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1347,6 +1346,7 @@ var (
 	searchInstAudit   = `/api/v3/find/inst_audit`
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) audit() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -1406,7 +1406,7 @@ func (ps *parseStream) audit() *parseStream {
 			return ps
 		}
 
-		// authorize logic reference: https://github.com/Tencent/bk-cmdb/issues/5758
+		// authorize logic reference: https://github.com/TencentBlueKing/bk-cmdb/issues/5758
 		if isMainline {
 			if query.Condition.BizID == 0 {
 				ps.err = fmt.Errorf("bk_biz_id is invalid, rid: %s", ps.RequestCtx.Rid)
@@ -1502,6 +1502,7 @@ var (
 	deleteCloudAreaRegexp = regexp.MustCompile(`^/api/v3/delete/cloudarea/[0-9]+/?$`)
 )
 
+// NOCC:golint/fnsize(设计如此)
 func (ps *parseStream) cloudArea() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -2065,5 +2066,138 @@ func (ps *parseStream) kube() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+const (
+	createProjectPattern   = `/api/v3/createmany/project`
+	updateProjectPattern   = `/api/v3/updatemany/project`
+	findProjectPattern     = `/api/v3/findmany/project`
+	deleteProjectPattern   = `/api/v3/deletemany/project`
+	updateProjectIDPattern = `/api/v3/update/project/bk_project_id`
+)
+
+// NOCC:golint/fnsize(project操作需要放到一个函数中)
+func (ps *parseStream) project() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(createProjectPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Project,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateProjectPattern, http.MethodPut) {
+		idsVal, err := ps.RequestCtx.getValueFromBody("ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ids := idsVal.Array()
+		if len(ids) == 0 {
+			ps.err = errors.New("ids is not set")
+			return ps
+		}
+
+		for _, id := range ids {
+			idIntVal := id.Int()
+			if idIntVal <= 0 {
+				ps.err = errors.New("invalid id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Project,
+						Action:     meta.Update,
+						InstanceID: idIntVal,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findProjectPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Project,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(deleteProjectPattern, http.MethodDelete) {
+		idsVal, err := ps.RequestCtx.getValueFromBody("ids")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		ids := idsVal.Array()
+		if len(ids) == 0 {
+			ps.err = errors.New("ids is not set")
+			return ps
+		}
+
+		for _, id := range ids {
+			idIntVal := id.Int()
+			if idIntVal <= 0 {
+				ps.err = errors.New("invalid id")
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					Basic: meta.Basic{
+						Type:       meta.Project,
+						Action:     meta.Delete,
+						InstanceID: idIntVal,
+					},
+				},
+			}
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateProjectIDPattern, http.MethodPut) {
+		idVal, err := ps.RequestCtx.getValueFromBody("id")
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		id := idVal.Int()
+		if id <= 0 {
+			ps.err = errors.New("invalid id")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.Project,
+					Action:     meta.Update,
+					InstanceID: id,
+				},
+			},
+		}
+
+		return ps
+	}
 	return ps
 }

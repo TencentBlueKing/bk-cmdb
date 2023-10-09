@@ -14,7 +14,7 @@
   <div class="verification-layout">
     <div class="options">
       <cmdb-auth class="inline-block-middle"
-        v-if="!isTopoModel"
+        v-if="!isTopoModel && isShowOptionBtn"
         :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
         @update-auth="handleReceiveAuth">
         <bk-button slot-scope="{ disabled }"
@@ -39,7 +39,10 @@
       @cell-click="handleShowDetails">
       <bk-table-column :label="$t('校验规则')" class-name="is-highlight" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{getRuleName(row.keys)}}
+          <div class="keys-cell">
+            {{getRuleName(row.keys)}}
+            <mini-tag :text="$t('模板')" v-if="row.bk_template_id" />
+          </div>
         </template>
       </bk-table-column>
       <bk-table-column prop="operation"
@@ -86,10 +89,12 @@
   import theVerificationDetail from './verification-detail'
   import { mapActions, mapGetters } from 'vuex'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import MiniTag from '@/components/ui/other/mini-tag.vue'
 
   export default {
     components: {
-      theVerificationDetail
+      theVerificationDetail,
+      MiniTag
     },
     props: {
       modelId: {
@@ -131,6 +136,9 @@
           return this.activeModel.bk_ispaused
         }
         return false
+      },
+      isShowOptionBtn() {
+        return BUILTIN_MODELS.PROJECT !== this.$route.params.modelId
       }
     },
     watch: {
@@ -153,7 +161,7 @@
         'deleteObjectUniqueConstraints'
       ]),
       isEditable(item) {
-        if (item.ispre || this.isReadOnly) {
+        if (item.ispre || this.isReadOnly || item.bk_template_id) {
           return false
         }
         return true
@@ -241,26 +249,16 @@
       },
       handleSliderBeforeClose() {
         const isChanged = this.$refs.verificationForm.isChanged()
-        if (!isChanged) {
+        const confirmFn = () => {
           this.slider.isShow = false
           this.slider.id = null
+        }
+        if (!isChanged) {
+          confirmFn()
           return true
         }
-        return new Promise((resolve) => {
-          this.$bkInfo({
-            title: this.$t('确认退出'),
-            subTitle: this.$t('退出会导致未保存信息丢失'),
-            extCls: 'bk-dialog-sub-header-center',
-            confirmFn: () => {
-              this.slider.isShow = false
-              this.slider.id = null
-              resolve(true)
-            },
-            cancelFn: () => {
-              resolve(false)
-            }
-          })
-        })
+        // this.$refs.verificationForm.setChanged(true)
+        return this.$refs.verificationForm.beforeClose(confirmFn)
       }
     }
   }
@@ -272,6 +270,11 @@
     }
     .verification-table {
         margin: 14px 0 0 0;
+        .keys-cell {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
     }
     .operation-btn[disabled] {
         color: #dcdee5 !important;

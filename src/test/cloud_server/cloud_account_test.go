@@ -47,7 +47,8 @@ func clearAccountData() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// 删除云账户id计数
-	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(), map[string]interface{}{"_id": common.BKTableNameCloudAccount})
+	err = test.GetDB().Table(common.BKTableNameIDgenerator).Delete(context.Background(),
+		map[string]interface{}{"_id": common.BKTableNameCloudAccount})
 	Expect(err).NotTo(HaveOccurred())
 }
 
@@ -56,7 +57,7 @@ func prepareAccountData() {
 	accountData := []map[string]interface{}{accountData1, accountData2}
 	for i := range accountData {
 		rsp, err := cloudServerClient.CreateAccount(context.Background(), header, accountData[i])
-		util.RegisterResponse(rsp)
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 	}
@@ -77,7 +78,7 @@ var _ = Describe("cloud account test", func() {
 		It("create with normal data", func() {
 			tmpAccount := NewTmpAccount()
 			rsp, err := cloudServerClient.CreateAccount(context.Background(), header, tmpAccount)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -86,7 +87,7 @@ var _ = Describe("cloud account test", func() {
 			tmpAccount := NewTmpAccount()
 			tmpAccount["bk_account_name"] = accountData1["bk_account_name"]
 			rsp, err := cloudServerClient.CreateAccount(context.Background(), header, tmpAccount)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCloudAccountNameAlreadyExist))
@@ -96,7 +97,7 @@ var _ = Describe("cloud account test", func() {
 			tmpAccount := NewTmpAccount()
 			tmpAccount["bk_cloud_vendor"] = "aaa"
 			rsp, err := cloudServerClient.CreateAccount(context.Background(), header, tmpAccount)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCloudVendorNotSupport))
@@ -111,7 +112,7 @@ var _ = Describe("cloud account test", func() {
 			accountID := int64(1)
 			data := map[string]interface{}{"bk_account_name": "Jack"}
 			rsp, err := cloudServerClient.UpdateAccount(context.Background(), header, accountID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -120,7 +121,7 @@ var _ = Describe("cloud account test", func() {
 			accountID := int64(1)
 			data := map[string]interface{}{"bk_account_name": accountData2["bk_account_name"]}
 			rsp, err := cloudServerClient.UpdateAccount(context.Background(), header, accountID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCloudAccountNameAlreadyExist))
@@ -130,7 +131,7 @@ var _ = Describe("cloud account test", func() {
 			accountID := int64(1)
 			data := map[string]interface{}{"bk_account_name": accountData2["bk_account_name"]}
 			rsp, err := cloudServerClient.UpdateAccount(context.Background(), header, accountID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCloudAccountNameAlreadyExist))
@@ -140,7 +141,7 @@ var _ = Describe("cloud account test", func() {
 			accountID := int64(99999)
 			data := map[string]interface{}{"bk_account_name": "Jack"}
 			rsp, err := cloudServerClient.UpdateAccount(context.Background(), header, accountID, data)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 			Expect(rsp.Code).To(Equal(common.CCErrCloudAccountIDNoExistFail))
@@ -153,7 +154,7 @@ var _ = Describe("cloud account test", func() {
 		It("delete with normal data", func() {
 			accountID := int64(1)
 			rsp, err := cloudServerClient.DeleteAccount(context.Background(), header, accountID)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -161,7 +162,7 @@ var _ = Describe("cloud account test", func() {
 		It("delete with cloud accountID which is not exist", func() {
 			accountID := int64(99999)
 			rsp, err := cloudServerClient.DeleteAccount(context.Background(), header, accountID)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
@@ -172,7 +173,7 @@ var _ = Describe("cloud account test", func() {
 
 		It("search with default query condition", func() {
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, nil)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
@@ -181,7 +182,7 @@ var _ = Describe("cloud account test", func() {
 		It("search with configured conditon", func() {
 			queryData := map[string]interface{}{"condition": map[string]interface{}{"bk_account_name": accountData1["bk_account_name"]}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(1)))
@@ -191,7 +192,7 @@ var _ = Describe("cloud account test", func() {
 		It("search with configured sort", func() {
 			queryData := map[string]interface{}{"page": map[string]interface{}{"sort": "bk_account_name"}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(2)))
@@ -202,23 +203,25 @@ var _ = Describe("cloud account test", func() {
 		It("search with configured limit", func() {
 			queryData := map[string]interface{}{"page": map[string]interface{}{"limit": 1}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(len(rsp.Data.Info)).To(Equal(1))
 		})
 
 		It("search with configured is_fuzzy is false", func() {
-			queryData := map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_account_name": "aws"}}
+			queryData := map[string]interface{}{"is_fuzzy": false,
+				"condition": map[string]interface{}{"bk_account_name": "aws"}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(0)))
 
-			queryData = map[string]interface{}{"is_fuzzy": false, "condition": map[string]interface{}{"bk_account_name": "awsAccount1"}}
+			queryData = map[string]interface{}{"is_fuzzy": false,
+				"condition": map[string]interface{}{"bk_account_name": "awsAccount1"}}
 			rsp, err = cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(1)))
@@ -226,9 +229,10 @@ var _ = Describe("cloud account test", func() {
 		})
 
 		It("search with configured is_fuzzy is true", func() {
-			queryData := map[string]interface{}{"is_fuzzy": true, "condition": map[string]interface{}{"bk_account_name": "aws"}}
+			queryData := map[string]interface{}{"is_fuzzy": true,
+				"condition": map[string]interface{}{"bk_account_name": "aws"}}
 			rsp, err := cloudServerClient.SearchAccount(context.Background(), header, queryData)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(int64(1)))

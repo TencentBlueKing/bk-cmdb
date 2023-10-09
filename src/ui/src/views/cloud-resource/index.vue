@@ -97,6 +97,13 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        :auth="{ type: $OPERATION.C_CLOUD_RESOURCE_TASK }"
+        @create="handleCreate"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <task-sideslider ref="taskSideslider"
       @request-refresh="getData">
@@ -130,7 +137,15 @@
           findTask: Symbol('findTask'),
           findAccount: Symbol('findAccount')
         },
-        scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+        scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              resource: this.$t('任务')
+            }
+          }
+        }
       }
     },
     watch: {
@@ -206,7 +221,7 @@
               await this.$store.dispatch('cloud/resource/deleteTask', {
                 id: row.bk_task_id
               })
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {
@@ -233,6 +248,7 @@
             params.condition.bk_task_name = this.filter
             params.is_fuzzy = true
           }
+          this.table.stuff.type = this.filter ? 'search' : 'default'
           const data = await this.$store.dispatch('cloud/resource/findTask', {
             params,
             config: {
@@ -253,6 +269,11 @@
       },
       resourceTypeFormatter(row, column) {
         return this.$t(resourceTypeFormatter(row[column.property]))
+      },
+      handleClearFilter() {
+        this.filter = ''
+        this.table.stuff.type = 'default'
+        this.getList()
       }
     }
   }

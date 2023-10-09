@@ -212,11 +212,14 @@
           </bk-button>
         </cmdb-auth>
       </div>
-      <bk-exception v-show="!displayList.length && !$loading(Object.values(request))"
-        type="search-empty"
-        scene="part">
-      </bk-exception>
     </div>
+    <cmdb-data-empty
+      class="empty-content"
+      v-if="!displayList.length && !$loading(Object.values(request))"
+      slot="empty"
+      :stuff="dataEmpty"
+      @clear="handleClearFilter">
+    </cmdb-data-empty>
   </div>
 </template>
 
@@ -256,7 +259,14 @@
           category: Symbol('category')
         },
         ignoreUpdateAuth: false,
-        isMainAuthCompleted: false
+        isMainAuthCompleted: false,
+        dataEmpty: {
+          type: 'empty',
+          payload: {
+            action: this.$t('添加'),
+            defaultText: this.$t('暂无服务分类')
+          }
+        }
       }
     },
     computed: {
@@ -268,6 +278,7 @@
       },
       keyword() {
         this.handleFilter()
+        if (this.keyword) this.dataEmpty.type = 'search'
       }
     },
     created() {
@@ -392,7 +403,6 @@
       handleDeleteCategory(id, type, index) {
         this.$bkInfo({
           title: this.$t('确认删除分类'),
-          zIndex: 999,
           confirmFn: async () => {
             await this.deleteServiceCategory({
               params: {
@@ -464,6 +474,10 @@
       handleCloseAddChild() {
         this.addChildStatus = null
         this.categoryName = ''
+      },
+      handleClearFilter() {
+        this.keyword = ''
+        this.dataEmpty.type = 'empty'
       }
     }
   }
@@ -760,7 +774,13 @@
                 width: 260px;
             }
         }
-    }
+        .empty-content{
+            position: absolute;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+        }
+      }
     .menu-operational {
         display: none;
         padding: 6px 0;

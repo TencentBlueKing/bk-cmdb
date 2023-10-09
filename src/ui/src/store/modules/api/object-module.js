@@ -62,7 +62,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   updateModule({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
-    return $http.put(`module/${bizId}/${setId}/${moduleId}`, params, config)
+    return $http.put(`${window.API_HOST}table/module/${bizId}/${setId}/${moduleId}`, params, config)
   },
 
   /**

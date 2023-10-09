@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import { defineComponent, ref, toRef, toRefs, PropType, watch } from 'vue'
-  import { formatValue } from '@/utils/tools.js'
+  import { getPropertyDefaultValue } from '@/utils/tools.js'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
@@ -63,7 +63,7 @@
       maxColumns: Number
     },
     setup(props, { emit }) {
-      const $propertyFormElement = ref(null)
+      const propertyFormEl = ref(null)
 
       const { sortedGroups, groupedProperties } = useProperty(toRefs(props))
 
@@ -99,10 +99,10 @@
       watch(selectedList, (selectedList) => {
         const newConfig = {}
         selectedList.forEach((property) => {
-          newConfig[property.id] = formatValue(propertyConfig.value[property.id], property)
+          newConfig[property.id] = getPropertyDefaultValue(property, propertyConfig.value[property.id])
         })
         propertyConfig.value = newConfig
-      })
+      }, { deep: true })
 
       const handleSelectField = () => {
         propertyModalVisible.value = true
@@ -134,7 +134,7 @@
         configPropertyGroups,
         configGroupedProperties,
         propertyConfig,
-        $propertyFormElement,
+        propertyFormEl,
         isRequired,
         handleSelectField,
         handleRemoveField,
@@ -144,7 +144,7 @@
     methods: {
       async validateAll() {
         // 获得每一个表单元素的校验方法
-        const validates = (this.$refs.$propertyFormElement || [])
+        const validates = (this.$refs.propertyFormEl || [])
           .map(formElement => formElement.$validator.validateAll())
 
         if (validates.length) {
@@ -155,9 +155,9 @@
         return true
       },
       async validate() {
-        const $propertyFormElements = this.$refs.$propertyFormElement || []
+        const propertyFormEls = this.$refs.propertyFormEl || []
         const validates = []
-        $propertyFormElements.forEach(async (formElement) => {
+        propertyFormEls.forEach(async (formElement) => {
           const [[key, val]] = Object.entries(formElement.fields)
           // 只检测dirty字段
           if (val.dirty) {
@@ -208,7 +208,7 @@
               :label="property.bk_property_name"
               :label-width="120">
               <property-form-element
-                ref="$propertyFormElement"
+                ref="propertyFormEl"
                 :must-required="isRequired(property)"
                 :property="property"
                 :size="formElementSize"

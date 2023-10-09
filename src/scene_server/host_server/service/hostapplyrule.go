@@ -98,9 +98,11 @@ func (s *Service) UpdateHostApplyRule(ctx *rest.Contexts) {
 	var rule metadata.HostApplyRule
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		rule, err = s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, ruleID, option)
+		rule, err = s.CoreAPI.CoreService().HostApplyRule().UpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+			bizID, ruleID, option)
 		if err != nil {
-			blog.ErrorJSON("UpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+			blog.Errorf("UpdateHostApplyRule failed, core service CreateHostApplyRule failed, bizID: %v, "+
+				"option: %+v, err: %v, rid: %s", bizID, option, err, rid)
 			return err
 		}
 		return nil
@@ -722,7 +724,7 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 			common.BKInnerObjIDModule, op)
 		if err != nil {
 			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
-			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return err
 		}
 		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
 		for _, rule := range planReq.AdditionalRules {

@@ -9,7 +9,8 @@ import (
 )
 
 // CreateProcessTemplate TODO
-func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/createmany/proc/proc_template"
 
@@ -24,7 +25,8 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, data
 }
 
 // DeleteProcessTemplate TODO
-func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/deletemany/proc/proc_template"
 
@@ -64,7 +66,8 @@ func (p *process) SearchProcessTemplate(ctx context.Context, h http.Header,
 }
 
 // UpdateProcessTemplate TODO
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header,
+	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/proc/proc_template"
 

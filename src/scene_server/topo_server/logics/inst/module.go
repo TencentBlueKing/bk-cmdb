@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/version"
 )
 
 // ModuleOperationInterface module operation methods
@@ -243,9 +242,25 @@ func (m *module) checkModuleServiceTemplate(kit *rest.Kit, bizID, defaultVal int
 	}
 
 	// if need create module using service template
-	if serviceTemplateID == 0 && !version.CanCreateSetModuleWithoutTemplate && defaultVal == 0 {
-		blog.Errorf("not use  service template create set module, rid: %s", kit.Rid)
-		return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, "service_template_id can not be 0")
+	if serviceTemplateID != 0 && defaultVal == 0 {
+		templateIDs := []int64{serviceTemplateID}
+		option := metadata.ListServiceTemplateOption{
+			BusinessID:         bizID,
+			ServiceTemplateIDs: templateIDs,
+		}
+		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(kit.Ctx, kit.Header, &option)
+		if err != nil {
+			blog.Errorf("get service template failed, bizID: %d, serviceTemplateIDs: %d, err: %v, rid: %s", bizID,
+				serviceTemplateID, err, kit.Rid)
+			return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if len(stResult.Info) == 0 {
+			blog.Errorf("get service template not found, filter: %#v, rid: %s", option, kit.Rid)
+			return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if stResult.Info[0].ID != serviceTemplateID {
+			return 0, 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
 	}
 
 	serviceCategoryID, err = m.checkServiceTemplateParam(kit, serviceCategoryID, serviceTemplateID, bizID,

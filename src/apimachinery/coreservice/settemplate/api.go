@@ -22,7 +22,8 @@ import (
 )
 
 // CreateSetTemplate TODO
-func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
+func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header, bizID int64,
+	option metadata.CreateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.SetTemplate `json:"data"`
@@ -49,7 +50,8 @@ func (p *setTemplate) CreateSetTemplate(ctx context.Context, header http.Header,
 }
 
 // UpdateSetTemplate TODO
-func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
+func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
+	option metadata.UpdateSetTemplateOption) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.SetTemplate `json:"data"`
@@ -76,7 +78,8 @@ func (p *setTemplate) UpdateSetTemplate(ctx context.Context, header http.Header,
 }
 
 // DeleteSetTemplate TODO
-func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
+func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64,
+	option metadata.DeleteSetTemplateOption) errors.CCErrorCoder {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 	}{}
@@ -102,7 +105,8 @@ func (p *setTemplate) DeleteSetTemplate(ctx context.Context, header http.Header,
 }
 
 // GetSetTemplate TODO
-func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
+func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bizID int64,
+	setTemplateID int64) (metadata.SetTemplate, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp `json:",inline"`
 		Data              metadata.SetTemplate `json:"data"`
@@ -128,7 +132,8 @@ func (p *setTemplate) GetSetTemplate(ctx context.Context, header http.Header, bi
 }
 
 // ListSetTemplate TODO
-func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
+func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, bizID int64,
+	option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder) {
 	ret := metadata.ListSetTemplateResult{}
 	subPath := "/findmany/topo/set_template/bk_biz_id/%d/"
 
@@ -152,7 +157,8 @@ func (p *setTemplate) ListSetTemplate(ctx context.Context, header http.Header, b
 }
 
 // CountSetTplInstances TODO
-func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Header, bizID int64, option metadata.CountSetTplInstOption) (map[int64]int64, errors.CCErrorCoder) {
+func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Header, bizID int64,
+	option metadata.CountSetTplInstOption) (map[int64]int64, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.CountSetTplInstItem `json:"data"`
@@ -184,7 +190,8 @@ func (p *setTemplate) CountSetTplInstances(ctx context.Context, header http.Head
 }
 
 // ListSetServiceTemplateRelations get relations of SetTemplate <==> ServiceTemplate
-func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
+func (p *setTemplate) ListSetServiceTemplateRelations(ctx context.Context, header http.Header, bizID int64,
+	setTemplateID int64) ([]metadata.SetServiceTemplateRelation, errors.CCErrorCoder) {
 	ret := struct {
 		metadata.BaseResp
 		Data []metadata.SetServiceTemplateRelation `json:"data"`

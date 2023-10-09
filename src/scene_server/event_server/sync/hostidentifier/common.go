@@ -21,8 +21,11 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/apigw/gse"
 	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
+	pushfile "configcenter/src/thirdparty/gse/push_file_forsyncdata"
 
 	"github.com/tidwall/gjson"
 )
@@ -69,7 +72,18 @@ func buildForStatus(cloudID, innerIP string) []*getstatus.CacheIPInfo {
 	return hostInfos
 }
 
-// getStatusOnAgentIP 只需要拿到主机的其中一个处于on状态的ip即可
+// buildV2ForStatus 构造查询通过api gataway新接口查询agent状态的主机id
+func buildV2ForStatus(cloudID, innerIP string) []string {
+	agentIDList := make([]string, 0)
+	// 对于多ip的情况需要特殊处理，agent可能仅有一个ip处于on状态，需要将ip数组里的ip分别查询
+	ips := strings.Split(innerIP, ",")
+	for _, ip := range ips {
+		agentIDList = append(agentIDList, CloudIDIPToAgentID(cloudID, ip))
+	}
+	return agentIDList
+}
+
+// 只需要拿到主机的其中一个处于on状态的ip即可
 func getStatusOnAgentIP(cloudID, innerIP string, agentStatus map[string]string) (bool, string) {
 	ips := strings.Split(innerIP, ",")
 	for _, ip := range ips {
@@ -81,14 +95,14 @@ func getStatusOnAgentIP(cloudID, innerIP string, agentStatus map[string]string) 
 	return false, ""
 }
 
-// buildTaskResultMap 根据与gse约定，需要根据content的内容拿到对应的ip和cloudID，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
-func buildTaskResultMap(originMap map[string]string) map[string]string {
-	taskResultMap := make(map[string]string)
+// 根据与gse约定，需要根据content的内容拿到对应的ip和cloudID，但是现在接口还未提供相关内容，这里作兼容，如果拿不到，就从key中截取相关的信息
+func buildV1TaskResultMap(originMap map[string]string) map[string]int64 {
+	taskResultMap := make(map[string]int64)
 	for key, val := range originMap {
 		if gjson.Get(val, "content.dest").Exists() && gjson.Get(val, "content.dest_cloudid").Exists() {
-			key = HostKey(gjson.Get(val, "content.dest_cloudid").String(),
-				gjson.Get(val, "content.dest").String())
-			taskResultMap[key] = val
+			key = HostKey(gjson.Get(val, "content.dest_cloudid").String(), gjson.Get(val, "content.dest").String())
+			code := gjson.Get(val, "error_code").Int()
+			taskResultMap[key] = code
 			continue
 		}
 
@@ -97,12 +111,49 @@ func buildTaskResultMap(originMap map[string]string) map[string]string {
 			continue
 		}
 		key = HostKey(split[len(split)-2], split[len(split)-1])
-		taskResultMap[key] = val
+		code := gjson.Get(val, "error_code").Int()
+		taskResultMap[key] = code
+		if code != common.CCSuccess && code != Handling {
+			blog.Errorf("task execution failed, cloudID:innerIP: %s, code: %d, msg: %s", key, code,
+				gjson.Get(val, "error_msg").String())
+		}
 	}
+	return taskResultMap
+}
+
+func buildV2TaskResultMap(dataList []gse.GetTransferFileResult) map[string]int64 {
+	taskResultMap := make(map[string]int64)
+	for _, data := range dataList {
+		taskResultMap[data.Content.DestAgentID] = data.ErrorCode
+		if data.ErrorCode != common.CCSuccess && data.ErrorCode != Handling {
+			blog.Errorf("task execution failed, agent id: %s, code: %d, msg: %s", data.Content.DestAgentID,
+				data.ErrorCode, data.ErrorMsg)
+		}
+	}
+
 	return taskResultMap
 }
 
 // HostKey return the host key to represent a unique host
 func HostKey(cloudID, hostIP string) string {
 	return fmt.Sprintf("%s:%s", cloudID, hostIP)
+}
+
+// StatusReq find agent status request
+type StatusReq struct {
+	CloudID      string `json:"cloud_id"`
+	InnerIP      string `json:"inner_ip"`
+	AgentID      string `json:"bk_agent_id"`
+	BKAddressing string `json:"bk_addressing"`
+}
+
+// TaskInfo push identifier task info
+type TaskInfo struct {
+	V1Task []*pushfile.API_FileInfoV2
+	V2Task []*gse.Task
+}
+
+// CloudIDIPToAgentID get agentID from ip and cloudID
+func CloudIDIPToAgentID(cloudID, innerIP string) string {
+	return cloudID + ":" + innerIP
 }

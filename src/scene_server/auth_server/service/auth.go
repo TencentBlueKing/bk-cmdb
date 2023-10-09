@@ -73,7 +73,8 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 
 	iamResourceType, err := iam.ConvertResourceType(input.ResourceType, 0)
 	if err != nil {
-		blog.Errorf("ConvertResourceType failed, err: %+v, resourceType: %s, rid: %s", err, input.ResourceType, ctx.Kit.Rid)
+		blog.Errorf("ConvertResourceType failed, err: %+v, resourceType: %s, rid: %s", err, input.ResourceType,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

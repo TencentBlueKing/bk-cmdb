@@ -37,6 +37,10 @@ func (m *associationModel) CreateMainlineModelAssociation(kit *rest.Kit, inputPa
 	return m.createModelAssociation(kit, inputParam, enableMainlineAssociationType)
 }
 
+var forbiddenCreateAssociationObjList = []string{
+	common.BKInnerObjIDProject,
+}
+
 func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation, enableMainlineAssociationType bool) (*metadata.CreateOneDataResult, error) {
 	// enableMainlineAssociationType used for distinguish two creation mode
 	// when enableMainlineAssociationType enabled, only bk_mainline type could be create
@@ -46,8 +50,6 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 	if err := m.isValid(kit, inputParam); nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}
-
-	inputParam.Spec.OwnerID = kit.SupplierAccount
 
 	exists, err := m.isExistsAssociationID(kit, inputParam.Spec.AssociationName)
 	if nil != err {

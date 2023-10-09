@@ -54,7 +54,7 @@
       </bk-form-item>
     </bk-form>
     <bk-form class="form-layout" form-type="inline" :label-width="300" v-if="form.bk_account_id">
-      <bk-form-item class="form-item" :label="$t('云区域设定')" required>
+      <bk-form-item class="form-item" :label="$t('管控区域设定')" required>
         <bk-button @click="handleAddVPC">{{$t('添加VPC')}}</bk-button>
         <input type="hidden" v-validate="'min_value:1'" :value="selectedVPC.length" name="vpc-count">
         <p class="form-error" v-if="errors.has('vpc-count')">{{$t('请至少选择一个VPC')}}</p>
@@ -106,6 +106,8 @@
   import TaskResourceSelector from './task-resource-selector.vue'
   import Bus from '@/utils/bus.js'
   import symbols from '../common/symbol'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
   export default {
     name: 'task-form',
     components: {
@@ -141,6 +143,7 @@
         accounts: [],
         form,
         selectedVPC: this.task ? [...this.task.bk_sync_vpcs] : [],
+        originVPC: this.task ? [...this.task.bk_sync_vpcs] : [],
         request: {
           getAccounts: symbols.get('getAccounts'),
           createTask: symbols.get('createTask'),
@@ -153,6 +156,19 @@
     computed: {
       isCreateMode() {
         return this.task === null
+      },
+      originForm() {
+        const originForm = this.isCreateMode ? {
+          bk_task_name: '',
+          bk_account_id: '',
+          bk_resource_type: 'host'
+
+        } : {
+          bk_task_name: this.task.bk_task_name,
+          bk_account_id: this.task.bk_account_id,
+          bk_resource_type: this.task.bk_resource_type
+        }
+        return originForm
       },
       auth() {
         if (this.isCreateMode) {
@@ -170,6 +186,11 @@
       selectedVPC() {
         this.errors.remove('vpc-count')
       }
+    },
+    created() {
+      const { beforeClose, setChanged  } = useSideslider(this.form)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       handleLinkToCloudAccount() {
@@ -279,6 +300,12 @@
       },
       handleVPCCancel() {
         this.showVPCSelector = false
+      },
+      changedValues() {
+        return !isEqual(this.form, this.originForm)
+      },
+      changedVpcValues() {
+        return !isEqual(this.selectedVPC, this.originVPC)
       }
     }
   }

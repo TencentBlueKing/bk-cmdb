@@ -38,6 +38,13 @@
           @create="handleShowCreateDialog">
         </topology-tree-node>
       </template>
+      <template #empty>
+        <cmdb-table-empty
+          slot="empty"
+          :stuff="table.stuff"
+          @clear="handleClearFilter">
+        </cmdb-table-empty>
+      </template>
     </bk-big-tree>
     <bk-dialog class="bk-dialog-no-padding"
       v-model="createInfo.show"
@@ -124,7 +131,13 @@
           nextModelId: null
         },
         editable: false,
-        timer: null
+        timer: null,
+        table: {
+          stuff: {
+            type: 'search',
+            payload: {}
+          }
+        }
       }
     },
     computed: {
@@ -776,6 +789,9 @@
       },
       handleResize() {
         this.$refs.tree.resize()
+      },
+      handleClearFilter() {
+        this.filter = ''
       }
     }
   }

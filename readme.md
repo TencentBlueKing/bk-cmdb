@@ -1,15 +1,15 @@
 ![](docs/resource/img/bk-cmdb.png)
 ---
-[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE.txt)
-[![Release Version](https://img.shields.io/badge/release-3.9.37-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
+[![license](https://img.shields.io/badge/license-mit-brightgreen.svg?style=flat)](https://github.com/TencentBlueKing/bk-cmdb/blob/master/LICENSE.txt)
+[![Release Version](https://img.shields.io/badge/release-3.2.19-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TencentBlueKing/bk-cmdb/pulls)
 [![BK Pipelines Status](https://api.bkdevops.qq.com/process/api/external/pipelines/projects/cc/p-c02db56ac633447eb2e740b3fd0b6d2b/badge?X-DEVOPS-PROJECT-ID=cc)](http://api.bkdevops.qq.com/process/api-html/user/builds/projects/cc/pipelines/p-c02db56ac633447eb2e740b3fd0b6d2b/latestFinished?X-DEVOPS-PROJECT-ID=cc)
 
 
 [(English Documents Available)](readme_en.md)
 
 > **重要提示**: `master` 分支在开发过程中可能处于 *不稳定或者不可用状态* 。
-请通过[releases](https://github.com/tencent/bk-cmdb/releases) 而非 `master` 去获取稳定的二进制文件。
+请通过[releases](https://github.com/TencentBlueKing/bk-cmdb/releases) 而非 `master` 去获取稳定的二进制文件。
 
 蓝鲸配置平台（蓝鲸CMDB）是一个面向资产及应用的企业级配置管理平台。
 
@@ -45,13 +45,13 @@
 * [版本升级说明](docs/wiki/db_upgrade.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
-* [使用Helm部署CMDB到K8S环境](helm/README.md)
+* [使用Helm部署CMDB到K8S环境](docs/support-file/helm/README.md)
 
 ## Roadmap
 * [版本日志](docs/support-file/changelog/release.md)
 
 ## Support
-- [wiki](https://github.com/Tencent/bk-cmdb/wiki)
+- [wiki](https://github.com/TencentBlueKing/bk-cmdb/wiki)
 - [白皮书](https://docs.bk.tencent.com/cmdb/)
 - [蓝鲸论坛](https://bk.tencent.com/s-mart/community)
 - [蓝鲸 DevOps 在线视频教程](https://bk.tencent.com/s-mart/video/)

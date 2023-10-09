@@ -74,8 +74,35 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 	return &resp.Data, nil
 }
 
+// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+func (inst *instance) BatchCreateInstance(ctx context.Context, h http.Header, objID string,
+	input *metadata.BatchCreateModelInstOption) (*metadata.BatchCreateInstRespData, errors.CCErrorCoder) {
+
+	resp := new(metadata.BatchCreateInstResp)
+	subPath := "/batch/create/model/%s/instance"
+
+	err := inst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // SetManyInstance TODO
-func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
+func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string,
+	input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/setmany/model/%s/instances"
 
@@ -91,7 +118,7 @@ func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID 
 
 // UpdateInstance update instance
 func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (
-	*metadata.UpdatedCount, error) {
+	*metadata.UpdatedCount, errors.CCErrorCoder) {
 
 	resp := new(metadata.UpdatedOptionResult)
 	subPath := "/update/model/%s/instance"
@@ -108,7 +135,7 @@ func (inst *instance) UpdateInstance(ctx context.Context, h http.Header, objID s
 		return nil, errors.CCHttpError
 	}
 
-	if err = resp.CCError(); err != nil {
+	if err := resp.CCError(); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +195,8 @@ func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID s
 }
 
 // DeleteInstanceCascade TODO
-func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, objID string,
+	input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/model/%s/instance/cascade"
 

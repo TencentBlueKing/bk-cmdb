@@ -15,6 +15,7 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"configcenter/src/common"
@@ -63,14 +64,14 @@ var (
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
 	DynamicGroupConditionTypes = map[string]map[string]string{
 		// host dynamic group.
-		common.BKInnerObjIDHost: map[string]string{
+		common.BKInnerObjIDHost: {
 			common.BKInnerObjIDSet:    common.BKInnerObjIDSet,
 			common.BKInnerObjIDModule: common.BKInnerObjIDModule,
 			common.BKInnerObjIDHost:   common.BKInnerObjIDHost,
 		},
 
 		// set dynamic group.
-		common.BKInnerObjIDSet: map[string]string{
+		common.BKInnerObjIDSet: {
 			common.BKInnerObjIDSet: common.BKInnerObjIDSet,
 		},
 	}
@@ -134,12 +135,36 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		}
 	case DynamicGroupOperatorLIKE:
 		if attrType != stringType {
-			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator, attributeType)
+			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator,
+				attributeType)
 		}
 
 		return validAttributeValueType(attrType, c.Value)
 	}
 
+	return nil
+}
+
+// VerifyRegexValidity 验证正则表达式的合法性
+func (c *DynamicGroupCondition) VerifyRegexValidity() error {
+	// 验证 value 是否为空
+	if c.Value == nil {
+		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v", c.Value)
+		return errors.New("value not set")
+	}
+	// 模糊匹配时需要验证正则表达式的合法性
+	if c.Operator != common.BKDBLIKE {
+		return nil
+	}
+	strValue := util.GetStrByInterface(c.Value)
+	if strValue == "" {
+		blog.Errorf("HTTP request body data is not set, err: value not set, regex: %v", c.Value)
+		return errors.New("value not set")
+	}
+	if _, err := regexp.Compile(strValue); err != nil {
+		blog.Errorf("the regular expression's type assertion failed, err: %v, regex: %v", err, c.Value)
+		return err
+	}
 	return nil
 }
 
@@ -170,10 +195,11 @@ const (
 
 func getAttributeType(attributeType string) (string, error) {
 	switch attributeType {
-	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime,
-		common.FieldTypeTimeZone, common.FieldTypeUser, common.FieldTypeList:
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeDate,
+		common.FieldTypeEnumMulti, common.FieldTypeTime, common.FieldTypeTimeZone, common.FieldTypeUser,
+		common.FieldTypeList:
 		return stringType, nil
-	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeOrganization:
+	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeOrganization, common.FieldTypeEnumQuote:
 		return numericType, nil
 	case common.FieldTypeBool:
 		return boolType, nil
@@ -244,6 +270,13 @@ func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) 
 	}
 
 	for _, cond := range c.Condition {
+		for _, item := range cond.Condition {
+			if err := item.VerifyRegexValidity(); err != nil {
+				blog.Errorf("verify regex validity failed, err: %v, input: %v, objectID: %s", err, item, objectID)
+				return err
+			}
+		}
+
 		if _, isSupport = types[cond.ObjID]; !isSupport {
 			return fmt.Errorf("not support condition type[%s] for %s dynamic group", cond.ObjID, objectID)
 		}

@@ -16,6 +16,8 @@ import (
 	"net/http"
 
 	"configcenter/src/common/http/rest"
+	"configcenter/src/scene_server/topo_server/service/capability"
+	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -31,7 +33,9 @@ func (s *Service) initAssociation(web *restful.WebService) {
 		Handler: s.SearchObjectByClassificationID})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/tree/brief/biz/{bk_biz_id}",
 		Handler: s.SearchBriefBizTopo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/topo/biz/brief_node_relation", Handler: s.GetBriefTopologyNodeRelation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/find/topo/biz/brief_node_relation",
+		Handler: s.GetBriefTopologyNodeRelation})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host/topopath", Handler: s.SearchHostTopoPath})
 
@@ -272,7 +276,30 @@ func (s *Service) initResourceDirectory(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *Service) initProject(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/project", Handler: s.CreateProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/project", Handler: s.UpdateProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/project", Handler: s.SearchProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/project", Handler: s.DeleteProject})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/project/bk_project_id",
+		Handler: s.UpdateProjectID})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *Service) initService(web *restful.WebService) {
+	c := &capability.Capability{
+		Utility:     rest.NewRestUtility(rest.Config{ErrorIf: s.Engine.CCErr, Language: s.Engine.Language}),
+		Logics:      s.Logics,
+		AuthManager: s.AuthManager,
+		ClientSet:   s.Engine.CoreAPI,
+	}
+
 	s.initAssociation(web)
 	s.initAuditLog(web)
 	s.initBusiness(web)
@@ -284,6 +311,7 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initObjectAttribute(web)
 	s.initObjectGroup(web)
 	s.initIdentifier(web)
+	s.initProject(web)
 
 	s.initBusinessObject(web)
 	s.initBusinessClassification(web)
@@ -301,4 +329,10 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initResourceDirectory(web)
 
 	s.initKube(web)
+
+	s.initModelQuote(web)
+
+	fieldtmpl.InitFieldTemplate(c)
+
+	c.Utility.AddToRestfulWebService(web)
 }

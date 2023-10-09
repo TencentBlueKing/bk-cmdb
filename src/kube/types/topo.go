@@ -232,7 +232,8 @@ type SearchHostOption struct {
 	WorkloadID  int64                    `json:"bk_workload_id"`
 	WlKind      WorkloadType             `json:"kind"`
 	NodeCond    *NodeCondition           `json:"node_cond"`
-	Ip          metadata.IPInfo          `json:"ip"`
+	Ipv4Ip      metadata.IPInfo          `json:"ip"`
+	Ipv6Ip      metadata.IPInfo          `json:"ipv6"`
 	HostCond    metadata.SearchCondition `json:"host_condition"`
 	Page        metadata.BasePage        `json:"page"`
 }

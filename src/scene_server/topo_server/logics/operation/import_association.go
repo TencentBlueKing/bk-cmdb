@@ -78,10 +78,6 @@ func (assoc *association) ImportInstAssociation(kit *rest.Kit, languageIf langua
 	}
 
 	errIdxMsgMap := ia.ImportAssociation()
-	if len(errIdxMsgMap) > 0 {
-		err = kit.CCError.CCError(common.CCErrorTopoImportAssociation)
-	}
-
 	resp := metadata.ResponeImportAssociationData{}
 	for row, msg := range errIdxMsgMap {
 		resp.ErrMsgMap = append(resp.ErrMsgMap, metadata.RowMsgData{
@@ -433,7 +429,8 @@ func (ia *importAssociation) getProperty(kit *rest.Kit, objIDArr []string, uniID
 	attrCond.Fields = []string{
 		common.BKFieldID, common.BKObjIDField, common.BKPropertyIDField, common.BKPropertyNameField,
 	}
-	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(ia.kit.Ctx, ia.kit.Header, attrCond)
+	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(ia.kit.Ctx,
+		ia.kit.Header, 0, attrCond)
 	if err != nil {
 		blog.Errorf("search attribute failed, err: %v, input:%#v, rid:%s", err, attrCond, ia.kit.Rid)
 		return nil, err

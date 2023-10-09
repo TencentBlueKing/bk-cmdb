@@ -66,6 +66,26 @@ var (
 			Unique: true,
 		},
 	}
+	tableInstanceDefaultIndexes = []types.Index{
+
+		{
+			Name: common.CCLogicIndexNamePrefix + "bkInstID_bkSupplierAccount",
+			Keys: bson.D{
+				{"bk_inst_id", 1},
+				{"bk_supplier_account", 1},
+			},
+			Background: true,
+		},
+
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "ID",
+			Keys: bson.D{
+				{"id", 1},
+			},
+			Background: true,
+			Unique:     true,
+		},
+	}
 )
 
 // MainLineInstanceUniqueIndex 建表前需要先建立预定义主线模型的唯一索引

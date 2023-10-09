@@ -70,7 +70,10 @@ type SearchModelInfo struct {
 
 // CreateModelAttributes create model attributes
 type CreateModelAttributes struct {
-	Attributes []Attribute `json:"attributes"`
+	// FromTemplate whether the source of attribute creation on the model is directly created or synchronized
+	// from the template. true means synchronized from the template, and false means created directly
+	FromTemplate bool        `json:"from_template"`
+	Attributes   []Attribute `json:"attributes"`
 }
 
 // SetModelAttributes TODO
@@ -78,12 +81,18 @@ type SetModelAttributes CreateModelAttributes
 
 // CreateModelAttrUnique TODO
 type CreateModelAttrUnique struct {
-	Data ObjectUnique `json:"data"`
+	// FromTemplate the only verification way to create a model,
+	// true is from template synchronization, false is from direct creation
+	FromTemplate bool         `json:"from_template"`
+	Data         ObjectUnique `json:"data"`
 }
 
 // UpdateModelAttrUnique TODO
 type UpdateModelAttrUnique struct {
-	Data UpdateUniqueRequest `json:"data"`
+	// FromTemplate the only way to verify the update model,
+	// true is from template synchronization, false is from direct creation
+	FromTemplate bool                `json:"from_template"`
+	Data         UpdateUniqueRequest `json:"data"`
 }
 
 // DeleteModelAttrUnique TODO
@@ -758,4 +767,20 @@ type ServiceTemplateAttributeResult struct {
 type SetTemplateAttributeResult struct {
 	BaseResp `json:",inline"`
 	Data     *SetTempAttrData `json:"data"`
+}
+
+// BatchCreateInstResp batch create instance response
+type BatchCreateInstResp struct {
+	BaseResp `json:",inline"`
+	Data     BatchCreateInstRespData `json:"data"`
+}
+
+// BatchCreateInstRespData batch create instance response data
+type BatchCreateInstRespData struct {
+	IDs []int64 `json:"ids"`
+}
+
+// BatchCreateModelInstOption batch create model instance
+type BatchCreateModelInstOption struct {
+	Data []mapstr.MapStr `json:"data"`
 }

@@ -19,7 +19,7 @@
           v-model="isCheckAll"
           :disabled="!instances.length"
           :title="$t('全选本页')"
-          @change="handleCheckALL">
+          @change="handleCheckAll">
         </bk-checkbox>
         <cmdb-auth :auth="HOST_AUTH.D_SERVICE_INSTANCE">
           <bk-button slot-scope="{ disabled }"
@@ -67,13 +67,12 @@
       </service-instance-table>
     </div>
     <bk-table v-if="!instances.length" :data="[]" class="mb10">
-      <cmdb-table-empty
+      <cmdb-data-empty
         slot="empty"
-        :stuff="emptyStuff">
-        <div class="empty-text">
-          <p>{{$t('暂无服务实例')}}，<span @click="handleGoAddInstance">{{$t('去业务拓扑添加')}}</span></p>
-        </div>
-      </cmdb-table-empty>
+        :stuff="emptyStuff"
+        @create="handleGoAddInstance"
+        @clear="handleFilterClear">
+      </cmdb-data-empty>
     </bk-table>
     <bk-pagination v-if="instances.length"
       class="pagination"
@@ -94,10 +93,35 @@
     MENU_BUSINESS_HOST_AND_SERVICE
   } from '@/dictionary/menu-symbol'
   import { mapState } from 'vuex'
+  import { t } from '@/i18n'
   import serviceInstanceTable from './service-instance-table.vue'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
   import { historyLabelProxy, hostServiceInstancesProxy } from '../service-proxy'
+
+  const defaultSearchSelect = () => ([
+    {
+      name: t('服务实例名'),
+      id: 0
+    },
+    {
+      name: t('标签值'),
+      id: 1,
+      children: [{
+        id: '',
+        name: ''
+      }],
+      conditions: []
+    },
+    {
+      name: t('标签键'),
+      id: 2,
+      children: [{
+        id: '',
+        name: ''
+      }]
+    }
+  ])
 
   export default {
     components: {
@@ -106,29 +130,7 @@
     mixins: [authMixin, readonlyMixin],
     data() {
       return {
-        searchSelect: [
-          {
-            name: this.$t('服务实例名'),
-            id: 0
-          },
-          {
-            name: this.$t('标签值'),
-            id: 1,
-            children: [{
-              id: '',
-              name: ''
-            }],
-            conditions: []
-          },
-          {
-            name: this.$t('标签键'),
-            id: 2,
-            children: [{
-              id: '',
-              name: ''
-            }]
-          }
-        ],
+        searchSelect: defaultSearchSelect(),
         searchSelectData: [],
         pagination: {
           current: 1,
@@ -141,19 +143,20 @@
         filter: [],
         instances: [],
         currentView: 'path',
-        historyLabels: {}
+        historyLabels: {},
+        emptyStuff: {
+          type: 'default',
+          payload: {
+            path: '无服务实例提示',
+            action: this.$t('去业务拓扑添加')
+          }
+        }
       }
     },
     computed: {
       ...mapState('hostDetails', ['info']),
       host() {
         return this.info.host || {}
-      },
-      emptyStuff() {
-        return {
-          type: this.searchSelectData.length ? 'search' : 'default',
-          payload: {}
-        }
       }
     },
     watch: {
@@ -196,6 +199,8 @@
           console.error(e)
           this.instances = []
           this.pagination.count = 0
+        } finally {
+          this.emptyStuff.type = this.searchSelectData.length === 0 ? 'default' : 'search'
         }
       },
       getSelectorParams() {
@@ -283,7 +288,7 @@
       handleCancelEditName(instance) {
         instance.editing.name = false
       },
-      handleCheckALL(checked) {
+      handleCheckAll(checked) {
         this.searchSelectData = []
         this.isCheckAll = checked
         this.$refs.serviceInstanceTable.forEach((table) => {
@@ -354,6 +359,7 @@
           })
           return
         }
+
         this.handlePageChange(1)
       },
       handlePageChange(page) {
@@ -388,6 +394,11 @@
             ip: this.info.host.bk_host_innerip
           }
         })
+      },
+      handleFilterClear() {
+        this.searchSelectData = []
+        this.searchSelect = defaultSearchSelect()
+        this.handlePageChange(1)
       }
     }
   }

@@ -53,10 +53,10 @@
               </div>
               <ul slot="content" class="host-list">
                 <li class="host-item" v-for="(row, index) in selected" :key="index">
-                  <div class="ip">
-                    {{row.host.bk_host_innerip}}
+                  <div class="ip" v-bk-overflow-tips="{ placement: 'left' }">
+                    {{row.host.bk_host_innerip || row.host.bk_host_innerip_v6 || '--'}}
                     <span class="repeat-tag" v-if="repeatSelected.includes(row)"
-                      v-bk-tooltips="{ content: `${$t('云区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
+                      v-bk-tooltips="{ content: `${$t('管控区域')}：${foreignkey(row.host.bk_cloud_id)}` }">
                       {{$t('IP重复')}}
                     </span>
                   </div>
@@ -170,7 +170,7 @@
         const repeat = []
         const unique = []
         selected.forEach((data) => {
-          const ip = data.host.bk_host_innerip
+          const ip = data.host.bk_host_innerip || data.host.bk_host_innerip_v6
           if (has(ipMap, ip)) {
             ipMap[ip].push(data)
           } else {
@@ -206,7 +206,7 @@
         })
       },
       handleCopyIp() {
-        const ipList = this.selected.map(item => item.host.bk_host_innerip)
+        const ipList = this.selected.map(item => item.host.bk_host_innerip || item.host.bk_host_innerip_v6)
         this.$copyText(ipList.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))
         }, () => {
@@ -244,7 +244,7 @@
     .host-selector-layout {
         display: flex;
         flex-direction: column;
-        height: 650px;
+        height: 750px;
         padding: 20px 20px 0 20px;
 
         .layout-header {

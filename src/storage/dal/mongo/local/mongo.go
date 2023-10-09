@@ -479,7 +479,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 		mtc.collectOperDuration(c.collName, insertOper, time.Since(start))
 	}()
 
-	rows := util.ConverToInterfaceSlice(docs)
+	rows := util.ConvertToInterfaceSlice(docs)
 
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
@@ -644,6 +644,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameProcessInstanceRelation:
 	case common.BKTableNameBaseBizSet:
 	case common.BKTableNameBasePlat:
+	case common.BKTableNameBaseProject:
 
 	case common.BKTableNameBaseInst:
 	case common.BKTableNameInstAsst:
@@ -838,10 +839,62 @@ func (c *Mongo) RenameTable(ctx context.Context, prevName, currName string) erro
 	return c.dbc.Database("admin").RunCommand(ctx, cmd).Err()
 }
 
+// BatchCreateIndexes 批量创建索引
+func (c *Collection) BatchCreateIndexes(ctx context.Context, indexes []types.Index) error {
+	mtc.collectOperCount(c.collName, indexCreateOper)
+
+	createIndexInfos := make([]mongo.IndexModel, len(indexes))
+	for idx, index := range indexes {
+		createIndexInfo, err := buildIndex(index)
+		if err != nil {
+			return err
+		}
+
+		createIndexInfos[idx] = createIndexInfo
+	}
+
+	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	_, err := indexView.CreateMany(ctx, createIndexInfos)
+	if err != nil {
+		mtc.collectErrorCount(c.collName, indexCreateOper)
+		// ignore the following case
+		// 1.the new index is exactly the same as the existing one
+		// 2.the new index has same keys with the existing one, but its name is different
+		if strings.Contains(err.Error(), "all indexes already exist") ||
+			strings.Contains(err.Error(), "already exists with a different name") {
+			return nil
+		}
+	}
+
+	return err
+}
+
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	mtc.collectOperCount(c.collName, indexCreateOper)
 
+	createIndexInfo, err := buildIndex(index)
+	if err != nil {
+		return err
+	}
+
+	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	_, err = indexView.CreateOne(ctx, createIndexInfo)
+	if err != nil {
+		mtc.collectErrorCount(c.collName, indexCreateOper)
+		// ignore the following case
+		// 1.the new index is exactly the same as the existing one
+		// 2.the new index has same keys with the existing one, but its name is different
+		if strings.Contains(err.Error(), "all indexes already exist") ||
+			strings.Contains(err.Error(), "already exists with a different name") {
+			return nil
+		}
+	}
+
+	return err
+}
+
+func buildIndex(index types.Index) (mongo.IndexModel, error) {
 	createIndexOpt := &options.IndexOptions{
 		Background:              &index.Background,
 		Unique:                  &index.Unique,
@@ -856,34 +909,19 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 	}
 
 	keys := index.Keys
-	for index, key := range keys {
+	for idx, key := range keys {
 		val, err := util.GetInt32ByInterface(key.Value)
 		if err != nil {
-			return err
+			return mongo.IndexModel{}, err
 		}
 		key.Value = val
-		keys[index] = key
+		keys[idx] = key
 	}
 
-	createIndexInfo := mongo.IndexModel{
+	return mongo.IndexModel{
 		Keys:    keys,
 		Options: createIndexOpt,
-	}
-
-	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
-	_, err := indexView.CreateOne(ctx, createIndexInfo)
-	if err != nil {
-		mtc.collectErrorCount(c.collName, indexCreateOper)
-		// ignore the following case
-		// 1.the new index is exactly the same as the existing one
-		// 2.the new index has same keys with the existing one, but its name is different
-		if strings.Contains(err.Error(), "all indexes already exist") ||
-			strings.Contains(err.Error(), "already exists with a different name") {
-			return nil
-		}
-	}
-
-	return err
+	}, nil
 }
 
 // DropIndex remove index by name

@@ -12,6 +12,7 @@
 
 <template>
   <bk-search-select
+    ref="bkSearchSelect"
     :data="searchOptions"
     :filter="true"
     :filter-menu-method="filterMenuMethod"
@@ -86,6 +87,12 @@
     created() {
       this.initOptions()
     },
+    mounted() {
+      Bus.$on('host-apply-clear-search', (value) => {
+        this.searchValue = value
+        this.clearInputAll()
+      })
+    },
     methods: {
       async initOptions() {
         const availableProperties = this.configPropertyList.filter(property => property.host_apply_enabled)
@@ -129,7 +136,11 @@
       },
       handleClear() {
         this.searchValue = []
+        this.clearInputAll()
         Bus.$emit(this.searchEventName, { query_filter: { rules: [] } })
+      },
+      clearInputAll() {
+        this.$refs.bkSearchSelect.inputOutSideClear()
       },
       handleSearch() {
         Bus.$emit(this.searchEventName, this.getSearchValue())
@@ -192,6 +203,9 @@
           return this.currentMenu.children.filter(item => item.name.toLowerCase().indexOf(filter.toLowerCase()) > -1)
         }
         return []
+      },
+      setEmptyKeyword() {
+        this.searchValue = []
       }
     }
   }
@@ -199,7 +213,7 @@
 <style lang="scss" scoped>
   .icon-close-circle-shape {
     font-size: 14px;
-    margin-right: 6px;
+    margin: 0 6px;
     cursor: pointer;
   }
   .icon-search {

@@ -9,7 +9,7 @@
     - 发现一个功能优化点；
     - 想交个朋友...
     
-    总之，不管你想做什么，都可以通过[创建Issue](https://github.com/Tencent/bk-cmdb/issues/new)
+    总之，不管你想做什么，都可以通过[创建Issue](https://github.com/TencentBlueKing/bk-cmdb/issues/new)
     的方式与我们互动。社区在收到你的issue后会在第一时间内响应。有问题我们会帮你解决；有bug我们一起定位，也
     欢迎给我们提交PR(Pull Request)修复这个bug；有需求需要社区提供，可以提出来大家讨论、评审。
     

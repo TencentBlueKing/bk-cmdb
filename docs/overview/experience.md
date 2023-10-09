@@ -20,4 +20,4 @@
   - 社区版下载地址：http://bk.tencent.com/download/
   - 部署指引：http://docs.bk.tencent.com/bkce_install_guide/
 
-- **开源独立部署**（目前已推出容器化部署，GitHub上的release版本会跟社区版大版本集成的配置平台保持同步更新）：https://github.com/Tencent/bk-cmdb#getting-started
+- **开源独立部署**（目前已推出容器化部署，GitHub上的release版本会跟社区版大版本集成的配置平台保持同步更新）：https://github.com/TencentBlueKing/bk-cmdb#getting-started

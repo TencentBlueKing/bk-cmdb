@@ -104,7 +104,7 @@ func (s *special) BkSystemInstall(ctx context.Context, appName string,
 		if httpDoErr != nil {
 			blog.ErrorJSON("BkSystemInstall update host instance http do error.  err:%s, input:%s, "+
 				"update parameter:%s, rid:%s", httpDoErr, input, updateInput, s.kit.Rid)
-			return s.kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+			return httpDoErr
 		}
 	}
 
@@ -160,7 +160,7 @@ func (s *special) bkSystemParameterConv(ctx context.Context, appName string, inp
 		return
 	}
 
-	isExist, err := s.lgc.IsPlatExist(s.kit, mapstr.MapStr{common.BKCloudIDField: input.CloudID})
+	isExist, err := s.lgc.IsPlatAllExist(s.kit, []int64{input.CloudID})
 	if nil != err {
 		blog.ErrorJSON("bkSystemParameterConv get cloud  error. err:%s, cond:%s, rid:%s", err.Error(), input, s.kit.Rid)
 		return

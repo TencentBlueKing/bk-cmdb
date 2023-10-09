@@ -28,6 +28,13 @@ const findInstance = (instances, objId, instId) => {
   const idKey = getIdKey(objId)
   return (instances || []).find(instance => instance[idKey] === instId)
 }
+const getInstanceName = (instance, objId) => {
+  const nameKey = getNameKey(objId)
+  if (objId === BUILTIN_MODELS.HOST) {
+    return instance[nameKey] || instance?.bk_host_innerip_v6
+  }
+  return instance[nameKey]
+}
 
 const findTopology = async ({
   bk_obj_id: currentModelId,
@@ -53,12 +60,12 @@ const findTopology = async ({
       const instance = isSource
         ? findInstance(result.data.instance[asstObjId], asstObjId, asstInstId)
         : findInstance(result.data.instance[objId], objId, instId)
-      const nameKey = isSource ? getNameKey(asstObjId) : getNameKey(objId)
+      const instanceName = getInstanceName(instance, isSource ? asstObjId : objId)
       return {
         id: association.id,
         bk_obj_id: isSource ? asstObjId : objId,
         bk_inst_id: isSource ? asstInstId : instId,
-        bk_inst_name: instance ? instance[nameKey] : `${i18n.t('已删除的实例')}(ID: ${isSource ? asstInstId : instId})`,
+        bk_inst_name: instance ? instanceName : `${i18n.t('已删除的实例')}(ID: ${isSource ? asstInstId : instId})`,
         bk_asst_id: association.bk_asst_id,
         bk_obj_asst_id: association.bk_obj_asst_id,
         deleted: !instance,
@@ -66,14 +73,13 @@ const findTopology = async ({
       }
     })
     const rootIdKey = getIdKey(currentModelId)
-    const rootNameKey = getNameKey(currentModelId)
     const rootInstance = (result.data.instance[currentModelId] || []).find(root => root[rootIdKey] === currentInstId)
     return {
       count: result.association_count,
       root: {
         bk_obj_id: currentModelId,
         bk_inst_id: currentInstId,
-        bk_inst_name: rootInstance ? rootInstance[rootNameKey] : currentInstName
+        bk_inst_name: rootInstance ? getInstanceName(rootInstance, currentModelId) : currentInstName
       },
       data
     }

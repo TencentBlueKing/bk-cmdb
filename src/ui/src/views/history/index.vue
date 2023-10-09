@@ -38,7 +38,7 @@
       @page-limit-change="handleSizeChange"
       @row-click="handleRowClick">
       <bk-table-column prop="resource_id" label="ID"></bk-table-column>
-      <bk-table-column prop="resource_name" :label="isHost ? 'IP' : $t('资源')"></bk-table-column>
+      <bk-table-column prop="resource_name" :label="isHost ? 'IP' : $t('资源')" show-overflow-tooltip></bk-table-column>
       <bk-table-column prop="operation_time" :label="$t('更新时间')">
         <template slot-scope="{ row }">{{$tools.formatTime(row.operation_time)}}</template>
       </bk-table-column>
@@ -47,29 +47,37 @@
           <cmdb-form-objuser :value="row.user" type="info"></cmdb-form-objuser>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff">{{$t('暂无数据')}}</cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
 
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
+  import tools from '@/utils/tools'
+
+  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
+  const formatValue = () => ({
+    operation_time: [today, today],
+    resource_name: ''
+  })
+
   export default {
     data() {
-      const today = this.$tools.formatTime(new Date(), 'YYYY-MM-DD')
       return {
         dictionary: [],
         history: [],
         pagination: this.$tools.getDefaultPaginationConfig(),
         condition: {
-          operation_time: [today, today],
-          resource_name: '',
+          ...formatValue(),
           action: ['delete']
         },
         table: {
           stuff: {
             type: 'default',
-            payload: {}
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
           }
         },
         requestId: Symbol('getHistory')
@@ -97,7 +105,7 @@
         immediate: true,
         handler(objId) {
           const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
-          this.$store.commit('setTitle', `${model.bk_obj_name}${this.$t('删除历史')}`)
+          this.$store.commit('setTitle', `${model.bk_obj_name} ${this.$t('删除历史')}`)
         }
       }
     },
@@ -131,6 +139,7 @@
               globalPermission: false
             }
           })
+          this.table.stuff.type = this.condition.resource_name ? 'search' : 'default'
           this.pagination.count = count
           this.history = info
         } catch ({ permission }) {
@@ -180,6 +189,13 @@
           bizId: this.bizId,
           objId: this.objId
         })
+      },
+      handleClearFilter() {
+        this.condition = {
+          ...formatValue(),
+          action: ['delete']
+        }
+        this.getHistory()
       }
     }
   }

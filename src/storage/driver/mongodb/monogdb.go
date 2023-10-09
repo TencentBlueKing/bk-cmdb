@@ -144,9 +144,9 @@ func GetDuplicateKey(err error) string {
 	if start == -1 {
 		return errString
 	}
-	start += len("dup key: ")
+	start += len("dup key: ") + 1
 
-	end := strings.LastIndex(errString, "}]},")
+	end := strings.LastIndex(errString, "}]")
 	if end == -1 || end < start {
 		return errString
 	}

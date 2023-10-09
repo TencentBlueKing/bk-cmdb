@@ -13,11 +13,14 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
+import { jsonp } from '@/api'
+import { useSiteConfig } from '@/setup/build-in-vars'
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
-import { setLocale as setMagicboxLocale } from '@/magicbox'
 
 Vue.use(VueI18n)
+
+const siteConfig = useSiteConfig()
 
 const langInCookie = Cookies.get(LANG_COOKIE_NAME)
 const matchedLang = LANG_SET.find(lang => lang.id === langInCookie || lang?.alias?.includes(langInCookie))
@@ -34,18 +37,24 @@ const i18n = new VueI18n({
   }
 })
 
-export const changeLocale = (locale) => {
-  Cookies.set(LANG_COOKIE_NAME, locale, {
-    expires: 365,
-    domain: window.location.hostname.split('.').slice(-2)
-      .join('.')
+export const changeLocale = async (locale) => {
+  Cookies.remove(LANG_COOKIE_NAME, { path: '' })
+  const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
+  Cookies.set(LANG_COOKIE_NAME, cookieValue, {
+    expires: 3600,
+    domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
-  document.body.setAttribute('lang', locale)
+  if (siteConfig?.desktopUrl) {
+    const url = `${siteConfig.desktopUrl}/api/c/compapi/v2/usermanage/fe_update_user_language/`
+    try {
+      await jsonp(url, { language: cookieValue })
+    } finally {
+      window.location.reload()
+    }
+  }
 
-  setMagicboxLocale(locale)
-
-  i18n.locale = locale
+  window.location.reload()
 }
 
 export const language = locale

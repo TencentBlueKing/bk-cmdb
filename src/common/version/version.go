@@ -38,6 +38,7 @@ var (
 	CCRunModeProduct = "product"
 	CCRunModeTest    = "test"
 	CCRunModeDev     = "dev"
+	CCRunModeForCI   = "for_ci"
 )
 
 var (
@@ -45,11 +46,6 @@ var (
 	CCDistrEnterprise = "enterprise"
 	// CCDistrCommunity TODO
 	CCDistrCommunity = "community"
-)
-
-var (
-	// CanCreateSetModuleWithoutTemplate means whether user can create set and module without template
-	CanCreateSetModuleWithoutTemplate = true
 )
 
 // ShowVersion is the default handler which match the --version flag

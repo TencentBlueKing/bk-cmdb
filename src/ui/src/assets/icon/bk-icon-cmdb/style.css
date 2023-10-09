@@ -815,6 +815,15 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-script-logo:before {
 	content: "\e3b6";
 }
+.icon-cc-field-time:before {
+	content: "\e3df";
+}
+.icon-cc-field-date:before {
+	content: "\e3e0";
+}
+.icon-cc-dot-more:before {
+	content: "\e3e4";
+}
 .icon-cc-unlock-fill:before {
 	content: "\e3bb";
 }
@@ -862,4 +871,61 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-cc-pod-folder:before {
 	content: "\e3d2";
+}
+.icon-cc-field-singlechar:before {
+	content: "\e3d3";
+}
+.icon-cc-model-host2:before {
+	content: "\e3d4";
+}
+.icon-cc-field-int:before {
+	content: "\e3d8";
+}
+.icon-cc-field-float:before {
+	content: "\e3d5";
+}
+.icon-cc-field-enum:before {
+	content: "\e3d6";
+}
+.icon-cc-field-longchar:before {
+	content: "\e3d9";
+}
+.icon-cc-field-organization:before {
+	content: "\e3d7";
+}
+.icon-cc-field-objuser:before {
+	content: "\e3db";
+}
+.icon-cc-field-bool:before {
+	content: "\e3da";
+}
+.icon-cc-field-timezone:before {
+	content: "\e3dc";
+}
+.icon-zonghe:before {
+	content: "\e3dd";
+}
+.icon-cc-table:before {
+	content: "\e3de";
+}
+.icon-cc-field-enummulti:before {
+	content: "\e3e1";
+}
+.icon-cc-field-list:before {
+	content: "\e3e2";
+}
+.icon-cc-unbind:before {
+	content: "\e3e3";
+}
+.icon-cc-menu-field-template:before {
+	content: "\e3e5";
+}
+.icon-cc-field-innertable:before {
+	content: "\e3e7";
+}
+.icon-cc-field-enumquote:before {
+	content: "\e3e8";
+}
+.icon-cc-field-foreignkey:before {
+	content: "\e3e9";
 }

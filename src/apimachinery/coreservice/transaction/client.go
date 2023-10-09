@@ -198,7 +198,8 @@ func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() err
 	defer func() {
 		// if panic ,abort the transaction to avoid WriteConflict when the uncommitted data was processed in another transaction
 		if panicErr := recover(); panicErr != nil {
-			blog.ErrorfDepthf(3, "run transaction,but server panic, err: %v, rid: %s, debug strace:%s", panicErr, rid, debug.Stack())
+			blog.ErrorfDepthf(3, "run transaction,but server panic, err: %v, rid: %s, debug strace:%s", panicErr, rid,
+				debug.Stack())
 			err = ccErr.New(common.CCErrCommInternalServerError, common.GetIdentification()+" Internal Server Error")
 
 			var abortErr error

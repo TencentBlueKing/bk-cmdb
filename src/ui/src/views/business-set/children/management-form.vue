@@ -16,10 +16,10 @@
       v-transfer-dom
       :is-show.sync="isShow"
       :title="title"
-      :quick-close="false"
       :width="800"
       :before-close="handleSliderBeforeClose">
       <cmdb-form slot="content" v-if="isShow"
+        ref="formRef"
         :properties="properties"
         :property-groups="propertyGroups"
         :inst="formData"
@@ -39,6 +39,7 @@
                 <div class="property-value" v-bk-tooltips="{ content: $t('内置业务集不可编辑'), disabled: !isBuiltin }">
                   <business-scope-settings-form
                     class="form-component"
+                    ref="businessSetFormRef"
                     :disabled="isBuiltin"
                     :data="scopeSettingsFormData"
                     @change="handleScopeSettingsChange" />
@@ -65,6 +66,7 @@
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $success } from '@/magicbox/index.js'
   import Utils from '@/components/filters/utils'
+  import { formatValue } from '@/utils/tools'
   import queryBuilderOperator from '@/utils/query-builder-operator'
   import businessScopeSettingsForm from '@/components/business-scope/settings-form.vue'
   import businessScopePreview from '@/components/business-scope/preview.vue'
@@ -102,13 +104,16 @@
         data: formData
       } = toRefs(props)
 
+      const formRef = ref(null)
+      const businessSetFormRef = ref(null)
+
       const getModelById = store.getters['objectModelClassify/getModelById']
       const model = computed(() => getModelById(BUILTIN_MODELS.BUSINESS_SET) || {})
       const isEmptyRuleValue = value => value === null || value === undefined || !value.toString().length
 
       const submitting = ref(false)
       const isEdit = computed(() => Boolean(formData.value.bk_biz_set_id))
-      const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')}${model.value.bk_obj_name}`))
+      const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')} ${model.value.bk_obj_name}`))
 
       const isBuiltin = computed(() => formData.value?.default === 1)
 
@@ -198,7 +203,7 @@
           rules.push({
             field,
             operator: queryBuilderOperator(operator),
-            value
+            value: formatValue(value, property)
           })
         }
 
@@ -244,6 +249,16 @@
       }
 
       const handleSliderBeforeClose = () => {
+        const { values, refrenceValues } = formRef.value
+        const { selectedBusiness, localSelectedBusiness } = businessSetFormRef.value
+        const changedValues = !isEqual(values, refrenceValues)
+        const changedSelectValues = !isEqual(selectedBusiness, localSelectedBusiness)
+        if (changedValues || changedSelectValues) {
+          formRef.value.setChanged(true)
+          return formRef.value.beforeClose(() => {
+            emit('update:show', false)
+          })
+        }
         emit('update:show', false)
       }
 
@@ -271,7 +286,9 @@
         handleScopeSettingsChange,
         handleSliderBeforeClose,
         previewProps,
-        handlePreview
+        handlePreview,
+        formRef,
+        businessSetFormRef
       }
     }
   })

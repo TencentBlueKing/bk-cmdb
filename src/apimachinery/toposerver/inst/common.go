@@ -46,7 +46,8 @@ func (t *instanceClient) SearchAuditDict(ctx context.Context, h http.Header) (*m
 }
 
 // SearchAuditList TODO
-func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header, input *metadata.AuditQueryInput) (*metadata.Response, error) {
+func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header,
+	input *metadata.AuditQueryInput) (*metadata.Response, error) {
 	resp := new(metadata.Response)
 	subPath := "/findmany/audit_list"
 
@@ -70,7 +71,8 @@ func (t *instanceClient) SearchAuditList(ctx context.Context, h http.Header, inp
 }
 
 // SearchAuditDetail TODO
-func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, input *metadata.AuditDetailQueryInput) (*metadata.Response, error) {
+func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header,
+	input *metadata.AuditDetailQueryInput) (*metadata.Response, error) {
 	resp := new(metadata.Response)
 	subPath := "/find/audit"
 
@@ -94,7 +96,8 @@ func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header, i
 }
 
 // GetInternalModule TODO
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string, h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
+func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string,
+	h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
 	resp = new(metadata.SearchInnterAppTopoResult)
 	subPath := "/topo/internal/%s/%s"
 
@@ -109,7 +112,8 @@ func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID s
 }
 
 // SearchBriefBizTopo TODO
-func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64, input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error) {
+func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64,
+	input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error) {
 	resp = new(metadata.SearchBriefBizTopoResult)
 	subPath := "/find/topo/tree/brief/biz/%d"
 

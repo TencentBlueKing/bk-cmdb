@@ -20,9 +20,22 @@
       @page-limit-change="handleSizeChange">
       <bk-table-column :label="$t('内网IP')" min-width="150" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <bk-button class="ip-value" theme="primary" text @click="handleShowDetails(row)">
-            {{row.expect_host.bk_host_innerip}}
+          <bk-button
+            v-if="row.expect_host.bk_host_innerip"
+            class="ip-value" theme="primary" text @click="handleShowDetails(row)">
+            {{row.expect_host.bk_host_innerip }}
           </bk-button>
+          <span v-else>{{'--'}}</span>
+        </template>
+      </bk-table-column>
+      <bk-table-column :label="$t('内网IPv6')" min-width="150" show-overflow-tooltip>
+        <template slot-scope="{ row }">
+          <bk-button
+            v-if="row.expect_host.bk_host_innerip_v6"
+            class="ip-value" theme="primary" text @click="handleShowDetails(row)">
+            {{row.expect_host.bk_host_innerip_v6 }}
+          </bk-button>
+          <span v-else>{{'--'}}</span>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('主机名称')" min-width="160" prop="expect_host.bk_host_name">
@@ -216,7 +229,7 @@
       async handleShowDetails(row) {
         this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
         const properties = this.propertyList
-        // 云区域数据
+        // 管控区域数据
         row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
         row.cloud_area.bk_inst_id = row.cloud_area.bk_cloud_id
         try {

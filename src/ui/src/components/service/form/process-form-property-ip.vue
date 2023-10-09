@@ -11,13 +11,17 @@
 -->
 
 <template>
-  <cmdb-input-select
-    name="ip"
-    :placeholder="$t('请选择或输入IP')"
-    :options="IPList"
-    v-bind="$attrs"
-    v-model="localValue">
-  </cmdb-input-select>
+  <div class="process-form-property-ip">
+    <div v-bk-tooltips="{ content: localValue, disabled: !disabled || localValue.length < 16 }">
+      <cmdb-input-select
+        name="ip"
+        :placeholder="$t('请选择或输入IP')"
+        :options="IPList"
+        v-bind="$attrs"
+        v-model="localValue">
+      </cmdb-input-select>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -46,6 +50,9 @@
       },
       requestId() {
         return `getInstanceIpByHost_${this.form.hostId}`
+      },
+      disabled() {
+        return this.$attrs?.disabled
       }
     },
     created() {

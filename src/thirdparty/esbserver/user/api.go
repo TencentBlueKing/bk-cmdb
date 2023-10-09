@@ -21,8 +21,7 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
-// GetAllUsers TODO
-// Deprecated
+// GetAllUsers get all users from user manager
 func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.EsbUserListResponse, err error) {
 	resp = &metadata.EsbUserListResponse{}
 	subPath := "/v2/usermanage/get_all_users/"
@@ -39,8 +38,9 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 	return
 }
 
-// ListUsers TODO
-func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
+// ListUsers get user list from user manager
+func (p *user) ListUsers(ctx context.Context, h http.Header,
+	params map[string]string) (resp *metadata.EsbListUserResponse, err error) {
 	// response demo
 	/*
 		{
@@ -103,8 +103,8 @@ func (p *user) ListUsers(ctx context.Context, h http.Header, params map[string]s
 	return
 }
 
-// GetDepartment TODO
-// get department from pass
+// GetDepartment This function is used for front-end non paged fuzzy query of organizational data in user management.
+// The parameters are included in the url
 func (p *user) GetDepartment(ctx context.Context, h http.Header, u *url.URL) (
 	resp *metadata.EsbDepartmentResponse, err error) {
 
@@ -133,9 +133,30 @@ func (p *user) GetDepartment(ctx context.Context, h http.Header, u *url.URL) (
 	return
 }
 
-// GetDepartmentProfile TODO
-// get department profile from pass
-func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse, err error) {
+// GetAllDepartment This function is used for backend paging to accurately pull organizational data from user manager,
+// without url parameters
+func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[string]string) (
+	resp *metadata.EsbDepartmentResponse, err error) {
+
+	resp = &metadata.EsbDepartmentResponse{}
+	subPath := "/v2/usermanage/list_departments/"
+	h.Set("Accept", "application/json")
+
+	err = p.client.Get().
+		WithContext(ctx).
+		WithParams(params).
+		SubResourcef(subPath).
+		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+// GetDepartmentProfile get department profile from user manager
+func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp *metadata.EsbDepartmentProfileResponse,
+	err error) {
 	resp = &metadata.EsbDepartmentProfileResponse{}
 	subPath := "/v2/usermanage/list_department_profiles/"
 	h := q.Header

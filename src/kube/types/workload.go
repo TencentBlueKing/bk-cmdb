@@ -19,7 +19,7 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
+	"reflect"
 
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
@@ -278,83 +278,37 @@ func (w *WlDataResp) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	switch kind {
-	case KubeDeployment:
-		array := make([]*Deployment, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeStatefulSet:
-		array := make([]*StatefulSet, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeDaemonSet:
-		array := make([]*DaemonSet, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeGameDeployment:
-		array := make([]*GameDeployment, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeGameStatefulSet:
-		array := make([]*GameStatefulSet, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeCronJob:
-		array := make([]*CronJob, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubeJob:
-		array := make([]*Job, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	case KubePodWorkload:
-		array := make([]*PodsWorkload, 0)
-		if err := json.Unmarshal(wlData.Info, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Info = append(w.Info, data)
-		}
-
-	default:
-		return fmt.Errorf("can not support this workload type: %v", kind)
+	info, err := wlArrayUnmarshalJSON(kind, wlData.Info)
+	if err != nil {
+		return err
 	}
+
+	w.Info = info
+
 	return nil
+}
+
+// wlArrayUnmarshalJSON unmarshal workload array json
+func wlArrayUnmarshalJSON(kind WorkloadType, js []byte) ([]WorkloadInterface, error) {
+	newInst, err := kind.NewInst()
+	if err != nil {
+		return nil, err
+	}
+
+	info := reflect.New(reflect.SliceOf(reflect.ValueOf(newInst).Type())).Elem().Addr().Interface()
+	if err = json.Unmarshal(js, info); err != nil {
+		return nil, err
+	}
+
+	infoArr := reflect.ValueOf(info).Elem()
+	infoArrLen := infoArr.Len()
+
+	workloads := make([]WorkloadInterface, infoArrLen)
+	for i := 0; i < infoArrLen; i++ {
+		workloads[i] = infoArr.Index(i).Interface().(WorkloadInterface)
+	}
+
+	return workloads, nil
 }
 
 // WlInstResp workload instance response
@@ -386,82 +340,13 @@ func (w *WlCreateOption) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	switch kind {
-	case KubeDeployment:
-		array := make([]*Deployment, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeStatefulSet:
-		array := make([]*StatefulSet, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeDaemonSet:
-		array := make([]*DaemonSet, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeGameDeployment:
-		array := make([]*GameDeployment, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeGameStatefulSet:
-		array := make([]*GameStatefulSet, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeCronJob:
-		array := make([]*CronJob, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubeJob:
-		array := make([]*Job, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	case KubePodWorkload:
-		array := make([]*PodsWorkload, 0)
-		if err := json.Unmarshal(req.Data, &array); err != nil {
-			return err
-		}
-		for _, data := range array {
-			w.Data = append(w.Data, data)
-		}
-
-	default:
-		return fmt.Errorf("can not support this workload type: %v", kind)
+	createData, err := wlArrayUnmarshalJSON(kind, req.Data)
+	if err != nil {
+		return err
 	}
+
+	w.Data = createData
+
 	return nil
 }
 

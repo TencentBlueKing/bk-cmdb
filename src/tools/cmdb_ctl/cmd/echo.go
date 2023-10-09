@@ -74,7 +74,8 @@ func (c *echo) echoServer(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(os.Stderr, "read http request failed. error: %s", err.Error())
 		return
 	}
-	fmt.Fprintf(os.Stdout, "%c[1;40;31m>> received new data, time: %s %c[0m\n", 0x1B, time.Now().Format(time.RFC3339), 0x1B)
+	fmt.Fprintf(os.Stdout, "%c[1;40;31m>> received new data, time: %s %c[0m\n", 0x1B, time.Now().Format(time.RFC3339),
+		0x1B)
 	if c.jsonPretty {
 		var prettyJSON bytes.Buffer
 		if err := json.Indent(&prettyJSON, s, "", "    "); err != nil {

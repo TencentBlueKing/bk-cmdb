@@ -83,9 +83,12 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteBizSet:                        "业务集删除",
 	ViewBizSet:                          "业务集查看",
 	AccessBizSet:                        "业务集访问",
-	CreateCloudArea:                     "云区域创建",
-	EditCloudArea:                       "云区域编辑",
-	DeleteCloudArea:                     "云区域删除",
+	CreateProject:                       "项目新建",
+	EditProject:                         "项目编辑",
+	DeleteProject:                       "项目删除",
+	CreateCloudArea:                     "管控区域创建",
+	EditCloudArea:                       "管控区域编辑",
+	DeleteCloudArea:                     "管控区域删除",
 	CreateCloudAccount:                  "云账户新建",
 	EditCloudAccount:                    "云账户编辑",
 	DeleteCloudAccount:                  "云账户删除",
@@ -118,13 +121,15 @@ var ActionIDNameMap = map[ActionID]string{
 	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
 	WatchInstAsstEvent:                  "实例关联事件监听",
 	WatchBizSetEvent:                    "业务集事件监听",
-	WatchPlatEvent:                      "云区域事件监听",
+	WatchPlatEvent:                      "管控区域事件监听",
 	WatchKubeClusterEvent:               "容器集群事件监听",
 	WatchKubeNodeEvent:                  "容器节点事件监听",
 	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
 	WatchKubeWorkloadEvent:              "容器工作负载事件监听",
 	WatchKubePodEvent:                   "容器Pod事件监听",
+	WatchProjectEvent:                   "项目事件监听",
 	GlobalSettings:                      "全局设置",
+	ManageHostAgentID:                   "主机AgentID管理",
 	CreateContainerCluster:              "容器集群新建",
 	EditContainerCluster:                "容器集群编辑",
 	DeleteContainerCluster:              "容器集群删除",
@@ -139,6 +144,10 @@ var ActionIDNameMap = map[ActionID]string{
 	DeleteContainerWorkload:             "容器工作负载删除",
 	CreateContainerPod:                  "容器Pod新建",
 	DeleteContainerPod:                  "容器Pod删除",
+	CreateFieldGroupingTemplate:         "字段组合模板新建",
+	ViewFieldGroupingTemplate:           "字段组合模板查看",
+	EditFieldGroupingTemplate:           "字段组合模板编辑",
+	DeleteFieldGroupingTemplate:         "字段组合模板删除",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -167,6 +176,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genResourcePoolDirectoryActions()...)
 	resourceActionList = append(resourceActionList, genBusinessActions()...)
 	resourceActionList = append(resourceActionList, genBizSetActions()...)
+	resourceActionList = append(resourceActionList, genProjectActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
 	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
 	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
@@ -181,6 +191,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genConfigAdminActions()...)
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
+	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
 
 	return resourceActionList
 }
@@ -630,6 +641,14 @@ func genResourcePoolHostActions() []ResourceAction {
 		Version:              1,
 	})
 
+	actions = append(actions, ResourceAction{
+		ID:      ManageHostAgentID,
+		Name:    ActionIDNameMap[ManageHostAgentID],
+		NameEn:  "Manage Host AgentID",
+		Type:    Edit,
+		Version: 1,
+	})
+
 	return actions
 }
 
@@ -781,6 +800,50 @@ func genBizSetActions() []ResourceAction {
 		NameEn:               "Access Business Set",
 		Type:                 View,
 		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	return actions
+}
+
+func genProjectActions() []ResourceAction {
+	projectResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       Project,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       ProjectSelection,
+		}},
+	}
+
+	actions := make([]ResourceAction, 0)
+	actions = append(actions, ResourceAction{
+		ID:                   CreateProject,
+		Name:                 ActionIDNameMap[CreateProject],
+		NameEn:               "Create Project",
+		Type:                 Create,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   EditProject,
+		Name:                 ActionIDNameMap[EditProject],
+		NameEn:               "Edit Project",
+		Type:                 Edit,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
+		RelatedActions:       nil,
+		Version:              1,
+	})
+
+	actions = append(actions, ResourceAction{
+		ID:                   DeleteProject,
+		Name:                 ActionIDNameMap[DeleteProject],
+		NameEn:               "Delete Project",
+		Type:                 Delete,
+		RelatedResourceTypes: []RelateResourceType{projectResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -1271,6 +1334,14 @@ func genEventWatchActions() []ResourceAction {
 		Version: 1,
 	})
 
+	actions = append(actions, ResourceAction{
+		ID:      WatchProjectEvent,
+		Name:    ActionIDNameMap[WatchProjectEvent],
+		NameEn:  "Project Event Listen",
+		Type:    View,
+		Version: 1,
+	})
+
 	modelSelection := []RelatedInstanceSelection{{
 		SystemID: SystemIDCMDB,
 		ID:       SysModelEventSelection,
@@ -1542,6 +1613,53 @@ func genContainerPodActions() []ResourceAction {
 			NameEn:  "Delete Container Pod",
 			Type:    Delete,
 			Version: 1,
+		},
+	}
+}
+
+func genFieldGroupingTemplateActions() []ResourceAction {
+	templateResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       FieldGroupingTemplate,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       FieldGroupingTemplateSelection,
+		}},
+	}
+
+	return []ResourceAction{
+		{
+			ID:      CreateFieldGroupingTemplate,
+			Name:    ActionIDNameMap[CreateFieldGroupingTemplate],
+			NameEn:  "Create Field Grouping Template",
+			Type:    Create,
+			Version: 1,
+		},
+		{
+			ID:                   ViewFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[ViewFieldGroupingTemplate],
+			NameEn:               "View Field Grouping Template",
+			Type:                 View,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			Version:              1,
+		},
+		{
+			ID:                   EditFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[EditFieldGroupingTemplate],
+			NameEn:               "Edit Field Grouping Template",
+			Type:                 Edit,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
+		},
+		{
+			ID:                   DeleteFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[DeleteFieldGroupingTemplate],
+			NameEn:               "Delete Field Grouping Template",
+			Type:                 Delete,
+			RelatedResourceTypes: []RelateResourceType{templateResource},
+			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Version:              1,
 		},
 	}
 }

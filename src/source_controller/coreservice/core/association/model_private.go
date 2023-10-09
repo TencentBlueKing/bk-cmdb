@@ -18,28 +18,42 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 )
 
 func (m *associationModel) isValid(kit *rest.Kit, inputParam metadata.CreateModelAssociation) error {
 
 	if 0 == len(inputParam.Spec.AssociationName) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the associationID (%s) is not set", kit.Rid, metadata.AssociationFieldAsstID)
+		blog.Errorf("%s is not set, rid: %s", metadata.AssociationFieldAsstID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAsstID)
 	}
 
 	if 0 == len(inputParam.Spec.ObjectID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the objectID (%s) is not set", kit.Rid, metadata.AssociationFieldObjectID)
+		blog.Errorf("%s is not set, rid: %s", metadata.AssociationFieldObjectID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldObjectID)
 	}
 
 	if 0 == len(inputParam.Spec.AsstObjID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", kit.Rid, metadata.AssociationFieldAssociationObjectID)
+		blog.Errorf("%s is not set, rid: %s", metadata.AssociationFieldAssociationObjectID, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
 	}
 
 	if 0 == len(inputParam.Spec.AsstKindID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", kit.Rid, metadata.AssociationFieldAssociationKind)
+		blog.Errorf("%s is not set", metadata.AssociationFieldAssociationKind, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
+	}
+
+	if util.InStrArr(forbiddenCreateAssociationObjList, inputParam.Spec.ObjectID) {
+		blog.Errorf("model forbid the creation of association relationships, obj: %s, rid: %s",
+			inputParam.Spec.ObjectID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoObjForbiddenCreateAssociation, inputParam.Spec.ObjectID)
+	}
+
+	if util.InStrArr(forbiddenCreateAssociationObjList, inputParam.Spec.AsstObjID) {
+		blog.Errorf("the associated object forbids the creation of association relationships, obj: %s, rid: %s",
+			inputParam.Spec.ObjectID, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrorTopoAssociatedObjForbiddenCreateAssociation,
+			inputParam.Spec.AsstObjID)
 	}
 
 	return nil

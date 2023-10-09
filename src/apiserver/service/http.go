@@ -86,7 +86,9 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			}
 		}
 
-		blog.Errorf("*failed do request[%s url: %s] , err: %v, rid: %s", req.Request.Method, url, err, rid)
+		blog.Errorf("*failed to do request[%s url: %s], user: %s, app code: %s, err: %v, rid: %s", req.Request.Method,
+			url, req.Request.Header.Get(common.BKHTTPHeaderUser), req.Request.Header.Get(common.BKHTTPRequestAppCode),
+			err, rid)
 
 		// send alarm when http request timeout, to monitor api server request
 		if strings.Contains(err.Error(), "timeout awaiting response headers") {
@@ -133,10 +135,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	}
 	response.Body.Close()
 	blog.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
-		time.Since(start).Nanoseconds()/int64(time.Millisecond),
-		req.Request.Method, response.StatusCode,
-		req.Request.Header.Get(common.BKHTTPHeaderUser),
-		req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
+		time.Since(start).Nanoseconds()/int64(time.Millisecond), req.Request.Method, response.StatusCode,
+		req.Request.Header.Get(common.BKHTTPHeaderUser), req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
 		req.Request.Header.Get(common.BKHTTPCCRequestID),
 	)
 	return

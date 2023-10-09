@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -114,6 +115,14 @@ func (ar *AtomRule) Validate(opt *ExprOption) error {
 		return fmt.Errorf("rule field: %s is not exist in the expr option", ar.Field)
 	}
 
+	if err := ar.validateValueWithType(opt, typ); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ar *AtomRule) validateValueWithType(opt *ExprOption, typ enumor.FieldType) error {
 	childOpt := cloneExprOption(opt)
 
 	// TODO confirm how to deal with object and array and mapstr
@@ -181,7 +190,7 @@ func validateFieldValue(v interface{}, typ enumor.FieldType) error {
 		}
 
 	case enumor.Time:
-		if err := util.ValidateDatetimeType(v); err != nil {
+		if err := valid.ValidateDatetimeType(v); err != nil {
 			return err
 		}
 

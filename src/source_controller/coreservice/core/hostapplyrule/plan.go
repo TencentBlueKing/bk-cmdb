@@ -62,7 +62,8 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 		return result, err
 	}
 
-	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostNameField}
+	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
+		common.BKCloudIDField, common.BKHostNameField}
 	for _, attr := range attributes {
 		fields = append(fields, attr.PropertyID)
 	}
@@ -173,9 +174,11 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 	if expectValue == nil {
 		return false, nil
 	}
+
+	var err error
+
 	switch pType {
 	case common.FieldTypeOrganization:
-
 		value, ok := expectValue.(primitive.A)
 		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
@@ -201,22 +204,31 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			}
 			ruleValueList = append(ruleValueList, value)
 		}
-		if cmp.Equal(expectValueList, ruleValueList) {
-			return true, nil
-		}
+
+		return cmp.Equal(expectValueList, ruleValueList), nil
 
 	// 当属性是int类型时，需要转为统一类型进行对比
 	case common.FieldTypeInt:
-		origin, err := util.GetIntByInterface(propertyValue)
+		propertyValue, err = util.GetIntByInterface(propertyValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-		expect, err := util.GetIntByInterface(expectValue)
+
+		expectValue, err = util.GetIntByInterface(expectValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-		if cmp.Equal(origin, expect) {
-			return true, nil
+
+	// 当属性是int类型时，需要转为统一类型进行对比
+	case common.FieldTypeFloat:
+		propertyValue, err = util.GetFloat64ByInterface(propertyValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+
+		expectValue, err = util.GetFloat64ByInterface(expectValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
 
 	case common.FieldTypeTime:
@@ -224,23 +236,15 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
 		}
-		expectTimeVal := expectVal.Time()
+		expectValue = expectVal.Time()
 
-		propertyTimeValue, err := metadata.ParseTime(propertyValue)
+		propertyValue, err = metadata.ParseTime(propertyValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-
-		if cmp.Equal(expectTimeVal, propertyTimeValue) {
-			return true, nil
-		}
-
-	default:
-		if cmp.Equal(expectValue, propertyValue) {
-			return true, nil
-		}
 	}
-	return false, nil
+
+	return cmp.Equal(expectValue, propertyValue), nil
 }
 
 func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attrMap map[int64]metadata.Attribute,
@@ -332,7 +336,8 @@ func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApply
 			targetRules[0].PropertyValue = expectValue
 		}
 		rawErr := attribute.Validate(kit.Ctx, expectValue, propertyIDField)
-		if rawErr.ErrCode != 0 {
+		// 用户字段，枚举多选，枚举引用，组织字段目前支持可多选功能，当状态从多选修改为单选状态时，此时对存量数据做校验时会报错，此处忽略报错
+		if rawErr.ErrCode != 0 && rawErr.ErrCode != common.CCErrCommParamsNeedSingleChoice {
 			blog.Errorf("attribute validate failed, attribute: %s, firstValue: %s, propertyID: %s, err: %s, rid: %s",
 				attribute, expectValue, propertyIDField, rawErr, rid)
 			plan.ErrCode = rawErr.ToCCError(kit.CCError).GetCode()

@@ -11,7 +11,11 @@
 -->
 
 <template>
-  <div :class="['property-form-element', 'cmdb-form-item', { 'is-error': errors.has(property.bk_property_id) }]">
+  <div :class="['property-form-element', 'cmdb-form-item', {
+         'is-error': errors.has(property.bk_property_id),
+         'is-tooltips': errorDisplayType === 'tooltips'
+       }]"
+    v-bk-tooltips="{ disabled: !disabled, content: disabledTips }">
     <component
       :ref="`component-${property.bk_property_id}`"
       :is="`cmdb-form-${property.bk_property_type}`"
@@ -20,26 +24,34 @@
       :options="property.option || []"
       :data-vv-name="property.bk_property_id"
       :data-vv-as="property.bk_property_name"
-      :placeholder="getPlaceholder(property)"
+      :placeholder="$tools.getPropertyPlaceholder(property)"
       :auto-check="autoCheck"
+      :multiple="property.ismultiple"
       :disabled="disabled"
       :size="size"
       :font-size="fontSize"
+      :row="row"
       v-bind="getMoreProps(property)"
       v-validate="getValidateRules(property)"
       v-on="events"
       v-model.trim="localValue">
     </component>
-    <div class="form-error"
-      v-if="errors.has(property.bk_property_id)">
-      {{errors.first(property.bk_property_id)}}
-    </div>
+    <template v-if="errors.has(property.bk_property_id)">
+      <i
+        class="bk-icon icon-exclamation-circle-shape tooltips-icon"
+        v-bk-tooltips.top-end="{ content: errors.first(property.bk_property_id) }"
+        :style="{ right: `${tipsIconOffset}px` }"
+        v-if="errorDisplayType === 'tooltips'">
+      </i>
+      <div class="form-error" v-else>
+        {{errors.first(property.bk_property_id)}}
+      </div>
+    </template>
   </div>
 </template>
 
 <script>
-  import Utils from '@/components/filters/utils'
-
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   export default {
     props: {
       property: {
@@ -67,8 +79,24 @@
         type: Object,
         default: () => ({})
       },
+      row: {
+        type: Number,
+        default: 3
+      },
       size: String,
-      fontSize: String
+      fontSize: String,
+      errorDisplayType: {
+        type: String,
+        default: 'normal'
+      },
+      tipsIconOffset: {
+        type: Number,
+        default: 8
+      },
+      disabledTips: {
+        type: String,
+        default: ''
+      }
     },
     computed: {
       localValue: {
@@ -89,19 +117,19 @@
         }
         return rules
       },
-      getPlaceholder(property) {
-        return Utils.getPlaceholder(property)
-      },
       getMoreProps(property) {
         const validateEvents = this.$tools.getValidateEvents(property)
         const otherProps = {}
-        if (['int', 'float'].includes(property.bk_property_type)) {
+        if ([PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(property.bk_property_type)) {
           otherProps.inputType = 'number'
         }
         if (this.mustRequired === true) {
           otherProps.clearable = false
         }
-        return { ...validateEvents, ...otherProps }
+        return { ...validateEvents, ...otherProps, ...this.$attrs }
+      },
+      focus() {
+        this.$refs[`component-${this.property.bk_property_id}`]?.focus()
       }
     }
   }
@@ -111,6 +139,7 @@
   .property-form-element {
     // 重置 .cmdb-form-item display
     display: block;
+    position: relative;
 
     .form-element-item {
       &.cmdb-search-input {
@@ -118,6 +147,17 @@
           position: relative;
         }
       }
+    }
+
+    .tooltips-icon {
+      position: absolute;
+      z-index: 10;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $dangerColor;
+      cursor: pointer;
+      font-size: 16px;
     }
   }
 </style>

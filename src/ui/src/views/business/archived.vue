@@ -18,7 +18,8 @@
           clearable
           :placeholder="$t('请输入xx', { name: $t('业务') })"
           right-icon="bk-icon icon-search"
-          @enter="handlePageChange(1, $event)">
+          @enter="handlePageChange(1, $event)"
+          @clear="handlePageChange(1, $event)">
         </bk-input>
       </div>
     </div>
@@ -70,7 +71,7 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
 
     <bk-dialog
@@ -174,7 +175,7 @@
           property
         }))
       },
-      getTableData(event) {
+      getTableData() {
         this.searchBusiness({
           params: this.getSearchParams(),
           config: {
@@ -190,9 +191,7 @@
           this.pagination.count = business.count
           this.list = business.info
 
-          if (event) {
-            this.table.stuff.type = 'search'
-          }
+          this.table.stuff.type = this.filter.name ? 'search' : 'default'
         })
           .catch(({ permission }) => {
             if (permission) {
@@ -237,7 +236,7 @@
           bizIds: [biz.bk_biz_id]
         }).then(() => {
           this.$bkMessage({
-            message: `${biz.bk_biz_name}已彻底删除`
+            message: `${biz.bk_biz_name} ${this.$t('已彻底删除')}`
           })
           this.getTableData()
         })
@@ -272,6 +271,11 @@
       handlePageChange(current, event) {
         this.pagination.current = current
         this.getTableData(event)
+      },
+      handleClearFilter() {
+        this.filter.name = ''
+        this.table.stuff.type = 'default'
+        this.getTableData()
       }
     }
   }
