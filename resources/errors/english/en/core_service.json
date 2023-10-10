@@ -44,5 +44,6 @@
     "1113040": "The field grouping template has attribute configuration, deletion is not allowed",
     "1113041": "The field grouping template has unique validation configuration, deletion is not allowed",
     "1113042": "The field grouping template has relationship with the model, deletion is not allowed",
+    "1113043": "Host has associated container resources",
     "":""
 }
