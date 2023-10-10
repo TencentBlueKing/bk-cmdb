@@ -12,6 +12,7 @@
 
 import has from 'has'
 import { computed, reactive, set } from 'vue'
+import { NO_SHOW_FIELD } from '@/dictionary/property-constants'
 
 export default ({ properties, propertyGroups, exclude }) => {
   const groupCollapseState = reactive({})
@@ -52,6 +53,7 @@ export default ({ properties, propertyGroups, exclude }) => {
   // 按分组聚合的属性列表
   const groupedProperties = computed(() => sortedGroups.value
     .map(group => sortedProperties.value?.filter((property) => {
+      if (NO_SHOW_FIELD.includes(property.bk_property_id)) return null
       // 兼容旧数据，把none这个分组的属性塞到默认分组去
       const isNoneGroup = property.bk_property_group === 'none'
       if (isNoneGroup) {

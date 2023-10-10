@@ -11,6 +11,8 @@
  */
 
 import { t } from '@/i18n'
+// 不展示出来的字段
+export const NO_SHOW_FIELD = ['bk_updated_by', 'bk_updated_at', 'bk_created_by', 'bk_created_at']
 
 export const PROPERTY_TYPES = Object.freeze({
   SINGLECHAR: 'singlechar',

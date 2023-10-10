@@ -11,7 +11,7 @@
  */
 
 import has from 'has'
-import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { PROPERTY_TYPES, NO_SHOW_FIELD } from '@/dictionary/property-constants'
 
 export default {
   props: {
@@ -62,7 +62,8 @@ export default {
     },
     $sortedProperties() {
       const sortKey = 'bk_property_index'
-      const properties = this.properties.filter(property => !property.bk_isapi)
+      const properties = this.properties.filter(property => !property.bk_isapi
+        && !NO_SHOW_FIELD.includes(property.bk_property_id))
       return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
     },
     $groupedProperties() {
