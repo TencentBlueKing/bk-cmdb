@@ -107,3 +107,39 @@ func AddModelWithMultipleBizIDCondition(cond mapstr.MapStr, modelBizIDs []int64)
 	delete(cond, common.BKAppIDField)
 	return nil
 }
+
+// FieldStatus model field status
+type FieldStatus struct {
+	ExistCreateAt   bool
+	ExistCreateTime bool
+	ExistUpdateAt   bool
+	ExistLastTime   bool
+}
+
+// GetFieldStatus get field status
+func GetFieldStatus(fields []string) ([]string, *FieldStatus, error) {
+	status := &FieldStatus{ExistCreateAt: true, ExistCreateTime: true, ExistUpdateAt: true, ExistLastTime: true}
+	if len(fields) == 0 {
+		return fields, status, nil
+	}
+
+	// 旧数据用create_time和last_time分别记录了实例的创建和更新时间，如果bk_created_at和bk_updated_at字段没值，需要把旧值赋过来
+	fieldMap := make(map[string]struct{})
+	for _, field := range fields {
+		fieldMap[field] = struct{}{}
+	}
+
+	_, status.ExistCreateAt = fieldMap[common.BKCreatedAt]
+	_, status.ExistCreateTime = fieldMap[common.CreateTimeField]
+	if status.ExistCreateAt && !status.ExistCreateTime {
+		fields = append(fields, common.CreateTimeField)
+	}
+
+	_, status.ExistUpdateAt = fieldMap[common.BKUpdatedAt]
+	_, status.ExistLastTime = fieldMap[common.LastTimeField]
+	if status.ExistUpdateAt && !status.ExistLastTime {
+		fields = append(fields, common.LastTimeField)
+	}
+
+	return fields, status, nil
+}

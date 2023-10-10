@@ -1047,7 +1047,7 @@ var _ = Describe("object test", func() {
 				j, err := json.Marshal(rsp.Data)
 				data := []map[string]interface{}{}
 				json.Unmarshal(j, &data)
-				Expect(len(data)).To(Equal(2))
+				Expect(len(data)).To(Equal(6))
 				Expect(data).To(ContainElement(HaveKeyWithValue("bk_property_name", "ayayyaya")))
 				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_name", "test_singlechar")))
 				Expect(data).NotTo(ContainElement(HaveKeyWithValue("bk_property_name", "test_sglchar")))

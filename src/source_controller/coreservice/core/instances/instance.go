@@ -466,9 +466,10 @@ func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]int
 	return nil
 }
 
-// SearchModelInstance TODO
-func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string,
-	inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+// SearchModelInstance search model instance
+func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (
+	*metadata.QueryResult, error) {
+
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -498,11 +499,22 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string,
 	// parse vip fields for processes
 	fields, vipFields := hooks.ParseVIPFieldsForProcessHook(inputParam.Fields, tableName)
 
+	fields, status, err := util.GetFieldStatus(fields)
+	if err != nil {
+		blog.Errorf("get filed status failed, fields:%v, err: %v, rid: %s", fields, err, kit.Rid)
+		return nil, err
+	}
+
+	return m.searchModelInstance(kit, objID, inputParam, fields, vipFields, status)
+}
+
+func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition,
+	fields []string, vipFields []string, status *util.FieldStatus) (*metadata.QueryResult, error) {
+
+	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
-		Limit(uint64(inputParam.Page.Limit)).
-		Sort(inputParam.Page.Sort).
-		Fields(fields...)
+		Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(fields...)
 	var instErr error
 	if objID == common.BKInnerObjIDHost {
 		hosts := make([]metadata.HostMapStr, 0)
@@ -523,7 +535,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string,
 	if !inputParam.DisableCounter {
 		count, err := m.countInstance(kit, objID, inputParam.Condition)
 		if err != nil {
-			blog.Errorf("search model instances count err: %s, rid: %s", err.Error(), kit.Rid)
+			blog.Errorf("search model instances count err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
 		finalCount = count
@@ -533,6 +545,26 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string,
 	instItems, instErr = hooks.SetVIPInfoForProcessHook(kit, instItems, vipFields, tableName, mongodb.Client())
 	if instErr != nil {
 		return nil, instErr
+	}
+
+	for idx, inst := range instItems {
+		if status.ExistCreateAt && inst[common.BKCreatedAt] == nil {
+			inst[common.BKCreatedAt] = inst[common.CreateTimeField]
+		}
+
+		if status.ExistUpdateAt && inst[common.BKUpdatedAt] == nil {
+			inst[common.BKUpdatedAt] = inst[common.LastTimeField]
+		}
+
+		if !status.ExistCreateTime {
+			inst.Remove(common.CreateTimeField)
+		}
+
+		if !status.ExistLastTime {
+			inst.Remove(common.LastTimeField)
+		}
+
+		instItems[idx] = inst
 	}
 
 	dataResult := &metadata.QueryResult{
