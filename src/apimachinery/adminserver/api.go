@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -50,22 +51,31 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 }
 
 // Migrate TODO
-func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) error {
+	resp := new(metadata.Response)
 	subPath := "/migrate/%s/%s"
 
-	err = a.client.Post().
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, distribution, ownerID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // RunSyncDBIndex TODO
-func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) (*metadata.Response, error) {
+func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) error {
 	resp := new(metadata.Response)
 	subPath := "/migrate/sync/db/index"
 
@@ -76,5 +86,14 @@ func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) (*metad
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return resp, err
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }

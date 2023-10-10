@@ -111,6 +111,35 @@ div.cmdb-form-item {
         input.cmdb-form-input {
             border-color: $cmdbDangerColor;
         }
+        &.is-tooltips {
+            input[type="text"],
+            input[type="password"],
+            input[type="number"],
+            input[type="url"],
+            textarea,
+            select {
+                border-color: $cmdbDangerColor;
+                color: $cmdbDangerColor;
+            }
+
+            .bk-textarea-wrapper {
+                border-color: $cmdbDangerColor;
+            }
+
+            .bk-tag-selector .bk-tag-input {
+                border-color: $cmdbDangerColor;
+            }
+
+            .bk-form-tip {
+                .bk-tip-text {
+                    color: $cmdbDangerColor;
+                }
+            }
+
+            .bk-select {
+                border-color: $cmdbDangerColor;
+            }
+        }
 
         .form-error {
             position: absolute;
@@ -143,81 +172,6 @@ input.cmdb-form-input {
         background-color: #fafafa;
         color: #aaa;
         cursor: not-allowed;
-    }
-}
-
-.cmdb-form-checkbox {
-    font-size: 0;
-    color: #737987;
-    margin-right: 30px;
-    line-height: 18px;
-    display: inline-block;
-    padding: 7px 0;
-    font-size: 0;
-
-    .cmdb-checkbox-text {
-        display: inline-block;
-        font-style: normal;
-        font-weight: normal;
-        font-size: 14px;
-        cursor: pointer;
-        vertical-align: middle;
-        font-size: 14px;
-        @include ellipsis;
-    }
-
-    input[type=checkbox] {
-        width: 18px;
-        height: 18px;
-        outline: none;
-        visibility: visible;
-        cursor: pointer;
-        vertical-align: middle;
-        background: #fff;
-        background-image: url('../images/checkbox-sprite.png');
-        display: inline-block;
-        background-position: 0 -62px;
-        -webkit-appearance: none;
-        margin: 0 5px 0 0;
-
-        &:checked {
-            background-position: -33px -62px;
-
-            &[disabled] {
-                color: #ccc;
-                background-position: -99px -62px;
-            }
-        }
-
-        &[disabled] {
-            background-position: -66px -62px;
-            cursor: default;
-
-            &+.bk-checkbox-text {
-                color: #ccc;
-                cursor: default;
-            }
-        }
-    }
-
-    &.cmdb-checkbox-small {
-        input[type=checkbox] {
-            width: 14px;
-            height: 14px;
-            background-position: 0 -95px;
-
-            &:checked {
-                background-position: -33px -95px;
-
-                &[disabled] {
-                    background-position: -99px -95px;
-                }
-            }
-
-            &[disabled] {
-                background-position: -66px -95px;
-            }
-        }
     }
 }
 
@@ -358,6 +312,10 @@ input.cmdb-form-input {
 
 /* form-error -----------start----------- */
 
+.form-component {
+     --font-size: 12px !important
+}
+
 .form-component.error {
 
     input[name="date-select"],
@@ -380,4 +338,66 @@ input.cmdb-form-input {
     background-position: center center;
     background-size: 12px 16px;
     background-image: url("../images/lock.svg");
+}
+
+.g-has-dashed-tooltips {
+    cursor: pointer;
+    position: relative;
+
+    &::after {
+        content: '';
+        position: absolute;
+        border-bottom: 1px dashed #979ba5;
+        width: 100%;
+        bottom: -4px;
+        left: 0;
+    }
+}
+
+.cmdb-config-sticky-layout {
+    max-height: 100%;
+    @include scrollbar-y;
+    .layout-footer {
+        display: flex;
+        align-items: center;
+        height: 52px;
+        padding: 0 20px;
+        .bk-button {
+            min-width: 86px;
+
+            & + .bk-button {
+                margin-left: 8px;
+            }
+        }
+        .auth-box {
+            & + .bk-button,
+            & + .auth-box {
+                margin-left: 8px;
+            }
+        }
+        &.is-sticky {
+            background-color: #fff;
+            border-top: 1px solid $borderColor;
+        }
+    }
+  }
+
+// siderslider抽屉组件标题文案过长样式
+.bk-sideslider:not(.filter-form-sideslider) {
+    .bk-sideslider-title {
+        padding-left: 20px !important;
+        cursor: pointer;
+        @include ellipsis;
+    }
+}
+
+.property-name-text {
+    &.required:after{
+        position: absolute;
+        left: calc(100% + 2px) !important;
+        top: 0;
+        margin: 0 0 0 -10px;
+        content: "*";
+        color: #ff5656;
+    }
 }

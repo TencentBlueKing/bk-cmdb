@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
@@ -69,13 +68,15 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 	return results, err
 }
 
-func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64, error) {
+func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64,
+	error) {
 	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
-func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID string, instID int64, asstInstID int64) error {
+func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID string, instID int64,
+	asstInstID int64) error {
 	cond := metadata.QueryCondition{Condition: map[string]interface{}{common.AssociationObjAsstIDField: objAsstID}}
 	asst, err := m.SearchModelAssociation(kit, cond)
 	if err != nil {
@@ -218,67 +219,14 @@ func genAssoInstLockKey(id int64, objectAsstID string) string {
 }
 
 // CreateOneInstanceAssociation TODO
-func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
-	inputParam.Data.OwnerID = kit.SupplierAccount
-	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
-		inputParam.Data.ObjectID, inputParam.Data.BizID)
-	if nil != err {
-		blog.Errorf("check instance (%#v)is duplicated error, rid: %s", inputParam.Data, kit.Rid)
-		return nil, err
-	}
-	if exists {
-		blog.Errorf("association instance (%#v)is duplicated, rid: %s", inputParam.Data, kit.Rid)
-		return nil, kit.CCError.Errorf(common.CCErrCommDuplicateItem, "association")
-	}
-	// check association kind
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
-	_, exists, err = m.associationModel.isExists(kit, cond)
-	if nil != err {
-		blog.Errorf("check asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, kit.Rid)
-		return nil, err
-	}
-	if !exists {
-		blog.Errorf("association asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrorTopoAsstKindIsNotExist)
-	}
-	// check association inst
-	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.ObjectID, uint64(inputParam.Data.InstID))
-	if nil != err {
-		return nil, err
-	}
+func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit,
+	inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 
-	if !exists {
-		blog.Errorf("inst to asst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrorAsstInstIsNotExist)
-	}
-	// check inst to asst
-	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.AsstObjectID, uint64(inputParam.Data.AsstInstID))
-	if nil != err {
-		return nil, err
-	}
-
-	if !exists {
-		blog.Errorf("asst inst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID, inputParam.Data.InstID, kit.Rid)
-		return nil, kit.CCError.Error(common.CCErrorInstToAsstIsNotExist)
-	}
-
-	checkAssoCond := mongo.NewCondition()
-	checkAssoCond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
-	checkAssoCond.Element(&mongo.Eq{Key: common.BKOwnerIDField, Val: kit.SupplierAccount})
-	assoItems, err := m.search(kit, checkAssoCond)
+	mappingType, err := m.checkInstAsstCreateData(kit, inputParam)
 	if err != nil {
-		blog.ErrorJSON("search associations with condition: %s failed, err: %s, rid: %s",
-			checkAssoCond.ToMapStr(), err.Error(), kit.Rid)
 		return nil, err
 	}
 
-	if len(assoItems) != 1 {
-		blog.ErrorJSON("association with cond: %s not exist, rid: %s", checkAssoCond.ToMapStr(), kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
-	}
-
-	mappingType := assoItems[0].Mapping
 	switch mappingType {
 	case metadata.OneToOneMapping:
 		mlocker := lock.NewMLocker(driverRedis.Client())
@@ -354,100 +302,139 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit, inputP
 	}
 }
 
-// CreateManyInstanceAssociation TODO
-func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
+func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (
+	metadata.AssociationMapping, error) {
+
+	inputParam.Data.OwnerID = kit.SupplierAccount
+	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
+		inputParam.Data.ObjectID, inputParam.Data.BizID)
+	if err != nil {
+		blog.Errorf("check if instance (%#v) is duplicated failed, err: %v, rid: %s", inputParam.Data, err, kit.Rid)
+		return "", err
+	}
+	if exists {
+		blog.Errorf("association instance (%#v)is duplicated, rid: %s", inputParam.Data, kit.Rid)
+		return "", kit.CCError.Errorf(common.CCErrCommDuplicateItem, "association")
+	}
+
+	// check association kind
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
+	_, exists, err = m.associationModel.isExists(kit, cond)
+	if err != nil {
+		blog.Errorf("check asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, kit.Rid)
+		return "", err
+	}
+	if !exists {
+		blog.Errorf("association asst kind(%#v)is not exist, rid: %s", inputParam.Data.ObjectAsstID, kit.Rid)
+		return "", kit.CCError.Error(common.CCErrorTopoAsstKindIsNotExist)
+	}
+
+	// check association inst
+	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.ObjectID, uint64(inputParam.Data.InstID))
+	if err != nil {
+		return "", err
+	}
+
+	if !exists {
+		blog.Errorf("inst to asst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID,
+			inputParam.Data.InstID, kit.Rid)
+		return "", kit.CCError.Error(common.CCErrorAsstInstIsNotExist)
+	}
+
+	// check inst to asst
+	exists, err = m.dependent.IsInstanceExist(kit, inputParam.Data.AsstObjectID, uint64(inputParam.Data.AsstInstID))
+	if err != nil {
+		return "", err
+	}
+
+	if !exists {
+		blog.Errorf("asst inst is not exist objid(%#v), instid(%#v), rid: %s", inputParam.Data.ObjectID,
+			inputParam.Data.InstID, kit.Rid)
+		return "", kit.CCError.Error(common.CCErrorInstToAsstIsNotExist)
+	}
+
+	checkAssoCond := mongo.NewCondition()
+	checkAssoCond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
+	checkAssoCond.Element(&mongo.Eq{Key: common.BKOwnerIDField, Val: kit.SupplierAccount})
+	assoItems, err := m.search(kit, checkAssoCond)
+	if err != nil {
+		blog.ErrorJSON("search associations with condition: %s failed, err: %s, rid: %s",
+			checkAssoCond.ToMapStr(), err.Error(), kit.Rid)
+		return "", err
+	}
+
+	if len(assoItems) != 1 {
+		blog.ErrorJSON("association with cond: %s not exist, rid: %s", checkAssoCond.ToMapStr(), kit.Rid)
+		return "", kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
+	}
+
+	mappingType := assoItems[0].Mapping
+	return mappingType, nil
+}
+
+// CreateManyInstanceAssociation batch create instance associations
+func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit,
+	inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
+
 	dataResult := &metadata.CreateManyDataResult{}
-	for itemIdx, item := range inputParam.Datas {
+	for idx, item := range inputParam.Datas {
+		itemIdx := int64(idx)
+
 		item.OwnerID = kit.SupplierAccount
 		// check is exist
 		exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.ObjectID, item.BizID)
-		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+		if err != nil {
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(err, item, itemIdx))
 			continue
 		}
 
 		if exists {
-			dataResult.Repeated = append(dataResult.Repeated, metadata.RepeatedDataResult{OriginIndex: int64(itemIdx), Data: mapstr.NewFromStruct(item, "field")})
+			dataResult.Repeated = append(dataResult.Repeated,
+				metadata.RepeatedDataResult{OriginIndex: itemIdx, Data: mapstr.NewFromStruct(item, "field")})
 			continue
 		}
 
 		// check asst inst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.ObjectID, uint64(item.InstID))
-		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+		if err != nil {
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(err, item, itemIdx))
 			continue
 		}
 
 		if !exists {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     kit.CCError.Error(common.CCErrorAsstInstIsNotExist).Error(),
-				Code:        int64(common.CCErrorAsstInstIsNotExist),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(
+				kit.CCError.Error(common.CCErrorAsstInstIsNotExist), item, itemIdx))
 			continue
 		}
 
-		// check  inst to asst exist
+		// check inst to asst exist
 		exists, err = m.dependent.IsInstanceExist(kit, item.AsstObjectID, uint64(item.AsstInstID))
-		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+		if err != nil {
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(err, item, itemIdx))
 			continue
 		}
 
 		if !exists {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     kit.CCError.Error(common.CCErrorInstToAsstIsNotExist).Error(),
-				Code:        int64(common.CCErrorInstToAsstIsNotExist),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(
+				kit.CCError.Error(common.CCErrorInstToAsstIsNotExist), item, itemIdx))
 			continue
 		}
 
 		err = m.checkAssociationMapping(kit, item.ObjectAsstID, item.InstID, item.AsstInstID)
 		if err != nil {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(err, item, itemIdx))
 			continue
 		}
 
 		// save asst inst
 		id, err := m.save(kit, item)
-		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+		if err != nil {
+			dataResult.Exceptions = append(dataResult.Exceptions, metadata.GenExceptionResult(err, item, itemIdx))
 			continue
 		}
 
-		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID:          id,
-			OriginIndex: int64(itemIdx),
-		})
-
+		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id, OriginIndex: itemIdx})
 	}
 
 	return dataResult, nil

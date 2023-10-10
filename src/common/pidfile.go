@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
 	"strconv"
 
 	"configcenter/src/common/blog"
@@ -28,7 +27,7 @@ var pidfile string
 
 func init() {
 	cwd, err := os.Getwd()
-	if nil != err {
+	if err != nil {
 		blog.Errorf("get current path failed. Error:%s", err.Error())
 	}
 	pidfile = cwd + "/pid/" + filepath.Base(os.Args[0]) + ".pid"

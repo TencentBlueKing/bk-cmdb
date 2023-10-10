@@ -20,7 +20,8 @@ import (
 )
 
 // CreateModel TODO
-func (t *object) CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error) {
+func (t *object) CreateModel(ctx context.Context, h http.Header,
+	model *metadata.MainLineObject) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/create/topomodelmainline"
 
@@ -65,7 +66,8 @@ func (t *object) SelectModel(ctx context.Context, h http.Header) (resp *metadata
 }
 
 // SelectModelByClsID TODO
-func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error) {
+func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string,
+	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/topo/model/%s/%s/%s"
 

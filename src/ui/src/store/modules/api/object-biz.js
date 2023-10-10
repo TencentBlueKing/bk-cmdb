@@ -40,7 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   createBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post(`biz/${rootGetters.supplierAccount}`, params, config)
+    return $http.post(`${window.API_HOST}table/biz/${rootGetters.supplierAccount}`, params, config)
   },
 
   /**

@@ -75,6 +75,7 @@ func (ps *ProcServer) WebService() *restful.Container {
 	return container
 }
 
+// NOCC:golint/fnsize(整体操作需要放在一起)
 func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  ps.Engine.CCErr,
@@ -82,17 +83,24 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	})
 
 	// service category
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category", Handler: ps.ListServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category/with_statistics", Handler: ps.ListServiceCategoryWithStatistics})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: ps.CreateServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_category", Handler: ps.UpdateServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: ps.DeleteServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category",
+		Handler: ps.ListServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category/with_statistics",
+		Handler: ps.ListServiceCategoryWithStatistics})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category",
+		Handler: ps.CreateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_category",
+		Handler: ps.UpdateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category",
+		Handler: ps.DeleteServiceCategory})
 
 	// service template
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template",
+		Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template/all_info",
 		Handler: ps.CreateServiceTemplateAllInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template/all_info",
 		Handler: ps.UpdateServiceTemplateAllInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
@@ -115,14 +123,20 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Path:    "/updatemany/service_template/host_apply_plan/task",
 		Handler: ps.ExecServiceTemplateHostApplyRule})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}", Handler: ps.GetServiceTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}/detail", Handler: ps.GetServiceTemplateDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}",
+		Handler: ps.GetServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet,
+		Path: "/find/proc/service_template/{service_template_id}/detail", Handler: ps.GetServiceTemplateDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_template/all_info",
 		Handler: ps.GetServiceTemplateAllInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/count_info/biz/{bk_biz_id}", Handler: ps.FindServiceTemplateCountInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/sync_status/biz/{bk_biz_id}", Handler: ps.GetServiceTemplateSyncStatus})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template",
+		Handler: ps.ListServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template",
+		Handler: ps.DeleteServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/service_template/count_info/biz/{bk_biz_id}", Handler: ps.FindServiceTemplateCountInfo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/service_template/sync_status/biz/{bk_biz_id}", Handler: ps.GetServiceTemplateSyncStatus})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_template/host_apply_rule_related",
 		Handler: ps.SearchRuleRelatedServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template/attribute",
@@ -133,24 +147,39 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.ListServiceTemplateAttribute})
 
 	// process template
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template", Handler: ps.CreateProcessTemplateBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template", Handler: ps.UpdateProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template", Handler: ps.DeleteProcessTemplateBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template",
+		Handler: ps.CreateProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template",
+		Handler: ps.UpdateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/deletemany/proc/proc_template", Handler: ps.DeleteProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
 
 	// service instance
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance",
+		Handler: ps.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/host/with_no_service_instance",
 		Handler: ps.SearchHostWithNoServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance", Handler: ps.SearchServiceInstancesInModuleWeb})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}", Handler: ps.SearchServiceInstancesBySetTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/with_host", Handler: ps.ListServiceInstancesWithHost})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance/with_host", Handler: ps.ListServiceInstancesWithHostWeb})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details", Handler: ps.ListServiceInstancesDetails})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}", Handler: ps.UpdateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance", Handler: ps.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance",
+		Handler: ps.SearchServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance",
+		Handler: ps.SearchServiceInstancesInModuleWeb})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}",
+		Handler: ps.SearchServiceInstancesBySetTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHost})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHostWeb})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details",
+		Handler: ps.ListServiceInstancesDetails})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}",
+		Handler: ps.UpdateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance",
+		Handler: ps.DeleteServiceInstance})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/find/proc/service_template/general_difference",
@@ -162,34 +191,48 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Path:    "/find/proc/service_instance/difference_detail",
 		Handler: ps.DiffServiceInstanceDetail})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync", Handler: ps.SyncServiceInstanceByTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_instance/sync",
+		Handler: ps.SyncServiceInstanceByTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}",
 		Handler: ps.FindServiceTemplateSyncStatus})
 
 	// deprecated,  only for old api
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels", Handler: ps.ServiceInstanceAddLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/service_instance/labels",
+		Handler: ps.ServiceInstanceAddLabels})
 
 	// deprecated,  only for old api
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels", Handler: ps.ServiceInstanceRemoveLabels})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/service_instance/labels",
+		Handler: ps.ServiceInstanceRemoveLabels})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/updatemany/proc/service_instance/labels",
 		Handler: ps.ServiceInstanceUpdateLabels})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation", Handler: ps.ServiceInstanceLabelsAggregation})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/labels/aggregation",
+		Handler: ps.ServiceInstanceLabelsAggregation})
 
 	// process instance
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance", Handler: ps.CreateProcessInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance", Handler: ps.UpdateProcessInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/process_instance", Handler: ps.DeleteProcessInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance", Handler: ps.ListProcessInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_related_info/biz/{bk_biz_id}", Handler: ps.ListProcessRelatedInfo})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/name_ids", Handler: ps.ListProcessInstancesNameIDsInModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/by_ids", Handler: ps.ListProcessInstancesDetailsByIDs})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/biz/{bk_biz_id}", Handler: ps.ListProcessInstancesDetails})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance",
+		Handler: ps.CreateProcessInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance",
+		Handler: ps.UpdateProcessInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/process_instance",
+		Handler: ps.DeleteProcessInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance",
+		Handler: ps.ListProcessInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_related_info/biz/{bk_biz_id}",
+		Handler: ps.ListProcessRelatedInfo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/name_ids",
+		Handler: ps.ListProcessInstancesNameIDsInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/process_instance/detail/by_ids",
+		Handler: ps.ListProcessInstancesDetailsByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path: "/findmany/proc/process_instance/detail/biz/{bk_biz_id}", Handler: ps.ListProcessInstancesDetails})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut,
+		Path: "/update/proc/process_instance/by_ids", Handler: ps.UpdateProcessInstancesByIDs})
 
 	// module
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
+		Path: "/delete/proc/template_binding_on_module", Handler: ps.RemoveTemplateBindingOnModule})
 
 	// task
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/service_instance/task",

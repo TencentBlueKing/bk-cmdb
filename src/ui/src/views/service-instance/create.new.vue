@@ -101,6 +101,8 @@
   import { mapGetters } from 'vuex'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import has from 'has'
+  import { PROCESS_BIND_IP_ALL_LOOPBACK_AND_NON_MAP } from '@/dictionary/process-bind-ip.js'
+
   export default {
     name: 'create-service-instance',
     components: {
@@ -284,7 +286,7 @@
         }
         const data = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
         if (data) {
-          return data.host.bk_host_innerip
+          return data.host.bk_host_innerip ? data.host.bk_host_innerip : data.host.bk_host_innerip_v6
         }
         return '--'
       },
@@ -320,13 +322,12 @@
       },
       getBindIp(instance, row) {
         const ipValue = row.ip.value
-        const mapping = {
-          1: '127.0.0.1',
-          2: '0.0.0.0'
-        }
+        const mapping = PROCESS_BIND_IP_ALL_LOOPBACK_AND_NON_MAP
+
         if (has(mapping, ipValue)) {
           return mapping[ipValue]
         }
+
         const { host } = this.hosts.find(data => data.host.bk_host_id === instance.bk_host_id)
         // 第一内网IP
         if (ipValue === '3') {
@@ -338,6 +339,16 @@
           const [outerIP] = host.bk_host_outerip.split(',')
           // 可能不存在，允许返回为空
           return outerIP
+        }
+        // 第一内网IPv6
+        if (ipValue === '7') {
+          const [innerIP] = host?.bk_host_innerip_v6?.split(',') || []
+          return innerIP || mapping?.[3]
+        }
+        // 第一外网IPv6
+        if (ipValue === '8') {
+          const [outerIP] = host?.bk_host_outerip_v6?.split(',') || []
+          return outerIP || mapping?.[3]
         }
         return ''
       },

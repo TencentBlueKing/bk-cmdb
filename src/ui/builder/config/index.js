@@ -49,7 +49,9 @@ const dev = {
     FULL_TEXT_SEARCH: JSON.stringify('off'),
     USER_MANAGE: JSON.stringify(''),
     HELP_DOC_URL: JSON.stringify(''),
-    DISABLE_OPERATION_STATISTIC: false
+    DISABLE_OPERATION_STATISTIC: false,
+    COOKIE_DOMAIN: JSON.stringify(''),
+    DESKTOP_URL: JSON.stringify('')
   }),
 
   // Paths
@@ -69,7 +71,7 @@ const dev = {
   host: 'localhost', // can be overwritten by process.env.HOST
   port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
   autoOpenBrowser: true,
-  errorOverlay: true,
+  errorOverlay: false,
   notifyOnErrors: true,
   poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
 
@@ -142,7 +144,9 @@ module.exports = {
       FULL_TEXT_SEARCH: '{{.fullTextSearch}}',
       USER_MANAGE: '{{.userManage}}',
       HELP_DOC_URL: '{{.helpDocUrl}}',
-      DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}'
+      DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
+      COOKIE_DOMAIN: '{{.cookieDomain}}',
+      DESKTOP_URL: '{{.bkDesktopUrl}}'
     }),
 
     // Template for index.html

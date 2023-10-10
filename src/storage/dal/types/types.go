@@ -57,6 +57,9 @@ type Table interface {
 
 	// CreateIndex 创建索引
 	CreateIndex(ctx context.Context, index Index) error
+	// BatchCreateIndexes 批量创建索引
+	BatchCreateIndexes(ctx context.Context, index []Index) error
+
 	// DropIndex 移除索引
 	DropIndex(ctx context.Context, indexName string) error
 	// Indexes 查询索引

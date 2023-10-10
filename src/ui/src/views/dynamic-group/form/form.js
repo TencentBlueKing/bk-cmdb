@@ -21,16 +21,19 @@ const Component = Vue.extend({
   },
   created() {
     this.unwatch = RouterQuery.watch('*', () => {
-      this.handleClose()
+      this.handleClose('watchClose')
     })
   },
   beforeDestroy() {
     this.unwatch()
   },
   methods: {
-    handleClose() {
+    handleClose(type = '') {
       document.body.removeChild(this.$el)
       this.$destroy()
+      if (!type) {
+        RouterQuery.set({ action: '' })
+      }
     }
   },
   // eslint-disable-next-line no-unused-vars

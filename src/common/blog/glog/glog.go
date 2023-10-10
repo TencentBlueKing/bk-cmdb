@@ -863,7 +863,8 @@ func (sb *syncBuffer) rotateFile(now time.Time) error {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Log file created at: %s\n", now.Format("2006/01/02 15:04:05"))
 	fmt.Fprintf(&buf, "Running on machine: %s\n", host)
-	fmt.Fprintf(&buf, "Binary: Built with %s %s for %s/%s\n", runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	fmt.Fprintf(&buf, "Binary: Built with %s %s for %s/%s\n", runtime.Compiler, runtime.Version(), runtime.GOOS,
+		runtime.GOARCH)
 	fmt.Fprintf(&buf, "Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg\n")
 	n, err := sb.file.Write(buf.Bytes())
 	sb.nbytes += uint64(n)
@@ -898,7 +899,7 @@ const flushInterval = 30 * time.Second
 
 // flushDaemon periodically flushes the log file buffers.
 func (l *loggingT) flushDaemon() {
-	for _ = range time.NewTicker(flushInterval).C {
+	for range time.NewTicker(flushInterval).C {
 		l.lockAndFlushAll()
 	}
 }

@@ -15,7 +15,7 @@
     <div class="toolbar">
       <p class="title">{{$t('列表值')}}</p>
       <i
-        v-bk-tooltips.top-start="$t('按照0-9a-z排序')"
+        v-bk-tooltips.top-start="$t('通过列表项的值按照0-9，a-z排序')"
         :class="['sort-icon', `icon-cc-sort-${order > 0 ? 'up' : 'down'}`]"
         @click="handleSort">
       </i>
@@ -51,11 +51,31 @@
         </bk-button>
       </li>
     </vue-draggable>
+    <div class="default-setting">
+      <p class="title mb10">{{$t('默认值设置')}}</p>
+      <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
+        <bk-select style="width: 100%;"
+          :clearable="true"
+          :disabled="isReadOnly"
+          name="defaultValueSelect"
+          data-vv-validate-on="change"
+          v-model="defaultListValue"
+          @change="handleSettingDefault">
+          <bk-option v-for="option in settingList"
+            :key="option.id"
+            :id="option.id"
+            :name="option.name">
+          </bk-option>
+        </bk-select>
+        <p class="form-error">{{errors.first('defaultValueSelect')}}</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
   import vueDraggable from 'vuedraggable'
+  import { v4 as uuidv4 } from 'uuid'
   export default {
     components: {
       vueDraggable
@@ -68,11 +88,17 @@
       isReadOnly: {
         type: Boolean,
         default: false
+      },
+      defaultValue: {
+        type: String,
+        default: ''
       }
     },
     data() {
       return {
         list: [{ name: '' }],
+        settingList: [],
+        defaultListValue: '',
         dragOptions: {
           animation: 300,
           disabled: false,
@@ -86,6 +112,18 @@
     watch: {
       value() {
         this.initValue()
+      },
+      list: {
+        deep: true,
+        handler(value) {
+          this.settingList = (value || []).filter(val => val.name).map(item => ({
+            id: uuidv4(),
+            name: item.name
+          }))
+          if (this.defaultValue) {
+            this.defaultListValue = this.settingList.find(item => item.name === this.defaultValue).id
+          }
+        }
       }
     },
     created() {
@@ -125,6 +163,7 @@
       },
       deleteList(index) {
         this.list.splice(index, 1)
+        this.defaultListValue = ''
         this.handleInput()
       },
       validate() {
@@ -140,6 +179,10 @@
 
         const list = this.list.map(item => item.name)
         this.$emit('input', list)
+      },
+      handleSettingDefault(id) {
+        const defaultValue =  id ? this.settingList.find(item => item.id === id).name : ''
+        this.$emit('update:defaultValue', defaultValue)
       }
     }
   }
@@ -154,6 +197,7 @@
             display: flex;
             align-items: center;
             position: relative;
+            margin-bottom: 16px;
             padding: 2px 2px 2px 28px;
             font-size: 0;
             cursor: move;

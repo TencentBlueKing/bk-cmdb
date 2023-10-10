@@ -12,25 +12,40 @@
 
 <template>
   <div class="form-label">
-    <span class="label-text">{{$t('字段设置')}}</span>
-    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isEditableShow">
-      <input type="checkbox" tabindex="-1" v-model="localValue.editable" :disabled="isReadOnly || ispre">
-      <span class="cmdb-checkbox-text">
-        {{$t('可编辑')}}
-      </span>
-      <i class="bk-cc-icon icon-cc-tips disabled-tips"
-        v-if="modelId === 'host'"
-        v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
-    </label>
-    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="isRequiredShow && !isMainLineModel">
-      <input type="checkbox" tabindex="-1" v-model="localValue.isrequired" :disabled="isReadOnly || ispre">
-      <span class="cmdb-checkbox-text">{{$t('必填')}}</span>
-    </label>
+    <div class="checkbox-options">
+      <flex-row gap="2px" v-if="isEditableShow">
+        <bk-checkbox
+          class="checkbox"
+          v-model="localValue.editable"
+          :disabled="isReadOnly || ispre || (isFromTemplateField && editableLockLocal)">
+          <span class="g-has-dashed-tooltips" v-bk-tooltips="$t('字段设置可编辑提示语')">
+            {{$t('在实例中可编辑')}}
+          </span>
+          <i class="bk-cc-icon icon-cc-tips disabled-tips"
+            v-if="modelId === 'host'"
+            v-bk-tooltips="$t('主机属性设置为不可编辑状态后提示')"></i>
+        </bk-checkbox>
+      </flex-row>
+      <flex-row gap="2px" class="mt20" v-if="isRequiredShow && !isMainLineModel">
+        <bk-checkbox
+          class="checkbox"
+          v-model="localValue.isrequired"
+          :disabled="isReadOnly || ispre || (isFromTemplateField && isrequiredLockLocal)">
+          <span>{{$t('设置为必填项')}}</span>
+        </bk-checkbox>
+      </flex-row>
+    </div>
   </div>
 </template>
 
 <script>
+  import { EDITABLE_TYPES, REQUIRED_TYPES } from '@/dictionary/property-constants'
+  import FlexRow from '@/components/ui/other/flex-row.vue'
+
   export default {
+    components: {
+      FlexRow
+    },
     props: {
       isReadOnly: {
         type: Boolean,
@@ -52,52 +67,59 @@
         type: Boolean,
         default: false
       },
-      ispre: Boolean
+      ispre: Boolean,
+      isEditField: {
+        type: Boolean,
+        default: false
+      },
+      isrequiredLock: {
+        type: Boolean,
+        default: false
+      },
+      editableLock: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
-        editableMap: [
-          'singlechar',
-          'int',
-          'float',
-          'enum',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'bool',
-          'list',
-          'organization'
-        ],
-        isrequiredMap: [
-          'singlechar',
-          'int',
-          'float',
-          'date',
-          'time',
-          'longchar',
-          'objuser',
-          'timezone',
-          'list',
-          'organization'
-        ],
         localValue: {
           editable: this.editable,
           isrequired: this.isrequired
         }
       }
     },
-    inject: ['customObjId'], // 来源于自定义字段编辑
+    inject: [
+      // 来源于自定义字段编辑
+      'customObjId',
+      'isSettingScene',
+      'isFromTemplateField'
+    ],
     computed: {
       isEditableShow() {
-        return this.editableMap.indexOf(this.type) !== -1
+        return EDITABLE_TYPES.indexOf(this.type) !== -1
       },
       isRequiredShow() {
-        return this.isrequiredMap.indexOf(this.type) !== -1
+        return REQUIRED_TYPES.indexOf(this.type) !== -1
       },
       modelId() {
         return this.$route.params.modelId ?? this.customObjId
+      },
+      isrequiredLockLocal: {
+        get() {
+          return this.isrequiredLock
+        },
+        set(val) {
+          this.$emit('update:isrequiredLock', val)
+        }
+      },
+      editableLockLocal: {
+        get() {
+          return this.editableLock
+        },
+        set(val) {
+          this.$emit('update:editableLock', val)
+        }
       }
     },
     watch: {
@@ -124,5 +146,12 @@
   .disabled-tips {
     font-size: 12px;
     margin-left: 6px;
+  }
+  .checkbox-options {
+    margin-bottom: 10px;
+    .checkbox {
+      height: 24px;
+      line-height: 24px;
+    }
   }
 </style>

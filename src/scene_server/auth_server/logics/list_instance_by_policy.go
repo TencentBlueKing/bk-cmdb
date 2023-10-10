@@ -81,8 +81,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
 	return lgc.listInstance(kit, cond, resourceType, page)
 }
 
-// ListHostByPolicy TODO
-// list host instances that user is privileged to access by policy
+// ListHostByPolicy list host instances that user is privileged to access by policy
 func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
@@ -103,9 +102,10 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 
 	param := metadata.PullResourceParam{
 		Condition: cond,
-		Fields:    []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
-		Limit:     page.Limit,
-		Offset:    page.Offset,
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
+			common.BKCloudIDField},
+		Limit:  page.Limit,
+		Offset: page.Offset,
 	}
 
 	hostRes, err := lgc.searchAuthResource(kit, param, resourceType)
@@ -144,8 +144,9 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filt
 		}
 
 		instances[index] = types.InstanceResource{
-			ID:          util.GetStrByInterface(host[common.BKHostIDField]),
-			DisplayName: getHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]), cloudMap[cloudID]),
+			ID: util.GetStrByInterface(host[common.BKHostIDField]),
+			DisplayName: metadata.GetHostDisplayName(util.GetStrByInterface(host[common.BKHostInnerIPField]),
+				util.GetStrByInterface(host[common.BKHostInnerIPv6Field]), cloudMap[cloudID]),
 		}
 	}
 	return &types.ListInstanceResult{

@@ -12,6 +12,19 @@
 
 import http from '@/api'
 
+const find = async ({ bk_biz_id: bizId, params, config }) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post('hosts/search', {
+      bk_biz_id: bizId || -1,
+      ...params
+    }, config)
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
 const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   try {
     const { info } = await http.post('hosts/search', {
@@ -36,9 +49,34 @@ const findOne = async ({ bk_host_id: hostId, bk_biz_id: bizId, config }) => {
   }
 }
 
+
+const findByIds = async ({ ids, bk_biz_id: bizId, config }) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post('hosts/search', {
+      bk_biz_id: bizId || -1,
+      condition: [
+        { bk_obj_id: 'biz', condition: [], fields: [] },
+        { bk_obj_id: 'set', condition: [], fields: [] },
+        { bk_obj_id: 'module', condition: [], fields: [] },
+        { bk_obj_id: 'host', condition: [{
+          field: 'bk_host_id',
+          operator: '$in',
+          value: ids
+        }], fields: [] }
+      ]
+    }, config)
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+
 const getTopoPath = (data, config) => http.post('find/host/topopath', data, config)
 
 export default {
+  find,
   findOne,
-  getTopoPath
+  getTopoPath,
+  findByIds
 }

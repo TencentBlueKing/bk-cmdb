@@ -22,7 +22,7 @@
       </bk-tab-panel>
     </bk-tab>
     <div class="audit-options">
-      <component :is="optionsComponent" @condition-change="handleConditionChange"></component>
+      <component ref="optionsComponent" :is="optionsComponent" @condition-change="handleConditionChange"></component>
     </div>
     <bk-table v-bkloading="{ isLoading: $loading(request.list) }"
       :data="table.list"
@@ -54,7 +54,9 @@
       </bk-table-column>
       <bk-table-column
         prop="resource_name"
+        :show-overflow-tooltip="true"
         :label="$t('实例')">
+        <template slot-scope="{ row }">{{getResourceName(row)}}</template>
       </bk-table-column>
       <bk-table-column
         :label="$t('操作描述')">
@@ -71,7 +73,7 @@
         prop="user"
         :label="$t('操作账号')">
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -227,14 +229,21 @@
         usefulCondition.condition = usefulSubCondition
 
         // 兼容resource_name为in/contains操作
-        if (usefulCondition.resource_name) {
-          const { fuzzy_query: fuzzy } = usefulCondition
+        if (usefulCondition.resource_name || usefulCondition.extend_resource_name) {
+          const {
+            fuzzy_query: fuzzy,
+            resource_name: resourceName,
+            extend_resource_name: extendResourceName
+          } = usefulCondition
+          const field = resourceName ? 'resource_name' : 'extend_resource_name'
+          const finalResourceName = resourceName || extendResourceName
+
           usefulSubCondition.push({
-            field: 'resource_name',
+            field,
             operator: fuzzy ? 'contains' : 'in',
-            value: fuzzy ? usefulCondition.resource_name : [usefulCondition.resource_name]
+            value: fuzzy ? finalResourceName : [finalResourceName]
           })
-          delete usefulCondition.resource_name
+          delete usefulCondition[field]
           delete usefulCondition.fuzzy_query
         }
 
@@ -291,6 +300,9 @@
           id: row.id
         })
       },
+      getResourceName(row) {
+        return row.resource_name || row.extend_resource_name || '--'
+      },
       getResourceTypeName(row) {
         const type = this.dictionary.find(type => type.id === row.resource_type)
         return type ? type.name : row.resource_type
@@ -300,6 +312,9 @@
         const operations = type ? type.operations : []
         const operation = operations.find(operation => operation.id === row.action)
         return operation ? operation.name : row.action
+      },
+      handleClearFilter() {
+        this.$refs.optionsComponent.handleReset()
       }
     }
   }

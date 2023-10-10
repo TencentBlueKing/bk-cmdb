@@ -86,6 +86,7 @@
                 :rule-list="initRuleList"
                 :id-list="ids"
                 @property-value-change="handlePropertyValueChange"
+                @property-valid-change="handlePropertyValidChange"
                 @selection-change="handlePropertySelectionChange"
                 @property-remove="handlePropertyRemove">
               </property-config-table>
@@ -135,6 +136,7 @@
   /* eslint-disable no-underscore-dangle */
   import { mapGetters, mapState } from 'vuex'
   import leaveConfirm from '@/components/ui/dialog/leave-confirm'
+  import { formatValue } from '@/utils/tools'
   import topSteps from './top-steps.vue'
   import hostPropertyModal from './host-property-modal'
   import propertyConfigTable from './property-config-table'
@@ -345,7 +347,7 @@
             additionalRules.push({
               bk_attribute_id: property.id,
               [this.targetIdKey]: id,
-              bk_property_value: property.__extra__.value
+              bk_property_value: formatValue(property.__extra__.value, property)
             })
           })
         })
@@ -414,6 +416,9 @@
         this.delButtonDisabled = this.selectedPropertyRow.length <= 0
       },
       handlePropertyValueChange() {
+        this.toggleNextButtonDisabled()
+      },
+      handlePropertyValidChange() {
         this.toggleNextButtonDisabled()
       },
       handlePropertyRemove() {

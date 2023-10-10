@@ -75,7 +75,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	s.cfg = cfg
 	s.engine = engine
 
-	if nil != err {
+	if err != nil {
 		s.err = err
 	}
 

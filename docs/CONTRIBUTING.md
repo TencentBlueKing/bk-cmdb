@@ -1,5 +1,5 @@
 # Contributing to bk-cmdb
- 我们欢迎[report Issues](https://github.com/Tencent/bk-cmdb/issues) 或者 [pull requests](https://github.com/Tencent/bk-cmdb/pulls)。 在贡献代码之前请阅读以下指引。
+ 我们欢迎[report Issues](https://github.com/TencentBlueKing/bk-cmdb/issues) 或者 [pull requests](https://github.com/TencentBlueKing/bk-cmdb/pulls)。 在贡献代码之前请阅读以下指引。
 
 ## 问题管理
 我们用 Github Issues 去跟踪 public bugs 和 feature requests。
@@ -33,4 +33,4 @@
 
 
 ## 代码协议
-[MIT LICENSE](https://github.com/Tencent/bk-cmdb/blob/master/LICENSE) 为bk-cmdb的开源协议，您贡献的代码也会受此协议保护。
+[MIT LICENSE](https://github.com/TencentBlueKing/bk-cmdb/blob/master/LICENSE) 为bk-cmdb的开源协议，您贡献的代码也会受此协议保护。

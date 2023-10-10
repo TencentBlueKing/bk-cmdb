@@ -64,7 +64,7 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		return err
 	}
 
-	enumOpts, err := metadata.ParseEnumOption(ctx, ostypeProperty.Option)
+	enumOpts, err := metadata.ParseEnumOption(ostypeProperty.Option)
 	if err != nil {
 		return err
 	}

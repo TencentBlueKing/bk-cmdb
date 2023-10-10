@@ -45,9 +45,10 @@ func NewManager(opt *option.Options) Metric {
 func (m *Manager) Actions() []httpserver.Action {
 	var httpactions []httpserver.Action
 	for _, a := range m.ms {
-		httpactions = append(httpactions, httpserver.Action{Method: a.Method, Path: a.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-			a.HandlerFunc(resp.ResponseWriter, req.Request)
-		}})
+		httpactions = append(httpactions, httpserver.Action{Method: a.Method, Path: a.Path,
+			Handler: func(req *restful.Request, resp *restful.Response) {
+				a.HandlerFunc(resp.ResponseWriter, req.Request)
+			}})
 	}
 	return httpactions
 }

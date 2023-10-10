@@ -48,8 +48,9 @@
                       :options="property.option || []"
                       :data-vv-name="property['bk_property_id']"
                       :data-vv-as="property['bk_property_name']"
-                      :placeholder="getPlaceholder(property)"
+                      :placeholder="$tools.getPropertyPlaceholder(property)"
                       :auto-select="false"
+                      :multiple="property.ismultiple"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]['value']">
@@ -104,6 +105,7 @@
   import { mapMutations } from 'vuex'
   import ProcessFormPropertyTable from './process-form-property-table'
   import has from 'has'
+  import useSideslider from '@/hooks/use-sideslider'
   export default {
     components: {
       ProcessFormPropertyTable
@@ -187,6 +189,9 @@
     },
     created() {
       this.initValues()
+      const { beforeClose, setChanged } = useSideslider(this.values)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
@@ -333,21 +338,13 @@
       },
       handleCancel() {
         if (this.hasChange()) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.$emit('on-cancel')
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
+          this.setChanged(true)
+          this.beforeClose(() => {
+            this.$emit('on-cancel')
           })
+        } else {
+          this.$emit('on-cancel')
         }
-        this.$emit('on-cancel')
       }
     }
   }

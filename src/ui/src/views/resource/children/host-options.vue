@@ -15,7 +15,6 @@
     <div class="options-left fl">
       <template v-if="scope === 1">
         <cmdb-auth class="mr10"
-          :ignore="!activeDirectory"
           :auth="[
             { type: $OPERATION.C_RESOURCE_HOST, relation: [directoryId] },
             { type: $OPERATION.U_RESOURCE_HOST, relation: [directoryId] }
@@ -65,7 +64,7 @@
       </cmdb-button-group>
     </div>
     <div class="options-right">
-      <filter-fast-search class="option-fast-search"></filter-fast-search>
+      <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
       <icon-button class="option-filter ml10" icon="icon-cc-funnel"
         v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
@@ -166,6 +165,8 @@
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import hostImportService from '@/service/host/import'
+  import { isUseComplexValueType } from '@/utils/tools'
+  import isEqual from 'lodash/isEqual'
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
   export default {
@@ -218,7 +219,8 @@
         if (this.activeDirectory) {
           return this.activeDirectory.bk_module_id
         }
-        return undefined
+        // 默认会导入到空闲机目录
+        return this.defaultDirectory?.bk_module_id
       },
       table() {
         return this.$parent.table
@@ -237,7 +239,7 @@
           id: this.IPWithCloudSymbol,
           bk_obj_id: 'host',
           bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('云区域')}ID:IP`,
+          bk_property_name: `${this.$t('管控区域')}ID:IP`,
           bk_property_type: 'singlechar'
         })
         const clipboardList = this.$parent.tableHeader.slice()
@@ -528,9 +530,15 @@
         }
       },
       handleCopy(property) {
-        const copyText = this.table.selection.map((data) => {
+        const copyText = this.table.selection.map((data, index) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
+
+          if (isUseComplexValueType(property)) {
+            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[index]?.getCopyValue()
+            return value
+          }
+
           if (property.id === this.IPWithCloudSymbol) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
@@ -596,21 +604,13 @@
       },
       handleSliderBeforeClose() {
         const $form = this.$refs.multipleForm
-        const { changedValues } = $form
-        if (Object.keys(changedValues).length) {
-          return new Promise((resolve) => {
-            this.$bkInfo({
-              title: this.$t('确认退出'),
-              subTitle: this.$t('退出会导致未保存信息丢失'),
-              extCls: 'bk-dialog-sub-header-center',
-              confirmFn: () => {
-                this.slider.show = false
-                this.slider.component = null
-              },
-              cancelFn: () => {
-                resolve(false)
-              }
-            })
+        const { values, refrenceValues } = $form
+        const changedValues =  !isEqual(values, refrenceValues)
+        if (changedValues) {
+          $form.setChanged(true)
+          return $form.beforeClose(() => {
+            this.slider.component = null
+            this.slider.show = false
           })
         }
         this.slider.show = false
@@ -704,6 +704,7 @@
           fileTips: this.$t('导入文件大小提示'),
           submit: (options) => {
             const params = {
+              bk_module_id: this.directoryId,
               op: options.step
             }
             if (options.importRelation) {
@@ -739,6 +740,9 @@
           success: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
+      },
+      searchFilter(value) {
+        this.$emit('search', value)
       }
     }
   }

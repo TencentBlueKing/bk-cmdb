@@ -22,28 +22,34 @@
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list">
               <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                <li class="property-item"
+                <li :class="['property-item', { 'full-width': isTableType(property) }]"
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name">
-                    <span class="property-name-text" :class="{ required: property['isrequired'] }">
+                    <span class="property-name-text" :class="{ required: property['isrequired'] }" v-bk-overflow-tips>
                       {{property['bk_property_name']}}
                     </span>
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
-                        trigger: 'click',
                         content: htmlEncode(property['placeholder'])
                       }">
                     </i>
                   </div>
                   <div class="property-value clearfix">
                     <slot :name="property.bk_property_id">
-                      <component class="form-component"
+                      <table-default-settings
+                        v-if="isTableType(property)"
+                        :preview="true"
+                        :headers="property.option.header"
+                        :defaults="property.option.default" />
+                      <component class="form-component" v-else
                         :is="`cmdb-form-${property['bk_property_type']}`"
                         :class="{ error: errors.has(property['bk_property_id']) }"
+                        :placeholder="$tools.getPropertyPlaceholder(property)"
                         :unit="property['unit']"
                         :row="2"
+                        :multiple="property.ismultiple"
                         :disabled="checkDisabled(property)"
                         :options="property.option || []"
                         :data-vv-name="property['bk_property_id']"
@@ -70,7 +76,13 @@
 
 <script>
   import formMixins from '@/mixins/form'
+  import TableDefaultSettings from './table-default-settings.vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+
   export default {
+    components: {
+      TableDefaultSettings
+    },
     mixins: [formMixins],
     props: {
       inst: {
@@ -150,6 +162,9 @@
       getValidateRules(property) {
         return this.$tools.getValidateRules(property)
       },
+      isTableType(property) {
+        return property.bk_property_type === PROPERTY_TYPES.INNER_TABLE
+      },
       uncollapseGroup() {
         this.errors.items.forEach((item) => {
           const property = this.properties.find(property => property.bk_property_id === item.field)
@@ -188,8 +203,9 @@
         justify-content: space-between;
         .property-item {
             flex: 0 0 48%;
-            margin: 8px 0 0;
+            margin: 8px 0 16px 0;
             font-size: 12px;
+            width: 100%;
             .property-name {
                 display: block;
                 margin: 6px 0 9px;
@@ -203,7 +219,10 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
-                font-size: 12px;
+                font-size: 14px;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                word-break: break-all;
                 @include ellipsis;
                 &.required:after {
                     position: absolute;
@@ -225,9 +244,15 @@
             .property-value {
                 font-size: 0;
                 position: relative;
-                .form-component {
-                    font-size: 14px;
-                }
+                width: 303px;
+            }
+
+            &.full-width {
+              flex: 0 0 100%;
+              width: 100%;
+              .property-value {
+                width: 100%;
+              }
             }
         }
     }

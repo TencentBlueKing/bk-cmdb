@@ -17,6 +17,8 @@
     :disabled="disabled"
     v-bind="$attrs"
     v-model.number="localValue"
+    :max="max"
+    :min="min"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">
@@ -27,8 +29,10 @@
 </template>
 
 <script>
+  import numberFormTypeMixin from '@/mixins/number-form-type'
   export default {
     name: 'cmdb-form-int',
+    mixins: [numberFormTypeMixin],
     props: {
       value: {
         default: null,

@@ -13,9 +13,12 @@
 package hostidentifier
 
 import (
+	"errors"
+
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/event_server/types"
 )
 
 // RateLimiter push identifier rate limiter
@@ -27,6 +30,7 @@ type RateLimiter struct {
 // HostIdentifierConf host identifier config
 type HostIdentifierConf struct {
 	StartUp                bool
+	Version                types.ApiVersion
 	BatchSyncIntervalHours int
 	LinuxFileConf          *FileConf
 	WinFileConf            *FileConf
@@ -46,6 +50,16 @@ func ParseIdentifierConf() (*HostIdentifierConf, error) {
 		return &HostIdentifierConf{
 			StartUp: startUp,
 		}, nil
+	}
+
+	version, err := cc.String("eventServer.hostIdentifier.version")
+	if err != nil {
+		blog.Errorf("get eventServer.hostIdentifier.version error, err: %v", err)
+		return nil, err
+	}
+	if types.ApiVersion(version) != types.V1 && types.ApiVersion(version) != types.V2 {
+		blog.Errorf("eventServer.hostIdentifier.version value is illegal")
+		return nil, errors.New("eventServer.hostIdentifier.version value is illegal")
 	}
 
 	batchSyncIntervalHours, err := cc.Int("eventServer.hostIdentifier.batchSyncIntervalHours")
@@ -79,6 +93,7 @@ func ParseIdentifierConf() (*HostIdentifierConf, error) {
 
 	return &HostIdentifierConf{
 		StartUp:                startUp,
+		Version:                types.ApiVersion(version),
 		BatchSyncIntervalHours: batchSyncIntervalHours,
 		LinuxFileConf:          linuxFileConfig,
 		WinFileConf:            winFileConfig,

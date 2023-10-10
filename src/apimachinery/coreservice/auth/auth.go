@@ -23,7 +23,8 @@ import (
 
 // AuthClientInterface TODO
 type AuthClientInterface interface {
-	SearchAuthResource(ctx context.Context, h http.Header, param metadata.PullResourceParam) (metadata.PullResourceResponse, error)
+	SearchAuthResource(ctx context.Context, h http.Header,
+		param metadata.PullResourceParam) (metadata.PullResourceResponse, error)
 }
 
 // NewAuthClientInterface TODO

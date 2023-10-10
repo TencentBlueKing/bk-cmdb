@@ -216,7 +216,7 @@
               repType: 'host_biz_chart'
             },
             {
-              name: this.$t('按云区域统计'),
+              name: this.$t('按管控区域统计'),
               repType: 'host_cloud_chart'
             },
             {

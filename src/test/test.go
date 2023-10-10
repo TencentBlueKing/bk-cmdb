@@ -11,10 +11,14 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/test/run"
@@ -24,6 +28,7 @@ import (
 )
 
 var clientSet apimachinery.ClientSetInterface
+var adminClient adminserver.AdminServerClientInterface
 var tConfig TestConfig
 var reportUrl string
 var reportDir string
@@ -50,9 +55,10 @@ type RedisConfig struct {
 
 func init() {
 	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
-	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load test.")
+	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load ")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
-	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0, "the load test total request,it has higher priority than SustainSeconds")
+	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0,
+		"the load test total request,it has higher priority than SustainSeconds")
 	flag.IntVar(&tConfig.DBWriteKBSize, "write-size", 1, "MongoDB write size , unit is KB.")
 	flag.StringVar(&tConfig.RedisCfg.RedisAddress, "redis-addr", "127.0.0.1:6379", "redis host address with port")
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
@@ -91,6 +97,16 @@ func init() {
 	}
 	clientSet, err = apimachinery.NewApiMachinery(c, disc)
 	Expect(err).Should(BeNil())
+
+	// initialize admin-server client set, because migrate needs a longer timeout
+	adminApiConfig := &util.APIMachineryConfig{
+		QPS:       20000,
+		Burst:     10000,
+		ExtraConf: &util.ExtraClientConfig{ResponseHeaderTimeout: 5 * time.Minute},
+	}
+	adminClientSet, err := apimachinery.NewApiMachinery(adminApiConfig, disc)
+	Expect(err).Should(BeNil())
+	adminClient = adminClientSet.AdminServer()
 	// wait for get the apiserver address.
 	time.Sleep(1 * time.Second)
 	fmt.Println("**** initialize clientSet success ***")
@@ -118,7 +134,7 @@ func GetHeader() http.Header {
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
-	// clientSet.AdminServer().ClearDatabase(context.Background(), GetHeader())
+
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
@@ -130,11 +146,15 @@ func ClearDatabase() {
 	tables, err := db.ListTables(context.Background())
 	Expect(err).Should(BeNil())
 	for _, tableName := range tables {
-		db.DropTable(context.Background(), tableName)
+		err = db.DropTable(context.Background(), tableName)
+		Expect(err).Should(BeNil())
 	}
-	db.Close()
-	clientSet.AdminServer().Migrate(context.Background(), "0", "community", GetHeader())
-	clientSet.AdminServer().RunSyncDBIndex(context.Background(), GetHeader())
+	_ = db.Close()
+
+	err = adminClient.Migrate(context.Background(), "0", "community", GetHeader())
+	Expect(err).Should(BeNil())
+	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
+	Expect(err).Should(BeNil())
 }
 
 // GetReportUrl TODO
@@ -156,4 +176,101 @@ func GetReportDir() string {
 // GetDB TODO
 func GetDB() *local.Mongo {
 	return db
+}
+
+// DeleteAllBizs delete all non-default bizs, used to clean biz data without ClearDatabase
+func DeleteAllBizs() {
+	ctx := context.Background()
+
+	biz := make([]metadata.BizInst, 0)
+	bizCond := mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBNIN: []string{"资源池", "蓝鲸"}}}
+	err := GetDB().Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).All(ctx, &biz)
+	Expect(err).NotTo(HaveOccurred())
+
+	if len(biz) == 0 {
+		return
+	}
+
+	DeleteAllHosts()
+	DeleteAllObjects()
+
+	bizIDs := make([]int64, len(biz))
+	for i, b := range biz {
+		bizIDs[i] = b.BizID
+	}
+
+	tableNames := []string{common.BKTableNameBaseSet, common.BKTableNameBaseModule, common.BKTableNameSetTemplate,
+		common.BKTableNameSetTemplateAttr, common.BKTableNameServiceTemplate, common.BKTableNameServiceTemplateAttr,
+		common.BKTableNameProcessTemplate, common.BKTableNameServiceCategory, common.BKTableNamePropertyGroup,
+		common.BKTableNameObjAttDes, kubetypes.BKTableNameBaseCluster, kubetypes.BKTableNameBaseNode,
+		kubetypes.BKTableNameBaseNamespace, kubetypes.BKTableNameBaseWorkload, kubetypes.BKTableNameBaseDeployment,
+		kubetypes.BKTableNameBaseStatefulSet, kubetypes.BKTableNameBaseDaemonSet, kubetypes.BKTableNameGameDeployment,
+		kubetypes.BKTableNameGameStatefulSet, kubetypes.BKTableNameBaseCronJob, kubetypes.BKTableNameBaseJob,
+		kubetypes.BKTableNameBasePodWorkload, kubetypes.BKTableNameBaseCustom, kubetypes.BKTableNameBasePod,
+		kubetypes.BKTableNameBaseContainer, common.BKTableNameBaseApp}
+
+	delCond := mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}}
+	for _, table := range tableNames {
+		err = GetDB().Table(table).Delete(ctx, delCond)
+		Expect(err).NotTo(HaveOccurred())
+	}
+}
+
+// DeleteAllHosts delete all hosts and their related data, used to clean host data without ClearDatabase
+func DeleteAllHosts() {
+	ctx := context.Background()
+
+	tableNames := []string{common.BKTableNameBaseHost, common.BKTableNameModuleHostConfig,
+		common.BKTableNameServiceInstance, common.BKTableNameProcessInstanceRelation, common.BKTableNameBaseProcess}
+
+	for _, table := range tableNames {
+		err := GetDB().Table(table).Delete(ctx, mapstr.New())
+		Expect(err).NotTo(HaveOccurred())
+	}
+}
+
+// DeleteAllObjects delete all non-default objects, used to clean object data without ClearDatabase
+func DeleteAllObjects() {
+	ctx := context.Background()
+
+	delCond := mapstr.MapStr{"creator": mapstr.MapStr{common.BKDBNE: "cc_system"}}
+	objects := make([]metadata.Object, 0)
+	err := GetDB().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKObjIDField, common.BkSupplierAccount).
+		All(ctx, &objects)
+	Expect(err).NotTo(HaveOccurred())
+
+	if len(objects) == 0 {
+		return
+	}
+
+	objIDs := make([]string, len(objects))
+	for i, obj := range objects {
+		err = db.DropTable(ctx, common.GetInstTableName(obj.ObjectID, obj.OwnerID))
+		Expect(err).NotTo(HaveOccurred())
+		err = db.DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, obj.OwnerID))
+		Expect(err).NotTo(HaveOccurred())
+		objIDs[i] = obj.ObjectID
+	}
+
+	objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
+	objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
+		"cc_ObjectBaseMapping"}
+	for _, table := range objTables {
+		err = db.Table(table).Delete(ctx, objCond)
+		Expect(err).NotTo(HaveOccurred())
+	}
+
+	// compensate for mainline object association
+	mainlineCond := mapstr.MapStr{
+		common.AssociationKindIDField: common.AssociationKindMainline,
+		common.BKAsstObjIDField:       common.BKInnerObjIDApp,
+	}
+	mainlineData := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDSet}
+	err = db.Table(common.BKTableNameObjAsst).Update(ctx, mainlineCond, mainlineData)
+	Expect(err).NotTo(HaveOccurred())
+
+	asstObjCond := mapstr.MapStr{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
+	err = db.Table(common.BKTableNameObjAsst).Delete(ctx,
+		mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{objCond, asstObjCond}})
+	Expect(err).NotTo(HaveOccurred())
 }

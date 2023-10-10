@@ -20,6 +20,9 @@
     :draggable="false"
     :mask-close="true"
     @after-leave="handleHidden">
+    <template slot="header">
+      <div :title="title" class="title-text">{{ title }} </div>
+    </template>
     <bk-table class="preview-table"
       ref="table"
       v-bkloading="{ isLoading: $loading() }"
@@ -45,12 +48,18 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff">
+      </cmdb-table-empty>
     </bk-table>
   </bk-dialog>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+
   export default {
     props: {
       id: {
@@ -67,7 +76,13 @@
             limit: 10, 'limit-list': [10, 50, 100, 500]
           }, false),
           sort: '-create_time',
-          list: []
+          list: [],
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         },
         isShow: false
       }
@@ -124,6 +139,14 @@
       async setPreviewProperties() {
         try {
           const previewProperties = await this.$tools.getDefaultHeaderProperties(this.properties)
+
+          if (this.details.bk_obj_id === BUILTIN_MODELS.HOST) {
+            const innerIPv6 = this.properties.find(item => item.bk_property_id === 'bk_host_innerip_v6')
+            if (innerIPv6) {
+              previewProperties.splice(1, 0, innerIPv6)
+            }
+          }
+
           this.previewProperties = Object.freeze(previewProperties)
         } catch (error) {
           console.error(error)
@@ -165,7 +188,7 @@
       },
       renderHeader(h, property) {
         if (!this.table.pagination.count || property.bk_property_id !== 'bk_host_innerip') {
-          return this.$tools.getHeaderPropertyName(property)
+          return <div v-bk-overflow-tips class="table-label">{ this.$tools.getHeaderPropertyName(property) }</div>
         }
         const attrs = {
           // eslint-disable-next-line no-underscore-dangle
@@ -215,5 +238,21 @@
                 color: #63656e;
             }
         }
+    }
+    .title-text{
+        display: inline-block;
+        width: 100%;
+        font-size: 20px;
+        color: #313238;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 0;
+    }
+   :deep(.table-label){
+        overflow: hidden;
+        white-space: nowrap;
+        word-wrap: normal;
+        text-overflow: ellipsis;
     }
 </style>

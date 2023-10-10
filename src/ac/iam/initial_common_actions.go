@@ -79,6 +79,7 @@ func GenerateCommonActions() []CommonAction {
 				{ID: DeleteResourcePoolHost},
 				{ID: ResourcePoolHostTransferToBusiness},
 				{ID: ResourcePoolHostTransferToDirectory},
+				{ID: ManageHostAgentID},
 				{ID: CreateResourcePoolDirectory},
 				{ID: EditResourcePoolDirectory},
 				{ID: DeleteResourcePoolDirectory},

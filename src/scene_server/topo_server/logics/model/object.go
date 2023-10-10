@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // ObjectOperationInterface object operation methods
@@ -33,6 +34,8 @@ type ObjectOperationInterface interface {
 	CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error)
 	// DeleteObject delete model by query condition
 	DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst bool) (*metadata.Object, error)
+	// DeleteTableObject delete table model by query condition
+	DeleteTableObject(kit *rest.Kit, objID, propertyID string, id int64) (*metadata.Object, error)
 	// FindObjectTopo search object topo by condition
 	FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.ObjectTopo, error)
 	// FindSingleObject find a object by objectID
@@ -45,6 +48,7 @@ type ObjectOperationInterface interface {
 	CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject) ([]metadata.Object, error)
 	// SearchObjectsWithTotalInfo search object with it's attribute and association
 	SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []int64) (*metadata.TotalObjectInfo, error)
+	SetProxy(attr AttributeOperationInterface)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -60,6 +64,12 @@ func NewObjectOperation(client apimachinery.ClientSetInterface,
 type object struct {
 	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
+	attr        AttributeOperationInterface
+}
+
+// SetProxy SetProxy
+func (o *object) SetProxy(attr AttributeOperationInterface) {
+	o.attr = attr
 }
 
 // IsObjectExist check whether objID is a real model's bk_obj_id field in backend
@@ -258,6 +268,61 @@ func (o *object) DeleteObject(kit *rest.Kit, cond mapstr.MapStr, needCheckInst b
 	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("delete object %s success, save audit log failed, err: %v, rid: %s", obj.ObjectName, err,
 			kit.Rid)
+		return nil, err
+	}
+
+	return &obj, nil
+}
+
+// DeleteTableObject delete model by query condition
+func (o *object) DeleteTableObject(kit *rest.Kit, objID, propertyID string, id int64) (*metadata.Object, error) {
+
+	// get model by conditon
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKObjIDField: objID,
+		},
+		DisableCounter: true,
+	}
+
+	objs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("failed to find objects by query(%#v), err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(objs.Info) == 0 {
+		blog.V(3).Infof("object not found, id: %v, propertyID: %v, rid: %s", id, propertyID, kit.Rid)
+		return nil, nil
+	}
+
+	if len(objs.Info) > 1 {
+		return nil, kit.CCError.CCError(common.CCErrCommGetMultipleObject)
+	}
+
+	obj := objs.Info[0]
+	input := &metadata.DeleteTableOption{
+		ObjID:      objID,
+		ID:         id,
+		PropertyID: propertyID,
+	}
+
+	if err = o.clientSet.CoreService().Model().DeleteTableModelCascade(kit.Ctx, kit.Header, input); err != nil {
+		blog.Errorf("delete the object by the id(%d) failed, err: %v, rid: %s", obj.ID, err, kit.Rid)
+		return nil, err
+	}
+
+	// save audit log.
+	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, &obj)
+	if err != nil {
+		blog.Errorf("generate audit log failed, obj name: %s, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
+		return nil, err
+	}
+
+	if err = audit.SaveAuditLog(kit, *auditLog); err != nil {
+		blog.Errorf("save audit log failed, err: %v, rid: %s", obj.ObjectName, err, kit.Rid)
 		return nil, err
 	}
 
@@ -537,7 +602,7 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
-		if err := util.ValidModelIDField(data[metadata.ModelFieldObjectID],
+		if err := valid.ValidModelIDField(data[metadata.ModelFieldObjectID],
 			metadata.ModelFieldObjectID, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object id(%s), rid: %s", metadata.ModelFieldObjectID, kit.Rid)
 			return nil, err
@@ -545,7 +610,7 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 	}
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
-		if err := util.ValidModelNameField(data[metadata.ModelFieldObjectName],
+		if err := valid.ValidModelNameField(data[metadata.ModelFieldObjectName],
 			metadata.ModelFieldObjectName, kit.CCError); err != nil {
 			blog.Errorf("failed to valid the object name(%s), rid: %s", metadata.ModelFieldObjectName, kit.Rid)
 			return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
@@ -788,7 +853,16 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			groupIndex += 1
 			createdGroup[item.PropertyGroupName] = struct{}{}
 		}
-
+		if item.PropertyType == common.FieldTypeEnumQuote {
+			if item.IsMultiple == nil {
+				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+			}
+			if err := o.attr.ValidObjIDAndInstID(kit, objID, item.Option, *item.IsMultiple); err != nil {
+				blog.Errorf("check enum quote option objID and instID failed, value: %+v, err: %v, rid: %s",
+					item.Option, err, kit.Rid)
+				return err
+			}
+		}
 		item.Creator = kit.User
 		attrs = append(attrs, item)
 	}
@@ -836,11 +910,21 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 		}
 	}
 
+	if err := o.saveCreateAttrAuditLog(kit, rspAttr.Created, attrs); err != nil {
+		blog.Errorf("save create object attr audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (o *object) saveCreateAttrAuditLog(kit *rest.Kit, rspAttrs []metadata.CreatedDataResult,
+	attrs []metadata.Attribute) error {
 	// generate audit log of model attribute.
 	audit := auditlog.NewObjectAttributeAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 
-	for _, item := range rspAttr.Created {
+	for _, item := range rspAttrs {
 		attrs[item.OriginIndex].ID = int64(item.ID)
 		auditLog, err := audit.GenerateAuditLog(generateAuditParameter, int64(item.ID), &attrs[item.OriginIndex])
 		if err != nil {
@@ -856,7 +940,6 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 			return err
 		}
 	}
-
 	return nil
 }
 

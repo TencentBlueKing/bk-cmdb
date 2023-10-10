@@ -71,8 +71,8 @@ func NewSuccessResp(data interface{}) *Response {
 
 // Response TODO
 type Response struct {
-	BaseResp `json:",inline"`
-	Data     interface{} `json:"data" mapstructure:"data"`
+	BaseResp `json:",inline" bson:",inline"`
+	Data     interface{} `json:"data" bson:"data" mapstructure:"data"`
 }
 
 // CountResponseContent count action response content.
@@ -568,4 +568,16 @@ func (f *CommonCountFilter) GetConditions() (map[string]interface{}, error) {
 	}
 
 	return mgoFilter, nil
+}
+
+// ImportInstRes batch create instance by excel result
+type ImportInstRes struct {
+	Errors  []string `json:"error"`
+	Success []int64  `json:"success"`
+}
+
+// ImportInstResp batch create instance by excel result response
+type ImportInstResp struct {
+	BaseResp `json:",inline"`
+	Data     ImportInstRes `json:"data"`
 }

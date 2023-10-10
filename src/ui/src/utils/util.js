@@ -81,3 +81,28 @@ export const camelize = cached((str, separator = '-') => {
   const camelizeRE = new RegExp(`${separator}(\\w)`, 'g')
   return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
 })
+
+export const swapItem = (arr, fromIndex, toIndex) => {
+  // eslint-disable-next-line prefer-destructuring
+  arr[toIndex] = arr.splice(fromIndex, 1, arr[toIndex])[0]
+  return arr
+}
+
+export const escapeRegexChar = (str) => {
+  // eslint-disable-next-line no-useless-escape
+  const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
+  return str.replace(escapeCharRE, '\\$1')
+}
+
+/**
+ * @param {*} event 事件对象
+ * @param {*} cb 回调
+ * @param {*} keyCode 调用回调的键值数组 默认为回车键
+ */
+export const keyupCallMethod = (event, cb, keyCode = [13]) => {
+  if (!event || typeof cb !== 'function' || !keyCode instanceof Array) return
+  const { keyCode: nowKey } = event
+  if (keyCode.includes(nowKey)) {
+    cb?.()
+  }
+}

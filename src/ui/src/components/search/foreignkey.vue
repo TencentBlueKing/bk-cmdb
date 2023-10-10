@@ -17,6 +17,7 @@
     v-bind="$attrs"
     :multiple="multiple"
     :loading="$loading(requestId)"
+    :remote-method="searchArea"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"
@@ -33,6 +34,8 @@
 
 <script>
   import activeMixin from './mixins/active'
+  import debounce from 'lodash.debounce'
+
   export default {
     name: 'cmdb-search-foreignkey',
     mixins: [activeMixin],
@@ -78,23 +81,32 @@
         return info.join(' | ')
       }
     },
-    async created() {
-      try {
-        const { info } = await this.$store.dispatch('cloud/area/findMany', {
-          params: {
-            page: {
-              sort: 'bk_cloud_name'
+    created() {
+      this.getCloudArea()
+      this.searchArea =  debounce(this.getCloudArea, 300)
+    },
+    methods: {
+      async getCloudArea(key) {
+        try {
+          const { info } = await this.$store.dispatch('cloud/area/findMany', {
+            params: {
+              condition: {
+                bk_cloud_name: key
+              },
+              is_fuzzy: true,
+              page: {
+                sort: 'bk_cloud_name'
+              }
+            },
+            config: {
+              requestId: this.requestId
             }
-          },
-          config: {
-            requestId: this.requestId,
-            fromCache: true
-          }
-        })
-        this.options = info
-      } catch (error) {
-        console.error(error)
-      }
+          })
+          this.options = info
+        } catch (error) {
+          console.error(error)
+        }
+      },
     }
   }
 </script>

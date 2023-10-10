@@ -17,7 +17,8 @@ function createIdProperty(objId) {
   const keyMap = {
     [BUILTIN_MODELS.BUSINESS]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS].ID,
     [BUILTIN_MODELS.BUSINESS_SET]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID,
-    [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID
+    [BUILTIN_MODELS.HOST]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.HOST].ID,
+    [BUILTIN_MODELS.PROJECT]: BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID
   }
   return {
     id: Date.now(),
@@ -39,7 +40,7 @@ function createIdProperty(objId) {
 
 export const find = async (params, config, injectId = false) => {
   try {
-    const properties = await http.post('find/objectattr', params, config)
+    const properties = await http.post('find/objectattr/web', params, config)
 
     if (!injectId) {
       return properties

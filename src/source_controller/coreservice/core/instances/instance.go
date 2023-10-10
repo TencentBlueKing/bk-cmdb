@@ -40,7 +40,8 @@ type instanceManager struct {
 }
 
 // New create a new instance manager instance
-func New(dependent OperationDependences, language language.CCLanguageIf, clientSet apimachinery.ClientSetInterface) core.InstanceOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf,
+	clientSet apimachinery.ClientSetInterface) core.InstanceOperation {
 	return &instanceManager{
 		dependent: dependent,
 		language:  language,
@@ -48,7 +49,8 @@ func New(dependent OperationDependences, language language.CCLanguageIf, clientS
 	}
 }
 
-func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
+func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool,
+	err error) {
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	cnt, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
@@ -56,24 +58,35 @@ func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapSt
 }
 
 // CreateModelInstance TODO
-func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
+func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
+	inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
 	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
-		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, kit.Rid)
+		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID,
+			inputParam.Data, kit.Rid)
 		return nil, err
 	}
 	validator, err := m.newValidator(kit, objID, bizID)
 	if err != nil {
-		blog.Errorf("CreateModelInstance failed, newValidator err:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, kit.Rid)
+		blog.Errorf("CreateModelInstance failed, newValidator err:%v, objID:%s, data:%#v, rid:%s", err, objID,
+			inputParam.Data, kit.Rid)
 		return nil, err
+	}
+
+	tableData := mapstr.New()
+	for key, val := range inputParam.Data {
+		if validator.properties[key].PropertyType == common.FieldTypeInnerTable {
+			tableData[key] = val
+		}
 	}
 
 	err = m.validCreateInstanceData(kit, objID, inputParam.Data, validator)
 	if nil != err {
-		blog.Errorf("CreateModelInstance failed, validCreateInstanceData error:%v, objID:%s, data:%#v, rid:%s", err, objID, inputParam.Data, rid)
+		blog.Errorf("CreateModelInstance failed, validCreateInstanceData error:%v, objID:%s, data:%#v, rid:%s", err,
+			objID, inputParam.Data, rid)
 		return nil, err
 	}
 
@@ -81,6 +94,11 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string, input
 	if err != nil {
 		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
 			err, objID, inputParam.Data, kit.Rid)
+		return nil, err
+	}
+
+	// attach the instance with the quoted instances
+	if err = m.dependent.AttachQuotedInst(kit, objID, id, tableData); err != nil {
 		return nil, err
 	}
 
@@ -171,6 +189,54 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
 	return dataResult, nil
 }
 
+// BatchCreateModelInstance batch create model instance, if one of instances fails to create, an error is returned.
+func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
+	inputParam *metadata.BatchCreateModelInstOption) (*metadata.BatchCreateInstRespData, error) {
+
+	result := new(metadata.BatchCreateInstRespData)
+	if len(inputParam.Data) == 0 {
+		return result, nil
+	}
+
+	instValidators, err := m.getValidatorsFromInstances(kit, objID, inputParam.Data, common.ValidCreate)
+	if err != nil {
+		blog.Errorf("get inst(%#v) validators failed, err: %v, obj: %s, data: %v, rid: %s", err, objID, inputParam.Data,
+			kit.Rid)
+		return nil, err
+	}
+
+	for idx := range inputParam.Data {
+		if inputParam.Data[idx] == nil {
+			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
+			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
+		}
+		inputParam.Data[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+
+		validator := instValidators[idx]
+		if validator == nil {
+			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", objID, inputParam.Data[idx], kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommNotFound)
+		}
+		err = m.validCreateInstanceData(kit, objID, inputParam.Data[idx], validator)
+		if err != nil {
+			blog.Errorf("valid create instance data(%#v) failed, err: %v, obj: %s, rid: %s", err, inputParam.Data[idx],
+				objID, kit.Rid)
+			return nil, err
+		}
+	}
+
+	ids, err := m.batchSave(kit, objID, inputParam.Data)
+	if err != nil {
+		return nil, err
+	}
+	result.IDs = make([]int64, len(ids))
+	for idx := range ids {
+		result.IDs[idx] = int64(ids[idx])
+	}
+
+	return result, nil
+}
+
 // UpdateModelInstance update model instances
 func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
@@ -199,14 +265,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 		return nil, err
 	}
 
-	instIDFieldName := common.GetInstIDField(objID)
 	for index, origin := range origins {
-		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
-		if err != nil {
-			blog.Errorf("parse inst id failed, err: %v, objID: %s, data: %#v, rid: %s", err, objID, origin, kit.Rid)
-			return nil, err
-		}
-
 		validator := instValidators[index]
 		if validator == nil {
 			blog.Errorf("get validator failed, objID: %s, inst: %#v, rid: %s", err, objID, origin, kit.Rid)
@@ -226,8 +285,8 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 			return nil, err
 		}
 
-		if err = m.validUpdateInstanceData(kit, objID, inputParam.Data, origin, validator, instID,
-			inputParam.CanEditAll, isMainline); err != nil {
+		if err = m.validUpdateInstanceData(kit, objID, inputParam.Data, origin, validator, inputParam.CanEditAll,
+			isMainline); err != nil {
 			blog.Errorf("update instance validation failed, err: %v, objID: %s, update data: %#v, inst: %#v, rid: %s",
 				err, objID, inputParam.Data, origin, kit.Rid)
 			return nil, err
@@ -251,44 +310,31 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 }
 
 // updateHostProcessBindIP if hosts' ips are updated, update processes which binds the changed ip
-func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData mapstr.MapStr, origins []mapstr.MapStr) error {
-	innerIP, innerIPExist := updateData[common.BKHostInnerIPField]
-	outerIP, outerIPExist := updateData[common.BKHostOuterIPField]
-
-	firstInnerIP := getFirstIP(innerIP)
-	firstOuterIP := getFirstIP(outerIP)
+func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, data mapstr.MapStr, origins []mapstr.MapStr) error {
+	updatedHostFirstIPMap := make(map[string]string)
+	for _, hostField := range metadata.ProcBindIPHostFieldMap {
+		ip, ipExist := data[hostField]
+		if ipExist {
+			updatedHostFirstIPMap[hostField] = getFirstIP(ip)
+		}
+	}
 
 	// get all hosts whose first ip changes
-	innerIPUpdatedHostMap := make(map[int64]bool)
-	outerIPUpdatedHostMap := make(map[int64]bool)
 	hostIDs := make([]int64, 0)
-	var err error
 
 	for _, origin := range origins {
-		var hostID int64
+		for field, updatedFirstIP := range updatedHostFirstIPMap {
+			if getFirstIP(origin[field]) == updatedFirstIP {
+				continue
+			}
 
-		if innerIPExist && getFirstIP(origin[common.BKHostInnerIPField]) != firstInnerIP {
-			hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
+			hostID, err := util.GetInt64ByInterface(origin[common.BKHostIDField])
 			if err != nil {
 				blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
 				return err
 			}
-			innerIPUpdatedHostMap[hostID] = true
-		}
-
-		if outerIPExist && getFirstIP(origin[common.BKHostOuterIPField]) != firstOuterIP {
-			if hostID == 0 {
-				hostID, err = util.GetInt64ByInterface(origin[common.BKHostIDField])
-				if err != nil {
-					blog.Errorf("host ID invalid, err: %v, host: %+v, rid: %s", err, origin, kit.Rid)
-					return err
-				}
-			}
-			outerIPUpdatedHostMap[hostID] = true
-		}
-
-		if hostID != 0 {
 			hostIDs = append(hostIDs, hostID)
+			break
 		}
 	}
 
@@ -296,44 +342,19 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 		return nil
 	}
 
-	// get hosts related process and template relations
-	processRelations := make([]metadata.ProcessInstanceRelation, 0)
-	processRelationFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-
-	err = mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Fields(
-		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &processRelations)
+	// get process templates and their relation to process ids
+	procTempMap, processTemplates, err := m.getUpdateIPHostProcTempInfo(kit, hostIDs)
 	if err != nil {
-		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return err
 	}
 
-	if len(processRelations) == 0 {
+	if len(procTempMap) == 0 || len(processTemplates) == 0 {
 		return nil
 	}
 
-	processTemplateIDs := make([]int64, len(processRelations))
-	processTemplateMap := make(map[int64][]int64)
-	for index, relation := range processRelations {
-		processTemplateIDs[index] = relation.ProcessTemplateID
-		processTemplateMap[relation.ProcessTemplateID] = append(processTemplateMap[relation.ProcessTemplateID], relation.ProcessID)
-	}
-
-	// get all processes whose templates has corresponding bind ip
-	processTemplates := make([]metadata.ProcessTemplate, 0)
-	processTemplateFilter := map[string]interface{}{
-		common.BKFieldID:                      map[string]interface{}{common.BKDBIN: processTemplateIDs},
-		"property.bind_info.as_default_value": true,
-	}
-
-	err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
-		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
-	if err != nil {
-		blog.Errorf("get process template failed, err: %v, processTemplateIDs: %+v, rid: %s", err, processTemplateIDs, kit.Rid)
-		return err
-	}
-
+	// update process whose process template has the bind ip that is changed
 	for _, processTemplate := range processTemplates {
-		data := make(map[string]interface{})
+		updateProc := make(map[string]interface{})
 
 		for index, value := range processTemplate.Property.BindInfo.Value {
 			if value.Std == nil {
@@ -346,18 +367,15 @@ func (m *instanceManager) updateHostProcessBindIP(kit *rest.Kit, updateData maps
 			}
 
 			if ip.Value != nil {
-				if innerIPExist && *ip.Value == metadata.BindInnerIP {
-					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstInnerIP
-				}
-
-				if outerIPExist && *ip.Value == metadata.BindOuterIP {
-					data[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = firstOuterIP
+				updatedIP, exist := updatedHostFirstIPMap[metadata.ProcBindIPHostFieldMap[*ip.Value]]
+				if exist {
+					updateProc[common.BKProcBindInfo+"."+strconv.Itoa(index)+"."+common.BKIP] = updatedIP
 				}
 			}
 		}
 
-		if len(data) != 0 {
-			if err := m.updateProcessBindIP(kit, data, processTemplateMap[processTemplate.ID]); err != nil {
+		if len(updateProc) != 0 {
+			if err := m.updateProcessBindIP(kit, updateProc, procTempMap[processTemplate.ID]); err != nil {
 				blog.Errorf("update process bind ip failed, err: %v, rid: %s", err, kit.Rid)
 				return err
 			}
@@ -392,12 +410,56 @@ func getFirstIP(ip interface{}) string {
 	return util.GetStrByInterface(ip)
 }
 
+// getUpdateIPHostProcTempInfo get update ip host related process and template info to update process bind ip
+func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []int64) (map[int64][]int64,
+	[]metadata.ProcessTemplate, error) {
+
+	// get hosts related process and template relations
+	procRelations := make([]metadata.ProcessInstanceRelation, 0)
+	procRelationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
+
+	err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(procRelationFilter).Fields(
+		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &procRelations)
+	if err != nil {
+		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
+		return nil, nil, err
+	}
+
+	if len(procRelations) == 0 {
+		return make(map[int64][]int64), make([]metadata.ProcessTemplate, 0), nil
+	}
+
+	procTemplateIDs := make([]int64, len(procRelations))
+	procTempMap := make(map[int64][]int64)
+	for index, relation := range procRelations {
+		procTemplateIDs[index] = relation.ProcessTemplateID
+		procTempMap[relation.ProcessTemplateID] = append(procTempMap[relation.ProcessTemplateID], relation.ProcessID)
+	}
+
+	// get all processes whose template has corresponding bind info
+	processTemplates := make([]metadata.ProcessTemplate, 0)
+	processTemplateFilter := map[string]interface{}{
+		common.BKFieldID:                      map[string]interface{}{common.BKDBIN: procTemplateIDs},
+		"property.bind_info.as_default_value": true,
+	}
+
+	err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
+		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
+	if err != nil {
+		blog.Errorf("get process template failed, ids: %+v, err: %v, rid: %s", err, procTemplateIDs, kit.Rid)
+		return nil, nil, err
+	}
+
+	return procTempMap, processTemplates, nil
+}
+
 // updateProcessBindIP update processes using changed ip
 func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
 
 	if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
-		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data, kit.Rid)
+		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data,
+			kit.Rid)
 		return err
 	}
 
@@ -405,7 +467,8 @@ func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]int
 }
 
 // SearchModelInstance TODO
-func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string,
+	inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
@@ -415,7 +478,8 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		}
 		objIDCond, ok := inputParam.Condition[common.BKObjIDField]
 		if ok && objIDCond != objID {
-			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
+			blog.V(9).Infof("searchInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID,
+				kit.Rid)
 			return nil, nil
 		}
 		inputParam.Condition[common.BKObjIDField] = objID
@@ -507,8 +571,9 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 }
 
 // DeleteModelInstance TODO
-func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	instIDs := []int64{}
+func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
+	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+	instIDs := make([]int64, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
@@ -525,9 +590,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		if nil != err {
 			return nil, err
 		}
-		if metadata.IsCommon(objID) {
-			instIDs = append(instIDs, instID)
-		}
+		instIDs = append(instIDs, instID)
 
 		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
 		if nil != err {
@@ -541,7 +604,8 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	// delete object instance data.
 	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
-		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID, err.Error(), inputParam.Condition, kit.Rid)
+		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID,
+			err.Error(), inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -554,12 +618,18 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 		}
 	}
 
+	// delete these instances' quoted instances
+	if err = m.dependent.DeleteQuotedInst(kit, objID, instIDs); err != nil {
+		return nil, err
+	}
+
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
 // CascadeDeleteModelInstance TODO
-func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	instIDs := []int64{}
+func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string,
+	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+	instIDs := make([]int64, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
 
@@ -574,9 +644,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
-		if metadata.IsCommon(objID) {
-			instIDs = append(instIDs, instID)
-		}
+		instIDs = append(instIDs, instID)
 
 		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
 		if nil != err {
@@ -598,6 +666,11 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 				objID, err.Error(), instIDs, kit.Rid)
 			return nil, err
 		}
+	}
+
+	// delete these instances' quoted instances
+	if err = m.dependent.DeleteQuotedInst(kit, objID, instIDs); err != nil {
+		return nil, err
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil

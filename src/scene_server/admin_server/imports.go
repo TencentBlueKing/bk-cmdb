@@ -81,4 +81,16 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202208032125"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202209231617"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202209281408"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202302031117"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202302062350"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202303072103"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202303301611"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202303301718"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202304012150"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202305110949"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202305151505"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.10.202307171520"
+
+	// v3.11.x
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.11.202309050900"
 )

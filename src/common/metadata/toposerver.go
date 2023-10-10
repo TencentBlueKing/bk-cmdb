@@ -126,7 +126,7 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawEr
 		if key, err := option.BizSetPropertyFilter.Validate(op); err != nil {
 			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{(key)},
+				Args:    []interface{}{key},
 			}
 		}
 
@@ -141,7 +141,7 @@ func (option *PreviewBusinessSetRequest) Validate(allowNoLimit bool) ccErr.RawEr
 		if key, err := option.Filter.Validate(op); err != nil {
 			return ccErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsNeedSet,
-				Args:    []interface{}{(key)},
+				Args:    []interface{}{key},
 			}
 		}
 
@@ -539,4 +539,160 @@ type UpdateBizSetOption struct {
 type UpdateBizSetData struct {
 	BizSetAttr mapstr.MapStr `json:"bk_biz_set_attr"`
 	Scope      *BizSetScope  `json:"bk_scope"`
+}
+
+// CreateProjectOption create project option
+type CreateProjectOption struct {
+	Data []mapstr.MapStr `json:"data"`
+}
+
+// Validate validate CreateProjectOption
+func (p *CreateProjectOption) Validate() ccErr.RawErrorInfo {
+	if len(p.Data) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if len(p.Data) > common.BKWriteOpLimit {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"data", common.BKWriteOpLimit},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ProjectInstResp pod instance response
+type ProjectInstResp struct {
+	BaseResp `json:",inline"`
+	Data     ProjectDataResp `json:"data"`
+}
+
+// ProjectDataResp project data response
+type ProjectDataResp struct {
+	IDs []int64 `json:"ids"`
+}
+
+// UpdateProjectOption update project option
+type UpdateProjectOption struct {
+	IDs  []int64       `json:"ids"`
+	Data mapstr.MapStr `json:"data"`
+}
+
+// Validate validate UpdateProjectOption
+func (p *UpdateProjectOption) Validate() ccErr.RawErrorInfo {
+	if p.Data == nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"data"},
+		}
+	}
+
+	if len(p.IDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
+		}
+	}
+
+	if len(p.IDs) > common.BKWriteOpLimit {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", common.BKWriteOpLimit},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// SearchProjectOption search project option
+type SearchProjectOption struct {
+	Filter *querybuilder.QueryFilter `json:"filter"`
+	Fields []string                  `json:"fields,omitempty"`
+	Page   BasePage                  `json:"page,omitempty"`
+}
+
+// Validate validate SearchProjectOption
+func (q *SearchProjectOption) Validate() ccErr.RawErrorInfo {
+	if err := q.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
+		return err
+	}
+
+	if q.Filter == nil {
+		return ccErr.RawErrorInfo{}
+	}
+
+	op := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if key, err := q.Filter.Validate(op); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{key},
+		}
+	}
+
+	if q.Filter.GetDeep() > querybuilder.MaxDeep {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// DeleteProjectOption delete project option
+type DeleteProjectOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate validate DeleteProjectOption
+func (p *DeleteProjectOption) Validate() ccErr.RawErrorInfo {
+	if len(p.IDs) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"ids"},
+		}
+	}
+
+	if len(p.IDs) > common.BKWriteOpLimit {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", common.BKWriteOpLimit},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// UpdateProjectIDOption update project bk_project_id option
+type UpdateProjectIDOption struct {
+	ID        int64  `json:"id"`
+	ProjectID string `json:"bk_project_id"`
+}
+
+// Validate validate UpdateProjectIDOption
+func (p *UpdateProjectIDOption) Validate() ccErr.RawErrorInfo {
+	if p.ID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKFieldID},
+		}
+	}
+
+	if p.ProjectID == "" {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKProjectIDField},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
 }

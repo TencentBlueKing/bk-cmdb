@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // ClassificationOperationInterface classification operation methods
@@ -206,7 +207,20 @@ func (c *classification) getClassificationObjects(kit *rest.Kit, classifications
 
 // FindClassification search classification
 func (c *classification) FindClassification(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.Classification, error) {
-	input := &metadata.QueryCondition{Condition: cond}
+
+	input := &metadata.QueryCondition{
+		Condition: map[string]interface{}{
+			common.BKDBAND: []map[string]interface{}{
+				cond,
+				{
+					common.BKClassificationTypeField: mapstr.MapStr{
+						common.BKDBNE: metadata.HiddenType,
+					},
+				},
+			},
+		},
+		DisableCounter: true,
+	}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(kit.Ctx, kit.Header, input)
 	if err != nil {
 		blog.ErrorJSON("find classification failed, err: %s, cond: %s, rid: %s", err, cond, kit.Rid)
@@ -271,14 +285,14 @@ func (c *classification) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapSt
 	}
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
-		if err := util.ValidModelIDField(data[metadata.ClassFieldClassificationID],
+		if err := valid.ValidModelIDField(data[metadata.ClassFieldClassificationID],
 			metadata.ClassFieldClassificationID, kit.CCError); err != nil {
 			return nil, err
 		}
 	}
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationName) {
-		if err := util.ValidModelNameField(data[metadata.ClassFieldClassificationName],
+		if err := valid.ValidModelNameField(data[metadata.ClassFieldClassificationName],
 			metadata.ClassFieldClassificationName, kit.CCError); err != nil {
 			return nil, err
 		}

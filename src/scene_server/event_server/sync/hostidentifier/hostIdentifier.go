@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
@@ -27,7 +28,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/gse/client"
 	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
 	pushfile "configcenter/src/thirdparty/gse/push_file_forsyncdata"
@@ -49,6 +52,8 @@ const (
 	hostIdentifierBatchSyncPerLimit = 200
 	// metricsNamespacePrefix is prefix of metrics namespace.
 	metricsNamespacePrefix = "cmdb_sync_data"
+	// v2ApiAgentOnStatus express agent status is on about use gse api gateway api
+	v2ApiAgentOnStatus = "2"
 )
 
 type hostIdentifierMetric struct {
@@ -71,6 +76,8 @@ type HostIdentifier struct {
 	ctx                 context.Context
 	gseTaskServerClient *client.GseTaskServerClient
 	gseApiServerClient  *client.GseApiServerClient
+	gseApiGWClient      gse.GseClientInterface
+	apiVersion          types.ApiVersion
 	winFileConfig       *FileConf
 	linuxFileConfig     *FileConf
 	watchLimiter        flowctrl.RateLimiter
@@ -80,17 +87,23 @@ type HostIdentifier struct {
 
 // NewHostIdentifier new HostIdentifier struct
 func NewHostIdentifier(ctx context.Context, redisCli redis.Client, engine *backbone.Engine, conf *HostIdentifierConf,
-	taskClient *client.GseTaskServerClient, apiClient *client.GseApiServerClient) (*HostIdentifier, error) {
+	apiGWClient gse.GseClientInterface, taskClient *client.GseTaskServerClient,
+	apiClient *client.GseApiServerClient, apiVersion types.ApiVersion) (*HostIdentifier, error) {
+	if apiGWClient == nil && (apiClient == nil || taskClient == nil) {
+		return nil, errors.New("connect to gse client is missing")
+	}
 	h := &HostIdentifier{
 		redisCli:            redisCli,
 		ctx:                 ctx,
 		engine:              engine,
 		gseTaskServerClient: taskClient,
 		gseApiServerClient:  apiClient,
+		gseApiGWClient:      apiGWClient,
 		winFileConfig:       conf.WinFileConf,
 		linuxFileConfig:     conf.LinuxFileConf,
 		watchLimiter:        flowctrl.NewRateLimiter(conf.RateLimiter.Qps, conf.RateLimiter.Burst),
 		fullLimiter:         flowctrl.NewRateLimiter(conf.RateLimiter.Qps, conf.RateLimiter.Burst),
+		apiVersion:          apiVersion,
 	}
 
 	h.registerMetrics()
@@ -211,32 +224,116 @@ func (h *HostIdentifier) WatchToSyncHostIdentifier() {
 			continue
 		}
 
-		h.watchToSyncHostIdentifier(events, rid)
+		h.watchToSyncHostIdentifier(events, header, rid)
 
 		eventOp.setCursor(lastCursor, rid)
 	}
 }
 
-func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, rid string) {
-
+func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, header http.Header, rid string) {
 	// 1、查询主机状态
-	statusReq := new(getstatus.AgentStatusRequest)
+	statusReqList := make([]StatusReq, 0)
 	for _, event := range events {
-		info := buildForStatus(strconv.FormatInt(event.CloudID, 10), event.InnerIP)
-		statusReq.Hosts = append(statusReq.Hosts, info...)
+		statusReqList = append(statusReqList, StatusReq{
+			CloudID:      strconv.FormatInt(event.CloudID, 10),
+			InnerIP:      event.InnerIP,
+			AgentID:      event.AgentID,
+			BKAddressing: event.BKAddressing,
+		})
 	}
 
-	resp, err := h.getAgentStatus(statusReq, true, rid)
+	resp, err := h.getAgentStatus(statusReqList, true, header, rid)
 	if err != nil {
 		blog.Errorf("get agent status error, host: %v, err: %v, rid: %s", events, err, rid)
 		return
 	}
 
 	// 2、将处于on状态的主机拿出来构造推送信息
+	task, hostInfos := h.getTaskFromEvent(events, resp, rid)
+	if task == nil || (len(task.V1Task) == 0 && len(task.V2Task) == 0) {
+		return
+	}
+
+	// 3、推送主机身份信息
+	h.watchLimiter.AcceptMany(int64(len(hostInfos)))
+	if _, err := h.pushFile(true, hostInfos, task, header, rid); err != nil {
+		blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
+	}
+}
+
+func (h *HostIdentifier) getTaskFromEvent(events []*IdentifierEvent, statusMap map[string]string, rid string) (
+	*TaskInfo, []*HostInfo) {
+
+	switch h.apiVersion {
+	case types.V2:
+		return h.getV2Task(events, statusMap, rid)
+
+	case types.V1:
+		return h.getV1Task(events, statusMap, rid)
+	}
+
+	return nil, nil
+}
+
+func (h *HostIdentifier) getV2Task(events []*IdentifierEvent, statusMap map[string]string, rid string) (*TaskInfo,
+	[]*HostInfo) {
+
+	fList := make([]*gse.Task, 0)
+	hostInfos := make([]*HostInfo, 0)
+	for _, event := range events {
+		agentID := event.AgentID
+		if agentID != "" {
+			if statusMap[event.AgentID] != v2ApiAgentOnStatus {
+				blog.Infof("agent status is off, agentID: %s, rid: %s", event.AgentID, rid)
+				h.metric.agentStatusTotal.WithLabelValues("off").Inc()
+				continue
+			}
+		} else {
+			ids := buildV2ForStatus(strconv.FormatInt(event.CloudID, 10), event.InnerIP)
+			isOn := false
+			for _, id := range ids {
+				if statusMap[id] == v2ApiAgentOnStatus {
+					isOn = true
+					agentID = id
+					break
+				}
+			}
+
+			if !isOn {
+				blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s", event.HostID, event.InnerIP,
+					event.CloudID, rid)
+				h.metric.agentStatusTotal.WithLabelValues("off").Inc()
+				continue
+			}
+		}
+
+		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
+		blog.Infof("agent status is on, agentID: %s, rid: %s", event.AgentID, rid)
+
+		file := h.buildV2PushFile(event.RawEvent, agentID)
+		fList = append(fList, file)
+		hostInfos = append(hostInfos, &HostInfo{
+			HostID:       event.HostID,
+			CloudID:      event.CloudID,
+			BKAddressing: event.BKAddressing,
+			AgentID:      agentID,
+			HostInnerIP:  event.InnerIP,
+		})
+	}
+
+	taskInfo := &TaskInfo{
+		V2Task: fList,
+	}
+	return taskInfo, hostInfos
+}
+
+func (h *HostIdentifier) getV1Task(events []*IdentifierEvent, statusMap map[string]string, rid string) (*TaskInfo,
+	[]*HostInfo) {
+
 	fList := make([]*pushfile.API_FileInfoV2, 0)
 	hostInfos := make([]*HostInfo, 0)
 	for _, event := range events {
-		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(event.CloudID, 10), event.InnerIP, resp.Result_)
+		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(event.CloudID, 10), event.InnerIP, statusMap)
 		if !isOn {
 			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s",
 				event.HostID, event.InnerIP, event.CloudID, rid)
@@ -245,10 +342,10 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 		}
 
 		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
-		blog.Infof("agent status is on, hostID: %d, ip: %s, cloudID: %d, rid: %s",
-			event.HostID, hostIP, event.CloudID, rid)
+		blog.Infof("agent status is on, hostID: %d, ip: %s, cloudID: %d, rid: %s", event.HostID, hostIP, event.CloudID,
+			rid)
 
-		file := h.buildPushFile(event.RawEvent, hostIP, event.CloudID)
+		file := h.buildV1PushFile(event.RawEvent, hostIP, event.CloudID)
 		fList = append(fList, file)
 		hostInfos = append(hostInfos, &HostInfo{
 			HostID:      event.HostID,
@@ -257,15 +354,10 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 		})
 	}
 
-	if len(fList) == 0 {
-		return
+	taskInfo := &TaskInfo{
+		V1Task: fList,
 	}
-
-	// 3、推送主机身份信息
-	h.watchLimiter.AcceptMany(int64(len(fList)))
-	if _, err := h.pushFile(true, hostInfos, fList, rid); err != nil {
-		blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
-	}
+	return taskInfo, hostInfos
 }
 
 // FullSyncHostIdentifier Fully synchronize host identity
@@ -280,7 +372,8 @@ func (h *HostIdentifier) FullSyncHostIdentifier() {
 		header, rid := newHeaderWithRid()
 		ctx, header := util.SetReadPreference(h.ctx, header, common.SecondaryPreferredMode)
 		option := &metadata.ListHosts{
-			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField},
+			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField,
+				common.BKAddressingField, common.BKAgentIDField},
 			Page: metadata.BasePage{
 				Start: start,
 				Limit: hostIdentifierBatchSyncPerLimit,
@@ -313,24 +406,52 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 	}
 
 	// 1、查询主机状态
-	statusReq := &getstatus.AgentStatusRequest{}
+	statusReqList := make([]StatusReq, 0)
 	for _, hostInfo := range hosts {
-		info := buildForStatus(util.GetStrByInterface(hostInfo[common.BKCloudIDField]),
-			util.GetStrByInterface(hostInfo[common.BKHostInnerIPField]))
-
-		statusReq.Hosts = append(statusReq.Hosts, info...)
+		statusReqList = append(statusReqList, StatusReq{
+			CloudID:      util.GetStrByInterface(hostInfo[common.BKCloudIDField]),
+			InnerIP:      util.GetStrByInterface(hostInfo[common.BKHostInnerIPField]),
+			AgentID:      util.GetStrByInterface(hostInfo[common.BKAgentIDField]),
+			BKAddressing: util.GetStrByInterface(hostInfo[common.BKAddressingField]),
+		})
 	}
 
-	resp, err := h.getAgentStatus(statusReq, false, rid)
+	resp, err := h.getAgentStatus(statusReqList, false, header, rid)
 	if err != nil {
 		blog.Errorf("get agent status error,  hostInfo: %v, err: %v, rid: %s", hosts, err, rid)
 		return nil, err
 	}
 
 	// 2、将处于on状态的主机拿出来构造主机身份推送信息
+	hostIDs, hostInfos, hostMap := h.getOnStatusAgent(hosts, resp, rid)
+	if len(hostIDs) == 0 {
+		return nil, errors.New("the host agent status is off")
+	}
+
+	// 3、查询主机身份并推送
+	return h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, rid, header)
+}
+
+func (h *HostIdentifier) getOnStatusAgent(hosts []map[string]interface{}, statusMap map[string]string, rid string) (
+	[]int64, []*HostInfo, map[int64]string) {
+
+	switch h.apiVersion {
+	case types.V2:
+		return h.getV2OnStatusAgent(hosts, statusMap, rid)
+
+	case types.V1:
+		return h.getV1OnStatusAgent(hosts, statusMap, rid)
+	}
+
+	return nil, nil, nil
+}
+
+func (h *HostIdentifier) getV2OnStatusAgent(hosts []map[string]interface{}, statusMap map[string]string, rid string) (
+	[]int64, []*HostInfo, map[int64]string) {
+
 	hostIDs := make([]int64, 0)
 	hostInfos := make([]*HostInfo, 0)
-	// 此map保存hostID和该host处于on的agent的ip的对应关系
+	// 此map保存hostID和该host处于on的agent的agentID的对应关系
 	hostMap := make(map[int64]string)
 	for _, hostInfo := range hosts {
 		hostID, err := util.GetInt64ByInterface(hostInfo[common.BKHostIDField])
@@ -338,13 +459,77 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 			blog.Errorf("get hostID error, hostInfo: %v, error: %v, rid: %s", hostInfo, err, rid)
 			continue
 		}
+
 		cloudID, err := util.GetInt64ByInterface(hostInfo[common.BKCloudIDField])
 		if err != nil {
 			blog.Errorf("get cloudID error, hostInfo: %v, error: %v, rid: %s", hostInfo, err, rid)
 			continue
 		}
 		innerIP := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
-		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(cloudID, 10), innerIP, resp.Result_)
+
+		agentID := util.GetStrByInterface(hostInfo[common.BKAgentIDField])
+		if agentID != "" {
+			if statusMap[agentID] != v2ApiAgentOnStatus {
+				blog.Infof("agent status is off, agentID: %s, hostID: %d, rid: %s", agentID, hostID, rid)
+				h.metric.agentStatusTotal.WithLabelValues("off").Inc()
+				continue
+			}
+		} else {
+			ids := buildV2ForStatus(strconv.FormatInt(cloudID, 10), innerIP)
+			isOn := false
+			for _, id := range ids {
+				if statusMap[id] == v2ApiAgentOnStatus {
+					isOn = true
+					agentID = id
+				}
+			}
+
+			if !isOn {
+				blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s", hostID, innerIP, cloudID,
+					rid)
+				h.metric.agentStatusTotal.WithLabelValues("off").Inc()
+				continue
+			}
+		}
+
+		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
+		hostIDs = append(hostIDs, hostID)
+		hostMap[hostID] = agentID
+		addressing := util.GetStrByInterface(hostInfo[common.BKAddressingField])
+		hostInfos = append(hostInfos, &HostInfo{
+			HostID:       hostID,
+			AgentID:      agentID,
+			BKAddressing: addressing,
+			HostInnerIP:  innerIP,
+			CloudID:      cloudID,
+		})
+	}
+
+	return hostIDs, hostInfos, hostMap
+}
+
+func (h *HostIdentifier) getV1OnStatusAgent(hosts []map[string]interface{}, statusMap map[string]string, rid string) (
+	[]int64, []*HostInfo, map[int64]string) {
+
+	hostIDs := make([]int64, 0)
+	// 此map保存hostID和该host处于on的agent的ip的对应关系
+	hostMap := make(map[int64]string)
+	hostInfos := make([]*HostInfo, 0)
+	for _, hostInfo := range hosts {
+		hostID, err := util.GetInt64ByInterface(hostInfo[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("get hostID error, hostInfo: %v, error: %v, rid: %s", hostInfo, err, rid)
+			continue
+		}
+
+		cloudID, err := util.GetInt64ByInterface(hostInfo[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("get cloudID error, hostInfo: %v, error: %v, rid: %s", hostInfo, err, rid)
+			continue
+		}
+
+		innerIP := util.GetStrByInterface(hostInfo[common.BKHostInnerIPField])
+		isOn, hostIP := getStatusOnAgentIP(strconv.FormatInt(cloudID, 10), innerIP, statusMap)
 		if !isOn {
 			blog.Infof("agent status is off, hostID: %d, ip: %s, cloudID: %d, rid: %s", hostID, innerIP, cloudID, rid)
 			h.metric.agentStatusTotal.WithLabelValues("off").Inc()
@@ -361,24 +546,105 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		})
 	}
 
-	if len(hostIDs) == 0 {
-		return nil, errors.New("the host agent status is off")
-	}
-
-	// 3、查询主机身份并推送
-	return h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, rid, header)
+	return hostIDs, hostInfos, hostMap
 }
 
-func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
-	always bool, rid string) (*getstatus.AgentStatusResponse, error) {
+func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, always bool, header http.Header, rid string) (
+	map[string]string, error) {
+
+	if len(statusReqList) == 0 {
+		return nil, errors.New("agent request array is empty")
+	}
+
+	switch h.apiVersion {
+	case types.V2:
+		result, err := h.getAgentStatusByV2Api(statusReqList, always, header)
+		if err != nil {
+			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
+		return result, nil
+
+	case types.V1:
+		result, err := h.getAgentStatusByV1Api(statusReqList, always, rid)
+		if err != nil {
+			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
+			return nil, err
+		}
+		h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
+		return result, nil
+	}
+
+	return nil, errors.New("can not find api about get agent status")
+}
+
+func (h *HostIdentifier) getAgentStatusByV2Api(statusReqList []StatusReq, always bool, header http.Header) (
+	map[string]string, error) {
+
+	// build agentID request list
+	agentIDList := make([]string, 0)
+	for _, statusReq := range statusReqList {
+		if statusReq.AgentID != "" {
+			agentIDList = append(agentIDList, statusReq.AgentID)
+			continue
+		}
+
+		if statusReq.BKAddressing == common.BKAddressingStatic {
+			list := buildV2ForStatus(statusReq.CloudID, statusReq.InnerIP)
+			agentIDList = append(agentIDList, list...)
+		}
+	}
+
+	if len(agentIDList) == 0 {
+		return nil, errors.New("can not build agentID info to find agent status")
+	}
+
+	// find agent status
+	req := &gse.ListAgentStateRequest{
+		AgentIDList: agentIDList,
+	}
+	statusMap := make(map[string]string)
+	failCount := 0
+	var err error
+	var resp *gse.ListAgentStateResp
+	for always || failCount < retryTimes {
+		resp, err = h.gseApiGWClient.ListAgentState(h.ctx, header, req)
+		if err != nil {
+			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
+			failCount++
+			sleepForFail(failCount)
+			continue
+		}
+
+		for _, agentStatus := range resp.Data {
+			statusMap[agentStatus.BKAgentID] = strconv.Itoa(agentStatus.StatusCode)
+		}
+		break
+	}
+
+	if !always && failCount >= retryTimes {
+		return nil, err
+	}
+
+	return statusMap, nil
+}
+
+func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, always bool, rid string) (map[string]string,
+	error) {
+
+	req := new(getstatus.AgentStatusRequest)
+	for _, statusReq := range statusReqList {
+		info := buildForStatus(statusReq.CloudID, statusReq.InnerIP)
+		req.Hosts = append(req.Hosts, info...)
+	}
 
 	var err error
 	failCount := 0
 	resp := new(getstatus.AgentStatusResponse)
-
 	// 调用gse api server 查询agent状态
 	for always || failCount < retryTimes {
-		resp, err = h.gseApiServerClient.GetAgentStatus(context.Background(), status)
+		resp, err = h.gseApiServerClient.GetAgentStatus(context.Background(), req)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
 			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
@@ -401,11 +667,32 @@ func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
 		return nil, errors.New("find agent status from apiServer error")
 	}
 
-	h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
-	return resp, nil
+	return resp.Result_, nil
 }
 
-func (h *HostIdentifier) buildPushFile(hostIdentifier, hostIP string, cloudID int64) *pushfile.API_FileInfoV2 {
+func (h *HostIdentifier) buildV2PushFile(hostIdentifier, agentID string) *gse.Task {
+	osType := gjson.Get(hostIdentifier, common.BKOSTypeField).String()
+	conf := h.getHostIdentifierFileConf(osType)
+	fileOwner := conf.FileOwner
+	// 如果是window系统，并且通过cloudID:ip的方式下发，代表是window的安装了1.0agent的机器，需要设置成特殊的owner
+	if osType == common.HostOSTypeEnumWindows && strings.Contains(agentID, ":") {
+		fileOwner = v1AgentFileOwner
+	}
+
+	return &gse.Task{
+		FileName:    conf.FileName,
+		StoreDir:    conf.FilePath,
+		FileContent: hostIdentifier,
+		Owner:       fileOwner,
+		Right:       conf.FilePrivilege,
+		AgentIDList: []string{agentID},
+	}
+}
+
+// v1AgentFileOwner 由于安装agent1.0的window系统，下发主机身份时，文件的所有者只能是root，所以涉及到的地方需要进行特殊处理，配置成该值
+const v1AgentFileOwner = "root"
+
+func (h *HostIdentifier) buildV1PushFile(hostIdentifier, hostIP string, cloudID int64) *pushfile.API_FileInfoV2 {
 	fileInfo := &pushfile.API_FileInfoV2{
 		MFile: &pushfile.API_BaseFileInfo{
 			MMd5: strMd5(hostIdentifier),
@@ -428,6 +715,10 @@ func (h *HostIdentifier) buildPushFile(hostIdentifier, hostIP string, cloudID in
 	fileInfo.MFile.MName = conf.FileName
 	fileInfo.MFile.MPath = conf.FilePath
 	fileInfo.MFile.MOwner = conf.FileOwner
+	// thrift的接口只会通过cloudID:innerIP的方式路由到1.0的agent，所以对于window操作系统可以直接设置
+	if osType == common.HostOSTypeEnumWindows {
+		fileInfo.MFile.MOwner = v1AgentFileOwner
+	}
 	fileInfo.MFile.MRight = conf.FilePrivilege
 	fileInfo.MFile.MBackupName = conf.FileName + ".bak"
 
@@ -456,22 +747,52 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 
 	// 2、构造想要推送的主机身份文件信息
 	fileList := make([]*pushfile.API_FileInfoV2, 0)
+	file2List := make([]*gse.Task, 0)
 	for _, identifier := range rsp.Info {
 		hostIdentifier, err := json.Marshal(identifier)
 		if err != nil {
 			blog.Errorf("marshal host identifier failed, val: %v, err: %v, rid: %s", identifier, err, rid)
 			continue
 		}
-		fileList = append(fileList, h.buildPushFile(string(hostIdentifier), hostMap[identifier.HostID],
-			identifier.CloudID))
+
+		switch h.apiVersion {
+		case types.V1:
+			fileList = append(fileList, h.buildV1PushFile(string(hostIdentifier), hostMap[identifier.HostID],
+				identifier.CloudID))
+			continue
+
+		case types.V2:
+			file := h.buildV2PushFile(string(hostIdentifier), hostMap[identifier.HostID])
+			file2List = append(file2List, file)
+			continue
+		}
 	}
 
-	if len(fileList) == 0 {
-		blog.Errorf("get host identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
-		return nil, errors.New("get host identifier success, but can not build file to push")
+	switch h.apiVersion {
+	case types.V1:
+		if len(fileList) == 0 {
+			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
+			return nil, errors.New("get host identifier success, but can not build file to push")
+		}
+
+	case types.V2:
+		if len(file2List) == 0 {
+			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
+			return nil, errors.New("get host identifier success, but can not build file to push")
+		}
 	}
 
 	// 3、推送主机身份信息
-	h.fullLimiter.AcceptMany(int64(len(fileList)))
-	return h.pushFile(false, hostInfos, fileList, rid)
+	task := new(TaskInfo)
+	switch h.apiVersion {
+	case types.V1:
+		h.fullLimiter.AcceptMany(int64(len(fileList)))
+		task.V1Task = fileList
+
+	case types.V2:
+		h.fullLimiter.AcceptMany(int64(len(file2List)))
+		task.V2Task = file2List
+	}
+
+	return h.pushFile(false, hostInfos, task, header, rid)
 }

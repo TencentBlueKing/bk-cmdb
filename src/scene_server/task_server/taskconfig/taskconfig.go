@@ -41,11 +41,14 @@ var (
 // init task queue
 func init() {
 	AddCodeTaskConfig(common.SyncSetTaskFlag, types.CC_MODULE_TOPO, "/topo/v3/internal/sync/module/task", 1, 2)
-	AddCodeTaskConfig(common.SyncModuleTaskFlag, types.CC_MODULE_PROC, "/process/v3/sync/service_instance/task", 1, 2)
+	AddCodeTaskConfig(common.SyncModuleTaskFlag, types.CC_MODULE_PROC, "/process/v3/sync/service_instance/task", 1, 10)
 	AddCodeTaskConfig(common.SyncModuleHostApplyTaskFlag, types.CC_MODULE_HOST,
 		"/host/v3/updatemany/module/host_apply_plan/task", 1, 2)
 	AddCodeTaskConfig(common.SyncServiceTemplateHostApplyTaskFlag, types.CC_MODULE_PROC,
 		"/process/v3/updatemany/service_template/host_apply_plan/task", 1, 2)
+	AddCodeTaskConfig(common.SyncFieldTemplateTaskFlag, types.CC_MODULE_TOPO,
+		"/topo/v3/sync/field_template/object/task", 1, 2)
+
 }
 
 // AddCodeTaskConfig add task

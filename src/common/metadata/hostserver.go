@@ -134,13 +134,13 @@ type HostToAppModule struct {
 	IsIncrement bool     `json:"is_increment"`
 }
 
-// HostCommonSearch TODO
+// HostCommonSearch the structure of the host common query condition
 type HostCommonSearch struct {
 	AppID     int64             `json:"bk_biz_id,omitempty"`
-	Ip        IPInfo            `json:"ip"`
+	Ipv4Ip    IPInfo            `json:"ip"`
+	Ipv6Ip    IPInfo            `json:"ipv6"`
 	Condition []SearchCondition `json:"condition"`
 	Page      BasePage          `json:"page"`
-	Pattern   string            `json:"pattern,omitempty"`
 }
 
 // SetCommonSearch TODO
@@ -426,7 +426,8 @@ func (option ListHostsParameter) Validate() (string, error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -459,7 +460,8 @@ func (option ListHostsWithNoBizParameter) Validate() (string, error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -511,7 +513,8 @@ func (option ListBizHostsTopoParameter) Validate(errProxy errors.DefaultCCErrorI
 			return errProxy.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("module_property_filter.%s", key))
 		}
 		if option.ModulePropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "module_property_filter.rules", querybuilder.MaxDeep)
+			return errProxy.CCErrorf(common.CCErrCommXXExceedLimit, "module_property_filter.rules",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -603,7 +606,8 @@ func (option ListHosts) Validate() (errKey string, err error) {
 			return fmt.Sprintf("host_property_filter.%s", key), err
 		}
 		if option.HostPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d", querybuilder.MaxDeep)
+			return "host_property_filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
+				querybuilder.MaxDeep)
 		}
 	}
 
@@ -1066,6 +1070,128 @@ func (h *HostIDArray) Validate() (rawError errors.RawErrorInfo) {
 		}
 	}
 	return errors.RawErrorInfo{}
+}
+
+// HostAgentRelation host id and agent id relation pair
+type HostAgentRelation struct {
+	HostID  int64  `json:"bk_host_id"`
+	AgentID string `json:"bk_agent_id"`
+}
+
+// Validate validate the HostAgentRelation
+func (b *HostAgentRelation) Validate() errors.RawErrorInfo {
+	if b.HostID <= 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKHostIDField},
+		}
+	}
+
+	if len(b.AgentID) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAgentIDField},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// BindAgentParam bind gse agent to host request parameter
+type BindAgentParam struct {
+	List []HostAgentRelation `json:"list"`
+}
+
+// Validate validate the BindAgentParam
+func (b *BindAgentParam) Validate() errors.RawErrorInfo {
+	if len(b.List) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"list"},
+		}
+	}
+
+	if len(b.List) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"list", common.BKMaxWriteOpLimit},
+		}
+	}
+
+	for _, param := range b.List {
+		if rawErr := param.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// UnbindAgentParam unbind gse agent and host request parameter
+type UnbindAgentParam struct {
+	List []HostAgentRelation `json:"list"`
+}
+
+// Validate validate the UnbindAgentParam
+func (b *UnbindAgentParam) Validate() (rawError errors.RawErrorInfo) {
+	if len(b.List) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"list"},
+		}
+	}
+
+	if len(b.List) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"list", common.BKMaxWriteOpLimit},
+		}
+	}
+
+	for _, param := range b.List {
+		if rawErr := param.Validate(); rawErr.ErrCode != 0 {
+			return rawErr
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// HostListParam host list param
+type HostListParam struct {
+	ApplicationID int64           `json:"bk_biz_id"`
+	HostList      []mapstr.MapStr `json:"bk_host_list"`
+}
+
+// Validate validate HostListParam
+func (h *HostListParam) Validate() errors.RawErrorInfo {
+	if len(h.HostList) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_host_list"},
+		}
+	}
+
+	if len(h.HostList) > common.BKMaxWriteOpLimit {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_host_list", common.BKMaxWriteOpLimit},
+		}
+	}
+
+	if h.ApplicationID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"bk_biz_id"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// HostIDsResp the response about add host to business interface
+type HostIDsResp struct {
+	HostIDs []int64 `json:"bk_host_ids"`
 }
 
 // CountHostCPUReq count host cpu num request

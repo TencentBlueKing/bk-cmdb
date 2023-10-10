@@ -20,7 +20,8 @@ import (
 )
 
 // Post TODO
-func (tq *taskQueue) Post(ctx context.Context, header http.Header, path string, data interface{}) (resp *metadata.Response, err error) {
+func (tq *taskQueue) Post(ctx context.Context, header http.Header, path string,
+	data interface{}) (resp *metadata.Response, err error) {
 	resp = &metadata.Response{}
 
 	err = tq.client.Post().

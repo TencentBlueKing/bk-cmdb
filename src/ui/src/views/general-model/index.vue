@@ -77,7 +77,7 @@
       <div class="options-filter clearfix fr">
         <cmdb-property-selector class="filter-selector"
           v-model="filter.field"
-          :properties="properties"
+          :properties="fastSearchProperties"
           :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
         <component class="filter-value"
@@ -117,18 +117,20 @@
         class-name="bk-table-selection">
       </bk-table-column>
       <bk-table-column v-for="column in table.header"
-        sortable="custom"
-        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: true })"
+        :sortable="getColumnSortable(column.property) ? 'custom' : false"
+        :min-width="$tools.getHeaderPropertyMinWidth(column.property, { hasSort: getColumnSortable(column.property) })"
         :key="column.id"
         :prop="column.id"
         :label="column.name"
-        show-overflow-tooltip>
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
         <template slot-scope="{ row }">
           <cmdb-property-value
             :theme="column.id === 'bk_inst_id' ? 'primary' : 'default'"
             :show-unit="false"
             :value="row[column.id]"
             :property="column.property"
+            :instance="row"
+            show-on="cell"
             @click.native.stop="handleValueClick(row, column)">
           </cmdb-property-value>
         </template>
@@ -148,7 +150,8 @@
         slot="empty"
         :auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
         :stuff="table.stuff"
-        @create="handleCreate">
+        @create="handleCreate"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
     <bk-sideslider
@@ -180,14 +183,16 @@
         </cmdb-form-multiple>
       </template>
     </bk-sideslider>
-    <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')">
+    <bk-sideslider v-transfer-dom :is-show.sync="columnsConfig.show" :width="600" :title="$t('列表显示属性配置')"
+      :before-close="handleColumnsConfigSliderBeforeClose">
       <cmdb-columns-config slot="content"
         v-if="columnsConfig.show"
+        ref="cmdbColumnsConfig"
         :properties="properties"
         :selected="columnsConfig.selected"
         :disabled-columns="columnsConfig.disabledColumns"
         @on-apply="handleApplyColumnsConfig"
-        @on-cancel="columnsConfig.show = false"
+        @on-cancel="handleColumnsConfigSliderBeforeClose"
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
@@ -225,6 +230,7 @@
   import instanceImportService from '@/service/instance/import'
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -360,6 +366,9 @@
       },
       isMainLineModel() {
         return this.isMainLine(this.model)
+      },
+      fastSearchProperties() {
+        return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       }
     },
     watch: {
@@ -542,6 +551,9 @@
         } else if (operator === '$in') {
           // eslint-disable-next-line no-nested-ternary
           value = Array.isArray(value) ? value : !!value ? [value] : []
+          if (this.filterType === PROPERTY_TYPES.ENUMQUOTE) {
+            value = value.map(val => Number(val))
+          }
         } else if (operator === '$regex') {
           value = Array.isArray(value) ? (value[0] || '') : value
         } else if (Array.isArray(value)) {
@@ -651,7 +663,9 @@
         }))
       },
       updateFilter(properties = []) {
-        const availableProperties = properties.filter(property => property.bk_obj_id === this.objId)
+        const availableProperties = properties
+          .filter(property => property.bk_obj_id === this.objId
+            && property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
         availableProperties.forEach((property) => {
           // eslint-disable-next-line max-len
           const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
@@ -722,9 +736,10 @@
               _t: Date.now()
             })
           }
+          const { filter, filter_adv: filterAdv } = this.$route.query
+          this.table.stuff.type = (filter && String(filter).length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
-          this.table.stuff.type = this.$route.query?.s?.length ? 'search' : 'default'
         } catch (err) {
           console.error(err)
           if (err.permission) {
@@ -878,20 +893,12 @@
       handleSliderBeforeClose() {
         if (this.tab.active === 'attribute') {
           const $form = this.attribute.type === 'multiple' ? this.$refs.multipleForm : this.$refs.form
+          const confirmFn = () => {
+            this.attribute.type === 'multiple' ? this.handleMultipleCancel : this.handleCancel
+          }
           if ($form.hasChange) {
-            return new Promise((resolve) => {
-              this.$bkInfo({
-                title: this.$t('确认退出'),
-                subTitle: this.$t('退出会导致未保存信息丢失'),
-                extCls: 'bk-dialog-sub-header-center',
-                confirmFn: () => {
-                  resolve(true)
-                },
-                cancelFn: () => {
-                  resolve(false)
-                }
-              })
-            })
+            $form.setChanged(true)
+            return $form.beforeClose(confirmFn)
           }
           return true
         }
@@ -919,7 +926,8 @@
               bk_obj_id: this.objId
             })
           },
-          success: () => RouterQuery.set({ _t: Date.now() })
+          success: () => RouterQuery.set({ _t: Date.now() }),
+          error: () => RouterQuery.set({ _t: Date.now() })
         })
         showImport()
       },
@@ -954,7 +962,7 @@
       },
       updateFilterTagHeight() {
         setTimeout(() => {
-          const el = this.$refs.filterTag.$el
+          const el = this.$refs?.filterTag?.$el
           if (el?.getBoundingClientRect) {
             this.filterTagHeight = el.getBoundingClientRect().height
           } else {
@@ -964,6 +972,27 @@
       },
       resetFastSearch() {
         this.filter = defaultFastSearch()
+      },
+      handleClearFilter() {
+        this.$refs.filterTag.handleResetAll()
+        this.table.stuff.type = 'default'
+      },
+      getColumnSortable(property) {
+        return this.$tools.isPropertySortable(property) ? 'custom' : false
+      },
+      handleColumnsConfigSliderBeforeClose() {
+        const refColumns = this.$refs.cmdbColumnsConfig
+        if (!refColumns) {
+          return
+        }
+        const { columnsChangedValues } = refColumns
+        if (columnsChangedValues?.()) {
+          refColumns.setChanged(true)
+          return refColumns.beforeClose(() => {
+            this.columnsConfig.show = false
+          })
+        }
+        this.columnsConfig.show = false
       }
     }
   }

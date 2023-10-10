@@ -16,10 +16,11 @@
     :width="515"
     :title="title"
     :is-show.sync="isShow"
-    :before-close="beforeClose"
+    :before-close="handleSliderBeforeClose"
     @hidden="handleHidden">
     <bk-form slot="content"
       class="dynamic-group-form"
+      ref="form"
       form-type="vertical"
       v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
       <bk-form-item :label="$t('业务')" required>
@@ -75,17 +76,21 @@
           {{isCreateMode ? $t('提交') : $t('保存')}}
         </bk-button>
       </cmdb-auth>
-      <bk-button class="mr10" theme="default" @click="close">{{$t('取消')}}</bk-button>
+      <bk-button class="mr10" theme="default" @click="handleSliderBeforeClose('cancel')">{{$t('取消')}}</bk-button>
     </div>
   </bk-sideslider>
 </template>
 
 <script>
   import { mapGetters } from 'vuex'
+  import { t } from '@/i18n'
   import FormPropertyList from './form-property-list.vue'
   import FormPropertySelector from './form-property-selector.js'
   import FormTarget from './form-target.vue'
   import RouterQuery from '@/router/query'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
   export default {
     components: {
       FormPropertyList,
@@ -108,7 +113,12 @@
           name: '',
           bk_obj_id: 'host'
         },
+        originFormData: {
+          bk_obj_id: 'host',
+          name: '',
+        },
         selectedProperties: [],
+        originProperties: [],
         request: Object.freeze({
           mainline: Symbol('mainline'),
           property: Symbol('property'),
@@ -118,7 +128,8 @@
         }),
         availableModelIds: Object.freeze(['host', 'module', 'set']),
         availableModels: [],
-        propertyMap: {}
+        propertyMap: {},
+        disabledPropertyMap: {}
       }
     },
     computed: {
@@ -143,6 +154,9 @@
       if (this.id) {
         this.getDetails()
       }
+      const { beforeClose, setChanged } = useSideslider()
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       async getMainLineModels() {
@@ -176,6 +190,12 @@
           })
           propertyMap.module.unshift(this.getServiceTemplateProperty())
           this.propertyMap = Object.freeze(propertyMap)
+
+          Object.keys(this.propertyMap).forEach((objId) => {
+            this.disabledPropertyMap[objId] = this.propertyMap[objId]
+              .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+              .map(item => item.bk_property_id)
+          })
         } catch (error) {
           console.error(error)
           this.propertyMap = {}
@@ -186,7 +206,7 @@
           id: Date.now(),
           bk_obj_id: 'module',
           bk_property_id: 'service_template_id',
-          bk_property_name: this.$t('服务模板'),
+          bk_property_name: t('服务模板'),
           bk_property_index: -1,
           bk_property_type: 'service-template',
           isonly: true,
@@ -209,6 +229,8 @@
             }
           })
           const transformedDetails = this.transformDetails(details)
+          this.originFormData.name = transformedDetails.name
+          this.originFormData.bk_obj_id = transformedDetails.bk_obj_id
           this.formData.name = transformedDetails.name
           this.formData.bk_obj_id = transformedDetails.bk_obj_id
           this.details = transformedDetails
@@ -295,6 +317,7 @@
           })
         })
         this.selectedProperties = properties
+        this.originProperties = properties
       },
       handleModelChange() {
         this.selectedProperties = []
@@ -328,7 +351,7 @@
           } else {
             await this.createDynamicGroup()
           }
-          this.close()
+          this.close('submit')
         } catch (error) {
           console.error(error)
         }
@@ -419,16 +442,28 @@
         })
         return baseConditions
       },
-      close() {
+      close(type) {
         this.isShow = false
-        RouterQuery.set({
-          _t: Date.now()
-        })
+        if (type !== 'normal') {
+          RouterQuery.set({
+            _t: Date.now(),
+            action: ''
+          })
+        }
       },
       show() {
         this.isShow = true
       },
-      beforeClose() {
+      handleSliderBeforeClose(type = 'normal') {
+        const changedValues = !isEqual(this.formData, this.originFormData)
+        const changedProperties =  !isEqual(this.selectedProperties, this.originProperties)
+        if (changedValues || changedProperties) {
+          this.setChanged(true)
+          return this.beforeClose(() => {
+            this.close(type)
+          })
+        }
+        this.close(type)
         return true
       },
       handleHidden() {

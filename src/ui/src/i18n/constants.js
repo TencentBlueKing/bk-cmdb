@@ -28,6 +28,7 @@ export const LANG_SET = Object.freeze([
     id: LANG_KEYS.ZH_CN,
     alias: ['zh-cn'],
     name: '中文',
+    apiLocale: 'zh-cn',
     icon: 'chinese'
   }
 ])

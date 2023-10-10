@@ -49,12 +49,18 @@ spec:
             port: {{ .Values.taskserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.taskserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.taskserver.resources }}
         resources: {{ toYaml .Values.taskserver.resources | nindent 10 }}

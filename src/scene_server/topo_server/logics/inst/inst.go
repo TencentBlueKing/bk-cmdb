@@ -14,10 +14,12 @@
 package inst
 
 import (
-	"sort"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -29,6 +31,7 @@ import (
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/log"
 )
 
 // InstOperationInterface inst operation methods
@@ -39,7 +42,7 @@ type InstOperationInterface interface {
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
 	// CreateInstBatch batch create instance by excel
-	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*BatchResult, error)
+	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*metadata.ImportInstRes, error)
 	// DeleteInst delete instance by objectid and condition
 	DeleteInst(kit *rest.Kit, objectID string, cond mapstr.MapStr, needCheckHost bool) error
 	// DeleteInstByInstID batch delete instance by inst id
@@ -74,15 +77,6 @@ func NewInstOperation(client apimachinery.ClientSetInterface, lang language.CCLa
 		language:    lang,
 		authManager: authManager,
 	}
-}
-
-// BatchResult batch create instance by excel result
-type BatchResult struct {
-	Errors         []string `json:"error"`
-	Success        []string `json:"success"`
-	SuccessCreated []int64  `json:"success_created"`
-	SuccessUpdated []int64  `json:"success_updated"`
-	UpdateErrors   []string `json:"update_error"`
 }
 
 // ObjectWithInsts a struct include object msg and insts array
@@ -250,94 +244,288 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 }
 
 // createInstBatch batch create instance by excel
-func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo,
-	idFieldName string) (*BatchResult, []int64, []int64, error){
-	updatedInstanceIDs := make([]int64, 0)
-	createdInstanceIDs := make([]int64, 0)
-	colIdxErrMap := map[int]string{}
-	colIdxList := make([]int, 0)
-	results := &BatchResult{}
-	for colIdx, colInput := range batchInfo.BatchInfo {
-		if colInput == nil {
+func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
+	*metadata.ImportInstRes, error) {
+
+	relRes, err := c.getObjRelationDestMsg(kit, objID)
+	if err != nil {
+		blog.Errorf("get object relation failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	ccLang := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	result := new(metadata.ImportInstRes)
+
+	for idx, inst := range batchInfo.BatchInfo {
+		if inst == nil {
 			// ignore empty excel line
 			continue
 		}
-
-		delete(colInput, "import_from")
+		delete(inst, "import_from")
 
 		// 实例id 为空，表示要新建实例
 		// 实例ID已经赋值，更新数据.  (已经赋值, value not equal 0 or nil)
 
-		// 是否存在实例ID字段
-		instID, exist := colInput[idFieldName]
+		instID, exist := inst[common.BKInstIDField]
 		if exist && (instID == "" || instID == nil) {
 			exist = false
 		}
 
-		// 实例ID字段是否设置值
-		if exist {
-			instID, err := util.GetInt64ByInterface(colInput[idFieldName])
+		// use new transaction, need a new header
+		kit.Header = kit.NewHeader()
+		_ = c.clientSet.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+			tableData, err := metadata.GetTableData(inst, relRes)
 			if err != nil {
-				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-					"import_row_int_error_str", colIdx, err.Error())
-				colIdxList = append(colIdxList, int(colIdx))
-				colIdxErrMap[int(colIdx)] = errStr
-				continue
+				result.Errors = append(result.Errors, ccLang.Languagef("import_row_int_error_str", idx,
+					err.Error()))
+				return err
 			}
 
-			filter := mapstr.MapStr{idFieldName: instID}
+			if exist {
+				instID, err := util.GetInt64ByInterface(instID)
+				if err != nil {
+					result.Errors = append(result.Errors, ccLang.Languagef("import_row_int_error_str", idx,
+						err.Error()))
+					return err
+				}
 
-			// to update.
-			if err := c.UpdateInst(kit, filter, colInput, objID); err != nil {
-				blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID, colInput,
-					err, kit.Rid)
-				errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-					"import_row_int_error_str", colIdx, err.Error())
-				colIdxList = append(colIdxList, int(colIdx))
-				colIdxErrMap[int(colIdx)] = errStr
-				continue
+				if err := c.updateInstByExcel(kit, objID, tableData, instID, inst); err != nil {
+					blog.Errorf("update instance by excel failed, err: %v, rid: %s", err, kit.Rid)
+					result.Errors = append(result.Errors, ccLang.Languagef("import_row_int_error_str", idx,
+						err.Error()))
+					return err
+				}
+
+				result.Success = append(result.Success, idx)
+				return nil
 			}
 
-			updatedInstanceIDs = append(updatedInstanceIDs, instID)
-			results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
-			continue
-		}
+			if err := c.createInstByExcel(kit, objID, tableData, inst); err != nil {
+				blog.Errorf("create instance by excel failed, err: %v, rid: %s", err, kit.Rid)
+				result.Errors = append(result.Errors, ccLang.Languagef("import_row_int_error_str", idx, err.Error()))
+				return err
+			}
 
-		colInput.Set(common.BKObjIDField, objID)
-		// call CoreService.CreateInstance
-		instCond := &metadata.CreateModelInstance{Data: colInput}
-		rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
+			result.Success = append(result.Success, idx)
+			return nil
+		})
+	}
+
+	return result, nil
+}
+
+func (c *commonInst) updateInstByExcel(kit *rest.Kit, objID string, tableData *metadata.TableData, instID int64,
+	inst mapstr.MapStr) error {
+
+	input := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: instID}}
+	preInst, err := c.FindInst(kit, objID, input)
+	if err != nil {
+		blog.Errorf("find instance failed, objID: %s, input: %v, err: %v, rid: %s", objID, input, err, kit.Rid)
+		return err
+	}
+
+	if len(preInst.Info) == 0 {
+		blog.Errorf("instance does not exist, objID: %s, instID: %v, err: %v, rid: %s", objID, instID, err, kit.Rid)
+		return fmt.Errorf("instance: %d does not exist", instID)
+	}
+
+	// update instance table field type data
+	if tableData != nil {
+		properties, err := c.updateTableData(kit, tableData, instID)
 		if err != nil {
-			blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
-			errStr := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Languagef(
-				"import_row_int_error_str", colIdx, err)
-			colIdxList = append(colIdxList, int(colIdx))
-			colIdxErrMap[int(colIdx)] = errStr
-			continue
+			blog.ErrorJSON("update table data failed, data: %s, err: %s, rid: %s", inst, err, kit.Rid)
+			return err
 		}
 
-		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
+		for property, ids := range properties {
+			inst.Set(property, ids)
+		}
+	}
 
-		if rsp.Created.ID == 0 {
-			blog.Errorf("instances created success, but get id failed, err: %+v, rid: %s", err, kit.Rid)
-			continue
+	if err := c.UpdateInst(kit, mapstr.MapStr{common.BKInstIDField: instID}, inst, objID); err != nil {
+		blog.Errorf("failed to update the object(%s) inst data (%#v), err: %v, rid: %s", objID, inst, err, kit.Rid)
+		return err
+	}
+
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).WithUpdateFields(preInst.Info[0])
+	auditLog, err := audit.GenerateAuditLog(auditParam, objID, []mapstr.MapStr{inst})
+	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
+		blog.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *metadata.TableData,
+	inst mapstr.MapStr) error {
+
+	// add host table field type data
+	if tableData != nil {
+		properties, err := c.addTableData(kit, tableData, 0)
+		if err != nil {
+			blog.ErrorJSON("add table data failed, data: %s, err: %s, rid: %s", tableData, err, kit.Rid)
+			return err
 		}
 
-		createdInstanceIDs = append(createdInstanceIDs, int64(rsp.Created.ID))
+		for property, ids := range properties {
+			inst.Set(property, ids)
+		}
 	}
 
-	// sort error
-	sort.Ints(colIdxList)
-	for colIdx := range colIdxList {
-		results.Errors = append(results.Errors, colIdxErrMap[colIdxList[colIdx]])
+	inst.Set(common.BKObjIDField, objID)
+	instCond := &metadata.CreateModelInstance{Data: inst}
+	rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
+	if err != nil {
+		blog.Errorf("failed to create object instance, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	inst[common.BKInstIDField] = rsp.Created.ID
+
+	// to generate audit log.
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, []mapstr.MapStr{inst})
+	if err != nil {
+		log.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
-	return results, createdInstanceIDs, updatedInstanceIDs, nil
+	err = audit.SaveAuditLog(kit, auditLog...)
+	if err != nil {
+		blog.Errorf("create inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// TODO 与hostserver的getHostRelationDestMsg方法有重复逻辑，后续重构调整
+// getObjRelationDestMsg get object relation, it can only get bk_property_id and dest_model field
+func (c *commonInst) getObjRelationDestMsg(kit *rest.Kit, objID string) ([]metadata.ModelQuoteRelation, error) {
+	opt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{
+			Filter: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{
+							Field:    common.BKSrcModelField,
+							Operator: filter.OpFactory(filter.Equal),
+							Value:    objID,
+						},
+					},
+				},
+			},
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		Fields: []string{common.BKPropertyIDField, common.BKDestModelField},
+	}
+
+	relRes, err := c.clientSet.CoreService().ModelQuote().ListModelQuoteRelation(kit.Ctx, kit.Header, opt)
+	if err != nil {
+		return nil, err
+	}
+	return relRes.Info, nil
+}
+
+// TODO 与hostserver的addTableData方法重复，后续重构处理
+func (c *commonInst) addTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) (map[string][]uint64, error) {
+	audit := auditlog.NewQuotedInstAuditLog(c.clientSet.CoreService())
+	genAuditParams := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	var auditLogs []metadata.AuditLog
+	result := make(map[string][]uint64)
+	for destModel, table := range tableData.ModelData {
+		if id != 0 {
+			for idx := range table {
+				table[idx].Set(common.BKInstIDField, id)
+			}
+		}
+		ids, err := c.clientSet.CoreService().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, destModel,
+			table)
+		if err != nil {
+			return nil, err
+		}
+
+		propertyID := tableData.ModelPropertyRel[destModel]
+		// generate and save audit logs
+		for i := range table {
+			table[i][common.BKFieldID] = ids[i]
+			result[propertyID] = append(result[propertyID], ids[i])
+		}
+
+		auditLog, ccErr := audit.GenerateAuditLog(genAuditParams, destModel, tableData.SrcModel, propertyID, table)
+		if ccErr != nil {
+			return nil, ccErr
+		}
+		auditLogs = append(auditLogs, auditLog...)
+	}
+
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return result, nil
+}
+
+// TODO 与hostserver的updateTableData方法重复，后续重构处理
+// updateTableData update table data
+func (c *commonInst) updateTableData(kit *rest.Kit, tableData *metadata.TableData, id int64) (
+	map[string][]uint64, error) {
+
+	audit := auditlog.NewQuotedInstAuditLog(c.clientSet.CoreService())
+	genAuditParams := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
+	filterOpt := metadata.CommonFilterOption{
+		Filter: filtertools.GenAtomFilter(common.BKInstIDField, filter.Equal, id),
+	}
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: filterOpt,
+		Page:               metadata.BasePage{Limit: common.BKMaxPageSize},
+	}
+
+	var auditLogs []metadata.AuditLog
+	for destModel := range tableData.ModelData {
+		listRes, err := c.clientSet.CoreService().ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, destModel,
+			listOpt)
+		if err != nil {
+			return nil, err
+		}
+
+		err = c.clientSet.CoreService().ModelQuote().BatchDeleteQuotedInstance(kit.Ctx, kit.Header, destModel,
+			&filterOpt)
+		if err != nil {
+			return nil, err
+		}
+
+		auditLog, ccErr := audit.GenerateAuditLog(genAuditParams, destModel, tableData.SrcModel,
+			tableData.ModelPropertyRel[destModel], listRes.Info)
+		if ccErr != nil {
+			return nil, err
+		}
+
+		auditLogs = append(auditLogs, auditLog...)
+	}
+
+	// save audit logs
+	ccErr := audit.SaveAuditLog(kit, auditLogs...)
+	if ccErr != nil {
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	properties, err := c.addTableData(kit, tableData, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return properties, nil
 }
 
 // CreateInstBatch batch create instance by excel
 func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
-	*BatchResult, error) {
+	*metadata.ImportInstRes, error) {
 
 	// forbidden create inner model instance with common api
 	if common.IsInnerModel(objID) {
@@ -363,54 +551,29 @@ func (c *commonInst) CreateInstBatch(kit *rest.Kit, objID string, batchInfo *met
 	}
 
 	if batchInfo.InputType != common.InputTypeExcel {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "input_type")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "input_type")
 	}
 	if len(batchInfo.BatchInfo) == 0 {
-		return &BatchResult{}, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "BatchInfo")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "BatchInfo")
 	}
 
-	// 1. 检查实例与URL参数指定的模型一致
+	// 检查实例与URL参数指定的模型一致
 	for line, inst := range batchInfo.BatchInfo {
 		objectID, exist := inst[common.BKObjIDField]
 		if exist && objectID != objID {
-			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field,"+
-				"rid: %s", objID, kit.Rid)
+			blog.Errorf("create object[%s] instance batch failed, bk_obj_id field conflict with url field, rid: %s",
+				objID, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrorTopoObjectInstanceObjIDFieldConflictWithURL, line)
 		}
 	}
 
-	idFieldName := metadata.GetInstIDFieldByObjID(objID)
-	results, createdInstanceIDs, updatedInstanceIDs, err := c.createInstBatch(kit, objID, batchInfo, idFieldName)
+	result, err := c.createInstBatch(kit, objID, batchInfo)
 	if err != nil {
 		blog.Errorf("create inst by export failed, err: %v, rid: %s", err, kit.Rid)
-		return results, err
-	}
-	// generate audit log of instance.
-	if len(createdInstanceIDs) > 0 {
-		cond := map[string]interface{}{
-			idFieldName: map[string]interface{}{common.BKDBIN: createdInstanceIDs},
-		}
-		audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
-		generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-		auditLog, err := audit.GenerateAuditLogByCondGetData(generateAuditParameter, objID, cond)
-		if err != nil {
-			blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return results, err
-		}
-
-		// save audit log.
-		err = audit.SaveAuditLog(kit, auditLog...)
-		if err != nil {
-			blog.Errorf("creat inst, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-			return results, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
-		}
+		return nil, err
 	}
 
-	results.SuccessCreated = createdInstanceIDs
-	results.SuccessUpdated = updatedInstanceIDs
-	sort.Strings(results.Success)
-
-	return results, nil
+	return result, nil
 }
 
 // DeleteInst delete instance by objectid and condition
@@ -588,7 +751,7 @@ func (c *commonInst) FindInstByAssociationInst(kit *rest.Kit, objID string,
 						objCondition.Operator == common.BKDBGTE {
 
 						// fix condition covered when do date range search action.
-						// ISSUE: https://github.com/Tencent/bk-cmdb/issues/5302
+						// ISSUE: https://github.com/TencentBlueKing/bk-cmdb/issues/5302
 						if _, isExist := instCond[objCondition.Field]; !isExist {
 							instCond[objCondition.Field] = make(map[string]interface{})
 						}

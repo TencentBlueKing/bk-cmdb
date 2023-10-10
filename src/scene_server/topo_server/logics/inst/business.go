@@ -832,7 +832,7 @@ func (b *business) updateModuleName(kit *rest.Kit, data metadata.ModuleOption, n
 		&inputParams)
 	if err != nil {
 		blog.Errorf("update inst failed to request object controller, err: %v, rid: %s", err, kit.Rid)
-		return kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return err
 	}
 
 	return nil
@@ -911,17 +911,17 @@ func (b *business) updateBusinessSet(kit *rest.Kit, setOption metadata.SetOption
 		},
 	}
 
-	_, err := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+	_, ccErr := b.clientSet.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
 		&inputParams)
-	if err != nil {
-		blog.Errorf("update set name failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+	if ccErr != nil {
+		blog.Errorf("update set name failed, err: %v, rid: %s", ccErr, kit.Rid)
+		return ccErr
 	}
 
 	// update platform setting.
-	err = b.updateBuiltInSetConfig(kit, setOption.Name)
+	err := b.updateBuiltInSetConfig(kit, setOption.Name)
 	if err != nil {
-		blog.Errorf("update config failed, set name: %s, rid: %s", setOption.Name, kit.Rid)
+		blog.Errorf("update config failed, set name: %s, err: %v, rid: %s", setOption.Name, err, kit.Rid)
 		return err
 	}
 

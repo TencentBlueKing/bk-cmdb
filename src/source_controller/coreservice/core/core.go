@@ -68,13 +68,15 @@ type ModelAttribute interface {
 	SetModelAttributes(kit *rest.Kit, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult,
 		error)
 	UpdateModelAttributes(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
-	UpdateModelAttributesIndex(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
-		*metadata.UpdateAttrIndexData, error)
+	UpdateModelAttributeIndex(kit *rest.Kit, objID string, id int64, input *metadata.UpdateAttrIndexInput) error
 	UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateTableModelAttributes(kit *rest.Kit, inputParam metadata.UpdateTableOption) error
 	DeleteModelAttributes(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelAttributes(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
 	SearchModelAttributesByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
+		*metadata.QueryModelAttributeDataResult, error)
+	SearchModelAttrsWithTableByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelAttributeDataResult, error)
 }
 
@@ -96,14 +98,17 @@ type ModelOperation interface {
 	ModelAttrUnique
 
 	CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
+	CreateTableModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error)
+	CascadeDeleteTableModel(kit *rest.Kit, input metadata.DeleteTableOption) error
 	SearchModel(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 	SearchModelWithAttribute(kit *rest.Kit, inputParam metadata.QueryCondition) (
 		*metadata.QueryModelWithAttributeDataResult, error)
 	CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
+	CreateTableModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error
 }
 
 // InstanceOperation instance methods
@@ -112,6 +117,8 @@ type InstanceOperation interface {
 		*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(kit *rest.Kit, objID string, inputParam metadata.CreateManyModelInstance) (
 		*metadata.CreateManyDataResult, error)
+	BatchCreateModelInstance(kit *rest.Kit, objID string, inputParam *metadata.BatchCreateModelInstOption) (
+		*metadata.BatchCreateInstRespData, error)
 	UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	CountModelInstances(kit *rest.Kit, objID string, input *metadata.Condition) (

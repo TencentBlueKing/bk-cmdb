@@ -19,7 +19,7 @@
     }">
     <div class="drag-icon" v-if="dragIcon"></div>
     <bk-icon class="group-collapse-icon" type="down-shape" />
-    <span class="group-title-text">{{title}}</span>
+    <p class="group-title-text" v-bk-overflow-tips>{{title}}</p>
     <bk-dropdown-menu
       @click.native.stop
       v-if="dropdownMenu"
@@ -190,7 +190,11 @@ $titleHeight: 26px;
   }
 
   .group-title-text {
+    max-width: 150px;
     margin-right: 5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .group-dropdown-menu {

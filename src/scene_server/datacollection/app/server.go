@@ -371,6 +371,7 @@ func (c *DataCollection) initModules() error {
 	// connect to snap kafka.
 	if c.config.SnapReportMode == "kafka" {
 		config := sarama.NewConfig()
+		config.Version = sarama.V0_10_2_0
 		config.Consumer.Return.Errors = false
 		config.Consumer.Offsets.AutoCommit.Enable = false // 禁用自动提交，改为手动
 		config.Consumer.Offsets.Initial = sarama.OffsetOldest

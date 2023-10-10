@@ -181,10 +181,12 @@ func (lgc *Logics) getListOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 }
 
 // ValidateListAttrValueRequest TODO
-func (lgc *Logics) ValidateListAttrValueRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListAttrValueFilter, error) {
+func (lgc *Logics) ValidateListAttrValueRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListAttrValueFilter,
+	error) {
 	filter, ok := req.Filter.(types.ListAttrValueFilter)
 	if !ok {
-		blog.ErrorJSON("request filter %s is not the right type for list_attr_value method, rid: %s", req.Filter, kit.Rid)
+		blog.ErrorJSON("request filter %s is not the right type for list_attr_value method, rid: %s", req.Filter,
+			kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 

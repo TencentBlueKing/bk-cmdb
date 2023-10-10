@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
@@ -134,7 +135,7 @@ func (c *consumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, cl
 			wg.Add(1)
 			go func(msg string) {
 				defer wg.Done()
-				result, err := c.analyzer.Analyze(&msg)
+				result, err := c.analyzer.Analyze(&msg, metadata.HostSnapDataSourcesChannel)
 				if err != nil {
 					blog.Errorf("KafkaPorter[%s]| analyze message failed, %v", c.name, err)
 					// metrics stats for analyze failed.
@@ -290,7 +291,7 @@ func (k *KafkaPorter) Run() error {
 // Mock mock analyzer
 func (k *KafkaPorter) Mock() error {
 	mock := k.analyzer.Mock()
-	if _, err := k.analyzer.Analyze(&mock); err != nil {
+	if _, err := k.analyzer.Analyze(&mock, metadata.HostSnapDataSourcesChannel); err != nil {
 		return fmt.Errorf("mock failed, %+v", err)
 	}
 	return nil

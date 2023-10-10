@@ -22,10 +22,12 @@ import {
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_MODEL_DETAILS,
-  MENU_BUSINESS_HOST_AND_SERVICE
+  MENU_BUSINESS_HOST_AND_SERVICE,
+  MENU_RESOURCE_PROJECT_DETAILS
 } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
+import { escapeRegexChar } from '@/utils/util'
 
 export default function useItem(list) {
   const getModelById = store.getters['objectModelClassify/getModelById']
@@ -40,8 +42,9 @@ export default function useItem(list) {
       const { key, kind, source } = item
       const newItem = { ...item }
       if (kind === 'instance' && key === BUILTIN_MODELS.HOST) {
+        const ip = source.bk_host_innerip || source.bk_host_innerip_v6
         newItem.type = key
-        newItem.title = Array.isArray(source.bk_host_innerip) ? source.bk_host_innerip.join(',') : source.bk_host_innerip
+        newItem.title = Array.isArray(ip) ? ip.join(',') : ip
         newItem.typeName = t('主机')
         newItem.linkTo = handleGoResourceHost
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS) {
@@ -49,6 +52,12 @@ export default function useItem(list) {
         newItem.title = source.bk_biz_name
         newItem.typeName = t('业务')
         newItem.linkTo = handleGoBusiness
+      } else if (kind === 'instance' && key === BUILTIN_MODELS.PROJECT) {
+        newItem.type = key
+        newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].NAME]
+        newItem.typeName = t('项目')
+        newItem.comp = 'project'
+        newItem.linkTo = handleGoProject
       } else if (kind === 'instance' && key === BUILTIN_MODELS.BUSINESS_SET) {
         newItem.type = key
         newItem.title = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].NAME]
@@ -144,6 +153,22 @@ export default function useItem(list) {
 
     routerActions.redirect(to)
   }
+  const handleGoProject = (source, newTab = true) => {
+    const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.PROJECT]
+    const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID]
+    const to = {
+      name: MENU_RESOURCE_PROJECT_DETAILS,
+      params: { [paramKey]: paramVal },
+      history: true
+    }
+
+    if (newTab) {
+      routerActions.open(to)
+      return
+    }
+
+    routerActions.redirect(to)
+  }
   const handleGoBusinessSet = (source, newTab = true) => {
     const paramKey = BUILTIN_MODEL_ROUTEPARAMS_KEYS[BUILTIN_MODELS.BUSINESS_SET]
     const paramVal = source[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
@@ -229,7 +254,7 @@ export const getHighlightValue = (value, data) => {
       continue
     }
 
-    const re = new RegExp(words[1])
+    const re = new RegExp(escapeRegexChar(words[1]))
     if (re.test(value)) {
       matched = keyword
       break

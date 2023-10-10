@@ -121,7 +121,10 @@
             :clearable="true"
             :right-icon="'bk-icon icon-search'"
             :placeholder="$t('请输入关键字')"
-            v-model.trim="modelSearchKey"
+            :value="modelSearchKey"
+            @change="inputChange"
+            @compositionstart.native="inputCompositionStart"
+            @compositionend.native="inputCompositionEnd"
           >
           </bk-input>
         </div>
@@ -260,10 +263,13 @@
           </bk-transition>
         </li>
       </ul>
-      <no-search-results
+      <cmdb-data-empty
         v-if="!currentClassifications.length"
-        :text="$t('搜不到相关模型')"
-      />
+        slot="empty"
+        :stuff="dataEmpty"
+        @create="modelDialog.isShow = true"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </div>
 
     <div class="model-management-footer" v-show="isModelSelectable">
@@ -412,7 +418,6 @@
   import has from 'has'
   import theCreateModel from '@/components/model-manage/_create-model'
   import cmdbLoading from '@/components/loading/index.vue'
-  import noSearchResults from '@/views/status/no-search-results.vue'
   import CollapseGroupTitle from './children/collapse-group-title.vue'
   import { mapGetters, mapMutations, mapActions } from 'vuex'
   import debounce from 'lodash.debounce'
@@ -425,7 +430,6 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
-
   export default {
     name: 'ModelManagement',
     filters: {
@@ -439,7 +443,6 @@
     },
     components: {
       theCreateModel,
-      noSearchResults,
       cmdbLoading,
       CollapseGroupTitle,
       Draggable,
@@ -455,6 +458,7 @@
         modelStatisticsSet: {}, // 模型实例数量统计
         curCreateModel: {}, // 当前创建的模型
         modelCreatedDialogVisible: false,
+        otherInputVal: '', // 针对某些输入法中文输入失焦后自动清空输入框情况 如：搜狗输入法
 
         // 分组表单弹窗
         groupDialog: {
@@ -495,7 +499,16 @@
          */
         importPaneVisible: false, // 导入面板是否显示
 
-        isTipsHidden: false // 模型管理提示是否隐藏
+        isTipsHidden: false, // 模型管理提示是否隐藏
+
+        dataEmpty: {
+          type: 'default',
+          payload: {
+            defaultText: this.$t('暂无模型'),
+            path: '暂无相关xxx',
+            resource: this.$t('模型'),
+          }
+        }
       }
     },
     computed: {
@@ -607,6 +620,8 @@
         }
 
         this.filterClassifications = searchResult.filter(item => item.bk_objects.length)
+
+        this.dataEmpty.type = this.modelSearchKey ? 'search' : 'default'
       },
       modelType() {
         this.modelSearchKey = ''
@@ -669,6 +684,26 @@
         'deleteClassification',
       ]),
       ...mapActions('objectModel', ['createObject', 'updateObject']),
+      inputChange(val) {
+        // 在输入过程中如果是中文输入法 不让modelSearchKey变化
+        if (this.isComposition) {
+          this.modelSearchKey = this.otherInputVal
+          return
+        }
+        this.modelSearchKey = val
+      },
+      inputCompositionStart() {
+        // 当前为中文输入法
+        this.isComposition = true
+        this.otherInputVal = this.modelSearchKey
+      },
+      inputCompositionEnd(event) {
+        // 兼容输入框输入中文突然变英文的情况
+        setTimeout(() => {
+          this.isComposition = false
+          this.modelSearchKey = event.target.value
+        }, 100)
+      },
       loadAllModels() {
         return this.searchClassificationsObjects({
           params: {},
@@ -942,25 +977,29 @@
           this.$http.cancelRequest(prevIndex)
         }
 
-        const result = await this.$store.dispatch(
-          'objectCommonInst/searchInstanceCount',
-          {
-            params: {
-              condition: { obj_ids: [modelId] },
-            },
-            config: {
-              requestId,
-              globalError: false,
-            },
-          }
-        )
+        try {
+          const result = await this.$store.dispatch(
+            'objectCommonInst/searchInstanceCount',
+            {
+              params: {
+                condition: { obj_ids: [modelId] },
+              },
+              config: {
+                requestId,
+                globalError: false,
+              },
+            }
+          )
 
-        const [data] = result
+          const [data] = result
 
-        this.$set(this.modelStatisticsSet, data.bk_obj_id, {
-          error: data.error,
-          inst_count: data.inst_count,
-        })
+          this.$set(this.modelStatisticsSet, data.bk_obj_id, {
+            error: data.error,
+            inst_count: data.inst_count,
+          })
+        } catch (err) {
+          console.error(err)
+        }
       },
       async saveGroup() {
         try {
@@ -1058,6 +1097,9 @@
         } catch (error) {
           console.log(error)
         }
+      },
+      handleClearFilter() {
+        this.modelSearchKey = ''
       }
     },
   }

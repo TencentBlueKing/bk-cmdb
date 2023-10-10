@@ -13,9 +13,10 @@
 package topographics
 
 import (
-	"configcenter/src/common/errors"
 	"context"
 	"net/http"
+
+	"configcenter/src/common/errors"
 
 	"configcenter/src/common/metadata"
 )

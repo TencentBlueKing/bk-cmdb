@@ -14,6 +14,15 @@ import http from '@/api'
 
 const findAllRequsetId = Symbol('findAllRequsetId')
 
+const find = async ({ params, config }) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post(`${window.API_HOST}biz/search/web`, params, config)
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const findOne = async ({ bk_biz_id: bizId, config }) => {
   try {
     const { info } = await http.post(`biz/search/${window.Supplier.account}`, {
@@ -29,6 +38,19 @@ const findOne = async ({ bk_biz_id: bizId, config }) => {
   }
 }
 
+const findByIds = async ({ ids, config }) => {
+  try {
+    const { count = 0, info: list = [] } = await http.post(`biz/search/${window.Supplier.account}`, {
+      condition: { bk_biz_id: { $in: ids } },
+      fields: [],
+      page: { start: 0, limit: ids.length }
+    }, config)
+    return { count, list }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const findAll = async () => {
   const data = await http.get('biz/simplify?sort=bk_biz_id', {
     requestId: findAllRequsetId,
@@ -39,6 +61,8 @@ const findAll = async () => {
 }
 
 export default {
+  find,
   findOne,
-  findAll
+  findAll,
+  findByIds
 }

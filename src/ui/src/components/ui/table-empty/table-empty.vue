@@ -13,8 +13,19 @@
 <template>
   <div :class="['table-stuff', type]">
     <div class="content" v-if="type === 'search'">
-      <i class="bk-cc-icon icon-cc-tips"></i>
-      <span class="text">{{$t('搜索内容为空')}}</span>
+      <bk-exception type="search-empty" scene="part">
+        <p>{{ $t('搜索结果为空') }}</p>
+        <div class="table-tips">
+          <i18n class="operation-text" path="搜索为空提示语">
+            <template #filter><span style="margin: 0 3px">{{$t('调整关键词')}}</span></template>
+            <template #clear>
+              <bk-button class="text-btn" theme="primary" text style="margin-left: 3px" @click.stop="$emit('clear')">
+                {{$t('清空筛选条件')}}
+              </bk-button>
+            </template>
+          </i18n>
+        </div>
+      </bk-exception>
     </div>
     <div class="content" v-else-if="type === 'permission'">
       <slot name="permission">
@@ -33,28 +44,33 @@
       </slot>
     </div>
     <div class="content" v-else>
-      <img class="img-empty" src="../../../assets/images/empty-content.png" alt="">
       <div>
         <template v-if="$slots.default">
           <slot></slot>
         </template>
         <template v-else>
-          <i18n path="您还未XXX" tag="div" v-if="!emptyText">
-            <template #action><span>{{action}}</span></template>
-            <template #resource><span>{{resource}}</span></template>
-            <template #link>
-              <cmdb-auth :auth="auth">
-                <bk-button class="text-btn"
-                  text
-                  theme="primary"
-                  slot-scope="{ disabled }"
-                  :disabled="disabled"
-                  @click="$emit('create')">
-                  {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
-                </bk-button>
-              </cmdb-auth>
-            </template>
-          </i18n>
+          <div class="content" v-if="type === 'default'">
+            <bk-exception type="empty" scene="part">
+              <p>{{ $t('暂无数据') }}</p>
+              <div class="table-tips"></div>
+              <i18n path="您还未XXX" tag="div" v-if="!emptyText">
+                <template #action><span>{{action}}</span></template>
+                <template #resource><span>{{resource}}</span></template>
+                <template #link>
+                  <cmdb-auth :auth="auth">
+                    <bk-button class="text-btn"
+                      text
+                      theme="primary"
+                      slot-scope="{ disabled }"
+                      :disabled="disabled"
+                      @click="$emit('create')">
+                      {{$i18n.locale === 'en' ? `${action} now` : `立即${action}`}}
+                    </bk-button>
+                  </cmdb-auth>
+                </template>
+              </i18n>
+            </bk-exception>
+          </div>
           <span v-else>
             {{emptyText}}
           </span>
@@ -84,7 +100,7 @@
     },
     data() {
       return {
-        permission: this.stuff.payload.permission
+        permission: this.stuff.payload?.permission
       }
     },
     computed: {
@@ -107,7 +123,7 @@
     watch: {
       stuff: {
         handler(value) {
-          this.permission = value.payload.permission
+          this.permission = value.payload?.permission
         },
         deep: true
       }
@@ -129,6 +145,9 @@
         .text-btn {
             font-size: 14px;
             height: auto;
+        }
+        .table-tips {
+          margin-top: 15px;
         }
     }
 </style>

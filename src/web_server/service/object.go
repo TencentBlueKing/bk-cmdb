@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -24,296 +23,15 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/logics"
 
 	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
 )
-
-var sortFields = []string{
-	"bk_property_id",
-	"bk_property_name",
-	"bk_property_type",
-	"bk_property_group_name",
-	"option",
-	"unit",
-	"description",
-	"placeholder",
-	"editable",
-	"isrequired",
-	"isreadonly",
-	"isonly",
-}
-
-// ImportObject import object attribute
-func (s *Service) ImportObject(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	webCommon.SetProxyHeader(c)
-	objID := c.Param(common.BKObjIDField)
-	ctx := util.NewContextFromGinContext(c)
-
-	language := webCommon.GetLanguageByHTTPRequest(c)
-	defLang := s.Language.CreateDefaultCCLanguageIf(language)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
-	file, err := c.FormFile("file")
-	if err != nil {
-		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
-			defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	randNum := rand.Uint32()
-	dir := webCommon.ResourcePath + "/import/"
-	if _, err = os.Stat(dir); err != nil {
-		blog.Warnf("os.Stat failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
-		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dir, err, rid)
-		}
-	}
-	filePath := fmt.Sprintf("%s/importinsts-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
-	if err = c.SaveUploadedFile(file, filePath); err != nil {
-		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
-			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	defer func() {
-		if err := os.Remove(filePath); err != nil {
-			blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", filePath, err, rid)
-		}
-	}()
-	f, err := xlsx.OpenFile(filePath)
-	if err != nil {
-		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail,
-			err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	attrItems, errMsg, err := s.Logics.GetImportInsts(ctx, f, objID, c.Request.Header, 3, false, defLang, modelBizID)
-	if len(attrItems) == 0 {
-		var msg string
-		if err != nil {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-				err.Error()).Error(), nil)
-		} else {
-			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-				"").Error(), nil)
-		}
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	if len(errMsg) != 0 {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail,
-			strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	logics.ConvAttrOption(attrItems)
-
-	params := map[string]interface{}{objID: map[string]interface{}{"attr": attrItems}}
-
-	result, err := s.CoreAPI.ApiServer().AddObjectBatch(ctx, c.Request.Header, params)
-	if err != nil {
-		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed,
-			"").Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	c.JSON(http.StatusOK, result)
-}
-
-func setExcelSubTitle(row *xlsx.Row) *xlsx.Row {
-	for _, key := range sortFields {
-		cell := row.AddCell()
-		cell.Value = key
-	}
-	return row
-}
-
-func setExcelTitle(ctx context.Context, row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	fields := logics.GetPropertyFieldDesc(defLang)
-	for _, key := range sortFields {
-		cell := row.AddCell()
-		cell.Value = fields[key]
-		blog.V(5).Infof("key:%s value:%v, rid: %s", key, fields[key], rid)
-	}
-	return row
-}
-
-func setExcelTitleType(ctx context.Context, row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	fieldType := logics.GetPropertyFieldType(defLang)
-	for _, key := range sortFields {
-		cell := row.AddCell()
-		cell.Value = fieldType[key]
-		blog.V(5).Infof("key:%s value:%v, rid: %s", key, fieldType[key], rid)
-	}
-	return row
-}
-
-func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	itemMap, ok := item.(map[string]interface{})
-	if !ok {
-		blog.V(5).Infof("failed to convert to map, rid: %s", rid)
-		return row
-	}
-
-	// key is the object filed, value is the object filed value
-	for _, key := range sortFields {
-
-		cell := row.AddCell()
-		// cell.SetValue([]string{"v1", "v2"})
-		keyVal, ok := itemMap[key]
-		if !ok {
-			blog.Warnf("not fount the key(%s), skip it, rid: %s", key, rid)
-			continue
-		}
-		blog.V(5).Infof("key:%s value:%v, rid: %s", key, keyVal, rid)
-		if nil == keyVal {
-			cell.SetString("")
-			continue
-		}
-		switch t := keyVal.(type) {
-		case bool:
-			cell.SetBool(t)
-		case string:
-			if "\"\"" == t {
-				cell.SetValue("")
-			} else {
-				cell.SetValue(t)
-			}
-		default:
-			switch key {
-			case common.BKOptionField:
-
-				bOptions, err := json.Marshal(t)
-				if nil != err {
-					blog.Errorf("option format error:%v, rid: %s", t, rid)
-					cell.SetValue("error info:" + err.Error())
-				} else {
-					cell.SetString(string(bOptions))
-				}
-
-			default:
-				if nil != keyVal {
-					cell.SetValue(t)
-				}
-			}
-		}
-	}
-
-	return row
-}
-
-// ExportObjectBody TODO
-type ExportObjectBody struct {
-	BizID int64 `json:"bk_biz_id"`
-}
-
-// ExportObject export object
-func (s *Service) ExportObject(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	ctx := util.NewContextFromGinContext(c)
-
-	webCommon.SetProxyHeader(c)
-
-	objID := c.Param(common.BKObjIDField)
-
-	language := webCommon.GetLanguageByHTTPRequest(c)
-	defLang := s.Language.CreateDefaultCCLanguageIf(language)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
-	requestBody := ExportObjectBody{}
-	err := c.BindJSON(&requestBody)
-	if err != nil {
-		blog.Error("export model failed, parse request body to json failed, err: %v, rid: %s", err, rid)
-		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
-		c.String(http.StatusBadRequest, msg)
-		return
-	}
-
-	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(objID, c.Request.Header, requestBody.BizID)
-	if nil != err {
-		blog.Error("export model, but get object data failed, err: %v, rid: %s", err, rid)
-		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-		c.String(http.StatusOK, msg)
-		return
-	}
-
-	// construct the excel file
-	var file *xlsx.File
-	var sheet *xlsx.Sheet
-
-	file = xlsx.NewFile()
-	sheet, err = file.AddSheet(objID)
-	if err != nil {
-		blog.Errorf("ExportObject failed, AddSheet failed, err: %s, rid: %s", err.Error(), rid)
-		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusOK, msg)
-		return
-	}
-
-	// set the title
-	setExcelTitle(ctx, sheet.AddRow(), defLang)
-	setExcelTitleType(ctx, sheet.AddRow(), defLang)
-	setExcelSubTitle(sheet.AddRow())
-
-	// add the value
-	for _, item := range arrItems {
-
-		innerRow := item.(map[string]interface{})
-		blog.V(5).Infof("object attribute data :%+v, rid: %s", innerRow, rid)
-
-		// set row value
-		setExcelRow(ctx, sheet.AddRow(), innerRow)
-
-	}
-
-	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	_, err = os.Stat(dirFileName)
-	if nil != err {
-		blog.Warnf("os.Stat failed, will retry with os.MkdirAll, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
-		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
-			blog.Errorf("os.MkdirAll failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
-		}
-	}
-	fileName := fmt.Sprintf("%d_%s.xlsx", time.Now().UnixNano(), objID)
-	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
-	err = file.Save(dirFileName)
-	if err != nil {
-		blog.Errorf("ExportInst save file error:%s, rid: %s", err.Error(), rid)
-		fmt.Printf(err.Error())
-	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
-	c.File(dirFileName)
-
-	if err := os.Remove(dirFileName); err != nil {
-		blog.Errorf("os.Remove failed, filename: %s, err: %+v, rid: %s", dirFileName, err, rid)
-	}
-
-}
 
 // SearchBusiness TODO
 func (s *Service) SearchBusiness(c *gin.Context) {
@@ -590,6 +308,11 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 		blog.Errorf("unmarshal body to json failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))
+		return
+	}
+
+	if len(cond.Object) == 0 {
+		c.JSON(http.StatusOK, metadata.Response{BaseResp: metadata.BaseResp{Result: true, ErrMsg: "success"}})
 		return
 	}
 

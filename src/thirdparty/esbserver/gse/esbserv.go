@@ -23,11 +23,16 @@ import (
 
 // GseClientInterface TODO
 type GseClientInterface interface {
-	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	QueryProcOperateResult(ctx context.Context, h http.Header, taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
-	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
-	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
+	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
+		err error)
+	QueryProcOperateResult(ctx context.Context, h http.Header,
+		taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
+	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
+		err error)
+	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
+		err error)
+	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
+		err error)
 	ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
 		*metadata.GseConfigAddStreamToResult, error)
 	ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error

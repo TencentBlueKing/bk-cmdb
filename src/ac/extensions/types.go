@@ -60,7 +60,7 @@ type InstanceSimplify struct {
 func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ type BusinessSimplify struct {
 func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(business, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
@@ -162,7 +162,7 @@ type SetSimplify struct {
 func (is *SetSimplify) Parse(data mapstr.MapStr) (*SetSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
@@ -180,28 +180,30 @@ type ModuleSimplify struct {
 func (is *ModuleSimplify) Parse(data mapstr.MapStr) (*ModuleSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
 	return is, err
 }
 
-// HostSimplify TODO
+// HostSimplify host simplify struct
 type HostSimplify struct {
-	BKAppIDField       int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	BKModuleIDField    int64  `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
-	BKSetIDField       int64  `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id"`
-	BKHostIDField      int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-	BKHostNameField    string `field:"bk_host_name" json:"bk_host_name" bson:"bk_host_name"`
-	BKHostInnerIPField string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
+	BKAppIDField         int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	BKModuleIDField      int64  `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
+	BKSetIDField         int64  `field:"bk_set_id" json:"bk_set_id" bson:"bk_set_id"`
+	BKHostIDField        int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	BKHostNameField      string `field:"bk_host_name" json:"bk_host_name" bson:"bk_host_name"`
+	BKHostInnerIPField   string `field:"bk_host_innerip" json:"bk_host_innerip" bson:"bk_host_innerip"`
+	BKHostInnerIPv6Field string `field:"bk_host_innerip_v6" json:"bk_host_innerip_v6" bson:"bk_host_innerip_v6"`
+	BKCloudID            int64  `field:"bk_cloud_id" json:"bk_cloud_id" bson:"bk_cloud_id"`
 }
 
 // Parse TODO
 func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
@@ -218,7 +220,7 @@ type PlatSimplify struct {
 func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 
@@ -235,7 +237,7 @@ type ProcessSimplify struct {
 // Parse TODO
 func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
 	err := mapstr.SetValueToStructByTags(is, data)
-	if nil != err {
+	if err !=nil  {
 		return nil, err
 	}
 

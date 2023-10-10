@@ -93,20 +93,28 @@ func (s *Service) initRoute(api *restful.WebService) {
 
 	// cloud account
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/cloud/account/verify", Handler: s.VerifyConnectivity})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account/validity", Handler: s.SearchAccountValidity})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account/validity",
+		Handler: s.SearchAccountValidity})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/account", Handler: s.CreateAccount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account", Handler: s.SearchAccount})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/account/{bk_account_id}", Handler: s.UpdateAccount})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/account/{bk_account_id}", Handler: s.DeleteAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/account/{bk_account_id}",
+		Handler: s.UpdateAccount})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/account/{bk_account_id}",
+		Handler: s.DeleteAccount})
 
 	// cloud sync task
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account/vpc/{bk_account_id}", Handler: s.SearchVpc})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/account/vpc/{bk_account_id}",
+		Handler: s.SearchVpc})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloud/sync/task", Handler: s.CreateSyncTask})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/task", Handler: s.SearchSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/sync/task/{bk_task_id}", Handler: s.UpdateSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}", Handler: s.DeleteSyncTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history", Handler: s.SearchSyncHistory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/region", Handler: s.SearchSyncRegion})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloud/sync/task/{bk_task_id}",
+		Handler: s.UpdateSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/cloud/sync/task/{bk_task_id}",
+		Handler: s.DeleteSyncTask})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/history",
+		Handler: s.SearchSyncHistory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloud/sync/region",
+		Handler: s.SearchSyncRegion})
 
 	utility.AddToRestfulWebService(api)
 }

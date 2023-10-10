@@ -21,6 +21,7 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/time"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 )
 
 // CreateSetTemplateOption TODO
@@ -72,7 +73,7 @@ func (option UpdateSetTemplateOption) Validate(errProxy ccErr.DefaultCCErrorIf) 
 
 	if len(option.Name) > 0 {
 		var err error
-		option.Name, err = util.ValidTopoNameField(option.Name, "name", errProxy)
+		option.Name, err = valid.ValidTopoNameField(option.Name, "name", errProxy)
 		if err != nil {
 			return "name", err
 		}

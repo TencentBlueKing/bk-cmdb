@@ -41,10 +41,13 @@ func (s *Service) Index(c *gin.Context) {
 		"authCenter":                s.Config.AuthCenter,
 		"helpDocUrl":                s.Config.Site.HelpDocUrl,
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
+		"cookieDomain":              s.Config.Site.BkDomain,
+		"bkDesktopUrl":              s.Config.Site.BkDesktopUrl,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
-		pageConf["userManage"] = strings.TrimSuffix(s.Config.Site.PaasDomainUrl, "/") + "/api/c/compapi/v2/usermanage/fs_list_users/"
+		pageConf["userManage"] = strings.TrimSuffix(s.Config.Site.PaasDomainUrl,
+			"/") + "/api/c/compapi/v2/usermanage/fs_list_users/"
 	}
 
 	c.HTML(200, "index.html", pageConf)

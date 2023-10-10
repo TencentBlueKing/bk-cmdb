@@ -15,13 +15,18 @@ package collections
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"runtime"
+	"sync"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/redis"
 
+	goredis "github.com/go-redis/redis/v7"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/tidwall/gjson"
@@ -54,6 +59,10 @@ const (
 
 	// needInternalDebug is flag for internal debug.
 	needInternalDebug = false
+
+	// defaultHostSnapDelayQueueBatchNum by default, the maximum number of members fetched from the delayed queue at
+	// one time.
+	defaultHostSnapDelayQueueBatchNum = 200
 )
 
 // SimplePorter is simple porter handles message from collectors.
@@ -231,27 +240,87 @@ func (p *SimplePorter) AddMessage(message *string) error {
 	return nil
 }
 
+// handleCollectorMsg processing collected and reported messages.
+func (p *SimplePorter) handleCollectorMsg(msg *string, sourceType string) {
+
+	cost := time.Now()
+	if _, err := p.analyzer.Analyze(msg, sourceType); err != nil {
+		blog.Errorf("SimplePorter[%s], analyze message failed, %+v", p.name, err)
+		// metrics stats for analyze failed.
+		p.analyzeTotal.WithLabelValues("failed").Inc()
+	} else {
+		// metrics stats for analyze success.
+		p.analyzeTotal.WithLabelValues("success").Inc()
+	}
+
+	// metrics stats for analyze duration.
+	p.analyzeDuration.Observe(time.Since(cost).Seconds())
+
+}
+
+func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
+
+	blog.Infof("SimplePorter[%s], loop to get host snapshot data in delayed queue now!", p.name)
+
+	for {
+		// 1、get 200 message data from the delay queue by default each time for compensation processing.
+		msgs, err := p.redisCli.ZRangeWithScores(context.Background(), common.RedisHostSnapMsgDelayQueue, 0,
+			defaultHostSnapDelayQueueBatchNum).Result()
+		if err != nil {
+			blog.Errorf("get members failed in delay queue, err: %v", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		var wg sync.WaitGroup
+
+		pipeline := make(chan bool, 10)
+
+		for _, msg := range msgs {
+			pipeline <- true
+			wg.Add(1)
+			go func(msg goredis.Z) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+				// if the timestamp of the data is 10 minutes ago, drop it directly。
+				if msg.Score < float64(time.Now().Add(-time.Minute*10).Unix()) {
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
+					if err != nil {
+						blog.Errorf("remove member failed, msg: %v,err: %v", msg, err)
+						return
+					}
+					return
+				}
+				// incorrect data type, discard directly.
+				val, ok := msg.Member.(string)
+				if !ok {
+					blog.Errorf("convert data msg: %v, failed, type: %v", msg, reflect.TypeOf(msg))
+					// if the type of element taken from the queue is wrong, delete it directly from the queue
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
+					if err != nil {
+						blog.Errorf("remove delay queue member failed, msg: %v, err: %v", msg, err)
+					}
+					return
+				}
+				// process legitimate messages in the delay queue
+				p.handleCollectorMsg(&val, metadata.HostSnapDataSourcesDelayQueue)
+			}(msg)
+		}
+
+		wg.Wait()
+
+		time.Sleep(10 * time.Second)
+	}
+}
+
 // analyzeLoop keeps analyzing message from collectors.
 func (p *SimplePorter) analyzeLoop() {
 	blog.Infof("SimplePorter[%s]| start a new analyze loop now!", p.name)
 
 	for msg := range p.msgChan {
-		// once analyze cost duration.
-		cost := time.Now()
-
-		// analyze message from collectors.
-		if _, err := p.analyzer.Analyze(msg); err != nil {
-			blog.Errorf("SimplePorter[%s]| analyze message failed, %+v", p.name, err)
-
-			// metrics stats for analyze failed.
-			p.analyzeTotal.WithLabelValues("failed").Inc()
-		} else {
-			// metrics stats for analyze success.
-			p.analyzeTotal.WithLabelValues("success").Inc()
-		}
-
-		// metrics stats for analyze duration.
-		p.analyzeDuration.Observe(time.Since(cost).Seconds())
+		p.handleCollectorMsg(msg, metadata.HostSnapDataSourcesChannel)
 	}
 }
 
@@ -287,9 +356,13 @@ func (p *SimplePorter) collectLoop() error {
 				p.receiveInvalidTotal.Inc()
 				continue
 			}
-
+			// the outermost "ip" field is GSE's control ip. In the gse2.0 scenario, there is no concept of control ip.
+			// at this time, the "ip" field is empty, so the hashkey needs to be combined in order to be compatible with
+			//different scenarios ip and bk_agent_id
+			ip := gjson.Get(newMsg.Payload, "ip").String()
+			agentID := gjson.Get(newMsg.Payload, "bk_agent_id").String()
 			// message data sharding hashring check.
-			hashKey, err := p.analyzer.Hash(gjson.Get(newMsg.Payload, "cloudid").String(), gjson.Get(newMsg.Payload, "ip").String())
+			hashKey, err := p.analyzer.Hash(gjson.Get(newMsg.Payload, "cloudid").String(), ip+agentID)
 			if err != nil {
 				blog.Errorf("SimplePorter[%s]| calculates message hash key failed, %+v", p.name, err)
 
@@ -392,6 +465,9 @@ func (p *SimplePorter) Run() error {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go p.analyzeLoop()
 	}
+
+	// periodically obtain the data reported by the host from the delay queue for compensation update.
+	go p.getMonitorMsgFromDelayQueue()
 
 	// fuse controller.
 	go p.fusing()

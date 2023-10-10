@@ -19,6 +19,8 @@ func GetInstNameField(objID string) string {
 		return BKBizSetNameField
 	case BKInnerObjIDApp:
 		return BKAppNameField
+	case BKInnerObjIDProject:
+		return BKProjectNameField
 	case BKInnerObjIDSet:
 		return BKSetNameField
 	case BKInnerObjIDModule:
@@ -48,6 +50,8 @@ func GetInstIDField(objType string) string {
 		return BKBizSetIDField
 	case BKInnerObjIDApp:
 		return BKAppIDField
+	case BKInnerObjIDProject:
+		return BKFieldID
 	case BKInnerObjIDSet:
 		return BKSetIDField
 	case BKInnerObjIDModule:
@@ -81,7 +85,7 @@ func GetInstIDField(objType string) string {
 // GetObjByType TODO
 func GetObjByType(objType string) string {
 	switch objType {
-	case BKInnerObjIDBizSet, BKInnerObjIDApp, BKInnerObjIDSet,
+	case BKInnerObjIDBizSet, BKInnerObjIDApp, BKInnerObjIDProject, BKInnerObjIDSet,
 		BKInnerObjIDModule, BKInnerObjIDProc,
 		BKInnerObjIDHost, BKInnerObjIDPlat:
 		return objType

@@ -436,6 +436,22 @@ func (c *Contexts) Response(resp *metadata.Response) {
 	}
 }
 
+// RespNoAuth respond no auth response
+func (c *Contexts) RespNoAuth(resp *metadata.BaseResp) {
+	c.collectNoAuthMetric()
+
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+
+	if err := c.resp.WriteAsJson(resp); err != nil {
+		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+		return
+	}
+}
+
 // NewContexts 产生一个新的contexts， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (c *Contexts) NewContexts() *Contexts {
 	newHeader := util.CCHeader(c.Kit.Header)

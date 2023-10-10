@@ -23,7 +23,9 @@
             :collapse.sync="groupState[group['bk_group_id']]">
             <ul class="property-list">
               <template v-for="(property, propertyIndex) in groupedProperties[groupIndex]">
-                <li :class="['property-item', { flex: flexProperties.includes(property['bk_property_id']) }]"
+                <li :class="['property-item', property.bk_property_type, {
+                      flex: flexProperties.includes(property['bk_property_id'])
+                    }]"
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
@@ -42,6 +44,7 @@
                   <div class="property-value clearfix">
                     <slot :name="property.bk_property_id">
                       <component class="form-component"
+                        v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE"
                         :is="`cmdb-form-${property['bk_property_type']}`"
                         :class="{ error: errors.has(property['bk_property_id']) }"
                         :unit="property['unit']"
@@ -50,12 +53,22 @@
                         :options="property.option || []"
                         :data-vv-name="property['bk_property_id']"
                         :data-vv-as="property['bk_property_name']"
-                        :placeholder="getPlaceholder(property)"
+                        :placeholder="$tools.getPropertyPlaceholder(property)"
                         :auto-select="false"
+                        :multiple="property.ismultiple"
                         v-bind="{ ...$attrs, ...$tools.getValidateEvents(property) }"
                         v-validate="getValidateRules(property)"
                         v-model.trim="values[property['bk_property_id']]">
                       </component>
+                      <cmdb-form-innertable v-else
+                        :mode="type"
+                        :property="property"
+                        :obj-id="objId"
+                        :instance-id="instanceId"
+                        :immediate="false"
+                        :disabled="checkDisabled(property)"
+                        :auth="saveAuth"
+                        v-model.trim="values[property['bk_property_id']]" />
                       <form-append :type="type" :property="property" :render="renderAppend"></form-append>
                       <span class="form-error"
                         :title="errors.first(property['bk_property_id'])">
@@ -97,6 +110,10 @@
   import formMixins from '@/mixins/form'
   import FormTips from './form-tips.js'
   import FormAppend from './form-append.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+  import useSideslider from '@/hooks/use-sideslider'
+
   export default {
     name: 'cmdb-form',
     components: {
@@ -148,6 +165,7 @@
     },
     data() {
       return {
+        PROPERTY_TYPES,
         values: {},
         refrenceValues: {},
         validating: false
@@ -168,6 +186,9 @@
       },
       groupedProperties() {
         return this.$groupedProperties.map(properties => properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property.bk_property_type)))
+      },
+      instanceId() {
+        return this.inst?.[BUILTIN_MODEL_PROPERTY_KEYS?.[this.objId]?.ID || 'bk_inst_id']
       }
     },
     watch: {
@@ -180,6 +201,9 @@
     },
     created() {
       this.initValues()
+      const { beforeClose, setChanged } = useSideslider(this.values)
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
       initValues() {
@@ -211,10 +235,6 @@
         const output = temp.innerText
         temp = null
         return output
-      },
-      getPlaceholder(property) {
-        const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
-        return this.$t(placeholderTxt, { name: property.bk_property_name })
       },
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
@@ -344,11 +364,12 @@
                 flex: 1;
             }
 
-            &.flex {
-                flex: 1;
+            &.flex,
+            &.innertable {
+                flex: 1 1 100%;
                 padding-right: 54px;
                 width: 100%;
-                max-width: unset;
+                max-width: 1200px !important;
             }
         }
     }

@@ -203,6 +203,17 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 			blog.Errorf("delete module failed, delete operation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
+
+		// 根据模型id删除该模型的主机应用规则
+		deleteRuleOption := metadata.DeleteHostApplyRuleOption{
+			ModuleIDs: []int64{moduleID},
+		}
+		if err := s.Engine.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx,
+			ctx.Kit.Header, bizID, deleteRuleOption); err != nil {
+			blog.Errorf("delete host apply rule failed, err: %v, bizID: %d, moduleID: %d, rid: %s", err, bizID,
+				moduleID, ctx.Kit.Rid)
+			return err
+		}
 		return nil
 	})
 
@@ -210,7 +221,6 @@ func (s *Service) DeleteModule(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-
 	ctx.RespEntity(nil)
 }
 
@@ -223,21 +233,21 @@ func (s *Service) UpdateModule(ctx *rest.Contexts) {
 	}
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter("app_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the biz id from path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "business id"))
 		return
 	}
 
 	setID, err := strconv.ParseInt(ctx.Request.PathParameter("set_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the set id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "set id"))
 		return
 	}
 
 	moduleID, err := strconv.ParseInt(ctx.Request.PathParameter("module_id"), 10, 64)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("parse the module id from the path, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "module id"))
 		return

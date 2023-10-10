@@ -13,9 +13,10 @@
 package mongo
 
 import (
+	"encoding/json"
+
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
-	"encoding/json"
 )
 
 var _ universalsql.Condition = (*mongoCondition)(nil)

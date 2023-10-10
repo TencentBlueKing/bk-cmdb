@@ -318,7 +318,8 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 			case nil:
 				continue
 			default:
-				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key, childType, t)
+				return nil, fmt.Errorf("the value of the key(%s) is not a valid type, type: %v,value:%+v", key,
+					childType, t)
 			}
 		}
 		return items, nil
@@ -391,4 +392,19 @@ func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes Ma
 	})
 
 	return more, less, changes
+}
+
+// GetMapStrArrByInterface get mapStr array by interface type data
+func GetMapStrArrByInterface(data interface{}) ([]MapStr, error) {
+	marshal, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []MapStr
+	if err := json.Unmarshal(marshal, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

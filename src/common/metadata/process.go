@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/thirdparty/hooks/process"
 )
 
@@ -191,6 +192,16 @@ func (option *ServiceTemplateDiffOption) ServiceTemplateOptionValidate() cErr.Ra
 	}
 
 	return cErr.RawErrorInfo{}
+}
+
+// SyncServiceTemplateOption sync service template to some hosts in a module.
+type SyncServiceTemplateOption struct {
+	BizID             int64   `json:"bk_biz_id"`
+	ServiceTemplateID int64   `json:"service_template_id"`
+	ModuleID          int64   `json:"bk_module_id"`
+	HostIDs           []int64 `json:"bk_host_ids,omitempty"`
+	// IsSyncModule defines if module attributes needs to be synced, or if hosts needs to be synced
+	IsSyncModule bool `json:"is_sync_module"`
 }
 
 // ListDiffServiceInstancesOption list service instances request.
@@ -710,7 +721,8 @@ func (o *ListProcessRelatedInfoOption) Validate() (rawError cErr.RawErrorInfo) {
 		if o.ProcessPropertyFilter.GetDeep() > querybuilder.MaxDeep {
 			return cErr.RawErrorInfo{
 				ErrCode: common.CCErrCommParamsInvalid,
-				Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules", querybuilder.MaxDeep)},
+				Args: []interface{}{fmt.Sprintf("exceed max query condition deepth: %d, host_property_filter.rules",
+					querybuilder.MaxDeep)},
 			}
 		}
 	}
@@ -750,9 +762,12 @@ type ModuleDetailOfP struct {
 
 // HostDetailOfP TODO
 type HostDetailOfP struct {
-	HostID  int64  `json:"bk_host_id"`
-	CloudID int64  `json:"bk_cloud_id"`
-	InnerIP string `json:"bk_host_innerip"`
+	HostID     int64  `json:"bk_host_id"`
+	CloudID    int64  `json:"bk_cloud_id"`
+	InnerIP    string `json:"bk_host_innerip"`
+	InnerIPv6  string `json:"bk_host_innerip_v6"`
+	Addressing string `json:"bk_addressing"`
+	AgentID    string `json:"bk_agent_id"`
 }
 
 // ServiceInstanceDetailOfP TODO
@@ -841,8 +856,19 @@ const (
 	// BindInnerIP TODO
 	BindInnerIP SocketBindType = "3"
 	// BindOuterIP TODO
-	BindOuterIP SocketBindType = "4"
+	BindOuterIP     SocketBindType = "4"
+	BindLocalHostV6 SocketBindType = "5"
+	BindAllV6       SocketBindType = "6"
+	BindInnerIPv6   SocketBindType = "7"
+	BindOuterIPv6   SocketBindType = "8"
 )
+
+var ProcBindIPHostFieldMap = map[SocketBindType]string{
+	BindInnerIP:   common.BKHostInnerIPField,
+	BindOuterIP:   common.BKHostOuterIPField,
+	BindInnerIPv6: common.BKHostInnerIPv6Field,
+	BindOuterIPv6: common.BKHostOuterIPv6Field,
+}
 
 // NeedIPFromHost TODO
 func (p *SocketBindType) NeedIPFromHost() bool {
@@ -851,7 +877,7 @@ func (p *SocketBindType) NeedIPFromHost() bool {
 	}
 
 	switch *p {
-	case BindInnerIP, BindOuterIP:
+	case BindInnerIP, BindOuterIP, BindInnerIPv6, BindOuterIPv6:
 		return true
 	default:
 		return false
@@ -864,33 +890,33 @@ func (p *SocketBindType) IP(host map[string]interface{}) (string, error) {
 		return "", process.ValidateProcessBindIPEmptyHook()
 	}
 
-	var ip string
+	if p.NeedIPFromHost() {
+		if host == nil {
+			return "", errors.New("process host is not specified to get bind ip")
+		}
+
+		ip := util.GetStrByInterface(host[ProcBindIPHostFieldMap[*p]])
+
+		index := strings.Index(strings.Trim(ip, ","), ",")
+		if index == -1 {
+			return ip, nil
+		}
+		return ip[:index], nil
+	}
 
 	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1", nil
 	case BindAll:
 		return "0.0.0.0", nil
-	case BindInnerIP:
-		if host == nil {
-			return "", errors.New("process host is not specified to get bind inner ip")
-		}
-		ip = util.GetStrByInterface(host[common.BKHostInnerIPField])
-	case BindOuterIP:
-		if host == nil {
-			return "", errors.New("process host is not specified to get bind outer ip")
-		}
-		ip = util.GetStrByInterface(host[common.BKHostOuterIPField])
+	case BindLocalHostV6:
+		return "::1", nil
+	case BindAllV6:
+		return "::", nil
 	default:
 		blog.Errorf("process template bind info ip is invalid, socket bind type: %s", *p)
 		return "", errors.New("process template bind info ip is invalid")
 	}
-
-	index := strings.Index(strings.Trim(ip, ","), ",")
-	if index == -1 {
-		return ip, nil
-	}
-	return ip[:index], nil
 }
 
 // String 用于打印
@@ -908,6 +934,14 @@ func (p *SocketBindType) String() string {
 		return "第一内网IP"
 	case BindOuterIP:
 		return "第一外网IP"
+	case BindLocalHostV6:
+		return "::1"
+	case BindAllV6:
+		return "::"
+	case BindInnerIPv6:
+		return "第一内网IPv6"
+	case BindOuterIPv6:
+		return "第一外网IPv6"
 	default:
 		return ""
 	}
@@ -915,7 +949,8 @@ func (p *SocketBindType) String() string {
 
 // Validate TODO
 func (p SocketBindType) Validate() error {
-	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP}
+	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOuterIP, BindLocalHostV6, BindAllV6,
+		BindInnerIPv6, BindOuterIPv6}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -929,7 +964,9 @@ const (
 	// ProtocolTypeTCP TODO
 	ProtocolTypeTCP ProtocolType = "1"
 	// ProtocolTypeUDP TODO
-	ProtocolTypeUDP ProtocolType = "2"
+	ProtocolTypeUDP  ProtocolType = "2"
+	ProtocolTypeTCP6 ProtocolType = "3"
+	ProtocolTypeUDP6 ProtocolType = "4"
 )
 
 // String 用于打印
@@ -939,6 +976,10 @@ func (p ProtocolType) String() string {
 		return "TCP"
 	case ProtocolTypeUDP:
 		return "UDP"
+	case ProtocolTypeTCP6:
+		return "TCP6"
+	case ProtocolTypeUDP6:
+		return "UDP6"
 	default:
 		return ""
 	}
@@ -949,11 +990,35 @@ func (p *ProtocolType) Validate() error {
 	if p == nil || len(*p) == 0 {
 		return errors.New("protocol is not set or is empty")
 	}
-	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP}
+
+	// validate if process bind protocol value is valid, the value is not empty
+	if err := process.ValidateProcessBindProtocolHook(string(*p)); err != nil {
+		return err
+	}
+
+	validValues := []ProtocolType{ProtocolTypeTCP, ProtocolTypeUDP, ProtocolTypeTCP6, ProtocolTypeUDP6}
 	if util.InArray(*p, validValues) == false {
 		return fmt.Errorf("invalid protocol type, value: %s, available values: %+v", p, validValues)
 	}
 	return nil
+}
+
+// ValidateBindIPMatchProtocol validate if process template bind ip matches protocol
+func ValidateBindIPMatchProtocol(s SocketBindType, p ProtocolType) error {
+	switch s {
+	case BindLocalHost, BindAll, BindInnerIP, BindOuterIP:
+		if p == ProtocolTypeTCP || p == ProtocolTypeUDP {
+			return nil
+		}
+		return fmt.Errorf("socket bind type(%s) and protocol type(%s) is not match", s, p)
+	case BindLocalHostV6, BindAllV6, BindInnerIPv6, BindOuterIPv6:
+		if p == ProtocolTypeTCP6 || p == ProtocolTypeUDP6 {
+			return nil
+		}
+		return fmt.Errorf("socket bind type(%s) and protocol type(%s) is not match", s, p)
+	default:
+		return errors.New("process template bind info ip is invalid")
+	}
 }
 
 // Process TODO
@@ -1041,7 +1106,8 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 		return "name", errors.New("name can't be empty")
 	}
 	if common.ServiceCategoryMaxLength < utf8.RuneCountInString(sc.Name) {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name), common.ServiceCategoryMaxLength)
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", utf8.RuneCountInString(sc.Name),
+			common.ServiceCategoryMaxLength)
 	}
 	match, err := regexp.MatchString(common.FieldTypeServiceCategoryRegexp, sc.Name)
 	if nil != err {
@@ -1094,7 +1160,7 @@ type ServiceTemplate struct {
 
 // Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
-	st.Name, err = util.ValidTopoNameField(st.Name, "name", errProxy)
+	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
 	if err != nil {
 		return "name", err
 	}
@@ -1735,35 +1801,9 @@ type ProcessProperty struct {
 
 // Validate TODO
 func (pt *ProcessProperty) Validate() (field string, err error) {
-	// call all field's Validate method one by one
-	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
-	selfVal := reflect.ValueOf(pt).Elem()
-	selfType := reflect.TypeOf(pt).Elem()
-	fieldCount := selfVal.NumField()
-	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-		field := selfType.Field(fieldIdx)
-		fieldVal := selfVal.Field(fieldIdx)
-		tag := field.Tag.Get("json")
-		fieldName := strings.Split(tag, ",")[0]
-
-		if fieldName == common.BKProcBindInfo {
-			continue
-		}
-		// check implements interface
-		fieldValType := fieldVal.Addr().Type()
-		if !fieldValType.Implements(propertyInterfaceType) {
-			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(), propertyInterfaceType.Name())
-			panic(msg)
-		}
-
-		// call validate method by interface
-		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
-		out := checkResult[0]
-		if !out.IsNil() {
-			err := out.Interface().(error)
-
-			return fieldName, err
-		}
+	field, err = pt.validateFields()
+	if err != nil {
+		return field, err
 	}
 
 	if fieldName, err := pt.BindInfo.Validate(); err != nil {
@@ -1798,6 +1838,41 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 		}
 	}
 
+	return "", nil
+}
+
+// validateFields call all field's Validate method one by one
+func (pt *ProcessProperty) validateFields() (string, error) {
+	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
+	selfVal := reflect.ValueOf(pt).Elem()
+	selfType := reflect.TypeOf(pt).Elem()
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		field := selfType.Field(fieldIdx)
+		fieldVal := selfVal.Field(fieldIdx)
+		tag := field.Tag.Get("json")
+		fieldName := strings.Split(tag, ",")[0]
+
+		if fieldName == common.BKProcBindInfo {
+			continue
+		}
+		// check implements interface
+		fieldValType := fieldVal.Addr().Type()
+		if !fieldValType.Implements(propertyInterfaceType) {
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(),
+				propertyInterfaceType.Name())
+			panic(msg)
+		}
+
+		// call validate method by interface
+		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
+		out := checkResult[0]
+		if !out.IsNil() {
+			err := out.Interface().(error)
+
+			return fieldName, err
+		}
+	}
 	return "", nil
 }
 
@@ -2005,6 +2080,11 @@ type PropertyBindIP struct {
 func (ti *PropertyBindIP) Validate() error {
 	if ti.Value == nil || len(*ti.Value) == 0 {
 		return process.ValidateProcessBindIPEmptyHook()
+	}
+
+	// validate if process bind ip value is valid, the value is not empty
+	if err := process.ValidateProcessBindIPHook(string(*ti.Value)); err != nil {
+		return err
 	}
 
 	if err := ti.Value.Validate(); err != nil {

@@ -17,8 +17,10 @@ import cnMessages from 'vee-validate/dist/locale/zh_CN'
 import stringLength from 'utf8-byte-length'
 import regularRemoteValidate from './regular-remote-validate'
 import stringRemoteValidate from './string-remote-validate'
+import duplicateRemoteValidate from './duplicate-remote-validate'
 import store from '@/store'
 import { PARAMETER_TYPES } from '@/dictionary/parameter-types'
+import { splitIP, parseIP } from '@/components/filters/utils'
 
 /**
  * 前端内置的验证规则，不包含用户自定义的规则
@@ -31,6 +33,26 @@ const buildInVaidationRules = {
       }
       return stringLength(value) <= length
     }
+  },
+  maxSelectLength: (value, [length]) => {
+    const maxlength = Number(length)
+    if (!Array.isArray(value)) {
+      return true
+    }
+    if (maxlength === -1) {
+      return true
+    }
+    return value?.length <= maxlength
+  },
+  minSelectLength: (value, [length]) => {
+    const minlength = Number(length)
+    if (!Array.isArray(value)) {
+      return true
+    }
+    if (minlength === -1) {
+      return true
+    }
+    return value?.length >= minlength
   },
   repeat: {
     validate: (value, otherValue) => otherValue.findIndex(item => item === value) === -1
@@ -83,23 +105,8 @@ const buildInVaidationRules = {
   },
   ipSearchRuls: {
     validate: (value) => {
-      const list = []
-      value.trim().split(/\n|;|；|,|，/)
-        .forEach((text) => {
-          const ip = text.trim()
-          ip.length && list.push(ip)
-        })
-      let isValid = true
-      let currentCloudId = null
-      list.forEach((text) => {
-        let [, cloudId = ''] = text.split(':').reverse()
-        cloudId = cloudId || null
-        if (currentCloudId && currentCloudId !== cloudId) {
-          isValid = false
-        }
-        currentCloudId = cloudId
-      })
-      return isValid
+      const { cloudIdSet } = parseIP(splitIP(value))
+      return cloudIdSet.size <= 1
     }
   },
   validRegExp: {
@@ -122,6 +129,8 @@ const dictionary = {
     messages: {
       regex: field => `请输入合法的${field}`,
       length: (field, [maxLength]) => `请输入${maxLength}个字符以内的内容`,
+      maxSelectLength: (field, [length, msg]) => msg || `最多选择 ${length} 项`,
+      minSelectLength: (field, [length, msg]) => msg || `至少选择 ${length} 项`,
       required: () => '该字段是必填项',
       http: () => '请输入以http(s)://开头的URL',
       isBigger: () => '必须大于最小值',
@@ -138,10 +147,12 @@ const dictionary = {
       setNameLen: () => '请输入256个字符以内的内容',
       businessTopoInstNames: () => '格式不正确，不能包含特殊字符 | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
-      ipSearchRuls: () => '暂不支持不同云区域的混合搜索',
+      ipSearchRuls: () => '暂不支持不同管控区域的混合搜索',
       validRegExp: () => '请输入合法的正则表达式',
       remoteRegular: () => '请输入合法的正则表达式',
-      remoteString: () => '请输入符合自定义校验规则的内容'
+      remoteString: () => '请输入符合自定义校验规则的内容',
+      excluded: field => `${field}已存在`,
+      remoteDuplicate: (field, [, , msg]) => msg || '重复的值'
     },
     custom: {
       asst: {
@@ -153,6 +164,8 @@ const dictionary = {
     messages: {
       regex: () => 'Please enter a valid $ {field}',
       length: (field, [maxLength]) => `Content length max than ${maxLength}`,
+      maxSelectLength: (field, [length, msg]) => msg || `Only select at most ${length} items`,
+      minSelectLength: (field, [length, msg]) => msg || `Select at least ${length} items`,
       required: () => 'This field is required',
       http: () => 'Please enter a URL beginning with http(s)://',
       isBigger: () => 'Must be greater than the minimum',
@@ -170,7 +183,9 @@ const dictionary = {
       ipSearchRuls: () => 'Hybrid search of different cloud regions is not supported at the moment',
       validRegExp: () => 'Please enter valid regular express',
       remoteRegular: () => 'Please input valid regular expression',
-      remoteString: () => 'Please input correct content that matchs ths custom rules'
+      remoteString: () => 'Please input correct content that matchs ths custom rules',
+      excluded: field => `${field} already exists`,
+      remoteDuplicate: (field, [, , msg]) => msg || 'Duplicate value'
     },
     custom: {
       asst: {
@@ -246,6 +261,7 @@ const mixinCustomRules = () => {
 // 扩展远程验证规则
 Validator.extend('remoteRegular', regularRemoteValidate)
 Validator.extend('remoteString', stringRemoteValidate, { paramNames: ['regular'] })
+Validator.extend('remoteDuplicate', duplicateRemoteValidate)
 
 export function setupValidator() {
   mixinCustomRules()

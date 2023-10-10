@@ -28,8 +28,11 @@ type TaskClientInterface interface {
 		metadata.APITaskDetail, errors.CCErrorCoder)
 
 	CreateBatch(c context.Context, h http.Header, tasks []metadata.CreateTaskRequest) ([]metadata.APITaskDetail, error)
+	CreateFieldTemplateBatch(c context.Context, h http.Header, tasks []metadata.CreateTaskRequest) (
+		[]metadata.APITaskDetail, error)
 
-	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (resp *metadata.ListAPITaskResponse, err error)
+	ListTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskRequest) (
+		resp *metadata.ListAPITaskResponse, err error)
 
 	ListLatestTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskLatestRequest) (
 		[]metadata.APITaskDetail, errors.CCErrorCoder)
@@ -37,14 +40,15 @@ type TaskClientInterface interface {
 	TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error)
 
 	DeleteTask(ctx context.Context, header http.Header, taskCond *metadata.DeleteOption) error
-	// TaskStatusToSuccess(ctx context.Context, header http.Header, taskID, subTaskID string) (resp *metadata.Response, err error)
-	// TaskStatusToFailure(ctx context.Context, header http.Header, taskID, subTaskID string, errResponse *metadata.Response) (resp *metadata.Response, err error)
 
 	ListLatestSyncStatus(ctx context.Context, header http.Header, option *metadata.ListLatestSyncStatusRequest) (
 		[]metadata.APITaskSyncStatus, errors.CCErrorCoder)
 
 	ListSyncStatusHistory(ctx context.Context, header http.Header, option *metadata.QueryCondition) (
 		*metadata.ListAPITaskSyncStatusResult, errors.CCErrorCoder)
+
+	ListFieldTemplateTaskSyncResult(ctx context.Context, header http.Header,
+		data *metadata.ListFieldTmplSyncTaskStatusOption) ([]metadata.ListFieldTmplTaskSyncResult, errors.CCErrorCoder)
 }
 
 // NewTaskClientInterface TODO

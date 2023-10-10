@@ -64,7 +64,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   updateSet({ commit, state, dispatch }, { bizId, setId, params, config }) {
-    return $http.put(`set/${bizId}/${setId}`, params, config)
+    return $http.put(`${window.API_HOST}table/set/${bizId}/${setId}`, params, config)
   },
 
   /**

@@ -29,6 +29,7 @@
       :before-select="beforeSelect"
       :before-check="beforeCheck"
       :filter-method="filterMethod"
+      :enable-title-tip="true"
       @select-change="handleSelectChange"
       @check-change="handleCheckChange"
       @expand-change="handleExpandChange">
@@ -54,9 +55,11 @@
           <span class="node-name" :title="data.bk_inst_name">{{data.bk_inst_name}}</span>
         </div>
       </div>
-      <div slot="empty" class="empty">
-        <span>{{$t('bk.bigTree.emptyText')}}</span>
-      </div>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-big-tree>
   </div>
 </template>
@@ -101,6 +104,14 @@
           1: 'icon-cc-host-free-pool',
           2: 'icon-cc-host-breakdown',
           default: 'icon-cc-host-free-pool'
+        },
+        table: {
+          stuff: {
+            type: 'search',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
         }
       }
     },
@@ -427,6 +438,9 @@
         }
 
         this.treeStat = this.getTreeStat()
+      },
+      handleClearFilter() {
+        this.$emit('clearFilter', [])
       }
     }
   }

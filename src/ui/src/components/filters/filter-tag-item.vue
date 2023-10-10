@@ -15,10 +15,12 @@
     <label class="tag-name">{{property.bk_property_name}}</label>
     <span class="tag-colon" v-if="showColon">:</span>
     <component
-      v-if="['foreignkey', 'service-template'].includes(property.bk_property_type)"
+      v-if="['foreignkey', 'service-template', 'enumquote', 'organization'].includes(property.bk_property_type)"
       :is="`cmdb-search-${property.bk_property_type}`"
       v-bk-overflow-tips="tipsConfig"
       display-type="info"
+      :property="property"
+      :options="property.option"
       :value="value">
       <template slot="info-prepend">{{operatorSymbol}}</template>
     </component>

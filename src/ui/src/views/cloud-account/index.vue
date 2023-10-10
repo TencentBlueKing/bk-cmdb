@@ -87,6 +87,13 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        :auth="{ type: $OPERATION.C_CLOUD_ACCOUNT }"
+        @create="handleCreate"
+        @clear="handleClearFilter">
+      </cmdb-table-empty>
     </bk-table>
     <account-sideslider ref="accountSideslider" @request-refresh="getData"></account-sideslider>
   </div>
@@ -113,7 +120,15 @@
           search: Symbol('search'),
           status: Symbol('status')
         },
-        scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true })
+        scheduleSearch: throttle(this.handlePageChange, 800, { leading: false, trailing: true }),
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              resource: this.$t('云账户')
+            }
+          }
+        }
       }
     },
     watch: {
@@ -187,7 +202,7 @@
             try {
               await this.$store.dispatch('cloud/account/delete', { id: row.bk_account_id })
               infoInstance.buttonLoading = true
-              this.$success('删除成功')
+              this.$success(this.$t('删除成功'))
               this.getData()
               return true
             } catch (e) {
@@ -212,6 +227,7 @@
             params.condition.bk_account_name = this.filter
             params.is_fuzzy = true
           }
+          this.table.stuff.type = this.filter ? 'search' : 'default'
           const data = await this.$store.dispatch('cloud/account/findMany', {
             params,
             config: {
@@ -274,6 +290,10 @@
           name: MENU_RESOURCE_CLOUD_RESOURCE,
           history: true
         })
+      },
+      handleClearFilter() {
+        this.filter = ''
+        this.getList()
       }
     }
   }

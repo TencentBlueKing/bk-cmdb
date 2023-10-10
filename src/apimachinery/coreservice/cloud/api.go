@@ -21,7 +21,8 @@ import (
 )
 
 // CreateAccount TODO
-func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
+func (c *cloud) CreateAccount(ctx context.Context, h http.Header,
+	account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder) {
 	ret := new(metadata.CloudAccountResult)
 	subPath := "/create/cloud/account"
 
@@ -44,7 +45,8 @@ func (c *cloud) CreateAccount(ctx context.Context, h http.Header, account *metad
 }
 
 // SearchAccount TODO
-func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
+func (c *cloud) SearchAccount(ctx context.Context, h http.Header,
+	option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudAccountResult)
 	subPath := "/findmany/cloud/account"
 
@@ -67,7 +69,8 @@ func (c *cloud) SearchAccount(ctx context.Context, h http.Header, option *metada
 }
 
 // UpdateAccount TODO
-func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int64, option map[string]interface{}) errors.CCErrorCoder {
+func (c *cloud) UpdateAccount(ctx context.Context, h http.Header, accountID int64,
+	option map[string]interface{}) errors.CCErrorCoder {
 	ret := new(metadata.CloudAccountResult)
 	subPath := "/update/cloud/account/%d"
 
@@ -112,7 +115,8 @@ func (c *cloud) DeleteAccount(ctx context.Context, h http.Header, accountID int6
 }
 
 // SearchAccountConf TODO
-func (c *cloud) SearchAccountConf(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
+func (c *cloud) SearchAccountConf(ctx context.Context, h http.Header,
+	option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudAccountConfResult)
 	subPath := "/findmany/cloud/accountconf"
 
@@ -135,7 +139,8 @@ func (c *cloud) SearchAccountConf(ctx context.Context, h http.Header, option *me
 }
 
 // CreateSyncTask TODO
-func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
+func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header,
+	account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder) {
 	ret := new(metadata.CreateSyncTaskResult)
 	subPath := "/create/cloud/sync/task"
 
@@ -158,7 +163,8 @@ func (c *cloud) CreateSyncTask(ctx context.Context, h http.Header, account *meta
 }
 
 // SearchSyncTask TODO
-func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
+func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header,
+	option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleCloudSyncTaskResult)
 	subPath := "/findmany/cloud/sync/task"
 
@@ -181,7 +187,8 @@ func (c *cloud) SearchSyncTask(ctx context.Context, h http.Header, option *metad
 }
 
 // UpdateSyncTask TODO
-func (c *cloud) UpdateSyncTask(ctx context.Context, h http.Header, taskID int64, option map[string]interface{}) errors.CCErrorCoder {
+func (c *cloud) UpdateSyncTask(ctx context.Context, h http.Header, taskID int64,
+	option map[string]interface{}) errors.CCErrorCoder {
 	ret := new(metadata.UpdatedOptionResult)
 	subPath := "/update/cloud/sync/task/%d"
 
@@ -226,7 +233,8 @@ func (c *cloud) DeleteSyncTask(ctx context.Context, h http.Header, taskID int64)
 }
 
 // CreateSyncHistory TODO
-func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header, history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder) {
+func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header,
+	history *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder) {
 	ret := new(metadata.CreateSyncHistoryesult)
 	subPath := "/create/cloud/sync/history"
 
@@ -249,7 +257,8 @@ func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header, history *m
 }
 
 // SearchSyncHistory TODO
-func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
+func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header,
+	option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory, errors.CCErrorCoder) {
 	ret := new(metadata.MultipleSyncHistoryResult)
 	subPath := "/findmany/cloud/sync/history"
 
@@ -272,7 +281,8 @@ func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, option *me
 }
 
 // DeleteDestroyedHostRelated TODO
-func (c *cloud) DeleteDestroyedHostRelated(ctx context.Context, h http.Header, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
+func (c *cloud) DeleteDestroyedHostRelated(ctx context.Context, h http.Header,
+	option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder {
 	ret := new(metadata.DeletedOptionResult)
 	subPath := "/delete/cloud/sync/destroyed_host_related"
 

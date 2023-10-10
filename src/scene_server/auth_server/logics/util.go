@@ -60,6 +60,10 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameServiceInstance
 	case iam.BizSetTemplate:
 		return common.BKTableNameSetTemplate
+	case iam.Project:
+		return common.BKTableNameBaseProject
+	case iam.FieldGroupingTemplate:
+		return common.BKTableNameFieldTemplate
 	// case iam.Set:
 	//	return common.BKTableNameBaseSet
 	// case iam.Module:
@@ -89,6 +93,8 @@ func getInstanceResourceObjID(resourceType iam.TypeID) string {
 		return common.BKInnerObjIDApp
 	case iam.BizSet:
 		return common.BKInnerObjIDBizSet
+	case iam.Project:
+		return common.BKInnerObjIDProject
 	// case iam.Set:
 	//	return common.BKInnerObjIDSet
 	// case iam.Module:
@@ -166,10 +172,6 @@ func (lgc *Logics) getCloudNameMapByIDs(kit *rest.Kit, cloudIDs []int64) (map[in
 	}
 
 	return cloudMap, nil
-}
-
-func getHostDisplayName(innerIP string, cloudName string) string {
-	return innerIP + "(" + cloudName + ")"
 }
 
 // GetModelsIDNameMap get a map, key is id, value is bk_obj_name

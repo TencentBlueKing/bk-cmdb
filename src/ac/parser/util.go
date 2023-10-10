@@ -92,10 +92,10 @@ func (ps *parseStream) searchModels(cond mapstr.MapStr) ([]metadata.Object, erro
 	return model.Info, nil
 }
 
-func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribute, error) {
+func (ps *parseStream) getModelAttribute(bizID int64, cond mapstr.MapStr) ([]metadata.Attribute, error) {
 
-	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(),
-		ps.RequestCtx.Header, &metadata.QueryCondition{Condition: cond})
+	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrsWithTableByCondition(context.Background(),
+		ps.RequestCtx.Header, bizID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}
@@ -204,6 +204,9 @@ func (ps *parseStream) getInstanceTypeByObject(objID string, ID int64) (meta.Res
 		return meta.Process, nil
 	case common.BKInnerObjIDBizSet:
 		return meta.BizSet, nil
+	case common.BKInnerObjIDProject:
+		return meta.Project, nil
+
 	}
 	isMainline, err := ps.isMainlineModel(objID)
 	if err != nil {
@@ -467,7 +470,7 @@ func (ps *parseStream) generateUpdateInstanceResource(model *metadata.Object, in
 			},
 			Layers: []meta.Item{{Type: meta.ResourcePoolDirectory, InstanceID: relationRes.Info[0].ModuleID}},
 		}, nil
-	case meta.Business, meta.BizSet, meta.CloudAreaInstance:
+	case meta.Business, meta.BizSet, meta.CloudAreaInstance, meta.Project:
 		return &meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Type:       instanceType,

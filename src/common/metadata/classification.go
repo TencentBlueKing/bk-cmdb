@@ -35,13 +35,15 @@ const (
 	ClassificationNetworkID = "bk_network"
 	// ClassificationUncategorizedID TODO
 	ClassificationUncategorizedID = "bk_uncategorized"
+	// ClassificationTableID built-in table classification
+	ClassificationTableID = "bk_table_classification"
 )
 
 // Model group classification initialization value
 const (
 	ClassificationHostManage    = "主机管理"
 	ClassificationTopo          = "业务拓扑"
-	ClassificationOrganization  = "组织测试"
+	ClassificationOrganization  = "组织架构"
 	ClassificationNet           = "网络"
 	ClassificationUncategorized = "未分类"
 )

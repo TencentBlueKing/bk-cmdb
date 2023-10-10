@@ -1,8 +1,8 @@
 # 社区贡献
 蓝鲸cmdb社区欢迎和鼓励大家参与到源代码的维护当中，共同构建良好的社区发展生态。
 
-蓝鲸cmdb社区遵循通用的GitHub代码贡献流程。通过[**issue**](https://github.com/Tencent/bk-cmdb/issues)
-与社区成员沟通问题、需求，通过 [**Pull Requests**](https://github.com/Tencent/bk-cmdb/pulls) 参与社区的
+蓝鲸cmdb社区遵循通用的GitHub代码贡献流程。通过[**issue**](https://github.com/TencentBlueKing/bk-cmdb/issues)
+与社区成员沟通问题、需求，通过 [**Pull Requests**](https://github.com/TencentBlueKing/bk-cmdb/pulls) 参与社区的
 代码维护，成为我们的**Contributor**!
 
 社区中的源代码、说明文档、方案设计文档等都是社区宝贵的资源，各位开发者都可以对这些资源进行维护。那么如何参与到社区
@@ -12,7 +12,7 @@
 首先，你需要有一个GitHub账户。如果你还没有，没关系，可以到[这里](https://github.com/join)快速的注册一个账户。
 
 ## 沟通
-接下来，对于bug、需求类的问题，你可以在这里[提交issue](https://github.com/Tencent/bk-cmdb/issues/new)，
+接下来，对于bug、需求类的问题，你可以在这里[提交issue](https://github.com/TencentBlueKing/bk-cmdb/issues/new)，
 反馈你的问题或需求等，和社区做个初步的沟通，目的是为了了解社区是否已经解决了这个问题，或需求已经进入了排期等。
 避免由于信息不对称导致你做重复性的工作。
 
@@ -21,7 +21,7 @@
 者参与到开发过程的基础。有了这个基础，如果你想继续深度的参与到社区的开发过程中，就可以进入下一个环节中。
 
 ## 开发
-前文你已经注册了GitHub账户，可以在bk-cmdb的[主页](https://github.com/Tencent/bk-cmdb)将仓库中的源代码
+前文你已经注册了GitHub账户，可以在bk-cmdb的[主页](https://github.com/TencentBlueKing/bk-cmdb)将仓库中的源代码
 **Fork**到你自己的仓库中，也欢迎你给我们star以示鼓励。如下图：
 
 ![Fork仓库](img/fork.png)

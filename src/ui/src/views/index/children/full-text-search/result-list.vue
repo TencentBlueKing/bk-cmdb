@@ -34,7 +34,12 @@
         </bk-pagination>
       </div>
     </template>
-    <no-search-results v-else-if="fetching !== -1" :text="$t('搜不到相关内容')" />
+    <cmdb-data-empty
+      v-else-if="fetching !== -1"
+      slot="empty"
+      :stuff="dataEmpty"
+      @clear="handleClearFilter">
+    </cmdb-data-empty>
   </div>
 </template>
 
@@ -54,6 +59,7 @@
   import useResult from './use-result'
   import useItem from './use-item'
   import { categories } from './use-tab.js'
+  import router from '@/router/index.js'
 
   export default defineComponent({
     components: {
@@ -75,6 +81,13 @@
         limit: 10,
         current: 1,
         total: 0
+      })
+
+      const dataEmpty = ref({
+        type: 'search',
+        payload: {
+          defaultText: ''
+        }
       })
 
       // 依赖query参数启动与响应
@@ -149,6 +162,13 @@
           }
         })
       }
+      const handleClearFilter = () => {
+        router.push({
+          query: {
+            tab: 'fullText'
+          }
+        })
+      }
 
       return {
         list,
@@ -156,7 +176,9 @@
         fetching,
         propertyMap,
         handleLimitChange,
-        handlePageChange
+        handlePageChange,
+        dataEmpty,
+        handleClearFilter
       }
     }
   })
@@ -219,6 +241,21 @@
             word-break: break-all;
             margin-bottom: 6px;
             margin-right: 16px;
+
+            .table-value {
+              display: flex;
+              align-items: center;
+
+              .matched-tag {
+                font-size: 12px;
+                background-color: #3a84ff1a;
+                border-color: rgba(58, 132, 255, .3);
+                color: #3a84ff;
+                padding: 2px 4px;
+                margin-left: 2px;
+                transform: scale(0.875);
+              }
+            }
           }
           &:hover {
             color: #313238;

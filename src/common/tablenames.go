@@ -22,13 +22,13 @@ const (
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
-	// BKTableNameObjDes the table name of the asst des
+	// BKTableNameAsstDes the table name of the asst des
 	BKTableNameAsstDes = "cc_AsstDes"
 
 	// BKTableNameObjDes the table name of the object
 	BKTableNameObjDes = "cc_ObjDes"
 
-	// BKTableNameObjDes the table name of the object
+	// BKTableNameObjUnique the table name of the object
 	BKTableNameObjUnique = "cc_ObjectUnique"
 
 	// BKTableNameObjAttDes the table name of the object attribute
@@ -43,6 +43,10 @@ const (
 	BKTableNameBaseApp    = "cc_ApplicationBase"
 	BKTableNameBaseBizSet = "cc_BizSetBase"
 
+	// BKTableNameModelQuoteRelation model reference relationship table name.
+	BKTableNameModelQuoteRelation = "cc_ModelQuoteRelation"
+
+	BKTableNameBaseProject = "cc_ProjectBase"
 	BKTableNameBaseHost    = "cc_HostBase"
 	BKTableNameBaseModule  = "cc_ModuleBase"
 	BKTableNameBaseInst    = "cc_ObjectBase"
@@ -92,7 +96,7 @@ const (
 	BKTableNameAPITask                    = "cc_APITask"
 	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"
 
-	// rule for host property auto apply
+	// BKTableNameHostApplyRule rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
 
 	// cloud sync tables
@@ -105,6 +109,18 @@ const (
 
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
+
+	// BKTableNameFieldTemplate  field template table
+	BKTableNameFieldTemplate = "cc_FieldTemplate"
+
+	// BKTableNameObjAttDesTemplate  field template  attribute description table
+	BKTableNameObjAttDesTemplate = "cc_ObjAttDesTemplate"
+
+	// BKTableNameObjectUniqueTemplate  field template unique checklist table
+	BKTableNameObjectUniqueTemplate = "cc_ObjectUniqueTemplate"
+
+	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
+	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
@@ -183,6 +199,18 @@ func GetObjectInstTableName(objID, supplierAccount string) string {
 	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, supplierAccount, TableSpecifierPublic, objID)
 }
 
+// GetObjectInstObjIDByTableName return the object id
+// example: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch',return switch.
+func GetObjectInstObjIDByTableName(collectionName, supplierAccount string) (string, error) {
+	prefix := fmt.Sprintf("%s%s_", BKObjectInstShardingTablePrefix, supplierAccount)
+	suffix := strings.TrimPrefix(collectionName, prefix)
+	suffixSlice := strings.Split(suffix, "_")
+	if len(suffixSlice) <= 1 {
+		return "", fmt.Errorf("collection name is error, collection name: %s", collectionName)
+	}
+	return strings.Join(suffixSlice[1:], "_"), nil
+}
+
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
 // the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
 func GetObjectInstAsstTableName(objID, supplierAccount string) string {
@@ -217,6 +245,8 @@ func GetInstTableName(objID, supplierAccount string) string {
 		return BKTableNameBaseApp
 	case BKInnerObjIDBizSet:
 		return BKTableNameBaseBizSet
+	case BKInnerObjIDProject:
+		return BKTableNameBaseProject
 	case BKInnerObjIDSet:
 		return BKTableNameBaseSet
 	case BKInnerObjIDModule:
@@ -229,5 +259,29 @@ func GetInstTableName(objID, supplierAccount string) string {
 		return BKTableNameBasePlat
 	default:
 		return GetObjectInstTableName(objID, supplierAccount)
+	}
+}
+
+// GetInstObjIDByTableName get objID by table name
+func GetInstObjIDByTableName(collectionName, supplierAccount string) (string, error) {
+	switch collectionName {
+	case BKTableNameBaseApp:
+		return BKInnerObjIDApp, nil
+	case BKTableNameBaseBizSet:
+		return BKInnerObjIDBizSet, nil
+	case BKTableNameBaseProject:
+		return BKInnerObjIDProject, nil
+	case BKTableNameBaseSet:
+		return BKInnerObjIDSet, nil
+	case BKTableNameBaseModule:
+		return BKInnerObjIDModule, nil
+	case BKTableNameBaseHost:
+		return BKInnerObjIDHost, nil
+	case BKTableNameBaseProcess:
+		return BKInnerObjIDProc, nil
+	case BKTableNameBasePlat:
+		return BKInnerObjIDPlat, nil
+	default:
+		return GetObjectInstObjIDByTableName(collectionName, supplierAccount)
 	}
 }

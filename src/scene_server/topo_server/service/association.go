@@ -835,7 +835,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 }
 
 // SearchInstAssociationAndInstDetail search association, source object inst and destination object inst
-// related issue: https://github.com/Tencent/bk-cmdb/issues/5807
+// related issue: https://github.com/TencentBlueKing/bk-cmdb/issues/5807
 func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	request := metadata.InstAndAssocRequest{}
 	if err := ctx.DecodeInto(&request); err != nil {

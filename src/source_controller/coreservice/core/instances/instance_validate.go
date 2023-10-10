@@ -14,6 +14,7 @@ package instances
 
 import (
 	stderr "errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -49,7 +51,8 @@ var createIgnoreKeys = []string{
 	common.BKProcIDField,
 }
 
-func (m *instanceManager) getBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr, validTye string, instID int64) (int64, error) {
+func (m *instanceManager) getBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr, validTye string,
+	instID int64) (int64, error) {
 	bizID, err := m.fetchBizIDFromInstance(kit, objID, instanceData, validTye, instID)
 	if err != nil {
 		blog.Errorf("fetchBizIDFromInstance failed, err: %v, rid: %s", err, kit.Rid)
@@ -62,7 +65,8 @@ func (m *instanceManager) getBizIDFromInstance(kit *rest.Kit, objID string, inst
 	return bizID, nil
 }
 
-func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr, validTye string, instID int64) (int64, error) {
+func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
+	validTye string, instID int64) (int64, error) {
 	switch objID {
 	case common.BKInnerObjIDHost:
 		if validTye == common.ValidUpdate {
@@ -84,7 +88,7 @@ func (m *instanceManager) fetchBizIDFromInstance(kit *rest.Kit, objID string, in
 			return 0, err
 		}
 		return bizID, nil
-	case common.BKInnerObjIDBizSet, common.BKInnerObjIDPlat:
+	case common.BKInnerObjIDBizSet, common.BKInnerObjIDProject, common.BKInnerObjIDPlat:
 		return 0, nil
 	default:
 		biz, exist := instanceData[common.BKAppIDField]
@@ -145,14 +149,18 @@ func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64)
 	return validator, nil
 }
 
-func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr, valid *validator) error {
+func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
+	valid *validator) error {
 	for _, key := range valid.requireFields {
 		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData, kit.Rid)
+			blog.Errorf("field [%s] in required for model [%s], input data: %+v, rid: %s", key, objID, instanceData,
+				kit.Rid)
 			return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-	FillLostedFieldValue(kit.Ctx, instanceData, valid.propertySlice)
+	if err := FillLostFieldValue(kit.Ctx, instanceData, valid.propertySlice); err != nil {
+		return err
+	}
 
 	if err := m.validCloudID(kit, objID, instanceData); err != nil {
 		return err
@@ -178,6 +186,45 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
+	err = m.validateCreateInstValue(kit, instanceData, valid)
+	if err != nil {
+		return err
+	}
+
+	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
+	if err != nil {
+		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
+	if skip {
+		return nil
+	}
+
+	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %v, rid: %s", err,
+			kit.Rid)
+		return err
+	}
+
+	switch objID {
+	case common.BKInnerObjIDModule:
+		// module instance's name must coincide with template
+		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
+			blog.Errorf("validate create module failed, module: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
+			return err
+		}
+
+	case common.BKInnerObjIDHost:
+		if err := m.validateHostCreate(kit, instanceData, valid); err != nil {
+			blog.Errorf("validate create host failed, host: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
@@ -200,36 +247,23 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 
 		rawErr := property.Validate(kit.Ctx, val, key)
 		if rawErr.ErrCode != 0 {
-			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val, kit.CCError.Error(rawErr.ErrCode), kit.Rid)
+			blog.Errorf("validCreateInstanceData failed, key: %s, value: %s, err: %s, rid: %s", key, val,
+				kit.CCError.Error(rawErr.ErrCode), kit.Rid)
 			return rawErr.ToCCError(kit.CCError)
 		}
-	}
-
-	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
-	if err != nil {
-		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return err
-	}
-
-	if skip {
-		return nil
-	}
-
-	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
-		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	// module instance's name must coincide with template
-	if objID == common.BKInnerObjIDModule {
-		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
-			if blog.V(9) {
-				blog.InfoJSON("validateModuleCreate failed, module: %s, err: %s, rid: %s", instanceData, err, kit.Rid)
+		// 在Validate里面没有对枚举引用的值进行校验，只是对其数据类型做了基本的校验，
+		// 因为对引用值是否存在校验需要查询数据库，所以放在Validate里面校验不太合适
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			if err := m.validInstIDs(kit, property, val); err != nil {
+				return err
 			}
-			return err
+		}
+
+		// remove inner table value
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(instanceData, property.PropertyID)
 		}
 	}
-
 	return nil
 }
 
@@ -275,8 +309,9 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 	return nil
 }
 
-func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, updateData mapstr.MapStr,
-	instanceData mapstr.MapStr, valid *validator, instID int64, canEditAll, isMainline bool) error {
+func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, updateData, instanceData mapstr.MapStr,
+	valid *validator, canEditAll, isMainline bool) error {
+
 	if err := m.validCloudID(kit, objID, updateData); err != nil {
 		return err
 	}
@@ -302,32 +337,14 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 
 	isInnerModel := common.IsInnerModel(objID) || isMainline
 
-	for key, val := range updateData {
-
-		if isInnerModel && util.InStrArr(updateIgnoreKeys, key) {
-			// ignore the key field
-			continue
-		}
-
-		property, ok := valid.properties[key]
-		if !ok || (!property.IsEditable && !canEditAll) {
-			delete(updateData, key)
-			continue
-		}
-		if value, ok := val.(string); ok {
-			val = strings.TrimSpace(value)
-			updateData[key] = val
-		}
-		rawErr := property.Validate(kit.Ctx, val, key)
-		if rawErr.ErrCode != 0 {
-			blog.ErrorJSON("validUpdateInstanceData failed, err: %s, val: %s, key:%s, rid: %s",
-				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
-			return rawErr.ToCCError(kit.CCError)
-		}
+	err = m.validOneUpdateInstKeyVal(kit, valid, updateData, isInnerModel, canEditAll)
+	if err != nil {
+		return err
 	}
 
 	if err := m.changeStringToTime(updateData, valid.propertySlice); err != nil {
-		blog.Errorf("there is an error in converting the time type string to the time type, err: %s, rid: %s", err, kit.Rid)
+		blog.Errorf("there is an error in converting the time type string to the time type, err: %v, rid: %s", err,
+			kit.Rid)
 		return err
 	}
 
@@ -341,6 +358,48 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return nil
 	}
 
+	return nil
+}
+
+func (m *instanceManager) validOneUpdateInstKeyVal(kit *rest.Kit, valid *validator, updateData mapstr.MapStr,
+	isInnerModel, canEditAll bool) error {
+
+	for key, val := range updateData {
+		if isInnerModel && util.InStrArr(updateIgnoreKeys, key) {
+			// ignore the key field
+			continue
+		}
+
+		property, ok := valid.properties[key]
+		if !ok || (!property.IsEditable && !canEditAll) {
+			delete(updateData, key)
+			continue
+		}
+
+		// right now inner table should be updated as quoted instance, cannot update in source instance
+		if property.PropertyType == common.FieldTypeInnerTable {
+			delete(updateData, key)
+			continue
+		}
+
+		if value, ok := val.(string); ok {
+			val = strings.TrimSpace(value)
+			updateData[key] = val
+		}
+		rawErr := property.Validate(kit.Ctx, val, key)
+		if rawErr.ErrCode != 0 {
+			blog.ErrorJSON("validUpdateInstanceData failed, err: %s, val: %s, key:%s, rid: %s",
+				rawErr.ToCCError(kit.CCError), val, key, kit.Rid)
+			return rawErr.ToCCError(kit.CCError)
+		}
+		// 在Validate里面没有对枚举引用的值进行校验，只是对其数据类型做了基本的校验，
+		// 因为对引用值是否存在校验需要查询数据库，所以放在Validate里面校验不太合适
+		if property.PropertyType == common.FieldTypeEnumQuote {
+			if err := m.validInstIDs(kit, property, val); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -382,7 +441,7 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 			return kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, nameField)
 		}
 
-		name, err := util.ValidTopoNameField(name, nameField, kit.CCError)
+		name, err := valid.ValidTopoNameField(name, nameField, kit.CCError)
 		if err != nil {
 			return err
 		}
@@ -392,7 +451,8 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 	// validate bk_parent_id
 	if instanceData.Exists(common.BKParentIDField) {
 		if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
-			blog.Errorf("invalid bk_parent_id value:%#v, err:%v, rid:%s", instanceData[common.BKParentIDField], err, kit.Rid)
+			blog.Errorf("invalid bk_parent_id value: %#v, err: %v, rid: %s", instanceData[common.BKParentIDField], err,
+				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
 		}
 	}
@@ -405,7 +465,8 @@ func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, instanceData
 	if objID == common.BKInnerObjIDHost {
 		if instanceData.Exists(common.BKCloudIDField) {
 			if cloudID, err := instanceData.Int64(common.BKCloudIDField); err != nil || cloudID < 0 {
-				blog.Errorf("invalid bk_cloud_id value:%#v, err:%v, rid:%s", instanceData[common.BKCloudIDField], err, kit.Rid)
+				blog.Errorf("invalid bk_cloud_id value: %#v, err: %v, rid: %s", instanceData[common.BKCloudIDField],
+					err, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 			}
 		}
@@ -552,5 +613,98 @@ func (m *instanceManager) validBizIDs(kit *rest.Kit, bizIDs []int64) error {
 		blog.Errorf("instance biz ids(%+v) contains invalid biz, rid: %s", uniqueBizIDs, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField)
 	}
+	return nil
+}
+
+func (m *instanceManager) validateHostCreate(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
+	// at least one of bk_host_innerip and bk_host_innerip_v6 attribute needs to be passed, because can not validate in
+	// db, validate it here
+	innerIPv4, ipv4Exist := instanceData[common.BKHostInnerIPField]
+	innerIPv6, ipv6Exist := instanceData[common.BKHostInnerIPv6Field]
+	if (!ipv4Exist || innerIPv4 == "") && (!ipv6Exist || innerIPv6 == "") {
+		return valid.errIf.Errorf(common.CCErrCommAtLeastSetOneVal, common.BKHostInnerIPField,
+			common.BKHostInnerIPv6Field)
+	}
+	return nil
+}
+
+// valid enum quote inst id is exist
+func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribute, val interface{}) error {
+	if property.Option == nil {
+		return fmt.Errorf("option params is invalid")
+	}
+
+	valIDs, ok := val.([]interface{})
+	if !ok {
+		blog.Errorf("convert val to interface slice failed, val type: %T, rid: %s", val, kit.Rid)
+		return fmt.Errorf("convert val to interface slice failed, val: %v", val)
+	}
+
+	if len(valIDs) == 0 {
+		if property.IsRequired {
+			blog.Errorf("enum quote inst id is null, rid: %s", kit.Rid)
+			return fmt.Errorf("enum quote inst id is null, please set the correct value")
+		}
+		return nil
+	}
+
+	if property.IsMultiple == nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
+	}
+	if !(*property.IsMultiple) && len(valIDs) != 1 {
+		blog.Errorf("enum quote is single choice, but inst id is multiple, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
+	}
+
+	valEnumIDMap := make(map[int64]struct{}, 0)
+	for _, valID := range valIDs {
+		valEnumID, err := util.GetInt64ByInterface(valID)
+		if err != nil {
+			blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
+			return err
+		}
+
+		if valEnumID == 0 {
+			return fmt.Errorf("enum quote instID is %d, it is illegal", valEnumID)
+		}
+		valEnumIDMap[valEnumID] = struct{}{}
+	}
+
+	if len(valEnumIDMap) == 0 {
+		return fmt.Errorf("enum quote instID is null, valEnumIDMap: %v", valEnumIDMap)
+	}
+
+	arrOption, err := metadata.ParseEnumQuoteOption(kit.Ctx, property.Option)
+	if len(arrOption) == 0 {
+		return fmt.Errorf("parse enum quote option data, but is null")
+	}
+	var quoteObjID string
+	for _, o := range arrOption {
+		if quoteObjID == "" {
+			quoteObjID = o.ObjID
+		} else if quoteObjID != o.ObjID {
+			return fmt.Errorf("enum quote objID not unique, objID: %s", quoteObjID)
+		}
+	}
+
+	valEnumIDs := make([]int64, 0)
+	for valEnumID := range valEnumIDMap {
+		valEnumIDs = append(valEnumIDs, valEnumID)
+	}
+	tableName := common.GetInstTableName(quoteObjID, kit.SupplierAccount)
+	cond := map[string]interface{}{
+		common.GetInstIDField(quoteObjID): map[string]interface{}{
+			common.BKDBIN: valEnumIDs,
+		},
+	}
+	cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count inst failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+	if len(valEnumIDs) != int(cnt) {
+		return fmt.Errorf("inst not exist, rid: %s", kit.Rid)
+	}
+
 	return nil
 }

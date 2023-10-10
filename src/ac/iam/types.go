@@ -39,6 +39,9 @@ const (
 
 	// SystemIDIAM TODO
 	SystemIDIAM = "bk_iam"
+
+	// RegisterIamLock defines the lock key for register iam operation
+	RegisterIamLock = "register_iam_lock"
 )
 
 // AuthConfig TODO
@@ -179,6 +182,9 @@ const (
 	// SysModelGroup TODO
 	SysModelGroup TypeID = "sys_model_group"
 
+	// FieldGroupingTemplate defines object field template
+	FieldGroupingTemplate TypeID = "field_grouping_template"
+
 	// SysInstanceModel TODO
 	// special model resource for selection of instance, not including models whose instances are managed separately
 	SysInstanceModel TypeID = "sys_instance_model"
@@ -247,6 +253,8 @@ const (
 	BizSetTemplate TypeID = "biz_set_template"
 	// BizHostApply TODO
 	BizHostApply TypeID = "biz_host_apply"
+	// Project project type id
+	Project TypeID = "project"
 )
 
 // ResourceType TODO
@@ -372,6 +380,7 @@ const (
 	ResourcePoolHostTransferToBusiness ActionID = "assign_host_to_biz"
 	// ResourcePoolHostTransferToDirectory TODO
 	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
+	ManageHostAgentID                   ActionID = "manage_host_agent_id"
 
 	// CreateResourcePoolDirectory TODO
 	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"
@@ -401,6 +410,13 @@ const (
 	ViewBizSet ActionID = "view_business_set"
 	// AccessBizSet TODO
 	AccessBizSet ActionID = "access_business_set"
+
+	// CreateProject create project action id
+	CreateProject ActionID = "create_project"
+	// EditProject edit project action id
+	EditProject ActionID = "edit_project"
+	// DeleteProject delete project action id
+	DeleteProject ActionID = "delete_project"
 
 	// CreateCloudArea TODO
 	CreateCloudArea ActionID = "create_cloud_area"
@@ -484,6 +500,8 @@ const (
 	WatchBizSetEvent ActionID = "watch_biz_set_event"
 	// WatchPlatEvent watch cloud area event action id
 	WatchPlatEvent ActionID = "watch_plat_event"
+	// WatchProjectEvent watch project event action id
+	WatchProjectEvent ActionID = "watch_project_event"
 
 	// watch kube related event actions
 
@@ -497,6 +515,15 @@ const (
 	WatchKubeWorkloadEvent ActionID = "watch_kube_workload"
 	// WatchKubePodEvent watch kube pod event action id, its event detail includes containers in it
 	WatchKubePodEvent ActionID = "watch_kube_pod"
+
+	// CreateFieldGroupingTemplate create field grouping template action id
+	CreateFieldGroupingTemplate = "create_field_grouping_template"
+	// ViewFieldGroupingTemplate view field grouping template action id
+	ViewFieldGroupingTemplate = "view_field_grouping_template"
+	// EditFieldGroupingTemplate edit field grouping template action id
+	EditFieldGroupingTemplate = "edit_field_grouping_template"
+	// DeleteFieldGroupingTemplate delete field grouping template action id
+	DeleteFieldGroupingTemplate = "delete_field_grouping_template"
 
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
@@ -643,6 +670,8 @@ const (
 	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
 	// BizSetSelection TODO
 	BizSetSelection InstanceSelectionID = "business_set_list"
+	//ProjectSelection project selection
+	ProjectSelection InstanceSelectionID = "project"
 	// BizHostInstanceSelection TODO
 	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"
 	// BizCustomQuerySelection TODO
@@ -655,6 +684,8 @@ const (
 	SysHostInstanceSelection InstanceSelectionID = "sys_host_instance"
 	// SysModelGroupSelection TODO
 	SysModelGroupSelection InstanceSelectionID = "sys_model_group"
+	// FieldGroupingTemplateSelection field grouping template instance selection id
+	FieldGroupingTemplateSelection InstanceSelectionID = "field_grouping_template"
 	// SysModelSelection TODO
 	SysModelSelection InstanceSelectionID = "sys_model"
 	// SysModelEventSelection TODO

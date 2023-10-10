@@ -22,6 +22,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/cloud"
 	"configcenter/src/apimachinery/coreservice/common"
 	"configcenter/src/apimachinery/coreservice/count"
+	fieldtmpl "configcenter/src/apimachinery/coreservice/field_template"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
 	"configcenter/src/apimachinery/coreservice/instance"
@@ -29,8 +30,10 @@ import (
 	"configcenter/src/apimachinery/coreservice/label"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	modelquote "configcenter/src/apimachinery/coreservice/model_quote"
 	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/process"
+	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
@@ -62,6 +65,9 @@ type CoreServiceClientInterface interface {
 	Auth() auth.AuthClientInterface
 	Common() common.CommonInterface
 	Kube() kube.KubeClientInterface
+	Project() project.ProjectClientInterface
+	ModelQuote() modelquote.Interface
+	FieldTemplate() fieldtmpl.Interface
 }
 
 // NewCoreServiceClient TODO
@@ -175,4 +181,19 @@ func (c *coreService) Common() common.CommonInterface {
 // Kube return the kube client
 func (c *coreService) Kube() kube.KubeClientInterface {
 	return kube.NewKubeClientInterface(c.restCli)
+}
+
+// Project return the project client
+func (c *coreService) Project() project.ProjectClientInterface {
+	return project.NewProjectClientInterface(c.restCli)
+}
+
+// ModelQuote return the model quote client
+func (c *coreService) ModelQuote() modelquote.Interface {
+	return modelquote.New(c.restCli)
+}
+
+// FieldTemplate return the field template client
+func (c *coreService) FieldTemplate() fieldtmpl.Interface {
+	return fieldtmpl.New(c.restCli)
 }

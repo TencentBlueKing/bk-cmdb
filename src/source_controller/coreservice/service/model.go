@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -117,7 +118,7 @@ func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	for index := range dataResult.Info {
 		result := dataResult.Info[index]
 		if defaultIDMap[result.ClassificationID] && result.ClassificationName == nameMap[result.ClassificationID] {
-			result.ClassificationName = s.TranslateClassificationName(lang, &result)
+			dataResult.Info[index].ClassificationName = s.TranslateClassificationName(lang, &result)
 		}
 	}
 	ctx.RespEntity(dataResult)
@@ -131,6 +132,16 @@ func (s *coreService) CreateModel(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(s.core.ModelOperation().CreateModel(ctx.Kit, inputData))
+}
+
+// CreateTableModel create inner table model
+func (s *coreService) CreateTableModel(ctx *rest.Contexts) {
+	inputData := metadata.CreateModel{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateTableModel(ctx.Kit, inputData))
 }
 
 // SetModel TODO
@@ -179,6 +190,21 @@ func (s *coreService) CascadeDeleteModel(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.ModelOperation().CascadeDeleteModel(ctx.Kit, id))
 }
 
+// CascadeDeleteTableModel delete table model related resources in a cascading manner.
+func (s *coreService) CascadeDeleteTableModel(ctx *rest.Contexts) {
+	inputData := metadata.DeleteTableOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := s.core.ModelOperation().CascadeDeleteTableModel(ctx.Kit, inputData); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+
+}
+
 // SearchModel TODO
 func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
@@ -204,7 +230,62 @@ func (s *coreService) SearchModel(ctx *rest.Contexts) {
 	ctx.RespEntity(dataResult)
 }
 
-// SearchModelWithAttribute TODO
+// ListModel list object.
+func (s *coreService) ListModel(cts *rest.Contexts) {
+	opt := new(metadata.CommonQueryOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	filter, err := opt.ToMgo()
+	if err != nil {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
+
+	if opt.Page.EnableCount {
+		count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(cts.Kit.Ctx)
+		if err != nil {
+			blog.Errorf("count objects failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+			return
+		}
+
+		cts.RespEntity(metadata.QueryModelDataResult{Count: int64(count)})
+		return
+	}
+
+	objects := make([]metadata.Object, 0)
+	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Start(uint64(opt.Page.Start)).
+		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &objects)
+	if err != nil {
+		blog.Errorf("list objects failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	result := metadata.QueryModelDataResult{Info: objects}
+
+	// translate
+	lang := s.Language(cts.Kit.Header)
+	for modelIdx := range result.Info {
+		if needTranslateObjMap[result.Info[modelIdx].ObjectID] {
+			result.Info[modelIdx].ObjectName = s.TranslateObjectName(lang, &result.Info[modelIdx])
+		}
+	}
+
+	cts.RespEntity(result)
+}
+
+// SearchModelWithAttribute search model with attribute
 func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
@@ -226,11 +307,17 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 			dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(lang, &dataResult.Info[modelIdx].Spec)
 		}
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
-			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre || needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-				if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-					dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
+			if dataResult.Info[modelIdx].Attributes[attributeIdx].IsPre || dataResult.Info[modelIdx].Spec.IsPre ||
+				needTranslateObjMap[dataResult.Info[modelIdx].Spec.ObjectID] {
+				dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName =
+					s.TranslatePropertyName(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder =
+					s.TranslatePlaceholder(lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+				switch dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType {
+				case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+					dataResult.Info[modelIdx].Attributes[attributeIdx].Option =
+						s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx],
+							dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 				}
 			}
 		}
@@ -257,7 +344,8 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 	// stat module count.
 	moduleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -283,7 +371,8 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 	}
 	bizCount, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(appFilter).Count(ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -344,7 +433,8 @@ func (s *coreService) CreateModelAttributeGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttributeGroup(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // SetModelAttributeGroup TODO
@@ -355,7 +445,8 @@ func (s *coreService) SetModelAttributeGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributeGroup(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // UpdateModelAttributeGroup TODO
@@ -366,7 +457,8 @@ func (s *coreService) UpdateModelAttributeGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributeGroup(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // UpdateModelAttributeGroupByCondition TODO
@@ -387,7 +479,8 @@ func (s *coreService) SearchModelAttributeGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributeGroup(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData)
 	if nil != err {
 		ctx.RespEntityWithError(dataResult, err)
 		return
@@ -432,7 +525,8 @@ func (s *coreService) DeleteModelAttributeGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributeGroup(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributeGroup(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // DeleteModelAttributeGroupByCondition TODO
@@ -454,7 +548,8 @@ func (s *coreService) CreateModelAttributes(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttributes(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // SetModelAttributes TODO
@@ -465,7 +560,25 @@ func (s *coreService) SetModelAttributes(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().SetModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"),
+		inputData))
+}
+
+// UpdateTableModelAttrByCondition update properties of form fields based on conditions.
+func (s *coreService) UpdateTableModelAttrByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.UpdateTableOption{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	err := s.core.ModelOperation().UpdateTableModelAttributes(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+	return
 }
 
 // UpdateModelAttributes TODO
@@ -477,19 +590,34 @@ func (s *coreService) UpdateModelAttributes(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributes(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-// UpdateModelAttributesIndex TODO
+// UpdateModelAttributesIndex update model attribute
 func (s *coreService) UpdateModelAttributesIndex(ctx *rest.Contexts) {
-
-	inputData := metadata.UpdateOption{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	inputData := new(metadata.UpdateAttrIndexInput)
+	if err := ctx.DecodeInto(inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributesIndex(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+	idStr := ctx.Request.PathParameter("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		blog.Errorf("parse id from path params failed, err: %v, id: %s, rid: %s", err, idStr, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID))
+		return
+	}
+
+	err = s.core.ModelOperation().UpdateModelAttributeIndex(ctx.Kit, objID, id, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }
 
 // UpdateModelAttributesByCondition TODO
@@ -512,10 +640,45 @@ func (s *coreService) DeleteModelAttribute(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttributes(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
-// SearchModelAttributesByCondition TODO
+// SearchModelAttrsWithTableByCondition querying model properties containing table types
+// NOTICE: include table attributes
+func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
+
+	inputData := metadata.QueryCondition{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := s.core.ModelOperation().SearchModelAttrsWithTableByCondition(ctx.Kit, inputData)
+	if err != nil {
+		ctx.RespEntityWithError(result, err)
+		return
+	}
+
+	// translate
+	lang := s.Language(ctx.Kit.Header)
+	for index := range result.Info {
+		if result.Info[index].IsPre || needTranslateObjMap[result.Info[index].ObjectID] {
+			result.Info[index].PropertyName = s.TranslatePropertyName(lang, &result.Info[index])
+			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
+			switch result.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
+					result.Info[index].Option)
+			}
+		}
+	}
+
+	ctx.RespEntity(result)
+}
+
+// SearchModelAttributesByCondition query for model attributes that do not contain table types
+// NOTICE: exclude table attributes
 func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 
 	inputData := metadata.QueryCondition{}
@@ -536,8 +699,10 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
 			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+			switch dataResult.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+				dataResult.Info[index].Option =
+					s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}
 	}
@@ -554,7 +719,8 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 		return
 	}
 
-	dataResult, err := s.core.ModelOperation().SearchModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"),
+		inputData)
 	if nil != err {
 		ctx.RespEntityWithError(dataResult, err)
 		return
@@ -566,8 +732,11 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 		if dataResult.Info[index].IsPre || needTranslateObjMap[dataResult.Info[index].ObjectID] {
 			dataResult.Info[index].PropertyName = s.TranslatePropertyName(lang, &dataResult.Info[index])
 			dataResult.Info[index].Placeholder = s.TranslatePlaceholder(lang, &dataResult.Info[index])
-			if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+
+			switch dataResult.Info[index].PropertyType {
+			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+				dataResult.Info[index].Option =
+					s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}
 	}
@@ -588,13 +757,20 @@ func (s *coreService) SearchModelAttrUnique(ctx *rest.Contexts) {
 
 // CreateModelAttrUnique TODO
 func (s *coreService) CreateModelAttrUnique(ctx *rest.Contexts) {
-	inputDatas := metadata.CreateModelAttrUnique{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
+	inputData := metadata.CreateModelAttrUnique{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputDatas))
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().CreateModelAttrUnique(ctx.Kit, objID, inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // UpdateModelAttrUnique TODO
@@ -604,12 +780,21 @@ func (s *coreService) UpdateModelAttrUnique(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	id, err := strconv.ParseUint(ctx.Request.PathParameter("id"), 10, 64)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "id"))
 		return
 	}
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id, inputDatas))
+
+	objID := ctx.Request.PathParameter("bk_obj_id")
+	res, err := s.core.ModelOperation().UpdateModelAttrUnique(ctx.Kit, objID, id, inputDatas)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(res)
 }
 
 // DeleteModelAttrUnique TODO
@@ -620,7 +805,8 @@ func (s *coreService) DeleteModelAttrUnique(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), id))
+	ctx.RespEntityWithError(s.core.ModelOperation().DeleteModelAttrUnique(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), id))
 }
 
 // CreateModelTables TODO
@@ -631,4 +817,14 @@ func (s *coreService) CreateModelTables(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateModelTables(ctx.Kit, inputData))
+}
+
+// CreateTableModelTables create table model table
+func (s *coreService) CreateTableModelTables(ctx *rest.Contexts) {
+	inputData := metadata.CreateModelTable{}
+	if err := ctx.DecodeInto(&inputData); nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateTableModelTables(ctx.Kit, inputData))
 }

@@ -22,10 +22,10 @@ import (
 
 // BaseResp common result struct
 type BaseResp struct {
-	Result      bool           `json:"result" mapstructure:"result"`
-	Code        int            `json:"bk_error_code" mapstructure:"bk_error_code"`
-	ErrMsg      string         `json:"bk_error_msg" mapstructure:"bk_error_msg"`
-	Permissions *IamPermission `json:"permission" mapstructure:"permission"`
+	Result      bool           `json:"result" bson:"result" mapstructure:"result"`
+	Code        int            `json:"bk_error_code" bson:"bk_error_code" mapstructure:"bk_error_code"`
+	ErrMsg      string         `json:"bk_error_msg" bson:"bk_error_msg" mapstructure:"bk_error_msg"`
+	Permissions *IamPermission `json:"permission" bson:"permission" mapstructure:"permission"`
 }
 
 // CCError 根据response返回的信息产生错误
@@ -277,6 +277,23 @@ type ExceptionResult struct {
 	Code        int64       `json:"code"`
 	Data        interface{} `json:"data"`
 	OriginIndex int64       `json:"origin_index"`
+}
+
+// GenExceptionResult generate exception result
+func GenExceptionResult(err error, data interface{}, index int64) ExceptionResult {
+	res := ExceptionResult{
+		Message:     err.Error(),
+		Code:        common.CCErrorUnknownOrUnrecognizedError,
+		Data:        data,
+		OriginIndex: index,
+	}
+
+	ccErr, ok := err.(errors.CCErrorCoder)
+	if ok {
+		res.Code = int64(ccErr.GetCode())
+	}
+
+	return res
 }
 
 // CreatedDataResult common created result definition

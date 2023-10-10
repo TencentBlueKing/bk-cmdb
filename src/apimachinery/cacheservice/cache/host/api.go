@@ -22,10 +22,16 @@ import (
 
 // Interface TODO
 type Interface interface {
-	SearchHostWithInnerIP(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (jsonString string, err error)
-	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (jsonString string, err error)
-	ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (jsonString string, err error)
-	ListHostWithPage(ctx context.Context, h http.Header, opt *metadata.ListHostWithPage) (cnt int64, jsonString string, err error)
+	SearchHostWithInnerIPForStatic(ctx context.Context, h http.Header, opt *metadata.SearchHostWithInnerIPOption) (
+		jsonString string, err error)
+	SearchHostWithAgentID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithAgentID) (
+		jsonString string, err error)
+	SearchHostWithHostID(ctx context.Context, h http.Header, opt *metadata.SearchHostWithIDOption) (
+		jsonString string, err error)
+	ListHostWithHostID(ctx context.Context, h http.Header, opt *metadata.ListWithIDOption) (
+		jsonString string, err error)
+	ListHostWithPage(ctx context.Context, h http.Header, opt *metadata.ListHostWithPage) (
+		cnt int64, jsonString string, err error)
 }
 
 // NewCacheClient TODO

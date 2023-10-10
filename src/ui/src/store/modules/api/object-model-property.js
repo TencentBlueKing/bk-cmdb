@@ -17,7 +17,8 @@ import $http from '@/api'
 function createIdProperty(objId) {
   const keyMap = {
     biz: 'bk_biz_id',
-    host: 'bk_host_id'
+    host: 'bk_host_id',
+    bk_project: 'id'
   }
   return {
     id: Date.now(),
@@ -117,7 +118,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   searchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr', params, config).then((data) => {
+    return $http.post('find/objectattr/web', params, config).then((data) => {
       if (injectId !== params.bk_obj_id) {
         return data
       }
@@ -140,7 +141,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   batchSearchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr', params, config).then((properties) => {
+    return $http.post('find/objectattr/web', params, config).then((properties) => {
       const result = {}
       params.bk_obj_id.$in.forEach((objId) => {
         result[objId] = []

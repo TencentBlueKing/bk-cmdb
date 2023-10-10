@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid"
 	"configcenter/src/source_controller/coreservice/multilingual"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
@@ -97,6 +98,7 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
 		return fmt.Errorf("get set instances by business:%d failed, %+v", im.bkBizID, err)
 	}
+	multilingual.TranslateInstanceName(im.lang, common.BKInnerObjIDSet, im.setInstances)
 	blog.V(5).Infof("get set instances by business:%d result: %+v, cond: %#v, rid: %s", im.bkBizID, im.setInstances, filter, rid)
 	return nil
 }
@@ -126,7 +128,7 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 
 	// load other mainline instance(except business,set,module) list of target business
 	for _, objectID := range im.modelIDs {
-		if util.IsInnerObject(objectID) {
+		if valid.IsInnerObject(objectID) {
 			continue
 		}
 
@@ -175,6 +177,7 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
 		return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
 	}
+	multilingual.TranslateInstanceName(im.lang, common.BKInnerObjIDApp, []mapstr.MapStr{im.businessInstance})
 	blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v, rid: %s", im.businessInstance, rid)
 	bizTopoInstance.InstanceName = util.GetStrByInterface(im.businessInstance[common.BKAppNameField])
 	if withDetail {
@@ -297,7 +300,8 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 }
 
 // CheckAndFillingMissingModels TODO
-func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header, withDetail bool) error {
+func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header,
+	withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
 
@@ -321,9 +325,9 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 			continue
 		}
 		blog.Warnf("get parent of %+v with key=%s failed, not Found, rid: %s", topoInstance, parentKey, rid)
-		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table has no bk_biz_id field
-		// and therefore find parentInstance failed.
-		// In this case current algorithm degenerate in to o(n) query cost.
+		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table has
+		// no bk_biz_id field and therefore find parentInstance failed. in this case current algorithm
+		// degenerate in to o(n) query cost.
 
 		filter := map[string]interface{}{
 			common.BKInstIDField: topoInstance.ParentInstanceID,

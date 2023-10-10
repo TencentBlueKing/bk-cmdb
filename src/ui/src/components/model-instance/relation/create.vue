@@ -26,8 +26,9 @@
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-relation-property-filter
+          ref="filterComponent"
           :obj-id="currentAsstObj"
-          :exclude-type="['foreignkey', 'time']"
+          :exclude-type="excludePropertyFilterTypes"
           @on-property-selected="handlePropertySelected"
           @on-operator-selected="handleOperatorSelected"
           @on-value-change="handleValueChange">
@@ -36,7 +37,7 @@
       <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
     </div>
     <bk-table class="new-association-table"
-      v-bkloading="{ isLoading: $loading() }"
+      v-bkloading="{ isLoading: $loading('get_relation_inst') }"
       :pagination="table.pagination"
       :data="table.list"
       :col-border="false"
@@ -48,8 +49,15 @@
         sortable="custom"
         :key="column.id"
         :prop="column.id"
-        :label="column.name">
-        <template slot-scope="{ row }">{{row[column.id] | formatter(column.property)}}</template>
+        :label="column.name"
+        :show-overflow-tooltip="$tools.isShowOverflowTips(column.property)">
+        <template slot-scope="{ row }">
+          <cmdb-property-value
+            :show-unit="false"
+            :value="row[column.id]"
+            :property="column.property">
+          </cmdb-property-value>
+        </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
         <template slot-scope="{ row }">
@@ -77,7 +85,8 @@
       <cmdb-table-empty
         slot="empty"
         :stuff="table.stuff"
-        :auth="tableDataAuth">
+        :auth="tableDataAuth"
+        @clear="handleClearFilter">
       </cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.id">
@@ -99,13 +108,14 @@
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
-  import queryBuilderOperator from '@/utils/query-builder-operator'
   import {
     BUILTIN_MODELS,
     BUILTIN_MODEL_PROPERTY_KEYS,
     BUILTIN_MODEL_ROUTEPARAMS_KEYS
   } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
+  import { isEmptyPropertyValue, formatValue } from '@/utils/tools'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     name: 'cmdb-relation-create',
@@ -151,8 +161,10 @@
           },
           sort: '',
           stuff: {
-            type: 'search',
-            payload: {}
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
           }
         },
         confirm: {
@@ -164,7 +176,8 @@
         currentAsstObj: '',
         existInstAssociation: [],
         tempData: [],
-        hasChange: false
+        hasChange: false,
+        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY]
       }
     },
     computed: {
@@ -204,7 +217,7 @@
         const name = {
           bk_host_innerip: this.$t('内网IP'),
           bk_biz_name: this.$t('业务名'),
-          bk_cloud_name: this.$t('云区域'),
+          bk_cloud_name: this.$t('管控区域'),
           bk_module_name: this.$t('模块名'),
           bk_set_name: this.$t('集群名'),
           bk_inst_name: this.$t('实例名'),
@@ -370,7 +383,16 @@
           name: this.instanceName,
           property: 'singlechar'
         }]
-        if (propertyId && propertyId !== this.instanceNameKey) {
+
+        if (this.currentAsstObj === BUILTIN_MODELS.HOST) {
+          header.push({
+            id: 'bk_host_innerip_v6',
+            name: this.$t('内网IPv6'),
+            property: 'singlechar'
+          })
+        }
+
+        if (propertyId && !header.some(({ id }) => propertyId === id)) {
           const property = this.getProperty(propertyId) || {}
           header.push({
             id: propertyId,
@@ -538,7 +560,7 @@
             promise = this.getObjInstance(objId, config)
         }
         promise.then((data) => {
-          this.table.stuff.type = 'search'
+          this.table.stuff.type = !isEmptyPropertyValue(this.filter.value) ? 'search' : 'default'
           this.setTableList(data, objId)
         }).catch((e) => {
           console.error(e)
@@ -575,11 +597,11 @@
           { bk_obj_id: 'set', condition: [], fields: [] }
         ]
         const property = this.getProperty(this.filter.id)
-        if (this.filter.value !== '' && property) {
+        if (!isEmptyPropertyValue(this.filter.value) && property) {
           condition[0].condition.push({
             field: this.filter.id,
             operator: this.filter.operator,
-            value: this.filter.value
+            value: formatValue(this.filter.value, property)
           })
         }
         return condition
@@ -592,8 +614,9 @@
           fields: [],
           page: this.page
         }
-        if (this.filter.value !== '') {
-          params.condition[this.filter.id] = this.filter.value
+        const property = this.getProperty(this.filter.id)
+        if (!isEmptyPropertyValue(this.filter.value)) {
+          params.condition[this.filter.id] = formatValue(this.filter.value, property)
         }
         return this.searchBusiness({
           params,
@@ -607,9 +630,10 @@
         }
 
         const condition = {}
-        if (this.filter.value !== '') {
+        const property = this.getProperty(this.filter.id)
+        if (!isEmptyPropertyValue(this.filter.value)) {
           condition[this.filter.id] = {
-            value: this.filter.value,
+            value: formatValue(this.filter.value, property),
             operator: this.filter.operator
           }
         }
@@ -643,16 +667,17 @@
           fields: [],
         }
         const property = this.getProperty(this.filter.id)
-        if (this.filter.value !== '' && property) {
-          params.conditions = {
-            condition: 'AND',
-            rules: [{
-              field: this.filter.id,
-              operator: queryBuilderOperator(this.filter.operator),
-              value: this.filter.value
-            }]
+        const condition = {}
+
+        if (!isEmptyPropertyValue(this.filter.value)) {
+          condition[this.filter.id] = {
+            value: formatValue(this.filter.value, property),
+            operator: this.filter.operator
           }
         }
+        // eslint-disable-next-line max-len
+        const { conditions } = Utils.transformGeneralModelCondition(condition, this.properties) || {}
+        params.conditions = conditions
         return params
       },
       setTableList(data, asstObjId) {
@@ -678,7 +703,13 @@
         this.filter.operator = value
       },
       handleValueChange(value) {
+        this.table.stuff.type = 'default'
         this.filter.value = value
+      },
+      handleClearFilter() {
+        this.filter.value = ''
+        this.$refs.filterComponent.clearFilter()
+        this.getInstance()
       }
     }
   }

@@ -301,7 +301,8 @@ func (cli *host) Create() error {
 		return nil
 	}
 
-	ids, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
+	ids, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().CreateHostBatch(cli.bizID,
+		cli.moduleIDS, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -350,7 +351,8 @@ func (cli *host) Update() error {
 		updateCond.Field(ModuleID).Eq(hostID)
 
 		// log.Infof("the exists:%s %d", string(existItem.ToJSON()), hostID)
-		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().UpdateHostBatch(cli.datas, strconv.Itoa(int(hostID)))
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().UpdateHostBatch(cli.datas,
+			strconv.Itoa(int(hostID)))
 		if err != nil {
 			log.Errorf("failed to update host, error info is %s", err.Error())
 			return err
@@ -360,7 +362,8 @@ func (cli *host) Update() error {
 		if 0 != len(cli.moduleIDS) {
 			err = cli.Transfer().MoveToModule(cli.moduleIDS, cli.isIncrement)
 			if nil != err {
-				log.Errorf("failed to biz(%d) set modules(%#v), error info is %s", cli.bizID, cli.moduleIDS, err.Error())
+				log.Errorf("failed to biz(%d) set modules(%#v), error info is %s", cli.bizID, cli.moduleIDS,
+					err.Error())
 				return err
 			}
 		}

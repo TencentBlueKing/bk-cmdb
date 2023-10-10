@@ -60,6 +60,7 @@
 
 .bk-dialog {
     .bk-dialog-header {
+        line-height: 1.4;
         .bk-dialog-header-inner {
             white-space: normal;
         }
@@ -131,7 +132,7 @@
         }
 
         &.has-link-line.is-leaf {
-            padding-left: 12px;
+            padding-left: 6px;
         }
 
         &:hover {
@@ -239,5 +240,17 @@
     .tippy-arrow {
         width: unset;
         height: unset;
+    }
+}
+
+// fix无外边框表格右侧固定时多出1px间隙的问题
+.bk-table {
+    .bk-table-fixed-right {
+        right: 0;
+    }
+    &.bk-table-outer-border {
+        .bk-table-fixed-right {
+            right: 1px;
+        }
     }
 }

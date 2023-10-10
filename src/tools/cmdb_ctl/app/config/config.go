@@ -41,15 +41,22 @@ type Config struct {
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"), "the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
+	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"),
+		"the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
 	// TODO add zkuser and zkpwd
-	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"), "the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
+	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"),
+		"the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
 	cmd.PersistentFlags().StringVar(&c.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379", "assign redis server address default is 127.0.0.1:6379")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "", "assign redis server master name defalut is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Password, "redis-pwd", "", "assign redis server password default is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.SentinelPassword, "redis-sentinelpwd", "", "assign the redis sentinel password  default is null")
-	cmd.PersistentFlags().StringVar(&c.RedisConf.Database, "redis-database", "0", "assign the redis database  default is 0")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Address, "redis-addr", "127.0.0.1:6379",
+		"assign redis server address default is 127.0.0.1:6379")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.MasterName, "redis-mastername", "",
+		"assign redis server master name defalut is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Password, "redis-pwd", "",
+		"assign redis server password default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.SentinelPassword, "redis-sentinelpwd", "",
+		"assign the redis sentinel password  default is null")
+	cmd.PersistentFlags().StringVar(&c.RedisConf.Database, "redis-database", "0",
+		"assign the redis database  default is 0")
 	return
 }
 

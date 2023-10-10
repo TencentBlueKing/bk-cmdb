@@ -60,6 +60,11 @@
         :row="row">
       </list-cell-tag>
     </bk-table-column>
+    <cmdb-table-empty
+      slot="empty"
+      :stuff="table.stuff"
+      @clear="handleClearFilter">
+    </cmdb-table-empty>
   </bk-table>
 </template>
 
@@ -87,6 +92,14 @@
         request: {
           getList: Symbol('getList'),
         },
+        table: {
+          stuff: {
+            type: 'default',
+            payload: {
+              emptyText: this.$t('bk.table.emptyText')
+            }
+          }
+        }
       }
     },
     computed: {
@@ -181,6 +194,7 @@
             editing: { name: false },
           }))
           this.pagination.count = count
+          this.table.stuff.type = this.filters.length === 0 ? 'default' : 'search'
         } catch (error) {
           this.list = []
           this.pagination.count = 0
@@ -242,6 +256,12 @@
       },
       handleRefreshCount(row, newCount) {
         row.process_count = newCount
+      },
+      async handleClearFilter() {
+        this.filters = []
+        await this.getList()
+        this.table.stuff.type = 'default'
+        Bus.$emit('filter-clear')
       }
     },
   }

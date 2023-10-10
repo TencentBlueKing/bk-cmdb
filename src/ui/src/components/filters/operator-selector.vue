@@ -75,6 +75,8 @@
           bool: [EQ, NE],
           date: [GTE, LTE],
           enum: [IN, NIN],
+          enummulti: [IN, NIN],
+          enumquote: [IN, NIN],
           float: [EQ, NE, GT, LT, RANGE],
           int: [EQ, NE, GT, LT, RANGE],
           list: [IN, NIN],

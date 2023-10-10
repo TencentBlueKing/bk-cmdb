@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	apiutil "configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/ssl"
 
 	"github.com/olivere/elastic/v7"
@@ -33,7 +35,8 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 		tlsConfig.InsecureSkipVerify = esConf.TLSClientConfig.InsecureSkipVerify
 		if !tlsConfig.InsecureSkipVerify && len(esConf.TLSClientConfig.CAFile) != 0 && len(esConf.TLSClientConfig.CertFile) != 0 && len(esConf.TLSClientConfig.KeyFile) != 0 {
 			var err error
-			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile, esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
+			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile,
+				esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
 			if err != nil {
 				return nil, err
 			}
@@ -78,7 +81,10 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []stri
 
 	// search highlight
 	highlight := elastic.NewHighlight()
-	highlight.Field("*")
+	// NOTE: 文档高亮同时支持属性和表格属性的keyword高亮
+	highlight.Field(metadata.IndexPropertyKeywords)
+	highlight.Field(fmt.Sprintf("%s.*.*.%s", metadata.TablePropertyName, metadata.IndexPropertyTypeKeyword))
+
 	highlight.RequireFieldMatch(false)
 
 	searchSource := elastic.NewSearchSource()

@@ -120,14 +120,8 @@ func (p *processOperation) GetServiceTemplate(kit *rest.Kit, templateID int64) (
 	return &template, nil
 }
 
-func (p *processOperation) validateServiceCategoryID(kit *rest.Kit, template *metadata.ServiceTemplate,
-	serviceCategoryID int64) errors.CCErrorCoder {
-
-	// update fields to local object
-	if serviceCategoryID == 0 {
-		return nil
-	}
-	template.ServiceCategoryID = serviceCategoryID
+func (p *processOperation) validateServiceCategoryID(kit *rest.Kit,
+	template *metadata.ServiceTemplate) errors.CCErrorCoder {
 
 	// validate service category id field
 	category, err := p.GetServiceCategory(kit, template.ServiceCategoryID)
@@ -151,11 +145,7 @@ func (p *processOperation) validateServiceCategoryID(kit *rest.Kit, template *me
 	return nil
 }
 
-func ifUpdateModuleName(kit *rest.Kit, template *metadata.ServiceTemplate, needCheckName bool) (
-	bool, errors.CCErrorCoder) {
-	if !needCheckName {
-		return false, nil
-	}
+func ifUpdateModuleName(kit *rest.Kit, template *metadata.ServiceTemplate) (bool, errors.CCErrorCoder) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var checkErr errors.CCErrorCoder
@@ -202,7 +192,8 @@ func ifUpdateModuleName(kit *rest.Kit, template *metadata.ServiceTemplate, needC
 			for _, module := range modules {
 				parentIDs = append(parentIDs, module.ParentID)
 			}
-			// check if other modules has same name with the service template name to be changed
+
+			// check if other modules has the same name with the service template name to be changed
 			moduleNameFilter := map[string]interface{}{
 				common.BKAppIDField:             template.BizID,
 				common.BKModuleNameField:        template.Name,
@@ -240,30 +231,36 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 	if err != nil {
 		return nil, err
 	}
+
+	// update fields to local object and do validation
+	if input.ServiceCategoryID > 0 {
+		template.ServiceCategoryID = input.ServiceCategoryID
+		if err := p.validateServiceCategoryID(kit, template); err != nil {
+			return nil, err
+		}
+	}
+
+	needUpdateModuleName := false
+	if len(input.Name) != 0 && template.Name != input.Name {
+		template.Name = input.Name
+
+		needUpdateModuleName, err = ifUpdateModuleName(kit, template)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if field, err := template.Validate(kit.CCError); err != nil {
-		blog.Errorf("validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		blog.Errorf("validate template(%+v) failed, err: %+v, rid: %s", template, err, kit.Rid)
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
-	if err := p.validateServiceCategoryID(kit, template, input.ServiceCategoryID); err != nil {
-		return nil, err
-	}
-
-	needCheckName := false
-	if len(input.Name) != 0 && template.Name != input.Name {
-		template.Name = input.Name
-		needCheckName = true
-	}
-
-	needUpdateModuleName, err := ifUpdateModuleName(kit, template, needCheckName)
-	if err != nil {
-		return nil, err
-	}
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); nil != err {
-		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, template, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, filter, template); err != nil {
+		blog.Errorf("update service template failed, err: %+v, filter: %+v, data: %+v, rid: %s", err, filter,
+			template, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 
@@ -297,18 +294,23 @@ func (p *processOperation) UpdateServiceTemplate(kit *rest.Kit, templateID int64
 
 	// update name & category of the modules using this service template
 	moduleFilter := map[string]interface{}{common.BKServiceTemplateIDField: template.ID}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData); err != nil {
-		blog.ErrorJSON("UpdateServiceTemplate failed, update modules using this service template failed, filter: %s,"+
-			" err: %s, rid: %s", moduleFilter, err, kit.Rid)
+	rawErr := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter, updateData)
+	if rawErr != nil {
+		blog.Errorf("update modules using this service template failed, err: %v, filter: %+v, rid: %s", rawErr,
+			moduleFilter, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return template, nil
 }
 
 // ListServiceTemplates TODO
-func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
-	filter := map[string]interface{}{
-		common.BKAppIDField: option.BusinessID,
+func (p *processOperation) ListServiceTemplates(kit *rest.Kit, option metadata.ListServiceTemplateOption) (
+	*metadata.MultipleServiceTemplate, errors.CCErrorCoder) {
+
+	filter := map[string]interface{}{}
+	
+	if option.BusinessID != 0 {
+		filter[common.BKAppIDField] = option.BusinessID
 	}
 
 	// filter with matching any sub category

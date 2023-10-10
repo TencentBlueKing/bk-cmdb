@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	attrvalid "configcenter/src/common/valid/attribute"
 )
 
 // GetHostAttributes TODO
@@ -48,30 +49,25 @@ func (lgc *Logics) GetHostAttributes(kit *rest.Kit, bizMetaOpt mapstr.MapStr) ([
 	return result.Info, nil
 }
 
-// GetHostInstanceDetails TODO
-func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, string, errors.CCError) {
+// GetHostInstanceDetails get host instance details
+func (lgc *Logics) GetHostInstanceDetails(kit *rest.Kit, hostID int64) (map[string]interface{}, errors.CCError) {
 	// get host details, pre data
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(kit.Ctx, kit.Header, hostID)
 	if err != nil {
-		blog.Errorf("GetHostInstanceDetails http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, kit.Rid)
-		return nil, "", kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("get host instance details failed, err: %v, input:%+v, rid:%s", err, hostID, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHostInstanceDetails http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, kit.Rid)
-		return nil, "", kit.CCError.New(result.Code, result.ErrMsg)
+		blog.Errorf("get host instance details failed, code: %d, msg: %s, input: %+v, rid: %s", result.Code,
+			result.ErrMsg, hostID, kit.Rid)
+		return nil, kit.CCError.New(result.Code, result.ErrMsg)
 	}
 
 	hostInfo := result.Data
 	if len(hostInfo) == 0 {
-		return nil, "", nil
+		return nil, nil
 	}
-	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
-	if !ok {
-		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, kit.Rid)
-		return nil, "", kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
-
-	}
-	return hostInfo, ip, nil
+	return hostInfo, nil
 }
 
 // GetHostRelations get hosts owned set, module info, where hosts must match condition specify by cond.
@@ -91,7 +87,7 @@ func (lgc *Logics) GetHostRelations(kit *rest.Kit, input metadata.HostModuleRela
 func (lgc *Logics) EnterIP(kit *rest.Kit, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{},
 	isIncrement bool) errors.CCError {
 
-	isExist, err := lgc.IsPlatExist(kit, mapstr.MapStr{common.BKCloudIDField: cloudID})
+	isExist, err := lgc.IsPlatAllExist(kit, []int64{cloudID})
 	if nil != err {
 		return err
 	}
@@ -174,7 +170,7 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 	for _, field := range defaultFields {
 		_, ok := host[field.PropertyID]
 		if !ok {
-			if true == util.IsStrProperty(field.PropertyType) {
+			if true == attrvalid.IsStrProperty(field.PropertyType) {
 				host[field.PropertyID] = ""
 			} else {
 				host[field.PropertyID] = nil
@@ -215,10 +211,11 @@ func (lgc *Logics) addHost(kit *rest.Kit, appID int64, host map[string]interface
 func (lgc *Logics) GetHostInfoByConds(kit *rest.Kit, cond map[string]interface{}) ([]mapstr.MapStr,
 	errors.CCErrorCoder) {
 	query := &metadata.QueryInput{
-		Condition: cond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKHostIDField,
+		Condition:      cond,
+		Start:          0,
+		Limit:          common.BKNoLimit,
+		Sort:           common.BKHostIDField,
+		DisableCounter: true,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, query)
@@ -251,9 +248,7 @@ func (lgc *Logics) SearchHostInfo(kit *rest.Kit, cond metadata.QueryCondition) (
 
 // HostSearch search host by multiple condition
 const (
-	SplitFlag      = "##"
-	TopoSetName    = "TopSetName"
-	TopoModuleName = "TopModuleName"
+	SplitFlag = "##"
 )
 
 // GetHostIDByCond query hostIDs by condition base on cc_ModuleHostConfig
@@ -832,7 +827,7 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 	_, doErr := lgc.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost, input)
 	if doErr != nil {
 		blog.ErrorJSON("CloneHostProperty UpdateInstance error. err: %s,condition:%s,rid:%s", doErr, input, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		return doErr
 	}
 
 	if err := audit.SaveAuditLog(kit, auditLog...); err != nil {
@@ -844,7 +839,8 @@ func (lgc *Logics) CloneHostProperty(kit *rest.Kit, appID int64, srcHostID int64
 }
 
 // IPCloudToHost get host id by ip and cloud
-func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64, err errors.CCErrorCoder) {
+func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostMap mapstr.MapStr, hostID int64,
+	err errors.CCErrorCoder) {
 	// FIXME there must be a better ip to hostID solution
 	ipArr := strings.Split(ip, ",")
 	condition := mapstr.MapStr{
@@ -856,7 +852,7 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 
 	hostInfoArr, err := lgc.GetHostInfoByConds(kit, condition)
 	if err != nil {
-		blog.ErrorJSON("IPCloudToHost GetHostInfoByConds error. err:%s, conditon:%s, rid:%s", err.Error(), condition, kit.Rid)
+		blog.Errorf("get host info failed, err: %v, condition: %+v, rid: %s", err, condition, kit.Rid)
 		return nil, 0, err
 	}
 	if len(hostInfoArr) == 0 {
@@ -865,8 +861,10 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 
 	hostID, convErr := hostInfoArr[0].Int64(common.BKHostIDField)
 	if nil != convErr {
-		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip, cloudID, kit.Rid)
-		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", convErr.Error())
+		blog.ErrorJSON("IPCloudToHost bk_host_id field not found hostMap:%s ip:%s, cloudID:%s,rid:%s", hostInfoArr, ip,
+			cloudID, kit.Rid)
+		return nil, 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+			common.BKHostIDField, "int", convErr.Error())
 	}
 
 	return hostInfoArr[0], hostID, nil
@@ -896,14 +894,12 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 		HostIDArr: hostIDs,
 	}
 	relations, err := lgc.GetHostRelations(kit, relationCond)
-	if nil != err {
+	if err != nil {
 		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, kit.Rid)
 		return nil, err
 	}
 
-	bizList := make([]int64, 0)
-	moduleList := make([]int64, 0)
-	setList := make([]int64, 0)
+	bizList, moduleList, setList := make([]int64, 0), make([]int64, 0), make([]int64, 0)
 	hostModule := make(map[int64][]int64)
 	for _, one := range relations {
 		bizList = append(bizList, one.AppID)
@@ -920,71 +916,21 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 
 	// now we get all the custom object's instances with set's parent instance id
 	// from low level to the top business level.
-	customObjInstMap := make(map[string]map[int64]mapstr.MapStr)
-	reversedRank := util.ReverseArrayString(rank)
-	var parentsInst []interface{}
-loop:
-	for _, one := range reversedRank {
-		switch one {
-		case common.BKInnerObjIDApp:
-			break loop
-		case common.BKInnerObjIDHost:
-			continue
-		case common.BKInnerObjIDModule:
-			continue
-		case common.BKInnerObjIDSet:
-			if rankMap[common.BKInnerObjIDSet] == common.BKInnerObjIDApp {
-				break loop
-			}
-
-			parentsInst = make([]interface{}, 0)
-			for _, set := range setDetails {
-				if fmt.Sprintf("%v", set[common.BKDefaultField]) != "0" {
-					// this is a inner set, do not have custom obj parent instance
-					continue
-				}
-				parentsInst = append(parentsInst, set[common.BKParentIDField])
-			}
-
-			continue
-		default:
-			if len(parentsInst) == 0 {
-				// when the set is inner set, which default field value is > 0;
-				break loop
-			}
-			// get custom level instances details with parent instance id list.
-			customInst, err := lgc.getCustomObjectInstances(kit, one, parentsInst)
-			if err != nil {
-				return nil, err
-			}
-
-			// reset parent instances
-			parentsInst = make([]interface{}, 0)
-			// save the custom instances details
-			for _, inst := range customInst {
-				if _, exists := customObjInstMap[one]; !exists {
-					customObjInstMap[one] = make(map[int64]mapstr.MapStr)
-				}
-
-				instID, err := util.GetInt64ByInterface(inst[common.BKInstIDField])
-				if err != nil {
-					blog.Errorf("get inst id from inst: %v failed, err: %v, rid: %s", inst, err, kit.Rid)
-					return nil, err
-				}
-
-				// save the instances data with object and it's instances
-				customObjInstMap[one][instID] = inst
-				// update parent instances
-				parentsInst = append(parentsInst, inst[common.BKParentIDField])
-			}
-
-			if rankMap[one] == common.BKInnerObjIDApp {
-				break loop
-			}
-		}
+	customObjInstMap, err := lgc.getCustomTopoInfo(kit, rank, rankMap, setDetails)
+	if err != nil {
+		return nil, err
 	}
 
 	// now, we have already get all the data we need, it's time to arrange the data.
+	return lgc.rearrangeHostDetailAndTopo(kit, withBiz, hosts, bizDetails, setDetails, moduleDetails, rank, hostModule,
+		rankMap, reverseRankMap, customObjInstMap)
+}
+
+func (lgc *Logics) rearrangeHostDetailAndTopo(kit *rest.Kit, withBiz bool, hosts []map[string]interface{},
+	bizDetails, setDetails, moduleDetails []mapstr.MapStr, rank []string, hostModule map[int64][]int64,
+	rankMap, reverseRankMap map[string]string, customObjInstMap map[string]map[int64]mapstr.MapStr) (
+	[]*metadata.HostDetailWithTopo, error) {
+
 	bizMap := make(map[int64]mapstr.MapStr)
 	for _, biz := range bizDetails {
 		bizID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
@@ -1039,10 +985,76 @@ loop:
 		}
 
 		topo[idx].Topo = children
-
 	}
 
 	return topo, nil
+}
+
+func (lgc *Logics) getCustomTopoInfo(kit *rest.Kit, rank []string, rankMap map[string]string,
+	setDetails []mapstr.MapStr) (map[string]map[int64]mapstr.MapStr, error) {
+
+	customObjInstMap := make(map[string]map[int64]mapstr.MapStr)
+	reversedRank := util.ReverseArrayString(rank)
+	var parentsInst []interface{}
+loop:
+	for _, one := range reversedRank {
+		switch one {
+		case common.BKInnerObjIDApp:
+			break loop
+		case common.BKInnerObjIDHost, common.BKInnerObjIDModule:
+			continue
+		case common.BKInnerObjIDSet:
+			if rankMap[common.BKInnerObjIDSet] == common.BKInnerObjIDApp {
+				break loop
+			}
+
+			parentsInst = make([]interface{}, 0)
+			for _, set := range setDetails {
+				if fmt.Sprintf("%v", set[common.BKDefaultField]) != "0" {
+					// this is a inner set, do not have custom obj parent instance
+					continue
+				}
+				parentsInst = append(parentsInst, set[common.BKParentIDField])
+			}
+
+			continue
+		default:
+			if len(parentsInst) == 0 {
+				// when the set is inner set, which default field value is > 0;
+				break loop
+			}
+			// get custom level instances details with parent instance id list.
+			customInst, err := lgc.getCustomObjectInstances(kit, one, parentsInst)
+			if err != nil {
+				return nil, err
+			}
+
+			// reset parent instances
+			parentsInst = make([]interface{}, 0)
+			// save the custom instances details
+			for _, inst := range customInst {
+				if _, exists := customObjInstMap[one]; !exists {
+					customObjInstMap[one] = make(map[int64]mapstr.MapStr)
+				}
+
+				instID, err := util.GetInt64ByInterface(inst[common.BKInstIDField])
+				if err != nil {
+					blog.Errorf("get inst id from inst: %v failed, err: %v, rid: %s", inst, err, kit.Rid)
+					return nil, err
+				}
+
+				// save the instances data with object and it's instances
+				customObjInstMap[one][instID] = inst
+				// update parent instances
+				parentsInst = append(parentsInst, inst[common.BKParentIDField])
+			}
+
+			if rankMap[one] == common.BKInnerObjIDApp {
+				break loop
+			}
+		}
+	}
+	return customObjInstMap, nil
 }
 
 // arrangeParentTree is to arrange the host's topology tree with the modules it belongs to.
@@ -1102,11 +1114,35 @@ func (lgc *Logics) arrangeParentTree(
 	}
 	parentToChildrenMap[common.BKInnerObjIDSet] = setModules
 
+	rootBizs, err := lgc.arrangeParentTreeFromModule(rankMap, parentToChildrenMap, bizsMap, setsMap, objInstMap, rid)
+	if err != nil {
+		return nil, err
+	}
+
+	// now, we format the topology
+	nodes, err := lgc.formatParentTree(rank, withBiz, rootBizs, bizsMap, reverseRankMap, parentToChildrenMap, rid)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(innerSetModules) != 0 {
+		// these set and modules are in the same business.
+		// add inner module and sets to the topology nodes.
+		nodes = append(nodes, arrangeInnerModuleTree(rid, withBiz, bizsMap, innerSetModules, setsMap)...)
+	}
+
+	return nodes, nil
+}
+
+func (lgc *Logics) arrangeParentTreeFromModule(rankMap map[string]string,
+	parentToChildrenMap map[string]map[int64][]mapstr.MapStr, bizsMap, setsMap map[int64]mapstr.MapStr,
+	objInstMap map[string]map[int64]mapstr.MapStr, rid string) ([]int64, error) {
+
 	// start from module object
 	parent := rankMap[common.BKInnerObjIDModule]
 
-	rootBizInstances := make(map[int64][]mapstr.MapStr)
-loop:
+	rootBizInstances := make([]int64, 0)
+
 	// for loop model from bottom module to business
 	for {
 		// get next object for prepare
@@ -1170,8 +1206,8 @@ loop:
 				customParents[pid] = append(customParents[pid], one)
 
 				if next == common.BKInnerObjIDApp {
-					if biz, exist := bizsMap[pid]; exist {
-						rootBizInstances[pid] = []mapstr.MapStr{biz}
+					if _, exist := bizsMap[pid]; exist {
+						rootBizInstances = append(rootBizInstances, pid)
 					}
 				}
 			}
@@ -1184,18 +1220,21 @@ loop:
 
 		// check if we have already hit the topology's root
 		if next == common.BKInnerObjIDApp {
-			break loop
+			return rootBizInstances, nil
 		}
 	}
+}
 
-	// now, we format the topology
-	var root string
+func (lgc *Logics) formatParentTree(rank []string, withBiz bool, rootBizs []int64, bizsMap map[int64]mapstr.MapStr,
+	reverseRankMap map[string]string, parentToChildrenMap map[string]map[int64][]mapstr.MapStr, rid string) (
+	[]*metadata.HostTopoNode, error) {
+
 	nodes := make([]*metadata.HostTopoNode, 0)
 	if withBiz {
 		// start from biz
-		root = common.BKInnerObjIDApp
+		root := common.BKInnerObjIDApp
 
-		for rootID := range rootBizInstances {
+		for _, rootID := range rootBizs {
 			node := &metadata.HostTopoNode{
 				Instance: &metadata.NodeInstance{
 					Object:   root,
@@ -1207,45 +1246,39 @@ loop:
 			nodes = append(nodes, node)
 		}
 
-	} else {
-		// start from the second level
-		root = rank[1]
-		rootInstances, exist := parentToChildrenMap[common.BKInnerObjIDApp]
-		if !exist {
-			blog.Errorf("can not find %s object's instances, rid: %s", root, rid)
-			return nil, fmt.Errorf("can not find %s object's instances", root)
-		}
-		// rootInstanceMap = objInstMap[root]
-		nameField := common.GetInstNameField(root)
-		idField := common.GetInstIDField(root)
-		for _, children := range rootInstances {
+		return nodes, nil
+	}
 
-			for _, one := range children {
-				childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(root)])
-				if err != nil {
-					blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", root, one, err, rid)
-					return nil, err
-				}
-				node := &metadata.HostTopoNode{
-					Instance: &metadata.NodeInstance{
-						Object:   root,
-						InstName: one[nameField],
-						InstID:   one[idField],
-					},
-					Children: getTopologyChildren(rid, reverseRankMap, root, childID, parentToChildrenMap),
-				}
-				nodes = append(nodes, node)
+	// start from the second level
+	root := rank[1]
+	rootInstances, exist := parentToChildrenMap[common.BKInnerObjIDApp]
+	if !exist {
+		blog.Errorf("can not find %s object's instances, rid: %s", root, rid)
+		return nil, fmt.Errorf("can not find %s object's instances", root)
+	}
+	// rootInstanceMap = objInstMap[root]
+	nameField := common.GetInstNameField(root)
+	idField := common.GetInstIDField(root)
+	for _, children := range rootInstances {
+
+		for _, one := range children {
+			childID, err := util.GetInt64ByInterface(one[common.GetInstIDField(root)])
+			if err != nil {
+				blog.Errorf("get %s instance id failed, inst: %v, err: %v, rid: %s", root, one, err, rid)
+				return nil, err
 			}
-
+			node := &metadata.HostTopoNode{
+				Instance: &metadata.NodeInstance{
+					Object:   root,
+					InstName: one[nameField],
+					InstID:   one[idField],
+				},
+				Children: getTopologyChildren(rid, reverseRankMap, root, childID, parentToChildrenMap),
+			}
+			nodes = append(nodes, node)
 		}
-	}
 
-	if len(innerSetModules) != 0 {
-		// these set and modules are in the same business.
-		// add inner module and sets to the topology nodes.
-		nodes = append(nodes, arrangeInnerModuleTree(rid, withBiz, bizsMap, innerSetModules, setsMap)...)
 	}
-
 	return nodes, nil
 }
 
@@ -1384,8 +1417,7 @@ func getTopologyChildren(rid string, rankMap map[string]string, obj string, inst
 
 }
 
-// getInnerObjectDetails TODO
-// get inner object's instance details, as is biz, set, modules from cache
+// getInnerObjectDetails get inner object's instance details, as is biz, set, modules from cache
 func (lgc *Logics) getInnerObjectDetails(kit *rest.Kit, withBiz bool, bizList, moduleList,
 	setList []int64) ([]mapstr.MapStr, []mapstr.MapStr, []mapstr.MapStr, error) {
 
@@ -1638,7 +1670,7 @@ func (lgc *Logics) ListServiceTemplateHostIDMap(kit *rest.Kit, ids []int64) ([]m
 }
 
 // ListHostTotalMainlineTopo search hosts with its' topo under business
-// related issue:https://github.com/Tencent/bk-cmdb/issues/5891
+// related issue:https://github.com/TencentBlueKing/bk-cmdb/issues/5891
 func (lgc *Logics) ListHostTotalMainlineTopo(kit *rest.Kit, bizID int64, params metadata.FindHostTotalTopo) (
 	[]*metadata.HostDetailWithTopo, error) {
 

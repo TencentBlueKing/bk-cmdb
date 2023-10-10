@@ -36,7 +36,7 @@ export const rollReqUseCount = async (
   config = {},
   method = 'post'
 ) => {
-  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info' } = options
+  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info', generator = false } = options
 
   let index = start
   const size = limit
@@ -49,7 +49,7 @@ export const rollReqUseCount = async (
   const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
 
   // 请求列表的req
-  const req = index => http[method](url, enableCount({
+  const req = index => () => http[method](url, enableCount({
     ...params,
     page: page(index)
   }, false), config)
@@ -64,7 +64,16 @@ export const rollReqUseCount = async (
     index += 1
   }
 
-  const all = await Promise.all(reqs)
+  if (generator) {
+    const genCall = function* () {
+      for (let i = 0; i < reqs.length; i++) {
+        yield reqs[i]
+      }
+    }
+    return genCall()
+  }
+
+  const all = await Promise.all(reqs.map(req => req()))
   all.forEach(({ [listKey]: list = [] }) => {
     results.push(...list)
   })
@@ -80,7 +89,7 @@ export const rollReq = async (
   config = {},
   method = 'post'
 ) => {
-  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info' } = options
+  const { start = 1, limit = 1000, countKey = 'count', listKey = 'info', generator = false } = options
 
   let index = start
   const size = limit
@@ -88,13 +97,13 @@ export const rollReq = async (
 
   const page = index => ({ ...(params.page || {}), start: (index - 1) * size, limit: size })
 
-  const req = index => http[method](url, {
+  const req = index => () => http[method](url, {
     ...params,
     page: page(index)
   }, config)
 
   // 先拉起始页，通常是第1页，同时得到总数
-  const { [countKey]: total = 0, [listKey]: list = [] } = await req(index)
+  const { [countKey]: total = 0, [listKey]: list = [] } = await req(index)()
   results.push(...list)
 
   // 一共要拉取多少次
@@ -104,6 +113,15 @@ export const rollReq = async (
   while (index < max) {
     index += 1
     reqs.push(req(index))
+  }
+
+  if (generator) {
+    const genCall = function* () {
+      for (let i = 0; i < reqs.length; i++) {
+        yield reqs[i]
+      }
+    }
+    return [results, genCall()]
   }
 
   const rest = await Promise.all(reqs)

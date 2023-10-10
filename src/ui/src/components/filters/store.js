@@ -496,8 +496,14 @@ const FilterStore = new Vue({
       this.IP.outer && flag.push('bk_host_outerip')
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
+        // assetList存放非法ip，当查询非法ip时，支持模糊查询和精确查询
         ip: {
-          data: transformedIP.data,
+          data: [...transformedIP.data.ipv4, ...transformedIP.data.assetList],
+          exact: this.IP.exact ? 1 : 0,
+          flag: flag.join('|')
+        },
+        ipv6: {
+          data: transformedIP.data.ipv6,
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         }
@@ -565,7 +571,7 @@ const FilterStore = new Vue({
       return this.components[name]
     },
     async getProperties() {
-      const properties = await api.post('find/objectattr', {
+      const properties = await api.post('find/objectattr/web', {
         bk_biz_id: this.bizId,
         bk_obj_id: {
           $in: ['host', 'module', 'set', 'biz']
@@ -704,7 +710,6 @@ const FilterStore = new Vue({
       return Promise.resolve()
     },
     async updateUserBehavior(properties) {
-      // console.log(this.userBehaviorKey, 'this.userBehaviorKeythis.userBehaviorKey')
       await store.dispatch('userCustom/saveUsercustom', {
         [this.userBehaviorKey]: properties.map(property => [property.bk_property_id, property.bk_obj_id])
       })

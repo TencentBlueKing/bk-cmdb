@@ -41,7 +41,7 @@
         :is="`cmdb-search-${rule.property.bk_property_type}`"
         :placeholder="getPlaceholder(rule.property)"
         :clearable="true"
-        :multiple="true"
+        :multiple="rule.property.ismultiple"
         :disabled="disabled"
         v-bind="getBindProps(rule.property)"
         v-model="rule.value">
@@ -64,6 +64,7 @@
   import cmdbPropertySelector from '@/components/property-selector'
   import propertyService from '@/service/property/property.js'
   import businessService from '@/service/business/search.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default defineComponent({
     components: {
@@ -97,10 +98,13 @@
       // 已选择的业务
       const selectedBusiness = ref([])
 
+      // 默认选择的业务
+      const localSelectedBusiness = ref([])
+
       // 初始化表单项的值
       watchEffect(() => {
         const localCondition = formData.value?.condition || []
-        const localSelectedBusiness = formData.value?.selectedBusiness || []
+        localSelectedBusiness.value = formData.value?.selectedBusiness || []
 
         const newCondition = []
         localCondition.forEach((item) => {
@@ -110,7 +114,7 @@
         })
 
         condition.value = newCondition
-        selectedBusiness.value = localSelectedBusiness
+        selectedBusiness.value = localSelectedBusiness.value
       })
 
       // 初始化业务属性和全量业务列表
@@ -122,7 +126,7 @@
         ])
         loading.property = false
 
-        const allowedPropertyTypes = ['organization', 'enum']
+        const allowedPropertyTypes = [PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.ENUM]
         properties.value = businessProperties.filter(item => allowedPropertyTypes.includes(item.bk_property_type))
         allBusiness.value = businessList
       })
@@ -188,7 +192,8 @@
         handleAdd,
         handleRemove,
         getPlaceholder,
-        getBindProps
+        getBindProps,
+        localSelectedBusiness
       }
     }
   })

@@ -9,7 +9,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -24,7 +23,7 @@ var _ = Describe("host test", func() {
 
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'cc_biz'", func() {
-			test.ClearDatabase()
+			test.DeleteAllBizs()
 
 			input := map[string]interface{}{
 				"life_cycle":        "2",
@@ -34,7 +33,7 @@ var _ = Describe("host test", func() {
 				"time_zone":         "Africa/Accra",
 			}
 			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data).To(ContainElement("cc_biz"))
@@ -93,7 +92,7 @@ var _ = Describe("host test", func() {
 				"bk_module_name": "test",
 			}
 			rsp, err := dirClient.CreateResourceDirectory(context.Background(), header, dir)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 
@@ -115,25 +114,25 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search host created using api", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Ip: params.IPInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Ipv4Ip: metadata.IPInfo{
 					Data:  []string{"127.0.0.1"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -157,25 +156,25 @@ var _ = Describe("host test", func() {
 				"input_type": "excel",
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search host created using excel", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Ip: params.IPInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Ipv4Ip: metadata.IPInfo{
 					Data:  []string{"127.0.0.2"},
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -188,9 +187,9 @@ var _ = Describe("host test", func() {
 		})
 
 		It("search host using multiple ips", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Ip: params.IPInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Ipv4Ip: metadata.IPInfo{
 					Data: []string{
 						"127.0.0.1",
 						"127.0.0.2",
@@ -198,12 +197,12 @@ var _ = Describe("host test", func() {
 					Exact: 1,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -219,25 +218,25 @@ var _ = Describe("host test", func() {
 		// 		},
 		// 	}
 		// 	rsp, err := hostServerClient.AddHostFromAgent(context.Background(), header, input)
-		// 	util.RegisterResponse(rsp)
+		// 	util.RegisterResponseWithRid(rsp, header)
 		// 	Expect(err).NotTo(HaveOccurred())
 		// 	Expect(rsp.Result).To(Equal(true))
 		// })
 
 		// It("search host created using agent", func() {
-		// 	input := &params.HostCommonSearch{
-		// 		AppID: int(bizId),
-		// 		Ip: params.IPInfo{
+		// 	input := &metadata.HostCommonSearch{
+		// 		AppID: bizId,
+		// 		Ip: metadata.IPInfo{
 		// 			Data:  []string{"127.0.0.3"},
 		// 			Exact: 1,
 		// 			Flag:  "bk_host_innerip|bk_host_outerip",
 		// 		},
-		// 		Page: params.PageInfo{
+		// 		Page: metadata.BasePage{
 		// 			Sort: "bk_host_id",
 		// 		},
 		// 	}
 		// 	rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-		// 	util.RegisterResponse(rsp)
+		// 	util.RegisterResponseWithRid(rsp, header)
 		// 	Expect(err).NotTo(HaveOccurred())
 		// 	Expect(rsp.Result).To(Equal(true))
 		// 	Expect(rsp.Data.Count).To(Equal(1))
@@ -256,33 +255,33 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search resource host", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -293,8 +292,9 @@ var _ = Describe("host test", func() {
 		})
 
 		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0", strconv.FormatInt(hostId, 10), header)
-			util.RegisterResponse(rsp)
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+				strconv.FormatInt(hostId, 10), header)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			for _, data := range rsp.Data {
@@ -308,7 +308,7 @@ var _ = Describe("host test", func() {
 		It("get host count in multi cloud area", func() {
 			opt := metadata.CloudAreaHostCount{CloudIDs: []int64{0, 100}}
 			rsp, err := hostServerClient.FindCloudAreaHostCount(context.Background(), header, opt)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(len(rsp.Data)).To(Equal(2))
@@ -317,14 +317,14 @@ var _ = Describe("host test", func() {
 
 	Describe("transfer host test", func() {
 		It("search biz host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Page: params.PageInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -340,20 +340,20 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AssignHostToApp(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search biz host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Page: params.PageInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
@@ -371,20 +371,20 @@ var _ = Describe("host test", func() {
 				ModuleID: dirID,
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search biz host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Page: params.PageInfo{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -404,7 +404,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -421,33 +421,33 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    moduleId,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -477,7 +477,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -489,27 +489,27 @@ var _ = Describe("host test", func() {
 				CloudID: 0,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search cloned host", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Ip: params.IPInfo{
+				Ipv4Ip: metadata.IPInfo{
 					Data:  []string{"127.0.0.5"},
 					Exact: 0,
 					Flag:  "bk_host_innerip|bk_host_outerip",
 				},
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
@@ -517,7 +517,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -529,7 +529,7 @@ var _ = Describe("host test", func() {
 
 		It("get instance topo", func() {
 			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId, 10), header)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.SetName).To(Equal("空闲机池"))
@@ -545,16 +545,16 @@ var _ = Describe("host test", func() {
 		})
 
 		It("search fault host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    faultModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    faultModuleId,
 							},
 						},
 						Fields: []string{},
@@ -562,7 +562,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -580,22 +580,22 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search fault host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    faultModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    faultModuleId,
 							},
 						},
 						Fields: []string{},
@@ -603,7 +603,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -617,22 +617,22 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2FaultModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search fault host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    faultModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    faultModuleId,
 							},
 						},
 						Fields: []string{},
@@ -640,7 +640,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -649,16 +649,16 @@ var _ = Describe("host test", func() {
 		})
 
 		It("search transfered module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    moduleId,
 							},
 						},
 						Fields: []string{},
@@ -666,7 +666,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
@@ -684,22 +684,22 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(false))
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
@@ -707,7 +707,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -723,52 +723,53 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHost2EmptyModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
 			data := rsp.Data.Info[0]["host"].(map[string]interface{})
 			data1 := rsp.Data.Info[1]["host"].(map[string]interface{})
-			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)), Equal(data1["bk_host_innerip"].(string))))
+			Expect("127.0.0.2").To(SatisfyAny(Equal(data["bk_host_innerip"].(string)),
+				Equal(data1["bk_host_innerip"].(string))))
 		})
 
 		It("search fault host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    faultModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    faultModuleId,
 							},
 						},
 						Fields: []string{},
@@ -776,34 +777,34 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
 		})
 
 		It("search resource host", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -817,62 +818,62 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.MoveHostToResourcePool(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search resource host", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
 		})
 
 		It("search resource host change start limit", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort:  "bk_host_id",
 					Start: 2,
 					Limit: 2,
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(3))
@@ -882,16 +883,16 @@ var _ = Describe("host test", func() {
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
@@ -899,7 +900,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -917,33 +918,33 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -965,7 +966,7 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
@@ -982,22 +983,22 @@ var _ = Describe("host test", func() {
 				"is_increment": true,
 			}
 			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true), rsp.ToString())
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
@@ -1005,34 +1006,34 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
 		})
 
 		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    moduleId,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1049,22 +1050,22 @@ var _ = Describe("host test", func() {
 				ModuleID:      moduleId,
 			}
 			rsp, err := hostServerClient.MoveSetHost2IdleModule(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search module host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    moduleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    moduleId,
 							},
 						},
 						Fields: []string{},
@@ -1072,23 +1073,23 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(0))
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
@@ -1096,7 +1097,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1108,22 +1109,22 @@ var _ = Describe("host test", func() {
 				"bk_sn":      "update_bk_sn",
 			}
 			rsp, err := hostServerClient.UpdateHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search idle host", func() {
-			input := &params.HostCommonSearch{
-				AppID: int(bizId),
-				Condition: []params.SearchCondition{
+			input := &metadata.HostCommonSearch{
+				AppID: bizId,
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "module",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "bk_module_id",
-								"operator": "$eq",
-								"value":    idleModuleId,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "bk_module_id",
+								Operator: "$eq",
+								Value:    idleModuleId,
 							},
 						},
 						Fields: []string{},
@@ -1131,7 +1132,7 @@ var _ = Describe("host test", func() {
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(2))
@@ -1147,33 +1148,33 @@ var _ = Describe("host test", func() {
 				"bk_supplier_account": "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 		})
 
 		It("search resource host", func() {
-			input := &params.HostCommonSearch{
+			input := &metadata.HostCommonSearch{
 				AppID: -1,
-				Condition: []params.SearchCondition{
+				Condition: []metadata.SearchCondition{
 					{
 						ObjectID: "biz",
-						Condition: []interface{}{
-							map[string]interface{}{
-								"field":    "default",
-								"operator": "$eq",
-								"value":    1,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    "default",
+								Operator: "$eq",
+								Value:    1,
 							},
 						},
 						Fields: []string{},
 					},
 				},
-				Page: params.PageInfo{
+				Page: metadata.BasePage{
 					Sort: "bk_host_id",
 				},
 			}
 			rsp, err := hostServerClient.SearchHost(context.Background(), header, input)
-			util.RegisterResponse(rsp)
+			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
 			Expect(rsp.Data.Count).To(Equal(1))
@@ -1183,7 +1184,7 @@ var _ = Describe("host test", func() {
 
 var _ = Describe("list_hosts_topo test", func() {
 	It("list_hosts_topo", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		By("create biz cc_biz_test")
 		bizInput := map[string]interface{}{
@@ -1254,19 +1255,19 @@ var _ = Describe("list_hosts_topo test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("search hosts")
-		searchInput := &params.HostCommonSearch{
-			AppID: int(bizId),
-			Page: params.PageInfo{
+		searchInput := &metadata.HostCommonSearch{
+			AppID: bizId,
+			Page: metadata.BasePage{
 				Sort: common.BKHostIDField,
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
@@ -1292,8 +1293,10 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(transferRsp.Result).To(Equal(true))
 
 		By("list hosts topo")
-		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId, &metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10}, Fields: []string{"bk_host_id"}})
-		util.RegisterResponse(rsp)
+		rsp, err := hostServerClient.ListBizHostsTopo(context.Background(), header, bizId,
+			&metadata.ListHostsWithNoBizParameter{Page: metadata.BasePage{Sort: common.BKHostIDField, Limit: 10},
+				Fields: []string{"bk_host_id"}})
+		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data)
@@ -1308,7 +1311,7 @@ var _ = Describe("list_hosts_topo test", func() {
 
 var _ = Describe("batch_update_host test", func() {
 	It("batch_update_host", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add host using api")
 		hostInput := map[string]interface{}{
@@ -1322,18 +1325,18 @@ var _ = Describe("batch_update_host test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("search hosts")
-		searchInput := &params.HostCommonSearch{
-			Page: params.PageInfo{
+		searchInput := &metadata.HostCommonSearch{
+			Page: metadata.BasePage{
 				Sort: common.BKHostIDField,
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		hostId1, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
@@ -1362,14 +1365,13 @@ var _ = Describe("batch_update_host test", func() {
 				},
 			},
 		}
-		updateRsp, err := hostServerClient.UpdateHostPropertyBatch(context.Background(), header, updateInput)
-		util.RegisterResponse(updateRsp)
+		err = hostServerClient.UpdateHostPropertyBatch(context.Background(), header, updateInput)
+		util.RegisterResponseWithRid(err, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(updateRsp.Result).To(Equal(true))
 
 		By("search updated host property")
 		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Info[0]["host"].(map[string]interface{})["bk_asset_id"].(string)).To(Equal(""))
@@ -1383,7 +1385,7 @@ var _ = Describe("batch_update_host test", func() {
 
 var _ = Describe("multiple ip host validation test", func() {
 	It("multiple ip host validation", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts with different ip using api")
 		hostInput := map[string]interface{}{
@@ -1397,18 +1399,18 @@ var _ = Describe("multiple ip host validation test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 
 		By("search hosts")
-		searchInput := &params.HostCommonSearch{
-			Page: params.PageInfo{
+		searchInput := &metadata.HostCommonSearch{
+			Page: metadata.BasePage{
 				Sort: common.BKHostIDField,
 			},
 		}
 		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, searchInput)
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1420,7 +1422,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 
@@ -1431,7 +1434,8 @@ var _ = Describe("multiple ip host validation test", func() {
 				"bk_cloud_id":     0,
 			},
 		}
-		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header, common.BKInnerObjIDHost, input)
+		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
+			common.BKInnerObjIDHost, input)
 		util.RegisterResponse(addHostResult)
 		Expect(err).To(HaveOccurred())
 	})
@@ -1439,7 +1443,7 @@ var _ = Describe("multiple ip host validation test", func() {
 
 var _ = Describe("add_host_to_resource_pool test", func() {
 	It("add_host_to_resource_pool", func() {
-		test.ClearDatabase()
+		test.DeleteAllHosts()
 
 		By("add hosts to resource pool default module")
 		hostInput := metadata.AddHostToResourcePoolHostList{
@@ -1455,7 +1459,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			},
 		}
 		hostRsp, err := hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
 		js, err := json.Marshal(hostRsp.Data)
@@ -1475,8 +1479,8 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		}
 
 		By("search hosts")
-		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
-		util.RegisterResponse(searchRsp)
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{})
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1509,13 +1513,13 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			Directory: 1000,
 		}
 		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(false))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{})
-		util.RegisterResponse(searchRsp)
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{})
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(2))
@@ -1534,7 +1538,7 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			},
 		}
 		hostRsp, err = hostServerClient.AddHostToResourcePool(context.Background(), header, hostInput)
-		util.RegisterResponse(hostRsp)
+		util.RegisterResponseWithRid(hostRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostRsp.Result).To(Equal(false))
 		js, err = json.Marshal(hostRsp.Data)
@@ -1548,18 +1552,210 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 		Expect(result.Error[0].Index).To(Equal(1))
 
 		By("search hosts")
-		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &params.HostCommonSearch{
-			Page: params.PageInfo{
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{
+			Page: metadata.BasePage{
 				Sort: common.BKHostIDField,
 			},
 		})
-		util.RegisterResponse(searchRsp)
+		util.RegisterResponseWithRid(searchRsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(searchRsp.Result).To(Equal(true))
 		Expect(searchRsp.Data.Count).To(Equal(3))
 		hostID, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[2]["host"].(map[string]interface{})[common.BKHostIDField])
 		Expect(err).NotTo(HaveOccurred())
 		Expect(hostID).To(Equal(result.Success[0].HostID))
+	})
+})
+
+var _ = Describe("bind & unbind host agent test", func() {
+	var hostID, hostID1 int64
+	agentID, agentID1 := "11111", "22222"
+
+	hostParam := &metadata.HostCommonSearch{
+		Page: metadata.BasePage{Sort: common.BKHostIDField},
+	}
+
+	It("bind host agent", func() {
+		By("add hosts using api")
+		hostInput := map[string]interface{}{
+			"host_info": map[string]interface{}{
+				"0": map[string]interface{}{
+					"bk_host_innerip": "127.0.0.10",
+				},
+				"1": map[string]interface{}{
+					"bk_host_innerip": "127.0.0.11",
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		util.RegisterResponseWithRid(hostRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+
+		By("get host ids")
+		searchRsp, err := hostServerClient.SearchHost(context.Background(), header, &metadata.HostCommonSearch{
+			Page: metadata.BasePage{Sort: common.BKHostIDField},
+		})
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		hostID, err = commonutil.GetInt64ByInterface(host[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+		host1 := searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		hostID1, err = commonutil.GetInt64ByInterface(host1[common.BKHostIDField])
+		Expect(err).NotTo(HaveOccurred())
+
+		By("bind agent to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is bound to host")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID1))
+
+		By("bind agent to host again")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("update host agents")
+		agentID, agentID1 = "33333", "444444"
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is updated to host")
+		searchRsp, err = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID1))
+
+		By("bind empty agent id to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: "",
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("bind agent id to not exist host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  111111,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("bind duplicate agent id to host")
+		err = hostServerClient.BindAgent(context.Background(), header, &metadata.BindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID1,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("unbind host agent", func() {
+		By("unbind host agent with mismatch agent")
+		err := hostServerClient.UnbindAgent(context.Background(), header, &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: "333333",
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("unbind agent id with not exist host")
+		err = hostServerClient.UnbindAgent(context.Background(), header, &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  111111,
+				AgentID: agentID,
+			}},
+		})
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).To(HaveOccurred())
+
+		By("check if agent id is still bound to host")
+		searchRsp, rawErr := hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(rawErr).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 1).To(Equal(true))
+		host := searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(agentID))
+
+		By("unbind host agent")
+		param := &metadata.UnbindAgentParam{
+			List: []metadata.HostAgentRelation{{
+				HostID:  hostID,
+				AgentID: agentID,
+			}, {
+				HostID:  hostID1,
+				AgentID: agentID1,
+			}},
+		}
+		err = hostServerClient.UnbindAgent(context.Background(), header, param)
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("check if agent id is not bound to host")
+		searchRsp, rawErr = hostServerClient.SearchHost(context.Background(), header, hostParam)
+		util.RegisterResponseWithRid(searchRsp, header)
+		Expect(rawErr).NotTo(HaveOccurred())
+		Expect(searchRsp.Result).To(Equal(true))
+		Expect(searchRsp.Data.Count >= 2).To(Equal(true))
+		host = searchRsp.Data.Info[0]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(""))
+		host = searchRsp.Data.Info[1]["host"].(map[string]interface{})
+		Expect(commonutil.GetStrByInterface(host[common.BKAgentIDField])).To(Equal(""))
+
+		By("unbind host agent again")
+		err = hostServerClient.UnbindAgent(context.Background(), header, param)
+		util.RegisterResponseWithRid(nil, header)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
 
@@ -1576,7 +1772,7 @@ var _ = Describe("cloud host test", func() {
 				"bk_account_id":   2,
 				"creator":         "admin",
 			})
-			util.RegisterResponse(resp)
+			util.RegisterResponseWithRid(resp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.Result).To(Equal(true))
 			cloudID = int64(resp.Data.Created.ID)
@@ -1653,10 +1849,14 @@ var _ = Describe("cloud host test", func() {
 					{
 						common.BKHostInnerIPField: "127.0.0.111",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "1",
+						common.BKCloudInstIDField: "000000001",
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.112",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "2",
+						common.BKCloudInstIDField: "000000002",
 					},
 				},
 			}
@@ -1669,9 +1869,9 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("check created cloud hosts", func() {
-			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{
-				AppID: int(bizID),
-				Page:  params.PageInfo{Sort: common.BKHostInnerIPField},
+			rsp, err := hostServerClient.SearchHost(ctx, header, &metadata.HostCommonSearch{
+				AppID: bizID,
+				Page:  metadata.BasePage{Sort: common.BKHostInnerIPField},
 			})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
@@ -1694,7 +1894,9 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.111",
 					common.BKCloudIDField:     cloudID,
-					common.BKHostNameField:    "127.0.0.111",
+					common.BKHostNameField:    "127.0.0.123",
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 
@@ -1702,7 +1904,7 @@ var _ = Describe("cloud host test", func() {
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 
-			searchRsp, e := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			searchRsp, e := hostServerClient.SearchHost(ctx, header, &metadata.HostCommonSearch{AppID: bizID})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(e).NotTo(HaveOccurred())
 			Expect(searchRsp.Result).To(Equal(true))
@@ -1713,7 +1915,7 @@ var _ = Describe("cloud host test", func() {
 				hostID, err := commonutil.GetInt64ByInterface(host[common.BKHostIDField])
 				Expect(err).NotTo(HaveOccurred())
 				if hostID == hostID1 {
-					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.111"))
+					Expect(commonutil.GetStrByInterface(host[common.BKHostNameField])).To(Equal("127.0.0.123"))
 				}
 			}
 		})
@@ -1763,6 +1965,8 @@ var _ = Describe("cloud host test", func() {
 					{
 						common.BKHostInnerIPField: "127.0.0.114",
 						common.BKCloudIDField:     cloudID,
+						common.BKCloudVendor:      "1",
+						common.BKCloudInstIDField: "000000001",
 					},
 					{
 						common.BKHostInnerIPField: "127.0.0.1144",
@@ -1782,6 +1986,8 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.111",
 					common.BKCloudIDField:     cloudID,
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 
@@ -1795,6 +2001,8 @@ var _ = Describe("cloud host test", func() {
 				HostInfo: []mapstr.MapStr{{
 					common.BKHostInnerIPField: "127.0.0.115",
 					common.BKCloudIDField:     cloudID,
+					common.BKCloudVendor:      "1",
+					common.BKCloudInstIDField: "000000001",
 				}},
 			}
 
@@ -1886,7 +2094,7 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("check deleted cloud hosts", func() {
-			rsp, err := hostServerClient.SearchHost(ctx, header, &params.HostCommonSearch{AppID: int(bizID)})
+			rsp, err := hostServerClient.SearchHost(ctx, header, &metadata.HostCommonSearch{AppID: bizID})
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))

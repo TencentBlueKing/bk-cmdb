@@ -195,7 +195,8 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 	return nil
 }
 
-func setMapToReflectValue(structField reflect.StructField, returnVal, inputVal reflect.Value) (retVal reflect.Value, err error) {
+func setMapToReflectValue(structField reflect.StructField, returnVal, inputVal reflect.Value) (retVal reflect.Value,
+	err error) {
 	if !returnVal.CanSet() {
 		return returnVal, fmt.Errorf("can not set to value %v", returnVal)
 	}

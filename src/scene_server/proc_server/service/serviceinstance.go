@@ -110,7 +110,8 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		addedServiceInstances = append(addedServiceInstances, *serviceInstance)
 	}
 
-	if err := ps.upsertProcesses(ctx, serviceInstanceIDs, bizID, module.ServiceTemplateID, input.Instances); err != nil {
+	if err := ps.upsertProcesses(ctx, serviceInstanceIDs, bizID, module.ServiceTemplateID,
+		input.Instances); err != nil {
 		return nil, err
 	}
 
@@ -282,13 +283,15 @@ func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInsta
 	processData map[string]interface{}) ccErr.CCErrorCoder {
 	firstProcess := new(metadata.Process)
 	if err := mapstr.DecodeFromMapStr(firstProcess, processData); err != nil {
-		blog.ErrorJSON("updateServiceInstanceName failed, Decode2Struct failed, process: %s, err: %s, rid: %s", processData, err.Error(), ctx.Kit.Rid)
+		blog.ErrorJSON("updateServiceInstanceName failed, Decode2Struct failed, process: %s, err: %s, rid: %s",
+			processData, err.Error(), ctx.Kit.Rid)
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, []int64{hostID})
 	if err != nil {
-		blog.Errorf("updateServiceInstanceName failed, getHostIPMapByID failed, hostID: %d, err: %v, rid: %s", hostID, err, ctx.Kit.Rid)
+		blog.Errorf("updateServiceInstanceName failed, getHostIPMapByID failed, hostID: %d, err: %v, rid: %s", hostID,
+			err, ctx.Kit.Rid)
 		return err
 	}
 	host := hostMap[hostID]
@@ -299,7 +302,8 @@ func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInsta
 		Process:           firstProcess,
 	}
 
-	return ps.CoreAPI.CoreService().Process().ConstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header, srvInstNameParams)
+	return ps.CoreAPI.CoreService().Process().ConstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header,
+		srvInstNameParams)
 }
 
 // SearchHostWithNoServiceInstance used for ui to get hosts that has no service instance and can create one
@@ -382,7 +386,7 @@ func (ps *ProcServer) SearchHostWithNoServiceInstance(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.SearchHostWithNoSvcInstOutput{HostIDs: hostIDs})
 }
 
-// SearchServiceInstancesInModuleWeb TODO
+// SearchServiceInstancesInModuleWeb search service instances in module for web
 func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -398,15 +402,21 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	bizID := input.BizID
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
-		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
 		HostIDs:    input.HostIDs,
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+
+	if input.ModuleID != 0 {
+		option.ModuleIDs = []int64{input.ModuleID}
+	}
+
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d "+
+			"failed, err: %v", input.ModuleID, err)
 		return
 	}
 
@@ -421,9 +431,11 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 			Limit: common.BKNoLimit,
 		},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listRelationOption)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		listRelationOption)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, list option: %+v, err: %v", listRelationOption, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance relations failed, "+
+			"list option: %+v, err: %v", listRelationOption, err)
 		return
 	}
 
@@ -441,7 +453,8 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	for _, instance := range serviceInstanceResult.Info {
 		item, err := mapstr.Struct2Map(instance)
 		if err != nil {
-			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
+			blog.ErrorJSON("SearchServiceInstancesInModuleWeb failed, Struct2Map failed, serviceInstance: %s, "+
+				"err: %s, rid: %s", instance, err.Error(), ctx.Kit.Rid)
 			ccErr := ctx.Kit.CCError.CCError(common.CCErrCommParseDBFailed)
 			ctx.RespAutoError(ccErr)
 			return
@@ -459,11 +472,12 @@ func (ps *ProcServer) SearchServiceInstancesInModuleWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// SearchServiceInstancesBySetTemplate TODO
+// SearchServiceInstancesBySetTemplate search service instances by set template
 func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("SearchServiceInstancesBySetTemplate failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, parse bk_biz_id error, err: %v, rid: %s", err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
@@ -497,9 +511,11 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		},
 		Condition: cond,
 	}
-	moduleInsts, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, qc)
+	moduleInsts, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDModule, qc)
 	if err != nil {
-		blog.Errorf("SearchServiceInstancesBySetTemplate failed, http request failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("SearchServiceInstancesBySetTemplate failed, http request failed, err: %v, rid: %s", err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -509,7 +525,8 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	for _, moduleInst := range moduleInsts.Info {
 		moduleID, err := util.GetInt64ByInterface(moduleInst[common.BKModuleIDField])
 		if err != nil {
-			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
+			blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, GetInt64ByInterface failed, moduleInst: %s, "+
+				"err: %#v, rid: %s", moduleInsts, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -524,17 +541,20 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		ModuleIDs:  modules,
 		Page:       input.Page,
 	}
-	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
 	if err != nil {
-		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ListServiceInstance failed, filter: %s, err: %s, rid: %s", option, err, ctx.Kit.Rid)
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in set_template_id: %d failed, err: %v", input.SetTemplateID, err)
+		blog.ErrorJSON("SearchServiceInstancesBySetTemplate failed, ListServiceInstance failed, filter: %s, err: %s,"+
+			" rid: %s", option, err, ctx.Kit.Rid)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in set_template_id: "+
+			"%d failed, err: %v", input.SetTemplateID, err)
 		return
 	}
 
 	ctx.RespEntity(serviceInstanceResult)
 }
 
-// SearchServiceInstancesInModule TODO
+// SearchServiceInstancesInModule search service instances in module
 func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 	input := new(metadata.GetServiceInstanceInModuleInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -555,15 +575,18 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 
 	option := &metadata.ListServiceInstanceOption{
 		BusinessID: input.BizID,
-		ModuleIDs:  []int64{input.ModuleID},
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
 		Selectors:  input.Selectors,
 		HostIDs:    input.HostIDs,
 	}
+	if input.ModuleID != 0 {
+		option.ModuleIDs = []int64{input.ModuleID}
+	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed"+
+			", err: %v", input.ModuleID, err)
 		return
 	}
 
@@ -590,7 +613,8 @@ func (ps *ProcServer) ListServiceInstancesDetails(ctx *rest.Contexts) {
 
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstanceDetail(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+			"get service instance in module: %d failed, err: %v", input.ModuleID, err)
 		return
 	}
 
@@ -646,7 +670,8 @@ func (ps *ProcServer) UpdateServiceInstances(ctx *rest.Contexts) {
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := ps.CoreAPI.CoreService().Process().UpdateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
+		if err := ps.CoreAPI.CoreService().Process().UpdateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+			option); err != nil {
 			blog.Errorf("UpdateServiceInstances failed, err:%s, bizID:%d, option:%#v, rid:%s",
 				err, bizID, *option, ctx.Kit.Rid)
 			return err
@@ -1655,8 +1680,11 @@ func (ps *ProcServer) handleAddedServiceInsts(hostMap map[int64]map[string]inter
 		if _, exists := hostWithSrvInstMap[hostID]; exists {
 			continue
 		}
-
-		srvInstName := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField]) + srvInstNameSuffix
+		namePrefix := util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPField])
+		if namePrefix == "" {
+			namePrefix = util.GetStrByInterface(hostMap[hostID][common.BKHostInnerIPv6Field])
+		}
+		srvInstName := namePrefix + srvInstNameSuffix
 		added = append(added, metadata.ServiceInstancesInfo{
 			Name: srvInstName,
 		})
@@ -1851,18 +1879,70 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	syncOneModuleOpt := metadata.ServiceTemplateDiffOption{
+	// get service template's process template num
+	procCond := mapstr.MapStr{common.BKServiceTemplateIDField: syncOpt.ServiceTemplateID}
+	counts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKTableNameProcessTemplate, []map[string]interface{}{procCond})
+	if err != nil {
+		blog.Error("get process template num by cond(%+v) failed, err: %v, rid: %s", procCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// get host ids by module
+	opt := &metadata.HostModuleRelationRequest{
+		ApplicationID: syncOpt.BizID,
+		ModuleIDArr:   syncOpt.ModuleIDs,
+		Fields:        []string{common.BKHostIDField, common.BKModuleIDField},
+	}
+
+	hostRelRes, rawErr := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	if rawErr != nil {
+		ctx.RespAutoError(rawErr)
+		return
+	}
+
+	moduleHostMap := make(map[int64][]int64)
+	for _, rel := range hostRelRes.Info {
+		moduleHostMap[rel.ModuleID] = append(moduleHostMap[rel.ModuleID], rel.HostID)
+	}
+
+	// split one module sync task according to the host dimension, algorithm: hosts num * processes num <= 1000
+	hostNum := 1000
+	if len(counts) == 1 && counts[0] != 0 {
+		hostNum = hostNum / int(counts[0])
+	}
+	if hostNum == 0 {
+		hostNum = 1
+	}
+
+	syncOneModuleOpt := metadata.SyncServiceTemplateOption{
 		BizID:             syncOpt.BizID,
 		ServiceTemplateID: syncOpt.ServiceTemplateID,
+		IsSyncModule:      true,
 	}
 	tasks := make([]metadata.CreateTaskRequest, 0)
 	for _, moduleID := range syncOpt.ModuleIDs {
 		syncOneModuleOpt.ModuleID = moduleID
-		tasks = append(tasks, metadata.CreateTaskRequest{
+
+		taskReq := metadata.CreateTaskRequest{
 			TaskType: common.SyncModuleTaskFlag,
 			InstID:   moduleID,
 			Data:     []interface{}{syncOneModuleOpt},
-		})
+		}
+
+		syncOneModuleOpt.IsSyncModule = false
+		hostIDs := moduleHostMap[moduleID]
+		for start := 0; start < len(hostIDs); start += hostNum {
+			if len(hostIDs)-start >= hostNum {
+				syncOneModuleOpt.HostIDs = hostIDs[start : start+hostNum]
+			} else {
+				syncOneModuleOpt.HostIDs = hostIDs[start:]
+			}
+			taskReq.Data = append(taskReq.Data, syncOneModuleOpt)
+		}
+
+		tasks = append(tasks, taskReq)
 	}
 
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
@@ -1884,8 +1964,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 // DoSyncServiceInstanceTask do sync one module's service instance by service template task
 func (ps *ProcServer) DoSyncServiceInstanceTask(ctx *rest.Contexts) {
-	syncOption := metadata.ServiceTemplateDiffOption{}
-	if err := ctx.DecodeInto(&syncOption); err != nil {
+	syncOption := new(metadata.SyncServiceTemplateOption)
+	if err := ctx.DecodeInto(syncOption); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1963,15 +2043,14 @@ func (ps *ProcServer) updateModuleAttributesWithServiceTemplate(kit *rest.Kit, m
 	_, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule, option)
 	if err != nil {
 		blog.Errorf("update module failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrUpdateModuleAttributesFail)
+		return err
 	}
 	return nil
 }
 
 // syncSrvInstToAdd handle all the service instances that need to be added
-func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option metadata.ServiceTemplateDiffOption, hostIDs []int64,
-	hostWithSrvInstMap map[int64]struct{}, processTemplates *metadata.MultipleProcessTemplate,
-	module *moduleSimpleInfo) ccErr.CCErrorCoder {
+func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option *metadata.SyncServiceTemplateOption, hostIDs []int64,
+	hostWithSrvInstMap map[int64]struct{}, processTemplates *metadata.MultipleProcessTemplate) ccErr.CCErrorCoder {
 
 	srvInstToAdd := make([]*metadata.ServiceInstance, 0)
 	if len(processTemplates.Info) == 0 {
@@ -1984,8 +2063,8 @@ func (ps *ProcServer) syncSrvInstToAdd(kit *rest.Kit, option metadata.ServiceTem
 		}
 		instance := &metadata.ServiceInstance{
 			BizID:             option.BizID,
-			ServiceTemplateID: module.serviceTemplateID,
-			ModuleID:          module.moduleID,
+			ServiceTemplateID: option.ServiceTemplateID,
+			ModuleID:          option.ModuleID,
 			HostID:            hostID,
 		}
 		srvInstToAdd = append(srvInstToAdd, instance)
@@ -2118,7 +2197,7 @@ func (ps *ProcServer) syncProcessAndSrvInstToRemove(kit *rest.Kit, svcTempID int
 }
 
 // updateModuleAttributes 通过当前的模板属性值更新对应的模块属性值
-func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option metadata.ServiceTemplateDiffOption) (
+func (ps *ProcServer) updateModuleAttributes(kit *rest.Kit, option *metadata.SyncServiceTemplateOption) (
 	*moduleSimpleInfo, ccErr.CCErrorCoder) {
 
 	// 1、获取服务模板的属性id与对应的property_value
@@ -2175,7 +2254,7 @@ type srvInstanceInfo struct {
 	serviceInstanceWithTemplateMap map[int64]map[int64]struct{}
 }
 
-func (ps *ProcServer) getServiceInstanceInfo(kit *rest.Kit, option metadata.ServiceTemplateDiffOption) (
+func (ps *ProcServer) getServiceInstanceInfo(kit *rest.Kit, option *metadata.SyncServiceTemplateOption) (
 	*srvInstanceInfo, ccErr.CCErrorCoder) {
 
 	serviceInstanceInfo := &srvInstanceInfo{
@@ -2192,6 +2271,7 @@ func (ps *ProcServer) getServiceInstanceInfo(kit *rest.Kit, option metadata.Serv
 		BusinessID:        option.BizID,
 		ModuleIDs:         []int64{option.ModuleID},
 		ServiceTemplateID: option.ServiceTemplateID,
+		HostIDs:           option.HostIDs,
 		Page:              metadata.BasePage{Limit: common.BKNoLimit},
 	}
 
@@ -2214,6 +2294,7 @@ func (ps *ProcServer) getServiceInstanceInfo(kit *rest.Kit, option metadata.Serv
 	hostOpt := &metadata.DistinctHostIDByTopoRelationRequest{
 		ApplicationIDArr: []int64{option.BizID},
 		ModuleIDArr:      []int64{option.ModuleID},
+		HostIDArr:        option.HostIDs,
 	}
 
 	hostIDs, cErr := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostOpt)
@@ -2242,7 +2323,7 @@ type processInfo struct {
 	processInstanceWithTemplateMap map[int64]int64
 }
 
-func (ps *ProcServer) getProcessInfo(kit *rest.Kit, option metadata.ServiceTemplateDiffOption,
+func (ps *ProcServer) getProcessInfo(kit *rest.Kit, option *metadata.SyncServiceTemplateOption,
 	serviceInstance *srvInstanceInfo) (*processInfo, *metadata.MultipleProcessInstanceRelation, ccErr.CCErrorCoder) {
 
 	processRelationInfo := &processInfo{
@@ -2320,7 +2401,22 @@ func (ps *ProcServer) getProcessInfo(kit *rest.Kit, option metadata.ServiceTempl
 }
 
 func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
-	syncOption metadata.ServiceTemplateDiffOption) ccErr.CCErrorCoder {
+	syncOption *metadata.SyncServiceTemplateOption) ccErr.CCErrorCoder {
+
+	// update module service category and attributes.
+	if syncOption.IsSyncModule {
+		_, cErr := ps.updateModuleAttributes(kit, syncOption)
+		if cErr != nil {
+			blog.Errorf("update module attributes failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
+			return nil
+		}
+		return nil
+	}
+
+	// sync host ids related service instances
+	if len(syncOption.HostIDs) == 0 {
+		return nil
+	}
 
 	serviceInstanceInfo, cErr := ps.getServiceInstanceInfo(kit, syncOption)
 	if cErr != nil {
@@ -2334,15 +2430,8 @@ func (ps *ProcServer) doSyncServiceInstanceTask(kit *rest.Kit,
 		return cErr
 	}
 
-	// update module service category and attributes.
-	module, cErr := ps.updateModuleAttributes(kit, syncOption)
-	if cErr != nil {
-		blog.Errorf("update module attributes failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
-		return nil
-	}
-
 	if err := ps.syncSrvInstToAdd(kit, syncOption, serviceInstanceInfo.hostIDs, serviceInstanceInfo.hostWithSrvInstMap,
-		processRelationInfo.procTemps, module); err != nil {
+		processRelationInfo.procTemps); err != nil {
 		blog.Errorf("add service instance failed, option: %+v, err: %v, rid: %s", syncOption, cErr, kit.Rid)
 		return err
 	}
@@ -2477,7 +2566,7 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 }
 
 func (ps *ProcServer) createProcessForServiceInstance(kit *rest.Kit, updateSvcInst map[int64]metadata.ServiceInstance,
-	op metadata.ServiceTemplateDiffOption, srvInst *srvInstanceInfo, processRelation *processInfo) ccErr.CCErrorCoder {
+	op *metadata.SyncServiceTemplateOption, srvInst *srvInstanceInfo, processRelation *processInfo) ccErr.CCErrorCoder {
 
 	processDatas := make([]map[string]interface{}, 0)
 	procRelations := make([]*metadata.ProcessInstanceRelation, 0)
@@ -2724,7 +2813,8 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 
 	if input.HostID == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but got empty host id. input: %+v", input)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"list service instances with host, but got empty host id. input: %+v", input)
 		return
 	}
 
@@ -2737,7 +2827,8 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+			"list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
 		return
 	}
 
@@ -2755,7 +2846,8 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 	}
 
 	if input.HostID == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service instances with host, but got empty host id. input: %+v", input)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"list service instances with host, but got empty host id. input: %+v", input)
 		return
 	}
 
@@ -2768,11 +2860,13 @@ func (ps *ProcServer) ListServiceInstancesWithHostWeb(ctx *rest.Contexts) {
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+			"list service instance failed, bizID: %d, hostID: %d", input.BizID, input.HostID, err)
 		return
 	}
 
-	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, input.BizID, false)
+	topoRoot, e := ps.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header,
+		input.BizID, false)
 	if e != nil {
 		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid: %s", input.BizID, e, rid)
 		err := ctx.Kit.CCError.Errorf(common.CCErrTopoMainlineSelectFailed)
@@ -2994,7 +3088,8 @@ func (ps *ProcServer) ServiceInstanceLabelsAggregation(ctx *rest.Contexts) {
 	}
 
 	if option.BizID == 0 {
-		ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0", "bk_biz_id")
+		ctx.RespErrorCodeF(common.CCErrCommParamsIsInvalid, "list service instance label, but got invalid biz id: 0",
+			"bk_biz_id")
 		return
 	}
 

@@ -29,7 +29,8 @@
     <div class="property-value fl" style="width: 315px;"
       v-if="Object.keys(selectedProperty).length">
       <component
-        :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
+        class="search-form-el"
+        :is="`cmdb-search-${selectedProperty['bk_property_type']}`"
         :options="selectedProperty.option || []"
         :placeholder="$t('请输入关键字')"
         v-model.trim="localSelected.value">
@@ -40,6 +41,8 @@
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import has from 'has'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
+
   export default {
     props: {
       objId: {
@@ -71,9 +74,14 @@
           default: ['$eq', '$ne'],
           singlechar: ['$regex', '$eq', '$ne'],
           longchar: ['$regex', '$eq', '$ne'],
-          objuser: ['$regex', '$eq', '$ne'],
+          objuser: ['$in', '$nin'],
           singleasst: ['$regex', '$eq', '$ne'],
-          multiasst: ['$regex', '$eq', '$ne']
+          multiasst: ['$regex', '$eq', '$ne'],
+          list: ['$in', '$nin'],
+          timezone: ['$in', '$nin'],
+          enummulti: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN],
+          enumquote: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN],
+          organization: [QUERY_OPERATOR.IN, QUERY_OPERATOR.NIN]
         },
         operatorLabel: {
           $nin: this.$t('不包含'),
@@ -154,6 +162,9 @@
       },
       handleOperatorSelected(value, data) {
         this.$emit('on-operator-selected', value, data)
+      },
+      clearFilter() {
+        this.localSelected.value = ''
       }
     }
   }
@@ -168,5 +179,8 @@
     }
     .property-value{
         width: 245px;
+        .search-form-el {
+          width: 100%;
+        }
     }
 </style>

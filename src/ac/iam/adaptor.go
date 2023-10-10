@@ -50,90 +50,89 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, er
 	return action, resource, nil
 }
 
+var ccIamResTypeMap = map[meta.ResourceType]TypeID{
+	meta.Business:                 Business,
+	meta.BizSet:                   BizSet,
+	meta.Project:                  Project,
+	meta.Model:                    SysModel,
+	meta.ModelUnique:              SysModel,
+	meta.ModelAttributeGroup:      SysModel,
+	meta.ModelModule:              BizTopology,
+	meta.ModelSet:                 BizTopology,
+	meta.MainlineInstance:         BizTopology,
+	meta.MainlineInstanceTopology: BizTopology,
+	meta.MainlineModel:            TypeID(""),
+	meta.ModelTopology:            TypeID(""),
+	meta.ModelClassification:      SysModelGroup,
+	meta.AssociationType:          SysAssociationType,
+	meta.ModelAssociation:         SysModel,
+	meta.MainlineModelTopology:    TypeID(""),
+	meta.ModelInstanceTopology:    SkipType,
+	meta.CloudAreaInstance:        SysCloudArea,
+	meta.HostInstance:             Host,
+	meta.HostFavorite:             SkipType,
+	meta.Process:                  BizProcessServiceInstance,
+	meta.DynamicGrouping:          BizCustomQuery,
+	meta.AuditLog:                 SysAuditLog,
+	meta.SystemBase:               TypeID(""),
+	meta.UserCustom:               UserCustom,
+	meta.ProcessServiceTemplate:   BizProcessServiceTemplate,
+	meta.ProcessServiceCategory:   BizProcessServiceCategory,
+	meta.ProcessServiceInstance:   BizProcessServiceInstance,
+	meta.BizTopology:              BizTopology,
+	meta.SetTemplate:              BizSetTemplate,
+	meta.OperationStatistic:       SysOperationStatistic,
+	meta.HostApply:                BizHostApply,
+	meta.ResourcePoolDirectory:    SysResourcePoolDirectory,
+	meta.CloudAccount:             SysCloudAccount,
+	meta.CloudResourceTask:        SysCloudResourceTask,
+	meta.EventWatch:               SysEventWatch,
+	meta.ConfigAdmin:              TypeID(""),
+	meta.SystemConfig:             TypeID(""),
+	meta.KubeCluster:              TypeID(""),
+	meta.KubeNode:                 TypeID(""),
+	meta.KubeNamespace:            TypeID(""),
+	meta.KubeWorkload:             TypeID(""),
+	meta.KubeDeployment:           TypeID(""),
+	meta.KubeStatefulSet:          TypeID(""),
+	meta.KubeDaemonSet:            TypeID(""),
+	meta.KubeGameStatefulSet:      TypeID(""),
+	meta.KubeGameDeployment:       TypeID(""),
+	meta.KubeCronJob:              TypeID(""),
+	meta.KubeJob:                  TypeID(""),
+	meta.KubePodWorkload:          TypeID(""),
+	meta.KubePod:                  TypeID(""),
+	meta.KubeContainer:            TypeID(""),
+	meta.FieldTemplate:            FieldGroupingTemplate,
+}
+
 // ConvertResourceType convert resource type from CMDB to IAM
 func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*TypeID, error) {
 	var iamResourceType TypeID
+
 	switch resourceType {
-	case meta.Business:
-		iamResourceType = Business
-	case meta.BizSet:
-		iamResourceType = BizSet
-	case meta.Model,
-		meta.ModelUnique,
-		meta.ModelAttributeGroup:
-		iamResourceType = SysModel
 	case meta.ModelAttribute:
 		if businessID > 0 {
 			iamResourceType = BizCustomField
 		} else {
 			iamResourceType = SysModel
 		}
-	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
-		iamResourceType = BizTopology
-	case meta.MainlineModel, meta.ModelTopology:
-	case meta.ModelClassification:
-		iamResourceType = SysModelGroup
-	case meta.AssociationType:
-		iamResourceType = SysAssociationType
-	case meta.ModelAssociation:
-		iamResourceType = SysModel
-	case meta.MainlineModelTopology:
-	case meta.ModelInstanceTopology:
-		iamResourceType = SkipType
-	case meta.CloudAreaInstance:
-		iamResourceType = SysCloudArea
-	case meta.HostInstance:
-		iamResourceType = Host
-	case meta.HostFavorite:
-		iamResourceType = SkipType
-	case meta.Process:
-		iamResourceType = BizProcessServiceInstance
-	case meta.DynamicGrouping:
-		iamResourceType = BizCustomQuery
-	case meta.AuditLog:
-		iamResourceType = SysAuditLog
-	case meta.SystemBase:
-	case meta.UserCustom:
-		iamResourceType = UserCustom
+		return &iamResourceType, nil
 	case meta.NetDataCollector:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
-	case meta.ProcessServiceTemplate:
-		iamResourceType = BizProcessServiceTemplate
-	case meta.ProcessServiceCategory:
-		iamResourceType = BizProcessServiceCategory
-	case meta.ProcessServiceInstance:
-		iamResourceType = BizProcessServiceInstance
-	case meta.BizTopology:
-		iamResourceType = BizTopology
-	case meta.SetTemplate:
-		iamResourceType = BizSetTemplate
-	case meta.OperationStatistic:
-		iamResourceType = SysOperationStatistic
-	case meta.HostApply:
-		iamResourceType = BizHostApply
-	case meta.ResourcePoolDirectory:
-		iamResourceType = SysResourcePoolDirectory
-	case meta.CloudAccount:
-		iamResourceType = SysCloudAccount
-	case meta.CloudResourceTask:
-		iamResourceType = SysCloudResourceTask
-	case meta.EventWatch:
-		iamResourceType = SysEventWatch
-	case meta.ConfigAdmin:
-	case meta.SystemConfig:
-	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
-		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
-		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
-	default:
-		if IsCMDBSysInstance(resourceType) {
-			iamResourceType = TypeID(resourceType)
-			return &iamResourceType, nil
-		}
-
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
 
-	return &iamResourceType, nil
+	iamResourceType, exists := ccIamResTypeMap[resourceType]
+	if exists {
+		return &iamResourceType, nil
+	}
+
+	if IsCMDBSysInstance(resourceType) {
+		iamResourceType = TypeID(resourceType)
+		return &iamResourceType, nil
+	}
+
+	return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 }
 
 // ConvertResourceAction convert resource action from CMDB to IAM
@@ -273,6 +272,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
 		meta.Find:                           Skip,
 		meta.FindMany:                       Skip,
+		meta.ManageHostAgentID:              ManageHostAgentID,
 	},
 	meta.ProcessServiceCategory: {
 		meta.Delete: DeleteBusinessServiceCategory,
@@ -415,6 +415,7 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,
 		meta.WatchKubeWorkload:     WatchKubeWorkloadEvent,
 		meta.WatchKubePod:          WatchKubePodEvent,
+		meta.WatchProject:          WatchProjectEvent,
 	},
 	meta.UserCustom: {
 		meta.Find:   Skip,
@@ -565,6 +566,18 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	meta.KubeContainer: {
 		meta.Find: Skip,
+	},
+	meta.Project: {
+		meta.Find:   Skip,
+		meta.Update: EditProject,
+		meta.Delete: DeleteProject,
+		meta.Create: CreateProject,
+	},
+	meta.FieldTemplate: {
+		meta.Create: CreateFieldGroupingTemplate,
+		meta.Find:   ViewFieldGroupingTemplate,
+		meta.Update: EditFieldGroupingTemplate,
+		meta.Delete: DeleteFieldGroupingTemplate,
 	},
 }
 

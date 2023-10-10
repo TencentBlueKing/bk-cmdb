@@ -13,8 +13,9 @@
 package common
 
 import (
-	"configcenter/src/framework/core/log"
 	"runtime/debug"
+
+	"configcenter/src/framework/core/log"
 )
 
 // GoRun start a goroutine

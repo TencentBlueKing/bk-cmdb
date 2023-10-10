@@ -22,7 +22,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		return ps
 	}
 
-	ps.host().
+	ps.hostAgentManagement().
+		host().
 		hostTransfer().
 		dynamicGrouping().
 		userCustom().
@@ -46,6 +47,32 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 		return 0, errors.New("invalid bk_biz_id value")
 	}
 	return bizID, nil
+}
+
+const (
+	// host agent id management
+	bindHostAgentPattern   = "/api/v3/host/bind/agent"
+	unbindHostAgentPattern = "/api/v3/host/unbind/agent"
+)
+
+func (ps *parseStream) hostAgentManagement() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitPattern(bindHostAgentPattern, http.MethodPost) || ps.hitPattern(unbindHostAgentPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.ManageHostAgentID,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
 }
 
 var (
@@ -304,6 +331,7 @@ const (
 	addHostsToHostPoolPattern             = "/api/v3/hosts/add"
 	addHostsByExcelPattern                = "/api/v3/hosts/excel/add"
 	addHostsToResourcePoolPattern         = "/api/v3/hosts/add/resource"
+	addHostsToBusinessIdlePattern         = "/api/v3/hosts/add/business_idle"
 	moveHostToBusinessModulePattern       = "/api/v3/hosts/modules"
 	moveResPoolHostToBizIdleModulePattern = "/api/v3/hosts/modules/resource/idle"
 	moveHostsToBizFaultModulePattern      = "/api/v3/hosts/modules/fault"
@@ -899,6 +927,25 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
+		return ps
+	}
+
+	if ps.hitPattern(addHostsToBusinessIdlePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.Update,
+				},
+			},
+		}
+
 		return ps
 	}
 

@@ -13,15 +13,27 @@
 package model
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 type modelAttrUnique struct {
 }
 
-// CreateModelAttrUnique TODO
-func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
+var forbiddenCreateUniqueObjList = []string{
+	common.BKInnerObjIDProject,
+}
+
+// CreateModelAttrUnique create model attribute unique
+func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, data metadata.CreateModelAttrUnique) (
+	*metadata.CreateOneDataResult, error) {
+
+	if util.InStrArr(forbiddenCreateUniqueObjList, objID) {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKObjIDField)
+	}
+
 	id, err := m.createModelAttrUnique(kit, objID, data)
 	if err != nil {
 		return nil, err
