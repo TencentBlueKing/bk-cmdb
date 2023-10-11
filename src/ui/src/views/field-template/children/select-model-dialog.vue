@@ -11,7 +11,7 @@
 -->
 
 <script setup>
-  import { computed, reactive, ref, watchEffect } from 'vue'
+  import { computed, reactive, ref, set, watchEffect } from 'vue'
   import { useStore } from '@/store'
   import { BUILTIN_MODELS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants'
   import { escapeRegexChar } from '@/utils/util'
@@ -123,7 +123,8 @@
     if (checked) {
       modelList.value.forEach((model) => {
         if (!selectedStatus.value.binded[model.id]
-          && !selectedStatus.value.selected[model.id]) {
+          && !selectedStatus.value.selected[model.id]
+          && modelAuths.value[model.id]) {
           selectedLocal.value.push(model)
         }
       })
@@ -140,6 +141,10 @@
     }
   }
 
+  const modelAuths = ref({})
+  const handleModelAuthUpdate = (model, isPass) => {
+    set(modelAuths.value, model.id, isPass)
+  }
 
   const handleConfirm = () => {
     emit('confirm', selectedLocal.value)
@@ -193,10 +198,13 @@
         arrow-type="filled">
         <div class="model-list">
           <template v-for="(model, modelIndex) in group.bk_objects">
-            <cmdb-auth :key="modelIndex" tag="div" :auth="[
-              { type: $OPERATION.U_MODEL, relation: [model.id] },
-              { type: $OPERATION.R_MODEL, relation: [model.id] }
-            ]">
+            <cmdb-auth :key="modelIndex" tag="div"
+              :ignore-passed-auth="true"
+              :auth="[
+                { type: $OPERATION.U_MODEL, relation: [model.id] },
+                { type: $OPERATION.R_MODEL, relation: [model.id] }
+              ]"
+              @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :class="['model-item', { 'is-builtin': model.ispre }]"
                   @click="handleSelect(model)">

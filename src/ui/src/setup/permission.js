@@ -134,8 +134,8 @@ export const translateAuth = (auth) => {
 
 function filterPassedAuth(auth, authResults) {
   const authList = Array.isArray(auth) ? auth : [auth]
-  return authList.filter(({ type, relation = [] }) => {
-    // 通用模型编辑
+  return authList.filter(({ type, relation = [] }, index) => {
+    // 通用模型实例编辑
     if (OPERATION.U_INST === type) {
       return authResults.filter(item => item.resource_type.startsWith('comobj_')).some((item) => {
         const modelId = item.resource_type?.split('_')?.[1]
@@ -146,6 +146,14 @@ function filterPassedAuth(auth, authResults) {
     // 业务主机或资源池主机编辑
     if (OPERATION.U_HOST === type || OPERATION.U_RESOURCE_HOST === type) {
       return authResults.some(item => item.resource_id === relation?.[1] && !item?.is_pass)
+    }
+
+    if ([OPERATION.U_MODEL, OPERATION.R_MODEL].includes(type)) {
+      return !authResults?.[index]?.is_pass
+    }
+
+    if (OPERATION.C_FIELD_TEMPLATE === type) {
+      return authResults.some(item => item.action === 'create' && !item?.is_pass)
     }
 
     return true

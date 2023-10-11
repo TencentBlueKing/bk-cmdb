@@ -348,6 +348,7 @@
             <cmdb-auth
               :key="modelIndex"
               tag="div"
+              :ignore-passed-auth="true"
               :auth="[
                 { type: $OPERATION.U_MODEL, relation: [model.id] },
                 { type: $OPERATION.R_MODEL, relation: [model.id] }
@@ -481,6 +482,7 @@
         top: 0;
         padding-top: 18px;
         background: #fff;
+        z-index: 1;
       }
     }
 
