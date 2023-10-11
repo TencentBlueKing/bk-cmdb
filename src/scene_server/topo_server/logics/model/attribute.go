@@ -397,7 +397,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	if isUpdate {
 		if data.IsMultiple != nil {
-			if err := attrvalid.ValidPropertyTypeIsMultiple(kit,data.PropertyType, *data.IsMultiple); err != nil {
+			if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, *data.IsMultiple); err != nil {
 				return err
 			}
 		}
@@ -439,7 +439,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 }
 
 func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) error {
-	if err := attrvalid.ValidPropertyTypeIsMultiple(kit,data.PropertyType, *data.IsMultiple); err != nil {
+	if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, *data.IsMultiple); err != nil {
 		return err
 	}
 
@@ -466,8 +466,8 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		err := attrvalid.ValidPropertyOption(kit,data.PropertyType, data.Option, *data.IsMultiple, data.Default)
-		if  err != nil {
+		err := attrvalid.ValidPropertyOption(kit, data.PropertyType, data.Option, *data.IsMultiple, data.Default)
+		if err != nil {
 			return err
 		}
 	}
@@ -1088,13 +1088,16 @@ func calcTableOptionDiffDefault(kit *rest.Kit, curAttrsOp, dbAttrsOp *metadata.T
 	}
 
 	// the header here is the new header part
-	curAttrsOp.Header = header
-	if len(curAttrsOp.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
+	created := &metadata.TableAttributesOption{
+		Header:  header,
+		Default: curAttrsOp.Default,
+	}
+	if len(created.Header)+len(updated.Header) > metadata.TableHeaderMaxNum {
 		return nil, nil, nil, kit.CCError.Errorf(common.CCErrCommXXExceedLimit, "table header",
 			metadata.TableHeaderMaxNum)
 	}
 
-	return curAttrsOp, updated, deletePropertyIDs, nil
+	return created, updated, deletePropertyIDs, nil
 }
 
 // validUpdateHeader 判断更新场景下的header是否合法
@@ -1184,7 +1187,7 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	updateDataStruct.Option, updateDataStruct.ObjectID = updated, objID
+	updateDataStruct.Option, updateDataStruct.ObjectID = curAttrsOp, objID
 
 	updateData, err := mapstruct.Struct2Map(updateDataStruct)
 	if err != nil {

@@ -105,6 +105,9 @@
       },
       isContainerHost() {
         return this.containerNodes.length > 0
+      },
+      isFromResource() {
+        return this.$route.query.from === 'resource'
       }
     },
     watch: {
@@ -166,7 +169,7 @@
         }
       },
       async getContainerNodeInfo() {
-        if (this.business === -1) {
+        if (this.business === -1 || this.isFromResource) {
           return
         }
 

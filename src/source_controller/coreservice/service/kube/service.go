@@ -35,60 +35,43 @@ func InitKube(c *capability.Capability) {
 		core: c.Core,
 	}
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/create/kube/cluster/{bk_biz_id}",
-		Handler: s.CreateCluster})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/updatemany/kube/cluster/{bk_biz_id}",
+	// cluster
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/kube/cluster", Handler: s.CreateCluster})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/cluster",
 		Handler: s.BatchUpdateCluster})
-
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/deletemany/kube/cluster/{bk_biz_id}",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/cluster",
 		Handler: s.BatchDeleteCluster})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/cluster", Handler: s.SearchClusters})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/kube/cluster",
-		Handler: s.SearchClusters})
+	// shared cluster
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/shared/cluster/ns/relation",
+		Handler: s.ListNsSharedClusterRel})
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/updatemany/kube/node/{bk_biz_id}",
-		Handler: s.BatchUpdateNode})
-
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/deletemany/kube/node/{bk_biz_id}",
+	// node
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/kube/node", Handler: s.BatchUpdateNode})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/kube/node",
 		Handler: s.BatchDeleteNode})
-
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/createmany/kube/node/{bk_biz_id}",
-		Handler: s.BatchCreateNode})
-
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/createmany/kube/pod",
-		Handler: s.BatchCreatePod})
-
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/findmany/kube/node",
-		Handler: s.SearchNodes})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/node", Handler: s.BatchCreateNode})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/node", Handler: s.SearchNodes})
 
 	// namespace
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.CreateNamespace})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/namespace/bk_biz_id/{bk_biz_id}",
-		Handler: s.UpdateNamespace})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace/bk_biz_id/{bk_biz_id}",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/namespace", Handler: s.CreateNamespace})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/namespace", Handler: s.UpdateNamespace})
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/namespace",
 		Handler: s.DeleteNamespace})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/namespace", Handler: s.ListNamespace})
 
 	// workload
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/workload/{kind}/{bk_biz_id}",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/workload/{kind}",
 		Handler: s.CreateWorkload})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/workload/{kind}/{bk_biz_id}",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/workload/{kind}",
 		Handler: s.UpdateWorkload})
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/workload/{kind}/{bk_biz_id}",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/workload/{kind}",
 		Handler: s.DeleteWorkload})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/workload/{kind}", Handler: s.ListWorkload})
 
 	// pod
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/kube/pod", Handler: s.BatchCreatePod})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/pod", Handler: s.ListPod})
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/pod", Handler: s.DeletePods})
 

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/gse"
 	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
@@ -112,6 +113,10 @@ func buildV1TaskResultMap(originMap map[string]string) map[string]int64 {
 		key = HostKey(split[len(split)-2], split[len(split)-1])
 		code := gjson.Get(val, "error_code").Int()
 		taskResultMap[key] = code
+		if code != common.CCSuccess && code != Handling {
+			blog.Errorf("task execution failed, cloudID:innerIP: %s, code: %d, msg: %s", key, code,
+				gjson.Get(val, "error_msg").String())
+		}
 	}
 	return taskResultMap
 }
@@ -120,6 +125,10 @@ func buildV2TaskResultMap(dataList []gse.GetTransferFileResult) map[string]int64
 	taskResultMap := make(map[string]int64)
 	for _, data := range dataList {
 		taskResultMap[data.Content.DestAgentID] = data.ErrorCode
+		if data.ErrorCode != common.CCSuccess && data.ErrorCode != Handling {
+			blog.Errorf("task execution failed, agent id: %s, code: %d, msg: %s", data.Content.DestAgentID,
+				data.ErrorCode, data.ErrorMsg)
+		}
 	}
 
 	return taskResultMap

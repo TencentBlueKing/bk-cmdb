@@ -186,7 +186,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		return err
 	}
 
-	err = m.validateCreateInstValue(kit, instanceData, valid)
+	err = m.validateCreateInstValue(kit, objID, instanceData, valid)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,9 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 	return nil
 }
 
-func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, instanceData mapstr.MapStr, valid *validator) error {
+func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, objID string, instanceData mapstr.MapStr,
+	valid *validator) error {
+
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
@@ -243,6 +245,15 @@ func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, instanceData ma
 		if value, ok := val.(string); ok {
 			val = strings.TrimSpace(value)
 			instanceData[key] = val
+		}
+
+		skip, err := hooks.IsSkipValidateKeyHook(kit, objID, key, instanceData)
+		if err != nil {
+			blog.Errorf("check is skip validate %s key %s hook failed, err: %v, rid: %s", objID, key, err, kit.Rid)
+			return err
+		}
+		if skip {
+			continue
 		}
 
 		rawErr := property.Validate(kit.Ctx, val, key)

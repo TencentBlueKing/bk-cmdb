@@ -30,9 +30,9 @@ const getWithStat = async (bizId, config = {}) => {
   }
 }
 
-const getContainerTopo = async ({ bizId, params }, config) => {
+const getContainerTopo = async (params, config) => {
   try {
-    const topoList = await rollReqUseCount(`find/kube/topo_path/bk_biz_id/${bizId}`, params, { limit: 100 }, config)
+    const topoList = await rollReqUseCount('find/kube/topo_path', params, { limit: 100 }, config)
     return normalizationTopo(topoList, params.bk_reference_id)
   } catch (error) {
     console.error(error)
@@ -40,10 +40,10 @@ const getContainerTopo = async ({ bizId, params }, config) => {
   }
 }
 
-const getContainerTopoNodeStats = async ({ bizId, params }, config) => {
+const getContainerTopoNodeStats = async (params, config) => {
   const [hostStats, podStats] = await Promise.all([
-    rollReqByDataKey(`find/kube/${bizId}/topo_node/host/count`, params, { limit: 100, dataKey: 'resource_info' }, config),
-    rollReqByDataKey(`find/kube/${bizId}/topo_node/pod/count`, params, { limit: 100, dataKey: 'resource_info' }, config)
+    rollReqByDataKey('find/kube/topo_node/host/count', params, { limit: 100, dataKey: 'resource_info' }, config),
+    rollReqByDataKey('find/kube/topo_node/pod/count', params, { limit: 100, dataKey: 'resource_info' }, config)
   ])
 
   return {

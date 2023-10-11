@@ -417,7 +417,7 @@
       },
       handleClearFilter() {
         this.table.filter = ''
-        this.table.stuff.type = 'default'
+        this.filterData()
       }
     }
   }
