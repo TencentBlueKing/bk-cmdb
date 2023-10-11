@@ -67,7 +67,7 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 				common.BKFieldID: id,
 			}
 			doc := map[string]int64{
-				common.ObjSortNumberField: int64(index),
+				common.ObjSortNumberField: int64(index) + 1,
 			}
 			err = db.Table(common.BKTableNameObjDes).Update(ctx, filter, doc)
 			if err != nil {

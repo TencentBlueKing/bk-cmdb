@@ -224,9 +224,9 @@ func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*met
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
 	}
 
-	if (obj.ObjSortNumber != nil) && *(obj.ObjSortNumber) < 0 {
+	if obj.ObjSortNumber < 0 {
 		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
-			"rid: %s", *(obj.ObjSortNumber), kit.Rid)
+			"rid: %s", obj.ObjSortNumber, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 

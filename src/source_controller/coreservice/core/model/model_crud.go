@@ -59,7 +59,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		return id, err
 	}
 
-	model.ObjSortNumber = &sortNum
+	model.ObjSortNumber = sortNum
 	model.ID = int64(id)
 	model.OwnerID = kit.SupplierAccount
 
@@ -89,25 +89,25 @@ func (m *modelManager) GetModelLastNum(kit *rest.Kit, model metadata.Object) (in
 	}
 
 	if len(modelResult) <= 0 {
-		return 0, nil
+		return 1, nil
 	}
 
-	if (model.ObjSortNumber != nil) && (*(model.ObjSortNumber) <= *(modelResult[0].ObjSortNumber)) {
+	if model.ObjSortNumber > 0 && model.ObjSortNumber <= modelResult[0].ObjSortNumber {
 		if err := m.objSortNumberAdd(kit, model); err != nil {
 			blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
 		}
-		return *(model.ObjSortNumber), nil
+		return model.ObjSortNumber, nil
 	}
 
-	return *(modelResult[0].ObjSortNumber) + 1, nil
+	return modelResult[0].ObjSortNumber + 1, nil
 }
 
 // objSortNumberAdd 大于等于model值的obj_sort_number字段值加一
 func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) error {
 	incCond := mapstr.MapStr{
 		metadata.ModelFieldObjCls:        model.ObjCls,
-		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: *(model.ObjSortNumber)},
+		metadata.ModelFieldObjSortNumber: mapstr.MapStr{common.BKDBGTE: model.ObjSortNumber},
 	}
 
 	incData := mapstr.MapStr{metadata.ModelFieldObjSortNumber: int64(1)}
@@ -210,9 +210,9 @@ func (m *modelManager) setUpdateObjectSortNumber(kit *rest.Kit, data *mapstr.Map
 		return err
 	}
 
-	if object.ObjSortNumber != nil && *(object.ObjSortNumber) < 0 {
+	if object.ObjSortNumber < 0 {
 		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
-			"rid: %s", *(object.ObjSortNumber), kit.Rid)
+			"rid: %s", object.ObjSortNumber, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 
