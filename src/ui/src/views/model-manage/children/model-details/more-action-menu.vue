@@ -23,8 +23,8 @@
 <template>
   <div class="more-action-menu">
     <slot name="append"></slot>
-    <cmdb-dot-menu class="dir-operation" color="#979BA5">
-      <ul class="bk-dropdown-list" v-if="commands.length">
+    <cmdb-dot-menu color="#979BA5">
+      <ul v-if="commands.length">
         <li v-for="(cmd, cmdIndex) in commands" :key="cmdIndex">
           <template v-if="cmd.isShow">
             <!-- 带权限的按钮 -->
