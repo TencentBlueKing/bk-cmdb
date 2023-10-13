@@ -158,10 +158,10 @@
                 <div v-else>--</div>
               </div>
             </div>
-            <div class="model-property-bottom">
+            <div class="model-audits">
               <template v-if="!activeModel['bk_ispaused']">
                 <div class="model-property-item"
-                  v-for="item in modelPropertyBottom"
+                  v-for="item in modelOperationFields"
                   :key="item.key">
                   <span class="model-property-item-label">{{$t(item.name)}}</span>
                   <div>
@@ -303,21 +303,6 @@
   import FlexTag from '@/components/ui/flex-tag'
   import fieldTemplateService from '@/service/field-template'
   import ModelOperate from './model-operate.vue'
-  const modelPropertyBottom = [
-    {
-      key: 'last_time',
-      name: '更新时间'
-    }, {
-      key: 'modifier',
-      name: '更新人'
-    }, {
-      key: 'create_time',
-      name: '创建时间'
-    }, {
-      key: 'creator',
-      name: '创建人'
-    }
-  ]
 
   export default {
     name: 'ModelDetails',
@@ -334,7 +319,21 @@
     },
     data() {
       return {
-        modelPropertyBottom,
+        modelOperationFields: [
+          {
+            key: 'last_time',
+            name: '更新时间'
+          }, {
+            key: 'modifier',
+            name: '更新人'
+          }, {
+            key: 'create_time',
+            name: '创建时间'
+          }, {
+            key: 'creator',
+            name: '创建人'
+          }
+        ],
         tab: {
           active: RouterQuery.get('tab', 'field')
         },
@@ -458,17 +457,9 @@
       this.$http.cancelRequest(this.request.instanceCount)
     },
     methods: {
-      ...mapActions('objectModelClassify', [
-        'searchClassificationsObjects'
-      ]),
       async getNewUpdate() {
-        await this.loadAllModels()
-        this.initObject('update')
-      },
-      loadAllModels() {
-        return this.searchClassificationsObjects({
-          params: {}
-        })
+        const { bk_obj_id } = this.activeModel
+        this.activeModel = (await this.searchObjects({ params: { bk_obj_id } }))?.[0]
       },
       handleTabChange(tab) {
         RouterQuery.set({ tab })
@@ -582,11 +573,10 @@
             this.getNewUpdate()
           })
       },
-      initObject(type) {
+      initObject() {
         const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
         if (model) {
           this.activeModel = model
-          if (type === 'update') return
           const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
           this.$store.commit('setTitle', `${menuI18n}【${this.activeModel.bk_obj_name}】`)
           this.getModelInstanceCount()
@@ -782,7 +772,7 @@
         .model-property {
           margin-right: 50px;
 
-          .model-property-top, .model-property-bottom {
+          .model-property-top, .model-audits {
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;

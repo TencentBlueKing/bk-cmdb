@@ -12,11 +12,12 @@
 
 import has from 'has'
 import { computed, reactive, set } from 'vue'
-import { NO_SHOW_FIELD } from '@/dictionary/property-constants'
+import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
 
 export default ({ properties, propertyGroups, exclude }) => {
   const groupCollapseState = reactive({})
-
+  const excludeValue = exclude.value.slice()
+  excludeValue.push(...BUILTIN_UNEDITABLE_FIELDS)
   // 已排序的字段分组
   const sortedGroups = computed(() => {
     const publicGroups = []
@@ -46,14 +47,13 @@ export default ({ properties, propertyGroups, exclude }) => {
   const sortedProperties = computed(() => {
     const sortKey = 'bk_property_index'
     const propertyList = properties.value
-      ?.filter(property => !exclude.value.includes(property.bk_property_id) && !property.bk_isapi)
+      ?.filter(property => !excludeValue.includes(property.bk_property_id) && !property.bk_isapi)
     return propertyList.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
   })
 
   // 按分组聚合的属性列表
   const groupedProperties = computed(() => sortedGroups.value
     .map(group => sortedProperties.value?.filter((property) => {
-      if (NO_SHOW_FIELD.includes(property.bk_property_id)) return null
       // 兼容旧数据，把none这个分组的属性塞到默认分组去
       const isNoneGroup = property.bk_property_group === 'none'
       if (isNoneGroup) {

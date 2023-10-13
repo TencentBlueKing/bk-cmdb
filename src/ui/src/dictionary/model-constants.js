@@ -21,6 +21,9 @@ import {
   MENU_RESOURCE_PROJECT_COLLECTION
 } from '@/dictionary/menu-symbol'
 
+// 不展示出来的字段
+export const BUILTIN_UNEDITABLE_FIELDS = ['bk_updated_by', 'bk_updated_at', 'bk_created_by', 'bk_created_at']
+
 // 常用的内置模型ID
 export const BUILTIN_MODELS = Object.freeze({
   BUSINESS_SET: 'bk_biz_set_obj',

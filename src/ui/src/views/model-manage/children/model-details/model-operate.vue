@@ -13,10 +13,6 @@
 <script setup>
   import DropdownOptionButton from '../dropdown-option-button.vue'
   defineProps({
-    modelPaused: {
-      type: Boolean,
-      default: false
-    },
     commands: {
       type: [Object, Array],
       default: () => ([])
@@ -27,51 +23,38 @@
 <template>
   <div class="model-operate">
     <slot name="append"></slot>
-    <bk-dropdown-menu
-      @click.native.stop
-      class="group-dropdown-menu"
-      trigger="click"
-      align="left"
-    >
-      <template #dropdown-trigger>
-        <div class="more-operation-btn">
-          <bk-icon type="more" />
-        </div>
-      </template>
-
-      <template #dropdown-content>
-        <ul class="bk-dropdown-list" v-if="commands.length">
-          <li v-for="(cmd, cmdIndex) in commands" :key="cmdIndex">
-            <template v-if="cmd.isShow">
-              <!-- 带权限的按钮 -->
-              <cmdb-auth
-                v-if="cmd.auth"
-                :auth="cmd.auth"
-              >
-                <dropdown-option-button
-                  class="model-operate-option"
-                  :disabled="cmd.disabled"
-                  @click="cmd.handler"
-                  v-bk-tooltips="$t(cmd.tips)"
-                >
-                  {{ cmd.text }}
-                </dropdown-option-button>
-              </cmdb-auth>
-
-              <!-- 无权限按钮 -->
+    <cmdb-dot-menu class="dir-operation" color="#979BA5">
+      <ul class="bk-dropdown-list" v-if="commands.length">
+        <li v-for="(cmd, cmdIndex) in commands" :key="cmdIndex">
+          <template v-if="cmd.isShow">
+            <!-- 带权限的按钮 -->
+            <cmdb-auth
+              v-if="cmd.auth"
+              :auth="cmd.auth"
+            >
               <dropdown-option-button
-                v-else
+                class="model-operate-option"
                 :disabled="cmd.disabled"
                 @click="cmd.handler"
                 v-bk-tooltips="$t(cmd.tips)"
               >
                 {{ cmd.text }}
               </dropdown-option-button>
-            </template>
-          </li>
-        </ul>
-      </template>
-    </bk-dropdown-menu>
+            </cmdb-auth>
+
+            <!-- 无权限按钮 -->
+            <dropdown-option-button
+              v-else
+              :disabled="cmd.disabled"
+              @click="cmd.handler"
+              v-bk-tooltips="$t(cmd.tips)"
+            >
+              {{ cmd.text }}
+            </dropdown-option-button>
+          </template>
+        </li>
+      </ul>
+    </cmdb-dot-menu>
   </div>
 </template>
 
@@ -80,17 +63,12 @@
   @include space-between;
   justify-content: flex-start;
 
-  .more-operation-btn {
-    cursor: pointer;
-    margin-left: 2px;
-    font-size: 16px;
-    @include space-between;
-  }
   .model-operate-option {
     font-weight: normal;
   }
-  .bk-dropdown-list>li {
-    width: auto;
-  }
+}
+.dropdown-option-button {
+  cursor: pointer;
+  padding: 0 15px !important;
 }
 </style>
