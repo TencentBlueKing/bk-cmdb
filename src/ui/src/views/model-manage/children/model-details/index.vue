@@ -42,7 +42,16 @@
           </div>
           <div class="model-identity">
             <div class="model-name">
-              <div>{{ activeModel.bk_obj_name }}</div>
+              <editable-field
+                class="model-name-edit"
+                :editing.sync="modelNameIsEditing"
+                v-model="activeModel.bk_obj_name"
+                font-size="12px"
+                @confirm="handleModelNameUpdateConfirm"
+                :editable="isEditable"
+                validate="required|singlechar|length:256|reservedWord"
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
+              </editable-field>
               <model-operate
                 v-if="isShowOperationButton"
                 :commands="[
@@ -66,7 +75,7 @@
                 </template>
               </model-operate>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
+            <div class="model-id" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
@@ -928,6 +937,15 @@
               height: 18px;
               line-height: 18px;
               padding: 0 6px;
+            }
+
+            .model-name-edit {
+                width: auto !important;
+                max-width: calc(100% - 25px);
+
+                :deep(.editable-field-content) {
+                  max-width: 100% !important;
+                }
             }
           }
 
