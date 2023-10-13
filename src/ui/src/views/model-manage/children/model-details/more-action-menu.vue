@@ -21,7 +21,7 @@
 </script>
 
 <template>
-  <div class="model-operate">
+  <div class="more-action-menu">
     <slot name="append"></slot>
     <cmdb-dot-menu class="dir-operation" color="#979BA5">
       <ul class="bk-dropdown-list" v-if="commands.length">
@@ -33,7 +33,7 @@
               :auth="cmd.auth"
             >
               <dropdown-option-button
-                class="model-operate-option"
+                class="more-action-menu-option"
                 :disabled="cmd.disabled"
                 @click="cmd.handler"
                 v-bk-tooltips="$t(cmd.tips)"
@@ -59,11 +59,11 @@
 </template>
 
 <style  lang="scss" scoped>
-.model-operate {
+.more-action-menu {
   @include space-between;
   justify-content: flex-start;
 
-  .model-operate-option {
+  .more-action-menu-option {
     font-weight: normal;
   }
 }

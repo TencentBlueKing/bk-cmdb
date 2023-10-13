@@ -52,7 +52,7 @@
                 validate="required|singlechar|length:256|reservedWord"
                 :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
               </editable-field>
-              <model-operate
+              <more-action-menu
                 v-if="isShowOperationButton"
                 :commands="[
                   {
@@ -73,7 +73,7 @@
                 <template #append>
                   <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
                 </template>
-              </model-operate>
+              </more-action-menu>
             </div>
             <div class="model-id" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
@@ -302,7 +302,7 @@
   import EditableField from '@/components/ui/details/editable-field.vue'
   import FlexTag from '@/components/ui/flex-tag'
   import fieldTemplateService from '@/service/field-template'
-  import ModelOperate from './model-operate.vue'
+  import MoreActionMenu from './more-action-menu.vue'
 
   export default {
     name: 'ModelDetails',
@@ -315,7 +315,7 @@
       cmdbLoading,
       EditableField,
       FlexTag,
-      ModelOperate
+      MoreActionMenu
     },
     data() {
       return {
@@ -457,9 +457,13 @@
       this.$http.cancelRequest(this.request.instanceCount)
     },
     methods: {
-      async getNewUpdate() {
+      async updateActiveModel() {
         const { bk_obj_id } = this.activeModel
-        this.activeModel = (await this.searchObjects({ params: { bk_obj_id } }))?.[0]
+        const model = (await this.searchObjects({ params: { bk_obj_id } }))?.[0]
+        this.activeModel = {
+          ...this.activeModel,
+          ...model
+        }
       },
       handleTabChange(tab) {
         RouterQuery.set({ tab })
@@ -570,7 +574,7 @@
           .then(() => {
             this.$http.cancel('post_searchClassificationsObjects')
             this.$success(this.$t('修改成功'))
-            this.getNewUpdate()
+            this.updateActiveModel()
           })
       },
       initObject() {
@@ -658,7 +662,7 @@
           bk_ispaused: ispaused,
           bk_obj_id: this.activeModel.bk_obj_id
         })
-        this.getNewUpdate()
+        this.updateActiveModel()
       },
       async deleteModel() {
         if (this.isMainLineModel) {
