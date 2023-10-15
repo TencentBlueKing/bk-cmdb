@@ -13,6 +13,7 @@
 package params
 
 import (
+	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -255,6 +256,22 @@ func deduplication(arr []string) []string {
 }
 
 // splitIPv4Data split ipv4 data
+/*
+该方法用于分割出IPv4条件中IP数组的管控区域和IPv4，返回存储管控区域与IP的map用于构建查询条件，如下IP条件数组：
+"data": [
+	"1:172.0.0.1",
+	"1:172.0.0.2",
+	"2:172.0.0.3",
+	"172.0.0.4"
+]
+
+处理后返回的map为：
+{
+	1: ["172.0.0.1", "172.0.0.2"],
+	2: ["172.0.0.3"],
+	-1: ["172.0.0.4"]
+}
+*/
 func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 	// 创建一个 map 用于存储分割结果
 	cloudIDMap := make(map[int64][]string)
@@ -278,6 +295,7 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 		cloudIDStr := ipString[:colonIndex]
 		cloudIDInt64, err := strconv.ParseInt(cloudIDStr, 10, 64)
 		if err != nil {
+			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s", err, cloudIDStr)
 			continue
 		}
 
@@ -286,7 +304,7 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 	return cloudIDMap, nil
 }
 
-// splitIPv6Data split ipv6 data
+// splitIPv6Data 该方法用于分割出IPv6条件中IP数组的管控区域和IPv6，返回存储管控区域与IP的map用于构建查询条件，具体解释参考splitIPv4Data方法解释
 func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error) {
 	// 创建一个 map 用于存储分割结果
 	cloudIDMap := make(map[int64][]string)
@@ -309,6 +327,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 		// 对于兼容IPv4的嵌入式IPv6地址，::127.0.0.1和::ffff:127.0.0.1这两种格式的地址，存放于ipv4字段中，所以使用ipv4的字段查询
 		ipAddr, err := common.GetIPv4IfEmbeddedInIPv6(ipAddress)
 		if err != nil {
+			blog.Errorf("get ipv4 if embedded in ipv6 failed, err: %v, ip: %s", err, ipAddress)
 			continue
 		}
 		if !strings.Contains(ipAddr, ":") {
@@ -318,6 +337,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 
 		fullIpv6Addr, err := common.ConvertIPv6ToStandardFormat(ipAddr)
 		if err != nil {
+			blog.Errorf("convert ipv6 to standard format failed, err: %v, ip: %s", err, ipAddr)
 			continue
 		}
 
@@ -331,6 +351,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 		cloudIDStr := ipString[:colonIndex]
 		cloudIDInt64, err := strconv.ParseInt(cloudIDStr, 10, 64)
 		if err != nil {
+			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s", err, cloudIDStr)
 			continue
 		}
 
@@ -439,6 +460,25 @@ func addIPv6ExactSearchCondition(exactOr []map[string]interface{}, ipv6CloudIDMa
 }
 
 // getIPv4MapCond 获取ipv4相关的查询条件
+/*
+该方法用于构建ipv4的精确查询条件并返回
+1、当参数中的IP前直接指定了管控区域如："4:127.0.0.1"，则构建的条件：
+{
+	"bk_cloud_id": 4,
+	"bk_host_innerip": {"$in": ["127.0.0.1", "......其它管控区域相同的IP"]}
+}
+
+2、当参数中的IP未直接指定了管控区域如："127.0.0.1"，而在主机查询条件中指定了管控区域[4,5,6]，则构建的条件：
+{
+	"bk_cloud_id": {"$in": [4,5,6]},
+	"bk_host_innerip": {"$in": ["127.0.0.1", "......其它未直接指定管控区域的IP"]}
+}
+
+3、当参数中的IP未直接指定了管控区域如："127.0.0.1"，而在主机查询条件中也未指定管控区域，则构建的条件：
+{
+	"bk_host_innerip": {"$in": ["127.0.0.1", "......其它未直接指定管控区域的IP"]}
+}
+*/
 func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
@@ -518,7 +558,7 @@ func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]in
 	}
 }
 
-// getIPv6MapStrCond 获取ipv6相关的查询条件
+// getIPv6MapStrCond 获取ipv6相关的查询条件，该方法用于构建ipv6的精确查询条件并返回，条件样式参考getIPv4MapCond方法解释
 func getIPv6MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
@@ -624,6 +664,25 @@ func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][
 }
 
 // getFuzzyMapStrCond 获取模糊查询条件
+/*
+该方法用于构建ipv4的模糊查询条件并返回，ipv6不支持模糊查询
+1、当参数中的IP前直接指定了管控区域如："4:127.0."，则构建的条件：
+{
+	"bk_cloud_id": 4,
+	"bk_host_innerip": {"$regex": "127.0."}
+}
+
+2、当参数中的IP未直接指定了管控区域如："127.0."，而在主机查询条件中指定了管控区域[4,5,6]，则构建的条件：
+{
+	"bk_cloud_id": {"$in": [4,5,6]},
+	"bk_host_innerip": {"$regex": "127.0."}
+}
+
+3、当参数中的IP未直接指定了管控区域如："127.0."，而在主机查询条件中也未指定管控区域，则构建的条件：
+{
+	"bk_host_innerip": {"$regex": "127.0."}
+}
+*/
 func getFuzzyCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	ipRegex map[string]interface{}) ([]map[string]interface{}, error) {
 
