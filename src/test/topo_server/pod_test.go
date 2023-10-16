@@ -50,6 +50,7 @@ var _ = Describe("pod test", func() {
 	var hostID1 int64
 	var hostID2 int64
 	podName := "podName"
+	podOperator := []string{"user1", "user2"}
 	var podID int64
 	containerName := "containerName"
 	containerUID := "containerUID"
@@ -235,7 +236,8 @@ var _ = Describe("pod test", func() {
 								},
 							},
 							Pod: types.Pod{
-								Name: &podName,
+								Name:     &podName,
+								Operator: &podOperator,
 							},
 							Containers: []types.Container{
 								{

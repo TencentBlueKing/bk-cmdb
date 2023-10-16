@@ -167,6 +167,7 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec
 		QOSClass:      pod.QOSClass,
 		NodeSelectors: pod.NodeSelectors,
 		Tolerations:   pod.Tolerations,
+		Operator:      pod.Operator,
 		Revision: table.Revision{
 			CreateTime: now,
 			LastTime:   now,

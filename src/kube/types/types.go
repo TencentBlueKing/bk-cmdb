@@ -328,6 +328,9 @@ const (
 
 	// ProjectCodeField project code field
 	ProjectCodeField = "bk_project_code"
+
+	// OperatorField operator field
+	OperatorField = "operator"
 )
 
 // node field names
