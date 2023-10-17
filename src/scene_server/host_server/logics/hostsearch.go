@@ -699,7 +699,8 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		return err
 	}
 
-	condition, err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ipv4Ip, sh.hostSearchParam.Ipv6Ip, condition)
+	condition, err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ipv4Ip, sh.hostSearchParam.Ipv6Ip, condition,
+		sh.kit.Rid)
 	if err != nil {
 		return err
 	}

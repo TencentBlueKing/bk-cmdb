@@ -13,7 +13,6 @@
 package params
 
 import (
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -21,6 +20,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -102,15 +102,15 @@ func ParseHostParams(input []metadata.ConditionItem) (map[string]interface{}, er
 }
 
 // ParseHostIPParams parses the IP address information into query statement
-func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, output map[string]interface{}) (
-	map[string]interface{}, error) {
+func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, output map[string]interface{},
+	rid string) (map[string]interface{}, error) {
 
 	var err error
 	exactOr := make([]map[string]interface{}, 0)
 	embeddedIPv4Addrs := make([]string, 0)
 
 	if len(ipv6Cond.Data) != 0 {
-		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr, output)
+		exactOr, embeddedIPv4Addrs, err = parseIPv6Condition(ipv6Cond, exactOr, output, rid)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add ipv6 addresses to condition, err: %v", err)
 		}
@@ -123,9 +123,13 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 		return output, nil
 	}
 
-	ipv4CloudIDMap, err := splitIPv4Data(ipv4Cond)
+	ipv4CloudIDMap, err := splitIPv4Data(ipv4Cond, rid)
 	if err != nil {
 		return nil, err
+	}
+	if len(ipv4CloudIDMap) == 0 && len(exactOr) != 0 {
+		output[common.BKDBOR] = exactOr
+		return output, nil
 	}
 
 	if exact == 1 {
@@ -150,17 +154,20 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 
 // parseIPv6Condition parse IPv6 conditions to full Ipv6 addresses and embedded IPv4 addresses
 // only full or abbreviated IPv6 addresses can be used for exact queries, not exact search is not supported
-func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}, output map[string]interface{}) (
-	[]map[string]interface{}, []string, error) {
+func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}, output map[string]interface{},
+	rid string) ([]map[string]interface{}, []string, error) {
 
 	flag := ipCond.Flag
 	if ipCond.Exact != 1 {
 		return exactOr, nil, nil
 	}
 
-	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPv6Data(ipCond)
+	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPv6Data(ipCond, rid)
 	if err != nil {
 		return nil, nil, err
+	}
+	if len(ipv6CloudIDMap) == 0 {
+		return exactOr, embeddedIPv4Addrs, nil
 	}
 
 	exactOr, err = addIPv6ExactSearchCondition(exactOr, ipv6CloudIDMap, output, flag)
@@ -259,20 +266,20 @@ func deduplication(arr []string) []string {
 /*
 该方法用于分割出IPv4条件中IP数组的管控区域和IPv4，返回存储管控区域与IP的map用于构建查询条件，如下IP条件数组：
 "data": [
-	"1:172.0.0.1",
-	"1:172.0.0.2",
-	"2:172.0.0.3",
-	"172.0.0.4"
+	"1:127.0.0.1",
+	"1:127.0.0.2",
+	"2:127.0.0.3",
+	"127.0.0.4"
 ]
 
 处理后返回的map为：
 {
-	1: ["172.0.0.1", "172.0.0.2"],
-	2: ["172.0.0.3"],
-	-1: ["172.0.0.4"]
+	1: ["127.0.0.1", "127.0.0.2"],
+	2: ["127.0.0.3"],
+	-1: ["127.0.0.4"]
 }
 */
-func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
+func splitIPv4Data(ipCond metadata.IPInfo, rid string) (map[int64][]string, error) {
 	// 创建一个 map 用于存储分割结果
 	cloudIDMap := make(map[int64][]string)
 
@@ -295,7 +302,7 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 		cloudIDStr := ipString[:colonIndex]
 		cloudIDInt64, err := strconv.ParseInt(cloudIDStr, 10, 64)
 		if err != nil {
-			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s", err, cloudIDStr)
+			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s, rid: %s", err, cloudIDStr, rid)
 			continue
 		}
 
@@ -304,8 +311,9 @@ func splitIPv4Data(ipCond metadata.IPInfo) (map[int64][]string, error) {
 	return cloudIDMap, nil
 }
 
-// splitIPv6Data 该方法用于分割出IPv6条件中IP数组的管控区域和IPv6，返回存储管控区域与IP的map用于构建查询条件，具体解释参考splitIPv4Data方法解释
-func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error) {
+// splitIPv6Data 该方法用于分割出IPv6条件中IP数组的管控区域和IPv6，
+// 返回存储管控区域与IPv6的map以及兼容IPv4的嵌入式IPv6地址的切片
+func splitIPv6Data(ipCond metadata.IPInfo, rid string) (map[int64][]string, []string, error) {
 	// 创建一个 map 用于存储分割结果
 	cloudIDMap := make(map[int64][]string)
 	embeddedIPv4Addrs := make([]string, 0)
@@ -327,7 +335,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 		// 对于兼容IPv4的嵌入式IPv6地址，::127.0.0.1和::ffff:127.0.0.1这两种格式的地址，存放于ipv4字段中，所以使用ipv4的字段查询
 		ipAddr, err := common.GetIPv4IfEmbeddedInIPv6(ipAddress)
 		if err != nil {
-			blog.Errorf("get ipv4 if embedded in ipv6 failed, err: %v, ip: %s", err, ipAddress)
+			blog.Errorf("get ipv4 if embedded in ipv6 failed, err: %v, ip: %s, rid: %s", err, ipAddress, rid)
 			continue
 		}
 		if !strings.Contains(ipAddr, ":") {
@@ -337,7 +345,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 
 		fullIpv6Addr, err := common.ConvertIPv6ToStandardFormat(ipAddr)
 		if err != nil {
-			blog.Errorf("convert ipv6 to standard format failed, err: %v, ip: %s", err, ipAddr)
+			blog.Errorf("convert ipv6 to standard format failed, err: %v, ip: %s, rid: %s", err, ipAddr, rid)
 			continue
 		}
 
@@ -351,7 +359,7 @@ func splitIPv6Data(ipCond metadata.IPInfo) (map[int64][]string, []string, error)
 		cloudIDStr := ipString[:colonIndex]
 		cloudIDInt64, err := strconv.ParseInt(cloudIDStr, 10, 64)
 		if err != nil {
-			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s", err, cloudIDStr)
+			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s, rid: %s", err, cloudIDStr, rid)
 			continue
 		}
 
@@ -430,6 +438,14 @@ func addIPv4ExactSearchCondition(exactOr []map[string]interface{}, ipv4CloudIDMa
 			return nil, err
 		}
 		exactOr = append(exactOr, ipv4MapCond...)
+	}
+
+	// 此处判断当设置了ip条件如：5h:127.0.0.x, j:127.0.0.1 但因为设置的所有ip或管控区域不合法，导致最后构建的条件为空，从而会查询出所有主机，不符合用户预期
+	// 所以如果设置了ip条件，但所有ip或管控区域都不合法，就设置一个空查询从而不返回任何主机数据
+	if len(exactOr) == 0 {
+		exactOr = append(exactOr, []map[string]interface{}{{
+			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: []string{}},
+		}}...)
 	}
 
 	return exactOr, nil
@@ -558,7 +574,26 @@ func getIPv4MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]in
 	}
 }
 
-// getIPv6MapStrCond 获取ipv6相关的查询条件，该方法用于构建ipv6的精确查询条件并返回，条件样式参考getIPv4MapCond方法解释
+// getIPv6MapStrCond 获取ipv6相关的查询条件，
+/*
+该方法用于构建ipv6的精确查询条件并返回
+1、当参数中的IP前直接指定了管控区域如："4:[0000:0000:0000:0000:0000:0000:0000:1234]"，则构建的条件：
+{
+	"bk_cloud_id": 4,
+	"bk_host_innerip_v6": {"$in": ["0000:0000:0000:0000:0000:0000:0000:1234", "......其它管控区域相同的IP"]}
+}
+
+2、当参数中的IP未直接指定了管控区域如："127.0.0.1"，而在主机查询条件中指定了管控区域[4,5,6]，则构建的条件：
+{
+	"bk_cloud_id": {"$in": [4,5,6]},
+	"bk_host_innerip_v6": {"$in": ["0000:0000:0000:0000:0000:0000:0000:1234", "......其它未直接指定管控区域的IP"]}
+}
+
+3、当参数中的IP未直接指定了管控区域如："0000:0000:0000:0000:0000:0000:0000:1234"，而在主机查询条件中也未指定管控区域，则构建的条件：
+{
+	"bk_host_innerip_v6": {"$in": ["0000:0000:0000:0000:0000:0000:0000:1234", "......其它未直接指定管控区域的IP"]}
+}
+*/
 func getIPv6MapCond(flag string, cloudID int64, outputCloudIDMap map[string][]int64,
 	exactIP map[string]interface{}) ([]map[string]interface{}, error) {
 
