@@ -38,42 +38,46 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 1,
+    "bk_biz_id": 3,
     "bk_obj_id": "host",
-    "name": "my-dynamic-group",
+    "name": "主机名含：host",
     "info": {
-    	"condition":[
-    		{
-    			"bk_obj_id":"set",
-    			"condition":[
-    				{
-    					"field":"default",
-    					"operator":"$ne",
-    					"value":1
-    				}
-    			]
-    		},
-    		{
-    			"bk_obj_id":"module",
-    			"condition":[
-    				{
-    					"field":"default",
-    					"operator":"$ne",
-    					"value":1
-    				}
-    			]
-    		},
-    		{
-    			"bk_obj_id":"host",
-    			"condition":[
-    				{
-    					"field":"bk_host_innerip",
-    					"operator":"$eq",
-    					"value":"127.0.0.1"
-    				}
-    			]
-    		}
-    	]
+        "condition": [
+            {
+                "bk_obj_id": "set",
+                "condition": [
+                    {
+                        "field": "bk_set_name",
+                        "operator": "$in",
+                        "value": [
+                            "aaSet"
+                        ]
+                    }
+                ]
+            },
+            {
+                "bk_obj_id": "module",
+                "condition": [
+                    {
+                        "field": "bk_module_name",
+                        "operator": "$in",
+                        "value": [
+                            "aaMod"
+                        ]
+                    }
+                ]
+            },
+            {
+                "bk_obj_id": "host",
+                "condition": [
+                    {
+                        "field": "bk_host_name",
+                        "operator": "$regex",
+                        "value": "host"
+                    }
+                ]
+            }
+        ]
     }
 }
 ```
@@ -84,12 +88,12 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
-    "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
-        "id": "XXXXXXXX"
-    }
+        "id": "293dcda1-68da-11ee-b1d6-dasjicdsc5"
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "9b9464cdff7f4ecaaf2ccfab7a508c81"
 }
 ```
 

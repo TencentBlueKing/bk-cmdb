@@ -100,7 +100,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission":null,
     "data": {},
     "request_id": "dsda1122adasadadada2222"

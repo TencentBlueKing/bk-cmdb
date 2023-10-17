@@ -30,120 +30,116 @@
 
 ```json
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "id": 49,
-    "bk_process_name": "p1",
-    "bk_biz_id": 1,
-    "service_template_id": 51,
-    "property": {
-      "proc_num": {
-        "value": 300,
-        "as_default_value": false
-      },
-      "stop_cmd": {
-        "value": "",
-        "as_default_value": false
-      },
-      "restart_cmd": {
-        "value": "",
-        "as_default_value": false
-      },
-      "face_stop_cmd": {
-        "value": "",
-        "as_default_value": false
-      },
-      "bk_func_name": {
-        "value": "p1",
-        "as_default_value": true
-      },
-      "work_path": {
-        "value": "",
-        "as_default_value": false
-      },
-      "priority": {
-        "value": null,
-        "as_default_value": false
-      },
-      "reload_cmd": {
-        "value": "",
-        "as_default_value": false
-      },
-      "bk_process_name": {
-        "value": "p1",
-        "as_default_value": true
-      },
-      "pid_file": {
-        "value": "",
-        "as_default_value": false
-      },
-      "auto_start": {
-        "value": false,
-        "as_default_value": false
-      },
-      "auto_time_gap": {
-        "value": null,
-        "as_default_value": false
-      },
-      "start_cmd": {
-        "value": "",
-        "as_default_value": false
-      },
-      "bk_func_id": {
-        "value": null,
-        "as_default_value": false
-      },
-      "user": {
-        "value": "root100",
-        "as_default_value": false
-      },
-      "timeout": {
-        "value": null,
-        "as_default_value": false
-      },
-      "description": {
-        "value": "",
-        "as_default_value": false
-      },
-      "bk_start_param_regex": {
-        "value": "",
-        "as_default_value": false
-      },
-      "bind_info": {
-        "value": [
-            {
-                "enable": {
-                    "value": false,
-                    "as_default_value": true
-                },
-                "ip": {
-                    "value": "1",
-                    "as_default_value": true
-                },
-                "port": {
-                    "value": "100",
-                    "as_default_value": true
-                },
-                "protocol": {
-                    "value": "1",
-                    "as_default_value": true
-                },
-                "row_id": 1
+    "result": true,
+    "code": 0,
+    "data": {
+        "id": 5,
+        "bk_process_name": "delete",
+        "bk_biz_id": 3,
+        "service_template_id": 4,
+        "property": {
+            "proc_num": {
+                "value": null,
+                "as_default_value": true
+            },
+            "stop_cmd": {
+                "value": "",
+                "as_default_value": true
+            },
+            "restart_cmd": {
+                "value": "",
+                "as_default_value": true
+            },
+            "face_stop_cmd": {
+                "value": "",
+                "as_default_value": true
+            },
+            "bk_func_name": {
+                "value": "delete",
+                "as_default_value": true
+            },
+            "work_path": {
+                "value": "",
+                "as_default_value": true
+            },
+            "priority": {
+                "value": null,
+                "as_default_value": true
+            },
+            "reload_cmd": {
+                "value": "",
+                "as_default_value": true
+            },
+            "bk_process_name": {
+                "value": "delete",
+                "as_default_value": true
+            },
+            "pid_file": {
+                "value": "",
+                "as_default_value": true
+            },
+            "auto_start": {
+                "value": null,
+                "as_default_value": null
+            },
+            "bk_start_check_secs": {
+                "value": null,
+                "as_default_value": true
+            },
+            "start_cmd": {
+                "value": "",
+                "as_default_value": true
+            },
+            "user": {
+                "value": "",
+                "as_default_value": true
+            },
+            "timeout": {
+                "value": null,
+                "as_default_value": true
+            },
+            "description": {
+                "value": "",
+                "as_default_value": true
+            },
+            "bk_start_param_regex": {
+                "value": "",
+                "as_default_value": true
+            },
+            "bind_info": {
+                "value": [
+                    {
+                        "enable": {
+                            "value": true,
+                            "as_default_value": true
+                        },
+                        "ip": {
+                            "value": "1",
+                            "as_default_value": true
+                        },
+                        "port": {
+                            "value": "9898",
+                            "as_default_value": true
+                        },
+                        "protocol": {
+                            "value": "1",
+                            "as_default_value": true
+                        },
+                        "row_id": 1
+                    }
+                ],
+                "as_default_value": true
             }
-        ],
-        "as_default_value": true
-      }
+        },
+        "creator": "admin",
+        "modifier": "admin",
+        "create_time": "2023-10-12T10:07:14.422Z",
+        "last_time": "2023-10-12T10:07:14.422Z",
+        "bk_supplier_account": "0"
     },
-    "creator": "admin",
-    "modifier": "admin",
-    "create_time": "2019-06-19T15:24:04.763+08:00",
-    "last_time": "2019-06-21T16:25:03.962512+08:00",
-    "bk_supplier_account": "0"
-  }
+    "message": "success",
+    "permission": null,
+    "request_id": "c15f62614eba4ab29820ea8d52c362c1"
 }
 
 ```

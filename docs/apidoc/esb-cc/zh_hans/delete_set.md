@@ -34,10 +34,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
-    "permission": null,
+    "message": "success",
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "permission": null,
+    "data": null
 }
 ```
 ### 返回结果参数说明

@@ -27,18 +27,20 @@
 
 ```json
 {
-  "bk_app_code": "esb_test",
-  "bk_app_secret": "xxx",
-  "bk_username": "xxx",
-  "bk_token": "xxx",
-  "bk_supplier_account": "0",
-  "bk_biz_id": 10,
-  "set_template_ids":[1, 11],
-  "page": {
-    "start": 0,
-    "limit": 10,
-    "sort": "-name"
-  }
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "bk_supplier_account": "0",
+    "bk_biz_id": 3,
+    "set_template_ids": [
+        3
+    ],
+    "page": {
+        "start": 0,
+        "limit": 10,
+        "sort": "-name"
+    }
 }
 ```
 
@@ -46,36 +48,26 @@
 
 ```json
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "count": 2,
-    "info": [
-      {
-        "id": 1,
-        "name": "zk1",
-        "bk_biz_id": 10,
-        "creator": "admin",
-        "modifier": "admin",
-        "create_time": "2020-03-16T15:09:23.859+08:00",
-        "last_time": "2020-03-25T18:59:00.167+08:00",
-        "bk_supplier_account": "0"
-      },
-      {
-        "id": 11,
-        "name": "q",
-        "bk_biz_id": 10,
-        "creator": "admin",
-        "modifier": "admin",
-        "create_time": "2020-03-16T15:10:05.176+08:00",
-        "last_time": "2020-03-16T15:10:05.176+08:00",
-        "bk_supplier_account": "0"
-      }
-    ]
-  }
+    "result": true,
+    "code": 0,
+    "data": {
+        "count": 1,
+        "info": [
+            {
+                "id": 3,
+                "name": "redis",
+                "bk_biz_id": 3,
+                "creator": "admin",
+                "modifier": "admin",
+                "create_time": "2023-10-12T10:14:40.71Z",
+                "last_time": "2023-10-12T10:14:40.71Z",
+                "bk_supplier_account": "0"
+            }
+        ]
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "2fb8761b27394865ba79dd7b7de09636"
 }
 ```
 

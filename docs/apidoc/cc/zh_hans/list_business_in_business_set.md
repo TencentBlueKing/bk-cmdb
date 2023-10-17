@@ -94,7 +94,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission":null,
     "data": {
         "count": 0,
@@ -115,7 +115,7 @@
 {
     "result":true,
     "code":0,
-    "message":"",
+    "message":"success",
     "permission":null,
     "data":{
         "count":10,

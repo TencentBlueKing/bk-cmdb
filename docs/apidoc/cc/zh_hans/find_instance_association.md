@@ -10,17 +10,17 @@
 
 | 字段                 |  类型      | 是否必填	   |  描述          |
 |----------------------|------------|--------|-----------------------------|
-| condition | object     | Yes   | 查询条件 |
-| bk_obj_id           | string     | YES     | 源模型id(v3.10+)|
+| condition | object     | 是   | 查询条件 |
+| bk_obj_id           | string     | 是     | 源模型id(v3.10+)|
 
 
 #### condition
 
-| 字段                 |  类型      | 是否必填	   |  描述         |
-|---------------------|------------|--------|-----------------------------|
-| bk_obj_asst_id           | string     | Yes     | 模型关联关系的唯一id|
-| bk_asst_id           | string     | NO     | 关联类型的唯一id|
-| bk_asst_obj_id           | string     | NO     | 目标模型id|
+| 字段                 |  类型      | 是否必填	 |  描述         |
+|---------------------|------------|-------|-----------------------------|
+| bk_obj_asst_id           | string     | 是     | 模型关联关系的唯一id|
+| bk_asst_id           | string     | 否     | 关联类型的唯一id|
+| bk_asst_obj_id           | string     | 否    | 目标模型id|
 
 
 ### 请求参数示例
@@ -46,7 +46,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": [{

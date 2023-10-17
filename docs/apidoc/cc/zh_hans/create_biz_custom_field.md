@@ -67,7 +67,7 @@
     "bk_obj_id": "cc_test_inst",
     "bk_property_id": "cc_test",
     "bk_property_name": "cc_test",
-    "bk_property_type": "singlechar",
+    "bk_property_type": "int",
     "bk_asst_obj_id": "test"
 }
 ```
@@ -79,7 +79,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
 	"data": {

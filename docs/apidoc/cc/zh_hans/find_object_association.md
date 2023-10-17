@@ -10,16 +10,16 @@
 
 | 字段                 |  类型      | 是否必填	   |  描述 |
 |----------------------|------------|--------|-----------------------------|
-| condition | string map     | Yes   | 查询条件 |
+| condition | string map     | 是   | 查询条件 |
 
 
 condition params
 
 | 字段                 |  类型      | 是否必填	   |  描述 |
 |---------------------|------------|--------|-----------------------------|
-| bk_asst_id           | string     | Yes     | 模型的关联类型唯一id|
-| bk_obj_id           | string     | Yes     | 源模型id|
-| bk_asst_id           | string     | Yes     | 目标模型id|
+| bk_asst_id           | string     | 是     | 模型的关联类型唯一id|
+| bk_obj_id           | string     | 是     | 源模型id|
+| bk_asst_id           | string     | 是     | 目标模型id|
 
 
 ### 请求参数示例
@@ -44,7 +44,7 @@ condition params
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": [

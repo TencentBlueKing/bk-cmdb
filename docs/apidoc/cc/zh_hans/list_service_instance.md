@@ -13,8 +13,8 @@
 | bk_biz_id            | int  | 是   | 业务id |
 | bk_module_id         | int  | 否   | 模块ID |
 | selectors            | int  | 否   | label过滤功能，operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin`|
-| page         | object  | No   | 分页参数 |
-| search_key         | string  | No   | 名字过滤参数 |
+| page         | object  | 否   | 分页参数 |
+| search_key         | string  | 否   | 名字过滤参数 |
 
 #### page
 

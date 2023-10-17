@@ -35,15 +35,15 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_obj_id":"test",
-    "update":[
+    "bk_obj_id": "bk_switch",
+    "update": [
         {
-          "datas":{
-            "bk_inst_name":"batch_update"
-          },
-          "inst_id":46
-         }
-        ]
+            "datas": {
+                "bk_inst_name": "update"
+            },
+            "inst_id": 1
+        }
+    ]
 }
 ```
 
@@ -55,10 +55,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "success"
+    "request_id": "7f2538c504af4f04a57b37ff5ea611fb"
 }
 ```
 

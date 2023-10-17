@@ -11,10 +11,10 @@
 
 |字段|类型|必填|描述|
 |---|---|---|---|
-|bk_biz_id|int64|Yes|业务ID|
-|set_fields|string array|Yes|控制返回结果的集群信息里有哪些字段|
-|module_fields|string array|Yes|控制返回结果的模块信息里有哪些字段|
-|host_fields|string array|Yes|控制返回结果的主机信息里有哪些字段|
+|bk_biz_id|int64|是|业务ID|
+|set_fields|string array|是|控制返回结果的集群信息里有哪些字段|
+|module_fields|string array|是|控制返回结果的模块信息里有哪些字段|
+|host_fields|string array|是|控制返回结果的主机信息里有哪些字段|
 
 
 ### 请求参数示例

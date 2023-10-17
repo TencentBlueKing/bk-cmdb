@@ -10,29 +10,28 @@
 
 #### 接口参数
 
-|字段|类型|必填|描述|
-|---|---|---|---|
-| bk_biz_id  | int64       | Yes      | 业务ID |
-|bk_set_ids|int64 array|No|集群ID列表，若为空，则代表任意一集群|
-|bk_module_ids|int64 array|No|模块ID列表，若为空，则代表任意一模块|
-|ids|int64 array|No|服务实例ID列表，若为空，则代表任意一实例||
-|bk_process_names|string array|No|进程名称列表，若为空，则代表任意一进程。`该字段与bk_func_id互斥，二者只能选其一，不能同时有值`|
-|bk_func_ids|string array|No|进程的功能ID列表，若为空，则代表任一进程。`bk_process_name，二者只能选其一，不能同时有值`|
-|bk_process_ids|int64 array|No|进程ID列表，若为空，则代表任一进程|
-|fields|string array|No|进程属性列表，控制返回结果的进程实例信息里有哪些字段，能够加速接口请求和减少网络流量传输<br>为空时返回进程所有字段,bk_process_id,bk_process_name,bk_func_id为必返回字段|
-|page|dict|Yes|分页条件|
+| 字段               | 类型           | 必填 | 描述                                                                                                         |
+|------------------|--------------|----|------------------------------------------------------------------------------------------------------------|
+| bk_biz_id        | int64        | 是  | 业务ID                                                                                                       |
+| bk_set_ids       | int64 array  | 否  | 集群ID列表，若为空，则代表任意一集群                                                                                        |
+| bk_module_ids    | int64 array  | 否  | 模块ID列表，若为空，则代表任意一模块                                                                                        |
+| ids              | int64 array  | 否  | 服务实例ID列表，若为空，则代表任意一实例                                                                                      ||
+| bk_process_names | string array | 否  | 进程名称列表，若为空，则代表任意一进程。`该字段与bk_func_id互斥，二者只能选其一，不能同时有值`                                                      |
+| bk_func_ids      | string array | 否  | 进程的功能ID列表，若为空，则代表任一进程。`bk_process_name，二者只能选其一，不能同时有值`                                                     |
+| bk_process_ids   | int64 array  | 否  | 进程ID列表，若为空，则代表任一进程                                                                                         |
+| fields           | string array | 否  | 进程属性列表，控制返回结果的进程实例信息里有哪些字段，能够加速接口请求和减少网络流量传输<br>为空时返回进程所有字段,bk_process_id,bk_process_name,bk_func_id为必返回字段 |
+| page             | dict         | 是  | 分页条件                                                                                                       |
 
 这些字段的条件关系是关系与(&amp;&amp;)，只会查询同时满足所填条件的进程实例<br>
 举例来说：如果同时填了bk_set_ids和bk_module_ids，而bk_module_ids都不属于bk_set_ids，则查询结果为空
 
 #### page
 
-| 字段  | 类型 |必选| 描述 |
-| ---  | ---  | ---  | --- |
-| start|int|No|记录开始位置，默认为0 |
-| limit|int|Yes|每页限制条数,最大500 |
-| sort  | string | 否   | 排序字段，'-'表示倒序, 只能是进程的字段，默认按bk_process_id排序 |
-
+| 字段    | 类型     | 必选 | 描述                                        |
+|-------|--------|----|-------------------------------------------|
+| start | int    | 否  | 记录开始位置，默认为0                               |
+| limit | int    | 是  | 每页限制条数,最大500                              |
+| sort  | string | 否  | 排序字段，'-'表示倒序, 只能是进程的字段，默认按bk_process_id排序 |
 
 ### 请求参数示例
 

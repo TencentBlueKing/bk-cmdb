@@ -23,10 +23,9 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "0",
-    "name": "test",
-    "bk_biz_id": 20,
-    "service_template_ids": [59]
+    "name": "redis",
+    "bk_biz_id": 3,
+    "service_template_ids": [3]
 }
 ```
 
@@ -36,19 +35,19 @@
 {
     "result": true,
     "code": 0,
-    "message": "success",
-    "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
-        "id": 6,
-        "name": "test",
-        "bk_biz_id": 20,
+        "id": 1,
+        "name": "redis",
+        "bk_biz_id": 3,
         "creator": "admin",
         "modifier": "admin",
-        "create_time": "2019-11-27T17:24:10.671658+08:00",
-        "last_time": "2019-11-27T17:24:10.671658+08:00",
+        "create_time": "2023-10-12T17:03:18.554918015+08:00",
+        "last_time": "2023-10-12T17:03:18.554918015+08:00",
         "bk_supplier_account": "0"
-    }
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "a1841a8b69ba4c5ca2a65056133e6ffc"
 }
 ```
 

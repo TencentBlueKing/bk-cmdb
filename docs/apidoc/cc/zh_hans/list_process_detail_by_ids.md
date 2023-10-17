@@ -10,9 +10,9 @@
 
 |字段|类型|必填|描述|
 |---|---|---|---|
-|bk_biz_id|int|Yes| 进程所在的业务ID |
-|bk_process_ids|array|Yes|进程ID列表，最多传500个|
-|fields|array|No|进程属性列表，控制返回结果的进程实例信息里有哪些字段，能够加速接口请求和减少网络流量传输<br>为空时返回进程所有字段,bk_process_id为必返回字段|
+|bk_biz_id|int|是| 进程所在的业务ID |
+|bk_process_ids|array|是|进程ID列表，最多传500个|
+|fields|array|否|进程属性列表，控制返回结果的进程实例信息里有哪些字段，能够加速接口请求和减少网络流量传输<br>为空时返回进程所有字段,bk_process_id为必返回字段|
 
 
 ### 请求参数示例

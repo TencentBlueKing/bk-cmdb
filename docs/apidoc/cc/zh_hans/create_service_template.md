@@ -18,13 +18,13 @@
 
 ```python
 {
-  "bk_app_code": "esb_test",
-  "bk_app_secret": "xxx",
-  "bk_username": "xxx",
-  "bk_token": "xxx",
-  "bk_biz_id": 1,
-  "name": "test4",
-  "service_category_id": 1
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "bk_biz_id": 3,
+    "name": "redis-server",
+    "service_category_id": 5
 }
 ```
 
@@ -32,23 +32,23 @@
 
 ```python
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "bk_biz_id": 1,
-    "id": 52,
-    "name": "test4",
-    "service_category_id": 1,
-    "creator": "admin",
-    "modifier": "admin",
-    "host_apply_enabled": false,
-    "create_time": "2019-09-18T23:09:44.251970453+08:00",
-    "last_time": "2019-09-18T23:09:44.251970568+08:00",
-    "bk_supplier_account": "0"
-  }
+    "result": true,
+    "code": 0,
+    "data": {
+        "bk_biz_id": 3,
+        "id": 3,
+        "name": "redis-server",
+        "service_category_id": 5,
+        "creator": "admin",
+        "modifier": "admin",
+        "create_time": "2023-10-12T16:58:59.667220357+08:00",
+        "last_time": "2023-10-12T16:58:59.667220628+08:00",
+        "bk_supplier_account": "0",
+        "host_apply_enabled": false
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "f1416618038c4d11987f3883921cd0b3"
 }
 ```
 

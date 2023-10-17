@@ -18,11 +18,11 @@
 ```python
 
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
-    "bk_biz_id":0
+  "bk_app_code": "esb_test",
+  "bk_app_secret": "xxx",
+  "bk_username": "xxx",
+  "bk_token": "xxx",
+  "bk_biz_id": 3
 }
 ```
 
@@ -30,35 +30,35 @@
 
 ```python
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "bk_set_id": 2,
-    "bk_set_name": "空闲机池",
-    "module": [
-      {
-        "bk_module_id": 3,
-        "bk_module_name": "空闲机",
-        "default": 1,
-        "host_apply_enabled": false
-      },
-      {
-        "bk_module_id": 4,
-        "bk_module_name": "故障机",
-        "default": 2,
-        "host_apply_enabled": false
-      },
-      {
-        "bk_module_id": 5,
-        "bk_module_name": "待回收",
-        "default": 3,
-        "host_apply_enabled": false
-      }
-    ]
-  }
+    "result": true,
+    "code": 0,
+    "data": {
+        "bk_set_id": 3,
+        "bk_set_name": "idle pool",
+        "module": [
+            {
+                "bk_module_id": 7,
+                "bk_module_name": "idle host",
+                "default": 1,
+                "host_apply_enabled": false
+            },
+            {
+                "bk_module_id": 8,
+                "bk_module_name": "fault host",
+                "default": 2,
+                "host_apply_enabled": false
+            },
+            {
+                "bk_module_id": 9,
+                "bk_module_name": "recycle host",
+                "default": 3,
+                "host_apply_enabled": false
+            }
+        ]
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "e79d09168c094bcea76f399ec35a73c4"
 }
 ```
 
@@ -75,15 +75,17 @@
 
 
 #### data说明
-| 字段      |  类型      |  描述      |
-|-----------|------------|------------|
-|bk_set_id | int64 | 空闲机, 故障机和待回收模块所属的set的实例ID |
-|bk_set_name | string |空闲机, 故障机和待回收模块所属的set的实例名称|
+
+| 字段          | 类型     | 描述                                       |
+|-------------|--------|------------------------------------------|
+| bk_set_id   | int64  | 空闲机, 故障机和待回收模块所属的set的实例ID                |
+| bk_set_name | string | idle pool：空闲机池。空闲机, 故障机和待回收模块所属的set的实例名称 |
 
 #### module说明
-| 字段      |  类型      |  描述      |
-|-----------|------------|------------|
-|bk_module_id | int | 空闲机, 故障机或待回收模块的实例ID |
-|bk_module_name | string |空闲机, 故障机或待回收模块的实例名称|
-|default | int | 表示模块类型 |
-| host_apply_enabled|bool|是否启用主机属性自动应用|
+
+| 字段                 | 类型     | 描述                                                       |
+|--------------------|--------|----------------------------------------------------------|
+| bk_module_id       | int    | idle host（空闲机）, fault host（故障机）或recycle host（待回收）模块的实例ID |
+| bk_module_name     | string | idle host（空闲机）, fault host（故障机）或recycle host（待回收）模块的实例名称 |
+| default            | int    | 表示模块类型                                                   |
+| host_apply_enabled | bool   | 是否启用主机属性自动应用                                             |

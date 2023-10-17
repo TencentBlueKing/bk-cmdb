@@ -22,7 +22,7 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "id" : 0
+    "id" : 64
 }
 ```
 
@@ -34,10 +34,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "success"
+    "request_id": "897175be02de42439a61ec2d39d886ae"
 }
 ```
 

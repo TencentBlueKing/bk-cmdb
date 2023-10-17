@@ -19,11 +19,13 @@
 |-----------|------------|--------|------------|
 | bk_biz_name       |  string  | 是     | 业务名 |
 | bk_biz_maintainer |  string  | 是     | 运维人员 |
-| bk_biz_productor  |  string  | 是     | 产品人员 |
-| bk_biz_developer  |  string  | 是     | 开发人员 |
-| bk_biz_tester     |  string  | 是     | 测试人员 |
+| bk_biz_productor  |  string  | 否    | 产品人员 |
+| bk_biz_developer  |  string  | 否    | 开发人员 |
+| bk_biz_tester     |  string  | 否    | 测试人员 |
 | time_zone         |  string  | 是     | 时区 |
 | language          |  string  | 是     | 语言, "1"代表中文, "2"代表英文 |
+| life_cycle | string | 否 | 生命周期，“1”代表测试中，“2”代表已上线，“3”代表停运 |
+| operator            |string|否|主要维护人|
 **注意：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段**
 
 ### 请求参数示例
@@ -42,7 +44,9 @@
         "bk_biz_developer": "admin",
         "bk_biz_tester": "admin",
         "time_zone": "Asia/Shanghai",
-        "language": "1"
+        "language": "1",
+        "operator": "",
+        "life_cycle": "2"
     }
 }
 ```
@@ -54,23 +58,23 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
         "bk_biz_developer": "admin",
-        "bk_biz_id": 8852,
+        "bk_biz_id": 4,
         "bk_biz_maintainer": "admin",
         "bk_biz_name": "cc_app_test",
         "bk_biz_productor": "admin",
         "bk_biz_tester": "admin",
         "bk_supplier_account": "0",
-        "create_time": "2022-02-22T20:10:14.295+08:00",
+        "create_time": "2023-10-17T17:34:19.335+08:00",
         "default": 0,
         "language": "1",
-        "last_time": "2022-02-22T20:10:14.295+08:00",
+        "last_time": "2023-10-17T17:34:19.335+08:00",
         "life_cycle": "2",
-        "operator": null,
+        "operator": "",
         "time_zone": "Asia/Shanghai"
     }
 }

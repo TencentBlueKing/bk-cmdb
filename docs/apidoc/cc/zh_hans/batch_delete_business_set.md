@@ -33,9 +33,9 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission":null,
-    "data": {},
+    "data": null,
     "request_id": "dsda1122adasadadada2222"
 }
 ```

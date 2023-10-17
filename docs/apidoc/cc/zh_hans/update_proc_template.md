@@ -42,7 +42,6 @@ value: 进程的值，不同的字段类型不一样
 |bk_start_param_regex|object|否|{"value": "","as_default_value": false}, value 类型是字符串||
 |bind_info|object|否| {"value":[],,"as_default_value": true }, value详细见process_property.bind_info.value[n]|
 
-
 #### process_property.bind_info.value[n] 可以出现的字段
 
 注意：
@@ -70,7 +69,7 @@ value: 进程的值，不同的字段类型不一样
 
 ### 请求参数示例
 
-```python
+```json
 {
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",

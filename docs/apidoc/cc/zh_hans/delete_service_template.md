@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据服务模板ID删除服务模板
+根据服务模板ID删除服务模板，当服务模板有关联的模块时，该服务模板不可删除
 
 ### 请求参数
 
@@ -30,12 +30,12 @@
 
 ```python
 {
-  "result": false,
-  "code": 1199056,
-  "message": "delete service template failed",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": null
+    "result": true,
+    "code": 0,
+    "data": null,
+    "message": "success",
+    "permission": null,
+    "request_id": "082704f837be424b8e920e45fe51bf38"
 }
 ```
 

@@ -29,12 +29,12 @@
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "bk_biz_id": 1,
-  "page": {
-    "start": 0,
-    "limit": 1
-  },
-  "bk_host_id": 26
+    "bk_biz_id": 3,
+    "page": {
+        "start": 0,
+        "limit": 1
+    },
+    "bk_host_id": 9
 }
 ```
 
@@ -42,32 +42,30 @@
 
 ```python
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "count": 1,
-    "info": [
-       {
-          "bk_biz_id": 1,
-          "id": 1,
-          "name": "test",
-          "labels": {
-              "test1": "1"
-          },
-          "service_template_id": 32,
-          "bk_host_id": 26,
-          "bk_module_id": 12,
-          "creator": "admin",
-          "modifier": "admin",
-          "create_time": "2021-12-31T03:11:54.992Z",
-          "last_time": "2021-12-31T03:11:54.992Z",
-          "bk_supplier_account": "0"
-      }
-    ]
-  }
+    "result": true,
+    "code": 0,
+    "data": {
+        "count": 1,
+        "info": [
+            {
+                "bk_biz_id": 3,
+                "id": 1,
+                "name": "10.0.0.11_delete_9898",
+                "labels": null,
+                "service_template_id": 4,
+                "bk_host_id": 9,
+                "bk_module_id": 12,
+                "creator": "admin",
+                "modifier": "admin",
+                "create_time": "2023-10-13T03:39:25.714Z",
+                "last_time": "2023-10-13T03:39:25.714Z",
+                "bk_supplier_account": "0"
+            }
+        ]
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "257ff8d375e240afb80d8606d17b71fd"
 }
 ```
 

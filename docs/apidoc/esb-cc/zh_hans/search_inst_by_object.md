@@ -14,6 +14,7 @@
 | bk_obj_id           |  string  | 是     | 自定义模型ID |
 | fields              |  array   | 否     | 指定查询的字段 |
 | condition           |  dict    | 否     | 查询条件 |
+| time_condition | dict | 否 | 时间条件 |
 | page                |  dict    | 否     | 分页条件 |
 
 #### page
@@ -46,6 +47,16 @@ condition 参数为查询的目标实例对应的模型定义的所有字段
     "fields": [
     ],
     "condition": {
+    },
+    "time_condition": {
+        "oper": "and",
+        "rules": [
+            {
+                "field": "create_time",
+                "start": "2022-05-13T19:12:48.007+08:00",
+                "end": "2023-10-14T19:12:48.007+08:00"
+            }
+        ]
     },
     "page": {
         "start": 0,

@@ -9,8 +9,8 @@
 #### 接口参数
 | 字段                 |  类型      | 必填	   |  描述          |
 |----------------------|------------|--------|-----------------------------|
-| id           | int     | Yes    | 模型实例关联关系的唯一身份id             |
-| bk_obj_id    | string    | Yes    | 模型实例关联关系的源或目标模型id(v3.10+) |
+| id           | int     | 是    | 模型实例关联关系的唯一身份id             |
+| bk_obj_id    | string    | 是    | 模型实例关联关系的源或目标模型id(v3.10+) |
 
 ### 请求参数示例
 
@@ -31,10 +31,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "success"
+    "request_id": "897175be02de42439a61ec2d39d886ae"
 }
 
 ```

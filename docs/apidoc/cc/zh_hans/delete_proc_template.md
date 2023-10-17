@@ -21,8 +21,10 @@
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "bk_biz_id": 1,
-  "process_templates": [50]
+  "bk_biz_id": 3,
+  "process_templates": [
+      3, 4
+  ]
 }
 ```
 

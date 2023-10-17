@@ -32,10 +32,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "request_id": "4cfe0e226b354599a0c9ba35372572f4"
 }
 ```
 #### response

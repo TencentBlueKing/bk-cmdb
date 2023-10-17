@@ -8,26 +8,26 @@
 
 #### 接口参数
 
-| 字段                 |  类型      | 是否必填	   |  描述          |
-|----------------------|------------|--------|-----------------------------|
-| bk_obj_asst_id           | string     | Yes     | 模型之间关联关系的唯一id|
-| bk_inst_id           | int64     | Yes     | 源模型实例id|
-| bk_asst_inst_id           | int64     | Yes     | 目标模型实例id|
-| metadata           | object     | Yes    | meta data             |
+| 字段                 | 类型     | 是否必填	   |  描述          |
+|----------------------|--------|--------|-----------------------------|
+| bk_obj_asst_id           | string | 是     | 模型之间关联关系的唯一id|
+| bk_inst_id           | int64  | 是    | 源模型实例id |
+| bk_asst_inst_id           | int64  | 是    | 目标模型实例id |
+| metadata           | object | 是       | meta data             |
 
 
 metadata params
 
-| 字段                 |  类型      | 是否必填	   |  描述         |
+| 字段                 | 类型         | 是否必填	   |  描述         |
 |---------------------|------------|--------|-----------------------------|
-| label           | string map     | Yes     |标签信息 |
+| label           | string map | 是       |标签信息 |
 
 
 label params
 
 | 字段                 |  类型      | 是否必填	   |  描述         |
 |---------------------|------------|--------|-----------------------------|
-| bk_biz_id           | string      | Yes     | 业务id |
+| bk_biz_id           | string      | 是    | 业务id |
 
 ### 请求参数示例
 
@@ -54,12 +54,12 @@ label params
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "data": {
         "id": 1038
     },
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
+    "request_id": "e43da4ef221746868dc4c837d36f3807"
 }
 
 ```

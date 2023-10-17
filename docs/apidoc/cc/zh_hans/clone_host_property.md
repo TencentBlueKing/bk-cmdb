@@ -56,10 +56,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": null
+    "request_id": "cbadedc530ce4f119a9a3a73eff00dfe"
 }
 ```
 

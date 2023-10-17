@@ -26,10 +26,10 @@
     "bk_username": "xxx",
     "bk_token": "xxx",
     "creator": "admin",
-    "bk_classification_id": "test",
-    "bk_obj_name": "test",
-    "bk_obj_icon": "icon-cc-business",
-    "bk_obj_id": "test"
+    "bk_classification_id": "test_group",
+    "bk_obj_name": "测试",
+    "bk_obj_icon": "icon-cc-engine-room",
+    "bk_obj_id": "test_network"
 }
 ```
 
@@ -39,28 +39,28 @@
 ```python
 
 {
-    "code": 0,
-    "permission": null,
     "result": true,
-    "request_id": "b529879b85c74e3c91b3d8119df8dbc7",
-    "message": "success",
+    "code": 0,
     "data": {
-        "description": "",
+        "bk_classification_id": "test_group",
         "bk_ishidden": false,
-        "bk_classification_id": "test",
-        "creator": "admin",
-        "bk_obj_name": "test",
         "bk_ispaused": false,
-        "last_time": null,
-        "bk_obj_id": "test",
-        "create_time": null,
+        "bk_obj_icon": "icon-cc-engine-room",
+        "bk_obj_id": "test_network",
+        "bk_obj_name": "测试",
         "bk_supplier_account": "0",
-        "position": "",
-        "bk_obj_icon": "icon-cc-business",
+        "create_time": null,
+        "creator": "admin",
+        "description": "",
+        "id": 63,
+        "ispre": false,
+        "last_time": null,
         "modifier": "",
-        "id": 2000002118,
-        "ispre": false
-    }
+        "position": ""
+    },
+    "message": "success",
+    "permission": null,
+    "request_id": "1f9510565ba0465e979aff7d26d8f7c8"
 }
 
 ```

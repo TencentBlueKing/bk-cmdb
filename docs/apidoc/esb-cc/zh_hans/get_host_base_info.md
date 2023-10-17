@@ -33,21 +33,27 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
+    "request_id": "c11aasdadadadsadasdadasd1111ds"
+    "permission": null,
     "data": [
         {
-            "bk_property_id": "bk_host_name",
-            "bk_property_name": "host name",
-            "bk_property_value": "centos7"
+            "bk_property_id": "bk_host_innerip",
+            "bk_property_name": "内网IP",
+            "bk_property_value": "127.0.0.1"
         },
         {
-            "bk_property_id": "bk_host_id",
-            "bk_property_name": "host ID",
-            "bk_property_value": "10000"
+            "bk_property_id": "bk_host_outerip",
+            "bk_property_name": "外网IP",
+            "bk_property_value": ""
+        },
+		......
+        {
+            "bk_property_id": "bk_addressing",
+            "bk_property_name": "寻址方式",
+            "bk_property_value": "static"
         }
-    ],
-    "permission": null,
-    "request_id": "c11aasdadadadsadasdadasd1111ds"
+    ]
 }
 ```
 

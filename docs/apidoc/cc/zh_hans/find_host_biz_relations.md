@@ -21,9 +21,9 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 1,
+    "bk_biz_id": 3,
     "bk_host_id": [
-        3,
+        9,
         4
     ]
 }
@@ -33,41 +33,27 @@
 
 ```json
 {
-  "result":true,
-  "code":0,
-  "message":"success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": [
-    {
-      "bk_biz_id": 3,
-      "bk_host_id": 3,
-      "bk_module_id": 59,
-      "bk_set_id": 11,
-      "bk_supplier_account": "0"
-    },
-    {
-      "bk_biz_id": 3,
-      "bk_host_id": 3,
-      "bk_module_id": 60,
-      "bk_set_id": 11,
-      "bk_supplier_account": "0"
-    },
-    {
-      "bk_biz_id": 3,
-      "bk_host_id": 3,
-      "bk_module_id": 61,
-      "bk_set_id": 12,
-      "bk_supplier_account": "0"
-    },
-    {
-      "bk_biz_id": 3,
-      "bk_host_id": 4,
-      "bk_module_id": 60,
-      "bk_set_id": 11,
-      "bk_supplier_account": "0"
-    }
-  ]
+    "result": true,
+    "code": 0,
+    "data": [
+        {
+            "bk_biz_id": 3,
+            "bk_host_id": 4,
+            "bk_module_id": 7,
+            "bk_set_id": 3,
+            "bk_supplier_account": "0"
+        },
+        {
+            "bk_biz_id": 3,
+            "bk_host_id": 9,
+            "bk_module_id": 7,
+            "bk_set_id": 3,
+            "bk_supplier_account": "0"
+        }
+    ],
+    "message": "success",
+    "permission": null,
+    "request_id": "5044b701eda54e858a46ad1dcfbbaad2"
 }
 ```
 

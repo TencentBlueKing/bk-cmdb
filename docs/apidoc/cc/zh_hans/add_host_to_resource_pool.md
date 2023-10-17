@@ -54,23 +54,25 @@
 
 ```json
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "data": {
-      "success": [
-          {
-              "index": 0,
-              "bk_host_id": 6
-          },
-          {
-              "index": 1,
-              "bk_host_id": 7
-          }
-      ]
-  },
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807"
+    "result": true,
+    "code": 0,
+    "message": "success",
+    "data": {
+        "success": [
+            {
+                "index": 0,
+                "bk_host_id": 6
+            }
+        ],
+        "error": [
+            {
+                "index": 1,
+                "error_message": "xxxx fields"
+            }
+        ]
+    },
+    "permission": null,
+    "request_id": "e43da4ef221746868dc4c837d36f3807"
 }
 
 ```

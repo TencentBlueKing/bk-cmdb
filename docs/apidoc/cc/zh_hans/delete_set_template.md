@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据业务ID和集群模板ID列表删除指定业务下的集群模板
+根据业务ID和集群模板ID列表删除指定业务下的集群模板，当有集群根据集群模板创建时，该集群模板无法删除
 
 ### 请求参数
 
@@ -22,8 +22,10 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id": 20,
-    "set_template_ids": [59]
+    "bk_biz_id": 3,
+    "set_template_ids": [
+        1, 2
+    ]
 }
 ```
 

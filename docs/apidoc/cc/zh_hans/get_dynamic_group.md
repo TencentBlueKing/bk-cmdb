@@ -32,55 +32,57 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
-    "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
-    	"bk_biz_id": 1,
-    	"name": "my-dynamic-group",
-    	"id": "XXXXXXXX",
-    	"bk_obj_id": "host",
-    	"info": {
-    		"condition":[
-    			{
-    				"bk_obj_id":"set",
-    				"condition":[
-    					{
-    						"field":"default",
-    						"operator":"$ne",
-    						"value":1
-    					}
-    				]
-    			},
-    			{
-    				"bk_obj_id":"module",
-    				"condition":[
-    					{
-    						"field":"default",
-    						"operator":"$ne",
-    						"value":1
-    					}
-    				]
-    			},
-    			{
-    				"bk_obj_id":"host",
-    				"condition":[
-    					{
-    						"field":"bk_host_innerip",
-    						"operator":"$eq",
-    						"value":"127.0.0.1"
-    					}
-    				]
-    			}
-    		]
-    	},
-       "create_user": "admin",
-       "create_time": "2018-03-27T16:22:43.271+08:00",
-       "modify_user": "admin",
-       "last_time": "2018-03-27T16:29:26.428+08:00"
+        "bk_biz_id": 3,
+        "id": "293dcda1-68da-11ee-b1d6-52540075cc6d",
+        "name": "主机名含：host",
+        "bk_obj_id": "host",
+        "info": {
+            "condition": [
+                {
+                    "bk_obj_id": "set",
+                    "condition": [
+                        {
+                            "field": "bk_set_name",
+                            "operator": "$in",
+                            "value": [
+                                "aaTset"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "bk_obj_id": "module",
+                    "condition": [
+                        {
+                            "field": "bk_module_name",
+                            "operator": "$in",
+                            "value": [
+                                "aaMod"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "bk_obj_id": "host",
+                    "condition": [
+                        {
+                            "field": "bk_host_name",
+                            "operator": "$regex",
+                            "value": "host"
+                        }
+                    ]
+                }
+            ]
+        },
+        "create_user": "admin",
+        "modify_user": "admin",
+        "create_time": "2023-10-12T08:34:29.913Z",
+        "last_time": "2023-10-12T08:34:29.913Z"
     },
+    "message": "success",
     "permission": null,
-    "request_id": "dsda1122adasadadada2222",
+    "request_id": "0bedb6e7ca594279a3670ddc2a80ce5c"
 }
 ```
 
