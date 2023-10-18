@@ -15,10 +15,12 @@ const defaultTemplateDraft = () => ({
   fieldList: null,
   uniqueList: null
 })
+const sessionTemplateDraft = () => Object.assign(defaultTemplateDraft(), JSON.parse(sessionStorage.getItem('sessionTemplateDraft')) || {})
+const setSessionTemplateDraft = val =>  sessionStorage.setItem('sessionTemplateDraft', val)
 
 const state = {
   // 草稿数据，属性与唯一校验格式与接口参数一致
-  templateDraft: defaultTemplateDraft()
+  templateDraft: sessionTemplateDraft()
 }
 
 const getters = {
@@ -28,8 +30,10 @@ const getters = {
 const mutations = {
   setTemplateDraft(state, templateDraft) {
     state.templateDraft = Object.assign(state.templateDraft, templateDraft)
+    setSessionTemplateDraft(JSON.stringify(state.templateDraft))
   },
   clearTemplateDraft(state) {
+    setSessionTemplateDraft(JSON.stringify(defaultTemplateDraft()))
     state.templateDraft = defaultTemplateDraft()
   }
 }
