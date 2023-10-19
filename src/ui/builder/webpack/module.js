@@ -24,7 +24,7 @@ const baseStyleLoaders = [
   }
 ]
 
-module.exports = () => ({
+module.exports = config => ({
   noParse: [
     /^(vue|vue-router|vuex)$/,
     /^(axios|moment|plotly.js|cytoscape|bk-magic-vue)$/
@@ -62,7 +62,10 @@ module.exports = () => ({
             cacheDirectory: true // node_modules/.cache/babel-loader
           }
         }
-      ],
+      ].concat(config.dev.grabAPI ? [{
+        loader: resolveBase('builder/utils/grab-api-loader.js'),
+        options: {}
+      }] : []),
       include: [resolveBase('src')],
       exclude: [resolveBase('node_modules')]
     },

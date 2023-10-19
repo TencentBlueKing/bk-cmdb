@@ -18,6 +18,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const GrabAPIPlugin = require('../utils/grab-api-plugin')
 const chalk = require('chalk')
 
 
@@ -79,7 +80,9 @@ const getCommonPlugins = config => ([
     format: `  build [:bar] ${chalk.green.bold(':percent')} (:elapsed seconds)`,
     clear: false
   })
-])
+].concat(config.dev.grabAPI ? [
+  new GrabAPIPlugin()
+] : []))
 
 const getProdPlugins = config => ([
   new MiniCssExtractPlugin({
