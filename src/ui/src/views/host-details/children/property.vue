@@ -128,6 +128,7 @@
               :mode="'update'"
               :obj-id="objId"
               :instance-id="host.bk_host_id"
+              :biz-id="bizId"
               :auth="HOST_AUTH.U_HOST"
               :ref="`component-${property.bk_property_id}`" />
           </template>
@@ -220,8 +221,15 @@
       ...mapGetters('hostDetails', ['groupedProperties', 'properties']),
       host() {
         return this.$tools.getInstFormValues(this.properties, this.info.host, false)
+      },
+      bizId() {
+        return this.isFromResource ? undefined : this.business
       }
     },
+    inject: [
+      'business',
+      'isFromResource'
+    ],
     methods: {
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)

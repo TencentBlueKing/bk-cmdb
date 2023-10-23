@@ -552,7 +552,7 @@
           </cmdb-auth>
           <cmdb-auth class="mr10" :ignore-passed-auth="true" :auth="[
             { type: $OPERATION.C_FIELD_TEMPLATE },
-            { type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }
+            { type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }
           ]">
             <template slot-scope="{ disabled }">
               <bk-button
