@@ -14,6 +14,8 @@
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
   import { t } from '@/i18n'
+  import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
+  import { translateAuth, filterPassedAuth } from '@/setup/permission'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -21,6 +23,7 @@
   import UniqueDiff from './unique-diff.vue'
   import CombineRequest from '@/api/combine-request.js'
   import fieldTemplateService from '@/service/field-template'
+  import { isViewAuthFreeModel, verifyAuth } from '@/service/auth'
 
   const props = defineProps({
     modelList: {
@@ -71,13 +74,16 @@
   const selectedModel = ref(null)
   const currentTab = ref('field')
 
+  const allModelAuth = ref([])
+  const allApplyAuthList = ref([])
+
   const fieldDiffs = ref({})
   const uniqueDiffs = ref({})
   const diffLoadingIds = ref({})
   const unmountCallbacks = []
   const hasDiffError = ref(false)
 
-  const modelEditAuths = ref({})
+  const modelAuthResult = ref({})
 
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
@@ -96,7 +102,8 @@
         attributes: props.fieldList
       }, {
         requestId,
-        globalError: true
+        globalError: true,
+        globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
 
@@ -138,7 +145,8 @@
         uniques: props.uniqueList
       }, {
         requestId,
-        globalError: true
+        globalError: true,
+        globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
 
@@ -162,17 +170,47 @@
     unmountCallbacks.push(() => allResult?.return())
   }
 
+  const getModelAuth = (model) => {
+    const auth = [{ type: OPERATION.U_MODEL, relation: [model.id] }]
+    if (!isViewAuthFreeModel({ id: model.id })) {
+      auth.push({ type: OPERATION.R_MODEL, relation: [model.id] })
+    }
+    return auth
+  }
+
+  const getModelRelatedPermission = (model) => {
+    const otherApplyAuthList = allApplyAuthList.value.filter((auth) => {
+      const [modelId] = auth.relation
+      return modelId !== model.id
+    })
+    const permission = translateAuth(otherApplyAuthList)
+    return permission
+  }
+
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
     if (initModelList.length) {
+      initModelList.forEach((model) => {
+        allModelAuth.value.push(...getModelAuth(model))
+      })
+      const authResult = await verifyAuth(TRANSFORM_TO_INTERNAL(allModelAuth.value)) || []
+      const applyAuthList = filterPassedAuth(allModelAuth.value, authResult)
+
+      if (applyAuthList.length) {
+        const permission = translateAuth(applyAuthList)
+        allApplyAuthList.value = applyAuthList
+        window?.permissionModal?.show(permission)
+      }
+
       fetchFieldDiff(initModelList)
       fetchUniqueDiff(initModelList)
     }
+
     modelListLocal.value = initModelList
   })
 
   // 查找匹配第1个可用的模型作为选中模型
-  watch([modelListLocal, modelEditAuths], ([modelList, modelAuths]) => {
+  watch([modelListLocal, modelAuthResult], ([modelList, modelAuths]) => {
     // 当前存在选中的模型则不变更
     if (selectedModel.value) {
       return
@@ -305,7 +343,7 @@
     del(fieldDiffs.value, model.id)
     del(uniqueDiffs.value, model.id)
 
-    del(modelEditAuths.value, model.id)
+    del(modelAuthResult.value, model.id)
   }
   const handleSelectModel = (model) => {
     if (model.bk_ispaused) {
@@ -318,7 +356,7 @@
   }
 
   const handleModelAuthUpdate = (model, isPass) => {
-    set(modelEditAuths.value, model.id, isPass)
+    set(modelAuthResult.value, model.id, isPass)
     emit('update-model-auth', model, isPass)
   }
 
@@ -349,10 +387,8 @@
               :key="modelIndex"
               tag="div"
               :ignore-passed-auth="true"
-              :auth="[
-                { type: $OPERATION.U_MODEL, relation: [model.id] },
-                { type: $OPERATION.R_MODEL, relation: [model.id] }
-              ]"
+              :auth="getModelAuth(model)"
+              :related-permission="getModelRelatedPermission(model)"
               @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"

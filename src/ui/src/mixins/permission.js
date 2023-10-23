@@ -12,9 +12,9 @@
 
 export default {
   methods: {
-    handleApplyPermission() {
+    handleApplyPermission(permission) {
       return this.$store.dispatch('auth/getSkipUrl', {
-        params: this.permission,
+        params: permission || this.permission,
         config: {
           requestId: 'getSkipUrl'
         }

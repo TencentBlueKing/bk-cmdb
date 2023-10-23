@@ -47,7 +47,7 @@ function convertRelation(relation = [], type) {
 }
 
 // 将相同动作下的相同视图的实例合并到一起，并且将相同的实例去重
-function mergeSameActions(actions) {
+export function mergeSameActions(actions) {
   const actionMap = new Map()
 
   actions.forEach((action) => {
@@ -87,6 +87,7 @@ function mergeSameActions(actions) {
   return permission
 }
 
+// 用于转换为无权限申请弹窗中展示需要的数据，结构与接口无权限返回的数据一致，申请权限的接口也是用这个数据
 export const translateAuth = (auth) => {
   const authList = Array.isArray(auth) ? auth : [auth]
   const actions = authList.map(({ type, relation = [] }) => {
@@ -132,7 +133,7 @@ export const translateAuth = (auth) => {
   return mergeSameActions(actions)
 }
 
-function filterPassedAuth(auth, authResults) {
+export function filterPassedAuth(auth, authResults) {
   const authList = Array.isArray(auth) ? auth : [auth]
   return authList.filter(({ type, relation = [] }, index) => {
     // 通用模型实例编辑
@@ -156,13 +157,13 @@ function filterPassedAuth(auth, authResults) {
       return authResults.some(item => item.action === 'create' && !item?.is_pass)
     }
 
-    return true
+    return !authResults?.[index]?.is_pass
   })
 }
 
 cursor.setOptions({
   globalCallback: (options) => {
-    const { authResults, ignorePassedAuth, callbackUrl } = options
+    const { authResults, ignorePassedAuth, callbackUrl, relatedPermission } = options
 
     // 根据配置去除有权限的auth，在此处去除比在permission中去除会更简单
     let newAuth = options.auth
@@ -172,7 +173,7 @@ cursor.setOptions({
     const permission = translateAuth(newAuth)
 
     const { permissionModal } = window
-    permissionModal && permissionModal.show(permission, authResults, callbackUrl)
+    permissionModal && permissionModal.show(permission, authResults, callbackUrl, relatedPermission)
   },
   x: 16,
   y: 8

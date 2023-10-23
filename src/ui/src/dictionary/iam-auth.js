@@ -1326,7 +1326,7 @@ export const IAM_ACTIONS = {
 export const OPERATION = {}
 Object.keys(IAM_ACTIONS).forEach(key => (OPERATION[key] = key))
 
-// 将配置的权限数据，转换为内部鉴权需要的数据格式, 转换函数均定义在IAM_ACTIONS[someType].transform中
+// 将配置的权限数据，转换为内部鉴权（auth/verify接口的参数）需要的数据格式, 转换函数均定义在IAM_ACTIONS[someType].transform中
 // {
 //     bk_biz_id: 1,                    // 业务下的鉴权要带业务id
 //     action: 'create',                // 动作
