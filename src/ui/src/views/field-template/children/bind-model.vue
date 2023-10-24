@@ -16,6 +16,7 @@
   import { t } from '@/i18n'
   import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
   import { translateAuth, filterPassedAuth } from '@/setup/permission'
+  import applyPermission from '@/utils/apply-permission.js'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -74,8 +75,8 @@
   const selectedModel = ref(null)
   const currentTab = ref('field')
 
-  const allModelAuth = ref([])
   const allApplyAuthList = ref([])
+  const isNoPerm = ref(false)
 
   const fieldDiffs = ref({})
   const uniqueDiffs = ref({})
@@ -87,6 +88,11 @@
 
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+
+    if (!modelIds.length) {
+      return
+    }
+
     const allResult = await CombineRequest.setup(Symbol(), (params) => {
       const [modelId] = params
       const requestId = Symbol(modelId)
@@ -129,6 +135,11 @@
 
   const fetchUniqueDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+
+    if (!modelIds.length) {
+      return
+    }
+
     const allResult = await CombineRequest.setup(Symbol(), (params) => {
       const [modelId] = params
 
@@ -189,24 +200,42 @@
 
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
+    const modelAuthList = []
     if (initModelList.length) {
       initModelList.forEach((model) => {
-        allModelAuth.value.push(...getModelAuth(model))
+        modelAuthList.push(...getModelAuth(model))
       })
-      const authResult = await verifyAuth(TRANSFORM_TO_INTERNAL(allModelAuth.value)) || []
-      const applyAuthList = filterPassedAuth(allModelAuth.value, authResult)
+      const authResult = await verifyAuth(TRANSFORM_TO_INTERNAL(modelAuthList)) || []
+      const applyAuthList = filterPassedAuth(modelAuthList, authResult)
 
       if (applyAuthList.length) {
         const permission = translateAuth(applyAuthList)
         allApplyAuthList.value = applyAuthList
         window?.permissionModal?.show(permission)
       }
-
-      fetchFieldDiff(initModelList)
-      fetchUniqueDiff(initModelList)
     }
 
     modelListLocal.value = initModelList
+  })
+
+  watch(modelAuthResult, (modelAuths) => {
+    const authResult = Object.values(modelAuths)
+    isNoPerm.value = authResult.every(isPass => isPass === false)
+
+    // 只当全部数据都有权限才获取diff数据
+    if (authResult.every(isPass => isPass)) {
+      fetchFieldDiff(props.modelList)
+      fetchUniqueDiff(props.modelList)
+    }
+  }, { deep: true })
+
+  watch(selectedModel, (model) => {
+    if (!fieldDiffs[model.id]) {
+      fetchFieldDiff([model])
+    }
+    if (!uniqueDiffs[model.id]) {
+      fetchUniqueDiff([model])
+    }
   })
 
   // 查找匹配第1个可用的模型作为选中模型
@@ -326,7 +355,7 @@
     }
   }
 
-  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
+  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? '-') + (uniqueDiffCounts.value[id]?.total ?? '-')
 
   const handleClickAddModel = () => {
     selectModelDialogRef.value.show()
@@ -358,6 +387,14 @@
   const handleModelAuthUpdate = (model, isPass) => {
     set(modelAuthResult.value, model.id, isPass)
     emit('update-model-auth', model, isPass)
+  }
+
+  const handleApplyPermission = async () => {
+    try {
+      await applyPermission(allApplyAuthList.value)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   defineExpose({
@@ -483,6 +520,13 @@
             </unique-diff>
           </div>
         </div>
+        <bk-exception v-else-if="isNoPerm" type="403" scene="part" class="no-perm">
+          <i18n path="暂无模型的查看与编辑权限，link">
+            <template #link>
+              <bk-link theme="primary" @click="handleApplyPermission">{{ $t('立即申请') }}</bk-link>
+            </template>
+          </i18n>
+        </bk-exception>
         <bk-exception v-else type="empty" scene="part" class="empty">
           <div>{{$t('暂无对比，请先绑定模型')}}</div>
         </bk-exception>
@@ -524,15 +568,17 @@
 
     .main {
       height: 100%;
-      &.empty {
+      &.empty,
+      &.no-perm {
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .empty {
+      .empty,
+      .no-perm {
         :deep(.bk-exception-img.part-img) {
           width: 240px;
-          height: 180px;
+          height: 150px;
         }
       }
 
