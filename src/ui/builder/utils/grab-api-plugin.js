@@ -43,7 +43,31 @@ class GrabAPIPlugin {
           'topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}',
           'find/objecttopology',
           'find/objectclassification',
-          'find/topoassociationtype'
+          'find/topoassociationtype',
+          'biz/${bkSupplierAccount}/${bkBizId}',
+
+          // 重复
+          'biz/search/${rootGetters.supplierAccount}',
+
+          'create/proc/service_instance/preview',
+          'deletemany/proc/service_instance/preview',
+          'find/proc/service_instance/difference',
+          'findmany/topo/service_template_sync_status/bk_biz_id/${params.bk_biz_id}',
+
+          // 重复
+          'host/transfer_with_auto_clear_service_instance/bk_biz_id/{this.bizId}',
+
+          'delete/objectattgroupasst/object/${objId}/property/${propertyId}/group/${groupId}',
+          '${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/export',
+          '${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${objId}/import',
+
+          // 重复
+          '${window.API_HOST}object/object/${this.activeModel.bk_obj_id}/import',
+          'delete/resource/directory/${moduleId}',
+          'find/objectattgroup/object/${options.bk_obj_id}',
+          'find/objectunique/object/${objId}',
+          'host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}',
+          'update/resource/directory/${moduleId}'
         ]
         const appendPaths = [
           'hosts/import',
