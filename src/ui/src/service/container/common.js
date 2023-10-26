@@ -101,6 +101,22 @@ export const propertyNameI18n = {
     type: {
       zh: '集群类型',
       en: 'clustertype'
+    },
+    environment: {
+      zh: '容器集群环境',
+      en: 'Container Cluster Environment'
+    },
+    bk_project_id: {
+      zh: 'BCS项目ID',
+      en: 'BCS Project ID'
+    },
+    bk_project_name: {
+      zh: 'BCS项目名称',
+      en: 'BCS Project Name'
+    },
+    bk_project_code: {
+      zh: 'BCS项目英文名称',
+      en: 'BCS Project English Name'
     }
   },
   [CONTAINER_OBJECTS.NAMESPACE]: {
@@ -265,6 +281,10 @@ export const propertyNameI18n = {
     ref: {
       zh: '所属 Workload',
       en: 'Workload'
+    },
+    operator: {
+      zh: '负责人',
+      en: 'Operator'
     }
   },
   [CONTAINER_OBJECTS.CONTAINER]: {

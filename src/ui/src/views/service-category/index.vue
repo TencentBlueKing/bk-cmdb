@@ -353,14 +353,14 @@
         const willShow = !tipsInstance.state.isVisible
         tipsInstance.reference.parentElement.classList[willShow ? 'add' : 'remove']('tips-active')
       },
-      async handleAddCategory(name, bk_root_id = 0) {
+      async handleAddCategory(name, rootId = 0) {
         if (!await this.$validator.validateAll()) {
           this.$bkMessage({
             message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
             theme: 'error'
           })
         } else {
-          this.createdCategory(name, bk_root_id)
+          this.createdCategory(name, rootId)
         }
       },
       async handleEditCategory(data, type, mainIndex) {

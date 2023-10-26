@@ -21,20 +21,21 @@ create new container pods and containers(v3.12.1+，permission: kube pod creatio
 
 #### pods[x]
 
-| Field          | Type   | Required | Description                 |
-|----------------|--------|----------|-----------------------------|
-| spec           | object | yes      | pod association information |
-| bk_host_id     | int    | yes      | pod associated host id      |
-| name           | string | yes      | pod name                    |
-| priority       | object | no       | priority                    |
-| labels         | object | no       | labels                      |
-| ip             | string | no       | Container network IP        |
-| ips            | array  | no       | Container network IP array  |
-| volumes        | object | no       | Volume information          |
-| qos_class      | string | no       | service quality             |
-| node_selectors | object | no       | Node label selector         |
-| tolerations    | object | no       | tolerance                   |
-| containers     | array  | no       | container information       |
+| Field          | Type         | Required | Description                 |
+|----------------|--------------|----------|-----------------------------|
+| spec           | object       | yes      | pod association information |
+| bk_host_id     | int          | yes      | pod associated host id      |
+| name           | string       | yes      | pod name                    |
+| operator       | string array | yes      | pod operator                |
+| priority       | object       | no       | priority                    |
+| labels         | object       | no       | labels                      |
+| ip             | string       | no       | Container network IP        |
+| ips            | array        | no       | Container network IP array  |
+| volumes        | object       | no       | Volume information          |
+| qos_class      | string       | no       | service quality             |
+| node_selectors | object       | no       | Node label selector         |
+| tolerations    | object       | no       | tolerance                   |
+| containers     | array        | no       | container information       |
 
 #### spec
 
@@ -118,6 +119,10 @@ create new container pods and containers(v3.12.1+，permission: kube pod creatio
             "bk_node_id": 1
           },
           "name": "name",
+          "operator": [
+            "user1",
+            "user2"
+          ],
           "bk_host_id": 1,
           "priority": 1,
           "labels": {

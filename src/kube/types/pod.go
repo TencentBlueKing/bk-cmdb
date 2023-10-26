@@ -46,6 +46,7 @@ var PodSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: QOSClassField, Type: enumor.Enum, IsRequired: false, IsEditable: true},
 	{Field: NodeSelectorsField, Type: enumor.MapString, IsRequired: false, IsEditable: true},
 	{Field: TolerationsField, Type: enumor.Object, IsRequired: false, IsEditable: true},
+	{Field: OperatorField, Type: enumor.Array, IsRequired: true, IsEditable: true},
 }
 
 // PodBaseRefDescriptor the description used when other resources refer to the pod.
@@ -131,6 +132,7 @@ type Pod struct {
 	QOSClass      *PodQOSClass       `json:"qos_class,omitempty"  bson:"qos_class"`
 	NodeSelectors *map[string]string `json:"node_selectors,omitempty"  bson:"node_selectors"`
 	Tolerations   *[]Toleration      `json:"tolerations,omitempty" bson:"tolerations"`
+	Operator      *[]string          `json:"operator,omitempty" bson:"operator"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }
@@ -149,6 +151,13 @@ func (option *Pod) createValidate() ccErr.RawErrorInfo {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
 			Args:    []interface{}{"pod name"},
+		}
+	}
+
+	if option.Operator == nil || len(*option.Operator) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"pod operator"},
 		}
 	}
 

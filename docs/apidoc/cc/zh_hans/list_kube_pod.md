@@ -225,4 +225,5 @@ pod的属性字段过滤规则，用于根据pod的属性字段搜索数据。�
 | qos_class      | enum         | 服务质量，官方文档：https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/quality-service-pod/                                                               |
 | node_selectors | string map   | 节点标签选择器，key和value均是string，官方文档：https://kubernetes.io/zh/docs/concepts/scheduling-eviction/assign-pod-node/                                                  |
 | tolerations    | object array | 容忍度，格式：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core                                                              |
+| operator       | string array | pod负责人                                                                                                                                                      |
 | containers     | object array | 容器数据                                                                                                                                                        |

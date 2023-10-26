@@ -21,13 +21,10 @@
     "@babel/plugin-transform-object-assign",
     "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-proposal-function-sent",
-    "@babel/plugin-proposal-export-namespace-from",
-    "@babel/plugin-proposal-numeric-separator",
+    "@babel/plugin-transform-export-namespace-from",
+    "@babel/plugin-transform-numeric-separator",
     "@babel/plugin-proposal-throw-expressions",
     "@babel/plugin-transform-async-to-generator",
-    ["import-bk-magic-vue", {
-      "baseLibName": "bk-magic-vue"
-    }],
     ["prismjs", {
       "languages": ["javascript", "json"],
       "plugins": ["line-numbers"],
