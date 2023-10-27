@@ -329,8 +329,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 	if err != nil {
-		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList,
-			ctx.Kit.Rid)
+		blog.Errorf("add host, but get module id failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -392,8 +391,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 		var err error
 		moduleID, _, err = s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 		if err != nil {
-			blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList,
-				ctx.Kit.Rid)
+			blog.Errorf("add host, but get module id failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -945,7 +943,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	appInfo, err := s.Logic.GetAppDetails(ctx.Kit, "", appConds)
 	if nil != err {
-		blog.Errorf("host sync app %d error:%s,input:%+v,rid:%s", hostList.ApplicationID, err.Error(), hostList,
+		blog.Errorf("host sync app %d failed, err: %v, input: %+v, rid: %s", hostList.ApplicationID, err, hostList,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -973,9 +971,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	}
 	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	moduleIDS, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
-	if nil != err {
-		blog.Errorf("NewHostSyncAppTop GetModuleIDByCond error. err:%s,input:%+v,rid:%s", err.Error(), hostList,
-			ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("get module id by condition failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1671,10 +1668,7 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 	if len(hostIDs) == 0 {
-		ctx.RespEntity(meta.HostInfo{
-			Count: 0,
-			Info:  []mapstr.MapStr{},
-		})
+		ctx.RespEntity(meta.HostInfo{Count: 0, Info: make([]mapstr.MapStr, 0)})
 		return
 	}
 

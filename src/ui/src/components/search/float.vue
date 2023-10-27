@@ -32,9 +32,10 @@
 
 <script>
   import activeMixin from './mixins/active'
+  import numberFormTypeMixin from '@/mixins/number-form-type'
   export default {
     name: 'cmdb-search-float',
-    mixins: [activeMixin],
+    mixins: [activeMixin, numberFormTypeMixin],
     props: {
       value: {
         type: [Number, String, Array],
@@ -43,16 +44,10 @@
       precision: {
         type: Number,
         default: 5
-      },
-      options: {
-        type: Object,
-        default: () => {}
       }
     },
     data() {
       return {
-        max: 99999999999,
-        min: -999999999,
         listeners: {
           focus: () => this.handleToggle(true),
           blur: () => this.handleToggle(false),
@@ -99,12 +94,7 @@
           this.localValue = [start, end]
         }
       }
-    },
-    mounted() {
-      const { min = -999999999, max = 99999999999 } = this.options || {}
-      this.max = max === '' ? 99999999999 : max
-      this.min = min  === '' ? -999999999 : min
-    },
+    }
   }
 </script>
 

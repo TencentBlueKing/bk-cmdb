@@ -52,12 +52,18 @@ spec:
             port: {{ .Values.cloudserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.cloudserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.cloudserver.resources }}
         resources: {{ toYaml .Values.cloudserver.resources | nindent 10 }}

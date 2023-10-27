@@ -169,7 +169,7 @@
         }
       },
       async getContainerNodeInfo() {
-        if (this.business === -1) {
+        if (this.business === -1 || this.isFromResource) {
           return
         }
 

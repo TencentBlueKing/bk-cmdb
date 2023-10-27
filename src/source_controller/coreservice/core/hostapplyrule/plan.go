@@ -174,9 +174,11 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 	if expectValue == nil {
 		return false, nil
 	}
+
+	var err error
+
 	switch pType {
 	case common.FieldTypeOrganization:
-
 		value, ok := expectValue.(primitive.A)
 		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
@@ -202,22 +204,31 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			}
 			ruleValueList = append(ruleValueList, value)
 		}
-		if cmp.Equal(expectValueList, ruleValueList) {
-			return true, nil
-		}
+
+		return cmp.Equal(expectValueList, ruleValueList), nil
 
 	// 当属性是int类型时，需要转为统一类型进行对比
 	case common.FieldTypeInt:
-		origin, err := util.GetIntByInterface(propertyValue)
+		propertyValue, err = util.GetIntByInterface(propertyValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-		expect, err := util.GetIntByInterface(expectValue)
+
+		expectValue, err = util.GetIntByInterface(expectValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-		if cmp.Equal(origin, expect) {
-			return true, nil
+
+	// 当属性是int类型时，需要转为统一类型进行对比
+	case common.FieldTypeFloat:
+		propertyValue, err = util.GetFloat64ByInterface(propertyValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+
+		expectValue, err = util.GetFloat64ByInterface(expectValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
 
 	case common.FieldTypeTime:
@@ -225,23 +236,15 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
 		}
-		expectTimeVal := expectVal.Time()
+		expectValue = expectVal.Time()
 
-		propertyTimeValue, err := metadata.ParseTime(propertyValue)
+		propertyValue, err = metadata.ParseTime(propertyValue)
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
-
-		if cmp.Equal(expectTimeVal, propertyTimeValue) {
-			return true, nil
-		}
-
-	default:
-		if cmp.Equal(expectValue, propertyValue) {
-			return true, nil
-		}
 	}
-	return false, nil
+
+	return cmp.Equal(expectValue, propertyValue), nil
 }
 
 func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attrMap map[int64]metadata.Attribute,

@@ -73,7 +73,7 @@ export const getMany = async ({ objId, params }, config, injectId = true, isPrep
 
 export const getMapValue = async (params, total, config) => {
   const result = await rollReqUseTotalCount(
-    `find/kube/field/map_str_val/bk_biz_id/${params.bk_biz_id}`,
+    'find/kube/field/map_str_val',
     params,
     { limit: 200, total },
     config,
