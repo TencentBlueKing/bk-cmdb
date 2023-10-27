@@ -592,7 +592,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		}
 	}
 
-	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, objIDs)
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1264,8 +1264,7 @@ func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header,
 		bizID, false)
 	if err != nil {
-		blog.Errorf("SearchTopoPath failed, SearchMainlineInstanceTopo failed, bizID:%d, err:%s, rid:%s", bizID,
-			err.Error(), rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid:%s", bizID, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}

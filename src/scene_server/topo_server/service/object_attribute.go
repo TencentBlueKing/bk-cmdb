@@ -216,7 +216,7 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		objIDs = append(objIDs, attr.ObjectID)
 	}
 
-	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, objIDs)
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -304,7 +304,7 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		}
 	}
 
-	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, objIDs)
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -579,7 +579,7 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
-	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, []string{common.BKInnerObjIDHost})
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{common.BKInnerObjIDHost})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

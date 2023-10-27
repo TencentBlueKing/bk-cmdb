@@ -182,6 +182,24 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				},
 				SubResourceTypes: nil,
 			},
+			{
+				ResourceID: FieldGroupingTemplate,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditFieldGroupingTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteFieldGroupingTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         ViewFieldGroupingTemplate,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
 		},
 	}
 }

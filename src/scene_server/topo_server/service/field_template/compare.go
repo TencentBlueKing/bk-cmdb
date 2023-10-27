@@ -19,12 +19,8 @@ package fieldtmpl
 
 import (
 	"configcenter/src/ac/meta"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // CompareFieldTemplateAttr compare field template attributes with object attributes.
@@ -46,12 +42,8 @@ func (s *service) CompareFieldTemplateAttr(cts *rest.Contexts) {
 		cts.RespNoAuth(authResp)
 		return
 	}
-	objID, err := s.getObjID(cts.Kit, []int64{opt.ObjectID})
-	if err != nil {
-		cts.RespAutoError(err)
-		return
-	}
-	authResp, authorized, err := s.auth.HasFindModelAuth(cts.Kit, objID)
+
+	authResp, authorized, err := s.auth.HasFindModelAuthUseID(cts.Kit, []int64{opt.ObjectID})
 	if err != nil {
 		cts.RespAutoError(err)
 		return
@@ -68,33 +60,6 @@ func (s *service) CompareFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	cts.RespEntity(res)
-}
-
-func (s *service) getObjID(kit *rest.Kit, objectIDs []int64) ([]string, error) {
-	objectIDs = util.IntArrayUnique(objectIDs)
-
-	objCond := &metadata.QueryCondition{
-		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: objectIDs}},
-		Fields:    []string{common.BKObjIDField},
-	}
-
-	objRes, err := s.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objCond)
-	if err != nil {
-		blog.Errorf("get object by id failed, val: %v, err: %v, rid: %s", objectIDs, err, kit.Rid)
-		return nil, err
-	}
-
-	if len(objRes.Info) != len(objectIDs) {
-		blog.Errorf("object with id count is invalid, ids: %v, res: %+v, rid: %s", objectIDs, objRes.Info, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.ObjectIDField)
-	}
-
-	result := make([]string, len(objRes.Info))
-	for idx := range objRes.Info {
-		result[idx] = objRes.Info[idx].ObjectID
-	}
-
-	return result, nil
 }
 
 // CompareFieldTemplateUnique compare field template uniques with object uniques.
@@ -116,12 +81,8 @@ func (s *service) CompareFieldTemplateUnique(cts *rest.Contexts) {
 		cts.RespNoAuth(authResp)
 		return
 	}
-	objID, err := s.getObjID(cts.Kit, []int64{opt.ObjectID})
-	if err != nil {
-		cts.RespAutoError(err)
-		return
-	}
-	authResp, authorized, err := s.auth.HasFindModelAuth(cts.Kit, objID)
+
+	authResp, authorized, err := s.auth.HasFindModelAuthUseID(cts.Kit, []int64{opt.ObjectID})
 	if err != nil {
 		cts.RespAutoError(err)
 		return

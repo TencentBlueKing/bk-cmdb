@@ -110,12 +110,8 @@ func (s *service) hasObjOrTmplAuth(kit *rest.Kit, tmplIDs []int64, objectIDs []i
 	var objAuthResp *metadata.BaseResp
 	var objAuthorized bool
 	if len(objectIDs) != 0 {
-		objIDs, err := s.getObjID(kit, objectIDs)
-		if err != nil {
-			return nil, false, err
-		}
-
-		objAuthResp, objAuthorized, err = s.auth.HasFindModelAuth(kit, objIDs)
+		var err error
+		objAuthResp, objAuthorized, err = s.auth.HasFindModelAuthUseID(kit, objectIDs)
 		if err != nil {
 			return nil, false, err
 		}

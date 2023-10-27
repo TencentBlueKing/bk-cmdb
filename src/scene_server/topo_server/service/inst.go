@@ -862,7 +862,7 @@ func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
 		}
 
 		// authorize
-		authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, objIDs)
+		authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -937,7 +937,7 @@ func (s *Service) SearchInstTopo(ctx *rest.Contexts) {
 		}
 
 		// authorize
-		authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, objIDs)
+		authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return

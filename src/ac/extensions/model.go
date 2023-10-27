@@ -208,7 +208,7 @@ func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*me
 	}
 
 	cond := &metadata.QueryCondition{
-		Fields: []string{common.BKFieldID},
+		Fields: []string{common.BKFieldID, common.BKObjIDField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{
 			common.BKObjIDField: map[string]interface{}{
@@ -222,25 +222,16 @@ func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*me
 	}
 
 	if len(modelResp.Info) == 0 {
-		return nil, true, nil
+		return nil, false, fmt.Errorf("get model by objID failed, val: %+v", objIDs)
 	}
 
 	mainlineModels, err := am.getMainlineModel(kit)
 	if err != nil {
 		return nil, false, err
 	}
-	skipModels, err := am.getSkipFindAttrAuthModel(kit)
-	if err != nil {
-		return nil, false, err
-	}
 
 	authResources := make([]meta.ResourceAttribute, 0)
 	for _, v := range modelResp.Info {
-		if _, ok := skipModels[v.ObjectID]; !ok {
-			authResources = append(authResources,
-				meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model, Action: meta.Find}})
-		}
-
 		instanceType, err := am.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
 		if err != nil {
 			return nil, false, err
@@ -267,26 +258,22 @@ func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struc
 	return models, nil
 }
 
+var objTypeMap = map[string]meta.ResourceType{
+	common.BKInnerObjIDPlat:    meta.CloudAreaInstance,
+	common.BKInnerObjIDHost:    meta.HostInstance,
+	common.BKInnerObjIDModule:  meta.ModelModule,
+	common.BKInnerObjIDSet:     meta.ModelSet,
+	common.BKInnerObjIDApp:     meta.Business,
+	common.BKInnerObjIDProc:    meta.Process,
+	common.BKInnerObjIDBizSet:  meta.BizSet,
+	common.BKInnerObjIDProject: meta.Project,
+}
+
 func (am *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string, id int64) (
 	meta.ResourceType, error) {
 
-	switch objID {
-	case common.BKInnerObjIDPlat:
-		return meta.CloudAreaInstance, nil
-	case common.BKInnerObjIDHost:
-		return meta.HostInstance, nil
-	case common.BKInnerObjIDModule:
-		return meta.ModelModule, nil
-	case common.BKInnerObjIDSet:
-		return meta.ModelSet, nil
-	case common.BKInnerObjIDApp:
-		return meta.Business, nil
-	case common.BKInnerObjIDProc:
-		return meta.Process, nil
-	case common.BKInnerObjIDBizSet:
-		return meta.BizSet, nil
-	case common.BKInnerObjIDProject:
-		return meta.Project, nil
+	if objType, ok := objTypeMap[objID]; ok {
+		return objType, nil
 	}
 
 	if _, ok := mainlineModel[objID]; ok {
@@ -317,8 +304,8 @@ func (am *AuthManager) getMainlineModel(kit *rest.Kit) (map[string]struct{}, err
 	return mainlineModel, nil
 }
 
-// HasFindModelAuth has find model auth
-func (am *AuthManager) HasFindModelAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+// HasFindModelAuthUseObjID use the objID parameter to determine whether you have permission to find the model
+func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
 	if !am.Enabled() {
 		return nil, true, nil
 	}
@@ -359,9 +346,27 @@ func (am *AuthManager) HasFindModelAuth(kit *rest.Kit, objIDs []string) (*metada
 		return nil, true, nil
 	}
 
-	authResources := make([]meta.ResourceAttribute, len(modelResp.Info))
-	for k, v := range modelResp.Info {
-		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model,
+	ids := make([]int64, len(modelResp.Info))
+	for idx, val := range modelResp.Info {
+		ids[idx] = val.ID
+	}
+
+	return am.HasFindModelAuthUseID(kit, ids)
+}
+
+// HasFindModelAuthUseID use the id parameter to determine whether you have permission to find the model
+func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, true, nil
+	}
+
+	authResources := make([]meta.ResourceAttribute, len(ids))
+	for idx, val := range ids {
+		authResources[idx] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: val, Type: meta.Model,
 			Action: meta.Find}}
 	}
 

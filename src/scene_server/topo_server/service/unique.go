@@ -257,7 +257,7 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
 	objectID := ctx.Request.PathParameter(common.BKObjIDField)
 
-	authResp, authorized, err := s.AuthManager.HasFindModelAuth(ctx.Kit, []string{objectID})
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{objectID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
