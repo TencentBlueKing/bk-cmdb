@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -202,7 +203,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	if len(fieldArr) > 0 {
 		dbInst.Fields(fieldArr...)
 	}
-	fieldArr, status, err := util.GetFieldStatus(fieldArr)
+	fieldArr, status, err := instances.GetFieldStatus(fieldArr)
 	if err != nil {
 		blog.Errorf("get filed status failed, fields:%v, err: %v, rid: %s", fieldArr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

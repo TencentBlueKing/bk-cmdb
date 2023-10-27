@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310101010
+package y3_12_202310301633
 
 import (
 	"context"
@@ -26,17 +26,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.12.202310101010", upgrade)
+	upgrader.RegistUpgrader("y3.12.202310301633", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.12.202310101010")
+	blog.Infof("start execute y3.12.202310301633")
 
 	if err = addRecordedFields(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade y3.10.202310101010 add recorded fields failed, err: %v", err)
+		blog.Errorf("upgrade y3.10.202310301633 add recorded fields failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.12.202310101010 success")
+	blog.Infof("upgrade y3.12.202310301633 success")
 	return nil
 }

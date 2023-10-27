@@ -35,8 +35,8 @@ func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation by the condition (%#v), error info is %s",
-			kit.Rid, cond.ToMapStr(), err.Error())
+		blog.Errorf("execute database count operation by the condition (%#v) failed, err: %v, rid: %s", cond.ToMapStr(),
+			err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -56,6 +56,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 	if model.LastTime == nil {
 		model.LastTime = &metadata.Time{}
 		model.LastTime.Time = time.Now()
+		model.Modifier = kit.User
 	}
 	if model.CreateTime == nil {
 		model.CreateTime = &metadata.Time{}
