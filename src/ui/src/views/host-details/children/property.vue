@@ -143,26 +143,26 @@
       <ul class="property-list">
         <li class="property-item"
           v-for="property in containerNodeProperties"
-          :key="property.id"
-          :id="`property-item-${property.id}`">
+          :key="`${property.id}_${index}`"
+          :id="`property-item-${property.id}_${index}`">
           <span class="property-name" v-bk-overflow-tips>
             {{property.bk_property_name}}
           </span>
           <span :class="['property-value']">
             <cmdb-property-value
               :is-show-overflow-tips="true"
-              :ref="`property-value-${property.id}`"
+              :ref="`property-value-${property.id}_${index}`"
               :value="node[property.bk_property_id]"
               :property="property">
             </cmdb-property-value>
           </span>
           <template v-if="!$tools.isEmptyPropertyValue(node[property.bk_property_id])">
             <div class="copy-box">
-              <i class="property-copy icon-cc-details-copy" @click="handleCopy(property.id)"></i>
+              <i class="property-copy icon-cc-details-copy" @click="handleCopy(`${property.id}_${index}`)"></i>
               <transition name="fade">
                 <span class="copy-tips"
                   :style="{ width: $i18n.locale === 'en' ? '100px' : '70px' }"
-                  v-if="showCopyTips === property.id">
+                  v-if="showCopyTips === `${property.id}_${index}`">
                   {{$t('复制成功')}}
                 </span>
               </transition>
