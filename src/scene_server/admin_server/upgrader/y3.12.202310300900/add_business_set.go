@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310161530
+package y3_12_202310300900
 
 import (
 	"context"
@@ -30,10 +30,8 @@ import (
 )
 
 const (
-	bizSetID         = 9992001
-	bizSetName       = "全业务-蓝盾测试部署专用"
-	bizSetMaintainer = "admin"
-	Description      = "供蓝盾Job插件执行调用"
+	bizSetID   = 9992001
+	bizSetName = "全业务-蓝盾测试部署专用"
 )
 
 func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -43,8 +41,8 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	defaultBusinessSet := &metadata.BizSetInst{
 		BizSetID:         bizSetID,
 		BizSetName:       bizSetName,
-		Description:      Description,
-		BizSetMaintainer: bizSetMaintainer,
+		Description:      "admin",
+		BizSetMaintainer: "供蓝盾Job插件执行调用",
 		SupplierAccount:  conf.OwnerID,
 		CreateTime:       now,
 		LastTime:         now,

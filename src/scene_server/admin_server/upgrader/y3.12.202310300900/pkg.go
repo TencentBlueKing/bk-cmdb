@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310161530
+package y3_12_202310300900
 
 import (
 	"context"
@@ -26,17 +26,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.12.202310161530", upgrade)
+	upgrader.RegistUpgrader("y3.12.202310300900", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.12.202310161530, add default business set")
+	blog.Infof("start execute y3.12.202310300900, add default business set")
 
 	if err = addDefaultBusinessSet(ctx, db, conf); err != nil {
-		blog.Errorf("upgrade y3.12.202310161530 add default business set failed, err: %v", err)
+		blog.Errorf("upgrade y3.12.202310300900 add default business set failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.12.202310161530 add default business set success")
+	blog.Infof("upgrade y3.12.202310300900 add default business set success")
 	return nil
 }
