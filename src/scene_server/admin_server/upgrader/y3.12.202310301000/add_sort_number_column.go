@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202309221200
+package y3_12_202310301000
 
 import (
 	"context"
@@ -28,19 +28,18 @@ import (
 
 func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 	// 查询 obj_sort_number 字段是否已存在，存在则返回
-	objSortNumberList := make([]map[string]int64, 0)
 	objSortNumberFilter := map[string]interface{}{
 		common.ObjSortNumberField: map[string]interface{}{
 			common.BKDBExists: true,
 		},
 	}
-	err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).Fields(common.ObjSortNumberField).
-		All(ctx, &objSortNumberList)
+	objSortNumberCount, err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).Fields(common.ObjSortNumberField).
+		Count(ctx)
 	if err != nil {
 		blog.Errorf("list object sort number failed, db find failed, err: %v", err)
 		return err
 	}
-	if len(objSortNumberList) > 0 {
+	if objSortNumberCount > 0 {
 		return nil
 	}
 
