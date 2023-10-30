@@ -78,7 +78,8 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 		condFields := []string{common.BKObjIDField, common.BKAsstObjIDField}
 		for _, field := range condFields {
 			if val, exist := cond.Get(field); exist {
-				authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{util.GetStrByInterface(val)})
+				authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit,
+					[]string{util.GetStrByInterface(val)})
 				if err != nil {
 					ctx.RespAutoError(err)
 					return
@@ -110,7 +111,7 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -319,7 +320,7 @@ func (s *Service) SearchModuleAssociation(ctx *rest.Contexts) {
 		}
 	}
 	// authorize
-	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -345,7 +346,7 @@ func (s *Service) FindAssociationByObjectAssociationID(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

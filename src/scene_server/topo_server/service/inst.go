@@ -410,7 +410,7 @@ func (s *Service) SearchInsts(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -460,7 +460,7 @@ func (s *Service) SearchObjectInstances(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -538,7 +538,7 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -570,7 +570,7 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -700,7 +700,7 @@ func (s *Service) SearchInstByAssociation(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -738,7 +738,7 @@ func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -775,7 +775,8 @@ func (s *Service) SearchInstsNames(ctx *rest.Contexts) {
 
 	rawErr := option.Validate()
 	if rawErr.ErrCode != 0 {
-		blog.ErrorJSON("SearchInstsNames failed, Validate err: %s, option: %s, rid:%s", rawErr.ToCCError(defErr), option, ctx.Kit.Rid)
+		blog.ErrorJSON("SearchInstsNames failed, Validate err: %s, option: %s, rid:%s", rawErr.ToCCError(defErr),
+			option, ctx.Kit.Rid)
 		ctx.RespAutoError(rawErr.ToCCError(defErr))
 		return
 	}
@@ -861,7 +862,7 @@ func (s *Service) SearchInstChildTopo(ctx *rest.Contexts) {
 		}
 
 		// authorize
-		authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+		authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -936,7 +937,7 @@ func (s *Service) SearchInstTopo(ctx *rest.Contexts) {
 		}
 
 		// authorize
-		authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+		authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
@@ -1026,7 +1027,7 @@ func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1139,7 +1140,7 @@ func (s *Service) FindInsts(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

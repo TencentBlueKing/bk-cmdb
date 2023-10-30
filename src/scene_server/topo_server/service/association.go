@@ -592,7 +592,7 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		}
 	}
 
-	authResp, authorized, err := s.hasFindModelAuth(ctx.Kit, objIDs)
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -768,7 +768,7 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -842,7 +842,7 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{request.ObjID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{request.ObjID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -892,7 +892,7 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{request.Condition.ObjectID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{request.Condition.ObjectID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -954,7 +954,7 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	}
 
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
-	authResp, authorized, err := s.hasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1003,7 +1003,7 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 		}
 	}
 
-	authResp, authorized, err = s.hasFindModelInstAuth(ctx.Kit, objIDs)
+	authResp, authorized, err = s.AuthManager.HasFindModelInstAuth(ctx.Kit, objIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1261,9 +1261,10 @@ func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 		return
 	}
 
-	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header,
+		bizID, false)
 	if err != nil {
-		blog.Errorf("SearchTopoPath failed, SearchMainlineInstanceTopo failed, bizID:%d, err:%s, rid:%s", bizID, err.Error(), rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid:%s", bizID, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}
