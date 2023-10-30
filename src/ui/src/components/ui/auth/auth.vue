@@ -18,6 +18,7 @@
       auth: auth,
       authResults,
       ignorePassedAuth,
+      relatedPermission,
       onclick
     }"
     @click="handleClick">
@@ -40,6 +41,7 @@
         default: 'span'
       },
       ignorePassedAuth: Boolean,
+      relatedPermission: Object,
       onclick: Function
     },
     data() {
