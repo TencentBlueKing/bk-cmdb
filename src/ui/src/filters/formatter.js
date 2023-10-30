@@ -20,7 +20,7 @@ const defaultFormatter = (value) => {
   return value
 }
 
-const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
+export const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
   if (!value) {
     return '--'
   }

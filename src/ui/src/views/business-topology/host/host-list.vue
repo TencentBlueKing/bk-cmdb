@@ -609,7 +609,7 @@
             target: internalModule
           })
           this.table.selection = []
-          this.$success('转移成功')
+          this.$success(this.$t('转移成功'))
           RouterQuery.set({
             _t: Date.now(),
             page: 1
@@ -679,7 +679,7 @@
           hosts: [...this.table.selection]
         })
         this.table.selection = []
-        this.$success('转移成功')
+        this.$success(this.$t('转移成功'))
         RouterQuery.set({
           _t: Date.now(),
           page: 1

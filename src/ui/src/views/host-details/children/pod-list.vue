@@ -37,7 +37,10 @@
         header: [],
         selection: [],
         sort: MODEL_ID_KEY,
-        pagination: getDefaultPaginationConfig()
+        pagination: getDefaultPaginationConfig(),
+        stuff: {
+          type: 'default'
+        }
       })
 
       const columnsConfig = reactive({
@@ -161,7 +164,9 @@
 
         const { conditions } = transformGeneralModelCondition(condition, properties.value)
 
+        table.stuff.type = 'default'
         if (conditions) {
+          table.stuff.type = 'search'
           params.filter.rules.push(...conditions.rules)
         }
 
@@ -246,6 +251,11 @@
         })
       }
 
+      const handleClearFilter = () => {
+        filter.value = ''
+        getList()
+      }
+
       return {
         requestIds,
         tableRef,
@@ -260,7 +270,8 @@
         handleSelectionChange,
         handleHeaderClick,
         handleSearch,
-        handleCopy
+        handleCopy,
+        handleClearFilter
       }
     }
   })
@@ -316,6 +327,14 @@
         </template>
       </bk-table-column>
       <bk-table-column type="setting"></bk-table-column>
+      <cmdb-table-empty
+        slot="empty"
+        :stuff="table.stuff"
+        @clear="handleClearFilter">
+        <bk-exception type="empty" scene="part">
+          <p>{{ $t('暂无数据') }}</p>
+        </bk-exception>
+      </cmdb-table-empty>
     </bk-table>
   </div>
 </template>

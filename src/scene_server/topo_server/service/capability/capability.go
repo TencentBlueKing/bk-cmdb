@@ -22,13 +22,11 @@ package capability
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/logics"
 )
 
 // Capability defines topo server's capability
 type Capability struct {
-	Utility     *rest.RestUtility
 	Logics      logics.Logics
 	AuthManager *extensions.AuthManager
 	ClientSet   apimachinery.ClientSetInterface

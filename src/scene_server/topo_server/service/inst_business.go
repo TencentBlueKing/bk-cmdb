@@ -179,16 +179,12 @@ func (s *Service) UpdateBusinessStatus(ctx *rest.Contexts) {
 			return
 		}
 
-		// check if this business still has hosts.
-		has, err := s.Logics.BusinessOperation().HasHosts(ctx.Kit, bizID)
+		err = s.Logics.BusinessOperation().CheckArchiveBizResource(ctx.Kit, bizID)
 		if err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
-		if has {
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoArchiveBusinessHasHost))
-			return
-		}
+
 		achieveBizName, err := s.Logics.BusinessOperation().GenerateAchieveBusinessName(ctx.Kit, bizName)
 		if err != nil {
 			ctx.RespAutoError(err)

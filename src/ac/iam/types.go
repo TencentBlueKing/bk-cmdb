@@ -609,6 +609,7 @@ type ResourceAction struct {
 	RelatedResourceTypes []RelateResourceType `json:"related_resource_types"`
 	RelatedActions       []ActionID           `json:"related_actions"`
 	Version              int                  `json:"version"`
+	Hidden               bool                 `json:"hidden"`
 }
 
 // SelectionMode 选择类型, 资源在权限中心产品上配置权限时的作用范围

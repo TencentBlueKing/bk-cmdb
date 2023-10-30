@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/redis"
 )
 
 // collectObjectsByObjectIDs collect business object that belongs to business or global object,
@@ -57,7 +58,8 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects
-func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
+func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action,
+	objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
 	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, object := range objects {
@@ -147,7 +149,8 @@ func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, heade
 }
 
 // AuthorizeResourceCreate TODO
-func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
+func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64,
+	resourceType meta.ResourceType) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -168,7 +171,7 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 // 1. create iam view
 // 2. register object resource creator action to iam
 func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header, objects []metadata.Object,
-	iamInstances []metadata.IamInstanceWithCreator) error {
+	iamInstances []metadata.IamInstanceWithCreator, redisCli redis.Client) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -176,7 +179,7 @@ func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// create iam view
-	if err := am.Viewer.CreateView(ctx, header, objects); err != nil {
+	if err := am.Viewer.CreateView(ctx, header, objects, redisCli, rid); err != nil {
 		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", objects, err, rid)
 		return err
 	}

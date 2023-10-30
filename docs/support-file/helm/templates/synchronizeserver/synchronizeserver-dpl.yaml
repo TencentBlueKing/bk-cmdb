@@ -51,12 +51,18 @@ spec:
             port: {{ .Values.synchronizeserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.synchronizeserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.synchronizeserver.resources }}
         resources: {{ toYaml .Values.synchronizeserver.resources | nindent 10 }}
