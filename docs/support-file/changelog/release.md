@@ -1,3 +1,18 @@
+## [Version: v3.12.2-feature-auth-alpha6] - 2023-10-30
+**新增功能**
+- 新增“业务访问”的7个API增加开关设置(涉及esb接口: find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+ list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo)
+
+**功能优化**
+- 字段组合模板中，编辑后绑定无模型编辑权限的模型时，一并申请权限
+- 创建完字段组合模板后，创建者应该直接获得这个模板的查看、编辑、删除权限
+
+**缺陷修复**
+- 字段组合模板，克隆权限失效
+- 拥有「业务集访问」权限，无下属业务的「业务访问」权限，点击到模块提示「需要申请对应的“业务访问”」
+- 从业务页面进入，点击进入主机详情页面，提示需要“主机池主机查看”权限
+- 字段组合模板中，第三步申请完成「模型编辑」后，点击“已完成”，刷新了整个页面，第二步编辑的内容丢失
+
 ## [Version: v3.10.26-feature-auth-alpha5] - 2023-08-31
 **缺陷修复**
 - 修复服务模板IP选项不可以置空的问题
