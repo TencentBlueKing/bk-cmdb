@@ -17,7 +17,7 @@ import { enableCount, onePageParams } from '../utils.js'
 const ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CLUSTER].ID
 
 const find = async (params, config) => {
-  const api = `findmany/kube/cluster/bk_biz_id/${params.bk_biz_id}`
+  const api = 'findmany/kube/cluster'
   try {
     const [{ info: list = [] }, { count = 0 }] = await Promise.all([
       http.post(api, enableCount(params, false), config),
@@ -32,7 +32,8 @@ const find = async (params, config) => {
 
 const findById = async (id, bizId, config = {}) => {
   try {
-    const { info: [instance = null] } = await http.post(`findmany/kube/cluster/bk_biz_id/${bizId}`, enableCount({
+    const { info: [instance = null] } = await http.post('findmany/kube/cluster', enableCount({
+      bk_biz_id: bizId,
       filter: {
         condition: 'AND',
         rules: [{

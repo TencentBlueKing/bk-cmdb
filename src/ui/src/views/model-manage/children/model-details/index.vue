@@ -99,6 +99,7 @@
               :max-width="'355px'"
               :list="templateList"
               :is-link-style="true"
+              :force-show-one="true"
               :popover-options="{
                 boundary: 'scrollParent',
                 appendTo: 'parent'

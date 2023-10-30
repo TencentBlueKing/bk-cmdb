@@ -330,7 +330,8 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 			continue
 		}
 
-		insts, errRes := i.doSpecialOp(insts)
+		var errRes []string
+		insts, errRes = i.doSpecialOp(insts)
 		errMsg = append(errMsg, errRes...)
 
 		if len(insts) == 0 {

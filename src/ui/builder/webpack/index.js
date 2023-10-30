@@ -62,7 +62,7 @@ module.exports = {
     ...moduleConfig(config)
   },
 
-  devtool: modeValue(false, 'eval-cheap-module-source-map'),
+  devtool: modeValue(undefined, 'eval'),
 
   cache: {
     type: 'filesystem',

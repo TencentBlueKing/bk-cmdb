@@ -25,8 +25,8 @@
     v-bind="$attrs"
     ref="selector">
     <bk-option
-      v-for="(option, index) in options"
-      :key="index"
+      v-for="option in options"
+      :key="option.id"
       :id="option.id"
       :name="option.name">
     </bk-option>

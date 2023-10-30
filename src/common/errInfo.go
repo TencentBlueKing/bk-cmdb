@@ -515,6 +515,7 @@ const (
 	CCErrTopoFieldTemplateAttrConflict                 = 1101125
 	CCErrTopoFieldTemplateUniqueConflict               = 1101126
 	CCErrTopoBizFieldConflict                          = 1101127
+	CCErrTopoArchiveBusinessHasKube                    = 1101128
 
 	// object controller 1102XXX
 
@@ -877,6 +878,8 @@ const (
 	CCErrCoreServiceFieldTemplateHasUnique = 1113041
 	// CCErrCoreServiceFieldTemplateHasRelation 字段组合模版存在与模型的关联关系
 	CCErrCoreServiceFieldTemplateHasRelation = 1113042
+	// CCErrCoreServiceHostRelateToKube some hosts has related container resources
+	CCErrCoreServiceHostRelateToKube = 1113043
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
