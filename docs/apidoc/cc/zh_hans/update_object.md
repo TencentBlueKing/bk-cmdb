@@ -16,7 +16,7 @@
 | bk_obj_name         | string             | 否     | 对象模型的名字                          |
 | bk_obj_icon         | string             | 否     | 对象模型的ICON信息，用于前端显示，取值可参考[(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json)|
 | position            | json object string | 否     | 用于前端展示的坐标                      |
-
+| obj_sort_number     | int    | 否     | 对象模型在所属模型分组下的排序序号     |
 
 
 ### 请求参数示例
@@ -32,7 +32,8 @@
     "bk_classification_id": "cc_test",
     "bk_obj_name": "cc2_test_inst",
     "bk_obj_icon": "icon-cc-business",
-    "position":"{\"ff\":{\"x\":-863,\"y\":1}}"
+    "position":"{\"ff\":{\"x\":-863,\"y\":1}}",
+    "obj_sort_number": 1
 }
 ```
 
