@@ -19,6 +19,7 @@ import (
 
 	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -46,11 +47,18 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
-		BusinessID: bizID}
-	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
-		ctx.RespNoAuth(resp)
-		return
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
+		authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+			BusinessID: bizID}
+		if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+			ctx.RespNoAuth(resp)
+			return
+		}
 	}
 
 	body := new(meta.FindModuleHostRelationParameter)
@@ -179,11 +187,18 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
-		BusinessID: bizID}
-	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
-		ctx.RespNoAuth(resp)
-		return
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
+		authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+			BusinessID: bizID}
+		if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+			ctx.RespNoAuth(resp)
+			return
+		}
 	}
 
 	moduleCond := []meta.ConditionItem{
@@ -321,7 +336,12 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
 		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
 			common.BKInnerObjIDApp, bizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
@@ -401,7 +421,12 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
 		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
 			common.BKInnerObjIDApp, bizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
@@ -557,7 +582,12 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
 		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
 			common.BKInnerObjIDApp, bizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
@@ -711,7 +741,12 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
 		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
 			common.BKInnerObjIDApp, bizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
@@ -1121,7 +1156,13 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
-	if s.AuthManager.Enabled() {
+
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, ctx.Kit.Rid)
+	}
+	if s.AuthManager.Enabled() && !skipAuth {
 		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
 			common.BKInnerObjIDApp, bizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
