@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/service/capability"
 	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
+	"configcenter/src/scene_server/topo_server/service/kube"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -172,7 +173,8 @@ func (s *Service) initSet(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/{app_id}/batch", Handler: s.BatchCreateSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/set/{app_id}/{set_id}", Handler: s.DeleteSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/set/{app_id}/{set_id}", Handler: s.UpdateSet})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/search/{owner_id}/{app_id}", Handler: s.SearchSet})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/set/search/{owner_id}/{app_id}",
+		Handler: s.SearchSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/set/bk_biz_id/{bk_biz_id}",
 		Handler: s.SearchSetBatch})
 
@@ -293,8 +295,9 @@ func (s *Service) initProject(web *restful.WebService) {
 }
 
 func (s *Service) initService(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{ErrorIf: s.Engine.CCErr, Language: s.Engine.Language})
+
 	c := &capability.Capability{
-		Utility:     rest.NewRestUtility(rest.Config{ErrorIf: s.Engine.CCErr, Language: s.Engine.Language}),
 		Logics:      s.Logics,
 		AuthManager: s.AuthManager,
 		ClientSet:   s.Engine.CoreAPI,
@@ -328,11 +331,11 @@ func (s *Service) initService(web *restful.WebService) {
 
 	s.initResourceDirectory(web)
 
-	s.initKube(web)
+	kube.InitKube(utility, c)
 
 	s.initModelQuote(web)
 
-	fieldtmpl.InitFieldTemplate(c)
+	fieldtmpl.InitFieldTemplate(utility, c)
 
-	c.Utility.AddToRestfulWebService(web)
+	utility.AddToRestfulWebService(web)
 }

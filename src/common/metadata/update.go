@@ -33,9 +33,11 @@ type CreatePartDataOption struct {
 
 // UpdateTableOption common update options
 type UpdateTableOption struct {
+	// CreateData is the table attribute header data to be created, used only for validation
 	CreateData CreatePartDataOption `json:"create_data" mapstructure:"create_data"`
-	UpdateData mapstr.MapStr        `json:"update_data" mapstructure:"update_data"`
-	Condition  mapstr.MapStr        `json:"condition" mapstructure:"condition"`
+	// UpdateData is the complete table attribute data to be updated
+	UpdateData mapstr.MapStr `json:"update_data" mapstructure:"update_data"`
+	Condition  mapstr.MapStr `json:"condition" mapstructure:"condition"`
 	// IsSync in the update scene, it is distinguished whether it is
 	// a synchronization scene of the field template
 	IsSync bool `json:"is_sync" mapstructure:"is_sync"`

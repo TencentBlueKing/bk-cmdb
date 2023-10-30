@@ -19,13 +19,13 @@ module.exports = () => ({
   // built-in optimizations works, more: https://webpack.js.org/configuration/mode/
   minimize: isProd, // is default follow mode setting
   minimizer: [
-    '...',
     new CssMinimizerPlugin({
       parallel: true
     }),
     new TerserPlugin({
       exclude: /\.min\.js$/,
-      parallel: true
+      parallel: true,
+      minify: TerserPlugin.swcMinify
     })
   ],
   runtimeChunk: 'single', // shared for all generated chunks

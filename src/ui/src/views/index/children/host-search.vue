@@ -20,6 +20,7 @@
           :placeholder="$t('首页主机搜索提示语')"
           :rows="rows"
           :clearable="true"
+          :show-clear-only-hover="true"
           v-model="searchContent"
           @focus="handleFocus"
           @blur="handleBlur"
@@ -281,8 +282,11 @@
                 line-height: 30px;
                 font-size: 14px;
                 border: 1px solid #C4C6CC;
-                padding: 5px 16px;
+                padding: 5px 32px 5px 16px;
                 border-radius: 0 0 0 2px;
+            }
+            .right-icon {
+              right: 20px !important;
             }
         }
     }

@@ -305,6 +305,9 @@
             bizId: bizId.value,
             podId: row.id
           },
+          query: {
+            node: query.value.node
+          },
           history: true
         })
       }

@@ -13,6 +13,7 @@
 import Vue from 'vue'
 import i18n from '@/i18n'
 import magicbox from 'bk-magic-vue'
+import 'bk-magic-vue/dist/bk-magic-vue.min.css'
 import './magicbox.scss'
 
 const magicboxLanguageMap = {

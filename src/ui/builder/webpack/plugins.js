@@ -26,13 +26,6 @@ const devEnv = require('../config/dev.env')
 const prodEnv = require('../config/prod.env')
 
 const getCommonPlugins = config => ([
-  new ESLintPlugin({
-    extensions: ['js', 'vue', 'ts', 'tsx'],
-    files: ['src'],
-    failOnWarning: true,
-    formatter: require('eslint-friendly-formatter')
-  }),
-
   new webpack.DefinePlugin({
     'process.env': modeValue(prodEnv, devEnv)
   }),
@@ -81,6 +74,17 @@ const getCommonPlugins = config => ([
   })
 ])
 
+const getDevPlugins = () => ([
+  new ESLintPlugin({
+    cache: true,
+    extensions: ['js', 'vue', 'ts', 'tsx'],
+    files: ['src'],
+    failOnWarning: true,
+    lintDirtyModulesOnly: true,
+    formatter: require('eslint-friendly-formatter')
+  })
+])
+
 const getProdPlugins = config => ([
   new MiniCssExtractPlugin({
     filename: isProd ? 'css/[name][contenthash:7].css' : '[name].css',
@@ -93,5 +97,6 @@ const getProdPlugins = config => ([
 module.exports = (config) => {
   const commonPlugins = getCommonPlugins(config)
   const prodPlugins = getProdPlugins(config)
-  return isProd ? [...commonPlugins, ...prodPlugins] : commonPlugins
+  const devPlugins = getDevPlugins()
+  return isProd ? [...commonPlugins, ...prodPlugins] : [...devPlugins, ...commonPlugins]
 }

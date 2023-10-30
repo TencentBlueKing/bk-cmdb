@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	kubetypes "configcenter/src/kube/types"
 )
 
 // BusinessOperationInterface business operation methods
@@ -39,8 +40,8 @@ type BusinessOperationInterface interface {
 	// FindBiz find biz
 	FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count int,
 		results []mapstr.MapStr, err error)
-	// HasHosts check if this business still has hosts.
-	HasHosts(kit *rest.Kit, bizID int64) (bool, error)
+	// CheckArchiveBizResource check if the business to be archived still has resources that needs to be removed.
+	CheckArchiveBizResource(kit *rest.Kit, bizID int64) error
 	// GenerateAchieveBusinessName 生成归档后的业务名称
 	// - 业务归档的时候，自动重命名为"foo-archived"
 	// - 归档的时候，如果发现已经存在同名的"foo-archived", 自动在其后+1, 比如 "foo-archived-1", "foo-archived-2"
@@ -212,21 +213,41 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count 
 	return result.Count, result.Info, err
 }
 
-// HasHosts check if this business still has hosts.
-func (b *business) HasHosts(kit *rest.Kit, bizID int64) (bool, error) {
-
+// CheckArchiveBizResource check if the business to be archived still has resources that needs to be removed.
+func (b *business) CheckArchiveBizResource(kit *rest.Kit, bizID int64) error {
 	option := []map[string]interface{}{{
 		common.BKAppIDField: bizID,
 	}}
 
+	// check if this business still has hosts
 	rsp, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameModuleHostConfig, option)
 	if err != nil {
 		blog.Errorf("get host module relation failed, err: %v, rid: %s", err, kit.Rid)
-		return false, err
+		return err
 	}
 
-	return rsp[0] != 0, nil
+	if len(rsp) != 1 || rsp[0] != 0 {
+		blog.Errorf("host module relation count is invalid, rsp: %v, rid: %s", rsp, kit.Rid)
+		return kit.CCError.CCError(common.CCErrTopoArchiveBusinessHasHost)
+	}
+
+	// check if this business still has kube resources by checking cluster and namespace(for shared cluster scenario)
+	kubeTables := []string{kubetypes.BKTableNameBaseCluster, kubetypes.BKTableNameBaseNamespace}
+	for _, table := range kubeTables {
+		rsp, err = b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, table, option)
+		if err != nil {
+			blog.Errorf("check if %s resource exists failed, err: %v, rid: %s", table, err, kit.Rid)
+			return err
+		}
+
+		if len(rsp) != 1 || rsp[0] != 0 {
+			blog.Errorf("%s resource count is invalid, rsp: %v, rid: %s", table, rsp, kit.Rid)
+			return kit.CCError.CCError(common.CCErrTopoArchiveBusinessHasKube)
+		}
+	}
+
+	return nil
 }
 
 var (

@@ -126,14 +126,12 @@ func (d *Client) GetHost(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, er
 		return nil, err
 	}
 
-	if len(objIDs) == 0 {
-		return hosts, nil
-	}
-
-	hosts, err = d.handleCustomTopo(kit, hosts, setInfo, objIDs)
-	if err != nil {
-		blog.Errorf("handle custom topo data failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
+	if len(objIDs) != 0 {
+		hosts, err = d.handleCustomTopo(kit, hosts, setInfo, objIDs)
+		if err != nil {
+			blog.Errorf("handle custom topo data failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
 	}
 
 	topoObjIDs := []string{TopoObjID, common.BKInnerObjIDApp}
