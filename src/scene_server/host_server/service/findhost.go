@@ -19,6 +19,7 @@ import (
 
 	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -46,9 +47,7 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
-		BusinessID: bizID}
-	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
 		ctx.RespNoAuth(resp)
 		return
 	}
@@ -179,9 +178,7 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
-		BusinessID: bizID}
-	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
 		ctx.RespNoAuth(resp)
 		return
 	}
@@ -321,13 +318,10 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
 	}
 
 	setCond := []meta.ConditionItem{
@@ -401,13 +395,10 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
 	}
 
 	// generate search condition,
@@ -557,13 +548,10 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
 	}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
@@ -711,13 +699,10 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
 	}
 
 	parameter := &meta.ListBizHostsTopoParameter{}
@@ -1121,15 +1106,13 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
-	if s.AuthManager.Enabled() {
-		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
-			common.BKInnerObjIDApp, bizID); err != nil {
-			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
 
-			return
-		}
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
 	}
+
 	params := meta.FindHostTotalTopo{}
 	if err := ctx.DecodeInto(&params); err != nil {
 		ctx.RespAutoError(err)
@@ -1149,4 +1132,28 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(int64(len(rsp)), rsp)
+}
+
+// authHostUnderBiz 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+// list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口, 可以通过配置变量，
+// 决定是否鉴业务访问权限
+func (s *Service) authHostUnderBiz(kit *rest.Kit, bizID int64) (*meta.BaseResp, bool) {
+	if !s.AuthManager.Enabled() {
+		return nil, true
+	}
+
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, kit.Rid)
+	}
+
+	if skipAuth {
+		return nil, true
+	}
+
+	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+		BusinessID: bizID}
+
+	return s.AuthManager.Authorize(kit, authRes)
 }
