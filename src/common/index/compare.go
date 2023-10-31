@@ -98,6 +98,18 @@ func IndexEqual(toDBIndex, dbIndex types.Index) bool {
 		if !exists {
 			return false
 		}
+
+		// 当从db中查出来的dbVal是map[string]string类型，而val是map[string]interface{}类型，由于两者类型不同，
+		// 会导致下面reflect.DeepEqual方法判断两者存在差异，所以这里需要进行转化
+		if value, ok := dbVal.(map[string]string); ok {
+			newDBVal := make(map[string]interface{})
+			for k, v := range value {
+				newDBVal[k] = v
+			}
+
+			dbVal = newDBVal
+		}
+
 		if !reflect.DeepEqual(val, dbVal) {
 			return false
 		}

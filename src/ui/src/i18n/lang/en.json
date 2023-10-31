@@ -1829,5 +1829,8 @@
     "字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板": "The field conflicts. The field has been bound to {other}. Delete the model or modify the template",
     "继续": "Continue",
     "已被模型绑定，不能删除": "Already bound to the model, can't delete",
-    "最多支持50个不同管控区域的混合搜索": "Supports mixed search for up to 50 different BK-Network Area"
+    "最多支持50个不同管控区域的混合搜索": "Supports mixed search for up to 50 different BK-Network Area",
+    "属性设置step": "Field Setting",
+    "信息确认step": "Information confirmed",
+    "属性应用step": "Field application"
 }

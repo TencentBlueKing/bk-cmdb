@@ -32,45 +32,46 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOption, ids []uint64) ([]types.Pod,
-	[]types.Container, map[int64]struct{}, error) {
+func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOption, podIDs, containerIDs []uint64) (
+	[]types.Pod, []types.Container, []int64, error) {
+
 	pods, containers := make([]types.Pod, 0), make([]types.Container, 0)
 	now := time.Now().Unix()
-	nodeIDMap := make(map[int64]struct{})
 
-	var i int
+	sysSpecArr, nodeIDs, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, inputData.Data)
+	if ccErr != nil {
+		return nil, nil, nil, ccErr
+	}
+
+	var podIdx, containerIdx int
 
 	for _, info := range inputData.Data {
 		for _, pod := range info.Pods {
-			podTmp, nodeID, err := s.combinationPodsInfo(kit, pod, info.BizID, now, int64(ids[i]))
+			id := int64(podIDs[podIdx])
+			sysSpec := sysSpecArr[podIdx]
+			podIdx++
+
+			podTmp, err := s.combinationPodsInfo(kit, pod, sysSpec, now, id)
 			if err != nil {
 				return nil, nil, nil, err
 			}
+
 			// need to be compatible with scenarios where
 			// there is no container in the pod, so move it next time.
-			i++
 			pods = append(pods, podTmp)
-			if nodeID != 0 {
-				nodeIDMap[nodeID] = struct{}{}
-			}
 
 			// skip if there is no container information in the pod
 			if len(pod.Containers) == 0 {
 				continue
 			}
-			// generate pod ids field
-			cIDs, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBaseContainer,
-				len(pod.Containers))
-			if err != nil {
-				blog.Errorf("create container failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
-				return nil, nil, nil, err
-			}
 
-			for id, container := range pod.Containers {
+			for _, container := range pod.Containers {
+				containerID := int64(containerIDs[containerIdx])
+				containerIdx++
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(kit, int64(cIDs[id]), int64(ids[i-1]), now, container)
+				data, err := s.combinationContainerInfo(kit, containerID, id, now, container)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -78,49 +79,64 @@ func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOptio
 			}
 		}
 	}
-	return pods, containers, nodeIDMap, nil
+
+	return pods, containers, nodeIDs, nil
 }
 
 // BatchCreatePod batch create pods
 func (s *service) BatchCreatePod(ctx *rest.Contexts) {
-
 	inputData := new(types.CreatePodsOption)
 	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	var podsLen int
+	var podsLen, containerLen int
 	for _, info := range inputData.Data {
 		podsLen += len(info.Pods)
+		for _, pod := range info.Pods {
+			containerLen += len(pod.Containers)
+		}
 	}
+
 	if podsLen == 0 {
 		ctx.RespAutoError(errors.New("no pods need created"))
 		return
 	}
+
 	// generate pod ids field
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
+	podIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
 	if err != nil {
-		blog.Errorf("create pods failed, generate ids failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("generate %d pod ids failed, err: %v, rid: %s", podsLen, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	// generate container ids field
+	containerIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer, containerLen)
+	if err != nil {
+		blog.Errorf("generate %d container ids failed, err: %v, rid: %s", containerLen, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	pods, containers, nodeIDs, err := s.combinePodData(ctx.Kit, inputData, podIDs, containerIDs)
+	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	pods, containers, nodeIDMap, err := s.combinePodData(ctx.Kit, inputData, ids)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if err := mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
+	if err = mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
 		blog.Errorf("create pod failed, db insert failed, pods: %+v, err: %+v, rid: %s", pods, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
+
 	if len(containers) == 0 {
 		ctx.RespEntity(pods)
 		return
 	}
+
 	err = mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, containers)
 	if err != nil {
 		blog.Errorf("create container failed, db insert failed, containers: %+v, err: %+v, rid: %s",
@@ -129,24 +145,19 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := s.updateNodeField(ctx.Kit, nodeIDMap); err != nil {
+	if err = s.updateNodeHasPodField(ctx.Kit, nodeIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(pods)
 }
 
-func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID int64, now, id int64) (
-	types.Pod, int64, error) {
-
-	sysSpec, hasPod, ccErr := s.core.KubeOperation().GetSysSpecInfoByCond(kit, pod.Spec, bizID, pod.HostID)
-	if ccErr != nil {
-		return types.Pod{}, 0, ccErr
-	}
+func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec types.SysSpec, now, id int64) (
+	types.Pod, error) {
 
 	podInfo := types.Pod{
 		ID:            id,
-		SysSpec:       *sysSpec,
+		SysSpec:       sysSpec,
 		Name:          pod.Name,
 		Priority:      pod.Priority,
 		Labels:        pod.Labels,
@@ -156,6 +167,7 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID i
 		QOSClass:      pod.QOSClass,
 		NodeSelectors: pod.NodeSelectors,
 		Tolerations:   pod.Tolerations,
+		Operator:      pod.Operator,
 		Revision: table.Revision{
 			CreateTime: now,
 			LastTime:   now,
@@ -164,12 +176,7 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, bizID i
 		},
 	}
 
-	// this scenario shows that the hasPod flag has been set to true and does not need to be reset
-	var nodeID int64
-	if !hasPod {
-		nodeID = sysSpec.NodeID
-	}
-	return podInfo, nodeID, nil
+	return podInfo, nil
 }
 
 func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (

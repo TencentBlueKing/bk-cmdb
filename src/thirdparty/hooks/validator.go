@@ -61,3 +61,8 @@ func ValidBizSetPropertyHook(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParam
 func ValidHostCloudIDHook(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
 	return nil
 }
+
+// IsSkipValidateKeyHook is a hook to check if a insert or update option data key's value need to validate or not.
+func IsSkipValidateKeyHook(kit *rest.Kit, objID string, key string, data mapstr.MapStr) (bool, error) {
+	return false, nil
+}

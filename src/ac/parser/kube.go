@@ -18,35 +18,26 @@
 package parser
 
 import (
-	"net/http"
+	"strings"
 
 	"configcenter/src/ac/meta"
 )
 
-// kubeRelated generate kube related resource auth parse stream
+// kubeRelated skip all kube related apis, do authorization in implementations
+// TODO remove this later
 func (ps *parseStream) kubeRelated() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	ps.KubePod()
+	if strings.Contains(ps.RequestCtx.URI, "/kube/") {
+		ps.Attribute.Resources = []meta.ResourceAttribute{{
+			Basic: meta.Basic{
+				Action: meta.SkipAction,
+			},
+		}}
+		return ps
+	}
 
 	return ps
-}
-
-// KubePodConfigs kube pod auth parser configs
-var KubePodConfigs = []AuthConfig{
-	{
-		Name:           "batchDeletePod",
-		Description:    "批量删除Pod",
-		Pattern:        "/api/v3/deletemany/kube/pod",
-		HTTPMethod:     http.MethodDelete,
-		ResourceType:   meta.KubePod,
-		ResourceAction: meta.Delete,
-	},
-}
-
-// KubePod generate kube pod auth parse stream
-func (ps *parseStream) KubePod() *parseStream {
-	return ParseStreamWithFramework(ps, KubePodConfigs)
 }
