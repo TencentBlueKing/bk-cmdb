@@ -381,7 +381,9 @@ var (
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
 
-	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	// NOCC:tosa/linelength(忽略长度)
+	transferHostWithAutoClearServiceInstanceRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	// NOCC:tosa/linelength(忽略长度)
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)

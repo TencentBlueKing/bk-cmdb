@@ -841,6 +841,18 @@ const (
 
 	// LastTimeField the last time field
 	LastTimeField = "last_time"
+
+	// BKCreatedAt the model instance create time field
+	BKCreatedAt = "bk_created_at"
+
+	// BKCreatedBy the model instance creator field
+	BKCreatedBy = "bk_created_by"
+
+	// BKUpdatedAt the model instance update time field
+	BKUpdatedAt = "bk_updated_at"
+
+	// BKUpdatedBy the model instance modifier field
+	BKUpdatedBy = "bk_updated_by"
 )
 
 const (

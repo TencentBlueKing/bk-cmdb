@@ -45,7 +45,6 @@ func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64
 }
 
 func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, err error) {
-
 	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjDes)
 	if err != nil {
 		blog.Errorf("it is failed to make sequence id on the table, err: %v, table: %s, rid: %s",
@@ -63,13 +62,15 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 	model.ID = int64(id)
 	model.OwnerID = kit.SupplierAccount
 
-	if nil == model.LastTime {
+	if model.LastTime == nil {
 		model.LastTime = &metadata.Time{}
 		model.LastTime.Time = time.Now()
+		model.Modifier = kit.User
 	}
-	if nil == model.CreateTime {
+	if model.CreateTime == nil {
 		model.CreateTime = &metadata.Time{}
 		model.CreateTime.Time = time.Now()
+		model.Creator = kit.User
 	}
 
 	err = mongodb.Client().Table(common.BKTableNameObjDes).Insert(kit.Ctx, model)
@@ -121,7 +122,7 @@ func (m *modelManager) objSortNumberAdd(kit *rest.Kit, model metadata.Object) er
 }
 
 func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
-
+	data.Set(metadata.ModelFieldModifier, kit.User)
 	data.Set(metadata.ModelFieldLastTime, time.Now())
 	models := make([]metadata.Object, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)

@@ -13,6 +13,7 @@
 /* eslint-disable no-unused-vars */
 import $http from '@/api'
 import CombineRequest from '@/api/combine-request'
+import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
 
 const state = {
   propertyConfig: {},
@@ -145,7 +146,7 @@ const mutations = {
     state.ruleDraft = {}
   },
   setPropertyList(state, list) {
-    state.propertyList = list
+    state.propertyList = list.filter(property => !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id))
   }
 }
 

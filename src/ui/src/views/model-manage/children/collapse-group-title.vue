@@ -118,7 +118,7 @@
        */
       commands: {
         type: Array,
-        default: () => []
+        default: () => ([])
       },
 
       // 是否是新建分组
@@ -141,7 +141,7 @@
           cmd.auth = null
         }
         if (!has(cmd, 'onUpdateAuth')) {
-          cmd.onUpdateAuth = () => {}
+          cmd.onUpdateAuth = () => ({})
         }
 
         return cmd
