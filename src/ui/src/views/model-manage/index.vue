@@ -1066,7 +1066,6 @@
         return this.updateObject({
           id: modelId,
           params: {
-            modifier: this.userName,
             bk_classification_id: newGroupId
           }
         })
