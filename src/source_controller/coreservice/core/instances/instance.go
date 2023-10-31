@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/thirdparty/hooks"
@@ -499,39 +500,24 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 	// parse vip fields for processes
 	fields, vipFields := hooks.ParseVIPFieldsForProcessHook(inputParam.Fields, tableName)
 
-	fields, status, err := GetFieldStatus(fields)
-	if err != nil {
-		blog.Errorf("get filed status failed, fields:%v, err: %v, rid: %s", fields, err, kit.Rid)
-		return nil, err
-	}
-
-	return m.searchModelInstance(kit, objID, inputParam, fields, vipFields, status)
+	return m.searchModelInstance(kit, objID, inputParam, fields, vipFields)
 }
 
 func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition,
-	fields []string, vipFields []string, status *FieldStatus) (*metadata.QueryResult, error) {
+	fields []string, vipFields []string) (*metadata.QueryResult, error) {
 
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
-		Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).Fields(fields...)
-	var instErr error
-	if objID == common.BKInnerObjIDHost {
-		hosts := make([]metadata.HostMapStr, 0)
-		instErr = query.All(kit.Ctx, &hosts)
-		for _, host := range hosts {
-			instItems = append(instItems, mapstr.MapStr(host))
-		}
-	} else {
-		instErr = query.All(kit.Ctx, &instItems)
-	}
+		Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort)
+
+	instItems, instErr := FindInst(kit, fields, query, objID)
 	if instErr != nil {
-		blog.Errorf("search instance error [%v], rid: %s", instErr, kit.Rid)
+		blog.Errorf("search instance failed, err: %v, rid: %s", instErr, kit.Rid)
 		return nil, instErr
 	}
 
 	var finalCount uint64
-
 	if !inputParam.DisableCounter {
 		count, err := m.countInstance(kit, objID, inputParam.Condition)
 		if err != nil {
@@ -545,26 +531,6 @@ func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, input
 	instItems, instErr = hooks.SetVIPInfoForProcessHook(kit, instItems, vipFields, tableName, mongodb.Client())
 	if instErr != nil {
 		return nil, instErr
-	}
-
-	for idx, inst := range instItems {
-		if status.ExistCreateAt && inst[common.BKCreatedAt] == nil {
-			inst[common.BKCreatedAt] = inst[common.CreateTimeField]
-		}
-
-		if status.ExistUpdateAt && inst[common.BKUpdatedAt] == nil {
-			inst[common.BKUpdatedAt] = inst[common.LastTimeField]
-		}
-
-		if !status.ExistCreateTime {
-			inst.Remove(common.CreateTimeField)
-		}
-
-		if !status.ExistLastTime {
-			inst.Remove(common.LastTimeField)
-		}
-
-		instItems[idx] = inst
 	}
 
 	dataResult := &metadata.QueryResult{
@@ -708,38 +674,71 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
-// FieldStatus model field status
-type FieldStatus struct {
-	ExistCreateAt   bool
-	ExistCreateTime bool
-	ExistUpdateAt   bool
-	ExistLastTime   bool
-}
+// FindInst find instance
+func FindInst(kit *rest.Kit, fields []string, query types.Find, objID string) ([]mapstr.MapStr, error) {
+	existCreateAt := true
+	existCreateTime := true
+	existUpdateAt := true
+	existLastTime := true
 
-// GetFieldStatus get field status
-func GetFieldStatus(fields []string) ([]string, *FieldStatus, error) {
-	status := &FieldStatus{ExistCreateAt: true, ExistCreateTime: true, ExistUpdateAt: true, ExistLastTime: true}
-	if len(fields) == 0 {
-		return fields, status, nil
+	if len(fields) != 0 {
+		// 旧数据用create_time和last_time分别记录了实例的创建和更新时间，如果bk_created_at和bk_updated_at字段没值，需要把旧值赋过来
+		fieldMap := make(map[string]struct{})
+		for _, field := range fields {
+			fieldMap[field] = struct{}{}
+		}
+
+		_, existCreateAt = fieldMap[common.BKCreatedAt]
+		_, existCreateTime = fieldMap[common.CreateTimeField]
+		if existCreateAt && !existCreateTime {
+			fields = append(fields, common.CreateTimeField)
+		}
+
+		_, existUpdateAt = fieldMap[common.BKUpdatedAt]
+		_, existLastTime = fieldMap[common.LastTimeField]
+		if existUpdateAt && !existLastTime {
+			fields = append(fields, common.LastTimeField)
+		}
 	}
 
-	// 旧数据用create_time和last_time分别记录了实例的创建和更新时间，如果bk_created_at和bk_updated_at字段没值，需要把旧值赋过来
-	fieldMap := make(map[string]struct{})
-	for _, field := range fields {
-		fieldMap[field] = struct{}{}
+	query.Fields(fields...)
+
+	insts := make([]mapstr.MapStr, 0)
+	var err error
+	if objID == common.BKInnerObjIDHost {
+		hosts := make([]metadata.HostMapStr, 0)
+		err = query.All(kit.Ctx, &hosts)
+		for _, host := range hosts {
+			insts = append(insts, mapstr.MapStr(host))
+		}
+	} else {
+		err = query.All(kit.Ctx, &insts)
 	}
 
-	_, status.ExistCreateAt = fieldMap[common.BKCreatedAt]
-	_, status.ExistCreateTime = fieldMap[common.CreateTimeField]
-	if status.ExistCreateAt && !status.ExistCreateTime {
-		fields = append(fields, common.CreateTimeField)
+	if err != nil {
+		blog.Errorf("search instance failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
-	_, status.ExistUpdateAt = fieldMap[common.BKUpdatedAt]
-	_, status.ExistLastTime = fieldMap[common.LastTimeField]
-	if status.ExistUpdateAt && !status.ExistLastTime {
-		fields = append(fields, common.LastTimeField)
+	for idx, inst := range insts {
+		if existCreateAt && inst[common.BKCreatedAt] == nil {
+			inst[common.BKCreatedAt] = inst[common.CreateTimeField]
+		}
+
+		if existUpdateAt && inst[common.BKUpdatedAt] == nil {
+			inst[common.BKUpdatedAt] = inst[common.LastTimeField]
+		}
+
+		if !existCreateTime {
+			inst.Remove(common.CreateTimeField)
+		}
+
+		if !existLastTime {
+			inst.Remove(common.LastTimeField)
+		}
+
+		insts[idx] = inst
 	}
 
-	return fields, status, nil
+	return insts, nil
 }

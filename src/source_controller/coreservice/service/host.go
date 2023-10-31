@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -197,43 +196,13 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	result := make([]metadata.HostMapStr, 0)
-	dbInst := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).
+	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).
 		Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
-	if len(fieldArr) > 0 {
-		dbInst.Fields(fieldArr...)
-	}
-	fieldArr, status, err := instances.GetFieldStatus(fieldArr)
+	info, err := instances.FindInst(ctx.Kit, fieldArr, query, common.BKInnerObjIDHost)
 	if err != nil {
-		blog.Errorf("get filed status failed, fields:%v, err: %v, rid: %s", fieldArr, err, ctx.Kit.Rid)
+		blog.ErrorJSON("failed to query the host, cond: %v, err: %s, rid: %s", condition, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-
-	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", condition, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	for idx, inst := range result {
-		if status.ExistCreateAt && inst[common.BKCreatedAt] == nil {
-			inst[common.BKCreatedAt] = inst[common.CreateTimeField]
-		}
-
-		if status.ExistUpdateAt && inst[common.BKUpdatedAt] == nil {
-			inst[common.BKUpdatedAt] = inst[common.LastTimeField]
-		}
-
-		if !status.ExistCreateTime {
-			delete(inst, common.CreateTimeField)
-		}
-
-		if !status.ExistLastTime {
-			delete(inst, common.LastTimeField)
-		}
-
-		result[idx] = inst
 	}
 
 	var finalCount uint64
@@ -249,10 +218,6 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		finalCount = count
 	}
 
-	info := make([]mapstr.MapStr, len(result))
-	for index, host := range result {
-		info[index] = mapstr.MapStr(host)
-	}
 	ctx.RespEntity(metadata.HostInfo{
 		Count: int(finalCount),
 		Info:  info,
