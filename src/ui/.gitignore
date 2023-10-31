@@ -24,4 +24,6 @@ eslint.html
 /mock/*
 !/mock/index.js
 
+apipaths.txt
+apivars.txt
 .eslintcache
