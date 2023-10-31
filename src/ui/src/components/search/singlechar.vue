@@ -82,13 +82,13 @@
         await this.$nextTick()
         const { tagInput } = this.$refs
         if (!tagInput) return
-        tagInput.$refs.input.addEventListener('paste', this.handlePaste)
+        tagInput.$refs.input?.addEventListener('paste', this.handlePaste)
       },
       async removePasteEvent() {
         await this.$nextTick()
         const { tagInput } = this.$refs
         if (!tagInput) return
-        tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
+        tagInput.$refs.input?.removeEventListener('paste', this.handlePaste)
       },
       handlePaste(event) {
         const text = event.clipboardData.getData('text')
