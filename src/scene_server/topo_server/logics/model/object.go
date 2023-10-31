@@ -647,10 +647,59 @@ func (o *object) isClassificationExist(kit *rest.Kit, clsID string) (bool, error
 	return true, nil
 }
 
+var recordedAttrs = []metadata.Attribute{
+	{
+		PropertyID:   common.BKCreatedAt,
+		PropertyName: "创建时间",
+		IsOnly:       false,
+		IsEditable:   false,
+		IsRequired:   false,
+		IsPre:        true,
+		PropertyType: common.FieldTypeTime,
+		Creator:      common.CCSystemOperatorUserName,
+		Option:       "",
+	},
+	{
+		PropertyID:   common.BKCreatedBy,
+		PropertyName: "创建人",
+		IsOnly:       false,
+		IsEditable:   false,
+		IsRequired:   false,
+		IsPre:        true,
+		PropertyType: common.FieldTypeUser,
+		Creator:      common.CCSystemOperatorUserName,
+		Option:       "",
+	},
+	{
+		PropertyID:   common.BKUpdatedAt,
+		PropertyName: "更新时间",
+		IsOnly:       false,
+		IsEditable:   false,
+		IsRequired:   false,
+		IsPre:        true,
+		PropertyType: common.FieldTypeTime,
+		Creator:      common.CCSystemOperatorUserName,
+		Option:       "",
+	},
+	{
+		PropertyID:   common.BKUpdatedBy,
+		PropertyName: "更新人",
+		IsOnly:       false,
+		IsEditable:   false,
+		IsRequired:   false,
+		IsPre:        true,
+		PropertyType: common.FieldTypeUser,
+		Creator:      common.CCSystemOperatorUserName,
+		Option:       "",
+	},
+}
+
 func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadata.Object,
 	groupData metadata.Group) ([]uint64, error) {
 
 	attrs := make([]metadata.Attribute, 0)
+	// createDefaultAttrs函数返回的属性id为需要创建唯一索引的属性id，所以需要这个map记录对应属性id的位置
+	resultIdxMap := make(map[int]struct{})
 	attrs = append(attrs, metadata.Attribute{
 		ObjectID:          obj.ObjectID,
 		IsOnly:            true,
@@ -666,6 +715,15 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 		PropertyName:      common.DefaultInstName,
 		OwnerID:           kit.SupplierAccount,
 	})
+	resultIdxMap[len(attrs)-1] = struct{}{}
+
+	for _, attr := range recordedAttrs {
+		attr.PropertyGroup = groupData.GroupID
+		attr.PropertyGroupName = groupData.GroupName
+		attr.ObjectID = obj.ObjectID
+		attr.OwnerID = kit.SupplierAccount
+		attrs = append(attrs, attr)
+	}
 
 	if isMainline {
 		attrs = append(attrs, metadata.Attribute{
@@ -684,6 +742,7 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 			PropertyName:      common.BKInstParentStr,
 			OwnerID:           kit.SupplierAccount,
 		})
+		resultIdxMap[len(attrs)-1] = struct{}{}
 	}
 
 	param := &metadata.CreateModelAttributes{Attributes: attrs}
@@ -703,7 +762,11 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 	}
 
 	result := make([]uint64, 0)
-	for _, item := range rspAttr.Created {
+	for idx, item := range rspAttr.Created {
+		if _, ok := resultIdxMap[idx]; !ok {
+			continue
+		}
+
 		result = append(result, item.ID)
 	}
 

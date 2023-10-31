@@ -56,6 +56,10 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		params[idx].Set(common.CreateTimeField, ts)
 		params[idx].Set(common.LastTimeField, ts)
 
+		params[idx].Set(common.BKCreatedBy, kit.User)
+		params[idx].Set(common.BKCreatedAt, ts)
+		params[idx].Set(common.BKUpdatedAt, ts)
+
 		if !metadata.IsCommon(objID) {
 			continue
 		}
@@ -114,6 +118,10 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
 
+	inputParam.Set(common.BKCreatedBy, kit.User)
+	inputParam.Set(common.BKCreatedAt, ts)
+	inputParam.Set(common.BKUpdatedAt, ts)
+
 	// build and save new object mapping data for inner object instance.
 	if metadata.IsCommon(objID) {
 		mapping := make(mapstr.MapStr, 0)
@@ -155,6 +163,9 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	}
 	ts := time.Now()
 	data.Set(common.LastTimeField, ts)
+	data.Set(common.BKUpdatedBy, kit.User)
+	data.Set(common.BKUpdatedAt, ts)
+
 	data.Remove(common.BKObjIDField)
 	err := mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
 	if err != nil {
@@ -168,7 +179,8 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	return nil
 }
 
-func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
+func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr,
+	exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	if !valid.IsInnerObject(objID) {
@@ -219,7 +231,8 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 	if common.IsObjectInstShardingTable(tableName) {
 		objIDCond, ok := cond[common.BKObjIDField]
 		if ok && objIDCond != objID {
-			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID, kit.Rid)
+			blog.V(9).Infof("countInstance condition's bk_obj_id: %s not match objID: %s, rid: %s", objIDCond, objID,
+				kit.Rid)
 			return 0, nil
 		}
 		cond[common.BKObjIDField] = objID
