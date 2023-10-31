@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310300900
+package y3_12_202310302130
 
 import (
 	"context"
@@ -43,13 +43,13 @@ func addDefaultBusinessSet(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		BizSetName:       bizSetName,
 		Description:      "admin",
 		BizSetMaintainer: "供蓝盾Job插件执行调用",
-		SupplierAccount:  conf.OwnerID,
 		CreateTime:       now,
 		LastTime:         now,
-		Default:          common.DefaultResBusinessSetFlag,
+		SupplierAccount:  conf.OwnerID,
 		Scope: metadata.BizSetScope{
 			MatchAll: true,
 		},
+		Default: common.DefaultResBusinessSetFlag,
 	}
 
 	result := make([]metadata.BizSetInst, 0)
