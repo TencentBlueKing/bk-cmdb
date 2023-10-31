@@ -43,6 +43,7 @@
           <div class="model-identity">
             <div class="model-name">
               <editable-field
+                class="model-name-edit"
                 :editing.sync="modelNameIsEditing"
                 v-model="activeModel.bk_obj_name"
                 font-size="12px"
@@ -50,92 +51,133 @@
                 :editable="isEditable"
                 validate="required|singlechar|length:256|reservedWord"
                 :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
+              </editable-field>
+              <more-action-menu
+                v-if="isShowOperationButton"
+                :commands="[
+                  {
+                    text: $t('停用模型'),
+                    auth: { type: $OPERATION.U_MODEL, relation: [modelId] },
+                    handler: () => dialogConfirm('stop'),
+                    isShow: !activeModel['bk_ispaused'],
+                    tips: '保留模型和相应实例，隐藏关联关系'
+                  },
+                  {
+                    text: $t('删除模型'),
+                    auth: { type: $OPERATION.D_MODEL, relation: [modelId] },
+                    handler: () => dialogConfirm('delete'),
+                    isShow: true,
+                    tips: '删除模型和其下所有实例，此动作不可逆，请谨慎操作'
+                  }
+                ]">
                 <template #append>
                   <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
                 </template>
-              </editable-field>
+              </more-action-menu>
             </div>
-            <div class="model-id" v-show="!modelNameIsEditing" v-bk-overflow-tips>
+            <div class="model-id" v-bk-overflow-tips>
               {{activeModel['bk_obj_id'] || ''}}
             </div>
           </div>
-          <div class="model-group-name">
-            <span :class="['model-group-name-label', { 'model-group-name-label-editing': modelGroupIsEditing }]">
-              {{$t('所属分组')}}
-            </span>
-            <editable-field
-              :editing.sync="modelGroupIsEditing"
-              class="model-group-name-edit"
-              v-model="activeModel.bk_classification_id"
-              :label="modelClassificationName"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-              validate="required"
-              @confirm="handleModelGroupUpdateConfirm"
-              type="enum"
-              font-size="12px"
-              style="width: calc(100% - 60px)"
-              :options="classifications
-                .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
-            >
-            </editable-field>
-          </div>
-          <div class="instance-count"
-            v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
-            <span class="instance-count-label">{{$t('实例数量')}}</span>
-            <div>
-              <span class="instance-count-text" @click="handleGoInstance">
-                <cmdb-loading :loading="$loading(request.instanceCount)">
-                  {{modelInstanceCount || 0}}
-                </cmdb-loading>
-              </span>
-            </div>
-          </div>
-          <div class="field-template"
-            v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
-            <span class="field-template-label">{{$t('绑定的字段组合模板')}}</span>
-            <flex-tag
-              v-if="templateList.length"
-              class="field-template-tag"
-              :max-width="'355px'"
-              :list="templateList"
-              :is-link-style="true"
-              :force-show-one="true"
-              :popover-options="{
-                boundary: 'scrollParent',
-                appendTo: 'parent'
-              }"
-              @click-text="handleViewTemplate">
-              <template #append="template">
-                <cmdb-auth
-                  tag="i"
-                  class="unbind-icon icon-cc-unbind"
-                  v-bk-tooltips="$t('解绑模版')"
+          <div class="model-property">
+            <div :class="['model-property-top', { 'model-group-name-label-editing': modelGroupIsEditing }]">
+              <div class="model-group-name">
+                <span class="model-group-name-label">
+                  {{$t('所属分组')}}
+                </span>
+                <editable-field
+                  class="model-group-name-edit"
+                  :editing.sync="modelGroupIsEditing"
+                  v-model="activeModel.bk_classification_id"
+                  :label="modelClassificationName"
                   :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-                  @click="handleUnbindTemplate(template)">
-                </cmdb-auth>
-              </template>
-              <template #text-append="template">
-                <i class="reddot"
-                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
-                  v-bk-tooltips="{
-                    allowHTML: true,
-                    theme: 'light template-diff-sync',
-                    content: `#template-diff-sync-tooltips-${template.id}`
-                  }">
-                </i>
-                <div :id="`template-diff-sync-tooltips-${template.id}`"
-                  class="diff-sync-content"
-                  v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync">
-                  <i18n path="模型信息与模板信息有差异提示语" tag="div" class="content-tips">
-                    <template #link>
-                      <bk-link theme="primary" @click="handleGoSync(template)">{{ $t('去同步') }}</bk-link>
-                    </template>
-                  </i18n>
+                  validate="required"
+                  @confirm="handleModelGroupUpdateConfirm"
+                  type="enum"
+                  font-size="12px"
+                  style="width: calc(100% - 60px)"
+                  :options="classifications
+                    .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
+                >
+                </editable-field>
+              </div>
+              <div class="instance-count"
+                v-if="!activeModel['bk_ispaused'] && !isNoInstanceModel">
+                <span class="instance-count-label">{{$t('实例数量')}}</span>
+                <div>
+                  <span class="instance-count-text" @click="handleGoInstance">
+                    <cmdb-loading :loading="$loading(request.instanceCount)">
+                      {{modelInstanceCount || 0}}
+                    </cmdb-loading>
+                  </span>
+                </div>
+              </div>
+              <div class="field-template"
+                v-if="!isNoInstanceModel">
+                <span class="field-template-label">{{$t('绑定的字段组合模板')}}</span>
+                <flex-tag
+                  v-if="templateList.length"
+                  class="field-template-tag"
+                  :max-width="'355px'"
+                  :list="templateList"
+                  :is-link-style="true"
+                  :popover-options="{
+                    boundary: 'scrollParent',
+                    appendTo: 'parent'
+                  }"
+                  @click-text="handleViewTemplate">
+                  <template #append="template">
+                    <cmdb-auth
+                      tag="i"
+                      class="unbind-icon icon-cc-unbind"
+                      v-bk-tooltips="$t('解绑模版')"
+                      :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
+                      @click="handleUnbindTemplate(template)">
+                    </cmdb-auth>
+                  </template>
+                  <template #text-append="template">
+                    <i class="reddot"
+                      v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync"
+                      v-bk-tooltips="{
+                        allowHTML: true,
+                        theme: 'light template-diff-sync',
+                        content: `#template-diff-sync-tooltips-${template.id}`
+                      }">
+                    </i>
+                    <div :id="`template-diff-sync-tooltips-${template.id}`"
+                      class="diff-sync-content"
+                      v-if="templateDiffStatus[template.id] && templateDiffStatus[template.id].need_sync">
+                      <i18n path="模型信息与模板信息有差异提示语" tag="div" class="content-tips">
+                        <template #link>
+                          <bk-link theme="primary" @click="handleGoSync(template)">{{ $t('去同步') }}</bk-link>
+                        </template>
+                      </i18n>
+                    </div>
+                  </template>
+                </flex-tag>
+                <div v-else>--</div>
+              </div>
+            </div>
+            <div class="model-audits">
+              <template v-if="!activeModel['bk_ispaused']">
+                <div class="model-property-item"
+                  v-for="item in modelOperationFields"
+                  :key="item.key">
+                  <span class="model-property-item-label">{{$t(item.name)}}</span>
+                  <div>
+                    <span class="model-property-item-text">
+                      <cmdb-loading :loading="$loading(request.instanceCount)">
+                        {{activeModel[item.key] || '--'}}
+                      </cmdb-loading>
+                    </span>
+                  </div>
                 </div>
               </template>
-            </flex-tag>
-            <div v-else>--</div>
+
+            </div>
+
           </div>
+
           <cmdb-auth class="restart-btn"
             v-if="!isMainLineModel && activeModel.bk_ispaused"
             :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
@@ -146,35 +188,6 @@
               {{$t('立即启用')}}
             </bk-button>
           </cmdb-auth>
-          <div class="btn-group">
-            <template v-if="isShowOperationButton">
-              <cmdb-auth class="label-btn"
-                v-if="!isMainLineModel && !activeModel['bk_ispaused']"
-                v-bk-tooltips="$t('保留模型和相应实例，隐藏关联关系')"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
-                <bk-button slot-scope="{ disabled }"
-                  text
-                  :disabled="disabled"
-                  @click="dialogConfirm('stop')">
-                  <i
-                    class="label-btn-icon bk-icon icon-minus-circle-shape">
-                  </i>
-                  <span class="label-btn-text">{{$t('停用')}}</span>
-                </bk-button>
-              </cmdb-auth>
-              <cmdb-auth class="label-btn"
-                v-bk-tooltips="$t('删除模型和其下所有实例，此动作不可逆，请谨慎操作')"
-                :auth="{ type: $OPERATION.D_MODEL, relation: [modelId] }">
-                <bk-button slot-scope="{ disabled }"
-                  text
-                  :disabled="disabled"
-                  @click="dialogConfirm('delete')">
-                  <i class="label-btn-icon icon-cc-del"></i>
-                  <span class="label-btn-text">{{$t('删除')}}</span>
-                </bk-button>
-              </cmdb-auth>
-            </template>
-          </div>
         </template>
       </div>
     </div>
@@ -289,6 +302,7 @@
   import EditableField from '@/components/ui/details/editable-field.vue'
   import FlexTag from '@/components/ui/flex-tag'
   import fieldTemplateService from '@/service/field-template'
+  import MoreActionMenu from './more-action-menu.vue'
 
   export default {
     name: 'ModelDetails',
@@ -300,10 +314,26 @@
       cmdbImport,
       cmdbLoading,
       EditableField,
-      FlexTag
+      FlexTag,
+      MoreActionMenu
     },
     data() {
       return {
+        modelOperationFields: [
+          {
+            key: 'last_time',
+            name: '更新时间'
+          }, {
+            key: 'modifier',
+            name: '更新人'
+          }, {
+            key: 'create_time',
+            name: '创建时间'
+          }, {
+            key: 'creator',
+            name: '创建人'
+          }
+        ],
         tab: {
           active: RouterQuery.get('tab', 'field')
         },
@@ -427,6 +457,14 @@
       this.$http.cancelRequest(this.request.instanceCount)
     },
     methods: {
+      async updateActiveModel() {
+        const { bk_obj_id } = this.activeModel
+        const model = (await this.searchObjects({ params: { bk_obj_id } }))?.[0]
+        this.activeModel = {
+          ...this.activeModel,
+          ...model
+        }
+      },
       handleTabChange(tab) {
         RouterQuery.set({ tab })
       },
@@ -523,9 +561,7 @@
           })
       },
       async saveModel({ modelIcon, modelName, classificationId } = {}) {
-        const params = {
-          modifier: this.userName,
-        }
+        const params = {}
 
         if (modelIcon) params.bk_obj_icon = modelIcon
         if (classificationId) params.bk_classification_id = classificationId
@@ -538,7 +574,7 @@
           .then(() => {
             this.$http.cancel('post_searchClassificationsObjects')
             this.$success(this.$t('修改成功'))
-            this.activeModel = { ...this.activeModel, ...params }
+            this.updateActiveModel()
           })
       },
       initObject() {
@@ -626,7 +662,7 @@
           bk_ispaused: ispaused,
           bk_obj_id: this.activeModel.bk_obj_id
         })
-        this.activeModel = { ...this.activeModel, ...{ bk_ispaused: ispaused } }
+        this.updateActiveModel()
       },
       async deleteModel() {
         if (this.isMainLineModel) {
@@ -737,16 +773,33 @@
 
 <style lang="scss" scoped>
     .model-info {
+        .model-property {
+          margin-right: 50px;
+
+          .model-property-top, .model-audits {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+          }
+          .model-property-top {
+            max-height: 45px;
+            margin-bottom: 20px;
+          }
+          .model-group-name-label-editing {
+            max-height: 58px;
+            margin-bottom: 7px;
+          }
+        }
         &-wrapper{
           padding: 0;
         }
 
         display: flex;
-        height: 100px;
+        padding: 25px 0;
         background: #fff;
         font-size: 14px;
         box-shadow: 0px 2px 4px 0px rgba(25,25,41,0.05);
-        align-items: center;
+        align-items: flex-start;
 
         .choose-icon-wrapper {
             position: relative;
@@ -870,12 +923,23 @@
             font-weight: 700;
             color: #313238;
             line-height: 26px;
+            @include space-between;
+            justify-content: flex-start;
 
             .bk-tag {
               font-weight: normal;
               height: 18px;
               line-height: 18px;
               padding: 0 6px;
+            }
+
+            .model-name-edit {
+                width: auto !important;
+                max-width: calc(100% - 25px);
+
+                :deep(.editable-field-content) {
+                  max-width: 100% !important;
+                }
             }
           }
 
@@ -887,7 +951,7 @@
         }
 
         .model-group-name {
-          width: 250px;
+          width: 170px;
           font-size: 12px;
           color: #63656e;
           display: flex;
@@ -898,13 +962,9 @@
             line-height: 26px;
             color: #979BA5;
           }
-          &-label-editing {
-            margin-top: 13px;
-          }
         }
-
-        .instance-count {
-            width: 250px;
+        .instance-count, .model-property-item {
+            width: 170px;
             display: flex;
             flex-wrap: wrap;
             flex-direction: column;
@@ -920,6 +980,10 @@
               display: flex;
               align-items: center;
             }
+         }
+         .model-property-item-text {
+            color: #313238;
+            cursor: auto;
          }
          .field-template {
             max-width: 400px;
@@ -1029,7 +1093,7 @@
       }
     }
     .editable-field {
-      width: 100%;
+      width: 100% !important;
     }
 </style>
 

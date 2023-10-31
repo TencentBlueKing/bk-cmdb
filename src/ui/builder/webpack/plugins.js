@@ -18,6 +18,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const GrabAPIPlugin = require('../utils/grab-api-plugin')
 const chalk = require('chalk')
 
 
@@ -26,13 +27,6 @@ const devEnv = require('../config/dev.env')
 const prodEnv = require('../config/prod.env')
 
 const getCommonPlugins = config => ([
-  new ESLintPlugin({
-    extensions: ['js', 'vue', 'ts', 'tsx'],
-    files: ['src'],
-    failOnWarning: true,
-    formatter: require('eslint-friendly-formatter')
-  }),
-
   new webpack.DefinePlugin({
     'process.env': modeValue(prodEnv, devEnv)
   }),
@@ -79,6 +73,19 @@ const getCommonPlugins = config => ([
     format: `  build [:bar] ${chalk.green.bold(':percent')} (:elapsed seconds)`,
     clear: false
   })
+].concat(config.dev.grabAPI ? [
+  new GrabAPIPlugin()
+] : []))
+
+const getDevPlugins = () => ([
+  new ESLintPlugin({
+    cache: true,
+    extensions: ['js', 'vue', 'ts', 'tsx'],
+    files: ['src'],
+    failOnWarning: true,
+    lintDirtyModulesOnly: true,
+    formatter: require('eslint-friendly-formatter')
+  })
 ])
 
 const getProdPlugins = config => ([
@@ -93,5 +100,6 @@ const getProdPlugins = config => ([
 module.exports = (config) => {
   const commonPlugins = getCommonPlugins(config)
   const prodPlugins = getProdPlugins(config)
-  return isProd ? [...commonPlugins, ...prodPlugins] : commonPlugins
+  const devPlugins = getDevPlugins()
+  return isProd ? [...commonPlugins, ...prodPlugins] : [...devPlugins, ...commonPlugins]
 }

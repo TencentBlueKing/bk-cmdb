@@ -21,20 +21,21 @@
 
 #### pods[x]
 
-| 字段             | 类型     | 必选  | 描述           |
-|----------------|--------|-----|--------------|
-| spec           | object | 是   | pod关联信息      |
-| bk_host_id     | int    | 是   | pod关联host id |
-| name           | string | 是   | pod名称        |
-| priority       | object | 否   | 优先级          |
-| labels         | object | 否   | 标签           |
-| ip             | string | 否   | 容器网络IP       |
-| ips            | array  | 否   | 容器网络IP数组     |
-| volumes        | object | 否   | 卷信息          |
-| qos_class      | string | 否   | 服务质量         |
-| node_selectors | object | 否   | 节点标签选择器      |
-| tolerations    | object | 否   | 容忍度          |
-| containers     | array  | 否   | 容器信息         |
+| 字段             | 类型           | 必选 | 描述           |
+|----------------|--------------|----|--------------|
+| spec           | object       | 是  | pod关联信息      |
+| bk_host_id     | int          | 是  | pod关联host id |
+| name           | string       | 是  | pod名称        |
+| operator       | string array | 是  | pod负责人       |
+| priority       | object       | 否  | 优先级          |
+| labels         | object       | 否  | 标签           |
+| ip             | string       | 否  | 容器网络IP       |
+| ips            | array        | 否  | 容器网络IP数组     |
+| volumes        | object       | 否  | 卷信息          |
+| qos_class      | string       | 否  | 服务质量         |
+| node_selectors | object       | 否  | 节点标签选择器      |
+| tolerations    | object       | 否  | 容忍度          |
+| containers     | array        | 否  | 容器信息         |
 
 #### spec
 
@@ -117,6 +118,10 @@
             "bk_node_id": 1
           },
           "name": "name",
+          "operator": [
+            "user1",
+            "user2"
+          ],
           "bk_host_id": 1,
           "priority": 1,
           "labels": {

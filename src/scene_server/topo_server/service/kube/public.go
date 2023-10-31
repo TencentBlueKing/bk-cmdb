@@ -242,8 +242,8 @@ func (s *service) CountKubeTopoHostsOrPods(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource},
-		BusinessID: option.BizID}
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: option.BizID}}
 	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
 		ctx.RespNoAuth(resp)
 		return
@@ -476,8 +476,8 @@ func (s *service) SearchKubeTopoPath(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource},
-		BusinessID: option.BizID}
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: option.BizID}}
 	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
 		ctx.RespNoAuth(resp)
 		return
