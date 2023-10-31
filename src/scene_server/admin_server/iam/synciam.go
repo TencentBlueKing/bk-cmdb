@@ -29,6 +29,7 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 const (
@@ -191,5 +192,39 @@ func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error)
 		return nil, err
 	}
 
-	return objects, nil
+	// 表格字段类型的object不注册到权限中心，这里需要将他们过滤出来
+	cnt, err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(nil).Count(ctx)
+	if err != nil {
+		blog.Errorf("count cc_ModelQuoteRelation failed, err: %v", err)
+		return nil, err
+	}
+	if cnt == 0 {
+		return objects, nil
+	}
+
+	relationObjMap := make(map[string]struct{})
+	for i := uint64(0); i < cnt; i += common.BKMaxLimitSize {
+		relations := make([]metadata.ModelQuoteRelation, 0)
+		err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(nil).Start(i).
+			Limit(common.BKMaxLimitSize).Fields(common.BKDestModelField).All(ctx, &relations)
+		if err != nil {
+			blog.Errorf("list model quote relations failed, err: %v", err)
+			return nil, err
+		}
+
+		for _, relation := range relations {
+			relationObjMap[relation.DestModel] = struct{}{}
+		}
+	}
+
+	result := make([]metadata.Object, 0)
+	for _, object := range objects {
+		if _, ok := relationObjMap[object.ObjectID]; ok {
+			continue
+		}
+
+		result = append(result, object)
+	}
+
+	return result, nil
 }
