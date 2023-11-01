@@ -561,7 +561,9 @@
           })
       },
       async saveModel({ modelIcon, modelName, classificationId } = {}) {
-        const params = {}
+        const params = {
+          obj_sort_number: classificationId ? undefined : this.activeModel.obj_sort_number // 改变分组就不传sort，默认到最后
+        }
 
         if (modelIcon) params.bk_obj_icon = modelIcon
         if (classificationId) params.bk_classification_id = classificationId
