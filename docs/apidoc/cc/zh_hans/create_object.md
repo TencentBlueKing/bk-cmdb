@@ -15,7 +15,7 @@
 | bk_obj_id            | string     | 是     | 对象模型的ID，只能用英文字母序列命名                     |
 | bk_obj_name          | string     | 是     | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |                                             |
 | bk_obj_icon          | string     | 否     | 对象模型的ICON信息，用于前端显示|
-
+| obj_sort_number      | int    | 否     | 对象模型在所属模型分组下的排序序号           |
 
 ### 请求参数示例
 
@@ -29,7 +29,8 @@
     "bk_classification_id": "test",
     "bk_obj_name": "test",
     "bk_obj_icon": "icon-cc-business",
-    "bk_obj_id": "test"
+    "bk_obj_id": "test",
+    "obj_sort_number": 1
 }
 ```
 
@@ -59,7 +60,8 @@
         "bk_obj_icon": "icon-cc-business",
         "modifier": "",
         "id": 2000002118,
-        "ispre": false
+        "ispre": false,
+        "obj_sort_number": 1
     }
 }
 
@@ -93,3 +95,4 @@
 | bk_obj_icon          | string             | 对象模型的ICON信息，用于前端显示|
 | position             | json object string | 用于前端展示的坐标   /
 | ispre                | bool               | 是否预定义, true or false   |
+| obj_sort_number     | int    | 否     | 对象模型在所属模型分组下的排序序号           |
