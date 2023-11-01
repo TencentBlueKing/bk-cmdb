@@ -125,28 +125,14 @@ func (o *object) FindSingleObject(kit *rest.Kit, field []string, objectID string
 // CreateObject create common object
 func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error) {
 
-	obj, err := o.isValid(kit, false, data)
+	obj, err := o.createObjectParamCheck(kit, data)
 	if err != nil {
-		blog.Errorf("valid data(%#v) failed, err: %v, rid: %s", data, err, kit.Rid)
+		blog.Errorf("param check failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
 		return nil, err
 	}
 
-	exist, err := o.isClassificationExist(kit, obj.ObjCls)
-	if err != nil {
-		blog.Errorf("check classification failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	if !exist {
-		blog.Errorf("classification (%s) is non-exist, cannot create object, rid: %s", obj.ObjCls, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrTopoObjectClassificationSelectFailed)
-	}
-
-	if len(obj.ObjIcon) == 0 {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
-	}
-
-	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header, &metadata.CreateModel{Spec: *obj})
+	objRsp, err := o.clientSet.CoreService().Model().CreateModel(kit.Ctx, kit.Header,
+		&metadata.CreateModel{Spec: *obj})
 	if err != nil {
 		blog.Errorf("create object(%s) failed, err: %v, rid: %s", obj.ObjectID, err, kit.Rid)
 		return nil, err
@@ -208,6 +194,40 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	if err := audit.SaveAuditLog(kit, *auditLog); err != nil {
 		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
+	}
+
+	return obj, nil
+}
+
+// createObjectParamCheck create object param check
+func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*metadata.Object, error) {
+	obj, err := o.isValid(kit, false, data)
+	if err != nil {
+		blog.Errorf("valid data failed, err: %v, data :%v, rid: %s", err, data, kit.Rid)
+		return nil, err
+	}
+
+	exist, err := o.isClassificationExist(kit, obj.ObjCls)
+	if err != nil {
+		blog.Errorf("check classification failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	if !exist {
+		blog.Errorf("classification is non-exist, err: cannot create object, ObjCls: %s, rid: %s",
+			obj.ObjCls, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrTopoObjectClassificationSelectFailed)
+	}
+
+	if len(obj.ObjIcon) == 0 {
+		blog.Errorf("objIcon is non-exist, err: objIcon not set, rid: %s", kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
+	}
+
+	if obj.ObjSortNumber < 0 {
+		blog.Errorf("obj sort number field invalid failed, err: obj sort number less than 0, obj_sort_number: %d, "+
+			"rid: %s", obj.ObjSortNumber, kit.Rid)
+		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
 
 	return obj, nil
@@ -523,7 +543,6 @@ func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error 
 	if !data.Exists(metadata.ModelFieldObjCls) {
 		return nil
 	}
-
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			metadata.ModelFieldObjCls: data[metadata.ModelFieldObjCls],
@@ -534,12 +553,12 @@ func (o *object) isClassificationValid(kit *rest.Kit, data mapstr.MapStr) error 
 		blog.Errorf("failed to read model classification, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-
 	if len(rsp.Info) <= 0 {
 		blog.Errorf("no model classification founded, err: %s, rid: %s",
 			kit.CCError.CCError(common.CCErrorModelClassificationNotFound), kit.Rid)
 		return kit.CCError.CCError(common.CCErrorModelClassificationNotFound)
 	}
+
 	return nil
 }
 
@@ -553,7 +572,6 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	}
 
 	obj.ID = id
-
 	// remove unchangeable fields.
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
@@ -561,6 +579,7 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 	if err := o.isClassificationValid(kit, data); err != nil {
 		return err
 	}
+
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).

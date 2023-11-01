@@ -51,6 +51,8 @@ const (
 	ModelFieldCreateTime = "create_time"
 	// ModelFieldLastTime TODO
 	ModelFieldLastTime = "last_time"
+	// ModelFieldObjSortNumber the sort number field
+	ModelFieldObjSortNumber = "obj_sort_number"
 )
 
 // Object object metadata definition
@@ -64,15 +66,16 @@ type Object struct {
 	// IsHidden front-end don't display the object if IsHidden is true
 	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
 
-	IsPre       bool   `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
-	IsPaused    bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
-	Position    string `field:"position" json:"position" bson:"position" mapstructure:"position"`
-	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
-	Description string `field:"description" json:"description" bson:"description" mapstructure:"description"`
-	Creator     string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
-	Modifier    string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
-	CreateTime  *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
-	LastTime    *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	IsPre         bool   `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsPaused      bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
+	Position      string `field:"position" json:"position" bson:"position" mapstructure:"position"`
+	OwnerID       string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Description   string `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	Creator       string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	Modifier      string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
+	CreateTime    *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime      *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	ObjSortNumber int64  `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
 }
 
 // GetDefaultInstPropertyName get default inst
