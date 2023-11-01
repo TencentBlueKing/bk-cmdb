@@ -699,9 +699,26 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		return err
 	}
 
-	condition, err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ipv4Ip, sh.hostSearchParam.Ipv6Ip, condition)
+	condition, err = hostParse.ParseHostIPParams(sh.hostSearchParam.Ipv4Ip, sh.hostSearchParam.Ipv6Ip, condition,
+		sh.kit.Rid)
 	if err != nil {
 		return err
+	}
+
+	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
+			if _, ok := cloudIDCond[common.BKDBIN]; ok {
+				delete(condition, common.BKCloudIDField)
+			}
+		}
+
+		cloudAreaCount := len(ipCond)
+		if sh.hostSearchParam.Ipv4Ip.Flag == hostParse.IOBOTH {
+			cloudAreaCount = cloudAreaCount / 2
+		}
+		if cloudAreaCount > 50 {
+			return errors.NewCCError(common.CCErrHostGetFail, "cloudArea count more than 50")
+		}
 	}
 
 	query := &metadata.QueryInput{
