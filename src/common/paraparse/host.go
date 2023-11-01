@@ -237,7 +237,7 @@ func deduplication(arr []string) []string {
 // splitIPData 该方法用于分割出IP条件中IP数组的管控区域和IP，
 // 返回存储管控区域与IP的map以及兼容IPv4的嵌入式IPv6地址的切片
 /*
-该方法用于分割出IPv4条件中IP数组的管控区域和IPv4，返回存储管控区域与IP的map用于构建查询条件，如下IP条件数组：
+如下IP条件数组：
 "data": [
 	"1:127.0.0.1",
 	"1:127.0.0.2",
