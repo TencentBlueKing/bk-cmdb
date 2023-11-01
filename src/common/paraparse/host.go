@@ -36,18 +36,22 @@ const (
 	TYPEIPV4 string = "ipv4"
 	// TYPEIPV6 IPv6类型
 	TYPEIPV6 string = "ipv6"
-	// NOCLOUDID 未指定云区域时map的键
-	NOCLOUDID int64 = -1
-	// NOTEXISTSIGN 分割符不存在
-	NOTEXISTSIGN int = -1
 )
 
+// FieldAndCondition 存放构建IP条件时的字段名称、管控区域条件和IP条件
 type FieldAndCondition struct {
 	CloudIDField     string
 	HostInnerIPField string
 	HostOuterIPField string
-	CloudID          int64
+	CloudIDCond      map[string]interface{}
 	IPCond           map[string]interface{}
+}
+
+// SplitIPResult 存放IP与管控区域分割后结果
+type SplitIPResult struct {
+	CloudIdIPMap      map[int64][]string
+	EmbeddedIPv4Addrs []string
+	NoCloudIdIP       []string
 }
 
 // ParseHostParams parses the host condition into query statement
@@ -134,19 +138,24 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 		return output, nil
 	}
 
-	ipv4CloudIDMap, _, err := splitIPData(ipv4Cond, rid, TYPEIPV4)
+	splitIPResult, err := splitIPData(ipv4Cond, rid, TYPEIPV4)
 	if err != nil {
 		return nil, err
 	}
-	if len(ipv4CloudIDMap) == 0 && len(exactOr) != 0 {
+	if len(splitIPResult.CloudIdIPMap) == 0 && len(splitIPResult.NoCloudIdIP) == 0 && len(exactOr) != 0 {
 		output[common.BKDBOR] = exactOr
 		return output, nil
 	}
 
+	fieldAndCond := FieldAndCondition{
+		CloudIDField:     common.BKCloudIDField,
+		HostInnerIPField: common.BKHostInnerIPField,
+		HostOuterIPField: common.BKHostOuterIPField,
+	}
 	if exact == 1 {
 		// exact search
 		// filter out illegal IPv4 addresses
-		exactOr, err = addExactSearchCondition(ipv4CloudIDMap, output, flag, TYPEIPV4)
+		exactOr, err = addExactSearchCondition(splitIPResult, fieldAndCond, output, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +170,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	} else {
 		// not exact search
 		orCond := make([]map[string]interface{}, 0)
-		orCond, err = addFuzzyCondition(orCond, ipv4CloudIDMap, output, flag)
+		orCond, err = addFuzzyCondition(splitIPResult, fieldAndCond, output, flag)
 		if err != nil {
 			return nil, err
 		}
@@ -180,19 +189,24 @@ func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}
 		return exactOr, nil, nil
 	}
 
-	ipv6CloudIDMap, embeddedIPv4Addrs, err := splitIPData(ipCond, rid, TYPEIPV6)
+	splitIPResult, err := splitIPData(ipCond, rid, TYPEIPV6)
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(ipv6CloudIDMap) == 0 {
-		return exactOr, embeddedIPv4Addrs, nil
+	if len(splitIPResult.CloudIdIPMap) == 0 && len(splitIPResult.NoCloudIdIP) == 0 {
+		return exactOr, splitIPResult.EmbeddedIPv4Addrs, nil
 	}
 
-	exactOr, err = addExactSearchCondition(ipv6CloudIDMap, output, flag, TYPEIPV6)
+	fieldAndCond := FieldAndCondition{
+		CloudIDField:     common.BKCloudIDField,
+		HostInnerIPField: common.BKHostInnerIPv6Field,
+		HostOuterIPField: common.BKHostOuterIPv6Field,
+	}
+	exactOr, err = addExactSearchCondition(splitIPResult, fieldAndCond, output, flag)
 	if err != nil {
 		return nil, nil, err
 	}
-	return exactOr, embeddedIPv4Addrs, nil
+	return exactOr, splitIPResult.EmbeddedIPv4Addrs, nil
 }
 
 // filterHostIP filter out illegal IP addresses
@@ -238,10 +252,11 @@ func deduplication(arr []string) []string {
 	-1: ["127.0.0.4"]
 }
 */
-func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (map[int64][]string, []string, error) {
+func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (SplitIPResult, error) {
 	// 创建一个 map 用于存储分割结果
-	cloudIDMap := make(map[int64][]string)
+	cloudIdIpMap := make(map[int64][]string)
 	embeddedIPv4Addrs := make([]string, 0)
+	noCloudIdIP := make([]string, 0)
 	var colonIndex int
 	var fullIPAddr string
 
@@ -258,7 +273,7 @@ func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (map[int64][
 			// 分割管控区域 ID 和 IP 地址
 			colonIndex = strings.Index(ipString, ":[")
 			ipPart := ipString[colonIndex+1:]
-			if colonIndex == NOTEXISTSIGN {
+			if colonIndex == -1 {
 				ipPart = ipString
 			}
 			// 去掉 IP 地址中的方括号，只保留 IP
@@ -283,8 +298,8 @@ func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (map[int64][
 		}
 
 		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
-		if colonIndex == NOTEXISTSIGN {
-			cloudIDMap[NOCLOUDID] = append(cloudIDMap[NOCLOUDID], ipString)
+		if colonIndex == -1 {
+			noCloudIdIP = append(noCloudIdIP, ipString)
 			continue
 		}
 
@@ -295,10 +310,15 @@ func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (map[int64][
 			blog.Errorf("cloudID is invalid failed, err: %v, cloudID: %s, rid: %s", err, cloudIDStr, rid)
 			continue
 		}
-
-		cloudIDMap[cloudIDInt64] = append(cloudIDMap[cloudIDInt64], fullIPAddr)
+		cloudIdIpMap[cloudIDInt64] = append(cloudIdIpMap[cloudIDInt64], fullIPAddr)
 	}
-	return cloudIDMap, embeddedIPv4Addrs, nil
+
+	splitIPResult := SplitIPResult{
+		CloudIdIPMap:      cloudIdIpMap,
+		EmbeddedIPv4Addrs: embeddedIPv4Addrs,
+		NoCloudIdIP:       noCloudIdIP,
+	}
+	return splitIPResult, nil
 }
 
 // addExactSearchCondition combine query statements based on exact ip conditions
@@ -340,37 +360,27 @@ func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (map[int64][
 	"bk_host_innerip_v6": {"$in": ["0000:0000:0000:0000:0000:0000:0000:1234", "......其它未直接指定管控区域的IP"]}
 }
 */
-func addExactSearchCondition(ipCloudIDMap map[int64][]string, output map[string]interface{}, flag string,
-	ipType string) ([]map[string]interface{}, error) {
+func addExactSearchCondition(splitIPResult SplitIPResult, fieldAndCond FieldAndCondition, output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
 
 	exactOr := make([]map[string]interface{}, 0)
-	ipCond := make([]map[string]interface{}, 0)
-	var err error
 
-	for cloudID, ipArr := range ipCloudIDMap {
-		// 校验、去重
+	if len(splitIPResult.NoCloudIdIP) != 0 {
+		ips := filterHostIP(splitIPResult.NoCloudIdIP)
+		exactIP := map[string]interface{}{common.BKDBIN: deduplication(ips)}
+		fieldAndCond.IPCond = exactIP
+		ipCond, err := getIPCond(flag, output, fieldAndCond)
+		if err != nil {
+			return nil, err
+		}
+		exactOr = append(exactOr, ipCond...)
+	}
+
+	for cloudID, ipArr := range splitIPResult.CloudIdIPMap {
+		fieldAndCond.CloudIDCond = map[string]interface{}{common.BKDBEQ: cloudID}
 		ipArr = filterHostIP(ipArr)
-		fieldAndCond := FieldAndCondition{
-			CloudIDField: common.BKCloudIDField,
-			CloudID:      cloudID,
-			IPCond:       map[string]interface{}{common.BKDBIN: deduplication(ipArr)},
-		}
+		fieldAndCond.IPCond = map[string]interface{}{common.BKDBIN: deduplication(ipArr)}
 
-		switch ipType {
-		case TYPEIPV4:
-			fieldAndCond.HostInnerIPField = common.BKHostInnerIPField
-			fieldAndCond.HostOuterIPField = common.BKHostOuterIPField
-			ipCond, err = getIPCond(flag, output, fieldAndCond)
-
-		case TYPEIPV6:
-			fieldAndCond.HostInnerIPField = common.BKHostInnerIPv6Field
-			fieldAndCond.HostOuterIPField = common.BKHostOuterIPv6Field
-			ipCond, err = getIPCond(flag, output, fieldAndCond)
-
-		default:
-			return nil, fmt.Errorf("unknow ipType: %s", ipType)
-		}
-
+		ipCond, err := getIPCond(flag, output, fieldAndCond)
 		if err != nil {
 			return nil, err
 		}
@@ -400,19 +410,29 @@ func addExactSearchCondition(ipCloudIDMap map[int64][]string, output map[string]
 	"bk_host_innerip": {"$regex": "127.0."}
 }
 */
-func addFuzzyCondition(orCond []map[string]interface{}, ipCloudIDMap map[int64][]string,
-	output map[string]interface{}, flag string) ([]map[string]interface{}, error) {
+func addFuzzyCondition(splitIPResult SplitIPResult, fieldAndCond FieldAndCondition, output map[string]interface{},
+	flag string) ([]map[string]interface{}, error) {
 
-	for cloudID, ipArr := range ipCloudIDMap {
+	orCond := make([]map[string]interface{}, 0)
+
+	if len(splitIPResult.NoCloudIdIP) != 0 {
+		splitIPResult.NoCloudIdIP = deduplication(splitIPResult.NoCloudIdIP)
+		for _, ip := range splitIPResult.NoCloudIdIP {
+			fieldAndCond.IPCond = map[string]interface{}{common.BKDBLIKE: SpecialCharChange(ip)}
+
+			fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
+			if err != nil {
+				return nil, err
+			}
+			orCond = append(orCond, fuzzySearchCond...)
+		}
+	}
+
+	for cloudID, ipArr := range splitIPResult.CloudIdIPMap {
 		ipArr = deduplication(ipArr)
 		for _, ip := range ipArr {
-			fieldAndCond := FieldAndCondition{
-				HostInnerIPField: common.BKHostInnerIPField,
-				HostOuterIPField: common.BKHostOuterIPField,
-				CloudIDField:     common.BKCloudIDField,
-				CloudID:          cloudID,
-				IPCond:           map[string]interface{}{common.BKDBLIKE: SpecialCharChange(ip)},
-			}
+			fieldAndCond.CloudIDCond = map[string]interface{}{common.BKDBEQ: cloudID}
+			fieldAndCond.IPCond = map[string]interface{}{common.BKDBLIKE: SpecialCharChange(ip)}
 
 			fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
 			if err != nil {
@@ -449,9 +469,9 @@ func getIPCond(flag string, output map[string]interface{}, fieldAndCond FieldAnd
 
 	switch flag {
 	case INNERONLY:
-		if fieldAndCond.CloudID != NOCLOUDID {
+		if fieldAndCond.CloudIDCond != nil {
 			return []map[string]interface{}{{
-				fieldAndCond.CloudIDField:     fieldAndCond.CloudID,
+				fieldAndCond.CloudIDField:     fieldAndCond.CloudIDCond,
 				fieldAndCond.HostInnerIPField: fieldAndCond.IPCond,
 			}}, nil
 		}
@@ -466,9 +486,9 @@ func getIPCond(flag string, output map[string]interface{}, fieldAndCond FieldAnd
 		}}, nil
 
 	case OUTERONLY:
-		if fieldAndCond.CloudID != NOCLOUDID {
+		if fieldAndCond.CloudIDCond != nil {
 			return []map[string]interface{}{{
-				fieldAndCond.CloudIDField:     fieldAndCond.CloudID,
+				fieldAndCond.CloudIDField:     fieldAndCond.CloudIDCond,
 				fieldAndCond.HostOuterIPField: fieldAndCond.IPCond,
 			}}, nil
 
@@ -484,12 +504,12 @@ func getIPCond(flag string, output map[string]interface{}, fieldAndCond FieldAnd
 		}}, nil
 
 	case IOBOTH:
-		if fieldAndCond.CloudID != NOCLOUDID {
+		if fieldAndCond.CloudIDCond != nil {
 			return []map[string]interface{}{{
-				fieldAndCond.CloudIDField:     fieldAndCond.CloudID,
+				fieldAndCond.CloudIDField:     fieldAndCond.CloudIDCond,
 				fieldAndCond.HostInnerIPField: fieldAndCond.IPCond,
 			}, {
-				fieldAndCond.CloudIDField:     fieldAndCond.CloudID,
+				fieldAndCond.CloudIDField:     fieldAndCond.CloudIDCond,
 				fieldAndCond.HostOuterIPField: fieldAndCond.IPCond,
 			}}, nil
 		}
