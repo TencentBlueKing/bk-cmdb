@@ -417,21 +417,12 @@ export function transformIP(raw) {
   const IPs = parseIP(splitIP(raw))
 
   transformedIP.data.ipv4 = IPs.IPv4List
-  IPs.IPv4WithCloudList.forEach(([, ip]) => transformedIP.data.ipv4.push(ip))
+  IPs.IPv4WithCloudList.forEach(([cloud, ip]) => transformedIP.data.ipv4.push(`${cloud}:[${ip}]`))
 
   transformedIP.data.ipv6 = IPs.IPv6List
-  IPs.IPv6WithCloudList.forEach(([, ip]) => transformedIP.data.ipv6.push(ip))
+  IPs.IPv6WithCloudList.forEach(([cloud, ip]) => transformedIP.data.ipv6.push(`${cloud}:[${ip}]`))
 
   transformedIP.data.assetList = IPs.assetList
-
-  const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
-  if (cloudIds.length) {
-    transformedIP.condition = {
-      field: 'bk_cloud_id',
-      operator: '$eq',
-      value: [...IPs.cloudIdSet][0]
-    }
-  }
 
   return transformedIP
 }
