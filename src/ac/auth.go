@@ -22,6 +22,7 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/storage/dal/redis"
 )
 
 // NoAuthorizeError TODO
@@ -40,11 +41,14 @@ type AuthInterface interface {
 // Viewer is a interface to operate iam view
 type Viewer interface {
 	// CreateView create iam view for objects
-	CreateView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	CreateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+		rid string) error
 	// DeleteView delete iam view for objects
-	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+		rid string) error
 	// UpdateView update iam view for objects
-	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object) error
+	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+		rid string) error
 }
 
 // AuthorizeInterface TODO
@@ -58,7 +62,8 @@ type AuthorizeInterface interface {
 	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) (
 		*types.AuthorizeList, error)
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)
-	GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission, error)
+	GetPermissionToApply(ctx context.Context, h http.Header, input []meta.ResourceAttribute) (*metadata.IamPermission,
+		error)
 	RegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstanceWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header, input metadata.IamInstancesWithCreator) (

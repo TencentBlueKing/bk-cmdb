@@ -1502,6 +1502,7 @@ func genContainerClusterActions() []ResourceAction {
 			NameEn:  "Create Container Cluster",
 			Type:    Create,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      EditContainerCluster,
@@ -1509,6 +1510,7 @@ func genContainerClusterActions() []ResourceAction {
 			NameEn:  "Edit Container Cluster",
 			Type:    Edit,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      DeleteContainerCluster,
@@ -1516,6 +1518,7 @@ func genContainerClusterActions() []ResourceAction {
 			NameEn:  "Delete Container Cluster",
 			Type:    Delete,
 			Version: 1,
+			Hidden:  true,
 		},
 	}
 }
@@ -1528,6 +1531,7 @@ func genContainerNodeActions() []ResourceAction {
 			NameEn:  "Create Container Node",
 			Type:    Create,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      EditContainerNode,
@@ -1535,6 +1539,7 @@ func genContainerNodeActions() []ResourceAction {
 			NameEn:  "Edit Container Node",
 			Type:    Edit,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      DeleteContainerNode,
@@ -1542,6 +1547,7 @@ func genContainerNodeActions() []ResourceAction {
 			NameEn:  "Delete Container Node",
 			Type:    Delete,
 			Version: 1,
+			Hidden:  true,
 		},
 	}
 }
@@ -1554,6 +1560,7 @@ func genContainerNamespaceActions() []ResourceAction {
 			NameEn:  "Create Container Namespace",
 			Type:    Create,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      EditContainerNamespace,
@@ -1561,6 +1568,7 @@ func genContainerNamespaceActions() []ResourceAction {
 			NameEn:  "Edit Container Namespace",
 			Type:    Edit,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      DeleteContainerNamespace,
@@ -1568,6 +1576,7 @@ func genContainerNamespaceActions() []ResourceAction {
 			NameEn:  "Delete Container Namespace",
 			Type:    Delete,
 			Version: 1,
+			Hidden:  true,
 		},
 	}
 }
@@ -1580,6 +1589,7 @@ func genContainerWorkloadActions() []ResourceAction {
 			NameEn:  "Create Container Workload",
 			Type:    Create,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      EditContainerWorkload,
@@ -1587,6 +1597,7 @@ func genContainerWorkloadActions() []ResourceAction {
 			NameEn:  "Edit Container Workload",
 			Type:    Edit,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      DeleteContainerWorkload,
@@ -1594,6 +1605,7 @@ func genContainerWorkloadActions() []ResourceAction {
 			NameEn:  "Delete Container Workload",
 			Type:    Delete,
 			Version: 1,
+			Hidden:  true,
 		},
 	}
 }
@@ -1606,6 +1618,7 @@ func genContainerPodActions() []ResourceAction {
 			NameEn:  "Create Container Pod",
 			Type:    Create,
 			Version: 1,
+			Hidden:  true,
 		},
 		{
 			ID:      DeleteContainerPod,
@@ -1613,6 +1626,7 @@ func genContainerPodActions() []ResourceAction {
 			NameEn:  "Delete Container Pod",
 			Type:    Delete,
 			Version: 1,
+			Hidden:  true,
 		},
 	}
 }

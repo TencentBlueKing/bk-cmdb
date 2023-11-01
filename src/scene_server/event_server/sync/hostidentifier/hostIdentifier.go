@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
@@ -672,15 +673,24 @@ func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, always
 func (h *HostIdentifier) buildV2PushFile(hostIdentifier, agentID string) *gse.Task {
 	osType := gjson.Get(hostIdentifier, common.BKOSTypeField).String()
 	conf := h.getHostIdentifierFileConf(osType)
+	fileOwner := conf.FileOwner
+	// 如果是window系统，并且通过cloudID:ip的方式下发，代表是window的安装了1.0agent的机器，需要设置成特殊的owner
+	if osType == common.HostOSTypeEnumWindows && strings.Contains(agentID, ":") {
+		fileOwner = v1AgentFileOwner
+	}
+
 	return &gse.Task{
 		FileName:    conf.FileName,
 		StoreDir:    conf.FilePath,
 		FileContent: hostIdentifier,
-		Owner:       conf.FileOwner,
+		Owner:       fileOwner,
 		Right:       conf.FilePrivilege,
 		AgentIDList: []string{agentID},
 	}
 }
+
+// v1AgentFileOwner 由于安装agent1.0的window系统，下发主机身份时，文件的所有者只能是root，所以涉及到的地方需要进行特殊处理，配置成该值
+const v1AgentFileOwner = "root"
 
 func (h *HostIdentifier) buildV1PushFile(hostIdentifier, hostIP string, cloudID int64) *pushfile.API_FileInfoV2 {
 	fileInfo := &pushfile.API_FileInfoV2{
@@ -705,6 +715,10 @@ func (h *HostIdentifier) buildV1PushFile(hostIdentifier, hostIP string, cloudID 
 	fileInfo.MFile.MName = conf.FileName
 	fileInfo.MFile.MPath = conf.FilePath
 	fileInfo.MFile.MOwner = conf.FileOwner
+	// thrift的接口只会通过cloudID:innerIP的方式路由到1.0的agent，所以对于window操作系统可以直接设置
+	if osType == common.HostOSTypeEnumWindows {
+		fileInfo.MFile.MOwner = v1AgentFileOwner
+	}
 	fileInfo.MFile.MRight = conf.FilePrivilege
 	fileInfo.MFile.MBackupName = conf.FileName + ".bak"
 

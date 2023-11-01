@@ -279,6 +279,23 @@ type ExceptionResult struct {
 	OriginIndex int64       `json:"origin_index"`
 }
 
+// GenExceptionResult generate exception result
+func GenExceptionResult(err error, data interface{}, index int64) ExceptionResult {
+	res := ExceptionResult{
+		Message:     err.Error(),
+		Code:        common.CCErrorUnknownOrUnrecognizedError,
+		Data:        data,
+		OriginIndex: index,
+	}
+
+	ccErr, ok := err.(errors.CCErrorCoder)
+	if ok {
+		res.Code = int64(ccErr.GetCode())
+	}
+
+	return res
+}
+
 // CreatedDataResult common created result definition
 type CreatedDataResult struct {
 	OriginIndex int64  `json:"origin_index"`

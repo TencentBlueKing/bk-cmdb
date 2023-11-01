@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/scene_server/auth_server/logics"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -39,56 +40,10 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		}, nil
 
 	case iam.Business, iam.BusinessForHostTrans:
-
-		// business instances should not include resource pool business
-		extraCond := map[string]interface{}{
-			common.BKDefaultField: map[string]interface{}{
-				common.BKDBNE: common.DefaultAppFlag,
-			},
-		}
-
-		return types.ResourcePullMethod{
-			ListAttr:      s.lgc.ListAttr,
-			ListAttrValue: s.lgc.ListAttrValue,
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
-		}, nil
+		return getBusinessMethod(s.lgc)
 
 	case iam.SysCloudArea:
-
-		// cloud area instances should not include default cloud area, since it can't be operated
-		extraCond := map[string]interface{}{
-			common.BKCloudIDField: map[string]interface{}{
-				common.BKDBNE: common.BKDefaultDirSubArea,
-			},
-		}
-
-		return types.ResourcePullMethod{
-			ListAttr:      s.lgc.ListAttr,
-			ListAttrValue: s.lgc.ListAttrValue,
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
-		}, nil
+		return getSysCloudAreaMethod(s.lgc)
 
 	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizSetTemplate:
 		return types.ResourcePullMethod{
@@ -121,118 +76,13 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		}, nil
 
 	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent:
-
-		// get mainline objects
-		mainlineOpt := &metadata.QueryCondition{
-			Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
-		}
-		asstRes, err := s.lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineOpt)
-		if err != nil {
-			blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
-			return types.ResourcePullMethod{}, err
-		}
-
-		mainlineObjIDs := make([]string, 0)
-		for _, asst := range asstRes.Info {
-			if metadata.IsCommon(asst.ObjectID) {
-				mainlineObjIDs = append(mainlineObjIDs, asst.ObjectID)
-			}
-		}
-
-		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
-		// instance model is used as parent layer of instances, should exclude host model and mainline model as
-		// they use separate operations
-		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-
-		var extraCond map[string]interface{}
-		switch resourceType {
-		case iam.SysModelEvent, iam.SysInstanceModel:
-			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
-				common.BKInnerObjIDSet, common.BKInnerObjIDModule)
-			excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
-			extraCond = map[string]interface{}{
-				common.BKObjIDField: map[string]interface{}{
-					common.BKDBNIN: excludedObjIDs,
-				},
-			}
-		case iam.MainlineModelEvent:
-			extraCond = map[string]interface{}{
-				common.BKObjIDField: map[string]interface{}{
-					common.BKDBIN: mainlineObjIDs,
-				},
-			}
-		default:
-			extraCond = map[string]interface{}{
-				common.BKObjIDField: map[string]interface{}{
-					common.BKDBNIN: excludedObjIDs,
-				},
-			}
-		}
-
-		return types.ResourcePullMethod{
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
-		}, nil
+		return getModelMethod(kit, s.lgc, resourceType)
 
 	case iam.SysAssociationType:
-
-		// association types should not include preset ones, since they can't be operated
-		extraCond := map[string]interface{}{
-			common.BKIsPre: map[string]interface{}{
-				common.BKDBNE: true,
-			},
-		}
-
-		return types.ResourcePullMethod{
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
-		}, nil
+		return getSysAssociationTypeMethod(s.lgc)
 
 	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
-		resourcePoolBizID, err := s.lgc.GetResourcePoolBizID(kit)
-		if err != nil {
-			return types.ResourcePullMethod{}, err
-		}
-
-		// resource pool directory must be in the resource pool business
-		extraCond := map[string]interface{}{
-			common.BKAppIDField: resourcePoolBizID,
-		}
-
-		return types.ResourcePullMethod{
-			ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
-		}, nil
+		return getResourcePoolDirectoryMethod(kit, s.lgc)
 
 	case iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
 		iam.BizTopology, iam.SysEventWatch, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance:
@@ -255,6 +105,173 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		}
 		return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
 	}
+}
+
+func getBusinessMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	// business instances should not include resource pool business
+	extraCond := map[string]interface{}{
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBNE: common.DefaultAppFlag,
+		},
+	}
+
+	return types.ResourcePullMethod{
+		ListAttr:      lgc.ListAttr,
+		ListAttrValue: lgc.ListAttrValue,
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (result *types.ListInstanceResult, e error) {
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+		},
+	}, nil
+}
+
+func getSysCloudAreaMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	// cloud area instances should not include default cloud area, since it can't be operated
+	extraCond := map[string]interface{}{
+		common.BKCloudIDField: map[string]interface{}{
+			common.BKDBNE: common.BKDefaultDirSubArea,
+		},
+	}
+
+	return types.ResourcePullMethod{
+		ListAttr:      lgc.ListAttr,
+		ListAttrValue: lgc.ListAttrValue,
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (result *types.ListInstanceResult, e error) {
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+		},
+	}, nil
+}
+
+func getModelMethod(kit *rest.Kit, lgc *logics.Logics, resourceType iam.TypeID) (types.ResourcePullMethod, error) {
+	// get mainline objects
+	mainlineOpt := &metadata.QueryCondition{
+		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+	}
+	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineOpt)
+	if err != nil {
+		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
+		return types.ResourcePullMethod{}, err
+	}
+
+	mainlineObjIDs := make([]string, 0)
+	for _, asst := range asstRes.Info {
+		if metadata.IsCommon(asst.ObjectID) {
+			mainlineObjIDs = append(mainlineObjIDs, asst.ObjectID)
+		}
+	}
+
+	// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
+	// instance model is used as parent layer of instances, should exclude host model and mainline model as
+	// they use separate operations
+	excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+
+	var extraCond map[string]interface{}
+	switch resourceType {
+	case iam.SysModelEvent, iam.SysInstanceModel:
+		excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
+			common.BKInnerObjIDSet, common.BKInnerObjIDModule)
+		excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
+		extraCond = map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBNIN: excludedObjIDs,
+			},
+		}
+	case iam.MainlineModelEvent:
+		extraCond = map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: mainlineObjIDs,
+			},
+		}
+	default:
+		extraCond = map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBNIN: excludedObjIDs,
+			},
+		}
+	}
+
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (result *types.ListInstanceResult, e error) {
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+		},
+	}, nil
+}
+
+func getSysAssociationTypeMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	// association types should not include preset ones, since they can't be operated
+	extraCond := map[string]interface{}{
+		common.BKIsPre: map[string]interface{}{
+			common.BKDBNE: true,
+		},
+	}
+
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (result *types.ListInstanceResult, e error) {
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+		},
+	}, nil
+}
+
+func getResourcePoolDirectoryMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	resourcePoolBizID, err := lgc.GetResourcePoolBizID(kit)
+	if err != nil {
+		return types.ResourcePullMethod{}, err
+	}
+
+	// resource pool directory must be in the resource pool business
+	extraCond := map[string]interface{}{
+		common.BKAppIDField: resourcePoolBizID,
+	}
+
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (result *types.ListInstanceResult, e error) {
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+		},
+	}, nil
 }
 
 // kubeWorkloadKinds kube workload kinds

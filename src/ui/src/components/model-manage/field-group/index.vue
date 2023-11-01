@@ -1008,22 +1008,19 @@
       async updatePropertyIndex({ element: property, newIndex }) {
         let curIndex = 0
         let curGroup = ''
+        const { bk_property_id: propertyId } = property
+        const group = this.groupedProperties?.
+          find(group => group?.properties?.
+            find(item => item?.bk_property_id === propertyId))
+        const len = group?.properties?.length || 0
 
-        for (const group of this.groupedProperties) {
-          const len = group.properties.length
-          for (const item of group.properties) {
-            if (item.bk_property_id === property.bk_property_id) {
-              // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
-              if (newIndex > 0 && group.properties.length !== 1) {
-                // 拖拽插件bug 跨组拖动到最后的位置index会多1
-                const index = newIndex === len ? newIndex - 2 : newIndex - 1
-                curIndex = Number(group.properties[index].bk_property_index) + 1
-              }
-              curGroup = group.info.bk_group_id
-              break
-            }
-          }
+        // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
+        if (newIndex > 0 && len !== 1) {
+          // 拖拽插件bug 跨组拖动到最后的位置index会多1
+          const index = newIndex === len ? newIndex - 2 : newIndex - 1
+          curIndex = Number(group.properties[index].bk_property_index) + 1
         }
+        curGroup = group.info.bk_group_id
 
         const params = {
           bk_property_group: curGroup,
@@ -1076,7 +1073,7 @@
       },
       handleDeleteField({ property: field, index, fieldIndex }) {
         this.$bkInfo({
-          title: this.$t('确定删除字段？', field.bk_property_name, { name: field.bk_property_name }),
+          title: this.$t('确定删除字段？'),
           subTitle: this.$t('删除模型字段提示', { property: field.bk_property_name, model: this.curModel.bk_obj_name }),
           confirmLoading: this.$loading('deleteObjectAttribute'),
           confirmFn: async () => {

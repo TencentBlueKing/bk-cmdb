@@ -286,7 +286,7 @@ func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
 				}()
 				// if the timestamp of the data is 10 minutes ago, drop it directly。
 				if msg.Score < float64(time.Now().Add(-time.Minute*10).Unix()) {
-					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg.Member).Err()
 					if err != nil {
 						blog.Errorf("remove member failed, msg: %v,err: %v", msg, err)
 						return
@@ -298,7 +298,7 @@ func (p *SimplePorter) getMonitorMsgFromDelayQueue() {
 				if !ok {
 					blog.Errorf("convert data msg: %v, failed, type: %v", msg, reflect.TypeOf(msg))
 					// if the type of element taken from the queue is wrong, delete it directly from the queue
-					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg).Err()
+					err := p.redisCli.ZRem(context.Background(), common.RedisHostSnapMsgDelayQueue, msg.Member).Err()
 					if err != nil {
 						blog.Errorf("remove delay queue member failed, msg: %v, err: %v", msg, err)
 					}
@@ -434,8 +434,9 @@ func (p *SimplePorter) fusing() {
 		fuseMaxCount := (defaultMessageChanSize * defaultFusingPercent) / 100
 		needEarlyStop := false
 
-		blog.Warnf("SimplePorter[%s]| time[%+v] fusing now! stackedNum[%d] chanSize[%d] threshold[%d] interval[%+v] fuseMaxCount[%d]",
-			p.name, now, stackedN, defaultMessageChanSize, defaultFusingThresholdPercent, defaultFusingCheckInterval, fuseMaxCount)
+		blog.Warnf("SimplePorter[%s]| time[%+v] fusing now! stackedNum[%d] chanSize[%d] threshold[%d] interval[%+v] "+
+			"fuseMaxCount[%d]", p.name, now, stackedN, defaultMessageChanSize, defaultFusingThresholdPercent,
+			defaultFusingCheckInterval, fuseMaxCount)
 
 		for (fuseCount < fuseMaxCount) && !needEarlyStop {
 			select {
@@ -548,8 +549,8 @@ func (p *SimplePorter) debug() {
 
 		// debug infos.
 		blog.Infof("SimplePorter[%s]| DEBUG[%+v], msgChanStage[%d], recvTotal[%f] recvInvalid[%f]"+
-			"recvSharding[%f] recvTimeout[%f] analyzeFailedTotal[%f] analyzeSuccTotal[%f] analyzeDuration[%f] fuseTotal[%f]",
-			p.name, now, msgChanStage, recvTotalNum, receiveInvalidTotalNum, receiveShardingTotalNum, receiveTimeoutTotalNum,
-			analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, fusingTotalNum)
+			"recvSharding[%f] recvTimeout[%f] analyzeFailedTotal[%f] analyzeSuccTotal[%f] analyzeDuration[%f] "+
+			"fuseTotal[%f]", p.name, now, msgChanStage, recvTotalNum, receiveInvalidTotalNum, receiveShardingTotalNum,
+			receiveTimeoutTotalNum, analyzeTotalFailedNum, analyzeTotalSuccNum, analyzeDuration, fusingTotalNum)
 	}
 }

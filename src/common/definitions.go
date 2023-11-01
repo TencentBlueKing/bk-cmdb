@@ -838,6 +838,18 @@ const (
 
 	// LastTimeField the last time field
 	LastTimeField = "last_time"
+
+	// BKCreatedAt the model instance create time field
+	BKCreatedAt = "bk_created_at"
+
+	// BKCreatedBy the model instance creator field
+	BKCreatedBy = "bk_created_by"
+
+	// BKUpdatedAt the model instance update time field
+	BKUpdatedAt = "bk_updated_at"
+
+	// BKUpdatedBy the model instance modifier field
+	BKUpdatedBy = "bk_updated_by"
 )
 
 const (
@@ -908,6 +920,10 @@ const (
 	// DefaultModuleType TODO
 	DefaultModuleType string = "1"
 )
+
+var FieldTypes = []string{FieldTypeSingleChar, FieldTypeLongChar, FieldTypeInt, FieldTypeFloat, FieldTypeEnum,
+	FieldTypeEnumMulti, FieldTypeDate, FieldTypeTime, FieldTypeUser, FieldTypeOrganization, FieldTypeTimeZone,
+	FieldTypeBool, FieldTypeList, FieldTypeTable, FieldTypeInnerTable, FieldTypeEnumQuote}
 
 const (
 	// FieldTypeSingleChar the single char filed type
@@ -1654,4 +1670,88 @@ const (
 const (
 	// BKTemplateID template id field
 	BKTemplateID = "bk_template_id"
+)
+
+// ProcessPropertyName process property name
+type ProcessPropertyName string
+
+const (
+	// ProcNumName process property procNum name
+	ProcNumName ProcessPropertyName = "proc_num"
+
+	// StopCmdName process property stopCmd name
+	StopCmdName ProcessPropertyName = "stop_cmd"
+
+	// RestartCmdName process property restartCmd name
+	RestartCmdName ProcessPropertyName = "restart_cmd"
+
+	// FaceStopCmdName process property faceStopCmd name
+	FaceStopCmdName ProcessPropertyName = "face_stop_cmd"
+
+	// BkFuncNameName process property bkFuncName name
+	BkFuncNameName ProcessPropertyName = "bk_func_name"
+
+	// WorkPathName process property workPath name
+	WorkPathName ProcessPropertyName = "work_path"
+
+	// BindIpName process property bindIp name
+	BindIpName ProcessPropertyName = "bind_ip"
+
+	// PriorityName process property priority name
+	PriorityName ProcessPropertyName = "priority"
+
+	// ReloadCmdName process property reloadCmd name
+	ReloadCmdName ProcessPropertyName = "reload_cmd"
+
+	// BkProcessName process property bkProcessNam
+	BkProcessName ProcessPropertyName = "bk_process_name"
+
+	// PortName process property port name
+	PortName ProcessPropertyName = "port"
+
+	// PidFileName process property pidFile name
+	PidFileName ProcessPropertyName = "pid_file"
+
+	// AutoStartName process property autoStart name
+	AutoStartName ProcessPropertyName = "auto_start"
+
+	// BkStartCheckSecsName process property autoStart name
+	BkStartCheckSecsName ProcessPropertyName = "bk_start_check_secs"
+
+	// StartCmdName process property startCmd name
+	StartCmdName ProcessPropertyName = "start_cmd"
+
+	// PropertyUserName process property user
+	PropertyUserName ProcessPropertyName = "user"
+
+	// TimeoutName process property timeout name
+	TimeoutName ProcessPropertyName = "timeout"
+
+	// ProtocolName process property protocol name
+	ProtocolName ProcessPropertyName = "protocol"
+
+	// DescriptionName process property description name
+	DescriptionName ProcessPropertyName = "description"
+
+	// BkStartParamRegexName process property bkStartParamRegex name
+	BkStartParamRegexName ProcessPropertyName = "bk_start_param_regex"
+)
+
+const (
+	// Field query field define
+	Field = "field"
+
+	// Operator query operator define
+	Operator = "operator"
+
+	// Value query value define
+	Value = "value"
+
+	// Condition query condition define
+	Condition = "condition"
+)
+
+const (
+	// TopoModuleName topo path name
+	TopoModuleName = "topo_module_name"
 )

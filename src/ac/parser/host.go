@@ -373,8 +373,6 @@ const (
 
 	// 查询业务下的主机CPU数量的特殊接口，给成本管理使用
 	countHostCPUPattern = "/api/v3/host/count/cpu"
-
-	findHostsWithKubeCondPattern = "/api/v3/hosts/kube/search"
 )
 
 var (
@@ -383,7 +381,9 @@ var (
 	// find host instance's object properties info
 	findHostInstanceObjectPropertiesRegexp = regexp.MustCompile(`^/api/v3/hosts/[^\s/]+/[0-9]+/?$`)
 
-	transferHostWithAutoClearServiceInstanceRegex        = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	// NOCC:tosa/linelength(忽略长度)
+	transferHostWithAutoClearServiceInstanceRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+	// NOCC:tosa/linelength(忽略长度)
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
@@ -419,7 +419,8 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitRegexp(findHostsByServiceTemplatesRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s",
+				ps.RequestCtx.Elements[6])
 			return ps
 		}
 
@@ -438,7 +439,8 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 
@@ -486,7 +488,8 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitRegexp(findHostsBySetTemplatesRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s",
+				ps.RequestCtx.Elements[6])
 			return ps
 		}
 
@@ -505,7 +508,8 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitRegexp(findHostsByTopoRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s", ps.RequestCtx.Elements[6])
+			ps.err = fmt.Errorf("find hosts by set templates, but got invalid business id: %s",
+				ps.RequestCtx.Elements[6])
 			return ps
 		}
 
@@ -776,7 +780,8 @@ func (ps *parseStream) host() *parseStream {
 	if ps.hitRegexp(findBizHostsTopoRegex, http.MethodPost) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("list business's hosts with topo, but got invalid business id: %s", ps.RequestCtx.Elements[4])
+			ps.err = fmt.Errorf("list business's hosts with topo, but got invalid business id: %s",
+				ps.RequestCtx.Elements[4])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -942,25 +947,6 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.Update,
-				},
-			},
-		}
-
-		return ps
-	}
-
-	if ps.hitPattern(findHostsWithKubeCondPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.FindMany,
 				},
 			},
 		}
@@ -1362,7 +1348,8 @@ func (ps *parseStream) hostTransfer() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("transfer host with auto clear service instance, but got invalid business id: %s", ps.RequestCtx.Elements[5])
+			ps.err = fmt.Errorf("transfer host with auto clear service instance, but got invalid business id: %s",
+				ps.RequestCtx.Elements[5])
 			return ps
 		}
 

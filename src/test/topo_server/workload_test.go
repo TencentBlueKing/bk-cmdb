@@ -44,7 +44,7 @@ var _ = Describe("workload test", func() {
 	var wlID int64
 	wlName := "wlName"
 	It("prepare environment, create business, cluster, namespace", func() {
-		test.ClearDatabase()
+		test.DeleteAllBizs()
 
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "kube",
@@ -67,8 +67,9 @@ var _ = Describe("workload test", func() {
 		region := "shenzhen"
 		vpc := "vpc-q6awe02n"
 		network := []string{"1.1.1.0/21"}
-		clusterType := "public"
-		createCLuster := &types.Cluster{
+		clusterType := types.IndependentClusterType
+		createCluster := &types.Cluster{
+			BizID:            bizID,
 			Name:             &clusterName,
 			SchedulingEngine: &schedulingEngine,
 			Uid:              &clusterUID,
@@ -81,8 +82,8 @@ var _ = Describe("workload test", func() {
 			Type:             &clusterType,
 		}
 
-		id, err := kubeClient.CreateCluster(ctx, header, bizID, createCLuster)
-		util.RegisterResponse(id)
+		id, err := kubeClient.CreateCluster(ctx, header, createCluster)
+		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
 
@@ -93,10 +94,11 @@ var _ = Describe("workload test", func() {
 			Name: nsName,
 		}
 		createOpt := types.NsCreateOption{
-			Data: []types.Namespace{ns},
+			BizID: bizID,
+			Data:  []types.Namespace{ns},
 		}
 
-		wlResult, err := kubeClient.CreateNamespace(ctx, header, bizID, &createOpt)
+		wlResult, err := kubeClient.CreateNamespace(ctx, header, &createOpt)
 		util.RegisterResponseWithRid(wlResult, header)
 		Expect(err).NotTo(HaveOccurred())
 		namespaceID = wlResult.IDs[0]
@@ -153,13 +155,14 @@ var _ = Describe("workload test", func() {
 			RollingUpdateStrategy: &rollingUpdateStrategy,
 		}
 		createOpt := types.WlCreateOption{
+			BizID: bizID,
 			Data: []types.WorkloadInterface{
 				&wl,
 			},
 		}
 
 		var err error
-		result, err := kubeClient.CreateWorkload(ctx, header, bizID, types.KubeDeployment, &createOpt)
+		result, err := kubeClient.CreateWorkload(ctx, header, types.KubeDeployment, &createOpt)
 		util.RegisterResponseWithRid(result, header)
 		Expect(err).NotTo(HaveOccurred())
 		wlID = result.IDs[0]
@@ -214,11 +217,14 @@ var _ = Describe("workload test", func() {
 			RollingUpdateStrategy: &rollingUpdateStrategy,
 		}
 		updateOpt := types.WlUpdateOption{
-			IDs:  []int64{wlID},
-			Data: &wl,
+			BizID: bizID,
+			WlUpdateByIDsOption: types.WlUpdateByIDsOption{
+				IDs:  []int64{wlID},
+				Data: &wl,
+			},
 		}
 
-		err := kubeClient.UpdateWorkload(ctx, header, bizID, types.KubeDeployment, &updateOpt)
+		err := kubeClient.UpdateWorkload(ctx, header, types.KubeDeployment, &updateOpt)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -262,11 +268,12 @@ var _ = Describe("workload test", func() {
 		}
 		fields := []string{common.BKFieldID}
 		queryOpt := types.WlQueryOption{
+			BizID:  bizID,
 			Filter: filter,
 			Page:   page,
 			Fields: fields,
 		}
-		result, err := kubeClient.ListWorkload(ctx, header, bizID, "deployment", &queryOpt)
+		result, err := kubeClient.ListWorkload(ctx, header, "deployment", &queryOpt)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(result.Info)).To(Equal(1))
 		Expect(result.Info[0][common.BKFieldID].(json.Number).Int64()).To(Equal(wlID))
@@ -276,20 +283,24 @@ var _ = Describe("workload test", func() {
 			EnableCount: true,
 		}
 		queryOpt = types.WlQueryOption{
+			BizID:  bizID,
 			Filter: filter,
 			Page:   page,
 		}
-		result, err = kubeClient.ListWorkload(ctx, header, bizID, "deployment", &queryOpt)
+		result, err = kubeClient.ListWorkload(ctx, header, "deployment", &queryOpt)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Count).To(Equal(1))
 	})
 
 	It("delete workload", func() {
 		deleteOpt := types.WlDeleteOption{
-			IDs: []int64{wlID},
+			BizID: bizID,
+			WlDeleteByIDsOption: types.WlDeleteByIDsOption{
+				IDs: []int64{wlID},
+			},
 		}
 
-		err := kubeClient.DeleteWorkload(ctx, header, bizID, types.KubeDeployment, &deleteOpt)
+		err := kubeClient.DeleteWorkload(ctx, header, types.KubeDeployment, &deleteOpt)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })

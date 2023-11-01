@@ -11,6 +11,8 @@
  */
 
 import has from 'has'
+import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
+
 const state = {
   info: {},
   properties: [],
@@ -32,7 +34,8 @@ const getters = {
   groupedProperties: (state) => {
     const groupedProperties = []
     state.propertyGroups.forEach((group) => {
-      const properties = state.properties.filter(property => property.bk_property_group === group.bk_group_id)
+      const properties = state.properties.filter(property => property.bk_property_group === group.bk_group_id
+        && !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id))
       if (properties.length) {
         properties.sort((prev, next) => prev.bk_property_index - next.bk_property_index)
         groupedProperties.push({

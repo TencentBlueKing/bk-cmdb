@@ -53,12 +53,18 @@ spec:
             port: {{ .Values.webserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /healthz
             port: {{ .Values.webserver.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
 
         {{- if .Values.webserver.resources }}
         resources: {{ toYaml .Values.webserver.resources | nindent 10 }}

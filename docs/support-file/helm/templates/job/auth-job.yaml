@@ -3,7 +3,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "bk-cmdb.fullname" . }}-auth-modelregister
+  name: {{ template "bk-cmdb.fullname" . }}-auth-register-{{ .Release.Revision }}
   labels:
     app: {{ template "bk-cmdb.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -12,8 +12,10 @@ metadata:
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "-4"
-    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation
 spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
   template:
     spec:
       containers:

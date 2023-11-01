@@ -13,71 +13,102 @@
 <template>
   <bk-sideslider
     :transfer="true"
-    :width="515"
+    :width="1202"
     :title="title"
     :is-show.sync="isShow"
     :before-close="handleSliderBeforeClose"
+    class="dynamic-slidebar"
     @hidden="handleHidden">
-    <bk-form slot="content"
-      class="dynamic-group-form"
-      ref="form"
-      form-type="vertical"
-      v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
-      <bk-form-item :label="$t('业务')" required>
-        <cmdb-business-selector class="form-item"
-          disabled
-          :value="bizId">
-        </cmdb-business-selector>
-      </bk-form-item>
-      <bk-form-item :label="$t('分组名称')" required>
-        <bk-input class="form-item"
-          v-model.trim="formData.name"
-          v-validate="'required|length:256'"
-          data-vv-name="name"
-          :data-vv-as="$t('查询名称')"
-          :placeholder="$t('请输入xx', { name: $t('查询名称') })">
-        </bk-input>
-        <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
-      </bk-form-item>
-      <bk-form-item :label="$t('查询对象')" required>
-        <form-target class="form-item"
-          v-model="formData.bk_obj_id"
-          :disabled="!isCreateMode"
-          @change="handleModelChange">
-        </form-target>
-      </bk-form-item>
-      <bk-form-item class="form-condition-tips"
-        desc-type="icon"
-        desc-icon="icon-cc-tips"
-        :label="$t('查询条件')"
-        :desc="$t('针对查询内容进行条件过滤')">
-        <form-property-list ref="propertyList" @remove="handleRemoveProperty"></form-property-list>
-        <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
-          icon="icon-plus-circle"
-          :text="true"
-          @click="showPropertySelector">
-          {{$t('继续添加')}}
-        </bk-button>
-        <input type="hidden"
-          v-validate="'min_value:1'"
-          data-vv-name="condition"
-          :data-vv-as="$t('查询条件')"
-          v-model="selectedProperties.length">
-        <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
-      </bk-form-item>
-    </bk-form>
-    <div class="dynamic-group-options" slot="footer">
-      <cmdb-auth :auth="saveAuth">
-        <bk-button class="mr10" slot-scope="{ disabled }"
-          theme="primary"
-          :disabled="disabled"
-          :loading="$loading([request.create, request.update])"
-          @click="handleConfirm">
-          {{isCreateMode ? $t('提交') : $t('保存')}}
-        </bk-button>
-      </cmdb-auth>
-      <bk-button class="mr10" theme="default" @click="handleSliderBeforeClose('cancel')">{{$t('取消')}}</bk-button>
-    </div>
+    <bk-resize-layout
+      :collapsible="true"
+      :initial-divide="412"
+      slot="content"
+      style="height: 100%;">
+      <div slot="aside" class="dynamic-group-info">
+        <bk-form
+          class="dynamic-group-form"
+          ref="form"
+          form-type="vertical"
+          v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
+          <h5 class="form-title">
+            {{ $t('基础信息') }}
+          </h5>
+          <bk-form-item :label="$t('分组名称')" required>
+            <bk-input class="form-item"
+              v-model.trim="formData.name"
+              v-validate="'required|length:256'"
+              data-vv-name="name"
+              :data-vv-as="$t('查询名称')"
+              :disabled="isPreviewProp"
+              :placeholder="$t('请输入xx', { name: $t('查询名称') })">
+            </bk-input>
+            <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
+          </bk-form-item>
+          <bk-form-item :label="$t('查询对象')" required>
+            <form-target class="form-item"
+              v-model="formData.bk_obj_id"
+              :disabled="!isCreateMode"
+              @change="handleModelChange">
+            </form-target>
+          </bk-form-item>
+          <h5 class="form-title">
+            {{ $t('分组条件') }}
+          </h5>
+          <bk-form-item class="">
+            <form-property-list ref="propertyList" @remove="handleRemoveProperty"
+              :disabled="isPreviewProp"></form-property-list>
+            <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
+              icon="icon-plus-circle"
+              :text="true"
+              :disabled="isPreviewProp"
+              @click="handleShowPropertySelector">
+              {{$t('添加条件')}}
+            </bk-button>
+            <input type="hidden"
+              v-validate="'min_value:1'"
+              data-vv-name="condition"
+              :data-vv-as="$t('查询条件')"
+              v-model="selectedProperties.length">
+            <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
+          </bk-form-item>
+        </bk-form>
+        <div class="dynamic-group-options" slot="footer">
+          <cmdb-auth :auth="saveAuth">
+            <bk-button class="mr10" slot-scope="{ disabled }"
+              theme="primary"
+              :disabled="disabled"
+              :loading="$loading([request.create, request.update])"
+              @click="handleConfirm">
+              {{ $t(confirmText) }}
+            </bk-button>
+          </cmdb-auth>
+          <bk-button v-show="!isPreviewProp"
+            class="mr10" theme="default" @click="handlePreview" :disabled="!selectedProperties.length">
+            {{$t('预览')}}
+          </bk-button>
+          <bk-popconfirm
+            :content="$t('确定清空分组条件')"
+            width="280"
+            trigger="click"
+            :confirm-text="$t('确定')"
+            :cancel-text="$t('取消')"
+            @confirm="handleClearCondition">
+            <bk-button v-show="!isPreviewProp" class="mr10" theme="default" :disabled="!selectedProperties.length">
+              {{$t('清空条件')}}
+            </bk-button>
+          </bk-popconfirm>
+          <bk-button v-show="!isPreviewProp"
+            class="mr10 btn-cancel" theme="default" @click="handleSliderBeforeClose('cancel')">
+            {{$t('取消')}}
+          </bk-button>
+        </div>
+      </div>
+      <div slot="main" class="dynamic-group-preview">
+        <preview-result class="preview-result"
+          :condition="previewCondition" :mode="bkObjId">
+        </preview-result>
+      </div>
+    </bk-resize-layout>
   </bk-sideslider>
 </template>
 
@@ -91,14 +122,22 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
+  import PreviewResult from '../preview/preview-result.vue'
+  import FilterStore from '../store'
+
   export default {
     components: {
       FormPropertyList,
-      FormTarget
+      FormTarget,
+      PreviewResult
     },
     props: {
       id: [String, Number],
-      title: String
+      title: String,
+      isPreview: {
+        type: Boolean,
+        value: false
+      }
     },
     provide() {
       return {
@@ -107,6 +146,9 @@
     },
     data() {
       return {
+        isPreviewData: false,
+        bkObjId: 'host',
+        previewCondition: {},
         isShow: false,
         details: null,
         formData: {
@@ -146,6 +188,18 @@
           return { type: this.$OPERATION.U_CUSTOM_QUERY, relation: [this.bizId, this.id] }
         }
         return { type: this.$OPERATION.C_CUSTOM_QUERY, relation: [this.bizId] }
+      },
+      isPreviewProp() {
+        return this.isPreviewData
+      },
+      confirmText() {
+        let text = '保存'
+        if (this.isPreviewProp) {
+          text = '编辑'
+        } else if (this.isCreateMode) {
+          text = '提交'
+        }
+        return text
       }
     },
     async created() {
@@ -157,6 +211,12 @@
       const { beforeClose, setChanged } = useSideslider()
       this.beforeClose = beforeClose
       this.setChanged = setChanged
+      this.isPreviewData = this.isPreview
+      if (this.isPreview || this.id) {
+        setTimeout(() => {
+          this.initPreviewParams()
+        }, 300)
+      }
     },
     methods: {
       async getMainLineModels() {
@@ -235,7 +295,7 @@
           this.formData.bk_obj_id = transformedDetails.bk_obj_id
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
-          setTimeout(this.$refs.propertyList.setDetailsCondition, 0)
+          setTimeout(this.$refs.propertyList?.setDetailsCondition, 0)
         } catch (error) {
           console.error(error)
         }
@@ -316,17 +376,20 @@
             property && properties.push(property)
           })
         })
-        this.selectedProperties = properties
-        this.originProperties = properties
+        this.selectedProperties = this.$tools.clone(properties)
+        this.originProperties = this.$tools.clone(properties)
       },
       handleModelChange() {
         this.selectedProperties = []
       },
-      showPropertySelector() {
-        FormPropertySelector.show({
+      handleClearCondition() {
+        this.selectedProperties = []
+      },
+      handleShowPropertySelector(event) {
+        this.formPropertySelector = FormPropertySelector.show({
           selected: this.selectedProperties,
           handler: this.handlePropertySelected
-        }, this)
+        }, this, event?.target)
       },
       handlePropertySelected(selected) {
         this.selectedProperties = selected
@@ -337,8 +400,24 @@
           this.selectedProperties.splice(index, 1)
         }
       },
+      async handlePreview() {
+        const result = await this.$refs.propertyList.$validator.validateAll()
+        if (!result) {
+          return
+        }
+        this.initPreviewParams()
+      },
+      initPreviewParams() {
+        this.bkObjId = this.formData.bk_obj_id
+        FilterStore.setDynamicGroupModel(this.formData.bk_obj_id)
+        this.previewCondition = this.$tools.clone(this.$refs.propertyList?.condition)
+      },
       async handleConfirm() {
         try {
+          if (this.isPreviewProp) {
+            this.isPreviewData = false
+            return
+          }
           const results = [
             await this.$validator.validateAll(),
             await this.$refs.propertyList.$validator.validateAll()
@@ -464,6 +543,7 @@
           })
         }
         this.close(type)
+        FormPropertySelector?.hide(this.formPropertySelector)
         return true
       },
       handleHidden() {
@@ -474,45 +554,83 @@
 </script>
 
 <style lang="scss" scoped>
-    .dynamic-group-form {
-        padding: 20px;
-        height: 100%;
-        @include scrollbar-y;
-        .form-item {
-            width: 100%;
-        }
-        .form-error {
-            position: absolute;
-            top: 100%;
-            font-size: 12px;
-            line-height: 14px;
-            color: $dangerColor;
-        }
-        .form-condition-tips {
-            /deep/ .bk-label .bk-label-text{
-                display: inline-flex;
-                align-items: center;
-                .bk-icon {
-                    margin-left: 4px;
-                }
-            }
-        }
-        .form-condition-button {
-            /deep/ > div {
-                display: flex;
-                align-items: center;
-                .bk-icon {
-                    top: 0;
-                }
-            }
-        }
+.dynamic-slidebar {
+  :deep(.bk-sideslider-content) {
+    overflow-x: hidden;
+  }
+}
+.dynamic-group-info {
+  width: 412px;
+  float: left;
+  height: calc(100% - 53px);
+}
+.dynamic-group-preview {
+  width: 100%;
+  float: right;
+  height: 100%;
+  padding-bottom: 11px;
+  background: #F5F7FA;
+}
+.dynamic-group-form {
+  padding: 18px 16px;
+  height: 100%;
+  @include scrollbar-y;
+  .form-item {
+    width: 100%;
+  }
+  .form-error {
+    position: absolute;
+    top: 100%;
+    font-size: 12px;
+    line-height: 14px;
+    color: $dangerColor;
+  }
+  .form-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #313238;
+    line-height: 22px;
+    margin-bottom: 10px;
+  }
+  :deep(.bk-form-item) {
+    margin-bottom: 20px;
+    margin-top: 0 !important;
+  }
+  .form-condition-button {
+    /deep/ > div {
+      display: flex;
+      align-items: center;
+      .bk-icon {
+        top: 0;
+      }
     }
-    .dynamic-group-options {
-        display: flex;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        padding: 0 20px;
-        border-top: 1px solid $borderColor;
+  }
+}
+.dynamic-group-options {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  border-top: 1px solid $borderColor;
+  background: #FAFBFD;
+  :deep(.bk-button) {
+    width: 88px;
+    padding: 0 !important;
+    &.btn-cancel {
+      position: relative;
+
+      &::before {
+        content: '';
+        width: 1px;
+        height: 16px;
+        background: #C4C6CC;
+        display: inline-block;
+        position: absolute;
+        left: -6PX;
+        top: 50%;
+        transform: translateY(-50%);
+      }
     }
+  }
+}
 </style>

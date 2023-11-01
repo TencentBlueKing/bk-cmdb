@@ -40,7 +40,7 @@
       <bk-table-column prop="last_time" :label="$t('更新时间')" show-overflow-tooltip>
         <template slot-scope="{ row }">{{$tools.formatTime(row.last_time)}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" width="200" fixed="right">
+      <bk-table-column :label="$t('操作')" :width="$i18n.locale === 'en' ? 280 : 200" fixed="right">
         <template slot-scope="{ row }">
           <cmdb-auth class="inline-block-middle"
             :auth="{ type: $OPERATION.BUSINESS_ARCHIVE, relation: [row.bk_biz_id] }">

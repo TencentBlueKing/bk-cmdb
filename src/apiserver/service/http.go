@@ -95,7 +95,9 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			monitor.Collect(&meta.Alarm{
 				RequestID: rid,
 				Type:      meta.HttpFatalError,
-				Detail: fmt.Sprintf("request timeout, err: %v, %s, %s, cost: %d ms", err, req.Request.Method, url,
+				Detail: fmt.Sprintf("request timeout, user: %s, app code: %s, err: %v, %s, %s, rid: %s, cost: %d ms",
+					req.Request.Header.Get(common.BKHTTPHeaderUser),
+					req.Request.Header.Get(common.BKHTTPRequestAppCode), err, req.Request.Method, url, rid,
 					time.Since(start)/time.Millisecond),
 				Dimension: map[string]string{"error_type": "request timeout"},
 				Module:    common.GetIdentification(),

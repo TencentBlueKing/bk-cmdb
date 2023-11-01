@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/table"
 )
@@ -115,6 +114,13 @@ type Namespace struct {
 
 // ValidateCreate validate create namespace
 func (ns *Namespace) ValidateCreate() errors.RawErrorInfo {
+	if ns.BizID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if ns.ClusterID == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -162,12 +168,30 @@ type ScopedResourceSelectorRequirement struct {
 
 // NsUpdateOption update namespace request
 type NsUpdateOption struct {
+	BizID int64 `json:"bk_biz_id"`
+	NsUpdateByIDsOption
+}
+
+// Validate validate update namespace request
+func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
+	if ns.BizID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	return ns.NsUpdateByIDsOption.Validate()
+}
+
+// NsUpdateByIDsOption update namespace by ids request
+type NsUpdateByIDsOption struct {
 	IDs  []int64    `json:"ids"`
 	Data *Namespace `json:"data"`
 }
 
 // Validate validate update namespace request
-func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
+func (ns *NsUpdateByIDsOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -197,11 +221,29 @@ func (ns *NsUpdateOption) Validate() errors.RawErrorInfo {
 
 // NsDeleteOption delete namespace request
 type NsDeleteOption struct {
-	IDs []int64 `json:"ids"`
+	BizID int64 `json:"bk_biz_id"`
+	NsDeleteByIDsOption
 }
 
 // Validate validate NsDeleteReq
 func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
+	if ns.BizID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	return ns.NsDeleteByIDsOption.Validate()
+}
+
+// NsDeleteByIDsOption delete namespace by ids options
+type NsDeleteByIDsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate NsDeleteByIDsOption
+func (ns *NsDeleteByIDsOption) Validate() errors.RawErrorInfo {
 	if len(ns.IDs) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -221,11 +263,19 @@ func (ns *NsDeleteOption) Validate() errors.RawErrorInfo {
 
 // NsCreateOption create namespace request
 type NsCreateOption struct {
-	Data []Namespace `json:"data"`
+	BizID int64       `json:"bk_biz_id"`
+	Data  []Namespace `json:"data"`
 }
 
 // Validate validate NsCreateReq
 func (ns *NsCreateOption) Validate() errors.RawErrorInfo {
+	if ns.BizID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if len(ns.Data) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsNeedSet,
@@ -240,7 +290,8 @@ func (ns *NsCreateOption) Validate() errors.RawErrorInfo {
 		}
 	}
 
-	for _, data := range ns.Data {
+	for i, data := range ns.Data {
+		ns.Data[i].BizID = ns.BizID
 		if err := ValidateCreate(data, NamespaceFields); err.ErrCode != 0 {
 			return err
 		}
@@ -257,6 +308,7 @@ type NsCreateResp struct {
 
 // NsQueryOption namespace query request
 type NsQueryOption struct {
+	BizID  int64              `json:"bk_biz_id"`
 	Filter *filter.Expression `json:"filter"`
 	Fields []string           `json:"fields,omitempty"`
 	Page   metadata.BasePage  `json:"page,omitempty"`
@@ -264,6 +316,13 @@ type NsQueryOption struct {
 
 // Validate validate NsQueryReq
 func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
+	if ns.BizID == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
 	if err := ns.Page.ValidateWithEnableCount(false, NsQueryLimit); err.ErrCode != 0 {
 		return err
 	}
@@ -280,22 +339,6 @@ func (ns *NsQueryOption) Validate() errors.RawErrorInfo {
 		}
 	}
 	return errors.RawErrorInfo{}
-}
-
-// BuildCond build query namespace condition
-func (ns *NsQueryOption) BuildCond(bizID int64) (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKAppIDField: bizID,
-	}
-
-	if ns.Filter != nil {
-		filterCond, err := ns.Filter.ToMgo()
-		if err != nil {
-			return nil, err
-		}
-		cond = mapstr.MapStr{common.BKDBAND: []mapstr.MapStr{cond, filterCond}}
-	}
-	return cond, nil
 }
 
 // NsInstResp namespace instance response

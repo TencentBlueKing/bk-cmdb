@@ -39,6 +39,9 @@ const (
 
 	// SystemIDIAM TODO
 	SystemIDIAM = "bk_iam"
+
+	// RegisterIamLock defines the lock key for register iam operation
+	RegisterIamLock = "register_iam_lock"
 )
 
 // AuthConfig TODO
@@ -594,6 +597,7 @@ type ResourceAction struct {
 	RelatedResourceTypes []RelateResourceType `json:"related_resource_types"`
 	RelatedActions       []ActionID           `json:"related_actions"`
 	Version              int                  `json:"version"`
+	Hidden               bool                 `json:"hidden"`
 }
 
 // SelectionMode 选择类型, 资源在权限中心产品上配置权限时的作用范围

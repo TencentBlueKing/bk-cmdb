@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"sync"
 
+	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -31,16 +33,20 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
 // KubeOperationInterface container cluster operation methods
 type KubeOperationInterface interface {
-	CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (int64, error)
 	DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) error
 	BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error
 	BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error)
 	BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]int64, error)
+
+	GenSharedClusterListCond(kit *rest.Kit, bizID int64, cond *filter.Expression) (mapstr.MapStr, error)
+	GenSharedNsListCond(kit *rest.Kit, objID string, bizID int64, cond *filter.Expression) (mapstr.MapStr, error)
+	CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][]int64) error
 }
 
 // NewClusterOperation create a business instance
@@ -58,7 +64,7 @@ type kube struct {
 	cluster     KubeOperationInterface
 }
 
-func (b *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Node, error) {
+func (k *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Node, error) {
 
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
@@ -70,10 +76,14 @@ func (b *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]typ
 			Limit: common.BKNoLimit,
 		},
 	}
-	result, err := b.clientSet.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
+	result, err := k.clientSet.CoreService().Kube().SearchNode(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("search node failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
+	}
+
+	if len(result.Data) == 0 {
+		return result.Data, nil
 	}
 
 	bizMap := make(map[int64]struct{})
@@ -95,22 +105,26 @@ func (b *kube) getDeleteNodeInfo(kit *rest.Kit, ids []int64, bizID int64) ([]typ
 }
 
 // BatchDeleteNode batch delete node.
-func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error {
+func (k *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDeleteNodeOption) error {
 
-	nodes, err := b.getDeleteNodeInfo(kit, option.IDs, bizID)
+	nodes, err := k.getDeleteNodeInfo(kit, option.IDs, bizID)
 	if err != nil {
 		return err
 	}
+
+	if len(nodes) == 0 {
+		return nil
+	}
+
 	// 1、check whether these nodes exist, they must all exist before they can be deleted,
 	// otherwise an error will be returned.
 	podCond := []map[string]interface{}{
 		{
-			types.BKBizIDField:  bizID,
 			types.BKNodeIDField: map[string]interface{}{common.BKDBIN: option.IDs},
 		},
 	}
 	// 2、check if there is a pod on the node.
-	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+	counts, err := k.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBasePod, podCond)
 	if err != nil {
 		blog.Errorf("count nodes failed, cond: %#v, err: %v, rid: %s", podCond, err, kit.Rid)
@@ -123,14 +137,15 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDe
 	}
 
 	// 3、batch delete nodes
-	if err := b.clientSet.CoreService().Kube().BatchDeleteNode(kit.Ctx, kit.Header, bizID, option); err != nil {
+	err = k.clientSet.CoreService().Kube().BatchDeleteNode(kit.Ctx, kit.Header, &option.BatchDeleteNodeByIDsOption)
+	if err != nil {
 		blog.Errorf("delete node failed, option: %#v, err: %v, rid: %s", option, err, kit.Rid)
 		return err
 	}
 
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	audit := auditlog.NewKubeAudit(k.clientSet.CoreService())
 	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, nodes)
 	if err != nil {
 		blog.Errorf(" creat inst, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -146,7 +161,7 @@ func (b *kube) BatchDeleteNode(kit *rest.Kit, bizID int64, option *types.BatchDe
 	return nil
 }
 
-func (b *kube) getDeleteClusterInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Cluster, error) {
+func (k *kube) getDeleteClusterInfo(kit *rest.Kit, ids []int64, bizID int64) ([]types.Cluster, error) {
 
 	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
@@ -158,7 +173,7 @@ func (b *kube) getDeleteClusterInfo(kit *rest.Kit, ids []int64, bizID int64) ([]
 			Limit: common.BKNoLimit,
 		},
 	}
-	result, err := b.clientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
+	result, err := k.clientSet.CoreService().Kube().SearchCluster(kit.Ctx, kit.Header, query)
 	if err != nil {
 		blog.Errorf("search cluster failed, filter: %+v, err: %v, rid: %s", query, err, kit.Rid)
 		return nil, err
@@ -183,14 +198,14 @@ func (b *kube) getDeleteClusterInfo(kit *rest.Kit, ids []int64, bizID int64) ([]
 }
 
 // DeleteCluster delete cluster.
-func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) error {
+func (k *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClusterOption) error {
 
-	clusters, err := b.getDeleteClusterInfo(kit, option.IDs, bizID)
+	clusters, err := k.getDeleteClusterInfo(kit, option.IDs, bizID)
 	if err != nil {
 		return err
 	}
 	// whether the associated resources under the cluster have been deleted. such as namespace, node, deployment, pod.
-	exist, cErr := b.isExistKubeResourceUnderCluster(kit, option, bizID)
+	exist, cErr := k.isExistKubeResourceUnderCluster(kit, option, bizID)
 	if cErr != nil {
 		blog.Errorf("failed to obtain resources under the cluster, bizID: %d, cluster IDs: %+v, err: %v, rid: %s",
 			bizID, option.IDs, cErr, kit.Rid)
@@ -202,14 +217,15 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
 	}
 
-	if err := b.clientSet.CoreService().Kube().DeleteCluster(kit.Ctx, kit.Header, bizID, option); err != nil {
+	err = k.clientSet.CoreService().Kube().DeleteCluster(kit.Ctx, kit.Header, &option.DeleteClusterByIDsOption)
+	if err != nil {
 		blog.Errorf("delete cluster failed, cluster IDs: %#v, err: %v, rid: %s", option.IDs, err, kit.Rid)
 		return err
 	}
 
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditDelete)
-	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	audit := auditlog.NewKubeAudit(k.clientSet.CoreService())
 	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, clusters)
 	if err != nil {
 		blog.Errorf("generate audit log failed, err: %v, rid: %s", err, kit.Rid)
@@ -224,7 +240,7 @@ func (b *kube) DeleteCluster(kit *rest.Kit, bizID int64, option *types.DeleteClu
 	return nil
 }
 
-func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64) (
+func (k *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.DeleteClusterOption, bizID int64) (
 	bool, error) {
 
 	if len(option.IDs) == 0 {
@@ -240,13 +256,9 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 	tables := []string{types.BKTableNameBaseNamespace, types.BKTableNameBaseNode, types.BKTableNameBasePod}
 	tables = append(tables, workLoads...)
 
-	filter := make([]map[string]interface{}, 0)
-	filter = []map[string]interface{}{
-		{
-			types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
-			common.BKAppIDField:    bizID,
-		},
-	}
+	filter := []map[string]interface{}{{
+		types.BKClusterIDFiled: map[string]interface{}{common.BKDBIN: option.IDs},
+	}}
 
 	for _, table := range tables {
 		wg.Add(1)
@@ -255,14 +267,14 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 				wg.Done()
 			}()
 
-			counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, table, filter)
+			counts, err := k.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, table, filter)
 			if err != nil {
 				blog.Errorf("count resource failed, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
 				firstErr = err
 				return
 			}
 			if counts[0] > 0 {
-				blog.Errorf("there are resources under the cluster that cannot be deleted, bizID %d, filter: %+v, "+
+				blog.Errorf("there are resources under the cluster that cannot be deleted, bizID: %d, filter: %+v, "+
 					"table: %s, rid: %s", bizID, table, kit.Rid)
 				firstErr = kit.CCError.CCErrorf(common.CCErrCommParamsInvalid)
 				return
@@ -279,10 +291,10 @@ func (b *kube) isExistKubeResourceUnderCluster(kit *rest.Kit, option *types.Dele
 }
 
 // BatchCreatePod batch create pod.
-func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]int64, error) {
+func (k *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]int64, error) {
 
 	// create pods and containers.
-	result, err := b.clientSet.CoreService().Kube().BatchCreatePod(kit.Ctx, kit.Header, data)
+	result, err := k.clientSet.CoreService().Kube().BatchCreatePod(kit.Ctx, kit.Header, data)
 	if err != nil {
 		blog.Errorf("create pod failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
@@ -290,7 +302,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]in
 
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	audit := auditlog.NewKubeAudit(k.clientSet.CoreService())
 
 	podIDs := make([]int64, 0)
 	for _, pod := range result {
@@ -312,7 +324,7 @@ func (b *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]in
 }
 
 // BatchCreateNode batch create node.
-func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error) {
+func (k *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error) {
 
 	conds := make([]map[string]interface{}, 0)
 	for _, node := range data.Nodes {
@@ -327,7 +339,7 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 		common.BKAppIDField: bizID,
 	}
 
-	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+	counts, err := k.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		types.BKTableNameBaseNode, []map[string]interface{}{cond})
 	if err != nil {
 		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
@@ -339,14 +351,14 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "duplicate node name has been created")
 	}
 
-	result, err := b.clientSet.CoreService().Kube().BatchCreateNode(kit.Ctx, kit.Header, bizID, data)
+	result, err := k.clientSet.CoreService().Kube().BatchCreateNode(kit.Ctx, kit.Header, data.Nodes)
 	if err != nil {
 		blog.Errorf("create nodes failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
 		return nil, err
 	}
 	// for audit log.
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
+	audit := auditlog.NewKubeAudit(k.clientSet.CoreService())
 	auditLog, err := audit.GenerateNodeAuditLog(generateAuditParameter, result.Info)
 
 	if err != nil {
@@ -367,58 +379,189 @@ func (b *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, biz
 	return ids, nil
 }
 
-// CreateCluster create container cluster
-func (b *kube) CreateCluster(kit *rest.Kit, data *types.Cluster, bizID int64) (int64, error) {
-
-	if data.Name == nil || data.Uid == nil {
-		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "cluster name or uid must be set")
+// GenSharedClusterListCond generate cluster condition for user biz to get shared cluster of platform biz
+func (k *kube) GenSharedClusterListCond(kit *rest.Kit, bizID int64, cond *filter.Expression) (mapstr.MapStr, error) {
+	// get all shared clusters that are used by the user biz
+	sharedClusterCond := &metadata.QueryCondition{
+		Fields:    []string{types.BKClusterIDFiled},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{types.BKBizIDField: bizID},
 	}
 
-	filterName := map[string]interface{}{
-		common.BKFieldName:  *data.Name,
-		common.BKAppIDField: bizID,
-	}
-
-	filterUid := map[string]interface{}{
-		common.BKFieldName:  *data.Uid,
-		common.BKAppIDField: bizID,
-	}
-
-	cond := map[string]interface{}{
-		common.BKDBOR: []map[string]interface{}{filterName, filterUid},
-	}
-
-	counts, err := b.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		types.BKTableNameBaseCluster, []map[string]interface{}{cond})
+	relRes, err := k.clientSet.CoreService().Kube().ListNsSharedClusterRel(kit.Ctx, kit.Header, sharedClusterCond)
 	if err != nil {
-		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
-		return 0, kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
-	}
-	if counts[0] > 0 {
-		blog.Errorf("cluster name or uid has been created, num: %d, err: %v, rid: %s", counts[0], err, kit.Rid)
-		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "cluster name or uid has been created")
+		blog.Errorf("failed to get topo path, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
-	result, err := b.clientSet.CoreService().Kube().CreateCluster(kit.Ctx, kit.Header, bizID, data)
+	if len(relRes.Info) == 0 {
+		clusterCond, err := filtertools.And(filtertools.GenAtomFilter(types.BKBizIDField, filter.Equal, bizID), cond)
+		if err != nil {
+			blog.Errorf("generate normal cluster cond with biz failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		mgoCond, rawErr := clusterCond.ToMgo()
+		if rawErr != nil {
+			blog.Errorf("parse normal cluster filter(%#v) failed, err: %v, rid: %s", clusterCond, rawErr, kit.Rid)
+			return nil, rawErr
+		}
+
+		return mgoCond, nil
+	}
+
+	// add shared cluster condition to original condition
+	sharedClusterIDs := make([]int64, len(relRes.Info))
+	for i, rel := range relRes.Info {
+		sharedClusterIDs[i] = rel.ClusterID
+	}
+
+	sharedCond := &filter.Expression{
+		RuleFactory: &filter.CombinedRule{
+			Condition: filter.Or,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field:    types.BKBizIDField,
+					Operator: filter.Equal.Factory(),
+					Value:    bizID,
+				},
+				&filter.AtomRule{
+					Field:    common.BKFieldID,
+					Operator: filter.In.Factory(),
+					Value:    sharedClusterIDs,
+				},
+			},
+		},
+	}
+
+	clusterCond, rawErr := filtertools.And(sharedCond, cond)
+	if rawErr != nil {
+		blog.Errorf("generate shared cluster cond with biz failed, err: %v, rid: %s", rawErr, kit.Rid)
+		return nil, rawErr
+	}
+
+	mgoCond, rawErr := clusterCond.ToMgo()
+	if rawErr != nil {
+		blog.Errorf("parse shared cluster filter(%#v) failed, err: %v, rid: %s", clusterCond, rawErr, kit.Rid)
+		return nil, rawErr
+	}
+
+	return mgoCond, nil
+}
+
+// GenSharedNsListCond generate ns condition for platform biz to get resources of user biz under shared cluster
+func (k *kube) GenSharedNsListCond(kit *rest.Kit, objID string, bizID int64, cond *filter.Expression) (mapstr.MapStr,
+	error) {
+
+	// get all shared namespaces that are related to the platform biz
+	sharedNsCond := &metadata.QueryCondition{
+		Fields:    []string{types.BKNamespaceIDField},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{types.BKAsstBizIDField: bizID},
+	}
+
+	relRes, err := k.clientSet.CoreService().Kube().ListNsSharedClusterRel(kit.Ctx, kit.Header, sharedNsCond)
 	if err != nil {
-		blog.Errorf("create cluster failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)
-		return 0, err
+		blog.Errorf("failed to get topo path, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
 	}
 
-	// for audit log.
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
-	audit := auditlog.NewKubeAudit(b.clientSet.CoreService())
-	auditLog, err := audit.GenerateClusterAuditLog(generateAuditParameter, []types.Cluster{*result.Info})
+	if len(relRes.Info) == 0 {
+		nsCond, err := filtertools.And(filtertools.GenAtomFilter(types.BKBizIDField, filter.Equal, bizID), cond)
+		if err != nil {
+			blog.Errorf("generate normal cluster cond with biz failed, err: %v, rid: %s", err, kit.Rid)
+			return nil, err
+		}
+
+		mgoCond, rawErr := nsCond.ToMgo()
+		if rawErr != nil {
+			blog.Errorf("parse normal namespace filter(%#v) failed, err: %v, rid: %s", nsCond, rawErr, kit.Rid)
+			return nil, rawErr
+		}
+
+		return mgoCond, nil
+	}
+
+	// add shared namespace condition to original condition
+	sharedNsIDs := make([]int64, len(relRes.Info))
+	for i, rel := range relRes.Info {
+		sharedNsIDs[i] = rel.NamespaceID
+	}
+
+	nsField := types.BKNamespaceIDField
+	if objID == types.KubeNamespace {
+		nsField = types.BKIDField
+	}
+
+	sharedCond := &filter.Expression{
+		RuleFactory: &filter.CombinedRule{
+			Condition: filter.Or,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field:    types.BKBizIDField,
+					Operator: filter.Equal.Factory(),
+					Value:    bizID,
+				},
+				&filter.AtomRule{
+					Field:    nsField,
+					Operator: filter.In.Factory(),
+					Value:    sharedNsIDs,
+				},
+			},
+		},
+	}
+
+	nsCond, rawErr := filtertools.And(sharedCond, cond)
+	if rawErr != nil {
+		blog.Errorf("generate shared namespace cond with biz failed, err: %v, rid: %s", rawErr, kit.Rid)
+		return nil, rawErr
+	}
+
+	mgoCond, rawErr := nsCond.ToMgo()
+	if rawErr != nil {
+		blog.Errorf("parse shared namespace filter(%#v) failed, err: %v, rid: %s", nsCond, rawErr, kit.Rid)
+		return nil, rawErr
+	}
+
+	return mgoCond, nil
+}
+
+// CheckPlatBizSharedNs check if platform biz's ns is in shared cluster and if its related biz matches the plat biz
+func (k *kube) CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][]int64) error {
+	if len(bizNsMap) == 0 {
+		return nil
+	}
+
+	nsCnt := 0
+	conds := make([]mapstr.MapStr, 0)
+
+	for bizID, nsIDs := range bizNsMap {
+		nsIDs = util.IntArrayUnique(nsIDs)
+		nsCnt += len(nsIDs)
+		conds = append(conds, mapstr.MapStr{
+			types.BKAsstBizIDField:   bizID,
+			types.BKNamespaceIDField: map[string]interface{}{common.BKDBIN: nsIDs},
+		})
+	}
+
+	cond := []map[string]interface{}{{common.BKDBOR: conds}}
+
+	counts, err := k.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		types.BKTableNameNsSharedClusterRel, cond)
 	if err != nil {
-		blog.Errorf("create cluster, generate audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
+		blog.Errorf("count shared ns failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
 	}
 
-	err = audit.SaveAuditLog(kit, auditLog...)
-	if err != nil {
-		blog.Errorf("create cluster, save audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	if len(counts) != 1 {
+		blog.Errorf("shared ns count is invalid, cond: %+v, rid: %s", cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	return result.Info.ID, nil
+	if int(counts[0]) != nsCnt {
+		blog.Errorf("shared ns count %d is invalid, cond: %+v, rid: %s", counts[0], cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	return nil
 }

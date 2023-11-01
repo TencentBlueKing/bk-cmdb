@@ -18,9 +18,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -66,7 +66,8 @@ func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 
 	err := s.core.HostOperation().TransferToAnotherBusiness(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("transfer host across business failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		blog.ErrorJSON("transfer host across business failed. err: %s, input: %s, rid: %s", err.Error(), inputData,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -82,7 +83,8 @@ func (s *coreService) RemoveFromModule(ctx *rest.Contexts) {
 	}
 	err := s.core.HostOperation().RemoveFromModule(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("remove host from module failed. err: %s, input: %s, rid: %s", err.Error(), inputData, ctx.Kit.Rid)
+		blog.ErrorJSON("remove host from module failed. err: %s, input: %s, rid: %s", err.Error(), inputData,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -144,7 +146,8 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 	hostID, err := strconv.Atoi(ctx.Request.PathParameter("bk_host_id"))
 	if err != nil {
-		blog.Errorf("GetHostByID failed, get host by id, but got invalid host id, hostID: %s, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
+		blog.Errorf("GetHostByID failed, get host by id, but got invalid host id, hostID: %s, err: %+v, rid: %s",
+			hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField))
 		return
 	}
@@ -158,6 +161,14 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
+	}
+
+	if result[common.BKCreatedAt] == nil && result[common.CreateTimeField] != nil {
+		result[common.BKCreatedAt] = result[common.CreateTimeField]
+	}
+
+	if result[common.BKUpdatedAt] == nil && result[common.LastTimeField] != nil {
+		result[common.BKUpdatedAt] = result[common.LastTimeField]
 	}
 
 	ctx.RespEntity(result)
@@ -185,13 +196,11 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	result := make([]metadata.HostMapStr, 0)
-	dbInst := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
-	if 0 < len(fieldArr) {
-		dbInst.Fields(fieldArr...)
-	}
-	if err := dbInst.All(ctx.Kit.Ctx, &result); err != nil {
-		blog.ErrorJSON("failed to query the host , cond: %s err: %s, rid: %s", condition, err, ctx.Kit.Rid)
+	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).
+		Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
+	info, err := instances.FindInst(ctx.Kit, fieldArr, query, common.BKInnerObjIDHost)
+	if err != nil {
+		blog.ErrorJSON("failed to query the host, cond: %v, err: %s, rid: %s", condition, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -201,17 +210,14 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	if !dat.DisableCounter {
 		count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
 		if err != nil {
-			blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, ctx.Kit.Rid)
+			blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostSelectInst))
 			return
 		}
 		finalCount = count
 	}
 
-	info := make([]mapstr.MapStr, len(result))
-	for index, host := range result {
-		info[index] = mapstr.MapStr(host)
-	}
 	ctx.RespEntity(metadata.HostInfo{
 		Count: int(finalCount),
 		Info:  info,
@@ -244,7 +250,8 @@ func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
 
 	err := s.core.HostOperation().TransferResourceDirectory(ctx.Kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferHostResourceDirectory  error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.Kit.Rid)
+		blog.ErrorJSON("TransferHostResourceDirectory  error. err:%s, input:%s, rid:%s", err.Error(), input,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

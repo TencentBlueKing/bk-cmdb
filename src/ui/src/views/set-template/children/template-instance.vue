@@ -502,9 +502,9 @@
         })
       },
       handleClearFilter() {
+        this.statusFilter = 'all'
         this.filterName = ''
         this.handleFilter()
-        this.dataEmpty.stuff.type = 'default'
       }
     }
   }

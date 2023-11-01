@@ -329,7 +329,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 	if err != nil {
-		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, ctx.Kit.Rid)
+		blog.Errorf("add host, but get module id failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -391,7 +391,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 		var err error
 		moduleID, _, err = s.Logic.GetResourcePoolModuleID(ctx.Kit, cond)
 		if err != nil {
-			blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, ctx.Kit.Rid)
+			blog.Errorf("add host, but get module id failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -465,7 +465,8 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 		return
 	}
 	if 0 == appID {
-		blog.Errorf("add host from agent, but got invalid default appID, err: %v,ownerID:%s,input:%#v,rid:%s", err, ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
+		blog.Errorf("add host from agent, but got invalid default appID, err: %v,ownerID:%s,input:%#v,rid:%s", err,
+			ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrAddHostToModule, "business not found"))
 		return
 	}
@@ -473,7 +474,8 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(appID)
 	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, opt.MapStr())
 	if err != nil {
-		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err, ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
+		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err,
+			ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -526,7 +528,8 @@ func (s *Service) SearchHost(ctx *rest.Contexts) {
 
 	hostIDArray := host.ExtractHostIDs()
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find, *hostIDArray...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(ctx.Kit.Ctx, ctx.Kit.Header, authmeta.Find,
+		*hostIDArray...); err != nil {
 		blog.Errorf("check host authorization failed, hostID: %+v, err: %+v, rid: %s", hostIDArray, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
@@ -716,6 +719,7 @@ func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
 
 		var (
 			wg       sync.WaitGroup
+			lock     sync.Mutex
 			firstErr error
 		)
 		pipeline := make(chan bool, 5)
@@ -774,8 +778,11 @@ func (s *Service) updateHostPropertyBatch(kit *rest.Kit, hostIDArr []int64,
 					firstErr = err
 					return
 				}
+
 				// add audit log.
+				lock.Lock()
 				auditContexts = append(auditContexts, auditLog...)
+				lock.Unlock()
 			}(update)
 		}
 
@@ -866,7 +873,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	}
 
 	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "host_info ",
+			common.BatchHostAddMaxRow))
 		return
 	}
 
@@ -876,7 +884,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	appInfo, err := s.Logic.GetAppDetails(ctx.Kit, "", appConds)
 	if nil != err {
-		blog.Errorf("host sync app %d error:%s,input:%+v,rid:%s", hostList.ApplicationID, err.Error(), hostList, ctx.Kit.Rid)
+		blog.Errorf("host sync app %d failed, err: %v, input: %+v, rid: %s", hostList.ApplicationID, err, hostList,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -903,8 +912,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	}
 	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	moduleIDS, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
-	if nil != err {
-		blog.Errorf("NewHostSyncAppTop GetModuleIDByCond error. err:%s,input:%+v,rid:%s", err.Error(), hostList, ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("get module id by condition failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -916,7 +925,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeCreateHost(ctx.Kit.Ctx, ctx.Kit.Header, hostList.ApplicationID); err != nil {
-		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s", hostList.ApplicationID, err, ctx.Kit.Rid)
+		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s", hostList.ApplicationID, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
 		return
 	}
@@ -1327,7 +1337,8 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	hostIDArr := make([]int64, 0)
 	hosts := make(map[int64]map[string]interface{}, 0)
 	indexHostIDMap := make(map[int64]int64, 0)
-	var errMsg, successMsg []string
+	var errMsg []string
+	var successMsg []int64
 	CCLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
 	for _, index := range util.SortedMapInt64Keys(hostList.HostInfo) {
 		hostInfo := hostList.HostInfo[index]
@@ -1598,10 +1609,7 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 	if len(hostIDs) == 0 {
-		ctx.RespEntity(meta.HostInfo{
-			Count: 0,
-			Info:  []mapstr.MapStr{},
-		})
+		ctx.RespEntity(meta.HostInfo{Count: 0, Info: make([]mapstr.MapStr, 0)})
 		return
 	}
 
