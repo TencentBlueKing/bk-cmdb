@@ -32,7 +32,7 @@ export default {
         this.setChanged = setChanged
       },
       methods: {
-        showDialog() {
+        confirmLeave() {
           const refColumns = this.$refs.cmdbColumnsConfig
           const { columnsChangedValues } = refColumns
           if (columnsChangedValues()) {
@@ -52,7 +52,7 @@ export default {
             width: 600,
             isShow: this.isShow,
             beforeClose: () => {
-              this.showDialog()
+              this.confirmLeave()
             }
           },
           on: {
@@ -70,7 +70,7 @@ export default {
           slot: 'content',
           on: {
             cancel: () => {
-              this.showDialog()
+              this.confirmLeave()
             },
             apply: (properties) => {
               this.isShow = false

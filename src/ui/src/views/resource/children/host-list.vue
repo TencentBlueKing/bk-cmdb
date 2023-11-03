@@ -287,7 +287,7 @@
           this.table.pagination.count = count
           this.table.list = info
           const { filter, ip } = this.$route.query
-          this.table.stuff.type = filter || ip  ? 'search' : 'default'
+          this.table.stuff.type = (filter || ip)  ? 'search' : 'default'
           const params = this.getParams()
           if (params.ip.data.length > 0) {
             this.table.stuff.type = 'search'
