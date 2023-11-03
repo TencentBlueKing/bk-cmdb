@@ -707,7 +707,9 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 
 	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
 		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
-			if _, ok := cloudIDCond[common.BKDBIN]; ok {
+			_, inExist := cloudIDCond[common.BKDBIN]
+			_, ninExist := cloudIDCond[common.BKDBNIN]
+			if inExist || ninExist {
 				delete(condition, common.BKCloudIDField)
 			}
 		}

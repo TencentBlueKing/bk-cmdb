@@ -138,7 +138,7 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 		return output, nil
 	}
 
-	splitIPResult, err := splitIPData(ipv4Cond, rid, TYPEIPV4)
+	splitIPResult, err := splitIPData(ipv4Cond, TYPEIPV4, rid)
 	if err != nil {
 		return nil, err
 	}
@@ -155,10 +155,11 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	if exact == 1 {
 		// exact search
 		// filter out illegal IPv4 addresses
-		exactOr, err = addExactSearchCondition(splitIPResult, fieldAndCond, output, flag)
+		ipv4ExactCond, err := addExactSearchCondition(splitIPResult, fieldAndCond, output, flag)
 		if err != nil {
 			return nil, err
 		}
+		exactOr = append(exactOr, ipv4ExactCond...)
 		// 此处判断当设置了ip条件如：5h:127.0.0.x, j:127.0.0.1 但因为设置的所有ip或管控区域不合法，导致最后构建的条件为空，从而会查询出所有主机，不符合用户预期
 		// 所以如果设置了ip条件，但所有ip或管控区域都不合法，就设置一个空查询从而不返回任何主机数据
 		if len(exactOr) == 0 {
@@ -189,7 +190,7 @@ func parseIPv6Condition(ipCond metadata.IPInfo, exactOr []map[string]interface{}
 		return exactOr, nil, nil
 	}
 
-	splitIPResult, err := splitIPData(ipCond, rid, TYPEIPV6)
+	splitIPResult, err := splitIPData(ipCond, TYPEIPV6, rid)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -297,7 +298,7 @@ func splitIPData(ipCond metadata.IPInfo, ipType string, rid string) (SplitIPResu
 			}
 		}
 
-		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 NOCLOUDID 键下
+		// 如果没有 ":[" 代表未直接指定管控区域，则直接添加到 noCloudIdIP下
 		if colonIndex == -1 {
 			noCloudIdIP = append(noCloudIdIP, ipString)
 			continue
