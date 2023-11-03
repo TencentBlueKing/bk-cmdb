@@ -759,22 +759,13 @@
         }
       },
       updateModellndex({ element: model, newIndex }) {
-        let curIndex = 1
-        let curGroup = ''
         const { id } = model
         const group = this.currentClassifications?.
           find(classifications => classifications?.bk_objects?.
             find(item => item?.id === id))
-        const len = group?.bk_objects?.length || 0
 
-        // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 1
-        if (newIndex > 0 && len !== 1) {
-          // 拖拽插件bug 跨组拖动到最后的位置index会多1
-          const index = newIndex === len ? newIndex - 2 : newIndex - 1
-          curIndex = Number(group.bk_objects[index].obj_sort_number) + 1
-        }
-
-        curGroup = group.bk_classification_id
+        const curGroup = group?.bk_classification_id
+        const curIndex = newIndex + 1
         this.updateModelGroup({ id, curGroup, curIndex })
       },
       getExportModels() {
