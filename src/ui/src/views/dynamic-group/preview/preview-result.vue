@@ -241,6 +241,7 @@
   const getHostList = (async () => {
     try {
       const params = {
+        bk_biz_id: bizId.value,
         ...FilterStore.getSearchParams(),
         page: {
           ...getPageParams(table.pagination),

@@ -373,7 +373,8 @@
         if (this.isContainerHost) {
           return containerHostService.findAll(params, config)
         }
-        this.table.stuff.type = this.$route.query.filter ? 'search' : 'default'
+        const { filter, ip } = this.$route.query
+        this.table.stuff.type = filter || ip  ? 'search' : 'default'
         if (params.ip.data.length > 0) {
           this.table.stuff.type = 'search'
         }

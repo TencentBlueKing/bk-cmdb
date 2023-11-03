@@ -16,8 +16,9 @@
       <bk-input class="options-filter"
         v-model.trim="filter"
         right-icon="icon-search"
-        placeholder="请输入名称关键字"
-        clearable>
+        :placeholder="$t('请输入名称关键字')"
+        clearable
+        v-autofocus>
       </bk-input>
     </div>
     <div class="property-selector-group clearfix"
@@ -35,7 +36,7 @@
         :checked="allChecked[model.bk_obj_id]"
         @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
         class="allCheck"
-      >全选</bk-checkbox>
+      >{{$t('全选')}}</bk-checkbox>
       <div class="group-property-list">
         <bk-checkbox
           :class="['group-property-item', { 'is-checked': isChecked(property) }]"
@@ -46,12 +47,13 @@
           :checked="isChecked(property)"
           :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
           @change="handleChange(property, ...arguments)">
-          <span v-bk-tooltips.top-start="{
-            disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
-            content: $t('该字段不支持配置')
-          }">
-            {{property.bk_property_name}}
-          </span>
+          <div style="width: calc(100% - 30px);"
+            v-bk-tooltips.top-start="{
+              disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
+              content: $t('该字段不支持配置')
+            }">
+            <div class="group-property-name" v-bk-overflow-tips>{{property.bk_property_name}}</div>
+          </div>
           <i class="icon-cc-selected"></i>
         </bk-checkbox>
       </div>
@@ -119,7 +121,8 @@
       Object.keys(propertyMap.value).forEach((modelId) => {
         matchedPropertyMapOther[modelId] = propertyMap.value[modelId].filter((property) => {
           const lowerCaseName = property.bk_property_name.toLowerCase()
-          return lowerCaseName.indexOf(lowerCaseFilter) > -1
+          const lowerPropertyId = property.bk_property_id.toLowerCase()
+          return lowerCaseName.indexOf(lowerCaseFilter) > -1 || lowerPropertyId.indexOf(lowerCaseFilter) > -1
         })
       })
       matchedPropertyMap.value = matchedPropertyMapOther
@@ -249,6 +252,12 @@
       line-height: 32px;
       padding-left: 6px;
       margin-left: -6px;
+
+      .group-property-name {
+        display: block;
+        width: 100%;
+        @include ellipsis;
+      }
 
       .icon-cc-selected {
         font-size: 24px;

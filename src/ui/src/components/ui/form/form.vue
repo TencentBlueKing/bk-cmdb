@@ -29,7 +29,7 @@
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
-                    <span class="property-name-text" :class="{ required: isRequired(property) }">
+                    <span class="property-name-text" v-bk-overflow-tips :class="{ required: isRequired(property) }">
                       {{property['bk_property_name']}}
                     </span>
                     <i class="property-name-tooltips icon-cc-tips"

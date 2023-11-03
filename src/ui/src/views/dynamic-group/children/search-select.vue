@@ -34,11 +34,11 @@
   const filterMenus = [
     {
       id: 'id',
-      name: t('id')
+      name: t('ID')
     },
     {
       id: 'name',
-      name: t('名称'),
+      name: t('分组名称'),
       multiable: true,
       remote: true
     },
@@ -58,7 +58,7 @@
       ]
     }, {
       id: 'modify_user',
-      name: t('更新人'),
+      name: t('修改人'),
       multiable: true,
       remote: true
     }
