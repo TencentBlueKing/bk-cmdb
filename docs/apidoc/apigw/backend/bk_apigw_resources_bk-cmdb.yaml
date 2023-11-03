@@ -31,6 +31,30 @@ paths:
         disabledStages: []
         descriptionEn:
   /api/v3/set/{bk_biz_id}/batch:
+    post:
+      operationId: post_set__batch
+      description: post_set__batch
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/set/{bk_biz_id}/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
     delete:
       operationId: batch_delete_set
       description: 批量删除集群
@@ -3791,6 +3815,5204 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/findmany/kube/workload/{kind}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/topomodelmainline/object/{bk_obj_id}:
+    delete:
+      operationId: delete_delete_topomodelmainline_object
+      description: delete_delete_topomodelmainline_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/topomodelmainline/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}/with_statistics:
+    get:
+      operationId: get_topo_internal___with_statistics
+      description: get_topo_internal___with_statistics
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}/with_statistics
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/topomodelmainline:
+    post:
+      operationId: post_create_topomodelmainline
+      description: post_create_topomodelmainline
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/topomodelmainline
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topoinstnode/host_serviceinst_count/{bk_biz_id}:
+    post:
+      operationId: post_find_topoinstnode_host_serviceinst_count
+      description: post_find_topoinstnode_host_serviceinst_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topoinstnode/host_serviceinst_count/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/topo/delete/biz/extra_moudle:
+    post:
+      operationId: post_topo_delete_biz_extra_moudle
+      description: post_topo_delete_biz_extra_moudle
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/topo/delete/biz/extra_moudle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/topo/update/biz/idle_set:
+    post:
+      operationId: post_topo_update_biz_idle_set
+      description: post_topo_update_biz_idle_set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/topo/update/biz/idle_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/auth/skip_url:
+    post:
+      operationId: post_auth_skip_url
+      description: post_auth_skip_url
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/auth/skip_url
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/auth/verify:
+    post:
+      operationId: post_auth_verify
+      description: post_auth_verify
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/auth/verify
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/simplify:
+    get:
+      operationId: get_biz_simplify
+      description: get_biz_simplify
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/biz/simplify
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/with_reduced:
+    get:
+      operationId: get_biz_with_reduced
+      description: get_biz_with_reduced
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/biz/with_reduced
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/search/{bk_supplier_account}:
+    post:
+      operationId: post_biz_search
+      description: post_biz_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/biz/search/{bk_supplier_account}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/{bk_supplier_account}/{bk_biz_id}:
+    put:
+      operationId: put_biz
+      description: put_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/biz/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/status/disabled/{bk_supplier_account}/{bk_biz_id}:
+    put:
+      operationId: put_biz_status_disabled
+      description: put_biz_status_disabled
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/biz/status/disabled/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/status/enable/{bk_supplier_account}/{bk_biz_id}:
+    put:
+      operationId: put_biz_status_enable
+      description: put_biz_status_enable
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/biz/status/enable/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/biz_set/simplify:
+    get:
+      operationId: get_findmany_biz_set_simplify
+      description: get_findmany_biz_set_simplify
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/findmany/biz_set/simplify
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/biz_set/with_reduced:
+    get:
+      operationId: get_findmany_biz_set_with_reduced
+      description: get_findmany_biz_set_with_reduced
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/findmany/biz_set/with_reduced
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/detail/by_ids:
+    post:
+      operationId: post_findmany_proc_biz_set__process_instance_detail_by_ids
+      description: post_findmany_proc_biz_set__process_instance_detail_by_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/detail/by_ids
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}:
+    post:
+      operationId: post_count_topoinst_host_service_inst_biz_set
+      description: post_count_topoinst_host_service_inst_biz_set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/biz_set/preview:
+    post:
+      operationId: post_find_biz_set_preview
+      description: post_find_biz_set_preview
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/biz_set/preview
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{process_template_id}:
+    post:
+      operationId: post_find_proc_biz_set__proc_template_id
+      description: post_find_proc_biz_set__proc_template_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{process_template_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}:
+    post:
+      operationId: post_find_topopath_biz_set__biz
+      description: post_find_topopath_biz_set__biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/biz_set/{bk_biz_set_id}:
+    post:
+      operationId: post_findmany_hosts_biz_set
+      description: post_findmany_hosts_biz_set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/biz_set/{bk_biz_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}:
+    post:
+      operationId: post_findmany_module_biz_set__biz__set
+      description: post_findmany_module_biz_set__biz__set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/proc_template:
+    post:
+      operationId: post_findmany_proc_biz_set__proc_template
+      description: post_findmany_proc_biz_set__proc_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/proc_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance:
+    post:
+      operationId: post_findmany_proc_biz_set__process_instance
+      description: post_findmany_proc_biz_set__process_instance
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/name_ids:
+    post:
+      operationId: post_findmany_proc_biz_set__process_instance_name_ids
+      description: post_findmany_proc_biz_set__process_instance_name_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/name_ids
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/labels/aggregation:
+    post:
+      operationId: post_findmany_proc_biz_set__service_instance_labels_aggregation
+      description: post_findmany_proc_biz_set__service_instance_labels_aggregation
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/labels/aggregation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance:
+    post:
+      operationId: post_findmany_proc_web_biz_set__service_instance
+      description: post_findmany_proc_web_biz_set__service_instance
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host:
+    post:
+      operationId: post_findmany_proc_web_biz_set__service_instance_with_host
+      description: post_findmany_proc_web_biz_set__service_instance_with_host
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/set/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}:
+    post:
+      operationId: post_findmany_set_biz_set__biz
+      description: post_findmany_set_biz_set__biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/set/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/cloud/account/{id}:
+    delete:
+      operationId: delete_delete_cloud_account
+      description: delete_delete_cloud_account
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/cloud/account/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/cloud/sync/task/{id}:
+    delete:
+      operationId: delete_delete_cloud_sync_task
+      description: delete_delete_cloud_sync_task
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/cloud/sync/task/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/cloud/account/verify:
+    post:
+      operationId: post_cloud_account_verify
+      description: post_cloud_account_verify
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/cloud/account/verify
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/cloud/account:
+    post:
+      operationId: post_create_cloud_account
+      description: post_create_cloud_account
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/cloud/account
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/cloud/sync/task:
+    post:
+      operationId: post_create_cloud_sync_task
+      description: post_create_cloud_sync_task
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/cloud/sync/task
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/cloudarea:
+    post:
+      operationId: post_createmany_cloudarea
+      description: post_createmany_cloudarea
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/cloudarea
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/account:
+    post:
+      operationId: post_findmany_cloud_account
+      description: post_findmany_cloud_account
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/account
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/account/validity:
+    post:
+      operationId: post_findmany_cloud_account_validity
+      description: post_findmany_cloud_account_validity
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/account/validity
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/account/vpc/{id}:
+    post:
+      operationId: post_findmany_cloud_account_vpc
+      description: post_findmany_cloud_account_vpc
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/account/vpc/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/sync/history:
+    post:
+      operationId: post_findmany_cloud_sync_history
+      description: post_findmany_cloud_sync_history
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/sync/history
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/sync/region:
+    post:
+      operationId: post_findmany_cloud_sync_region
+      description: post_findmany_cloud_sync_region
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/sync/region
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloud/sync/task:
+    post:
+      operationId: post_findmany_cloud_sync_task
+      description: post_findmany_cloud_sync_task
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloud/sync/task
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloudarea/hostcount:
+    post:
+      operationId: post_findmany_cloudarea_hostcount
+      description: post_findmany_cloudarea_hostcount
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloudarea/hostcount
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/cloud/account/{id}:
+    put:
+      operationId: put_update_cloud_account
+      description: put_update_cloud_account
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/cloud/account/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/cloud/sync/task/{id}:
+    put:
+      operationId: put_update_cloud_sync_task
+      description: put_update_cloud_sync_task
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/cloud/sync/task/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/proc/service_template/attribute:
+    delete:
+      operationId: delete_delete_proc_service_template_attribute
+      description: delete_delete_proc_service_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/proc/service_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/proc/service_template/host_apply_rule/biz/{bk_biz_id}:
+    delete:
+      operationId: delete_deletemany_proc_service_template_host_apply_rule_biz
+      description: delete_deletemany_proc_service_template_host_apply_rule_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/proc/service_template/host_apply_rule/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/deletemany/module/host_apply_rule/bk_biz_id/{bk_biz_id}:
+    delete:
+      operationId: delete_host_deletemany_module_host_apply_rule_bk_biz_id
+      description: delete_host_deletemany_module_host_apply_rule_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/host/deletemany/module/host_apply_rule/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_template/{id}/detail:
+    get:
+      operationId: get_find_proc_service_template__detail
+      description: get_find_proc_service_template__detail
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/proc/service_template/{id}/detail
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates/with_statistics:
+    get:
+      operationId: get_findmany_topo_set_template__bk_biz_id__service_templates_with_statistics
+      description: get_findmany_topo_set_template__bk_biz_id__service_templates_with_statistics
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates/with_statistics
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_instance/difference_detail:
+    post:
+      operationId: post_find_proc_service_instance_difference_detail
+      description: post_find_proc_service_instance_difference_detail
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/service_instance/difference_detail
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_template/general_difference:
+    post:
+      operationId: post_find_proc_service_template_general_difference
+      description: post_find_proc_service_template_general_difference
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/service_template/general_difference
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/proc/service_template/all_info:
+    post:
+      operationId: post_create_proc_service_template_all_info
+      description: post_create_proc_service_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/proc/service_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_template/all_info:
+    post:
+      operationId: post_find_proc_service_template_all_info
+      description: post_find_proc_service_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/service_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_template/host_apply_rule_related:
+    post:
+      operationId: post_find_proc_service_template_host_apply_rule_related
+      description: post_find_proc_service_template_host_apply_rule_related
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/service_template/host_apply_rule_related
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related:
+    post:
+      operationId: post_find_topoinst_bk_biz_id__host_apply_rule_related
+      description: post_find_topoinst_bk_biz_id__host_apply_rule_related
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: post_findmany_host_apply_rule_bk_biz_id
+      description: post_findmany_host_apply_rule_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules:
+    post:
+      operationId: post_findmany_host_apply_rule_bk_biz_id__host_related_rules
+      description: post_findmany_host_apply_rule_bk_biz_id__host_related_rules
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_category/with_statistics:
+    post:
+      operationId: post_findmany_proc_service_category_with_statistics
+      description: post_findmany_proc_service_category_with_statistics
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_category/with_statistics
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_instance/labels/aggregation:
+    post:
+      operationId: post_findmany_proc_service_instance_labels_aggregation
+      description: post_findmany_proc_service_instance_labels_aggregation
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_instance/labels/aggregation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template/attribute:
+    post:
+      operationId: post_findmany_proc_service_template_attribute
+      description: post_findmany_proc_service_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template/count_info/biz/{bk_biz_id}:
+    post:
+      operationId: post_findmany_proc_service_template_count_info_biz
+      description: post_findmany_proc_service_template_count_info_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template/count_info/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template/host_apply_plan/status:
+    post:
+      operationId: post_findmany_proc_service_template_host_apply_plan_status
+      description: post_findmany_proc_service_template_host_apply_plan_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template/host_apply_plan/status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: post_findmany_proc_service_template_sync_status_bk_biz_id
+      description: post_findmany_proc_service_template_sync_status_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/createmany/module/host_apply_plan/preview:
+    post:
+      operationId: post_host_createmany_module_host_apply_plan_preview
+      description: post_host_createmany_module_host_apply_plan_preview
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/createmany/module/host_apply_plan/preview
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/createmany/service_template/host_apply_plan/preview:
+    post:
+      operationId: post_host_createmany_service_template_host_apply_plan_preview
+      description: post_host_createmany_service_template_host_apply_plan_preview
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/createmany/service_template/host_apply_plan/preview
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/find/service_template/host_apply_status:
+    post:
+      operationId: post_host_find_service_template_host_apply_status
+      description: post_host_find_service_template_host_apply_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/find/service_template/host_apply_status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/module/host_apply_plan/invalid_host_count:
+    post:
+      operationId: post_host_findmany_module_host_apply_plan_invalid_host_count
+      description: post_host_findmany_module_host_apply_plan_invalid_host_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/module/host_apply_plan/invalid_host_count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/module/host_apply_plan/status:
+    post:
+      operationId: post_host_findmany_module_host_apply_plan_status
+      description: post_host_findmany_module_host_apply_plan_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/module/host_apply_plan/status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/service_template/host_apply_plan/invalid_host_count:
+    post:
+      operationId: post_host_findmany_service_template_host_apply_plan_invalid_host_count
+      description: post_host_findmany_service_template_host_apply_plan_invalid_host_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/service_template/host_apply_plan/invalid_host_count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/service_template/host_apply_rule:
+    post:
+      operationId: post_host_findmany_service_template_host_apply_rule
+      description: post_host_findmany_service_template_host_apply_rule
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/service_template/host_apply_rule
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/service_template/host_apply_rule_count:
+    post:
+      operationId: post_host_findmany_service_template_host_apply_rule_count
+      description: post_host_findmany_service_template_host_apply_rule_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/service_template/host_apply_rule_count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/updatemany/module/host_apply_plan/run:
+    post:
+      operationId: post_host_updatemany_module_host_apply_plan_run
+      description: post_host_updatemany_module_host_apply_plan_run
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/updatemany/module/host_apply_plan/run
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}:
+    post:
+      operationId: post_module_bk_biz_id__service_template_id
+      description: post_module_bk_biz_id__service_template_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/proc/service_instance/labels:
+    post:
+      operationId: post_updatemany_proc_service_instance_labels
+      description: post_updatemany_proc_service_instance_labels
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/updatemany/proc/service_instance/labels
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/proc/service_template/host_apply_plan/run:
+    post:
+      operationId: post_updatemany_proc_service_template_host_apply_plan_run
+      description: post_updatemany_proc_service_template_host_apply_plan_run
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/updatemany/proc/service_template/host_apply_plan/run
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/service_instance/sync:
+    put:
+      operationId: put_update_proc_service_instance_sync
+      description: put_update_proc_service_instance_sync
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/service_instance/sync
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/service_template/all_info:
+    put:
+      operationId: put_update_proc_service_template_all_info
+      description: put_update_proc_service_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/service_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/service_template/attribute:
+    put:
+      operationId: put_update_proc_service_template_attribute
+      description: put_update_proc_service_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/service_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/proc/service_instance/biz/{bk_biz_id}:
+    put:
+      operationId: put_updatemany_proc_service_instance_biz
+      description: put_updatemany_proc_service_instance_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/proc/service_instance/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/proc/service_template/host_apply_enable_status/biz/{bk_biz_id}:
+    put:
+      operationId: put_updatemany_proc_service_template_host_apply_enable_status_biz
+      description: put_updatemany_proc_service_template_host_apply_enable_status_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/proc/service_template/host_apply_enable_status/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/kube/{bk_obj_id}/attributes:
+    get:
+      operationId: get_find_kube__attributes
+      description: get_find_kube__attributes
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/kube/{bk_obj_id}/attributes
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/kube/host_node_path:
+    post:
+      operationId: post_find_kube_host_node_path
+      description: post_find_kube_host_node_path
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/kube/host_node_path
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/kube/pod_path:
+    post:
+      operationId: post_find_kube_pod_path
+      description: post_find_kube_pod_path
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/kube/pod_path
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/kube/search:
+    post:
+      operationId: post_hosts_kube_search
+      description: post_hosts_kube_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/kube/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/field_template:
+    delete:
+      operationId: delete_delete_field_template
+      description: delete_delete_field_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/field_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/{id}:
+    get:
+      operationId: get_find_field_template
+      description: get_find_field_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/field_template/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/field_template/clone:
+    post:
+      operationId: post_create_field_template_clone
+      description: post_create_field_template_clone
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/field_template/clone
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/simplify/by_attr_template_id:
+    post:
+      operationId: post_find_field_template_simplify_by_attr_template_id
+      description: post_find_field_template_simplify_by_attr_template_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/simplify/by_attr_template_id
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/field_template/unbind/object:
+    post:
+      operationId: post_update_field_template_unbind_object
+      description: post_update_field_template_unbind_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/field_template/unbind/object
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/field_template:
+    post:
+      operationId: post_create_field_template
+      description: post_create_field_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/field_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/attribute/difference:
+    post:
+      operationId: post_find_field_template_attribute_difference
+      description: post_find_field_template_attribute_difference
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/attribute/difference
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/model/status:
+    post:
+      operationId: post_find_field_template_model_status
+      description: post_find_field_template_model_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/model/status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/sync/status:
+    post:
+      operationId: post_find_field_template_sync_status
+      description: post_find_field_template_sync_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/sync/status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/tasks_status:
+    post:
+      operationId: post_find_field_template_tasks_status
+      description: post_find_field_template_tasks_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/tasks_status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/field_template/unique/difference:
+    post:
+      operationId: post_find_field_template_unique_difference
+      description: post_find_field_template_unique_difference
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/field_template/unique/difference
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/field_template/attribute:
+    post:
+      operationId: post_findmany_field_template_attribute
+      description: post_findmany_field_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/field_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/field_template/attribute/count:
+    post:
+      operationId: post_findmany_field_template_attribute_count
+      description: post_findmany_field_template_attribute_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/field_template/attribute/count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/field_template/by_object:
+    post:
+      operationId: post_findmany_field_template_by_object
+      description: post_findmany_field_template_by_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/field_template/by_object
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/field_template/unique:
+    post:
+      operationId: post_findmany_field_template_unique
+      description: post_findmany_field_template_unique
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/field_template/unique
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/field_template/bind/object:
+    post:
+      operationId: post_update_field_template_bind_object
+      description: post_update_field_template_bind_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/field_template/bind/object
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/topo/field_template/sync:
+    post:
+      operationId: post_update_topo_field_template_sync
+      description: post_update_topo_field_template_sync
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/topo/field_template/sync
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/field_template:
+    put:
+      operationId: put_update_field_template
+      description: put_update_field_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/field_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/field_template/info:
+    put:
+      operationId: put_update_field_template_info
+      description: put_update_field_template_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/field_template/info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/associationtype/{id}:
+    delete:
+      operationId: delete_delete_associationtype
+      description: delete_delete_associationtype
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/associationtype/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/objectassociation/{id}:
+    delete:
+      operationId: delete_delete_objectassociation
+      description: delete_delete_objectassociation
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/objectassociation/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/objectattgroup/{id}:
+    delete:
+      operationId: delete_delete_objectattgroup
+      description: delete_delete_objectattgroup
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/objectattgroup/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/operation/chart/{id}:
+    delete:
+      operationId: delete_delete_operation_chart
+      description: delete_delete_operation_chart
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/operation/chart/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/resource/directory/{id}:
+    delete:
+      operationId: delete_delete_resource_directory
+      description: delete_delete_resource_directory
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/resource/directory/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/topo/set_template/attribute:
+    delete:
+      operationId: delete_delete_topo_set_template_attribute
+      description: delete_delete_topo_set_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/topo/set_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}:
+    delete:
+      operationId: delete_module
+      description: delete_module
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/{bk_biz_id}/{bk_set_id}:
+    delete:
+      operationId: delete_set
+      description: delete_set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/set/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/find/system_config/platform_setting/current:
+    get:
+      operationId: get_admin_find_system_config_platform_setting_current
+      description: get_admin_find_system_config_platform_setting_current
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/admin/find/system_config/platform_setting/current
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/find/system_config/platform_setting/initial:
+    get:
+      operationId: get_admin_find_system_config_platform_setting_initial
+      description: get_admin_find_system_config_platform_setting_initial
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/admin/find/system_config/platform_setting/initial
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/audit_dict:
+    get:
+      operationId: get_find_audit_dict
+      description: get_find_audit_dict
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/audit_dict
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}:
+    get:
+      operationId: get_find_topo_set_template__bk_biz_id
+      description: get_find_topo_set_template__bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/operation/chart:
+    get:
+      operationId: get_findmany_operation_chart
+      description: get_findmany_operation_chart
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/findmany/operation/chart
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/difference/service_instances:
+    post:
+      operationId: post_find_proc_difference_service_instances
+      description: post_find_proc_difference_service_instances
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/difference/service_instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topoinst_with_statistics/biz/{bk_biz_id}:
+    post:
+      operationId: post_find_topoinst_with_statistics_biz
+      description: post_find_topoinst_with_statistics_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topoinst_with_statistics/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/operation/chart/position:
+    post:
+      operationId: post_update_operation_chart_position
+      description: post_update_operation_chart_position
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/operation/chart/position
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/associationtype:
+    post:
+      operationId: post_create_associationtype
+      description: post_create_associationtype
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/associationtype
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectassociation:
+    post:
+      operationId: post_create_objectassociation
+      description: post_create_objectassociation
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectassociation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectattgroup:
+    post:
+      operationId: post_create_objectattgroup
+      description: post_create_objectattgroup
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectattgroup
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectunique/object/{bk_obj_id}:
+    post:
+      operationId: post_create_objectunique_object
+      description: post_create_objectunique_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectunique/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/operation/chart:
+    post:
+      operationId: post_create_operation_chart
+      description: post_create_operation_chart
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/operation/chart
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/resource/directory:
+    post:
+      operationId: post_create_resource_directory
+      description: post_create_resource_directory
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/resource/directory
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/topo/set_template/all_info:
+    post:
+      operationId: post_create_topo_set_template_all_info
+      description: post_create_topo_set_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/topo/set_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/objectunique/object/{bk_obj_id}/unique/{id}:
+    post:
+      operationId: post_delete_objectunique_object__unique
+      description: post_delete_objectunique_object__unique
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/delete/objectunique/object/{bk_obj_id}/unique/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/biz:
+    post:
+      operationId: post_deletemany_biz
+      description: post_deletemany_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/deletemany/biz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/associationtype:
+    post:
+      operationId: post_find_associationtype
+      description: post_find_associationtype
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/associationtype
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/classificationobject:
+    post:
+      operationId: post_find_classificationobject
+      description: post_find_classificationobject
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/classificationobject
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/full_text:
+    post:
+      operationId: post_find_full_text
+      description: post_find_full_text
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/full_text
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/host/topopath:
+    post:
+      operationId: post_find_host_topopath
+      description: post_find_host_topopath
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/host/topopath
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/inst_audit:
+    post:
+      operationId: post_find_inst_audit
+      description: post_find_inst_audit
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/inst_audit
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectattgroup/object/{bk_obj_id}:
+    post:
+      operationId: post_find_objectattgroup_object
+      description: post_find_objectattgroup_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectattgroup/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectattr/host:
+    post:
+      operationId: post_find_objectattr_host
+      description: post_find_objectattr_host
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectattr/host
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectattr/web:
+    post:
+      operationId: post_find_objectattr_web
+      description: post_find_objectattr_web
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectattr/web
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objecttopo/scope_type/global/scope_id/0:
+    post:
+      operationId: post_find_objecttopo_scope_type_global_scope_id_0
+      description: post_find_objecttopo_scope_type_global_scope_id_0
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objecttopo/scope_type/global/scope_id/0
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectunique/object/{bk_obj_id}:
+    post:
+      operationId: post_find_objectunique_object
+      description: post_find_objectunique_object
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectunique/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/operation/chart/data:
+    post:
+      operationId: post_find_operation_chart_data
+      description: post_find_operation_chart_data
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/operation/chart/data
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topo/set_template/all_info:
+    post:
+      operationId: post_find_topo_set_template_all_info
+      description: post_find_topo_set_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topo/set_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topoinst/biz/{bk_biz_id}:
+    post:
+      operationId: post_find_topoinst_biz
+      description: post_find_topoinst_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topoinst/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topopath/biz/{bk_biz_id}:
+    post:
+      operationId: post_find_topopath_biz
+      description: post_find_topopath_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topopath/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/search/noauth:
+    post:
+      operationId: post_findmany_hosts_search_noauth
+      description: post_findmany_hosts_search_noauth
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/search/noauth
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/search/resource:
+    post:
+      operationId: post_findmany_hosts_search_resource
+      description: post_findmany_hosts_search_resource
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/search/resource
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/search/with_biz:
+    post:
+      operationId: post_findmany_hosts_search_with_biz
+      description: post_findmany_hosts_search_with_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/search/with_biz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/inst/association/object/{bk_obj_id}/inst_id/{bk_inst_id}/offset/{offset}/limit/{limit}/web:
+    post:
+      operationId: post_findmany_inst_association_object__inst_id__offset__limit__web
+      description: post_findmany_inst_association_object__inst_id__offset__limit__web
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/inst/association/object/{bk_obj_id}/inst_id/{bk_inst_id}/offset/{offset}/limit/{limit}/web
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/object/instances/names:
+    post:
+      operationId: post_findmany_object_instances_names
+      description: post_findmany_object_instances_names
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/object/instances/names
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/host/with_no_service_instance:
+    post:
+      operationId: post_findmany_proc_host_with_no_service_instance
+      description: post_findmany_proc_host_with_no_service_instance
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/host/with_no_service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/process_instance/detail/by_ids:
+    post:
+      operationId: post_findmany_proc_process_instance_detail_by_ids
+      description: post_findmany_proc_process_instance_detail_by_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/process_instance/detail/by_ids
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/process_instance/name_ids:
+    post:
+      operationId: post_findmany_proc_process_instance_name_ids
+      description: post_findmany_proc_process_instance_name_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/process_instance/name_ids
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/web/service_instance:
+    post:
+      operationId: post_findmany_proc_web_service_instance
+      description: post_findmany_proc_web_service_instance
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/web/service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/web/service_instance/with_host:
+    post:
+      operationId: post_findmany_proc_web_service_instance_with_host
+      description: post_findmany_proc_web_service_instance_with_host
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/web/service_instance/with_host
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/resource/directory:
+    post:
+      operationId: post_findmany_resource_directory
+      description: post_findmany_resource_directory
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/resource/directory
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/diff_with_instances:
+    post:
+      operationId: post_findmany_topo_set_template__bk_biz_id__diff_with_instances
+      description: post_findmany_topo_set_template__bk_biz_id__diff_with_instances
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/diff_with_instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/instances_sync_status:
+    post:
+      operationId: post_findmany_topo_set_template__bk_biz_id__instances_sync_status
+      description: post_findmany_topo_set_template__bk_biz_id__instances_sync_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/instances_sync_status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sets/web:
+    post:
+      operationId: post_findmany_topo_set_template__bk_biz_id__sets_web
+      description: post_findmany_topo_set_template__bk_biz_id__sets_web
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sets/web
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{templateId}/bk_biz_id/{bk_biz_id}/host_with_instances:
+    post:
+      operationId: post_findmany_topo_set_template__bk_biz_id__host_with_instances
+      description: post_findmany_topo_set_template__bk_biz_id__host_with_instances
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/{templateId}/bk_biz_id/{bk_biz_id}/host_with_instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/attribute:
+    post:
+      operationId: post_findmany_topo_set_template_attribute
+      description: post_findmany_topo_set_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/set_template_status:
+    post:
+      operationId: post_findmany_topo_set_template_bk_biz_id__set_template_status
+      description: post_findmany_topo_set_template_bk_biz_id__set_template_status
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/set_template_status
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/web:
+    post:
+      operationId: post_findmany_topo_set_template_bk_biz_id__web
+      description: post_findmany_topo_set_template_bk_biz_id__web
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/web
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: post_findmany_topo_set_template_sync_history_bk_biz_id
+      description: post_findmany_topo_set_template_sync_history_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: post_findmany_topo_set_template_sync_status_bk_biz_id
+      description: post_findmany_topo_set_template_sync_status_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/findmany/module/get_module_final_rules:
+    post:
+      operationId: post_host_findmany_module_get_module_final_rules
+      description: post_host_findmany_module_get_module_final_rules
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/findmany/module/get_module_final_rules
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/transfer/resource/directory:
+    post:
+      operationId: post_host_transfer_resource_directory
+      description: post_host_transfer_resource_directory
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/transfer/resource/directory
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: post_host_transfer_with_auto_clear_service_instance_bk_biz_id
+      description: post_host_transfer_with_auto_clear_service_instance_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview:
+    post:
+      operationId: post_host_transfer_with_auto_clear_service_instance_bk_biz_id__preview
+      description: post_host_transfer_with_auto_clear_service_instance_bk_biz_id__preview
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/favorites:
+    post:
+      operationId: post_hosts_favorites
+      description: post_hosts_favorites
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/favorites
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/favorites/search:
+    post:
+      operationId: post_hosts_favorites_search
+      description: post_hosts_favorites_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/favorites/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/import:
+    post:
+      operationId: post_hosts_import
+      description: post_hosts_import
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/import
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules:
+    post:
+      operationId: post_hosts_modules
+      description: post_hosts_modules
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/biz/mutilple:
+    post:
+      operationId: post_hosts_modules_biz_mutilple
+      description: post_hosts_modules_biz_mutilple
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/biz/mutilple
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/fault:
+    post:
+      operationId: post_hosts_modules_fault
+      description: post_hosts_modules_fault
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/fault
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/idle:
+    post:
+      operationId: post_hosts_modules_idle
+      description: post_hosts_modules_idle
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/idle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/resource:
+    post:
+      operationId: post_hosts_modules_resource
+      description: post_hosts_modules_resource
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/resource
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/resource/idle:
+    post:
+      operationId: post_hosts_modules_resource_idle
+      description: post_hosts_modules_resource_idle
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/resource/idle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/resource/cross/biz:
+    post:
+      operationId: post_hosts_resource_cross_biz
+      description: post_hosts_resource_cross_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/resource/cross/biz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/search:
+    post:
+      operationId: post_hosts_search
+      description: post_hosts_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/update:
+    post:
+      operationId: post_hosts_update
+      description: post_hosts_update
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/update
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/{bk_biz_id}/{bk_set_id}:
+    post:
+      operationId: post_module
+      description: post_module
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/module/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/search/{bk_supplier_account}/{bk_biz_id}/{bk_set_id}:
+    post:
+      operationId: post_module_search
+      description: post_module_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/module/search/{bk_supplier_account}/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/{bk_biz_id}:
+    post:
+      operationId: post_set
+      description: post_set
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/set/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/search/{bk_supplier_account}/{bk_biz_id}:
+    post:
+      operationId: post_set_search
+      description: post_set_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/set/search/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/system/config/user_config/blueking_modify:
+    post:
+      operationId: post_system_config_user_config_blueking_modify
+      description: post_system_config_user_config_blueking_modify
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/system/config/user_config/blueking_modify
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectattr/index/{bk_obj_id}/{propertyId}:
+    post:
+      operationId: post_update_objectattr_index
+      description: post_update_objectattr_index
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/objectattr/index/{bk_obj_id}/{propertyId}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objecttopo/scope_type/global/scope_id/0:
+    post:
+      operationId: post_update_objecttopo_scope_type_global_scope_id_0
+      description: post_update_objecttopo_scope_type_global_scope_id_0
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/objecttopo/scope_type/global/scope_id/0
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/operation/chart:
+    post:
+      operationId: post_update_operation_chart
+      description: post_update_operation_chart
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/operation/chart
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/usercustom:
+    post:
+      operationId: post_usercustom
+      description: post_usercustom
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/usercustom
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/usercustom/default/model:
+    post:
+      operationId: post_usercustom_default_model
+      description: post_usercustom_default_model
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/usercustom/default/model
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/usercustom/default/model/{bk_obj_id}:
+    post:
+      operationId: post_usercustom_default_model_
+      description: post_usercustom_default_model_
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/usercustom/default/model/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/usercustom/default/search:
+    post:
+      operationId: post_usercustom_default_search
+      description: post_usercustom_default_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/usercustom/default/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/usercustom/user/search:
+    post:
+      operationId: post_usercustom_user_search
+      description: post_usercustom_user_search
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/usercustom/user/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/batch:
+    put:
+      operationId: put_hosts_batch
+      description: put_hosts_batch
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_hosts_batch
+      description: delete_hosts_batch
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/hosts/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/favorites/{id}:
+    put:
+      operationId: put_hosts_favorites
+      description: put_hosts_favorites
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/favorites/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_hosts_favorites
+      description: delete_hosts_favorites
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/hosts/favorites/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/favorites/{id}/incr:
+    put:
+      operationId: put_hosts_favorites__incr
+      description: put_hosts_favorites__incr
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/favorites/{id}/incr
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}:
+    put:
+      operationId: put_module_host_apply_enable_status_bk_biz_id
+      description: put_module_host_apply_enable_status_bk_biz_id
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/associationtype/{id}:
+    put:
+      operationId: put_update_associationtype
+      description: put_update_associationtype
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/associationtype/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectassociation/{id}:
+    put:
+      operationId: put_update_objectassociation
+      description: put_update_objectassociation
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectassociation/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectattgroup:
+    put:
+      operationId: put_update_objectattgroup
+      description: put_update_objectattgroup
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectattgroup
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectattgroup/groupindex:
+    put:
+      operationId: put_update_objectattgroup_groupindex
+      description: put_update_objectattgroup_groupindex
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectattgroup/groupindex
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectunique/object/{bk_obj_id}/unique/{id}:
+    put:
+      operationId: put_update_objectunique_object__unique
+      description: put_update_objectunique_object__unique
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectunique/object/{bk_obj_id}/unique/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/process_instance/by_ids:
+    put:
+      operationId: put_update_proc_process_instance_by_ids
+      description: put_update_proc_process_instance_by_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/process_instance/by_ids
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/resource/directory/{id}:
+    put:
+      operationId: put_update_resource_directory
+      description: put_update_resource_directory
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/resource/directory/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/topo/set_template/all_info:
+    put:
+      operationId: put_update_topo_set_template_all_info
+      description: put_update_topo_set_template_all_info
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/topo/set_template/all_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/topo/set_template/attribute:
+    put:
+      operationId: put_update_topo_set_template_attribute
+      description: put_update_topo_set_template_attribute
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/topo/set_template/attribute
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/biz/property:
+    put:
+      operationId: put_updatemany_biz_property
+      description: put_updatemany_biz_property
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/biz/property
           matchSubpath: false
           timeout: 0
           upstreams: {}
