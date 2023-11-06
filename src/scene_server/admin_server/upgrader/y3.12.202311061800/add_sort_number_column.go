@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310311500
+package y3_12_202311061800
 
 import (
 	"context"
@@ -33,22 +33,24 @@ func addSortNumberColumnToObjDes(ctx context.Context, db dal.RDB) error {
 			common.BKDBExists: true,
 		},
 	}
-	objSortNumberCount, err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).Fields(common.ObjSortNumberField).
-		Count(ctx)
+	objSortNumberCount, err := db.Table(common.BKTableNameObjDes).Find(objSortNumberFilter).
+		Fields(common.ObjSortNumberField).Count(ctx)
 	if err != nil {
-		blog.Errorf("list object sort number failed, db find failed, err: %v", err)
+		blog.Errorf("get object sort number count failed, db find failed, err: %v", err)
 		return err
-	}
-	if objSortNumberCount > 0 {
-		return nil
 	}
 
 	// 获取所有模型信息
 	objectList := make([]metadata.Object, 0)
-	err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKFieldID, common.BKClassificationIDField).
-		All(ctx, &objectList)
+	objFind := db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKFieldID, common.BKClassificationIDField,
+		common.ObjSortNumberField)
+
+	if objSortNumberCount != 0 {
+		objFind = objFind.Sort(common.ObjSortNumberField)
+	}
+	err = objFind.All(ctx, &objectList)
 	if err != nil {
-		blog.Errorf("list object ids failed, db find failed, err: %v", err)
+		blog.Errorf("find objects failed, db find failed, err: %v", err)
 		return err
 	}
 
