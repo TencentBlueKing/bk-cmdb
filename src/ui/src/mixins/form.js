@@ -12,7 +12,6 @@
 
 import has from 'has'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
 
 export default {
   props: {
@@ -63,8 +62,7 @@ export default {
     },
     $sortedProperties() {
       const sortKey = 'bk_property_index'
-      const properties = this.properties.filter(property => !property.bk_isapi
-        && !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id))
+      const properties = this.properties.filter(property => !property.bk_isapi)
       return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
     },
     $groupedProperties() {
