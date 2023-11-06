@@ -25,5 +25,17 @@ export const autofocus = {
         input.setSelectionRange(length, length)
       }, 0)
     }
+  },
+  inserted: (el) => {
+    const input = el.querySelector('input') || el.querySelector('textarea')
+    if (input) {
+      // 尽量靠后执行，避免其他队列任务影响到聚焦
+      setTimeout(() => {
+        input.focus()
+        // 将光标放在末尾
+        const length = input?.value?.length ?? 0
+        input.setSelectionRange(length, length)
+      }, 0)
+    }
   }
 }
