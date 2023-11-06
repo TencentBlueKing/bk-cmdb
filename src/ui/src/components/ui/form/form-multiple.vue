@@ -108,6 +108,7 @@
 <script>
   import formMixins from '@/mixins/form'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
 
   export default {
@@ -167,8 +168,10 @@
           const isapi = property.bk_isapi
           const { isonly } = property
           const isAsst = ['singleasst', 'multiasst'].includes(property.bk_property_type)
+          const isUneditable = this.uneditableProperties.includes(property.bk_property_id)
+          const isBuiltinUneditable = BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id)
           // eslint-disable-next-line max-len
-          return editable && !isapi && !isonly && !isAsst && !this.uneditableProperties.includes(property.bk_property_id)
+          return editable && !isapi && !isonly && !isAsst && !isUneditable && !isBuiltinUneditable
         }))
       },
       hasAvaliableGroups() {
