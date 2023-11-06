@@ -31,6 +31,19 @@ export default {
         this.beforeClose = beforeClose
         this.setChanged = setChanged
       },
+      methods: {
+        confirmLeave() {
+          const refColumns = this.$refs.cmdbColumnsConfig
+          const { columnsChangedValues } = refColumns
+          if (columnsChangedValues()) {
+            this.setChanged(true)
+            return this.beforeClose(() => {
+              this.isShow = false
+            })
+          }
+          this.isShow = false
+        }
+      },
       render(h) {
         return h('bk-sideslider', {
           ref: 'sideslider',
@@ -39,15 +52,7 @@ export default {
             width: 600,
             isShow: this.isShow,
             beforeClose: () => {
-              const refColumns = this.$refs.cmdbColumnsConfig
-              const { columnsChangedValues } = refColumns
-              if (columnsChangedValues()) {
-                this.setChanged(true)
-                return this.beforeClose(() => {
-                  this.isShow = false
-                })
-              }
-              this.isShow = false
+              this.confirmLeave()
             }
           },
           on: {
@@ -65,7 +70,7 @@ export default {
           slot: 'content',
           on: {
             cancel: () => {
-              this.isShow = false
+              this.confirmLeave()
             },
             apply: (properties) => {
               this.isShow = false

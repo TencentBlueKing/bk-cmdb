@@ -472,7 +472,7 @@
     "未配置节点管理地址": "Node Management APP address not configured",
     "自定义查询": "Dynamic group",
     "新建动态分组": "Create group",
-    "编辑动态分组": "Edit group",
+    "编辑动态分组": "Edit group【{name}】",
     "预览查询": "Preview group",
     "查询内容": "Group content",
     "新增查询条件": "Add filters",
@@ -1839,5 +1839,14 @@
     "最多支持50个不同管控区域的混合搜索": "Supports mixed search for up to 50 different BK-Network Area",
     "属性设置step": "Field Setting",
     "信息确认step": "Information confirmed",
-    "属性应用step": "Field application"
+    "属性应用step": "Field application",
+    "请输入名称关键字": "Please enter a name keyword",
+    "解除绑定": "unbound",
+    "停用模型": "Deactivation model",
+    "删除模型": "Deletion model",
+    "解绑": "Unbind",
+    "解绑成功": "Unbind successfully",
+    "解绑模版": "Unbind Stencil",
+    "确认解绑该模板": "Confirm to unbind the template",
+    "解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理": "After being unbound, field content and unique check are detached from the template and no longer managed by the template"
 }

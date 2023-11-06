@@ -31,6 +31,7 @@
             <cmdb-auth
               v-if="cmd.auth"
               :auth="cmd.auth"
+              class="menu-auth"
             >
               <dropdown-option-button
                 class="more-action-menu-option"
@@ -59,6 +60,9 @@
 </template>
 
 <style  lang="scss" scoped>
+  .menu-auth {
+    width: 100%;
+  }
 .more-action-menu {
   @include space-between;
   justify-content: flex-start;

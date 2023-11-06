@@ -40,7 +40,7 @@
               v-validate="'required'">
             </component>
           </div>
-          <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
+          <i class="item-remove bk-icon icon-close" v-if="!disabled" @click="handleRemove(property)"></i>
         </div>
         <p class="form-error" v-if="errors.has(property.bk_property_id)">{{errors.first(property.bk_property_id)}}</p>
       </bk-form-item>
@@ -248,6 +248,10 @@
 
     .bk-label {
       cursor: pointer;
+      .bk-label-text {
+        width: calc(100% - 20px);
+        @include ellipsis;
+      }
     }
 
     &:hover {
@@ -287,6 +291,9 @@
       position: absolute;
       right: 0;
       top: -32px;
+      &:hover {
+        color: #EA3636;
+      }
     }
   }
   .form-error {

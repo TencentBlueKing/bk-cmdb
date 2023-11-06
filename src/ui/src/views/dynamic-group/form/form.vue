@@ -22,6 +22,8 @@
     <bk-resize-layout
       :collapsible="true"
       :initial-divide="412"
+      :min="400"
+      :max="500"
       slot="content"
       style="height: 100%;">
       <div slot="aside" class="dynamic-group-info">
@@ -560,7 +562,7 @@
   }
 }
 .dynamic-group-info {
-  width: 412px;
+  width: 100%;
   float: left;
   height: calc(100% - 53px);
 }
