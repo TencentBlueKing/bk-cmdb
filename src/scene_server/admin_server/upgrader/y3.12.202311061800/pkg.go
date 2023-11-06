@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202310311500
+package y3_12_202311061800
 
 import (
 	"context"
@@ -26,17 +26,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.12.202310311500", upgrade)
+	upgrader.RegistUpgrader("y3.12.202311061800", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.12.202310311500")
+	blog.Infof("start execute y3.12.202311061800")
 
 	if err = addSortNumberColumnToObjDes(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.12.202310311500 add sort number column failed, err: %v", err)
+		blog.Errorf("upgrade y3.12.202311061800 add sort number column failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.12.202310311500 add sort number column success")
+	blog.Infof("upgrade y3.12.202311061800 add sort number column success")
 	return nil
 }
