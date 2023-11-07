@@ -69,6 +69,10 @@ func getRowWithOneCell() []excel.Cell {
 
 func getHandleIntFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
 		intVal, err := util.GetInt64ByInterface(val)
 		if err != nil {
 			blog.Errorf("value type is not int, val: %v", val)
@@ -82,6 +86,10 @@ func getHandleIntFieldFunc() handleInstFieldFunc {
 
 func getHandleFloatFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
 		floatVal, err := util.GetFloat64ByInterface(val)
 		if err != nil {
 			blog.Errorf("value type is not float64, val: %v", val)
@@ -95,6 +103,10 @@ func getHandleFloatFieldFunc() handleInstFieldFunc {
 
 func getHandleEnumFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
 		option, err := metadata.ParseEnumOption(property.Option)
 		if err != nil {
 			blog.Errorf("option type is invalid, option: %v", property.Option)
@@ -161,6 +173,10 @@ func getEnumNameByID(id string, option metadata.EnumOption) string {
 
 func getHandleBoolFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
 		val, ok := val.(bool)
 		if !ok {
 			blog.Errorf("value type is not boolean, val: %v", val)
