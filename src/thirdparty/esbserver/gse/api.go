@@ -35,7 +35,7 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -56,7 +56,7 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -76,7 +76,7 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -97,7 +97,7 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -118,7 +118,7 @@ func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -140,7 +140,7 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -167,7 +167,7 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -194,7 +194,7 @@ func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -222,7 +222,7 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -250,7 +250,7 @@ func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -276,7 +276,7 @@ func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metada
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -302,7 +302,7 @@ func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metada
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -330,7 +330,7 @@ func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadat
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 

@@ -27,8 +27,7 @@ func (p *nodeman) SearchPackage(ctx context.Context, h http.Header,
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath, processname).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)
@@ -43,8 +42,7 @@ func (p *nodeman) SearchProcess(ctx context.Context, h http.Header,
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath, processname).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)
@@ -59,8 +57,7 @@ func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header,
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath, processname).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)
@@ -82,7 +79,7 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath, bizID).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)
@@ -97,8 +94,7 @@ func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, ta
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath, bizID, taskID).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)
@@ -113,9 +109,8 @@ func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header,
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithParam("name", processname).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Peek().
 		Do().
 		Into(resp)

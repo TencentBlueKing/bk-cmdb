@@ -1196,6 +1196,12 @@ const (
 	BKHTTPRequestFromWeb = "Cc_Request_From_Web"
 )
 
+// new http header keys in the standard of api gateway
+const (
+	// BkHTTPHeaderAuth is the blueking api gateway authorization http header key
+	BkHTTPHeaderAuth = "X-Bkapi-Authorization"
+)
+
 // ReadPreferenceMode TODO
 type ReadPreferenceMode string
 
@@ -1359,6 +1365,8 @@ const (
 
 	// HTTPCookieBKToken TODO
 	HTTPCookieBKToken = "bk_token"
+	// HTTPCookieBKTicket is the bk ticket cookie name
+	HTTPCookieBKTicket = "bk_ticket"
 
 	// WEBSessionUinKey TODO
 	WEBSessionUinKey = "username"
