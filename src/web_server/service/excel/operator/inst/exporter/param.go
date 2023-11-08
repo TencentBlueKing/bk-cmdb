@@ -220,6 +220,7 @@ func (e *HostParam) GetInstCond() (mapstr.MapStr, error) {
 		}
 	}
 
+	result[common.BKIP] = e.ExportCond.Ipv4Ip
 	result[metadata.DBQueryCondition] = e.ExportCond.Condition
 	result[metadata.PageName] = e.cursor.getPage()
 	e.cursor.next()
