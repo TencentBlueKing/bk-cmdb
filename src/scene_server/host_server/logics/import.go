@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -31,7 +32,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/thirdparty/hooks"
 )

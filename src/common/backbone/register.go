@@ -14,11 +14,11 @@ package backbone
 
 import (
 	"encoding/json"
+	"errors"
 
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
-	"configcenter/src/framework/core/errors"
 )
 
 // ServiceRegisterInterface TODO
