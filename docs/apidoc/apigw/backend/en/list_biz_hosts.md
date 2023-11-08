@@ -129,7 +129,6 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
   "code": 0,
   "message": "success",
   "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
   "data": {
     "count": 2,
     "info": [
@@ -160,7 +159,6 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 | code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
 | message    | string | Error message returned by request failure                                          |
 | permission | object | Permission information                                                             |
-| request_id | string | Request chain id                                                                   |
 | data       | object | Data returned by request                                                           |
 
 #### data
