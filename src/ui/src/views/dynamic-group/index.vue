@@ -13,7 +13,7 @@
 <template>
   <div class="dynamic-group-layout">
     <cmdb-tips class="mb10" tips-key="showCustomQuery"
-      more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/CustomQuery.md">
+      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/CustomQuery.md`">
       {{$t('动态分组提示')}}
     </cmdb-tips>
     <div class="dynamic-group-options">
