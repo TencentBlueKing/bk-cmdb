@@ -96,6 +96,8 @@
   const uniqueDrawerOpen = ref(false)
   const stuff = ref({ type: 'default' })
 
+  const query = computed(() => RouterQuery.getAll())
+
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])
     fieldLocalList.value = fieldList.map(unwrapData)
@@ -105,8 +107,6 @@
       handleOpenUnqiueDrawer()
     }
   })
-
-  const query = computed(() => RouterQuery.getAll())
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))

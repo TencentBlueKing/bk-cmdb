@@ -942,6 +942,10 @@
                 :deep(.editable-field-content) {
                   max-width: 100% !important;
                 }
+                :deep(.editable-field-edit-button) {
+                  font-size: 16px;
+                  display: flex;
+                }
             }
           }
 

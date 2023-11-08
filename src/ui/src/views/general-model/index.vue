@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="models-layout">
+  <div class="models-layout general-model-layout">
     <div class="models-options clearfix">
       <div class="options-button clearfix fl">
         <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_INST, relation: [model.id] }">
@@ -999,6 +999,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .general-model-layout {
+      :deep(.bk-tag-selector .bk-tag-input .placeholder) {
+        left: 10px;
+      }
+    }
     .models-layout {
         padding: 15px 20px 0;
     }

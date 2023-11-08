@@ -64,7 +64,7 @@
       >
       </bk-input>
       <div class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
-        <img src="@/assets/images/icon/icon-model-setting.png">
+        <i class="bk-icon left-icon icon-cog"></i>
       </div>
     </div>
     <div class="group-wrapper">
@@ -1061,7 +1061,7 @@
       handleEditField(group, property) {
         this.slider.isEditField = true
         this.slider.curField = property
-        this.slider.curGroup = group.info
+        this.slider.curGroup = group.info || group
         this.slider.title = this.$t('编辑字段')
         this.slider.isShow = true
         this.slider.beforeClose = this.handleSliderBeforeClose
@@ -1261,9 +1261,8 @@ $modelHighlightColor: #3c96ff;
     align-items: center;
     background: white;
     cursor: pointer;
-    img {
-      width: 16px;
-      height: 16px;
+    i {
+      font-size: 18px;
     }
   }
 }
