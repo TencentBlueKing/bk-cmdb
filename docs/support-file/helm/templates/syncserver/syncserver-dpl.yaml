@@ -1,0 +1,119 @@
+{{- if .Values.syncserver.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-syncserver"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: syncserver
+spec:
+  replicas: {{ .Values.syncserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: syncserver
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: syncserver
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.syncserver.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.syncserver.podAnnotations }}
+        {{ toYaml .Values.syncserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: syncserver
+          image: {{ .Values.image.registry }}/{{ .Values.syncserver.image.repository }}:v{{ default .Chart.AppVersion .Values.syncserver.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: {{ .Values.syncserver.workDir }}
+          command:
+            - ./cmdb_syncserver
+            - --addrport=$(POD_IP):{{ .Values.syncserver.port }}
+        {{- if .Values.syncserver.configDir }}
+            - --config={{ .Values.syncserver.configDir }}
+        {{- end }}
+            - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.syncserver.command.logDir }}
+            - --log-dir={{ .Values.syncserver.command.logDir }}
+        {{- end }}
+            - --v={{ .Values.syncserver.command.logLevel }}
+            - --logtostderr={{ .Values.syncserver.command.logToStdErr }}
+            - "--enable-auth"
+            - {{ .Values.iam.auth.enabled | quote }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.syncserver.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.syncserver.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+
+        {{- if .Values.syncserver.resources }}
+          resources: {{ toYaml .Values.syncserver.resources | nindent 10 }}
+        {{- end }}
+
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+        {{- if .Values.syncserver.env }}
+          {{ toYaml .Values.syncserver.env | indent 10 }}
+        {{- end }}
+
+          ports:
+            - containerPort: {{ .Values.syncserver.port }}
+
+          volumeMounts:
+          {{- if .Values.common.monitor.enabled }}
+            - name: plugin-path
+              mountPath: {{ .Values.common.monitor.pluginPath }}
+          {{- end }}
+          {{- if .Values.syncserver.configDir }}
+            - name: configures
+              mountPath: {{ .Values.syncserver.configDir }}
+          {{- end }}
+      volumes:
+        {{- if .Values.common.monitor.enabled }}
+        - name: plugin-path
+          hostPath:
+            path: {{ .Values.common.monitor.pluginPath }}
+        {{- end }}
+        {{- if .Values.syncserver.configDir }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-syncserver-configures
+        {{- end }}
+
+      {{- with .Values.syncserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.syncserver.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.syncserver.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

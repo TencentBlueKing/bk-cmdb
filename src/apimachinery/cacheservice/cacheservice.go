@@ -16,6 +16,7 @@ package cacheservice
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/cacheservice/cache/common"
 	"configcenter/src/apimachinery/cacheservice/cache/event"
 	"configcenter/src/apimachinery/cacheservice/cache/host"
 	"configcenter/src/apimachinery/cacheservice/cache/topology"
@@ -28,6 +29,7 @@ type Cache interface {
 	Host() host.Interface
 	Topology() topology.Interface
 	Event() event.Interface
+	CommonRes() common.Interface
 }
 
 // CacheServiceClientInterface TODO
@@ -71,4 +73,9 @@ func (c *cache) Topology() topology.Interface {
 // Event TODO
 func (c *cache) Event() event.Interface {
 	return event.NewCacheClient(c.restCli)
+}
+
+// CommonRes is the common resource cache client
+func (c *cache) CommonRes() common.Interface {
+	return common.NewCacheClient(c.restCli)
 }

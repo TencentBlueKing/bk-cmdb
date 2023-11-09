@@ -33,23 +33,28 @@ import (
 */
 
 var (
-	db dal.RDB
+	dbMap = make(map[string]dal.DB)
+
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
 )
 
 // Client  get default error
-func Client() dal.RDB {
-	return db
+func Client(prefix ...string) dal.DB {
+	var pre string
+	if len(prefix) > 0 {
+		pre = prefix[0]
+	}
+	return dbMap[pre]
 }
 
 // Table 获取操作db table的对象
 func Table(name string) dbType.Table {
-	return db.Table(name)
+	return Client().Table(name)
 }
 
-// ParseConfig TODO
+// ParseConfig parse mongodb configuration
 func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
 	lastConfigErr = nil
 	config, err := cc.Mongo(prefix)
@@ -80,47 +85,46 @@ func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, err
 	return &config, nil
 }
 
-// InitClient TODO
+// InitClient init mongodb client
 func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
 	lastInitErr = nil
 	var dbErr error
-	db, dbErr = local.NewMgo(config.GetMongoConf(), time.Minute)
+	dbMap[prefix], dbErr = local.NewMgo(config.GetMongoConf(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the mongo server, error info is %s", dbErr.Error())
-		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'"+prefix+".mongodb' initialization failed")
+		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed,
+			"'"+prefix+".mongodb' initialization failed")
 		return lastInitErr
 	}
 	return nil
 }
 
-// Validate TODO
-func Validate() errors.CCErrorCoder {
-	return nil
-}
-
-// UpdateConfig TODO
+// UpdateConfig update mongodb configuration
 func UpdateConfig(prefix string, config mongo.Config) {
-	// 不支持热更行
+	// 不支持热更新
 	return
 }
 
-// Healthz TODO
+// Healthz check db health status
 func Healthz() (items []metric.HealthItem) {
-
 	item := &metric.HealthItem{
 		IsHealthy: true,
 		Name:      types.CCFunctionalityMongo,
 	}
 	items = append(items, *item)
-	if db == nil {
-		item.IsHealthy = false
-		item.Message = "not initialized"
-		return
-	}
-	if err := db.Ping(); err != nil {
-		item.IsHealthy = false
-		item.Message = "connect error. err: " + err.Error()
-		return
+
+	for prefix, db := range dbMap {
+		if db == nil {
+			item.IsHealthy = false
+			item.Message = prefix + " db not initialized"
+			return
+		}
+
+		if err := db.Ping(); err != nil {
+			item.IsHealthy = false
+			item.Message = prefix + " db connect error. err: " + err.Error()
+			return
+		}
 	}
 
 	return

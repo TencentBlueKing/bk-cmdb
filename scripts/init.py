@@ -168,50 +168,6 @@ watch:
     with open(output + "mongodb.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-    outputMonstache = os.getcwd() + "/monstache/etc/"
-    if not os.path.exists(outputMonstache):
-        mkdir_p(outputMonstache)
-    # monstache.so config.toml
-    monstachesoconfig_file_template_str = '''
-# mongodb settings
-mongo-url = "mongodb://$mongo_user:$mongo_pass@$mongo_host:$mongo_port/$db"
-
-# elasticsearch settings
-elasticsearch-urls = ["$es_url"]
-elasticsearch-user = "$es_user"
-elasticsearch-password = "$es_pass"
-gzip = true
-
-# metadata collections.
-change-stream-namespaces = [""]
-direct-read-namespaces = [""]
-direct-read-dynamic-include-regex = "cmdb.cc_ApplicationBase$$|cc_SetBase$$|cc_ModuleBase$$|cmdb.cc_HostBase$$|cmdb.cc_ObjDes$$|cc_ObjAttDes$$|cmdb.cc_ObjectBase_(.*)_pub_"
-namespace-regex = "cmdb.cc_ApplicationBase$$|cc_SetBase$$|cc_ModuleBase$$|cmdb.cc_HostBase$$|cmdb.cc_ObjDes$$|cc_ObjAttDes$$|cmdb.cc_ObjectBase_(.*)_pub_"
-
-# plugin
-mapper-plugin-path = "etc/monstache-plugin.so"
-
-# resume mode
-resume = true
-    '''
-    template = FileTemplate(monstachesoconfig_file_template_str)
-    result = template.substitute(**context)
-    with open(outputMonstache + "config.toml", 'w') as tmp_file:
-        tmp_file.write(result)
-
-    # monstache.so extra.toml.toml
-    monstachesoextra_file_template_str = '''
-# elasticsearch settings
-
-# the param must be assigned
-elasticsearch-shard-num = "$es_shard_num"
-elasticsearch-replica-num = "$es_replica_num"
-    '''
-    template = FileTemplate(monstachesoextra_file_template_str)
-    result = template.substitute(**context)
-    with open(outputMonstache + "extra.toml", 'w') as tmp_file:
-        tmp_file.write(result)
-
     # common.yaml
     common_file_template_str = '''
 #topoServer:
@@ -257,6 +213,11 @@ elasticsearch-replica-num = "$es_replica_num"
 #    secretsToken:
 #    secretsProject:
 #    secretsEnv:
+#syncServer:
+#  fullTextSearch:
+#    enableSync: false
+#	 indexShardNum: 1
+#	 indexReplicaNum: 1
 
 #elasticsearch配置
 es:
@@ -530,6 +491,17 @@ apiGW:
     caFile:
     # 用于解密根据RFC1423加密的证书密钥的PEM块
     password:
+
+# syncServer相关配置
+syncServer:
+  # 全文检索同步相关配置
+  fullTextSearch:
+    # 是否开启全文检索同步, 默认为false
+    enableSync: false
+    # ES索引拥有的主分片数量
+    indexShardNum: 1
+    # ES索引每个主分片拥有的副本数量
+    indexReplicaNum: 1
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -580,8 +552,6 @@ apiGW:
 #  res: /data/cmdb/cmdb_adminserver/conf/errors
 #language:
 #  res: /data/cmdb/cmdb_adminserver/conf/language
-#monstache:
-#  dir: /data/cmdb/monstache/etc
 #auth:
 #  address: 127.0.0.1
 #  appCode: bk_cmdb
@@ -606,9 +576,6 @@ errors:
 # 指定language的路径
 language:
   res: conf/language
-# 指定monstache相关配置文件
-monstache:
-  res: monstache/etc
     '''
 
     template = FileTemplate(migrate_file_template_str)
@@ -716,6 +683,7 @@ def main(argv):
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,
         "cmdb_authserver": 60014,
+        "cmdb_syncserver": 60015,
         "cmdb_cacheservice": 50010
     }
     arr = [
@@ -1031,7 +999,6 @@ def main(argv):
     )
     update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
-    print('initial monstache config success, configs could be found at monstache/etc')
 
 
 if __name__ == "__main__":

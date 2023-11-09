@@ -251,6 +251,17 @@ data:
           # 下发主机身份文件权限值
           filePrivilege: {{ .Values.common.eventServer.hostIdentifier.windows.filePrivilege }}
 
+    ## syncServer相关配置
+    syncServer:
+      # 全文检索同步相关配置
+      fullTextSearch:
+        # 是否开启全文检索同步
+        enableSync: {{ .Values.common.syncServer.fullTextSearch.enableSync }}
+        # elasticsearch索引的shard数量
+        indexShardNum: {{ .Values.common.syncServer.fullTextSearch.indexShardNum }}
+        # elasticsearch索引的replica数量
+        indexReplicaNum: {{ .Values.common.syncServer.fullTextSearch.indexReplicaNum }}
+
     # 直接调用gse服务相关配置
     gse:
       # 调用gse的apiServer服务时相关配置

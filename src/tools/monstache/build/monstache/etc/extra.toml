@@ -1,5 +1,0 @@
-# elasticsearch settings
-
-# the param must be assigned
-elasticsearch-shard-num = ""
-elasticsearch-replica-num = ""

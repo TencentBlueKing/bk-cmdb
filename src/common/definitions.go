@@ -1758,3 +1758,8 @@ const (
 	// TopoModuleName topo path name
 	TopoModuleName = "topo_module_name"
 )
+
+const (
+	// MongoMetaID is mongodb meta id field
+	MongoMetaID = "_id"
+)

@@ -69,7 +69,8 @@ func (s *cacheService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 
 	host, err := s.cacheSet.Host.GetHostWithID(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"search host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespString(&host)
@@ -88,7 +89,8 @@ func (s *cacheService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
 
 	host, err := s.cacheSet.Host.ListHostWithHostIDs(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"list host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespStringArray(host)
@@ -104,7 +106,8 @@ func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 
 	cnt, host, err := s.cacheSet.Host.ListHostsWithPage(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"list host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespCountInfoString(cnt, host)
@@ -169,7 +172,8 @@ func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 	}
 	biz, err := s.cacheSet.Business.GetBusiness(ctx.Kit.Ctx, bizID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz with id in cache, but get biz failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"search biz with id in cache, but get biz failed, err: %v", err)
 		return
 	}
 	ctx.RespString(&biz)
@@ -219,7 +223,8 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 
 	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.SupplierAccount, instID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v",
+			err)
 		return
 	}
 	ctx.RespString(&inst)
@@ -312,7 +317,8 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	if len(options.Cursor) != 0 {
 		events, err := s.cacheSet.Event.WatchWithCursor(ctx.Kit, key, options)
 		if err != nil {
-			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
+			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -403,4 +409,26 @@ func (s *cacheService) generateWatchEventResp(startCursor string, rsc watch.Curs
 	}
 
 	return result
+}
+
+// ListCommonCacheWithKey search common resource cache info with specified keys
+func (s *cacheService) ListCommonCacheWithKey(cts *rest.Contexts) {
+	cacheType := cts.Request.PathParameter("type")
+	if len(cacheType) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "type"))
+		return
+	}
+
+	opt := new(metadata.ListCommonCacheWithKeyOpt)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	res, err := s.cacheSet.CommonRes.ListWithKey(cts.Kit, cacheType, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespStringArray(res)
 }

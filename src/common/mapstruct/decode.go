@@ -63,3 +63,19 @@ func Struct2Map(v interface{}) (map[string]interface{}, error) {
 	}
 	return data, nil
 }
+
+// Decode2StructWithTag convert map to struct using specified tag
+// 适用场景：仅支持原生转 map to struct
+func Decode2StructWithTag(m map[string]interface{}, st interface{}, tag string) error {
+	config := &mapstructure.DecoderConfig{
+		TagName: tag,
+		Result:  st,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(m)
+}
