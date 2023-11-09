@@ -48,9 +48,17 @@ func (s *coreService) TranslateInstName(defLang language.DefaultCCLanguageIf, ob
 	return util.FirstNotEmptyString(defLang.Language("inst_"+obj.ObjectID), obj.ObjectName, obj.ObjectID)
 }
 
-// TranslatePropertyName TODO
+// TranslatePropertyName translate property name
 func (s *coreService) TranslatePropertyName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute) string {
-	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName,
+	var prefix string
+	switch att.PropertyID {
+	case common.BKInstNameField, common.BKCreatedAt, common.BKCreatedBy, common.BKUpdatedAt, common.BKUpdatedBy:
+		prefix = "common"
+	default:
+		prefix = att.ObjectID
+	}
+
+	return util.FirstNotEmptyString(defLang.Language(prefix+"_property_"+att.PropertyID), att.PropertyName,
 		att.PropertyID)
 }
 
