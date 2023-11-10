@@ -12,6 +12,7 @@
 
 <template>
   <div class="model-detail-wrapper">
+    <!-- 此区域的高度变化后注意同时修改 .model-details-tab 的 height -->
     <div class="model-info-wrapper">
       <div class="model-info" v-bkloading="{ isLoading: $loading('getClassificationsObjectStatistics') }">
         <template v-if="activeModel !== null">
@@ -71,7 +72,9 @@
                   }
                 ]">
                 <template #append>
-                  <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">{{$t('已停用')}}</bk-tag>
+                  <bk-tag v-if="activeModel.bk_ispaused" size="small" theme="default">
+                    {{$t('已停用')}}
+                  </bk-tag>
                 </template>
               </more-action-menu>
             </div>
@@ -158,26 +161,22 @@
                 <div v-else>--</div>
               </div>
             </div>
-            <div class="model-audits">
-              <template v-if="!activeModel['bk_ispaused']">
-                <div class="model-property-item"
-                  v-for="item in modelOperationFields"
-                  :key="item.key">
-                  <span class="model-property-item-label">{{$t(item.name)}}</span>
-                  <div>
-                    <span class="model-property-item-text">
-                      <cmdb-loading :loading="$loading(request.instanceCount)">
-                        {{activeModel[item.key] || '--'}}
-                      </cmdb-loading>
-                    </span>
-                  </div>
+            <div class="model-audits" v-if="!activeModel['bk_ispaused']">
+              <div class="model-property-item"
+                v-for="item in modelOperationFields"
+                :key="item.key">
+                <span class="model-property-item-label">{{$t(item.name)}}</span>
+                <div>
+                  <span class="model-property-item-text">
+                    <cmdb-loading :loading="$loading(request.instanceCount)">
+                      {{activeModel[item.key] || '--'}}
+                    </cmdb-loading>
+                  </span>
                 </div>
-              </template>
-
+              </div>
             </div>
-
           </div>
-
+          <div class="divider" v-if="!isMainLineModel && activeModel.bk_ispaused"></div>
           <cmdb-auth class="restart-btn"
             v-if="!isMainLineModel && activeModel.bk_ispaused"
             :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
@@ -776,7 +775,7 @@
 <style lang="scss" scoped>
     .model-info {
         .model-property {
-          margin-right: 50px;
+          margin-right: 32px;
 
           .model-property-top, .model-audits {
             display: flex;
@@ -933,6 +932,7 @@
               height: 18px;
               line-height: 18px;
               padding: 0 6px;
+              white-space: nowrap;
             }
 
             .model-name-edit {
@@ -1021,6 +1021,14 @@
           }
         .restart-btn {
             display: inline-block;
+            margin-top: 12px;
+        }
+        .divider {
+          width: 1px;
+          background: #EAEBF0;
+          height: 66px;
+          margin-right: 32px;
+          margin-top: -6px;
         }
         .btn-group {
             margin-left: auto;
@@ -1084,7 +1092,7 @@
         }
     }
     /deep/ .model-details-tab {
-      height: calc(100% - 100px);
+      height: calc(100% - 156px);
       .bk-tab-header {
         padding: 0 18px;
         background: #fff;
