@@ -62,7 +62,7 @@ const (
 	BKAuditLogPageLimit = 200
 
 	// BKMaxExportLimit the limit to export
-	BKMaxExportLimit = 100
+	BKMaxExportLimit = 500
 
 	// BKInstMaxExportLimit the limit to instance export
 	BKInstMaxExportLimit = 1000
