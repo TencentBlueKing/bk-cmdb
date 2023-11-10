@@ -11,53 +11,56 @@
 -->
 
 <template>
-  <div class="property-selector-content" slot="content">
+  <div class="property-selector-content" slot="content" ref="propertySelector">
     <div class="property-selector-options">
       <bk-input class="options-filter"
         v-model.trim="filter"
         right-icon="icon-search"
-        :placeholder="$t('请输入名称关键字')"
+        :placeholder="$t('请输入字段名称或唯一标识')"
         clearable
         v-autofocus>
       </bk-input>
     </div>
-    <div class="property-selector-group clearfix"
-      v-for="model in models"
-      v-show="isShowGroup(model)"
-      :key="model.id">
-      <label class="group-label">
-        {{model.bk_obj_name}}
-        <span class="count">
-          （{{matchedPropertyMap[model.bk_obj_id].length}}）
-        </span>
-      </label>
-      <bk-checkbox
-        :indeterminate="indeterminate[model.bk_obj_id]"
-        :checked="allChecked[model.bk_obj_id]"
-        @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
-        class="allCheck"
-      >{{$t('全选')}}</bk-checkbox>
-      <div class="group-property-list">
+    <div class="all-property-selector">
+      <div class="property-selector-group clearfix"
+        v-for="model in models"
+        v-show="isShowGroup(model)"
+        :key="model.id">
+        <label class="group-label">
+          {{model.bk_obj_name}}
+          <span class="count">
+            （{{matchedPropertyMap[model.bk_obj_id].length}}）
+          </span>
+        </label>
         <bk-checkbox
-          :class="['group-property-item', { 'is-checked': isChecked(property) }]"
-          v-for="property in matchedPropertyMap[model.bk_obj_id]"
-          v-show="isShowProperty(property)"
-          :key="property.id"
-          :title="property.bk_property_name"
-          :checked="isChecked(property)"
-          :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
-          @change="handleChange(property, ...arguments)">
-          <div style="width: calc(100% - 30px);"
-            v-bk-tooltips.top-start="{
-              disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
-              content: $t('该字段不支持配置')
-            }">
-            <div class="group-property-name" v-bk-overflow-tips>{{property.bk_property_name}}</div>
-          </div>
-          <i class="icon-cc-selected"></i>
-        </bk-checkbox>
+          :indeterminate="indeterminate[model.bk_obj_id]"
+          :checked="allChecked[model.bk_obj_id]"
+          @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
+          class="allCheck"
+        >{{$t('全选')}}</bk-checkbox>
+        <div class="group-property-list">
+          <bk-checkbox
+            :class="['group-property-item', { 'is-checked': isChecked(property) }]"
+            v-for="property in matchedPropertyMap[model.bk_obj_id]"
+            v-show="isShowProperty(property)"
+            :key="property.id"
+            :title="property.bk_property_name"
+            :checked="isChecked(property)"
+            :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
+            @change="handleChange(property, ...arguments)">
+            <div style="width: calc(100% - 30px);"
+              v-bk-tooltips.top-start="{
+                disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
+                content: $t('该字段不支持配置')
+              }">
+              <div class="group-property-name" v-bk-overflow-tips>{{property.bk_property_name}}</div>
+            </div>
+            <i class="icon-cc-selected"></i>
+          </bk-checkbox>
+        </div>
       </div>
     </div>
+
     <cmdb-data-empty v-if="isShowEmpty" slot="empty"
       :stuff="dataEmpty"
       @clear="handleClearFilter"></cmdb-data-empty>
@@ -65,9 +68,10 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch, inject, reactive } from 'vue'
+  import { computed, ref, watch, inject, reactive, nextTick } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
+  import store from '@/store'
 
   const props = defineProps({
     selected: {
@@ -77,6 +81,19 @@
     handler: Function
   })
   const dynamicGroupForm = inject('dynamicGroupForm')
+  const propertySelector = ref('')
+
+  watch(() => propertySelector.value, (val) => {
+    const height  = store.state.appHeight
+    nextTick(() => {
+      const { bottom = 0 } = val?.getClientRects()?.[0]
+      const dis = bottom - height
+      if (dis > -10) {
+        // 改变气泡框的高度
+        val.getElementsByClassName('all-property-selector')[0].style.height = `${420 - Math.abs(dis)}px`
+      }
+    })
+  })
 
   const indeterminate = reactive({
     host: false,
@@ -211,9 +228,16 @@
 <style lang="scss" scoped>
 .property-selector-content {
   width: 400px;
-  height: 500px;
-  padding: 10px 20px;
-  @include scrollbar-y;
+  max-height: 500px;
+  padding: 10px 14px;
+  margin: -.3rem -.6rem;
+}
+.all-property-selector {
+  max-height: 440px;
+  margin-right: -14px;
+  margin-left: -14px;
+  padding: 0 14px;
+  @include scrollbar-y(6px, transparent);
 }
 .property-selector-group {
   margin-top: 15px;
@@ -234,6 +258,9 @@
 
   .allCheck {
     float: right;
+    :deep(.bk-checkbox-text) {
+      font-size: 12px;
+    }
   }
 
   .group-property-list {
@@ -241,7 +268,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     margin-top: 4px;
-    gap: 2px 14px;
+    gap: 3px 14px;
     float: left;
     width: 100%;
 

@@ -1840,7 +1840,7 @@
     "属性设置step": "Field Setting",
     "信息确认step": "Information confirmed",
     "属性应用step": "Field application",
-    "请输入名称关键字": "Please enter a name keyword",
+    "请输入字段名称或唯一标识": "Please enter a field name or unique identifier",
     "解除绑定": "unbound",
     "停用模型": "Deactivation model",
     "删除模型": "Deletion model",

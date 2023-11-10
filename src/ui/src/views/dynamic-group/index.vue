@@ -69,7 +69,7 @@
             {{row.last_time | formatter('time')}}
           </template>
         </bk-table-column>
-        <bk-table-column prop="operation" :label="$t('操作')" fixed="right" :min-width="$i18n.local === 'en' ? 110 : 90">
+        <bk-table-column prop="operation" :label="$t('操作')" fixed="right" :width="$i18n.locale === 'en' ? 170 : 130">
           <template slot-scope="{ row }">
             <bk-button class="mr10"
               :text="true"
