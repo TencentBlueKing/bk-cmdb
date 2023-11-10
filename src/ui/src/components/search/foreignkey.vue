@@ -23,7 +23,7 @@
     <bk-option v-for="option in options"
       :key="option.bk_cloud_id"
       :id="option.bk_cloud_id"
-      :name="option.bk_cloud_name">
+      :name="`${option.bk_cloud_name}[${option.bk_cloud_id}]`">
     </bk-option>
   </bk-select>
   <span v-else>
@@ -87,13 +87,24 @@
     },
     methods: {
       async getCloudArea(key) {
+        const condition = {}
+        if (key) {
+          condition.$or = []
+          condition.$or.push({
+            bk_cloud_name: {
+              $regex: key
+            }
+          })
+          if (!isNaN(Number(key))) {
+            condition.$or.push({
+              bk_cloud_id: Number(key)
+            })
+          }
+        }
         try {
           const { info } = await this.$store.dispatch('cloud/area/findMany', {
             params: {
-              condition: {
-                bk_cloud_name: key
-              },
-              is_fuzzy: true,
+              condition,
               page: {
                 sort: 'bk_cloud_name'
               }

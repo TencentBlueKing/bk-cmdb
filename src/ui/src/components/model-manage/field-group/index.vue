@@ -548,7 +548,7 @@
       },
       disabledConfig() {
         const disabled = {
-          host: ['bk_host_innerip', 'bk_cloud_id'],
+          host: ['bk_host_innerip', 'bk_host_innerip_v6', 'bk_cloud_id'],
           biz: ['bk_biz_name']
         }
         return disabled[this.objId] || ['bk_inst_name']
