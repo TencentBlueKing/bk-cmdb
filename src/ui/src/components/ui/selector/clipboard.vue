@@ -78,7 +78,7 @@
         font-size: 14px;
         line-height: 32px;
         // 漏出半个 item，引导用户下拉
-        max-height: calc(160px + (32px / 2));
+        max-height: calc(256px + (32px / 2));
         @include scrollbar-y;
         &::-webkit-scrollbar{
             width: 3px;
