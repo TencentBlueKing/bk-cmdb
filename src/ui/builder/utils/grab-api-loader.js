@@ -35,15 +35,16 @@ module.exports = function (source) {
   const matches1 = source.matchAll(reg1)
   const matches2 = source.matchAll(reg2)
   for (const match of matches1) {
-    const m = match?.[3]?.trim?.()?.split('?')?.[0]
-    if (!m) {
+    const method = match?.[2]?.trim?.()
+    const path = match?.[3]?.trim?.()?.split('?')?.[0]
+    if (!path) {
       continue
     }
 
-    if (['`', '\''].includes(m.substring(0, 1))) {
-      fs.appendFileSync('apipaths.txt', `${m}\n`)
+    if (['`', '\''].includes(path.substring(0, 1))) {
+      fs.appendFileSync('apipaths.txt', `${method} ${path}\n`)
     } else {
-      fs.appendFileSync('apivars.txt', `${this.resourcePath}: ${m}\n`)
+      fs.appendFileSync('apivars.txt', `${this.resourcePath}: ${path}\n`)
     }
   }
 
