@@ -207,6 +207,14 @@
         return text
       }
     },
+    watch: {
+      selectedProperties: {
+        deep: true,
+        handler() {
+          this.errors.remove('condition')
+        }
+      }
+    },
     async created() {
       await this.getMainLineModels()
       await this.getModelProperties()
