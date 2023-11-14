@@ -259,6 +259,39 @@ func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struc
 	return models, nil
 }
 
+// getSkipFindAttrAuthModelID 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
+func (am *AuthManager) getSkipFindAttrAuthModelID(kit *rest.Kit) (map[int64]struct{}, error) {
+	skipObjIDMap, err := am.getSkipFindAttrAuthModel(kit)
+	if err != nil {
+		return nil, err
+	}
+
+	skipObjIDs := make([]string, 0, len(skipObjIDMap))
+	for objID := range skipObjIDMap {
+		skipObjIDs = append(skipObjIDs, objID)
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: skipObjIDs,
+			},
+		},
+	}
+	objResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	skipIDMap := make(map[int64]struct{})
+	for _, obj := range objResp.Info {
+		skipIDMap[obj.ID] = struct{}{}
+	}
+	return skipIDMap, nil
+}
+
 var objTypeMap = map[string]meta.ResourceType{
 	common.BKInnerObjIDPlat:    meta.CloudAreaInstance,
 	common.BKInnerObjIDHost:    meta.HostInstance,
@@ -352,11 +385,40 @@ func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) 
 		ids[idx] = val.ID
 	}
 
-	return am.HasFindModelAuthUseID(kit, ids)
+	return am.hasFindModelAuthWithID(kit, ids)
 }
 
 // HasFindModelAuthUseID use the id parameter to determine whether you have permission to find the model
 func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, true, nil
+	}
+
+	models, err := am.getSkipFindAttrAuthModelID(kit)
+	if err != nil {
+		return nil, false, err
+	}
+
+	finalIDs := make([]int64, 0)
+	for _, id := range ids {
+		if _, ok := models[id]; !ok {
+			finalIDs = append(finalIDs, id)
+		}
+	}
+
+	if len(finalIDs) == 0 {
+		return nil, true, nil
+	}
+
+	return am.hasFindModelAuthWithID(kit, ids)
+}
+
+// HasFindModelAuthWithID use the id parameter to determine whether you have permission to find the model
+func (am *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
 	if !am.Enabled() {
 		return nil, true, nil
 	}
