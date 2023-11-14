@@ -63,6 +63,8 @@
     MODEL_FIELD_SELECTOR: 'modelFieldSelector',
   }
 
+  const query = computed(() => RouterQuery.getAll())
+
   const fieldLocalList = ref([])
   const uniqueLocalList = ref([])
 
@@ -105,8 +107,6 @@
       handleOpenUnqiueDrawer()
     }
   })
-
-  const query = computed(() => RouterQuery.getAll())
 
   // 只有字段属性的列表
   const pureFieldList = computed(() => fieldLocalList.value.map(item => item.field))

@@ -221,12 +221,11 @@ export const IAM_VIEWS_INST_NAME = {
   },
   async [IAM_VIEWS.CLOUD_RESOURCE_TASK](vm, id) {
     const action = 'cloud/resource/findOneTask'
-    const res = await vm.$store.dispatch(action, {
+    const task = await vm.$store.dispatch(action, {
       id: Number(id),
       config: { ...requestConfigBase(`${action}${id}`) }
     })
-    const data = res.info[0] || {}
-    return data.bk_task_name
+    return task?.bk_task_name
   },
   async [IAM_VIEWS.FIELD_TEMPLATE](vm, id) {
     const res = await fieldTemplateService.findById(id, requestConfigBase('field_template'))
