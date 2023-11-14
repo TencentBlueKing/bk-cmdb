@@ -774,6 +774,8 @@
 
 <style lang="scss" scoped>
     .model-info {
+      height: 158px;
+      overflow: hidden;
         .model-property {
           margin-right: 32px;
 
@@ -1096,7 +1098,7 @@
         }
     }
     /deep/ .model-details-tab {
-      height: calc(100% - 156px);
+      height: calc(100% - 158px);
       .bk-tab-header {
         padding: 0 18px;
         background: #fff;
