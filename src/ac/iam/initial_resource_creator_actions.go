@@ -116,6 +116,10 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				ResourceID: SysModel,
 				Actions: []CreatorRelatedAction{
 					{
+						ID:         ViewSysModel,
+						IsRequired: false,
+					},
+					{
 						ID:         EditSysModel,
 						IsRequired: false,
 					},
