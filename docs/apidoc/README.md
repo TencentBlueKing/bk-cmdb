@@ -1,7 +1,7 @@
 # apidoc
 存放cmdb相关的接口文档。
 
-### cc
+### apigw
 存放cmdb在API Gateway的接口文档与映射关系。
 
 ### esb-cc 

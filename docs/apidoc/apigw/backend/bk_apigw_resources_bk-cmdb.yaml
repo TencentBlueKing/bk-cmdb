@@ -8422,6 +8422,81 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v3/find/kube/topo_node/{type}/count:
+    post:
+      operationId: post_find_kube_topo_node_count
+      description: post_find_kube_topo_node_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/kube/topo_node/{type}/count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/kube/topo_path:
+    post:
+      operationId: post_find_kube_topo_path
+      description: post_find_kube_topo_path
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/kube/topo_path
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/object/by_field_template:
+    post:
+      operationId: post_findmany_object_by_field_template
+      description: post_findmany_object_by_field_template
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/object/by_field_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
   /api/v3/hosts/add:
     post:
       operationId: add_host_to_resource
