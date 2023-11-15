@@ -590,8 +590,13 @@ func (s *coreService) UpdateModelAttributes(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.ModelOperation().UpdateModelAttributes(ctx.Kit,
-		ctx.Request.PathParameter("bk_obj_id"), inputData))
+	updateCount, err := s.core.ModelOperation().UpdateModelAttributes(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"),
+		inputData)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(updateCount)
 }
 
 // UpdateModelAttributesIndex update model attribute

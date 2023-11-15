@@ -68,8 +68,3 @@ func (cli *Classification) Parse(data mapstr.MapStr) (*Classification, error) {
 
 	return cli, err
 }
-
-// ToMapStr to mapstr
-func (cli *Classification) ToMapStr() mapstr.MapStr {
-	return mapstr.SetValueToMapStrByTags(cli)
-}
