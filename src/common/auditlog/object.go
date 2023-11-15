@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -47,6 +48,12 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 		data = &rsp.Info[0]
 	}
 
+	dataMap, err := mapstruct.Struct2Map(data)
+	if err != nil {
+		blog.Errorf("convert model(%+v) to map failed, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelRes,
@@ -55,7 +62,7 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 		ResourceName: data.ObjectName,
 		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: parameter.NewBasicContent(data.ToMapStr()),
+			Details: parameter.NewBasicContent(dataMap),
 		},
 	}, nil
 }
@@ -100,7 +107,11 @@ func (h *objectAuditLog) GenerateAuditLogForBindingFieldTemplate(parameter *gene
 		// todo: 获取关联关系接口
 
 		for _, data := range rsp.Info {
-			obj := data.ToMapStr()
+			obj, err := mapstruct.Struct2Map(data)
+			if err != nil {
+				blog.Errorf("convert model(%+v) to map failed, err: %v, rid: %s", data, err, kit.Rid)
+				return nil, err
+			}
 			objectTmplIDMap[data.ID] = append(objectTmplIDMap[data.ID], templateID)
 			obj[string(metadata.ObjTemplateIDs)] = objectTmplIDMap[data.ID]
 			parameter.updateFields = obj
