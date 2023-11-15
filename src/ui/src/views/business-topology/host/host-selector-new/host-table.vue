@@ -154,7 +154,9 @@
       },
       filterHost() {
         if (this.keyword) {
-          this.displayList = this.list.filter(item => new RegExp(this.keyword, 'i').test(item.host.bk_host_innerip))
+          const reg = new RegExp(this.keyword, 'i')
+          this.displayList = this.list.filter(item => reg.test(item.host.bk_host_innerip)
+            || reg.test(item.host.bk_host_innerip_v6))
         } else {
           this.displayList = this.list
         }
