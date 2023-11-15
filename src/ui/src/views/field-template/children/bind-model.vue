@@ -66,11 +66,6 @@
     height: String
   })
 
-  const noValue = {
-    conflict: [{
-      message: '模型字段冲突'
-    }]
-  }
 
   const emit = defineEmits(['update-diffs', 'update-model-auth'])
 
@@ -113,7 +108,7 @@
         attributes: props.fieldList
       }, {
         requestId,
-        globalError: false,
+        globalError: true,
         globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
@@ -124,12 +119,11 @@
       const results = await result
       for (let i = 0; i < results.length; i++) {
         // 分组中的每一个执行结果
-        const { status, reason } = results[i]
-        const value = results[i]?.value ?? {}
-        if (status === 'rejected' || !Object.keys(value).length) {
+        const { status, reason, value } = results[i]
+        if (status === 'rejected') {
           console.error(reason?.message)
-          Object.assign(value, noValue)
           hasDiffError.value = true
+          continue
         }
         set(fieldDiffs.value, modelIds[(groupIndex * 5) + i], value ?? {})
       }
@@ -162,7 +156,7 @@
         uniques: props.uniqueList
       }, {
         requestId,
-        globalError: false,
+        globalError: true,
         globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
@@ -173,12 +167,11 @@
       const results = await result
       for (let i = 0; i < results.length; i++) {
         // 分组中的每一个执行结果
-        const { status, reason } = results[i]
-        const value = results[i]?.value ?? {}
-        if (status === 'rejected' || !Object.keys(value).length) {
+        const { status, reason, value } = results[i]
+        if (status === 'rejected') {
           console.error(reason?.message)
-          Object.assign(value, noValue)
           hasDiffError.value = true
+          continue
         }
         set(uniqueDiffs.value, modelIds[(groupIndex * 5) + i], value ?? {})
       }
@@ -302,7 +295,6 @@
         }
       }
     })
-    hasDiffError.value = hasDiffConflict
     emit('update-diffs', hasDiffError.value, hasDiffConflict, diffCounts)
   })
 
