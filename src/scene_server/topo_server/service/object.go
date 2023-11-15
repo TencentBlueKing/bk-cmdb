@@ -163,7 +163,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		ctx.RespAutoError(txnErr)
 		return
 	}
-	ctx.RespEntity(rsp.ToMapStr())
+	ctx.RespEntity(rsp)
 }
 
 // SearchObject search some objects by condition

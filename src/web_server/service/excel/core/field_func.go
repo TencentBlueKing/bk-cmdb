@@ -512,44 +512,20 @@ func (d *Client) getUsernameFromEsb(kit *rest.Kit, userList []string) (map[strin
 
 	// 处理请求的用户数据，将用户拼接成不超过500字节的字符串进行用户数据的获取
 	userListStr := getUserListStr(userList)
-
-	var wg sync.WaitGroup
-	var lock sync.RWMutex
-	var firstErr errors.CCErrorCoder
-	pipeline := make(chan bool, 10)
 	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
 
 	for _, subStr := range userListStr {
-		pipeline <- true
-		wg.Add(1)
-		go func(subStr string) {
-			defer func() {
-				wg.Done()
-				<-pipeline
-			}()
+		params := make(map[string]string)
+		params["fields"] = "username,display_name"
+		params["exact_lookups"] = subStr
 
-			lock.Lock()
-			params := make(map[string]string)
-			params["fields"] = "username,display_name"
-			params["exact_lookups"] = subStr
-			lock.Unlock()
+		userListEsbSub, errNew := user.GetUserList(d.GinCtx, params)
+		if errNew != nil {
+			blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, errNew, kit.Rid)
+			return nil, errNew.ToCCError(kit.CCError)
+		}
 
-			userListEsbSub, errNew := user.GetUserList(d.GinCtx, params)
-			if errNew != nil {
-				firstErr = errNew.ToCCError(kit.CCError)
-				blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, firstErr, kit.Rid)
-				return
-			}
-
-			lock.Lock()
-			userListEsb = append(userListEsb, userListEsbSub...)
-			lock.Unlock()
-		}(subStr)
-	}
-	wg.Wait()
-
-	if firstErr != nil {
-		return nil, firstErr
+		userListEsb = append(userListEsb, userListEsbSub...)
 	}
 
 	for _, userInfo := range userListEsb {

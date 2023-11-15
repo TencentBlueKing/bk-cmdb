@@ -106,6 +106,8 @@
   import ProcessFormPropertyTable from './process-form-property-table'
   import has from 'has'
   import useSideslider from '@/hooks/use-sideslider'
+  import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
+
   export default {
     components: {
       ProcessFormPropertyTable
@@ -168,7 +170,8 @@
     },
     computed: {
       groupedProperties() {
-        return this.$groupedProperties
+        return this.$groupedProperties.map(properties => properties
+          .filter(property => !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id)))
       }
     },
     watch: {

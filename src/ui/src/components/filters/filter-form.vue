@@ -35,7 +35,7 @@
             :placeholder="$t('主机搜索提示语')"
             data-vv-name="ip"
             data-vv-validate-on="blur"
-            v-validate="'ipSearchRuls'"
+            v-validate="'ipSearchMaxCloud|ipSearchMaxCount'"
             v-focus
             v-model.trim="IPCondition.text"
             @focus="errors.remove('ip')">
@@ -509,6 +509,9 @@
             line-height: initial;
             font-size: 12px;
             color: $dangerColor;
+        }
+        :deep(.bk-form-textarea) {
+          resize: vertical;
         }
     }
     .filter-item {

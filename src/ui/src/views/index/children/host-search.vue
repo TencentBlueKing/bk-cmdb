@@ -58,6 +58,7 @@
   import QS from 'qs'
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
+  import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
 
   export default {
     data() {
@@ -143,7 +144,7 @@
       },
       async handleSearch(force = '') {
         const searchList = this.getSearchList()
-        if (searchList.length > 10000) {
+        if (searchList.length > IP_SEARCH_MAX_COUNT) {
           this.$warn(this.$t('最多支持搜索10000条数据'))
           return
         }
@@ -172,8 +173,8 @@
 
           const ipSearch = () => {
             // 不同管控区域+IP的混合搜索
-            if (cloudIdSet.size > 1) {
-              return this.$warn(this.$t('暂不支持不同管控区域的混合搜索'))
+            if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
+              return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
             }
 
             this.handleIPSearch(IPs)
@@ -201,20 +202,16 @@
       },
       handleIPSearch(IPs) {
         const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
-        IPs.IPv4WithCloudList.forEach(([, ip]) => IPList.push(ip))
-        IPs.IPv6WithCloudList.forEach(([, ip]) => IPList.push(ip))
+        IPs.IPv4WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
+        IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
 
         const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
-
-        const cloudIds = [...IPs.cloudIdSet].filter(id => id !== '')
-        const filter = cloudIds.length ? { 'bk_cloud_id.in': cloudIds.join(',') } : {}
 
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {
             scope: 'all',
             ip: QS.stringify(ip, { encode: false }),
-            filter: QS.stringify(filter, { encode: false })
           },
           history: true
         })

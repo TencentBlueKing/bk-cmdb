@@ -694,7 +694,7 @@ func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, st
 	resp *metadata.PlatformSettingResult, err error) {
 
 	resp = new(metadata.PlatformSettingResult)
-	subPath := "/find/system_config/platform_setting/%s"
+	subPath := "/admin/find/system_config/platform_setting/%s"
 
 	err = a.client.Get().
 		WithContext(ctx).
@@ -702,6 +702,10 @@ func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, st
 		WithHeaders(h).
 		Do().
 		Into(resp)
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
 
 	return
 }

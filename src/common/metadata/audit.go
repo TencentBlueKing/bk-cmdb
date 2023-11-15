@@ -380,7 +380,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	opDetailType, exists := resTypeOpDetailTypeMap[audit.ResourceType]
 	if !exists {
 		operationDetail := new(BasicOpDetail)
-		if err := json.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
+		if err := bson.Unmarshal(audit.OperationDetail, &operationDetail); err != nil {
 			return err
 		}
 		auditLog.OperationDetail = operationDetail

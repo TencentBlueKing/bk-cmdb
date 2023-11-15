@@ -90,10 +90,10 @@
       <span class="tag unique" v-if="fieldUnique.type === UNIUQE_TYPES.SINGLE && fieldUnique.list.length">
         <em class="tag-text">{{$t('单独唯一')}}</em>
       </span>
-      <span class="tag unique union" v-else-if="fieldUnique.type === UNIUQE_TYPES.UNION" v-bk-tooltips="{
-        content: getUniqueRuleContent(fieldUnique.list)
-      }">
-        <em class="tag-text">{{$t('联合唯一')}}</em>
+      <span class="tag unique union" v-else-if="fieldUnique.type === UNIUQE_TYPES.UNION">
+        <em class="tag-text" v-bk-tooltips="{
+          content: getUniqueRuleContent(fieldUnique.list)
+        }">{{$t('联合唯一')}}</em>
       </span>
       <span class="tag template" v-if="isTemplate"><em class="tag-text">{{$t('模板')}}</em></span>
       <slot name="tag-append"></slot>

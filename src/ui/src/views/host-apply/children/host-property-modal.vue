@@ -44,12 +44,18 @@
               style="outline:none">
               {{property.bk_property_name}}
             </div>
-            <div v-else>
+            <div v-else v-bk-overflow-tips class="property_name">
               {{property.bk_property_name}}
             </div>
           </bk-checkbox>
         </li>
       </ul>
+      <cmdb-data-empty
+        class="empty"
+        v-if="hasPropertyList"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter">
+      </cmdb-data-empty>
     </bk-checkbox-group>
   </bk-dialog>
 </template>
@@ -72,12 +78,19 @@
         show: this.visible,
         localChecked: [],
         searchName: '',
-        propertyList: []
+        propertyList: [],
+        dataEmpty: {
+          type: 'search',
+        },
       }
     },
     computed: {
       ...mapGetters('hostApply', ['configPropertyList']),
-      ...mapGetters('objectBiz', ['bizId'])
+      ...mapGetters('objectBiz', ['bizId']),
+      hasPropertyList() {
+        // eslint-disable-next-line no-underscore-dangle
+        return this.propertyList.filter(property => property.__extra__.visible).length === 0
+      }
     },
     watch: {
       visible(val) {
@@ -95,6 +108,18 @@
       this.propertyList = this.$tools.clone(this.configPropertyList)
     },
     methods: {
+      handleClearFilter() {
+        this.searchName = ''
+        this.setPropertyList()
+      },
+      setPropertyList() {
+        // 使用visible方式是为了兼容checkbox-group组件
+        this.propertyList.forEach((property) => {
+          // eslint-disable-next-line no-underscore-dangle
+          property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1
+        })
+        this.propertyList = [...this.propertyList]
+      },
       async getHostPropertyList() {
         try {
           const data = await this.$store.dispatch('hostApply/getProperties', {
@@ -119,18 +144,19 @@
         this.localChecked = this.checkedList
       },
       hanldeFilterProperty() {
-        // 使用visible方式是为了兼容checkbox-group组件
-        this.propertyList.forEach((property) => {
-          // eslint-disable-next-line no-underscore-dangle
-          property.__extra__.visible = property.bk_property_name.indexOf(this.searchName) > -1
-        })
-        this.propertyList = [...this.propertyList]
+        this.setPropertyList()
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
+    .empty {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
     .search {
         width: 280px;
         margin-bottom: 10px;
@@ -145,6 +171,16 @@
         .property-item {
             flex: 0 0 33.3333%;
             margin: 8px 0;
+            width: 33.33%;
+            :deep(.bk-form-checkbox) {
+              width: 100%;
+              .bk-checkbox-text {
+                max-width: calc(100% - 25px);
+              }
+            }
+            .property_name {
+              @include ellipsis;
+            }
         }
     }
 </style>

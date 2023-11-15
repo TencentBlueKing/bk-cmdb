@@ -14,7 +14,7 @@ package configcenter
 
 import (
 	"bytes"
-	err "errors"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -25,7 +25,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
+	ccerr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/kafka"
@@ -63,7 +63,7 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 	if err := checkDir(errorres); err != nil {
 		return err
 	}
-	errcode, err := errors.LoadErrorResourceFromDir(errorres)
+	errcode, err := ccerr.LoadErrorResourceFromDir(errorres)
 	if err != nil {
 		return fmt.Errorf("load error resource error: %s", err)
 	}
@@ -322,7 +322,7 @@ func Redis(prefix string) (redis.Config, error) {
 
 	if parser == nil {
 		blog.Errorf("can't find redis configuration")
-		return redis.Config{}, err.New("can't find redis configuration")
+		return redis.Config{}, errors.New("can't find redis configuration")
 	}
 
 	return redis.Config{
@@ -352,7 +352,7 @@ func Mongo(prefix string) (mongo.Config, error) {
 
 	if parser == nil {
 		blog.Errorf("can't find mongo configuration")
-		return mongo.Config{}, err.New("can't find mongo configuration")
+		return mongo.Config{}, errors.New("can't find mongo configuration")
 	}
 
 	c := mongo.Config{
@@ -439,7 +439,7 @@ func Kafka(prefix string) (kafka.Config, error) {
 
 	if parser == nil {
 		blog.Errorf("can't find kafka configuration")
-		return kafka.Config{}, err.New("can't find kafka configuration")
+		return kafka.Config{}, errors.New("can't find kafka configuration")
 	}
 
 	return kafka.Config{
@@ -456,117 +456,77 @@ func Kafka(prefix string) (kafka.Config, error) {
 func String(key string) (string, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getString(key), nil
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return "", err
 	}
-	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getString(key), nil
-	}
-	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getString(key), nil
-	}
-	return "", err.New("config not found")
+
+	return parser.getString(key), nil
 }
 
 // Int return the int value of the configuration information according to the key.
 func Int(key string) (int, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		if !migrateParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return migrateParser.getInt(key), nil
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return 0, err
 	}
 
-	if commonParser != nil && commonParser.isSet(key) {
-		if !commonParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return commonParser.getInt(key), nil
+	if !parser.isConfigIntType(key) {
+		return 0, errors.New("config is not int type")
 	}
-
-	if extraParser != nil && extraParser.isSet(key) {
-		if !extraParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return extraParser.getInt(key), nil
-	}
-	return 0, err.New("config not found")
+	return parser.getInt(key), nil
 }
 
 // Int64 return the int value of the configuration information according to the key.
 func Int64(key string) (int64, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		if !migrateParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return migrateParser.getInt64(key), nil
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return 0, err
 	}
 
-	if commonParser != nil && commonParser.isSet(key) {
-		if !commonParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return commonParser.getInt64(key), nil
+	if !parser.isConfigIntType(key) {
+		return 0, errors.New("config is not int type")
 	}
-
-	if extraParser != nil && extraParser.isSet(key) {
-		if !extraParser.isConfigIntType(key) {
-			return 0, err.New("config is not int type")
-		}
-		return extraParser.getInt64(key), nil
-	}
-	return 0, err.New("config not found")
+	return parser.getInt64(key), nil
 }
 
 // Bool return the bool value of the configuration information according to the key.
 func Bool(key string) (bool, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		if !migrateParser.isConfigBoolType(key) {
-			return false, err.New("config is not bool type")
-		}
-		return migrateParser.getBool(key), nil
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return false, err
 	}
 
-	if commonParser != nil && commonParser.isSet(key) {
-		if !commonParser.isConfigBoolType(key) {
-			return false, err.New("config is not bool type")
-		}
-		return commonParser.getBool(key), nil
+	if !parser.isConfigBoolType(key) {
+		return false, errors.New("config is not bool type")
 	}
-
-	if extraParser != nil && extraParser.isSet(key) {
-		if !extraParser.isConfigBoolType(key) {
-			return false, err.New("config is not bool type")
-		}
-		return extraParser.getBool(key), nil
-	}
-
-	return false, err.New("config not found")
+	return parser.getBool(key), nil
 }
 
 // StringSlice return the stringSlice value of the configuration information according to the key.
 func StringSlice(key string) ([]string, error) {
 	confLock.RLock()
 	defer confLock.RUnlock()
-	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser.getStringSlice(key), nil
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return nil, err
 	}
-	if commonParser != nil && commonParser.isSet(key) {
-		return commonParser.getStringSlice(key), nil
-	}
-	if extraParser != nil && extraParser.isSet(key) {
-		return extraParser.getStringSlice(key), nil
-	}
-	return nil, err.New("config not found")
+
+	return parser.getStringSlice(key), nil
 }
 
-// IsExist TODO
+// IsExist checks if key exists in all config files
 func IsExist(key string) bool {
 	confLock.RLock()
 	defer confLock.RUnlock()
@@ -579,6 +539,19 @@ func IsExist(key string) bool {
 	return true
 }
 
+// UnmarshalKey takes a single key and unmarshal it into a Struct.
+func UnmarshalKey(key string, val interface{}) error {
+	confLock.RLock()
+	defer confLock.RUnlock()
+
+	parser, err := getKeyValueParser(key)
+	if err != nil {
+		return err
+	}
+
+	return parser.unmarshalKey(key, val)
+}
+
 func getRedisParser() *viperParser {
 	return redisParser
 }
@@ -589,6 +562,23 @@ func getMongodbParser() *viperParser {
 
 func getCommonParser() *viperParser {
 	return commonParser
+}
+
+// getKeyValueParser get viper parser for common key value in the order of migrate->common->extra
+func getKeyValueParser(key string) (*viperParser, error) {
+	if migrateParser != nil && migrateParser.isSet(key) {
+		return migrateParser, nil
+	}
+
+	if commonParser != nil && commonParser.isSet(key) {
+		return commonParser, nil
+	}
+
+	if extraParser != nil && extraParser.isSet(key) {
+		return extraParser, nil
+	}
+
+	return nil, fmt.Errorf("%s key's config not found", key)
 }
 
 type viperParser struct {
@@ -665,4 +655,8 @@ func (vp *viperParser) isConfigBoolType(path string) bool {
 		return false
 	}
 	return true
+}
+
+func (vp *viperParser) unmarshalKey(key string, val interface{}) error {
+	return vp.parser.UnmarshalKey(key, val)
 }

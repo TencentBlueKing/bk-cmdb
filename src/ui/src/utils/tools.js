@@ -537,7 +537,7 @@ export function isEmptyPropertyValue(originalValue) {
     || (Array.isArray(originalValue) && originalValue.length === 0)
 }
 
-export function getPropertyCopyValue(originalValue, propertyType) {
+export function getPropertyCopyValue(originalValue, propertyType, options = {}) {
   if (isEmptyPropertyValue(originalValue)) {
     return '--'
   }
@@ -550,9 +550,14 @@ export function getPropertyCopyValue(originalValue, propertyType) {
     case 'time':
       value = formatTime(originalValue, 'YYYY-MM-DD HH:mm:ss')
       break
-    case 'foreignkey':
-      value = (originalValue || []).map(cloud => cloud.bk_inst_id).join(',')
+    case 'foreignkey': {
+      if (options.isFullCloud) {
+        value = (originalValue || []).map(cloud => `${cloud.bk_inst_name}[${cloud.bk_inst_id}]`).join(',')
+      } else {
+        value = (originalValue || []).map(cloud => cloud.bk_inst_id).join(',')
+      }
       break
+    }
     case 'list':
     case 'objuser':
     case 'organization':

@@ -14,7 +14,8 @@
 | modifier             | string     | 否     | 本条数据的最后修改人员                                   |
 | bk_classification_id | string     | 否     | 对象模型的分类ID，只能用英文字母序列命名                 |
 | bk_obj_id            | string     | 否     | 对象模型的ID，只能用英文字母序列命名                     |
-| bk_obj_name          | string     | 否     | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |                                             |
+| bk_obj_name          | string     | 否     | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |
+| obj_sort_number      | int    | 否     | 对象模型在所属模型分组下的排序序号           |
 
 ### 请求参数示例
 
@@ -27,8 +28,9 @@
     "creator": "user",
     "modifier": "user",
     "bk_classification_id": "test",
-    "bk_obj_id": "biz"
-    "bk_obj_name": "aaa"
+    "bk_obj_id": "biz",
+    "bk_obj_name": "aaa",
+    "obj_sort_number": 1
 }
 ```
 
@@ -57,7 +59,8 @@
             "bk_obj_id": "XX",
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
-            "bk_supplier_account": "0"
+            "bk_supplier_account": "0",
+            "obj_sort_number": 1
         }
     ]
 }
@@ -91,3 +94,4 @@
 | bk_obj_icon          | string             | 对象模型的ICON信息，用于前端显示，取值可参考[(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json)|
 | position             | json object string | 用于前端展示的坐标                                                                             |
 | description           | string     | 数据的描述信息                                           |
+| obj_sort_number      | int    | 否     | 对象模型在所属模型分组下的排序序号           |
