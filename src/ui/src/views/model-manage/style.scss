@@ -199,16 +199,16 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
 // 模型
 .model-list {
-  $modelItemWidth: 256px;
   $modelItemRadius: 2px;
   $modelItemHeight: 60px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(256px, 1fr));
+  width: 100%;
+  align-content: flex-start;
 
   .model-item {
-    float: left;
     display: flex;
-    margin-right: 12px;
-    margin-top: 10px;
-    width: $modelItemWidth;
     height: $modelItemHeight;
     background-color: #fff;
     border-radius: $modelItemRadius;
@@ -273,7 +273,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
     .model-info {
       flex: 0 1 auto;
-      width: $modelItemWidth - $modelItemHeight;
+      width: calc(100% - $modelItemHeight);
       overflow: hidden;
       display: flex;
       align-items: center;

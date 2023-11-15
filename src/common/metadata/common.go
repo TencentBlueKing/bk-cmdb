@@ -186,26 +186,35 @@ func (tc *TimeCondition) MergeTimeCondition(condition map[string]interface{}) (m
 			return nil, errors.New(common.CCErrCommParamsNeedSet, "time condition field not set")
 		}
 
+		field := cond.Field
+		if field == common.BKCreatedAt {
+			field = common.CreateTimeField
+		}
+
+		if field == common.BKUpdatedAt {
+			field = common.LastTimeField
+		}
+
 		if cond.Start == nil && cond.End == nil {
 			return nil, errors.New(common.CCErrCommParamsInvalid, "time condition start and end both not set")
 		}
 
 		if cond.Start == nil {
-			timeCondition[cond.Field] = map[string]interface{}{common.BKDBLTE: cond.End}
+			timeCondition[field] = map[string]interface{}{common.BKDBLTE: cond.End}
 			continue
 		}
 
 		if cond.End == nil {
-			timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start}
+			timeCondition[field] = map[string]interface{}{common.BKDBGTE: cond.Start}
 			continue
 		}
 
 		if *cond.Start == *cond.End {
-			timeCondition[cond.Field] = map[string]interface{}{common.BKDBEQ: cond.Start}
+			timeCondition[field] = map[string]interface{}{common.BKDBEQ: cond.Start}
 			continue
 		}
 
-		timeCondition[cond.Field] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
+		timeCondition[field] = map[string]interface{}{common.BKDBGTE: cond.Start, common.BKDBLTE: cond.End}
 	}
 
 	if len(condition) == 0 {

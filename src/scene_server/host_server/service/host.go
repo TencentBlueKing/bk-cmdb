@@ -583,8 +583,8 @@ func (s *Service) SearchHostWithBizSet(ctx *rest.Contexts) {
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	host, _, err := s.Logic.SearchHost(ctx.Kit, body, false)
 	if err != nil {
-		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
+		blog.Errorf("search host failed, err: %v,input: %v, rid:%s", err, body, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 
@@ -1687,11 +1687,29 @@ func (s *Service) SearchHostWithKube(ctx *rest.Contexts) {
 		return
 	}
 
-	condition, err = hostParse.ParseHostIPParams(req.Ipv4Ip, req.Ipv6Ip, condition)
+	condition, err = hostParse.ParseHostIPParams(req.Ipv4Ip, req.Ipv6Ip, condition, ctx.Kit.Rid)
 	if err != nil {
 		blog.Errorf("parse host IP condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostGetFail))
 		return
+	}
+
+	if ipCond, ok := condition[common.BKDBOR].([]map[string]interface{}); ok {
+		if cloudIDCond, ok := condition[common.BKCloudIDField].(map[string]interface{}); ok {
+			_, inExist := cloudIDCond[common.BKDBIN]
+			_, ninExist := cloudIDCond[common.BKDBNIN]
+			if inExist || ninExist {
+				delete(condition, common.BKCloudIDField)
+			}
+		}
+
+		cloudAreaCount := len(ipCond)
+		if req.Ipv4Ip.Flag == hostParse.IOBOTH {
+			cloudAreaCount = cloudAreaCount / 2
+		}
+		if cloudAreaCount > 50 {
+			ctx.RespAutoError(errors.NewCCError(common.CCErrHostGetFail, "cloudArea count more than 50"))
+		}
 	}
 
 	// 3. find host by condition

@@ -12,10 +12,12 @@
 
 import has from 'has'
 import { computed, reactive, set } from 'vue'
+import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
 
 export default ({ properties, propertyGroups, exclude }) => {
   const groupCollapseState = reactive({})
-
+  const excludeValue = exclude.value.slice()
+  excludeValue.push(...BUILTIN_UNEDITABLE_FIELDS)
   // 已排序的字段分组
   const sortedGroups = computed(() => {
     const publicGroups = []
@@ -45,7 +47,7 @@ export default ({ properties, propertyGroups, exclude }) => {
   const sortedProperties = computed(() => {
     const sortKey = 'bk_property_index'
     const propertyList = properties.value
-      ?.filter(property => !exclude.value.includes(property.bk_property_id) && !property.bk_isapi)
+      ?.filter(property => !excludeValue.includes(property.bk_property_id) && !property.bk_isapi)
     return propertyList.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
   })
 

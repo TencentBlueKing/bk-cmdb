@@ -64,7 +64,7 @@
               </bk-input>
               <p class="form-error" :title="errors.first('modelId')">{{errors.first('modelId')}}</p>
             </div>
-            <i class="icon-cc-exclamation-tips" v-bk-tooltips="$t('模型唯一标识提示语')"></i>
+            <i class="icon-cc-exclamation-tips" tabindex="-1" v-bk-tooltips="$t('模型唯一标识提示语')"></i>
           </label>
           <label>
             <span class="label-title">{{$t('名称')}}</span>

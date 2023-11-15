@@ -11,6 +11,7 @@
  */
 
 import has from 'has'
+
 const state = {
   info: {},
   properties: [],

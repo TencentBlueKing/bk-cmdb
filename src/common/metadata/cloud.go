@@ -36,11 +36,6 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
-// ToMapStr TODO
-func (c *CloudAccount) ToMapStr() mapstr.MapStr {
-	return mapstr.SetValueToMapStrByTags(c)
-}
-
 // Validate TODO
 func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	if c.AccountName == "" {
@@ -252,11 +247,6 @@ type CloudSyncTask struct {
 	LastEditor        string         `json:"bk_last_editor" bson:"bk_last_editor"`
 	CreateTime        time.Time      `json:"create_time" bson:"create_time"`
 	LastTime          time.Time      `json:"last_time" bson:"last_time"`
-}
-
-// ToMapStr to mapstr
-func (c *CloudSyncTask) ToMapStr() mapstr.MapStr {
-	return mapstr.SetValueToMapStrByTags(c)
 }
 
 // VpcSyncInfo TODO

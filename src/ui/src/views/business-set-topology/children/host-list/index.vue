@@ -230,7 +230,7 @@
               || (property.bk_obj_id === BUILTIN_MODELS.MODULE && property.bk_property_id === 'bk_module_name')
               || (property.bk_obj_id === BUILTIN_MODELS.SET && property.bk_property_id === 'bk_set_name')),
             selected: FilterStore.defaultHeader.map(property => property.bk_property_id),
-            disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_cloud_id']
+            disabledColumns: ['bk_host_id', 'bk_host_innerip', 'bk_host_innerip_v6', 'bk_cloud_id']
           },
           handler: {
             apply: async (properties) => {

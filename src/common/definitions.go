@@ -62,7 +62,7 @@ const (
 	BKAuditLogPageLimit = 200
 
 	// BKMaxExportLimit the limit to export
-	BKMaxExportLimit = 100
+	BKMaxExportLimit = 500
 
 	// BKInstMaxExportLimit the limit to instance export
 	BKInstMaxExportLimit = 1000
@@ -378,6 +378,9 @@ const (
 
 	// BKObjNameField the obj name field
 	BKObjNameField = "bk_obj_name"
+
+	// ObjSortNumberField the sort number field
+	ObjSortNumberField = "obj_sort_number"
 
 	// BKObjIconField the obj icon field
 	BKObjIconField = "bk_obj_icon"
@@ -838,6 +841,18 @@ const (
 
 	// LastTimeField the last time field
 	LastTimeField = "last_time"
+
+	// BKCreatedAt the model instance create time field
+	BKCreatedAt = "bk_created_at"
+
+	// BKCreatedBy the model instance creator field
+	BKCreatedBy = "bk_created_by"
+
+	// BKUpdatedAt the model instance update time field
+	BKUpdatedAt = "bk_updated_at"
+
+	// BKUpdatedBy the model instance modifier field
+	BKUpdatedBy = "bk_updated_by"
 )
 
 const (

@@ -10,15 +10,10 @@
  * limitations under the License.
  */
 
-'use strict'
-// Template version: 1.3.1
-// see http://vuejs-templates.github.io/webpack for documentation.
-
 const path = require('path')
 const fs = require('fs')
 const parseArgs = require('minimist')
 const { fixRequestBody } = require('http-proxy-middleware')
-
 
 const config = {
   BUILD_TITLE: '',
@@ -97,7 +92,9 @@ const dev = {
 
   cssSourceMap: true,
 
-  useMock: false
+  useMock: false,
+
+  grabAPI: !!argv.grabapi
 }
 
 const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)

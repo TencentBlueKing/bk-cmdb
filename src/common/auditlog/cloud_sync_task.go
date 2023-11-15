@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -53,6 +54,12 @@ func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParame
 		data = &res.Info[0]
 	}
 
+	dataMap, err := mapstruct.Struct2Map(data)
+	if err != nil {
+		blog.Errorf("convert cloud sync task(%+v) to map failed, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+
 	return &metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudSyncTaskRes,
@@ -61,7 +68,7 @@ func (h *syncTaskAuditLog) GenerateAuditLog(parameter *generateAuditCommonParame
 		ResourceName: data.TaskName,
 		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: parameter.NewBasicContent(data.ToMapStr()),
+			Details: parameter.NewBasicContent(dataMap),
 		},
 	}, nil
 }

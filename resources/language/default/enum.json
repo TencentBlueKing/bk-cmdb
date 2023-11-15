@@ -105,5 +105,8 @@
     "bk_project_property_bk_project_sec_lvl_enum_private": "私有",
     "bk_project_property_bk_project_sec_lvl_enum_classified": "机密",
 
+    "host_property_bk_addressing_enum_static": "静态",
+    "host_property_bk_addressing_enum_dynamic": "动态",
+
     "": ""
 }
