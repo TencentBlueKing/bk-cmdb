@@ -594,7 +594,7 @@ export const IAM_ACTIONS = {
     cmdb_action: 'hostInstance.delete',
     relation: [{
       view: IAM_VIEWS.HOST,
-      instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY, IAM_VIEWS.HOST]
+      instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
     }],
     transform: (cmdbAction, relationIds) => {
       const verifyMeta = basicTransform(cmdbAction, {})
