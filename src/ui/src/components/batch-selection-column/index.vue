@@ -49,21 +49,21 @@
       data: {
         type: Array,
         required: true,
-        default: () => [],
+        default: () => ([]),
       },
       /**
        * 已选择数据
        */
       selectedRows: {
         type: Array,
-        default: () => [],
+        default: () => ([]),
       },
       /**
        * 反选数据
        */
       unselectedRows: {
         type: Array,
-        default: () => [],
+        default: () => ([]),
       },
       /**
        * 是否跨页全选
@@ -124,6 +124,11 @@
         default: null
       },
     },
+    inject: {
+      hostSelector: {
+        default: null
+      }
+    },
     data() {
       return {
         rows: [],
@@ -172,6 +177,11 @@
       selectedRows: {
         immediate: true,
         handler(val) {
+          if (this.hostSelector) {
+            // 新增主机到模块 结果取消勾选主机 同步到复选框
+            const { selected } = this.hostSelector
+            this.setSelected(selected)
+          }
           if (this.reserveSelection) {
             this.reservedSelectedRows = cloneDeep(val)
           }
@@ -179,9 +189,21 @@
       }
     },
     methods: {
+      setSelected(selected) {
+        const hostIdSet = new Set()
+        selected.forEach(item => hostIdSet.add(item?.hostId))
+        this.rows.forEach((row) => {
+          const { hostId } = row
+          if (hostIdSet.has(hostId)) {
+            row.checked = true
+          } else {
+            row.checked = false
+          }
+        })
+        this.generatePageSelection()
+      },
       initRows() {
         this.rows = cloneDeep(this.data)
-
         if (this.reserveSelection && this.rowKey) {
           this.generateRowSelection()
           this.generatePageSelection()
@@ -373,7 +395,7 @@
             }
           }
 
-          return { ...i, checked }
+          return { ...i, checked, hostId: i?.host?.bk_host_id }
         })
       },
       // 清除所有选择状态
