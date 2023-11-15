@@ -199,9 +199,19 @@ const FilterStore = new Vue({
       return Utils.getUniqueProperties(fixedProperties, headerProperties).slice(0, 6)
     },
     defaultHeader() {
-      if (this.customHeader.length) return this.customHeader
-      if (this.globalHeader.length) return this.globalHeader
-      return this.presetHeader
+      const hostProperties = this.getModelProperties('host')
+      let header = this.presetHeader
+      if (this.customHeader.length) {
+        header = this.customHeader
+      } else if (this.globalHeader.length) {
+        header = this.globalHeader
+      }
+
+      // 保证固定的列一定存在，会被应用于列配置
+      const fixedProperties = this.fixedPropertyIds
+        .map(propertyId => Utils.findPropertyByPropertyId(propertyId, hostProperties))
+
+      return Utils.getUniqueProperties(fixedProperties, header)
     },
     modelPropertyMap() {
       const map = {}

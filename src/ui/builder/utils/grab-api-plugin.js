@@ -67,15 +67,19 @@ class GrabAPIPlugin {
           'find/objectattgroup/object/${options.bk_obj_id}',
           'find/objectunique/object/${objId}',
           'host/transfer_with_auto_clear_service_instance/bk_biz_id/${this.bizId}',
-          'update/resource/directory/${moduleId}'
+          'update/resource/directory/${moduleId}',
+
+          'delete/proc/template_binding_on_module'
         ]
+
+        // varfile中收集到的
         const appendPaths = [
-          'hosts/import',
-          'hosts/update',
-          'findmany/inst/association/object/${currentModelId}/inst_id/${currentInstId}/offset/${offset}/limit/${limit}/web',
-          'findmany/hosts/search/with_biz',
-          'findmany/hosts/search/resource',
-          'findmany/hosts/search/noauth'
+          'post hosts/import',
+          'post hosts/update',
+          'post findmany/inst/association/object/${currentModelId}/inst_id/${currentInstId}/offset/${offset}/limit/${limit}/web',
+          'post findmany/hosts/search/with_biz',
+          'post findmany/hosts/search/resource',
+          'post findmany/hosts/search/noauth'
         ]
         const orders = {
           拓扑: ['topoinstnode', '^topo', 'topomodelmainline'],
@@ -97,14 +101,15 @@ class GrabAPIPlugin {
         const content = fs.readFileSync('apipaths.txt', 'utf-8')
         const list = content.split(/\n/)
           .map(x => x.replaceAll(/[`']/g, ''))
-          .filter(x => x.length > 0 && !ignorePaths.includes(x))
+          .filter(x => x.length > 0 && !ignorePaths.includes(x.split(' ').slice(-1)[0]))
           .concat(appendPaths)
           .sort()
         const uniqueList = [...new Set(list)]
 
         uniqueList.forEach((path) => {
+          const pathRaw = path.split(' ').slice(-1)[0]
           for (const [key, searchs] of orderEntries) {
-            if (searchs.some(x => (x.startsWith('^') ? path.indexOf(x.substring(1)) === 0 : path.indexOf(x) > -1))) {
+            if (searchs.some(x => (x.startsWith('^') ? pathRaw.indexOf(x.substring(1)) === 0 : pathRaw.indexOf(x) > -1))) {
               if (group[key]) {
                 group[key].push(path)
               } else {

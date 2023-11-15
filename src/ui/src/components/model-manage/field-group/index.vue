@@ -400,6 +400,7 @@
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import { escapeRegexChar } from '@/utils/util'
+  import { getUniqueProperties } from '@/components/filters/utils'
 
   export default {
     name: 'FieldGroup',
@@ -548,7 +549,7 @@
       },
       disabledConfig() {
         const disabled = {
-          host: ['bk_host_innerip', 'bk_host_innerip_v6', 'bk_cloud_id'],
+          host: ['bk_host_id', 'bk_host_innerip', 'bk_host_innerip_v6', 'bk_cloud_id'],
           biz: ['bk_biz_name']
         }
         return disabled[this.objId] || ['bk_inst_name']
@@ -686,9 +687,15 @@
             })
           }
         })
+
         const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
-        this.configProperty.selected = this.curGlobalCustomTableColumns
-          || seletedProperties.map(property => property.bk_property_id)
+        const curGlobalCustomTableColumns = this.curGlobalCustomTableColumns
+          .map(column => properties.find(prop => prop.bk_property_id === column))
+
+        // 保证固定展示的列一定出现在已选择的数据中，无论之前的配置是什么
+        this.configProperty.selected = getUniqueProperties(seletedProperties, curGlobalCustomTableColumns)
+          .map(property => property.bk_property_id)
+
         this.initGroupState = this.$tools.clone(groupCollapseState)
         this.groupCollapseState = Object.assign({}, groupCollapseState, this.groupCollapseState)
         this.groupedProperties = groupedProperties
@@ -742,7 +749,8 @@
           config: {
             requestId: this.requestIds.properties,
             cancelPrevious: true
-          }
+          },
+          injectId: this.objId === 'host' ? 'host' : false
         })
       },
       getVerification() {
