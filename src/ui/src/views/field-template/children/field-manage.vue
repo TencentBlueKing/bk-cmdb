@@ -98,8 +98,6 @@
   const uniqueDrawerOpen = ref(false)
   const stuff = ref({ type: 'default' })
 
-  const query = computed(() => RouterQuery.getAll())
-
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])
     fieldLocalList.value = fieldList.map(unwrapData)
