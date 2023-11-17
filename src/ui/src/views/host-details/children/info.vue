@@ -213,7 +213,7 @@
         const result = await containerHostService.getNodePath({ ids: [this.host.bk_host_id] }, {
           globalError: false
         })
-        this.containerTopoPaths = result?.info?.paths || []
+        this.containerTopoPaths = result?.info || []
       },
       viewAll() {
         this.showAll = !this.showAll
@@ -241,7 +241,7 @@
               bizId: this.bizId
             },
             query: {
-              node: this.isContainerHost ? `cluster-${item.id}` : `module-${item.id}`
+              node: item.isContainer ? `cluster-${item.id}` : `module-${item.id}`
             }
           })
         } else {

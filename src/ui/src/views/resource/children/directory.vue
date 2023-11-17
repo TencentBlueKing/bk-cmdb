@@ -77,14 +77,15 @@
               v-bk-tooltips.top="isSticky(dir) ? $t('取消置顶') : $t('置顶')"
               @click="handleToggleSticky(dir)">
             </i>
-            <cmdb-dot-menu class="dir-operation" color="#3A84FF" @click.native.stop="handleCloseInput">
-              <div class="dot-content">
+            <cmdb-dot-menu class="dir-operation" ref="dot-menu"
+              color="#3A84FF" append-to="parent" @click.native.stop="handleCloseInput">
+              <div class="dot-content" @mouseleave="() => handleLeave(dir, index)">
                 <cmdb-auth :auth="{ type: $OPERATION.U_RESOURCE_DIRECTORY, relation: [dir.bk_module_id] }">
                   <bk-button slot-scope="{ disabled }"
                     class="menu-btn"
                     :text="true"
                     :disabled="disabled"
-                    @click="handleResetName(dir)">
+                    @click.stop="handleResetName(dir)">
                     {{$t('重命名')}}
                   </bk-button>
                 </cmdb-auth>
@@ -98,7 +99,7 @@
                       class="menu-btn"
                       :text="true"
                       :disabled="!!dir.host_count || disabled"
-                      @click="handleDelete(dir, index)">
+                      @click.stop="handleDelete(dir, index)">
                       {{$t('删除')}}
                     </bk-button>
                   </div>
@@ -260,6 +261,12 @@
           this.handleCancelEdit()
         } catch (e) {
           console.error(e)
+        }
+      },
+      handleLeave(dir, index) {
+        const { bk_module_id: moduleId } = dir
+        if (moduleId !== this.acitveDirId) {
+          this.$refs['dot-menu'][index - 1]?.$refs?.popover?.hideHandler()
         }
       },
       handleSearchHost(active = {}, dispatchEvent = true) {

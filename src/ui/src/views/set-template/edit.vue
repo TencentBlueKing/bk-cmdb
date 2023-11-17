@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from 'vue'
+  import { computed, defineComponent, reactive, ref, watch } from 'vue'
   import router from '@/router/index.js'
   import routerActions from '@/router/actions'
   import ManagementForm from './children/management-form.vue'
@@ -29,6 +29,10 @@
     },
     setup() {
       const managementForm = ref(null)
+      const leaveConfirmConfig = reactive({
+        id: 'editSetTemplate',
+        active: false
+      })
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
@@ -54,6 +58,7 @@
 
         // 更新模板后，获取模板的同步状态
         const syncStatus = await getTemplateSyncStatus(bizId.value, templateId.value)
+        leaveConfirmConfig.active = false
         needSync.value = syncStatus
 
         successDialogShow.value = true
@@ -104,6 +109,10 @@
         })
       }
 
+      watch(() => submitDisabled.value, (val) => {
+        leaveConfirmConfig.active = !val
+      })
+
       return {
         bizId,
         templateId,
@@ -118,7 +127,8 @@
         handleCancel,
         handleCloseSuccessDialog,
         handleToCreateInstance,
-        handleToSyncInstance
+        handleToSyncInstance,
+        leaveConfirmConfig
       }
     }
   })
@@ -175,6 +185,14 @@
         </div>
       </div>
     </bk-dialog>
+    <cmdb-leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('确认离开当前页？')"
+      :content="$t('离开将会导致未保存信息丢失')"
+      :ok-text="$t('离开')"
+      :cancel-text="$t('取消')">
+    </cmdb-leave-confirm>
   </cmdb-sticky-layout>
 </template>
 
