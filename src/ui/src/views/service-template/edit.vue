@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, ref } from 'vue'
+  import { computed, defineComponent, reactive, ref, watch, nextTick } from 'vue'
   import router from '@/router/index.js'
   import { t } from '@/i18n'
   import { $bkInfo, $success } from '@/magicbox/index.js'
@@ -27,6 +27,10 @@
     },
     setup() {
       const managementForm = ref(null)
+      const leaveConfirmConfig = reactive({
+        id: 'editServiceTemplate',
+        active: false
+      })
 
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
@@ -47,13 +51,15 @@
         }
         await serviceTemplateService.update(data, { requestId: requestIds.update })
 
+        leaveConfirmConfig.active = false
         $success(t('保存成功'))
-
-        routerActions.redirect({
-          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
-          params: {
-            templateId: templateId.value
-          }
+        nextTick(() => {
+          routerActions.redirect({
+            name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+            params: {
+              templateId: templateId.value
+            }
+          })
         })
       }
 
@@ -88,6 +94,10 @@
         loading.value = false
       }
 
+      watch(() => submitDisabled.value, (val) => {
+        leaveConfirmConfig.active = !val
+      })
+
       return {
         bizId,
         templateId,
@@ -97,7 +107,8 @@
         requestIds,
         handleSubmit,
         handleCancel,
-        handleDataLoaded
+        handleDataLoaded,
+        leaveConfirmConfig
       }
     }
   })
@@ -128,6 +139,14 @@
         <bk-button theme="default" @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </template>
+    <cmdb-leave-confirm
+      v-bind="leaveConfirmConfig"
+      :reverse="true"
+      :title="$t('确认离开当前页？')"
+      :content="$t('离开将会导致未保存信息丢失')"
+      :ok-text="$t('离开')"
+      :cancel-text="$t('取消')">
+    </cmdb-leave-confirm>
   </cmdb-sticky-layout>
 </template>
 
