@@ -569,13 +569,13 @@
               return `${cloud}:${ip}`
             }
             if (property.id === this.IPv6WithCloudSymbol) {
-              return `${cloud}:${ipv6}`
+              return `${cloud}:[${ipv6}]`
             }
             if (property.id === this.IPv46WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip) ? ipv6 : ip}`
+              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip) ? `[${ipv6}]` : ip}`
             }
             if (property.id === this.IPv64WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip_v6) ? ip : ipv6}`
+              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip_v6) ? ip : `[${ipv6}]`}`
             }
           }
           if (property.bk_property_type === 'topology') {

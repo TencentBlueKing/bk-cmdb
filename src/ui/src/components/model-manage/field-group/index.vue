@@ -690,10 +690,11 @@
 
         const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
         const curGlobalCustomTableColumns = this.curGlobalCustomTableColumns
-          .map(column => properties.find(prop => prop.bk_property_id === column))
+          ?.map(column => properties.find(prop => prop.bk_property_id === column))
+          ?.filter(column => column)
 
         // 保证固定展示的列一定出现在已选择的数据中，无论之前的配置是什么
-        this.configProperty.selected = getUniqueProperties(seletedProperties, curGlobalCustomTableColumns)
+        this.configProperty.selected = getUniqueProperties(seletedProperties || [], curGlobalCustomTableColumns || [])
           .map(property => property.bk_property_id)
 
         this.initGroupState = this.$tools.clone(groupCollapseState)
