@@ -131,11 +131,6 @@
         uniqueSelected: []
       }
     },
-    provide() {
-      return {
-        hostSelector: this
-      }
-    },
     computed: {
       selected() {
         return [...this.repeatSelected, ...this.uniqueSelected]

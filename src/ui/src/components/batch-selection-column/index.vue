@@ -33,6 +33,8 @@
   import cloneDeep from 'lodash/cloneDeep'
   import safeGet from 'lodash/get'
 
+  // 数据 hostId:index
+  const hostIdIndex = {}
   export default {
     name: 'BatchSelectionColumn',
     props: {
@@ -124,11 +126,6 @@
         default: null
       },
     },
-    inject: {
-      hostSelector: {
-        default: null
-      }
-    },
     data() {
       return {
         rows: [],
@@ -176,34 +173,56 @@
       },
       selectedRows: {
         immediate: true,
-        handler(val) {
-          if (this.hostSelector) {
-            // 新增主机到模块 结果取消勾选主机 同步到复选框
-            const { selected } = this.hostSelector
-            this.setSelected(selected)
-          }
+        handler(val = [], oldVal = []) {
           if (this.reserveSelection) {
             this.reservedSelectedRows = cloneDeep(val)
           }
+          this.setSelected(val, oldVal)
         }
       }
     },
     methods: {
-      setSelected(selected) {
-        const hostIdSet = new Set()
-        selected.forEach(item => hostIdSet.add(item?.hostId))
-        this.rows.forEach((row) => {
-          const { hostId } = row
-          if (hostIdSet.has(hostId)) {
-            row.checked = true
+      setSelected(selected, oldSelected) {
+        // 当前勾选的
+        const addSelected = new Set()
+        // 当前取消勾选的
+        const removeSelected = new Set()
+        oldSelected.forEach(item => removeSelected.add(item?.hostId  ?? item?.host?.bk_host_id))
+        selected.forEach((row) => {
+          const hostId =  row?.hostId ?? row?.host?.bk_host_id
+          if (removeSelected.has(hostId)) {
+            removeSelected.delete(hostId)
           } else {
+            addSelected.add(hostId)
+          }
+        })
+        addSelected.forEach((hostId) => {
+          const index = hostIdIndex[hostId] ?? -1
+          const row = this.rows[index]
+          if (row && !row?.checked) {
+            row.checked = true
+            this.handleRowSelectionChange(row)
+          }
+        })
+        removeSelected.forEach((hostId) => {
+          const index = hostIdIndex[hostId] ?? -1
+          const row = this.rows[index]
+          if (row && row?.checked) {
             row.checked = false
+            this.handleRowSelectionChange(row)
           }
         })
         this.generatePageSelection()
       },
+      initHostIdIndex() {
+        this.rows.forEach((row, index) => {
+          const hostId = row?.host?.bk_host_id
+          hostIdIndex[hostId] = index
+        })
+      },
       initRows() {
         this.rows = cloneDeep(this.data)
+        this.initHostIdIndex(this.rows)
         if (this.reserveSelection && this.rowKey) {
           this.generateRowSelection()
           this.generatePageSelection()
