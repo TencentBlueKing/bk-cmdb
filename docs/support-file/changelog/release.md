@@ -1,3 +1,7 @@
+## [Version: v3.12.3-feature-auth-alpha8] - 2023-11-17
+**功能优化**
+- 优化了一些前端的显示问题
+
 ## [Version: v3.12.2-feature-auth-alpha7] - 2023-11-15
 **功能优化**
 - 优化了一些前端的显示问题
