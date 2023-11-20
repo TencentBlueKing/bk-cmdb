@@ -44,8 +44,8 @@
     name: 'cmdb-dot-menu',
     props: {
       appendTo: {
-        type: String,
-        default: 'document.body'
+        type: [HTMLBodyElement, String],
+        default: () => (document.body)
       },
       color: {
         type: String,
