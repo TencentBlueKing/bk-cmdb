@@ -106,7 +106,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 
 	// connect the remote mongodb
 	instance := instances.New(s, lang, engine.CoreAPI)
-	hostApplyRuleCore := hostapplyrule.New(instance)
+	hostApplyRuleCore := hostapplyrule.New(instance, engine.CoreAPI)
 	s.core = core.New(
 		model.New(s, lang),
 		instance,
