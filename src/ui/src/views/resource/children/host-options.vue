@@ -165,7 +165,7 @@
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import hostImportService from '@/service/host/import'
-  import { isUseComplexValueType } from '@/utils/tools'
+  import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import isEqual from 'lodash/isEqual'
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
@@ -197,6 +197,9 @@
         },
         assignOptions: [],
         IPWithCloudSymbol: Symbol('IPWithCloud'),
+        IPv6WithCloudSymbol: Symbol('IPv6WithCloud'),
+        IPv46WithCloudSymbol: Symbol('IPv46WithCloud'),
+        IPv64WithCloudSymbol: Symbol('IPv64WithCloud'),
         authRequestId: AuthRequestId,
         assignOptionAuthedMap: {
           biz: {},
@@ -235,15 +238,21 @@
         })
       },
       clipboardList() {
-        const IPWithCloud = FilterUtils.defineProperty({
-          id: this.IPWithCloudSymbol,
+        const IPWithCloudFields = {
+          [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
+          [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
+          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv4优先')})`,
+          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv6优先')})`
+        }
+        const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
+          id: key,
           bk_obj_id: 'host',
-          bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('管控区域')}ID:IP`,
+          bk_property_id: key,
+          bk_property_name: IPWithCloudFields[key],
           bk_property_type: 'singlechar'
-        })
+        }))
         const clipboardList = this.$parent.tableHeader.slice()
-        clipboardList.splice(1, 0, IPWithCloud)
+        clipboardList.splice(1, 0, ...IPWithClouds)
         return clipboardList
       },
       properties() {
@@ -539,21 +548,44 @@
             return value
           }
 
-          if (property.id === this.IPWithCloudSymbol) {
+          const IPWithCloudKeys = [
+            this.IPWithCloudSymbol,
+            this.IPv6WithCloudSymbol,
+            this.IPv46WithCloudSymbol,
+            this.IPv64WithCloudSymbol
+          ]
+          if (IPWithCloudKeys.includes(property.id)) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
-            return `${cloud}:${ip}`
+            const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
+            if (property.id === this.IPWithCloudSymbol) {
+              return `${cloud}:${ip}`
+            }
+            if (property.id === this.IPv6WithCloudSymbol) {
+              return `${cloud}:[${ipv6}]`
+            }
+            if (property.id === this.IPv46WithCloudSymbol) {
+              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip) ? `[${ipv6}]` : ip}`
+            }
+            if (property.id === this.IPv64WithCloudSymbol) {
+              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip_v6) ? ip : `[${ipv6}]`}`
+            }
           }
           if (property.bk_property_type === 'topology') {
             // eslint-disable-next-line no-underscore-dangle
             return data.__bk_host_topology__.join(',')
           }
           const propertyId = property.bk_property_id
+          const copyValueOptions = {}
+          if (propertyId === 'bk_cloud_id') {
+            copyValueOptions.isFullCloud = true
+          }
           if (Array.isArray(modelData)) {
-            const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
+            const value = modelData
+              .map(item => this.$tools.getPropertyCopyValue(item[propertyId], property, copyValueOptions))
             return value.join(',')
           }
-          return this.$tools.getPropertyCopyValue(modelData[propertyId], property)
+          return this.$tools.getPropertyCopyValue(modelData[propertyId], property, copyValueOptions)
         })
         this.$copyText(copyText.join('\n')).then(() => {
           this.$success(this.$t('复制成功'))

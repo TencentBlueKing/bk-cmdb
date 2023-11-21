@@ -65,5 +65,33 @@ func GetCustomObjects(ctx context.Context, header http.Header, client apimachine
 		return []metadata.Object{}, nil
 	}
 
-	return resp.Info, nil
+	// 表格字段类型的object不注册到权限中心，这里需要将他们过滤出来
+	opt := &metadata.CommonQueryOption{
+		Fields: []string{common.BKDestModelField},
+		Page:   metadata.BasePage{Limit: common.BKMaxPageSize},
+	}
+	relRes, err := client.CoreService().ModelQuote().ListModelQuoteRelation(ctx, header, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(relRes.Info) == 0 {
+		return resp.Info, nil
+	}
+
+	relationObjMap := make(map[string]struct{})
+	for _, res := range relRes.Info {
+		relationObjMap[res.DestModel] = struct{}{}
+	}
+
+	result := make([]metadata.Object, 0)
+	for _, object := range resp.Info {
+		if _, ok := relationObjMap[object.ObjectID]; ok {
+			continue
+		}
+
+		result = append(result, object)
+	}
+
+	return result, nil
 }

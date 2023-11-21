@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 )
 
@@ -50,6 +51,17 @@ func (h *cloudAccountAuditLog) GenerateAuditLog(parameter *generateAuditCommonPa
 		data = &res.Info[0].CloudAccount
 	}
 
+	secretKey := data.SecretKey
+	data.SecretKey = ""
+
+	dataMap, err := mapstruct.Struct2Map(data)
+	if err != nil {
+		blog.Errorf("convert cloud account(%+v) to map failed, err: %v, rid: %s", data, err, kit.Rid)
+		return nil, err
+	}
+
+	data.SecretKey = secretKey
+
 	return &metadata.AuditLog{
 		AuditType:    metadata.CloudResourceType,
 		ResourceType: metadata.CloudAccountRes,
@@ -58,7 +70,7 @@ func (h *cloudAccountAuditLog) GenerateAuditLog(parameter *generateAuditCommonPa
 		ResourceName: data.AccountName,
 		OperateFrom:  parameter.operateFrom,
 		OperationDetail: &metadata.BasicOpDetail{
-			Details: parameter.NewBasicContent(data.ToMapStr()),
+			Details: parameter.NewBasicContent(dataMap),
 		},
 	}, nil
 }

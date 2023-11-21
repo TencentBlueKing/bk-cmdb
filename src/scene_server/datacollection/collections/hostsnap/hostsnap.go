@@ -747,8 +747,9 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	}
 
 	for _, disktotal := range val.Get("data.disk.usage.#.total").Array() {
-		hostMsg.disk += disktotal.Uint() >> 10 >> 10 >> 10
+		hostMsg.disk += disktotal.Uint()
 	}
+	hostMsg.disk = hostMsg.disk >> 10 >> 10 >> 10
 
 	hostMsg.mem = val.Get("data.mem.meminfo.total").Uint()
 	hostMsg.hostname = strings.TrimSpace(val.Get("data.system.info.hostname").String())

@@ -250,7 +250,7 @@
               requestId: this.request.create
             }
           })
-          this.$success('创建成功')
+          this.$success(this.$t('创建成功'))
           this.$emit('save')
         } catch (error) {
           console.error(error)

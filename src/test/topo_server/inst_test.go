@@ -569,7 +569,7 @@ var _ = Describe("inst test", func() {
 
 		instance, ok := info[0].(map[string]interface{})
 		Expect(ok).To(Equal(true))
-		Expect(len(instance)).To(Equal(16))
+		Expect(len(instance)).To(Equal(20))
 	})
 
 	It("search object instances with limit more than 500", func() {

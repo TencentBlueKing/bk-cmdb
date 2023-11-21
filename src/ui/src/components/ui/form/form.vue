@@ -29,7 +29,7 @@
                   v-if="checkEditable(property)"
                   :key="propertyIndex">
                   <div class="property-name" v-if="!invisibleNameProperties.includes(property['bk_property_id'])">
-                    <span class="property-name-text" :class="{ required: isRequired(property) }">
+                    <span class="property-name-text" v-bk-overflow-tips :class="{ required: isRequired(property) }">
                       {{property['bk_property_name']}}
                     </span>
                     <i class="property-name-tooltips icon-cc-tips"
@@ -111,7 +111,7 @@
   import FormTips from './form-tips.js'
   import FormAppend from './form-append.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import { BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+  import { BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
 
   export default {
@@ -185,7 +185,11 @@
         return !!Object.keys(this.changedValues).length
       },
       groupedProperties() {
-        return this.$groupedProperties.map(properties => properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property.bk_property_type)))
+        return this.$groupedProperties.map(properties => properties.filter((property) => {
+          const isAsst = ['singleasst', 'multiasst', 'foreignkey'].includes(property.bk_property_type)
+          const isBuiltinUneditable = BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id)
+          return !isAsst && !isBuiltinUneditable
+        }))
       },
       instanceId() {
         return this.inst?.[BUILTIN_MODEL_PROPERTY_KEYS?.[this.objId]?.ID || 'bk_inst_id']

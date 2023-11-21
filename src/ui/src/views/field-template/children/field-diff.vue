@@ -63,7 +63,7 @@
   const [{ groups }] = useGroup(propertyParams)
   const groupedPropertyies = useGroupProperty(groups, properties)
 
-  const isConflict = field => props.diffs.conflict?.some(item => item.data.bk_property_id === field.bk_property_id)
+  const isConflict = field => props.diffs.conflict?.some(item => item.data?.bk_property_id === field.bk_property_id)
   const isNew = field => props.diffs.create?.some(item => item.bk_property_id === field.bk_property_id)
   const isUpdate = field => props.diffs.update?.some(item => item.bk_property_id === field.bk_property_id)
   const isUnchanged = field => props.diffs.unchanged?.some(item => item.bk_property_id === field.bk_property_id)

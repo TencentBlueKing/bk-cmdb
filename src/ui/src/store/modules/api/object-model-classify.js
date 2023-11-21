@@ -96,6 +96,9 @@ const actions = {
      */
   searchClassificationsObjects({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
     return $http.post('find/classificationobject', params, config).then((data) => {
+      // 根据obj_sort_number字段从小到大排序
+      data?.forEach(group => group?.bk_objects
+        ?.sort((first, last) => first?.obj_sort_number - last?.obj_sort_number))
       const classification = data || []
 
       // 注入容器分组和对象

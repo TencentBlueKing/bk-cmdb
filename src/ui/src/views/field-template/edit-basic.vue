@@ -160,8 +160,7 @@
         <cmdb-auth :auth="{ type: $OPERATION.U_FIELD_TEMPLATE, relation: [templateId] }">
           <template #default="{ disabled }">
             <bk-button
-              :disabled="disabled"
-              :loading="$loading(requestIds.save)"
+              :disabled="disabled || $loading(requestIds.save)"
               @click="handleNextStep">
               {{$t('保存&下一步')}}
             </bk-button>

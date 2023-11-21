@@ -167,7 +167,7 @@
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
-              class="model-list clearfix"
+              class="model-list"
               :class="{
                 'is-empty': isGroupEmpty(classification)
               }"
@@ -182,9 +182,8 @@
               :data-group-id="classification.bk_classification_id"
               v-model="classification.bk_objects"
               @start="handleModelDragStart"
-              :move="handleModelDragMove"
               @end="handleModelDragEnd"
-              @add="handleModelDragAdd"
+              @change="handleModelDragChange"
             >
               <div
                 class="model-item bgc-white"
@@ -245,21 +244,19 @@
                   </span>
                 </div>
               </div>
+              <div class="group-empty-model"
+                v-if="classification.bk_objects.length === 0">
+                <i class="bk-icon icon-info-circle"></i>
+                <i18n path="分组暂无模型提示">
+                  <template #btn>
+                    <bk-button :text="true" title="primary"
+                      @click="showModelDialog(classification.bk_classification_id)">
+                      {{$t('立即添加')}}
+                    </bk-button>
+                  </template>
+                </i18n>
+              </div>
             </draggable>
-          </bk-transition>
-          <bk-transition name="collapse" class="group-empty-model"
-            v-if="classification.bk_objects.length === 0"
-            v-show="!classificationsCollapseState[classification.id]">
-            <div>
-              <i class="bk-icon icon-info-circle"></i>
-              <i18n path="分组暂无模型提示">
-                <template #btn>
-                  <bk-button :text="true" title="primary" @click="showModelDialog(classification.bk_classification_id)">
-                    {{$t('立即添加')}}
-                  </bk-button>
-                </template>
-              </i18n>
-            </div>
           </bk-transition>
         </li>
       </ul>
@@ -753,22 +750,23 @@
       handleModelDragEnd() {
         this.isDragging = false
       },
-      handleModelDragMove(event) {
-        const draggedModel = event.draggedContext.element
-        const targetGroupModels = event.relatedContext.list
-        const { willInsertAfter } = event
-        const isSameGroup = targetGroupModels
-          .some(model => model.bk_classification_id === draggedModel?.bk_classification_id)
-        if (isSameGroup && willInsertAfter) {
-          return true
+      handleModelDragChange(moveInfo) {
+        if (has(moveInfo, 'moved') || has(moveInfo, 'added')) {
+          const info = moveInfo.moved
+            ? { ...moveInfo.moved }
+            : { ...moveInfo.added }
+          this.updateModellndex(info)
         }
-        return !isSameGroup
       },
-      handleModelDragAdd(event) {
-        const { modelId } = event.item.dataset
-        const newGroupId = event.to.dataset.groupId
+      updateModellndex({ element: model, newIndex }) {
+        const { id } = model
+        const group = this.currentClassifications?.
+          find(classifications => classifications?.bk_objects?.
+            find(item => item?.id === id))
 
-        this.updateModelGroup({ modelId, newGroupId })
+        const curGroup = group?.bk_classification_id
+        const curIndex = newIndex + 1
+        this.updateModelGroup({ id, curGroup, curIndex })
       },
       getExportModels() {
         return this.currentClassifications
@@ -1062,12 +1060,12 @@
         this.modelDialog.groupId = groupId || ''
         this.modelDialog.isShow = true
       },
-      updateModelGroup({ modelId, newGroupId }) {
+      updateModelGroup({ id, curGroup, curIndex }) {
         return this.updateObject({
-          id: modelId,
+          id,
           params: {
-            modifier: this.userName,
-            bk_classification_id: newGroupId
+            bk_classification_id: curGroup,
+            obj_sort_number: +curIndex
           }
         })
           .then(() => {

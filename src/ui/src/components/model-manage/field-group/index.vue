@@ -64,7 +64,7 @@
       >
       </bk-input>
       <div class="setting-btn" v-if="canEditSort" @click="configProperty.show = true">
-        <img src="@/assets/images/icon/icon-model-setting.png">
+        <i class="bk-icon left-icon icon-cog"></i>
       </div>
     </div>
     <div class="group-wrapper">
@@ -400,6 +400,7 @@
   import fieldTemplateService from '@/service/field-template'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import { escapeRegexChar } from '@/utils/util'
+  import { getUniqueProperties } from '@/components/filters/utils'
 
   export default {
     name: 'FieldGroup',
@@ -548,7 +549,7 @@
       },
       disabledConfig() {
         const disabled = {
-          host: ['bk_host_innerip', 'bk_cloud_id'],
+          host: ['bk_host_id', 'bk_host_innerip', 'bk_host_innerip_v6', 'bk_cloud_id'],
           biz: ['bk_biz_name']
         }
         return disabled[this.objId] || ['bk_inst_name']
@@ -686,9 +687,16 @@
             })
           }
         })
+
         const seletedProperties = this.$tools.getHeaderProperties(properties, [], this.disabledConfig)
-        this.configProperty.selected = this.curGlobalCustomTableColumns
-          || seletedProperties.map(property => property.bk_property_id)
+        const curGlobalCustomTableColumns = this.curGlobalCustomTableColumns
+          ?.map(column => properties.find(prop => prop.bk_property_id === column))
+          ?.filter(column => column)
+
+        // 保证固定展示的列一定出现在已选择的数据中，无论之前的配置是什么
+        this.configProperty.selected = getUniqueProperties(seletedProperties || [], curGlobalCustomTableColumns || [])
+          .map(property => property.bk_property_id)
+
         this.initGroupState = this.$tools.clone(groupCollapseState)
         this.groupCollapseState = Object.assign({}, groupCollapseState, this.groupCollapseState)
         this.groupedProperties = groupedProperties
@@ -742,7 +750,8 @@
           config: {
             requestId: this.requestIds.properties,
             cancelPrevious: true
-          }
+          },
+          injectId: this.objId === 'host' ? 'host' : false
         })
       },
       getVerification() {
@@ -1008,22 +1017,19 @@
       async updatePropertyIndex({ element: property, newIndex }) {
         let curIndex = 0
         let curGroup = ''
+        const { bk_property_id: propertyId } = property
+        const group = this.groupedProperties?.
+          find(group => group?.properties?.
+            find(item => item?.bk_property_id === propertyId))
+        const len = group?.properties?.length || 0
 
-        for (const group of this.groupedProperties) {
-          const len = group.properties.length
-          for (const item of group.properties) {
-            if (item.bk_property_id === property.bk_property_id) {
-              // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
-              if (newIndex > 0 && group.properties.length !== 1) {
-                // 拖拽插件bug 跨组拖动到最后的位置index会多1
-                const index = newIndex === len ? newIndex - 2 : newIndex - 1
-                curIndex = Number(group.properties[index].bk_property_index) + 1
-              }
-              curGroup = group.info.bk_group_id
-              break
-            }
-          }
+        // 取移动字段新位置的前一个字段 index + 1，当给空字段组添加新字段时，curIndex 默认为 0
+        if (newIndex > 0 && len !== 1) {
+          // 拖拽插件bug 跨组拖动到最后的位置index会多1
+          const index = newIndex === len ? newIndex - 2 : newIndex - 1
+          curIndex = Number(group.properties[index].bk_property_index) + 1
         }
+        curGroup = group.info.bk_group_id
 
         const params = {
           bk_property_group: curGroup,
@@ -1064,7 +1070,7 @@
       handleEditField(group, property) {
         this.slider.isEditField = true
         this.slider.curField = property
-        this.slider.curGroup = group.info
+        this.slider.curGroup = group.info || group
         this.slider.title = this.$t('编辑字段')
         this.slider.isShow = true
         this.slider.beforeClose = this.handleSliderBeforeClose
@@ -1264,9 +1270,8 @@ $modelHighlightColor: #3c96ff;
     align-items: center;
     background: white;
     cursor: pointer;
-    img {
-      width: 16px;
-      height: 16px;
+    i {
+      font-size: 18px;
     }
   }
 }
