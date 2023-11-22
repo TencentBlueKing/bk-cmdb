@@ -13,8 +13,12 @@
 export default {
   methods: {
     handleApplyPermission(permission) {
+      let prem = this.permission
+      if (permission && !(permission instanceof Event)) {
+        prem = permission
+      }
       return this.$store.dispatch('auth/getSkipUrl', {
-        params: permission || this.permission,
+        params: prem,
         config: {
           requestId: 'getSkipUrl'
         }
