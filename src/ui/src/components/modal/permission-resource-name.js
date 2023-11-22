@@ -67,12 +67,10 @@ export const IAM_VIEWS_INST_NAME = {
     return inst ? inst.bk_inst_name : id
   },
   async [IAM_VIEWS.PROJECT](vm, id) {
-    const models = vm.$store.getters['objectModelClassify/models']
-    const objId = (models.find(item => item.id === Number(id)) || {}).bk_obj_id
     const project = await projectService.findOne({
-      id: objId
+      id: Number(id)
     }, { ...requestConfigBase(`find_project_${id}`) })
-    return project ? project.bk_inst_name : id
+    return project ? project.bk_project_name : id
   },
   [IAM_VIEWS.INSTANCE_MODEL](vm, id) {
     const models = vm.$store.getters['objectModelClassify/models']

@@ -17,6 +17,7 @@ import isEqual from 'lodash/isEqual'
 import uniqBy from 'lodash/uniqBy'
 
 const SYSTEM_ID = 'bk_cmdb'
+const SYSTEM_NAME = '配置平台'
 
 // 前端构造的auth结构为：
 // [{ type: 'xxx', relation: [xxx] }]
@@ -62,6 +63,7 @@ export function mergeSameActions(actions) {
 
   const permission = {
     system_id: SYSTEM_ID,
+    system_name: SYSTEM_NAME,
     actions: []
   }
 
@@ -72,7 +74,8 @@ export function mergeSameActions(actions) {
       const instances = uniqBy(viewInstances, insts => insts?.reduce((acc, cur) => `${acc}/${cur?.id}_${cur?.type}`, ''))
       const data = {
         type: viewType,
-        system_id: SYSTEM_ID
+        system_id: SYSTEM_ID,
+        system_name: SYSTEM_NAME,
       }
       if (instances?.length) {
         data.instances = instances

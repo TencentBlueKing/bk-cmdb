@@ -22,7 +22,10 @@
         :data="list"
         :max-height="193"
         class="permission-table">
-        <bk-table-column prop="name" :label="$t('需要申请的权限')" width="250"></bk-table-column>
+        <bk-table-column :label="$t('系统')" width="150">
+          {{ $t(permission.system_name) }}
+        </bk-table-column>
+        <bk-table-column prop="name" :label="$t('需要申请的权限')" width="200"></bk-table-column>
         <bk-table-column prop="resource" :label="$t('关联的资源实例')">
           <template slot-scope="{ row }">
             <div v-if="row.relations.length" style="overflow: auto;">
@@ -102,7 +105,7 @@
           requiredPermissions: this.$t('需要申请的权限'),
           noData: this.$t('无数据'),
           apply: this.$t('去申请'),
-          applied: this.$t('已完成'),
+          applied: this.$t('我已申请'),
           cancel: this.$t('取消'),
           close: this.$t('关闭')
         }

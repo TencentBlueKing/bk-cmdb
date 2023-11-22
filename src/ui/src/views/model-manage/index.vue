@@ -195,54 +195,63 @@
                   'is-paused': model['bk_ispaused'],
                   'is-builtin': model.ispre
                 }"
-                @mouseenter="handleModelMouseEnterDebounce(model)"
               >
-                <div
-                  class="model-info"
-                  :class="{
-                    'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
-                  }"
-                  @click="handleModelClick(model, classification)"
-                >
-                  <div class="drag-icon"></div>
-                  <div class="model-icon">
-                    <i class="icon" :class="[model['bk_obj_icon']]"></i>
-                  </div>
-                  <div class="model-details">
-                    <p class="model-name" :title="model['bk_obj_name']">
-                      {{ model["bk_obj_name"] }}
-                    </p>
-                    <p class="model-id" :title="model['bk_obj_id']">
-                      {{ model["bk_obj_id"] }}
-                    </p>
-                  </div>
-                  <bk-checkbox
-                    v-model="modelSelectionState[model.bk_obj_id]"
-                    @change="handleModelSelectionChange(classification)"
-                    :disabled="isBuiltinModel(model)"
-                    v-bk-tooltips="{
-                      content: $t('内置模型不允许导出'),
-                      disabled: !isBuiltinModel(model)
-                    }"
-                    @click.stop.native
-                    class="model-checkbox"
-                  >
-                  </bk-checkbox>
-                </div>
-                <div
-                  v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
-                  class="model-instance-count"
-                  @click="handleGoInstance(model)"
-                >
-                  <span class="count-number">
-                    <cmdb-loading
-                      :loading="!modelStatisticsSet[model.bk_obj_id] ||
-                        $loading(requestIds.statistics[model.bk_obj_id])"
-                    >
-                      {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
-                    </cmdb-loading>
-                  </span>
-                </div>
+                <cmdb-auth-mask
+                  tag="div"
+                  class="model-auth-mask"
+                  v-bind="getViewAuthMaskProps(model)">
+                  <template #default="{ disabled }">
+                    <div class="model-auth-mask-inner" @mouseenter="handleModelMouseEnterDebounce(model)">
+                      <div
+                        class="model-info"
+                        :class="{
+                          'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id),
+                          'noauth': disabled
+                        }"
+                        @click="handleModelClick(model, classification)"
+                      >
+                        <div class="drag-icon"></div>
+                        <div class="model-icon">
+                          <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                        </div>
+                        <div class="model-details">
+                          <p class="model-name" :title="model['bk_obj_name']">
+                            {{ model["bk_obj_name"] }}
+                          </p>
+                          <p class="model-id" :title="model['bk_obj_id']">
+                            {{ model["bk_obj_id"] }}
+                          </p>
+                        </div>
+                        <bk-checkbox
+                          v-model="modelSelectionState[model.bk_obj_id]"
+                          @change="handleModelSelectionChange(classification)"
+                          :disabled="isBuiltinModel(model)"
+                          v-bk-tooltips="{
+                            content: $t('内置模型不允许导出'),
+                            disabled: !isBuiltinModel(model)
+                          }"
+                          @click.stop.native
+                          class="model-checkbox"
+                        >
+                        </bk-checkbox>
+                      </div>
+                      <div
+                        v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id) && !disabled"
+                        class="model-instance-count"
+                        @click="handleGoInstance(model)"
+                      >
+                        <span class="count-number">
+                          <cmdb-loading
+                            :loading="!modelStatisticsSet[model.bk_obj_id] ||
+                              $loading(requestIds.statistics[model.bk_obj_id])"
+                          >
+                            {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
+                          </cmdb-loading>
+                        </span>
+                      </div>
+                    </div>
+                  </template>
+                </cmdb-auth-mask>
               </div>
               <div class="group-empty-model"
                 v-if="classification.bk_objects.length === 0">
@@ -427,6 +436,8 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
+  import { isViewAuthFreeModel } from '@/service/auth'
+
   export default {
     name: 'ModelManagement',
     filters: {
@@ -743,6 +754,18 @@
       },
       toggleModelList(classification) {
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
+      },
+      getViewAuthMaskProps(model) {
+        if (isViewAuthFreeModel(model)) {
+          return {
+            ignore: true
+          }
+        }
+        const auth = { type: this.$OPERATION.R_MODEL, relation: [model.id] }
+        return {
+          auth,
+          authorized: this.isViewAuthed(auth)
+        }
       },
       handleModelDragStart() {
         this.isDragging = true
