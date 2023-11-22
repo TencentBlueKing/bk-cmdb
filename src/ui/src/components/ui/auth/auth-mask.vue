@@ -16,7 +16,7 @@
   export default defineComponent({
     name: 'cmdb-auth-mask',
     props: {
-      auth: Object,
+      auth: [Object, Array],
       authorized: Boolean,
       tag: {
         type: String,
@@ -25,8 +25,13 @@
       ignore: Boolean,
       callbackUrl: String
     },
+    data() {
+      return {
+        useIAM: this.$Site.authscheme === 'iam'
+      }
+    },
     render(h) {
-      if (this.ignore) {
+      if (!this.useIAM || this.ignore) {
         return this.$scopedSlots.default({
           disabled: false
         })

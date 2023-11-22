@@ -207,6 +207,16 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   width: 100%;
   align-content: flex-start;
 
+  &.is-empty {
+    display: block;
+  }
+
+  .model-auth-mask,
+  .model-auth-mask-inner {
+    display: flex;
+    width: 100%;
+  }
+
   .model-item {
     display: flex;
     height: $modelItemHeight;
@@ -273,7 +283,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
     .model-info {
       flex: 0 1 auto;
-      width: calc(100% - $modelItemHeight);
+      width: 100%;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -297,6 +307,11 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       &.no-instance-count {
         border-radius: $modelItemRadius;
         width: 100%;
+      }
+      &.noauth {
+        .model-name {
+          color: $grayColor;
+        }
       }
 
       .drag-icon {
@@ -329,7 +344,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     }
 
     .model-details {
-      margin-left: 11px;
+      margin: 0 10px;
       overflow: hidden;
     }
 
