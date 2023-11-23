@@ -662,6 +662,12 @@ func (s *Service) UpdateModuleHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
+	// if nothing needs to be changed, ignores the sync module host apply request
+	if !syncOpt.Changed && len(syncOpt.AdditionalRules) == 0 && len(syncOpt.RemoveRuleIDs) == 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
 	if rawErr := syncOpt.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
@@ -778,12 +784,13 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 			AttributeID:   rule.AttributeID,
 			PropertyValue: rule.PropertyValue})
 	}
+
 	// apply module attribute rules to the host.
-	err = s.updateHostAttributes(ctx.Kit, attributes, hostIDs)
-	if err != nil {
+	if err = s.updateHostApplyByRule(ctx.Kit, attributes, hostIDs); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
+
 	ctx.RespEntity(nil)
 }
 
