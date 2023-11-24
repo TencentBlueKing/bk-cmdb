@@ -59,7 +59,7 @@
       </bk-table-column>
       <bk-table-column v-if="!readonly && table.stuff.type !== 'permission'" :label="$t('操作')">
         <template slot-scope="{ row }">
-          <cmdb-auth :auth="HOST_AUTH.U_HOST">
+          <cmdb-auth :auth="getInstanceAuth(row)" :ignore-passed-auth="true">
             <bk-button slot-scope="{ disabled }"
               text
               theme="primary"
@@ -116,6 +116,7 @@
       return {
         properties: [],
         list: [],
+        hostOriginalList: [],
         pagination: {
           count: 0,
           current: 1,
@@ -316,6 +317,49 @@
           }
         }
       },
+      getInstanceAuth(row) {
+        const auth = [this.HOST_AUTH.U_HOST]
+        switch (this.model.bk_obj_id) {
+          case BUILTIN_MODELS.BUSINESS: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS,
+              relation: [row.bk_biz_id]
+            })
+            break
+          }
+          case BUILTIN_MODELS.BUSINESS_SET: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS_SET,
+              relation: [row[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]]
+            })
+            break
+          }
+          case BUILTIN_MODELS.HOST: {
+            const originalData = this.hostOriginalList.find(data => data.host.bk_host_id === row.bk_host_id)
+            const [biz] = originalData.biz
+            if (biz.default === 0) {
+              auth.push({
+                type: this.$OPERATION.U_HOST,
+                relation: [biz.bk_biz_id, row.bk_host_id]
+              })
+            } else {
+              const [module] = originalData.module
+              auth.push({
+                type: this.$OPERATION.U_RESOURCE_HOST,
+                relation: [module.bk_module_id, row.bk_host_id]
+              })
+            }
+            break
+          }
+          default: {
+            auth.push({
+              type: this.$OPERATION.U_INST,
+              relation: [this.model.id, row.bk_inst_id]
+            })
+          }
+        }
+        return auth
+      },
       getHostInstances(config) {
         const models = ['biz', 'set', 'module', 'host']
         const hostCondition = {
@@ -343,10 +387,13 @@
             }
           },
           config
-        }).then(data => ({
-          count: data.count,
-          info: data.info.map(item => item.host)
-        }))
+        }).then((data) => {
+          this.hostOriginalList = data.info
+          return {
+            count: data.count,
+            info: data.info.map(item => item.host)
+          }
+        })
       },
       getBusinessInstances(config) {
         return this.$store.dispatch('objectBiz/searchBusiness', {
