@@ -176,7 +176,7 @@
               :sort="false"
               :animation="200"
               :disabled="isModelSelectable"
-              draggable=".model-item"
+              draggable=".model-item-draggable"
               group="model-list"
               ghost-class="model-item-ghost"
               :data-group-id="classification.bk_classification_id"
@@ -193,7 +193,8 @@
                 :data-model-id="model.id"
                 :class="{
                   'is-paused': model['bk_ispaused'],
-                  'is-builtin': model.ispre
+                  'is-builtin': model.ispre,
+                  'model-item-draggable': hasEditAuth(model)
                 }"
               >
                 <cmdb-auth-mask
@@ -210,6 +211,10 @@
                         }"
                         @click="handleModelClick(model, classification)"
                       >
+                        <!-- 用于获取模型编辑权限 -->
+                        <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+                          @update-auth="isPass => handleEditUpdateAuth(model, isPass)">
+                        </cmdb-auth>
                         <div class="drag-icon"></div>
                         <div class="model-icon">
                           <i class="icon" :class="[model['bk_obj_icon']]"></i>
@@ -516,7 +521,9 @@
             path: '暂无相关xxx',
             resource: this.$t('模型'),
           }
-        }
+        },
+
+        editAuthResult: {}
       }
     },
     computed: {
@@ -755,17 +762,29 @@
       toggleModelList(classification) {
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
       },
+      getModelViewAuth(model) {
+        return { type: this.$OPERATION.R_MODEL, relation: [model.id] }
+      },
       getViewAuthMaskProps(model) {
         if (isViewAuthFreeModel(model)) {
           return {
             ignore: true
           }
         }
-        const auth = { type: this.$OPERATION.R_MODEL, relation: [model.id] }
+        const auth = this.getModelViewAuth(model)
         return {
           auth,
           authorized: this.isViewAuthed(auth)
         }
+      },
+      hasViewAuth(model) {
+        return isViewAuthFreeModel(model) || this.isViewAuthed(this.getModelViewAuth(model))
+      },
+      hasEditAuth(model) {
+        return this.editAuthResult[model.id]
+      },
+      handleEditUpdateAuth(model, isPass) {
+        this.$set(this.editAuthResult, model.id, isPass)
       },
       handleModelDragStart() {
         this.isDragging = true
