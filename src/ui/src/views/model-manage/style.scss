@@ -236,7 +236,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     }
 
     @at-root .is-dragging &:hover {
-      box-shadow: 0px 20px 40px 0px rgba(239, 12, 12, 1);
+      box-shadow: 0px 2px 4px 0px rgba(25, 25, 41, 0.05);
     }
 
     &.is-builtin {
@@ -281,6 +281,16 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       background-color: #f0f1f5;
     }
 
+    &.model-item-draggable {
+      .model-info {
+        &:hover {
+          .drag-icon {
+            visibility: visible;
+          }
+        }
+      }
+    }
+
     .model-info {
       flex: 0 1 auto;
       width: 100%;
@@ -291,9 +301,6 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
       &:hover {
         background-color: #eff5ff;
-        .drag-icon {
-          visibility: visible;
-        }
       }
 
       @at-root .is-dragging &:hover {

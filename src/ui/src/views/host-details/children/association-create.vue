@@ -64,22 +64,16 @@
         <template slot-scope="{ row }">
           <cmdb-auth :auth="getInstanceAuth(row)" :ignore-passed-auth="true">
             <template slot-scope="{ disabled }">
-              <bk-link href="javascript:void(0)" class="option-link"
-                v-if="tempData.includes(row[instanceIdKey])"
+              <bk-link href="javascript:void(0)" :class="['option-link', { disabled }]"
                 theme="primary"
-                :disabled="disabled"
-                @click="updateAssociation(row[instanceIdKey], 'remove')">
-                {{$t('取消关联')}}
-              </bk-link>
-              <bk-link href="javascript:void(0)" class="option-link"
-                theme="primary"
+                :disabled="disabled || $loading(requestIds.delete)"
                 @click="updateAssociation(row[instanceIdKey], 'remove')"
-                v-else-if="isAssociated(row)">
+                v-if="isAssociated(row)">
                 {{$t('取消关联')}}
               </bk-link>
-              <bk-link href="javascript:void(0)" class="option-link" v-else
+              <bk-link href="javascript:void(0)" :class="['option-link', { disabled }]" v-else
                 theme="primary"
-                :disabled="disabled"
+                :disabled="disabled || $loading(requestIds.create)"
                 @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
                 {{$t('添加关联')}}
               </bk-link>
@@ -170,7 +164,11 @@
         tempData: [],
         hasChange: false,
         isShowPropertyFilter: true,
-        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY]
+        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY],
+        requestIds: {
+          create: Symbol('create'),
+          delete: Symbol('delete'),
+        }
       }
     },
     computed: {
@@ -530,6 +528,9 @@
             bk_obj_asst_id: this.currentOption.bk_obj_asst_id,
             bk_inst_id: this.isSource ? this.instId : instId,
             bk_asst_inst_id: this.isSource ? instId : this.instId
+          },
+          config: {
+            requestId: this.requestIds.create
           }
         })
       },
@@ -542,7 +543,10 @@
         })
         return this.deleteInstAssociation({
           id: (instAssociation || {}).id,
-          objId: this.objId
+          objId: this.objId,
+          config: {
+            requestId: this.requestIds.delete
+          }
         })
       },
       beforeUpdate(event, instId, updateType = 'new') {
@@ -782,7 +786,7 @@
     .option-link{
         font-size: 12px;
         color: #3c96ff;
-        &.is-associated {
+        &.disabled {
             color: #979BA5;
             cursor: not-allowed;
         }
