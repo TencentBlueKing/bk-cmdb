@@ -414,7 +414,7 @@ func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metad
 		return nil, true, nil
 	}
 
-	return am.hasFindModelAuthWithID(kit, ids)
+	return am.hasFindModelAuthWithID(kit, finalIDs)
 }
 
 // HasFindModelAuthWithID use the id parameter to determine whether you have permission to find the model
