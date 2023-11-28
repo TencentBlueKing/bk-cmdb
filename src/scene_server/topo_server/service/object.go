@@ -182,15 +182,20 @@ func (s *Service) SearchObject(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResources := make([]meta.ResourceAttribute, len(resp.Info))
+	ids := make([]int64, len(resp.Info))
 	for k, v := range resp.Info {
-		authResources[k] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: v.ID, Type: meta.Model,
-			Action: meta.Find}}
+		ids[k] = v.ID
 	}
-	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authResources...); !authorized {
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseID(ctx.Kit, ids)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
 		ctx.RespNoAuth(authResp)
 		return
 	}
+
 	ctx.RespEntity(resp.Info)
 }
 
