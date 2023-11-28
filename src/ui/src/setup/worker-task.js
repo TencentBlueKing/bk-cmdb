@@ -15,6 +15,15 @@ import { OPERATION } from '@/dictionary/iam-auth'
 import CCWorker from '@/workers/ccworker.js'
 import { isViewAuthFreeModel, isViewAuthFreeModelInstance } from '@/service/auth'
 
+const iamWorker = new CCWorker(new Worker(new URL('@/workers/iam.js', import.meta.url)), {
+  preverify(payload) {
+    store.commit('auth/setAuthedList', payload)
+  },
+  error(err) {
+    console.error(err)
+  }
+})
+
 const iam = () => {
   const models = store.getters['objectModelClassify/models']
 
@@ -40,14 +49,7 @@ const iam = () => {
       }
     })
 
-  new CCWorker(new Worker(new URL('@/workers/iam.js', import.meta.url)), {
-    preverify(payload) {
-      store.commit('auth/setAuthedList', payload)
-    },
-    error(err) {
-      console.error(err)
-    }
-  }).dispatch('preverify', {
+  iamWorker.dispatch('preverify', {
     authList
   })
 }
@@ -57,5 +59,6 @@ const run = () => {
 }
 
 export default {
-  run
+  run,
+  iam
 }
