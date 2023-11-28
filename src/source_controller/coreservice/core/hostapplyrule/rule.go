@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -27,6 +28,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 )
 
 type ruleType string
@@ -38,6 +40,7 @@ const (
 
 type hostApplyRule struct {
 	dependence HostApplyDependence
+	cs         apimachinery.ClientSetInterface
 }
 
 // HostApplyDependence TODO
@@ -46,9 +49,10 @@ type HostApplyDependence interface {
 }
 
 // New TODO
-func New(dependence HostApplyDependence) core.HostApplyRuleOperation {
+func New(dependence HostApplyDependence, cs apimachinery.ClientSetInterface) core.HostApplyRuleOperation {
 	rule := &hostApplyRule{
 		dependence: dependence,
+		cs:         cs,
 	}
 	return rule
 }
@@ -185,6 +189,10 @@ func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64, option m
 		return rule, ccErr
 	}
 
+	if err := hooks.ValidHostApplyStatusHook(kit, p.cs, attribute.PropertyID, option.PropertyValue); err != nil {
+		return rule, err
+	}
+
 	// generate id field
 	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameHostApplyRule)
 	if nil != err {
@@ -226,6 +234,10 @@ func (p *hostApplyRule) UpdateHostApplyRule(kit *rest.Kit, bizID int64, ruleID i
 		ccErr := rawError.ToCCError(kit.CCError)
 		blog.Errorf("UpdateHostApplyRule failed, validate host attribute value failed, attribute: %+v, value: %+v, err: %+v, rid: %s", attribute, option.PropertyValue, ccErr, kit.Rid)
 		return rule, ccErr
+	}
+
+	if err := hooks.ValidHostApplyStatusHook(kit, p.cs, attribute.PropertyID, option.PropertyValue); err != nil {
+		return rule, err
 	}
 
 	rule.LastTime = time.Now()
@@ -613,6 +625,10 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64, opt
 			itemResult.SetError(ccErr)
 			batchResult.Items = append(batchResult.Items, itemResult)
 			continue
+		}
+
+		if err := hooks.ValidHostApplyStatusHook(kit, p.cs, attribute.PropertyID, item.PropertyValue); err != nil {
+			return batchResult, err
 		}
 
 		// update rule

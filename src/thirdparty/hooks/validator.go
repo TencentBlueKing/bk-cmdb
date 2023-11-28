@@ -14,7 +14,7 @@ package hooks
 
 import (
 	"configcenter/src/apimachinery"
-	"configcenter/src/common/errors"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -46,7 +46,7 @@ func ValidateHostBsInfoHook(kit *rest.Kit, objID string, data mapstr.MapStr) err
 
 // ValidHostTransferHook is a hook to check if host transfer parameter is valid or not
 func ValidHostTransferHook(kit *rest.Kit, db dal.DB, crossBizTransfer bool, srcBizIDs []int64,
-	destBizID int64) errors.CCErrorCoder {
+	destBizID int64) ccErr.CCErrorCoder {
 
 	return nil
 }
@@ -58,11 +58,45 @@ func ValidBizSetPropertyHook(kit *rest.Kit, fieldInfo *metadata.BizSetScopeParam
 }
 
 // ValidHostCloudIDHook valid host cloud id hook
-func ValidHostCloudIDHook(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
+func ValidHostCloudIDHook(kit *rest.Kit, cloudID int64) ccErr.CCErrorCoder {
 	return nil
 }
 
 // IsSkipValidateKeyHook is a hook to check if a insert or update option data key's value need to validate or not.
 func IsSkipValidateKeyHook(kit *rest.Kit, objID string, key string, data mapstr.MapStr) (bool, error) {
 	return false, nil
+}
+
+// ValidUpdateHostStatusHook is a hook to check if an update operation on host status field is valid or not
+func ValidUpdateHostStatusHook(kit *rest.Kit, cs apimachinery.ClientSetInterface, objID string,
+	originInst mapstr.MapStr, updateData mapstr.MapStr) error {
+
+	return nil
+}
+
+// ValidHostApplyStatusHook is a hook to check if host apply status is valid or not
+func ValidHostApplyStatusHook(kit *rest.Kit, cs apimachinery.ClientSetInterface, attrID string,
+	value interface{}) ccErr.CCErrorCoder {
+
+	return nil
+}
+
+// CanUpdateHostApplyStatusHook is a hook to check if host status can be updated by host apply
+func CanUpdateHostApplyStatusHook(kit *rest.Kit, cs apimachinery.ClientSetInterface, attrID string,
+	originalValue, expectValue interface{}) (bool, ccErr.CCErrorCoder) {
+
+	return true, nil
+}
+
+// HostApplyUpdateInfo defines host apply update info
+type HostApplyUpdateInfo struct {
+	HostIDs    []int64
+	Attributes []metadata.HostAttribute
+}
+
+// GetHostApplyUpdateInfoHook is a hook to get host apply update info
+func GetHostApplyUpdateInfoHook(kit *rest.Kit, cs apimachinery.ClientSetInterface, rules []metadata.HostAttribute,
+	hostIDs []int64, attrMap map[int64]string) ([]HostApplyUpdateInfo, ccErr.CCErrorCoder) {
+
+	return []HostApplyUpdateInfo{{HostIDs: hostIDs, Attributes: rules}}, nil
 }
