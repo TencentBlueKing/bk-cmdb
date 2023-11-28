@@ -442,6 +442,7 @@
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
   import { isViewAuthFreeModel } from '@/service/auth'
+  import workerTask from '@/setup/worker-task'
 
   export default {
     name: 'ModelManagement',
@@ -913,9 +914,10 @@
         this.importPaneVisible = false
         Bus.$emit('disable-customize-breadcrumbs')
       },
-      doneImport() {
+      async doneImport() {
         this.importPaneVisible = false
-        this.loadAllModels()
+        await this.loadAllModels()
+        workerTask.iam()
       },
       doubleCheckCancelImport() {
         this.$bkInfo({
@@ -1130,10 +1132,12 @@
           this.modelCreatedDialogVisible = true
           this.$http.cancel('post_searchClassificationsObjects')
           this.getModelInstanceCount(params.bk_obj_id)
-          this.loadAllModels()
           this.modelDialog.isShow = false
           this.modelDialog.groupId = ''
           this.modelSearchKey = ''
+          await this.loadAllModels()
+          // 重新获取所有模型的鉴权
+          workerTask.iam()
         } catch (error) {
           console.log(error)
         }
