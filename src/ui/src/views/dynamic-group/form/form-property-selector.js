@@ -13,53 +13,13 @@
 import Vue from 'vue'
 import store from '@/store'
 import i18n from '@/i18n'
-import RouterQuery from '@/router/query'
+import protertySelectorMixins from '@/mixins/property-selector'
 import FormPropertySelector from './form-property-selector.vue'
 const Component = Vue.extend({
   components: {
     FormPropertySelector
   },
-  created() {
-    this.unwatch = RouterQuery.watch('*', () => {
-      this.handleClose()
-    })
-  },
-  beforeDestroy() {
-    this.unwatch()
-  },
-  methods: {
-    handleClose() {
-      // magicbox实现相关，多个侧滑同时存在，后面的不会挂在到body中，而是挂在到popmanager中，此处不手动移出
-      // document.body.removeChild(this.$el)
-      this.$destroy()
-      this.addConditionInstance?.destroy()
-    },
-    createPopver(target) {
-      if (this.addConditionInstance) {
-        this.addConditionInstance.destroy()
-      }
-      this.addConditionInstance = this.$bkPopover(target, {
-        content: this.$refs.selector.$el,
-        delay: [300, 0],
-        hideOnClick: true,
-        interactive: true,
-        placement: 'top',
-        animateFill: false,
-        sticky: true,
-        theme: 'light',
-        boundary: 'window',
-        trigger: 'click', // 'manual mouseenter',
-        arrow: true,
-        onHidden: () => {
-          this.$refs.selector?.confirm()
-          this.addConditionInstance?.destroy?.()
-        }
-      })
-    },
-  },
-  render() {
-    return (<form-property-selector ref="selector" { ...{ props: this.$options.attrs }} on-close={ this.handleClose }></form-property-selector>)
-  }
+  mixins: [protertySelectorMixins]
 })
 
 export default {

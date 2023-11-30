@@ -1112,7 +1112,7 @@
     "仅能在业务模块下新增": "Can only be added under the business module",
     "无": "None",
     "创建实例": "Create Instance",
-    "抱歉您没有查看权限": "Sorry, you don't have permission to view, {link}",
+    "抱歉您没有查看权限": "Sorry, you don't have permission to view {link}",
     "您还未XXX": "You have not {action}{resource} yet, {link}",
     "搜索内容为空": "Search result is empty",
     "主机自动应用": "Host Auto-apply",

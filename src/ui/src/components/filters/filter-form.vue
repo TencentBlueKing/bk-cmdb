@@ -360,8 +360,8 @@
         FilterStore.updateSelected([...this.selected])
         FilterStore.updateUserBehavior(this.selected)
       },
-      handleSelectProperty() {
-        PropertySelector.show()
+      handleSelectProperty(event) {
+        PropertySelector.show({}, event?.target)
       },
       handleSearch() {
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入

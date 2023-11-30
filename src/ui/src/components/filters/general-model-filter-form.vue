@@ -36,6 +36,7 @@
             @active-change="handleComponentActiveChange(property, ...arguments)">
           </component>
         </div>
+        <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
         <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
@@ -185,7 +186,7 @@
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
       },
-      handleSelectProperty() {
+      handleSelectProperty(event) {
         const { objId, properties, propertyGroups, selected: propertySelected } = this
         PropertySelector.show({
           objId,
@@ -193,7 +194,7 @@
           propertyGroups,
           propertySelected,
           handler: this.updateSelected
-        })
+        }, event?.target)
       },
       updateSelected(selected) {
         // 将触发updateCondition新的条件项会被生成
