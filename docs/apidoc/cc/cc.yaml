@@ -1685,3 +1685,25 @@
   comp_codename: generic.v2.cc.cc_component
   dest_path: /api/v3/findmany/kube/workload/{kind}
   dest_http_method: POST
+
+- path: /v2/cc/sync_service_template_to_service_instance/
+  name: sync_service_template_to_service_instance
+  label: 同步服务模板信息到相应的服务实例上
+  label_en: sync service template to service instance
+  suggest_method: POST
+  api_type: operate
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/update/proc/service_instance/sync
+  dest_http_method: PUT
+  is_hidden: true
+
+- path: /v2/cc/list_service_template_sync_status/
+  name: list_service_template_sync_status
+  label: 查询服务模板的同步状态
+  label_en: list service template sync status
+  suggest_method: POST
+  api_type: query
+  comp_codename: generic.v2.cc.cc_component
+  dest_path: /api/v3/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}
+  dest_http_method: POST
+  is_hidden: true
