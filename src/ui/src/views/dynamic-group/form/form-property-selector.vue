@@ -18,10 +18,8 @@
         right-icon="icon-search"
         :placeholder="$t('请输入字段名称或唯一标识')"
         clearable
-        v-autofocus>
+        v-autofocus="['inserted', 'update']">
       </bk-input>
-      <!--为了让input 的autofocus在新建时候起作用-->
-      <input type="hidden" :value="random" />
     </div>
     <div class="all-property-selector">
       <div class="property-selector-group clearfix"
@@ -70,7 +68,7 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch, inject, reactive, nextTick, onMounted } from 'vue'
+  import { computed, ref, watch, inject, reactive, nextTick } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
   import store from '@/store'
@@ -84,7 +82,6 @@
   })
   const dynamicGroupForm = inject('dynamicGroupForm')
   const propertySelector = ref('')
-  const random = ref('')
 
   watch(() => propertySelector.value, (val) => {
     const height  = store.state.appHeight
@@ -224,12 +221,6 @@
     dataEmpty.type = filter ? 'search' : 'empty'
   }, {
     immediate: true
-  })
-
-  onMounted(() => {
-    nextTick(() => {
-      random.value = Math.random()
-    })
   })
 
 </script>
