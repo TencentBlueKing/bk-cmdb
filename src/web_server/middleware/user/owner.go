@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -35,6 +36,7 @@ type OwnerManager struct {
 	OwnerID  string
 	UserName string
 	header   http.Header
+	ApiCli   apiserver.ApiServerClientInterface
 }
 
 // NewOwnerManager TODO
@@ -70,7 +72,8 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 	if !exist {
 		redisCli := m.CacheCli
 		for {
-			ok, err := redisCli.SetNX(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
+			ok, err := redisCli.SetNX(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID,
+				m.OwnerID, 60*time.Second).Result()
 			if nil != err {
 				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 				return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
@@ -81,7 +84,8 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 			time.Sleep(time.Second)
 		}
 		defer func() {
-			if err := redisCli.Del(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID).Err(); err != nil {
+			if err := redisCli.Del(context.Background(),
+				common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID).Err(); err != nil {
 				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
 			}
 		}()
@@ -115,7 +119,7 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 	params[common.BKLanguageField] = "1" // 中文
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
-	result, httpDoErr := m.Engine.CoreAPI.ApiServer().AddDefaultApp(context.Background(), m.header, m.OwnerID, params)
+	result, httpDoErr := m.ApiCli.AddDefaultApp(context.Background(), m.header, m.OwnerID, params)
 	if httpDoErr != nil {
 		blog.ErrorJSON("addDefaultApp searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
@@ -131,7 +135,7 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 	rid := util.GetHTTPCCRequestID(m.header)
-	result, httpDoErr := m.Engine.CoreAPI.ApiServer().SearchDefaultApp(context.Background(), m.header, m.OwnerID)
+	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header, m.OwnerID)
 	if httpDoErr != nil {
 		blog.ErrorJSON("defaultAppIsExist searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return false, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
@@ -145,7 +149,9 @@ func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata
 	return 0 < result.Data.Count, nil, nil
 }
 
-func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder, *metadata.IamPermission) {
+func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder,
+	*metadata.IamPermission) {
+
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
 	rid := util.GetHTTPCCRequestID(m.header)
 
@@ -156,14 +162,14 @@ func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, er
 			"limit": common.BKNoLimit,
 		},
 	}
-	result, httpDoErr := m.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), m.header, filter)
+	result, httpDoErr := m.ApiCli.GetObjectAttr(context.Background(), m.header, filter)
 	if httpDoErr != nil {
-		blog.ErrorJSON("getObjectFields searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
+		blog.Errorf("get object attribute failed, err: %v, cond: %+v, rid: %s", httpDoErr, filter, rid)
 		return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
 	}
 
 	if err := result.CCError(); err != nil {
-		blog.ErrorJSON("getObjectFields searchDefaultApp http replay error. err:%s, cond:%s, rid:%s", result, filter, rid)
+		blog.Errorf("get object attribute failed, err: %v, cond: %+v, rid: %s", err, filter, rid)
 		return nil, err, result.Permissions
 	}
 

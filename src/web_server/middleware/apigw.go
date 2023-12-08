@@ -15,18 +15,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package middleware
 
 import (
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/common/backbone"
+	"net/http"
+
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/resource/jwt"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+// ApiGWMiddleware is a gin middleware for api gateway request handler
+func ApiGWMiddleware(c *gin.Context) {
+	header, err := jwt.GetHandler().Parse(c.Request.Header)
+	if err != nil {
+		c.JSON(http.StatusOK, metadata.BkBaseResp{Code: common.CCErrAPINoPassSourceCertification, Message: err.Error()})
+		return
+	}
+	c.Request.Header = header
+	c.Next()
 }

@@ -15,18 +15,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package cmdb
 
 import (
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/common/backbone"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+// ClientI is the cmdb api gateway client
+type ClientI interface {
+	Client() rest.ClientInterface
+	SetApiGWAuthHeader(header http.Header) http.Header
+	Proxy(req *http.Request, resp http.ResponseWriter)
+}
+
+type cmdb struct {
+	service *apigwutil.ApiGWSrv
+}
+
+// NewClient create cmdb api gateway client
+func NewClient(options *apigwutil.ApiGWOptions) ClientI {
+	return &cmdb{
+		service: apigwutil.NewApiGW(options, apigwutil.CmdbName),
+	}
 }

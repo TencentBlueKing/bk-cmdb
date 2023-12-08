@@ -51,7 +51,7 @@ func (s *service) BuildTemplate(c *gin.Context) {
 	randNum := rand.Uint32()
 	filePath := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer(), GinCtx: c}
+	client := &core.Client{ApiClient: s.apiCli, GinCtx: c}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -247,7 +247,7 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		return
 	}
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -287,7 +287,7 @@ func (s *service) ExportObject(c *gin.Context) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%d_%s.xlsx", dir, time.Now().UnixNano(), objID)
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -352,7 +352,7 @@ func (s *service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {

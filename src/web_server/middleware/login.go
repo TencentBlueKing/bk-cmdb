@@ -22,7 +22,9 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
@@ -118,8 +120,23 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	}
 
 	if path1 == "api" {
+		// proxy request to api gateway for blueking deployment method
+		if config.DeploymentMethod == common.BluekingDeployment {
+			apigw.Client().Cmdb().Proxy(c.Request, c.Writer)
+			return
+		}
+
+		// proxy request to api-server for independent deployment method
+		header, err := jwt.GetHandler().Sign(c.Request.Header)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": fmt.Sprintf("sign jwt info failed, err: %v", err)})
+			c.Abort()
+			return
+		}
+		c.Request.Header = header
+
 		servers, err := disc.ApiServer().GetServers()
-		if nil != err || 0 == len(servers) {
+		if err != nil || len(servers) == 0 {
 			blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
 			c.JSON(503, gin.H{
 				"status": "no api server can be used.",
@@ -129,11 +146,9 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 		}
 		url := servers[0]
 		httpclient.ProxyHttp(c, url)
-
-	} else {
-		c.Next()
+		return
 	}
-	return
+	c.Next()
 }
 
 // isAuthed check user is authed

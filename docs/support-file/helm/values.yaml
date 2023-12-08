@@ -1261,6 +1261,14 @@ common:
       ch: /data/cmdb/cmdb_webserver/changelog_user/ch
       # 英文版版本日志存放路径
       en: /data/cmdb/cmdb_webserver/changelog_user/en
+    # web-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥路径
+      publicKeyPath:
+      # jwt私钥路径
+      privateKeyPath:
   ## monitor common config parameters
   ##
   monitor:
@@ -1394,6 +1402,15 @@ common:
         ## 下发主机身份文件权限值
         ##
         filePrivilege: 644
+
+  ## apiServer common config parameters
+  apiServer:
+    # api-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥路径
+      publicKeyPath:
 
   ## gse server config
   ##

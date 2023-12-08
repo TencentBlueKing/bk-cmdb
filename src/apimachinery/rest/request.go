@@ -189,6 +189,12 @@ func (r *Request) Body(body interface{}) *Request {
 		return r
 	}
 
+	bodyBytes, ok := body.([]byte)
+	if ok {
+		r.body = bodyBytes
+		return r
+	}
+
 	valueOf := reflect.ValueOf(body)
 	switch valueOf.Kind() {
 	case reflect.Interface:
