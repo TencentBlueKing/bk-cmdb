@@ -1224,6 +1224,9 @@ const (
 
 	// BkHTTPHeaderSupplierAccount is supplier account http header key
 	BkHTTPHeaderSupplierAccount = "X-Bkapi-Supplier-Account"
+
+	// BkHTTPHeaderAuth is the blueking api gateway authorization http header key
+	BkHTTPHeaderAuth = "X-Bkapi-Authorization"
 )
 
 // ReadPreferenceMode TODO
@@ -1389,6 +1392,8 @@ const (
 
 	// HTTPCookieBKToken TODO
 	HTTPCookieBKToken = "bk_token"
+	// HTTPCookieBKTicket is the bk ticket cookie name
+	HTTPCookieBKTicket = "bk_ticket"
 
 	// WEBSessionUinKey TODO
 	WEBSessionUinKey = "username"
