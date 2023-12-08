@@ -14,6 +14,7 @@ package transaction
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"net/http"
 	"runtime/debug"
@@ -25,7 +26,6 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
 	"configcenter/src/storage/dal/mongo/local"
 )
 

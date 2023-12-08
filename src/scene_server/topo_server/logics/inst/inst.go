@@ -31,7 +31,6 @@ import (
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/log"
 )
 
 // InstOperationInterface inst operation methods
@@ -388,7 +387,7 @@ func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *m
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, []mapstr.MapStr{inst})
 	if err != nil {
-		log.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
