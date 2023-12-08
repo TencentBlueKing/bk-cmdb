@@ -13,9 +13,12 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,6 +28,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
+	"github.com/tidwall/gjson"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -128,18 +132,66 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	resp.ResponseWriter.WriteHeader(response.StatusCode)
+	parseResponse(req, resp, response.Body, rid)
 
-	if _, err := io.Copy(resp, response.Body); err != nil {
-		response.Body.Close()
-		blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
-		return
-	}
-	response.Body.Close()
 	blog.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
 		time.Since(start).Nanoseconds()/int64(time.Millisecond), req.Request.Method, response.StatusCode,
 		req.Request.Header.Get(common.BKHTTPHeaderUser), req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
 		req.Request.Header.Get(common.BKHTTPCCRequestID),
 	)
 	return
+}
+
+func parseResponse(req *restful.Request, resp *restful.Response, body io.ReadCloser, rid string) {
+	// compatible for esb and old ui response
+	// TODO remove this logics and change cc response format when esb is not supported
+	if req.Request.Header.Get(common.BkHTTPHeaderJWT) == "" {
+		if _, err := io.Copy(resp, body); err != nil {
+			body.Close()
+			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+			return
+		}
+		body.Close()
+		return
+	}
+
+	// parse api gateway response, change the format to esb style
+	bodyBytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		blog.Errorf("read response body failed, err: %v, rid: %s", err, rid)
+		return
+	}
+	defer body.Close()
+
+	buf := bytes.NewBuffer([]byte{'{'})
+
+	gjson.ParseBytes(bodyBytes).ForEach(func(key, value gjson.Result) bool {
+		keyStr := key.String()
+		switch keyStr {
+		case common.HTTPBKAPIErrorCode:
+			keyStr = common.BkAPIErrorCode
+		case common.HTTPBKAPIErrorMessage:
+			keyStr = common.BkAPIErrorMessage
+		}
+
+		buf.WriteByte('"')
+		buf.WriteString(keyStr)
+		buf.WriteString(`":`)
+		buf.WriteString(value.Raw)
+		buf.WriteByte(',')
+		return true
+	})
+
+	convertedBody := buf.Bytes()
+	if len(convertedBody) > 0 {
+		convertedBody[len(convertedBody)-1] = '}'
+	}
+
+	resp.Header().Set("Content-Length", strconv.Itoa(len(convertedBody)))
+
+	_, err = resp.Write(convertedBody)
+	if err != nil {
+		blog.Errorf("write api gateway response failed, err: %v, rid: %s", err, rid)
+		return
+	}
 }
