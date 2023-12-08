@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
@@ -302,6 +303,9 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 			}
 
 			if idTypeMap[id] != boolType {
+				if id == common.BKDefaultField {
+					val = strings.Trim(val, `"`)
+				}
 				attr[id] = val
 				continue
 			}

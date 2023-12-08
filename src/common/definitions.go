@@ -62,7 +62,7 @@ const (
 	BKAuditLogPageLimit = 200
 
 	// BKMaxExportLimit the limit to export
-	BKMaxExportLimit = 100
+	BKMaxExportLimit = 500
 
 	// BKInstMaxExportLimit the limit to instance export
 	BKInstMaxExportLimit = 1000
@@ -1118,6 +1118,15 @@ const (
 	HTTPBKAPIErrorCode = "bk_error_code"
 )
 
+// new api response fields in the standard of api gateway
+const (
+	// BkAPIErrorCode error code field name
+	BkAPIErrorCode = "code"
+
+	// BkAPIErrorMessage error message field name
+	BkAPIErrorMessage = "message"
+)
+
 // KvMap the map definition
 type KvMap map[string]interface{}
 
@@ -1198,6 +1207,24 @@ const (
 
 // new http header keys in the standard of api gateway
 const (
+	// BkHTTPHeaderRid is the request id http header key
+	BkHTTPHeaderRid = "X-Bkapi-Request-Id"
+
+	// BkHTTPHeaderUser is the username http header key.
+	BkHTTPHeaderUser = "X-Bkapi-User-Name"
+
+	// BkHTTPHeaderAppCode is the blueking app code http header key
+	BkHTTPHeaderAppCode = "X-Bkapi-App-Code"
+
+	// BkHTTPHeaderLanguage is the language http header key
+	BkHTTPHeaderLanguage = "X-Bkapi-Language"
+
+	// BkHTTPHeaderJWT is the blueking api gateway jwt http header key
+	BkHTTPHeaderJWT = "X-Bkapi-JWT"
+
+	// BkHTTPHeaderSupplierAccount is supplier account http header key
+	BkHTTPHeaderSupplierAccount = "X-Bkapi-Supplier-Account"
+
 	// BkHTTPHeaderAuth is the blueking api gateway authorization http header key
 	BkHTTPHeaderAuth = "X-Bkapi-Authorization"
 )

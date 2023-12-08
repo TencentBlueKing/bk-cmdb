@@ -214,11 +214,6 @@ func (o *Object) Parse(data mapstr.MapStr) (*Object, error) {
 	return o, err
 }
 
-// ToMapStr to mapstr
-func (o *Object) ToMapStr() mapstr.MapStr {
-	return mapstr.SetValueToMapStrByTags(o)
-}
-
 // MainLineObject main line object definition
 type MainLineObject struct {
 	Object        `json:",inline"`

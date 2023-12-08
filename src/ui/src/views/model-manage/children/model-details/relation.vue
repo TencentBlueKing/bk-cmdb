@@ -42,7 +42,8 @@
             :class="['relation-pre', $i18n.locale]">
             {{$t('内置')}}
           </span>
-          <span class="relation-id" v-bk-overflow-tips>{{row['bk_obj_asst_id']}}</span>
+          <span :class="['relation-id', { 'relation-id-pre': row.ispre }]"
+            v-bk-overflow-tips>{{row['bk_obj_asst_id']}}</span>
         </template>
       </bk-table-column>
       <bk-table-column prop="bk_asst_name" :label="$t('关联类型')" show-overflow-tooltip>
@@ -330,6 +331,9 @@
         width: 100%;
         display: inline-block;
         @include ellipsis;
+    }
+    .relation-id-pre {
+      width: calc(100% - 30px);
     }
     .text-primary {
         cursor: pointer;

@@ -1,6 +1,10 @@
 {
-    "common_property_bk_inst_name": "Instance name",
+    "common_property_bk_inst_name": "Instance Name",
     "common_property_bk_inst_id": "Instance ID",
+    "common_property_bk_created_at": "Created At",
+    "common_property_bk_created_by": "Created By",
+    "common_property_bk_updated_at": "Updated At",
+    "common_property_bk_updated_by": "Updated By",
     "biz_property_bk_biz_name": "Business name",
     "biz_property_life_cycle": "Lifecycle",
     "biz_property_bk_biz_maintainer": "Maintainer",

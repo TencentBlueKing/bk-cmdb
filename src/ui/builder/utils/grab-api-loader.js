@@ -30,24 +30,36 @@ module.exports = function (source) {
     return source
   }
 
-  const reg1 = new RegExp('(http|\\$http)\\.(post|get|delete|put|download)\\(([\\w\'`/${}.\\[\\]?=()\\s]+?)(?=[,)])', 'gm')
+  const reg1 = new RegExp('(http|\\$http)\\.(post|get|delete|put|download)\\(([\\n\\s\\w\'`/${}.\\[\\]?=()\\n\\s]+?)(?=[,)])', 'gm')
   const reg2 = /(\w+\s*[:=]\s*|return\s*)(`\$\{window.API_HOST\}[\w`/${}.]+)/gm
+  const reg3 = new RegExp('(rollReqUseCount|rollReq|rollReqUseTotalCount|rollReqByDataKey)\\(([\\n\\s\\w\'`/${}.\\[\\]?=()\\n\\s]+?)(?=[,)])', 'gm')
   const matches1 = source.matchAll(reg1)
   const matches2 = source.matchAll(reg2)
+  const matches3 = source.matchAll(reg3)
   for (const match of matches1) {
-    const m = match?.[3]?.trim?.()?.split('?')?.[0]
-    if (!m) {
+    const method = match?.[2]?.trim?.()
+    const path = match?.[3]?.trim?.()?.split('?')?.[0]
+    if (!path) {
       continue
     }
 
-    if (['`', '\''].includes(m.substring(0, 1))) {
-      fs.appendFileSync('apipaths.txt', `${m}\n`)
+    if (['`', '\''].includes(path.substring(0, 1))) {
+      fs.appendFileSync('apipaths.txt', `${method} ${path}\n`)
     } else {
-      fs.appendFileSync('apivars.txt', `${this.resourcePath}: ${m}\n`)
+      fs.appendFileSync('apivars.txt', `${this.resourcePath}: ${path}\n`)
     }
   }
 
   for (const match of matches2) {
+    const m = match?.[2]?.trim?.()?.split('?')?.[0]
+    if (!m) {
+      continue
+    }
+
+    fs.appendFileSync('apipaths.txt', `${m}\n`)
+  }
+
+  for (const match of matches3) {
     const m = match?.[2]?.trim?.()?.split('?')?.[0]
     if (!m) {
       continue

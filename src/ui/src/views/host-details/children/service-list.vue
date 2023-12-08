@@ -398,6 +398,7 @@
       handleFilterClear() {
         this.searchSelectData = []
         this.searchSelect = defaultSearchSelect()
+        this.getHistoryLabel()
         this.handlePageChange(1)
       }
     }

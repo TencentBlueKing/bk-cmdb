@@ -167,7 +167,7 @@
           </div>
           <bk-transition name="collapse" duration-type="ease">
             <draggable
-              class="model-list clearfix"
+              class="model-list"
               :class="{
                 'is-empty': isGroupEmpty(classification)
               }"

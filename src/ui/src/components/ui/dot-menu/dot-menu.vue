@@ -15,6 +15,9 @@
     ref="popover"
     trigger="click"
     placement="bottom-start"
+    :tippy-options="{
+      appendTo
+    }"
     :sticky="true"
     :arrow="false"
     theme="light dot-menu-popover"
@@ -40,6 +43,10 @@
   export default {
     name: 'cmdb-dot-menu',
     props: {
+      appendTo: {
+        type: [Element, String],
+        default: () => document.body
+      },
       color: {
         type: String,
         default: '#979BA5'
