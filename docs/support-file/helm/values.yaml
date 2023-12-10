@@ -752,6 +752,67 @@ procserver:
       memory: 512Mi
       cpu: 200m
 
+## @section bk-cmdb syncserver parameters
+##
+syncserver:
+  ## @param syncserver.enabled Enable syncserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb syncserver image parameters
+  ## @param syncserver.image.repository bk-cmdb syncserver image repository
+  ## @param syncserver.image.rag bk-cmdb syncserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_syncserver
+    tag:
+  ## @param syncserver.replicas Number of syncserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param syncserver.port bk-cmdb syncserver service HTTP port
+  ##
+  port: 80
+  ## @param syncserver.workDir bk-cmdb syncserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_syncserver
+  ## bk-cmdb syncserver start command parameters
+  ## @param syncserver.command.logDir bk-cmdb syncserver log directory
+  ## @param syncserver.command.logLevel bk-cmdb syncserver log level
+  ## @param syncserver.command.logLevel Enable bk-cmdb syncserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_syncserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
 ## @section bk-cmdb synchronizeserver parameters
 ##
 synchronizeserver:
@@ -1395,6 +1456,17 @@ common:
         ##
         filePrivilege: 644
 
+  ## sync server common config parameters
+  syncServer:
+    # @param common.syncServer.fullTextSearch full-text search synchronization common config parameters
+    fullTextSearch:
+      # @param common.syncServer.fullTextSearch.enableSync if full-text search synchronization is enabled
+      enableSync: true
+      # @param common.syncServer.fullTextSearch.indexShardNum es index sharding number
+      indexShardNum: 1
+      # @param common.syncServer.fullTextSearch.indexReplicaNum es index replicas number
+      indexReplicaNum: 1
+
   ## gse server config
   ##
   gse:
@@ -1745,74 +1817,6 @@ elasticsearch:
     persistence:
       size: 10Gi
     replicas: 1
-
-## @section monstache parameters
-##
-monstache:
-  ## @param monstache.enabled Enable monstache
-  ##
-  enabled: false
-  ## bk-cmdb monstache image parameters
-  ## @param monstache.image.repository monstache image repository
-  ## @param monstache.image.rag monstache image tag
-  ##
-  image:
-    repository: blueking/cmdb_monstache
-    tag: v2.0.0
-  ## @param monstache.replicas Number of monstache replicas to deploy
-  ##
-  replicas: 1
-  ## @param monstache.port monstache service HTTP port
-  ##
-  port: 80
-  ## @param monstache.workDir  monstache work directory
-  ##
-  workDir: /data/cmdb/monstache
-  ## @param monstache.configDir  monstache config directory
-  ##
-  configDir: /data/cmdb/monstache/etc
-  ## @param monstache.directReadDynamicIncludeRegex monstache direct read dynamic include regex
-  ##
-  directReadDynamicIncludeRegex: cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
-    namespace-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_
-  ## @param monstache.mapperPluginPath monstache plugin path
-  ##
-  mapperPluginPath: /data/cmdb/monstache/monstache-plugin.so
-  ## @param monstache.elasticsearchShardNum elasticsearch sharding number
-  ##
-  elasticsearchShardNum: 1
-  ## @param monstache.elasticsearchReplicaNum elasticsearch replicas number
-  ##
-  elasticsearchReplicaNum: 1
-  ## @param podAnnotations Annotations for bk-panel pods
-  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  ##
-  podAnnotations: {}
-  ## @param affinity Affinity for pod assignment
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
-  ##
-  affinity: {}
-  ## @param nodeSelector Node labels for pod assignment
-  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
-  ##
-  nodeSelector: {}
-  ## @param tolerations Tolerations for pod assignment
-  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  ##
-  tolerations: []
-  ## bk-cmdb containers' resource requests and limits
-  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  ## @param resources.limits The resources limits for the bk-cmdb container
-  ## @param resources.requests [object] The requested resources for the bk-cmdb container
-  ##
-  resources:
-    limits:
-      cpu: 200m
-      memory: 1024Mi
-    requests:
-      memory: 512Mi
-      cpu: 200m
 
 ## @section ServiceMonitor parameters
 ##

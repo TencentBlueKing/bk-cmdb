@@ -12,7 +12,12 @@
 
 package metadata
 
-// SearchHostWithIP 通过IP查找host details请求参数
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+)
+
+// SearchHostWithInnerIPOption 通过IP查找host details请求参数
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`
 	CloudID int64  `json:"bk_cloud_id"`
@@ -60,4 +65,29 @@ type ListHostWithPage struct {
 	// sort field is not used.
 	// max page limit is 1000
 	Page BasePage `json:"page"`
+}
+
+// ListCommonCacheWithKeyOpt is the option to list common cache with key.
+type ListCommonCacheWithKeyOpt struct {
+	Kind string `json:"kind"`
+	// length range is [1,500]
+	Keys   []string `json:"keys"`
+	Fields []string `json:"fields"`
+}
+
+// Validate ListCommonCacheWithKeyOpt
+func (opt ListCommonCacheWithKeyOpt) Validate() errors.RawErrorInfo {
+	if len(opt.Kind) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"kind"}}
+	}
+
+	if len(opt.Keys) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"keys"}}
+	}
+
+	if len(opt.Keys) > 500 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{"keys", 500}}
+	}
+
+	return errors.RawErrorInfo{}
 }

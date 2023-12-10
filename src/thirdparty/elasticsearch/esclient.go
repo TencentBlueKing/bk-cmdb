@@ -17,23 +17,34 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-// EsSrv TODO
+// EsSrv es client
 type EsSrv struct {
 	Client *elastic.Client
 }
 
-// NewEsClient TODO
-func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
+// NewEsClient new es client
+func NewEsClient(esConf *EsConfig) (*EsSrv, error) {
+	if esConf == nil {
+		return nil, errors.New("es config is not set")
+	}
+
 	// Obtain a client and connect to the default ElasticSearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.
-	httpClient := &http.Client{}
-	client := &elastic.Client{}
-	var err error
+	httpClient := new(http.Client)
+
+	cliOpt := []elastic.ClientOptionFunc{
+		elastic.SetURL(esConf.EsUrl),
+		elastic.SetSniff(false),
+		elastic.SetBasicAuth(esConf.EsUser, esConf.EsPassword),
+	}
+
 	if strings.HasPrefix(esConf.EsUrl, "https://") {
 		tlsConfig := new(tls.Config)
 		tlsConfig.InsecureSkipVerify = esConf.TLSClientConfig.InsecureSkipVerify
-		if !tlsConfig.InsecureSkipVerify && len(esConf.TLSClientConfig.CAFile) != 0 && len(esConf.TLSClientConfig.CertFile) != 0 && len(esConf.TLSClientConfig.KeyFile) != 0 {
+
+		if !tlsConfig.InsecureSkipVerify && len(esConf.TLSClientConfig.CAFile) != 0 &&
+			len(esConf.TLSClientConfig.CertFile) != 0 && len(esConf.TLSClientConfig.KeyFile) != 0 {
 			var err error
 			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile,
 				esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
@@ -41,38 +52,29 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 				return nil, err
 			}
 		}
+
 		// if use https tls or else, config httpClient first
 		tr := &http.Transport{
 			TLSClientConfig: tlsConfig,
 		}
 		httpClient.Transport = tr
-		client, err = elastic.NewClient(
-			elastic.SetHttpClient(httpClient),
-			elastic.SetURL(esConf.EsUrl),
-			elastic.SetScheme("https"),
-			elastic.SetSniff(false),
-			elastic.SetBasicAuth(esConf.EsUser, esConf.EsPassword))
-		if err != nil {
-			blog.Errorf("create new es https es client error, err: %v", err)
-			return nil, err
-		}
-	} else {
-		client, err = elastic.NewClient(
-			elastic.SetHttpClient(httpClient),
-			elastic.SetURL(esConf.EsUrl),
-			elastic.SetSniff(false),
-			elastic.SetBasicAuth(esConf.EsUser, esConf.EsPassword))
-		if err != nil {
-			blog.Errorf("create new http es client error, err: %v", err)
-			return nil, err
-		}
+
+		cliOpt = append(cliOpt, elastic.SetScheme("https"))
+	}
+
+	cliOpt = append(cliOpt, elastic.SetHttpClient(httpClient))
+
+	client, err := elastic.NewClient(cliOpt...)
+	if err != nil {
+		blog.Errorf("create new es https es client error, err: %v", err)
+		return nil, err
 	}
 
 	// it's amazing that we found new client result success with value nil once a time.
 	if client == nil {
 		return nil, errors.New("create es client, but it's is nil")
 	}
-	return client, nil
+	return &EsSrv{Client: client}, nil
 }
 
 // Search search elastic with target conditions.
@@ -123,7 +125,7 @@ func (es *EsSrv) Count(ctx context.Context, query elastic.Query, indexes []strin
 	return count, nil
 }
 
-// EsConfig TODO
+// EsConfig es configuration
 type EsConfig struct {
 	FullTextSearch  string
 	EsUrl           string
@@ -132,20 +134,25 @@ type EsConfig struct {
 	TLSClientConfig apiutil.TLSClientConfig
 }
 
-// ParseConfigFromKV returns a new config
-func ParseConfigFromKV(prefix string, configMap map[string]string) (EsConfig, error) {
+// ParseConfig returns a new es config from config file
+func ParseConfig(prefix string) (*EsConfig, error) {
 	fullTextSearch, _ := cc.String(prefix + ".fullTextSearch")
 	url, _ := cc.String(prefix + ".url")
 	usr, _ := cc.String(prefix + ".usr")
 	pwd, _ := cc.String(prefix + ".pwd")
 
-	conf := EsConfig{
+	conf := &EsConfig{
 		FullTextSearch: fullTextSearch,
 		EsUrl:          url,
 		EsUser:         usr,
 		EsPassword:     pwd,
 	}
+
 	var err error
 	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig(prefix)
-	return conf, err
+	if err != nil {
+		return nil, err
+	}
+
+	return conf, nil
 }

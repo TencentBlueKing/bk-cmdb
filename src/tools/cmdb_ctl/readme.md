@@ -416,3 +416,50 @@ denyall配置为false的情况下，limit和ttl配置才能生效
               }
             ]
      ```
+
+### 数据同步
+
+- 使用方式
+     ```
+         ./tool_ctl sync [flags]
+         ./tool_ctl sync [command]
+     ```
+- 子命令
+     ```
+          full-text-search      全文检索数据同步
+     ```     
+
+#### 全文检索数据同步
+
+- `full-text-search`子命令的命令行参数
+     ```
+          --is-migrate[=false]: 初始化全文检索数据，不可以和is-sync-data参数同时设置
+          --is-sync-data[=false]: 同步全文检索数据，以下参数均需要设置本参数
+          --is-all[=false]: 同步全量数据，不可以和collection参数同时设置
+          --index="": 需要进行数据同步的Elasticsearch Index
+          --collection="": 需要与Elasticsearch进行数据同步的MongoDB数据表
+          --oids=[]: 需要与Elasticsearch进行数据同步的MongoDB数据ID列表，最多1000个，需要首先指定collection命令行参数
+     ```
+
+- 示例
+     ```
+         全文检索初始化:
+             ./tool_ctl sync full-text-search --zk-addr=127.0.0.1:2181 --is-migrate
+     ```
+
+     ```
+          将全量的全文检索数据同步到Elasticsearch:
+             ./cmdb_ctl sync full-text-search --zk-addr=127.0.0.1:2181 --is-sync-data --is-all
+     ```
+
+     ```
+          将指定的索引的全文检索数据同步到Elasticsearch:
+             ./cmdb_ctl sync full-text-search --zk-addr=127.0.0.1:2181 --is-sync-data --index="bk_cmdb.host"
+     ```
+
+     ```
+          将指定的全文检索数据同步到Elasticsearch:
+             ./cmdb_ctl sync full-text-search --zk-addr=127.0.0.1:2181 --is-sync-data --collection="cc_HostBase" --oids=65291386812c38ce22236665,6535e53a225ab588783ae11c
+     ```
+
+

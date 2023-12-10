@@ -52,6 +52,7 @@ const (
 	CC_MODULE_TASK             = "task"
 	CC_MODULE_CLOUD            = "cloud"
 	CC_MODULE_AUTH             = "auth"
+	CC_MODULE_SYNC             = "sync"
 	// CC_MODULE_CACHE 缓存服务
 	CC_MODULE_CACHESERVICE = "cacheservice"
 )

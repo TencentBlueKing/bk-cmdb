@@ -646,6 +646,9 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBasePlat:
 	case common.BKTableNameBaseProject:
 
+	// NOTE: should not use the table name for archive, the object instance and association
+	// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
+	// error message in order to find the wrong table name used in logics level.
 	case common.BKTableNameBaseInst:
 	case common.BKTableNameInstAsst:
 
@@ -664,11 +667,11 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case kubetypes.BKTableNameBaseCustom:
 	case kubetypes.BKTableNameBasePod:
 	case kubetypes.BKTableNameBaseContainer:
-		// NOTE: should not use the table name for archive, the object instance and association
-		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
-		// error message in order to find the wrong table name used in logics level.
 
-		// TODO add del archive for container tables
+	case common.BKTableNameObjDes:
+	case common.BKTableNameObjAttDes:
+	case common.BKTableNameModelQuoteRelation:
+
 	default:
 		if !common.IsObjectShardingTable(c.collName) {
 			// do not archive the delete docs

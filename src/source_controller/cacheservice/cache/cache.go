@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/source_controller/cacheservice/cache/common"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
@@ -29,7 +30,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
-// NewCache TODO
+// NewCache new cache service
 func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
 	watchDB dal.DB) (*ClientSet, error) {
 
@@ -46,24 +47,30 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, err
 	}
 
+	if err = common.InitCache(reflector); err != nil {
+		return nil, fmt.Errorf("new common resource cache failed, err: %v", err)
+	}
+
 	mainlineClient := mainline.NewMainlineClient()
 	hostClient := host.NewClient()
 
 	cache := &ClientSet{
-		Tree:     topotree.NewTopologyTree(mainlineClient),
-		Host:     hostClient,
-		Business: mainlineClient,
-		Topology: topo,
-		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		Tree:      topotree.NewTopologyTree(mainlineClient),
+		Host:      hostClient,
+		Business:  mainlineClient,
+		Topology:  topo,
+		Event:     watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		CommonRes: common.NewClient(),
 	}
 	return cache, nil
 }
 
-// ClientSet TODO
+// ClientSet is the cache client set
 type ClientSet struct {
-	Tree     *topotree.TopologyTree
-	Topology *topology.Topology
-	Host     *host.Client
-	Business *mainline.Client
-	Event    *watch.Client
+	Tree      *topotree.TopologyTree
+	Topology  *topology.Topology
+	Host      *host.Client
+	Business  *mainline.Client
+	Event     *watch.Client
+	CommonRes *common.Client
 }

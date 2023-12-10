@@ -35,7 +35,7 @@ type Config struct {
 	Auth      iam.AuthConfig
 	Redis     redis.Config
 	ConfigMap map[string]string
-	Es        elasticsearch.EsConfig
+	Es        *elasticsearch.EsConfig
 }
 
 // NewServerOption TODO

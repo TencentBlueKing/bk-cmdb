@@ -14,4 +14,4 @@ source:
   # 此处备注的第三方代码在后续统计代码量环节会被排除，若代码库中不存在需要排除的第三方代码，该项配置标识可为空
   third_party_source:
     #第三方代码文件的正则表达式，若无统一标识格式，可以指定具体目录，样例可参考test_source举例
-    filepath_regex: ["/vendor/.*", "/src/tools/monstache/vendor/.*"]
+    filepath_regex: ["/vendor/.*"]
