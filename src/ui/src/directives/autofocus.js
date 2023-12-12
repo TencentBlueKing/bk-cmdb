@@ -26,12 +26,11 @@ const focusCall = (el) => {
   }
 }
 export const autofocus = {
-  update: (el, { value = ['update'] }) => {
-    if (!~value.indexOf('update')) return
+  update: (el, { modifiers }) => {
+    if (!modifiers?.update) return
     focusCall(el)
   },
-  inserted: (el, { value = ['update'] }) => {
-    if (!~value.indexOf('inserted')) return
+  inserted: (el) => {
     focusCall(el)
   }
 }

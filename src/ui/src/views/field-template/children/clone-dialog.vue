@@ -80,7 +80,7 @@
           ref="cloneInput"
           v-model="cloneForm.name"
           v-validate="'required|length:256'"
-          v-autofocus="['inserted']"
+          v-autofocus
           :placeholder="$t('请输入模板名称')"
           name="name">
         </bk-input>
