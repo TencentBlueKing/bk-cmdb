@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="property-selector-content" slot="content" :style="{
+  <div class="property-selector-content" :style="{
     height: `${height}px`
   }">
     <div class="property-selector-options">

@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content" ref="general-model-filter-form">
+  <cmdb-sticky-layout class="filter-layout" slot="content">
     <bk-form class="filter-form" form-type="vertical">
       <bk-form-item class="filter-item"
         v-for="property in selected"
