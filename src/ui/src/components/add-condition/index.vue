@@ -11,7 +11,9 @@
 -->
 
 <template>
-  <div class="property-selector-content" slot="content" ref="propertySelector">
+  <div class="property-selector-content" slot="content" :style="{
+    height: `${height}px`
+  }">
     <div class="property-selector-options">
       <bk-input class="options-filter"
         v-model.trim="filter"
@@ -69,12 +71,15 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch, reactive, nextTick } from 'vue'
+  import { computed, ref, watch, reactive } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
-  import store from '@/store'
 
   const props = defineProps({
+    height: {
+      type: Number,
+      default: 490
+    },
     selected: {
       type: Array,
       default: () => ([])
@@ -93,20 +98,6 @@
     },
   })
   const checkboxRef = ref('')
-  const propertySelector = ref('')
-
-  watch(() => propertySelector.value, (val) => {
-    const height  = store.state.appHeight
-    nextTick(() => {
-      const { bottom = 0 } = val?.getClientRects()?.[0]
-      const dis = bottom - height
-      if (dis > -10) {
-        // 改变气泡框的高度
-        val.getElementsByClassName('all-property-selector')[0].style.height = `${420 - Math.abs(dis)}px`
-      }
-    })
-  })
-
   const indeterminate = reactive({})
   const allChecked = reactive({})
   const dataEmpty = reactive({
@@ -241,6 +232,7 @@
   margin: -.3rem -.6rem;
 }
 .all-property-selector {
+  height: calc(100% - 42px);
   max-height: 440px;
   margin-right: -14px;
   margin-left: -14px;

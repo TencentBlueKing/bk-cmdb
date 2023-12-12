@@ -51,7 +51,7 @@
     },
     methods: {
       async confirm() {
-        this.handler(this.$refs?.addConditionComp?.localSelected ?? this.selected)
+        this.handler(this.selected)
         this.close()
       }
     }

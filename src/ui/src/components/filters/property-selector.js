@@ -13,26 +13,28 @@
 import Vue from 'vue'
 import i18n from '@/i18n'
 import store from '@/store'
-import protertySelectorMixins from '@/mixins/property-selector'
-import FormPropertySelector from './property-selector.vue'
-
-const Component = Vue.extend({
-  components: {
-    FormPropertySelector
-  },
-  mixins: [protertySelectorMixins]
-})
-
+import PropertySelector from './property-selector.vue'
 export default {
-  show(props = {}, target = 'window') {
-    const vm = new Component({
-      store,
+  show(props = {}) {
+    const vm = new Vue({
       i18n,
-      attrs: props,
+      store,
+      render(h) {
+        return h(PropertySelector, {
+          ref: 'propertySelector',
+          props,
+          on: {
+            closed: () => {
+              this.$el && this.$el.parentElement && this.$el.parentElement.removeChild(this.$el)
+              this.$destroy()
+            }
+          }
+        })
+      }
     })
     vm.$mount()
-    vm.createPopver(target)
-    vm.addConditionInstance?.show()
+    document.body.appendChild(vm.$el)
+    vm.$refs.propertySelector.open()
     return vm
   }
 }

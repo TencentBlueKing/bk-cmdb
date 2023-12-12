@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content">
+  <cmdb-sticky-layout class="filter-layout" slot="content" ref="general-model-filter-form">
     <bk-form class="filter-form" form-type="vertical">
       <bk-form-item class="filter-item"
         v-for="property in selected"
@@ -39,9 +39,8 @@
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
-        <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
-          {{$t('添加其他条件')}}
-        </bk-button>
+        <PropertySelector :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+          :handler="updateSelected" :type="2"></PropertySelector>
       </bk-form-item>
     </bk-form>
     <div class="filter-options"
@@ -60,13 +59,14 @@
   import { mapGetters } from 'vuex'
   import has from 'has'
   import OperatorSelector from './operator-selector.vue'
-  import PropertySelector from './general-model-property-selector.js'
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
+  import PropertySelector from '@/components/add-condition/property-selector.vue'
 
   export default {
     components: {
-      OperatorSelector
+      OperatorSelector,
+      PropertySelector
     },
     props: {
       objId: {
@@ -98,6 +98,13 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
+      propertyMap() {
+        const modelPropertyMap = { [this.objId]: this.properties }
+        const ignoreProperties = [] // 预留，需要忽略的属性
+        // eslint-disable-next-line max-len
+        modelPropertyMap[this.objId] = modelPropertyMap[this.objId].filter(property => !ignoreProperties.includes(property.bk_property_id))
+        return modelPropertyMap
+      }
     },
     watch: {
       filterSelected: {
@@ -185,16 +192,6 @@
       async handleRemove(property) {
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
-      },
-      handleSelectProperty(event) {
-        const { objId, properties, propertyGroups, selected: propertySelected } = this
-        PropertySelector.show({
-          objId,
-          properties,
-          propertyGroups,
-          propertySelected,
-          handler: this.updateSelected
-        }, event?.target)
       },
       updateSelected(selected) {
         // 将触发updateCondition新的条件项会被生成
