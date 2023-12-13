@@ -33,7 +33,7 @@
       @click="isShow = true">
       {{text}}
     </bk-button>
-    <addCondition
+    <property-selector
       slot="content"
       v-if="isShow"
       ref="addConditionComp"
@@ -42,7 +42,7 @@
       :models="models"
       :property-map="propertyMap"
       :height="height">
-    </addCondition>
+    </property-selector>
   </bk-popover>
 </template>
 
@@ -50,11 +50,11 @@
   import { mapGetters } from 'vuex'
   import FilterStore from '@/components/filters/store'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import addCondition from '@/components/add-condition'
+  import PropertySelector from '@/components/condition-picker/property-selector.vue'
 
   export default {
     components: {
-      addCondition
+      PropertySelector
     },
     props: {
       objId: String, // type = 2需要

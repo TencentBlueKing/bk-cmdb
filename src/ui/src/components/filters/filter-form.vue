@@ -80,8 +80,8 @@
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
         <bk-form-item>
-          <PropertySelector :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
-            :type="3"></PropertySelector>
+          <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+            :type="3"></condition-picker>
         </bk-form-item>
       </bk-form>
       <div class="filter-options"
@@ -175,12 +175,12 @@
   import { mapGetters } from 'vuex'
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
-  import PropertySelector from '@/components/add-condition/property-selector.vue'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
       OperatorSelector,
-      PropertySelector
+      ConditionPicker
     },
     directives: {
       focus: {

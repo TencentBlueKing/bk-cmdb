@@ -59,9 +59,9 @@
           <bk-form-item class="">
             <form-property-list ref="propertyList" @remove="handleRemoveProperty"
               :disabled="isPreviewProp"></form-property-list>
-            <PropertySelector :text="$t('添加条件')" icon="icon-plus-circle" :selected="selectedProperties"
+            <condition-picker :text="$t('添加条件')" icon="icon-plus-circle" :selected="selectedProperties"
               :property-map="propertyMap"
-              :handler="handlePropertySelected" :disabled="isPreviewProp"></PropertySelector>
+              :handler="handlePropertySelected" :disabled="isPreviewProp"></condition-picker>
             <input type="hidden"
               v-validate="'min_value:1'"
               data-vv-name="condition"
@@ -124,14 +124,14 @@
   import PreviewResult from '../preview/preview-result.vue'
   import FilterStore from '../store'
   import { $success } from '@/magicbox'
-  import PropertySelector from '@/components/add-condition/property-selector.vue'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
       FormPropertyList,
       FormTarget,
       PreviewResult,
-      PropertySelector
+      ConditionPicker
     },
     props: {
       id: [String, Number],

@@ -23,7 +23,7 @@
         v-autofocus>
       </bk-input>
     </div>
-    <div class="all-property-selector">
+    <div class="property-selector-container">
       <div class="property-selector-group clearfix"
         v-for="model in models"
         v-show="isShowGroup(model)"
@@ -39,7 +39,7 @@
           :indeterminate="indeterminate[model.bk_obj_id]"
           :checked="allChecked[model.bk_obj_id]"
           @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
-          class="allCheck"
+          class="all-check"
         >{{$t('全选')}}</bk-checkbox>
         <div class="group-property-list">
           <bk-checkbox
@@ -231,7 +231,7 @@
   padding: 10px 14px;
   margin: -.3rem -.6rem;
 }
-.all-property-selector {
+.property-selector-container {
   height: calc(100% - 42px);
   max-height: 440px;
   margin-right: -14px;
@@ -256,7 +256,7 @@
     }
   }
 
-  .allCheck {
+  .all-check {
     float: right;
     :deep(.bk-checkbox-text) {
       font-size: 12px;
@@ -307,7 +307,7 @@
         }
       }
 
-      /deep/ {
+      :deep {
         .bk-checkbox {
           flex: 16px 0 0;
           opacity: 0;

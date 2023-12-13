@@ -39,8 +39,8 @@
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
-        <PropertySelector :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
-          :handler="updateSelected" :type="2"></PropertySelector>
+        <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+          :handler="updateSelected" :type="2"></condition-picker>
       </bk-form-item>
     </bk-form>
     <div class="filter-options"
@@ -61,12 +61,12 @@
   import OperatorSelector from './operator-selector.vue'
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
-  import PropertySelector from '@/components/add-condition/property-selector.vue'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
       OperatorSelector,
-      PropertySelector
+      ConditionPicker
     },
     props: {
       objId: {
