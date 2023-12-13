@@ -12,7 +12,7 @@
 
 <template>
   <bk-popover ref="popover" :tippy-options="{
-    delay: [300, 0],
+    delay: 0,
     hideOnClick: true,
     interactive: true,
     placement: 'top',
