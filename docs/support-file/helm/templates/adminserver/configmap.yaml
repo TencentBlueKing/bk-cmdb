@@ -193,6 +193,8 @@ data:
     cacheService:
     # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
       briefTopologySyncIntervalMinutes: {{ .Values.common.cacheService.briefTopologySyncIntervalMinutes }}
+      # 业务容器拓扑缓存的定时刷新时间，默认为15分钟，最小为15分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+      kubeTopoSyncIntervalMinutes: {{ .Values.common.cacheService.kubeTopoSyncIntervalMinutes }}
 
     # openTelemetry跟踪链接入相关配置
     openTelemetry:
