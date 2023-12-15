@@ -1309,6 +1309,10 @@ common:
     ## 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
     ##
     briefTopologySyncIntervalMinutes: 15
+    ## @param common.cacheService.kubeTopoSyncIntervalMinutes bk-cmdb cacheservice sync kube topo interval
+    ## 业务容器拓扑缓存的定时刷新时间，默认为15分钟，最小为15分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+    ##
+    kubeTopoSyncIntervalMinutes: 15
   ## log platform openTelemetry config
   ##
   openTelemetry:
