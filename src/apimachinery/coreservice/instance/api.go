@@ -18,8 +18,8 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // CreateInstance create instance
@@ -215,7 +215,7 @@ func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, 
 func (inst *instance) ReadInstanceStruct(ctx context.Context, h http.Header, objID string,
 	input *metadata.QueryCondition, result interface{}) errors.CCErrorCoder {
 
-	rid := util.GetHTTPCCRequestID(h)
+	rid := httpheader.GetRid(h)
 	subPath := "/read/model/%s/instances"
 
 	err := inst.client.Post().

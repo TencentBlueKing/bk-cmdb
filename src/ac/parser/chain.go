@@ -10,6 +10,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 
 	"github.com/tidwall/gjson"
 )
@@ -193,17 +194,17 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 	}
 
 	// validate user header at first.
-	user := ps.RequestCtx.Header.Get(common.BKHTTPHeaderUser)
+	user := httpheader.GetUser(ps.RequestCtx.Header)
 	if len(user) == 0 {
-		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPHeaderUser)
+		ps.err = fmt.Errorf("request lost user header")
 		return ps
 	}
 	ps.Attribute.User.UserName = user
 
 	// validate the supplier account now.
-	supplier := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
+	supplier := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
 	if len(supplier) == 0 {
-		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPOwnerID)
+		ps.err = fmt.Errorf("request lost supplier account header")
 		return ps
 	}
 	ps.Attribute.User.SupplierAccount = supplier

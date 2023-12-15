@@ -16,25 +16,23 @@ import (
 	"net/http"
 	"testing"
 
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/language"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/stretchr/testify/require"
 )
 
 var defaultHeader = func() http.Header {
 
-	header := http.Header{}
-	header.Set(common.BKHTTPCCRequestID, "test_req_id")
-	header.Set(common.BKHTTPHeaderUser, "test_user")
-	header.Set(common.BKHTTPOwnerID, "test_owner")
-	header.Set(common.BKHTTPLanguage, "en")
+	header := headerutil.GenCommonHeader("test_user", "test_owner", "test_req_id")
+	httpheader.SetLanguage(header, "en")
 	return header
 }()
 

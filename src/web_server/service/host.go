@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
@@ -49,10 +50,10 @@ func getReturnStr(code int, message string, data interface{}) string {
 
 // ListenIPOptions TODO
 func (s *Service) ListenIPOptions(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 
 	hostIDStr := c.Param("bk_host_id")
 	hostID, err := strconv.ParseInt(hostIDStr, 10, 64)

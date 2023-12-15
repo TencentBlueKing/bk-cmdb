@@ -22,9 +22,10 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	validator "configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal/redis"
 )
@@ -45,10 +46,8 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	ownerManager.UserName = userName
 	ownerManager.OwnerID = ownerID
 
-	header := make(http.Header)
-	header.Add(common.BKHTTPHeaderUser, userName)
-	header.Add(common.BKHTTPLanguage, language)
-	header.Add(common.BKHTTPOwnerID, ownerID)
+	header := headerutil.BuildHeader(userName, ownerID)
+	httpheader.SetLanguage(header, language)
 	ownerManager.header = header
 
 	return ownerManager
@@ -61,9 +60,9 @@ func (m *OwnerManager) SetHttpHeader(key, val string) {
 
 // InitOwner TODO
 func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder) {
-	rid := util.GetHTTPCCRequestID(m.header)
+	rid := httpheader.GetRid(m.header)
 	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
-	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
+	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 
 	exist, err, permissions := m.defaultAppIsExist()
 	if err != nil {
@@ -104,8 +103,8 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 }
 
 func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermission) {
-	rid := util.GetHTTPCCRequestID(m.header)
-	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
+	rid := httpheader.GetRid(m.header)
+	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 
 	blog.V(5).Infof("addDefaultApp %s, rid: %s", m.OwnerID, rid)
 	params, err, permissions := m.getObjectFields(common.BKInnerObjIDApp)
@@ -133,8 +132,8 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 }
 
 func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
-	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
-	rid := util.GetHTTPCCRequestID(m.header)
+	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
+	rid := httpheader.GetRid(m.header)
 	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header, m.OwnerID)
 	if httpDoErr != nil {
 		blog.ErrorJSON("defaultAppIsExist searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
@@ -152,8 +151,8 @@ func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata
 func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder,
 	*metadata.IamPermission) {
 
-	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(m.header))
-	rid := util.GetHTTPCCRequestID(m.header)
+	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
+	rid := httpheader.GetRid(m.header)
 
 	filter := mapstr.MapStr{
 		common.BKObjIDField: objID,

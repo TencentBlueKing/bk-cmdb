@@ -16,6 +16,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	kubetypes "configcenter/src/kube/types"
@@ -124,11 +125,7 @@ func GetTestConfig() TestConfig {
 
 // GetHeader TODO
 func GetHeader() http.Header {
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
-	return header
+	return headerutil.GenDefaultHeader()
 }
 
 // ClearDatabase TODO

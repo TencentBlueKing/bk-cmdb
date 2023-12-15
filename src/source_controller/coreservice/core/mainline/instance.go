@@ -19,13 +19,15 @@ import (
 	"net/http"
 
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // SearchMainlineInstanceTopo get topo tree of mainline model
-func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, error) {
+func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64,
+	withDetail bool) (*metadata.TopoInstanceNode, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	bizTopoNode, err := m.SearchMainlineModelTopo(ctx, header, false)
@@ -35,9 +37,11 @@ func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header htt
 	}
 	blog.V(9).Infof("model mainline: %+v, rid: %s", bizTopoNode, rid)
 
-	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(util.GetLanguage(header)), mongodb.Client(), bkBizID)
+	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(header)), mongodb.Client(),
+		bkBizID)
 	if err != nil {
-		blog.Errorf("SearchMainlineInstanceTopo failed, NewInstanceMainline failed, bizID: %d, err: %+v, rid: %s", bkBizID, err, rid)
+		blog.Errorf("SearchMainlineInstanceTopo failed, NewInstanceMainline failed, bizID: %d, err: %+v, rid: %s",
+			bkBizID, err, rid)
 		return nil, fmt.Errorf("new mainline instance by business:%d failed, %+v", bkBizID, err)
 	}
 

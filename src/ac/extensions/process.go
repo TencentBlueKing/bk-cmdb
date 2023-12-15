@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -50,7 +51,8 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 		process := ProcessSimplify{}
 		_, err = process.Parse(item)
 		if err != nil {
-			blog.Errorf("collectProcessesByIDs by id %+v failed, parse process %+v failed, err: %+v, rid: %s", ids, item, err, rid)
+			blog.Errorf("collectProcessesByIDs by id %+v failed, parse process %+v failed, err: %+v, rid: %s", ids,
+				item, err, rid)
 			return nil, fmt.Errorf("parse process from db data failed, err: %+v", err)
 		}
 		processes = append(processes, process)
@@ -59,7 +61,8 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 }
 
 // MakeResourcesByProcesses TODO
-func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64, processes ...ProcessSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64,
+	processes ...ProcessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, process := range processes {
 		resource := meta.ResourceAttribute{
@@ -69,7 +72,7 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 				Name:       process.ProcessName,
 				InstanceID: process.ProcessID,
 			},
-			SupplierAccount: util.GetOwnerID(header),
+			SupplierAccount: httpheader.GetSupplierAccount(header),
 			BusinessID:      businessID,
 		}
 
@@ -79,7 +82,8 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 }
 
 // GenProcessNoPermissionResp TODO
-func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header,
+	businessID int64) (*metadata.BaseResp, error) {
 	// process read authorization is skipped
 	resp := metadata.NewNoPermissionResp(nil)
 	return &resp, nil
@@ -98,7 +102,8 @@ func (am *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimpli
 }
 
 // AuthorizeByProcesses TODO
-func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Header, action meta.Action, processes ...ProcessSimplify) error {
+func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Header, action meta.Action,
+	processes ...ProcessSimplify) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -116,7 +121,8 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 }
 
 // AuthorizeByProcessID TODO
-func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action,
+	ids ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -114,7 +115,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	user := util.GetUser(ctx.Request.Request.Header)
+	user := httpheader.GetUser(ctx.Request.Request.Header)
 	for i := range input.Data {
 		input.Data[i][common.BKCreator] = user
 		input.Data[i][common.BKLastEditor] = user
@@ -219,7 +220,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	user := util.GetUser(ctx.Request.Request.Header)
+	user := httpheader.GetUser(ctx.Request.Request.Header)
 	input[common.BKCreator] = user
 	input[common.BKLastEditor] = user
 
@@ -475,14 +476,16 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	}
 
 	if len(input.HostIDs) > common.BKMaxRecordsAtOnce {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxRecordsAtOnce))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce,
+			common.BKMaxRecordsAtOnce))
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if ccErr != nil {
-			blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
+			blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s",
+				input, ccErr.Error(), rid)
 			return ccErr
 		}
 		return nil
@@ -555,7 +558,8 @@ func (s *Service) FindCloudAreaHostCount(ctx *rest.Contexts) {
 		return
 	}
 	if false == res.Result {
-		blog.Errorf("FindCloudAreaHostCount http reply error.  input:%#v, err code:%d, err msg:%s, rid:%s", *input, res.Code, res.ErrMsg, rid)
+		blog.Errorf("FindCloudAreaHostCount http reply error.  input:%#v, err code:%d, err msg:%s, rid:%s", *input,
+			res.Code, res.ErrMsg, rid)
 		ctx.RespAutoError(res.CCError())
 		return
 	}

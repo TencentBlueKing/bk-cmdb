@@ -14,6 +14,7 @@ package common
 
 import (
 	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -28,18 +29,17 @@ func SetProxyHeader(c *gin.Context) {
 
 	// 删除 Accept-Encoding 避免返回值被压缩
 	c.Request.Header.Del("Accept-Encoding")
-	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
-	c.Request.Header.Add(common.BKHTTPLanguage, GetLanguageByHTTPRequest(c))
-	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+	httpheader.AddUser(c.Request.Header, userName)
+	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
+	httpheader.AddSupplierAccount(c.Request.Header, ownerID)
 }
 
-// GetLanguageByHTTPRequest TODO
+// GetLanguageByHTTPRequest get language by http request cookie
 func GetLanguageByHTTPRequest(c *gin.Context) string {
-
-	cookieLanguage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
-	if "" != cookieLanguage && nil == err {
+	cookieLanguage, err := c.Cookie(common.HTTPCookieLanguage)
+	if err == nil && cookieLanguage != "" {
 		return cookieLanguage
 	}
 
-	return "zh-cn"
+	return string(common.Chinese)
 }

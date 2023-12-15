@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/iam"
 
 	"github.com/emicklei/go-restful/v3"
@@ -35,8 +35,8 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -101,8 +101,8 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 	}
 
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam register request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
