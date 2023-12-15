@@ -68,13 +68,13 @@ spec:
             exit 1
           fi
           EOF
-          resources:
-            limits:
-              cpu: 200m
-              memory: 1024Mi
-            requests:
-              memory: 512Mi
-              cpu: 200m
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1024Mi
+          requests:
+            memory: 512Mi
+            cpu: 200m
       restartPolicy: OnFailure
   backoffLimit: 20
 {{- end }}
