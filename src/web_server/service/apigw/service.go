@@ -15,18 +15,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package apigw
 
 import (
-	"configcenter/src/apimachinery/apiserver"
+	"net/http"
+
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/capability"
+	"configcenter/src/web_server/middleware"
+	"configcenter/src/web_server/middleware/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+type apigw struct {
+	ws     *service.MiddlewareService
+	engine *backbone.Engine
+}
+
+// Init api gateway service
+func Init(c *capability.Capability) {
+	a := &apigw{
+		ws:     service.NewMiddlewareService(c.Ws, middleware.ApiGWMiddleware),
+		engine: c.Engine,
+	}
+
+	a.ws.Post("/demo", a.Demo)
+}
+
+// Demo api gateway http handler demo
+func (a *apigw) Demo(c *gin.Context) {
+	c.JSON(http.StatusOK, metadata.BkBaseResp{Code: common.CCSuccess, Message: common.CCSuccessStr})
 }

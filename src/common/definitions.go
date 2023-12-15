@@ -1110,6 +1110,7 @@ const (
 	ExcelImportMaxRow = 1000
 )
 
+// deprecated old api response fields only for legacy api
 const (
 	// HTTPBKAPIErrorMessage apiserver error message
 	HTTPBKAPIErrorMessage = "bk_error_msg"
@@ -1201,8 +1202,6 @@ const (
 	BKHTTPSecretsEnv = "BK-Secrets-Env"
 	// BKHTTPReadReference  query db use secondary node
 	BKHTTPReadReference = "Cc_Read_Preference"
-	// BKHTTPRequestFromWeb represents if request is from web server
-	BKHTTPRequestFromWeb = "Cc_Request_From_Web"
 )
 
 // new http header keys in the standard of api gateway
@@ -1222,11 +1221,14 @@ const (
 	// BkHTTPHeaderJWT is the blueking api gateway jwt http header key
 	BkHTTPHeaderJWT = "X-Bkapi-JWT"
 
-	// BkHTTPHeaderSupplierAccount is supplier account http header key
-	BkHTTPHeaderSupplierAccount = "X-Bkapi-Supplier-Account"
-
 	// BkHTTPHeaderAuth is the blueking api gateway authorization http header key
 	BkHTTPHeaderAuth = "X-Bkapi-Authorization"
+
+	// BkHTTPHeaderSupplierAccount is supplier account http header key
+	BkHTTPHeaderSupplierAccount = "X-Bkcmdb-Supplier-Account"
+
+	// BKHTTPHeaderReqFromWeb is the http header key that represents if request is from web server
+	BKHTTPHeaderReqFromWeb = "X-Bkcmdb-Request-From-Web"
 )
 
 // ReadPreferenceMode TODO

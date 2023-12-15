@@ -194,6 +194,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	ownerM := user.NewOwnerManager(uin, supplier.OwnerID, language)
 	ownerM.CacheCli = s.CacheCli
 	ownerM.Engine = s.Engine
+	ownerM.ApiCli = s.ApiCli
 	permissions, err := ownerM.InitOwner()
 	if nil != err {
 		blog.Errorf("InitOwner error: %v, rid:%s", err, rid)

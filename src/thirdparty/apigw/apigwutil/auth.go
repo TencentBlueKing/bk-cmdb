@@ -41,6 +41,12 @@ type AppAuthConfig struct {
 	AppSecret string `json:"bk_app_secret,omitempty"`
 }
 
+// SetAuthHeaderKey set api gateway authorization header key
+func SetAuthHeaderKey(auth string, header http.Header) http.Header {
+	header.Set(common.BkHTTPHeaderAuth, auth)
+	return header
+}
+
 // SetAuthHeader set api gateway authorization header
 func SetAuthHeader(appConf AppAuthConfig, header http.Header) http.Header {
 	conf := AuthConfig{
@@ -56,6 +62,34 @@ func SetAuthHeader(appConf AppAuthConfig, header http.Header) http.Header {
 		return header
 	}
 
-	header.Set(common.BkHTTPHeaderAuth, string(authInfo))
+	SetAuthHeaderKey(string(authInfo), header)
 	return header
+}
+
+// GenDefaultAuthHeader generate api gateway default authorization header
+func GenDefaultAuthHeader(conf *ApiGWConfig) (string, error) {
+	authConf := AuthConfig{
+		AppAuthConfig: AppAuthConfig{
+			AppCode:   conf.AppCode,
+			AppSecret: conf.AppSecret,
+		},
+		UserName: conf.Username,
+	}
+
+	authInfo, err := json.Marshal(authConf)
+	if err != nil {
+		blog.Errorf("marshal default api auth config %+v failed, err: %v", conf, err)
+		return "", err
+	}
+
+	return string(authInfo), nil
+}
+
+// SetApiGWAuthHeader set authorization header by api gateway config
+func SetApiGWAuthHeader(conf *ApiGWConfig, header http.Header) http.Header {
+	appConf := AppAuthConfig{
+		AppCode:   conf.AppCode,
+		AppSecret: conf.AppSecret,
+	}
+	return SetAuthHeader(appConf, header)
 }

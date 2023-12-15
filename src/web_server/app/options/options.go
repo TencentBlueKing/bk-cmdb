@@ -14,6 +14,7 @@
 package options
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
 
@@ -22,13 +23,15 @@ import (
 
 // ServerOption define option of server in flags
 type ServerOption struct {
-	ServConf *config.CCAPIConfig
+	ServConf         *config.CCAPIConfig
+	DeploymentMethod common.DeploymentMethod
 }
 
 // NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
 	s := ServerOption{
-		ServConf: config.NewCCAPIConfig(),
+		ServConf:         config.NewCCAPIConfig(),
+		DeploymentMethod: common.OpenSourceDeployment,
 	}
 
 	return &s
@@ -40,6 +43,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/ccapi.conf")
+	fs.Var(&s.DeploymentMethod, "deployment-method", "The deployment method, supported value: open_source, blueking")
 }
 
 // Session TODO
@@ -87,6 +91,7 @@ type Config struct {
 	ConfigMap                 map[string]string
 	AuthCenter                AppInfo
 	DisableOperationStatistic bool
+	DeploymentMethod          common.DeploymentMethod
 }
 
 // AppInfo TODO

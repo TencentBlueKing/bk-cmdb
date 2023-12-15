@@ -15,18 +15,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package common
 
-import (
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/common/backbone"
+// DeploymentMethod is the deployment method
+type DeploymentMethod string
 
-	"github.com/gin-gonic/gin"
-)
-
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+// String get string value
+func (d *DeploymentMethod) String() string {
+	return string(*d)
 }
+
+// Set value
+func (d *DeploymentMethod) Set(s string) error {
+	*d = DeploymentMethod(s)
+	return nil
+}
+
+// Type returns value type
+func (d *DeploymentMethod) Type() string {
+	return "DeploymentMethod"
+}
+
+const (
+	// OpenSourceDeployment is the open-source deployment method, do not rely on api gateway
+	OpenSourceDeployment DeploymentMethod = "open_source"
+	// BluekingDeployment is the deployment method for blueking, using api gateway
+	BluekingDeployment DeploymentMethod = "blueking"
+)

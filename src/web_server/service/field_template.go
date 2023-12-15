@@ -76,7 +76,7 @@ func (s *Service) ListFieldTemplate(c *gin.Context) {
 		Page:               opt.Page,
 		Fields:             opt.Fields,
 	}
-	tmplRes, err := s.CoreAPI.ApiServer().FieldTemplate().ListFieldTemplate(kit.Ctx, kit.Header, tmplOpt)
+	tmplRes, err := s.ApiCli.FieldTemplate().ListFieldTemplate(kit.Ctx, kit.Header, tmplOpt)
 	if err != nil {
 		blog.Errorf("list field template failed, err: %v, opt: %+v, rid: %s", err, tmplOpt, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: err.GetCode(), ErrMsg: err.Error()})
@@ -106,7 +106,7 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 		Page:      metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: objCond,
 	}
-	objRes, ccErr := s.CoreAPI.ApiServer().ReadModel(kit.Ctx, kit.Header, objOpt)
+	objRes, ccErr := s.ApiCli.ReadModel(kit.Ctx, kit.Header, objOpt)
 	if ccErr != nil {
 		blog.Errorf("list object ids failed, err: %v, opt: %+v, rid: %s", ccErr, objOpt, kit.Rid)
 		return nil, false, ccErr
@@ -125,7 +125,7 @@ func (s *Service) parseFieldTmplWithObjFilter(kit *rest.Kit, tmplFilter, objFilt
 	relOpt := &metadata.ListObjFieldTmplRelOption{
 		ObjectIDs: objIDs,
 	}
-	relRes, ccErr := s.CoreAPI.ApiServer().FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, relOpt)
+	relRes, ccErr := s.ApiCli.FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, relOpt)
 	if ccErr != nil {
 		blog.ErrorJSON("list obj field template relation failed, err: %s, opt: %s, rid: %s", ccErr, relOpt, kit.Rid)
 		return nil, false, ccErr
@@ -169,7 +169,7 @@ func (s *Service) CountFieldTemplateObj(c *gin.Context) {
 	objOpt := &metadata.ListObjFieldTmplRelOption{
 		TemplateIDs: opt.TemplateIDs,
 	}
-	relRes, err := s.CoreAPI.ApiServer().FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, objOpt)
+	relRes, err := s.ApiCli.FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, objOpt)
 	if err != nil {
 		blog.Errorf("list field template and object relation failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: err.GetCode(), ErrMsg: err.Error()})

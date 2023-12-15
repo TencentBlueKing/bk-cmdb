@@ -18,27 +18,30 @@
 package apigw
 
 import (
-	"fmt"
-
 	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/cmdb"
+	"configcenter/src/thirdparty/apigw/gse"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var AuthKey = "x-bkapi-authorization"
-
-// ApiGWSrv api gateway service
-type ApiGWSrv struct {
-	Client rest.ClientInterface
-	Auth   string
+// ClientSet is the api gateway client set
+type ClientSet interface {
+	Gse() gse.ClientI
+	Cmdb() cmdb.ClientI
 }
 
-// NewApiGW new a api gateway client
-func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWSrv, error) {
+type clientSet struct {
+	gse  gse.ClientI
+	cmdb cmdb.ClientI
 
+	options *apigwutil.ApiGWOptions
+}
+
+// NewClientSet new api gateway client set
+func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (ClientSet, error) {
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       2000,
 		Burst:     2000,
@@ -46,25 +49,40 @@ func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWS
 	}
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
 	flowControl := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
 
-	esbCapability := &util.Capability{
-		Client: client,
-		Discover: &apigwutil.ApiGWDiscovery{
-			Servers: config.Address,
+	options := &apigwutil.ApiGWOptions{
+		Config: config,
+		Capability: util.Capability{
+			Client:     client,
+			Throttle:   flowControl,
+			MetricOpts: util.MetricOption{Register: metric},
 		},
-		Throttle:   flowControl,
-		MetricOpts: util.MetricOption{Register: reg},
 	}
 
-	apigw := &ApiGWSrv{
-		Client: rest.NewRESTClient(esbCapability, "/"),
-		Auth: fmt.Sprintf(`{"bk_username": "%s", "bk_app_code": "%s", "bk_app_secret": "%s"}`, config.Username,
-			config.AppCode, config.AppSecret),
+	if options.Auth, err = apigwutil.GenDefaultAuthHeader(config); err != nil {
+		return nil, err
 	}
-	return apigw, nil
+
+	return &clientSet{options: options}, nil
+}
+
+// Gse returns gse client
+func (c *clientSet) Gse() gse.ClientI {
+	if c.gse == nil {
+		c.gse = gse.NewClient(c.options)
+	}
+	return c.gse
+}
+
+// Cmdb returns cmdb client
+func (c *clientSet) Cmdb() cmdb.ClientI {
+	if c.cmdb == nil {
+		c.cmdb = cmdb.NewClient(c.options)
+	}
+	return c.cmdb
 }

@@ -128,6 +128,13 @@ func NewApiServerClientInterface(c *util.Capability, version string) ApiServerCl
 	}
 }
 
+// NewWrappedApiServerClientI new wrapped api server client interface by restful client
+func NewWrappedApiServerClientI(client rest.ClientInterface, wrappers ...rest.RequestWrapper) ApiServerClientInterface {
+	return &apiServer{
+		client: rest.NewClientWrapper(client, wrappers...),
+	}
+}
+
 type apiServer struct {
 	client rest.ClientInterface
 }

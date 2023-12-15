@@ -121,6 +121,8 @@ type ApiName string
 const (
 	// GseName gse api gateway name
 	GseName ApiName = "bk-gse"
+	// CmdbName cmdb api gateway name
+	CmdbName ApiName = "bk-cmdb"
 )
 
 const templateVar = "{api_name}"
@@ -129,11 +131,11 @@ const templateVar = "{api_name}"
 // 举例：根据配置文件拿到的apigw地址为 http://bkapi.example.com/api/{api_name}，此时如果是要调用A项目的api gateway网关，
 // 可以将模版地址中的{api_name}进行替换，得到http://bkapi.example.com/api/A；以此实现根据同一个网关模版变量，
 // 通过调整网关名称，能够调用不同的api gateway网关。
-func ReplaceApiName(templateAddr []string, apiName ApiName) ([]string, error) {
+func ReplaceApiName(templateAddr []string, apiName ApiName) []string {
 	address := make([]string, len(templateAddr))
 	for idx, template := range templateAddr {
 		address[idx] = strings.Replace(template, templateVar, string(apiName), 1)
 	}
 
-	return address, nil
+	return address
 }

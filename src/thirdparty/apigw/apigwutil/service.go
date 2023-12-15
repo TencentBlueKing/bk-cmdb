@@ -15,18 +15,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package apigwutil
 
 import (
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/common/backbone"
-
-	"github.com/gin-gonic/gin"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+// ApiGWOptions is the api gateway client options
+type ApiGWOptions struct {
+	Config     *ApiGWConfig
+	Auth       string
+	Capability util.Capability
+}
+
+// ApiGWSrv api gateway service
+type ApiGWSrv struct {
+	Client rest.ClientInterface
+	Config *ApiGWConfig
+	Auth   string
+}
+
+// NewApiGW new api gateway service
+func NewApiGW(options *ApiGWOptions, apiName ApiName) *ApiGWSrv {
+	capability := options.Capability
+	capability.Discover = &ApiGWDiscovery{
+		Servers: ReplaceApiName(options.Config.Address, apiName),
+	}
+
+	apigw := &ApiGWSrv{
+		Client: rest.NewRESTClient(&capability, "/"),
+		Config: options.Config,
+		Auth:   options.Auth,
+	}
+
+	return apigw
 }

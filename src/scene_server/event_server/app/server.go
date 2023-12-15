@@ -26,6 +26,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
@@ -34,7 +35,6 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/gse/client"
 )
@@ -208,19 +208,11 @@ func (es *EventServer) initConfigs() error {
 			return err
 		}
 	case eventtype.V2:
-		config, err := apigwutil.ParseApiGWConfig("apiGW")
+		err = apigw.Init("apiGW", es.Engine().Metric().Registry())
 		if err != nil {
-			blog.Errorf("get gse api gateway config error, err: %v", err)
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
 		}
-		config.Address, err = apigwutil.ReplaceApiName(config.Address, apigwutil.GseName)
-		if err != nil {
-			blog.Errorf("replace the template var in api gateway address failed, addr: %v, apiName: %v, err: %v",
-				config.Address, apigwutil.GseName, err)
-			return err
-		}
-
-		es.config.GseApiGWConfig = config
 	}
 
 	return nil
@@ -292,7 +284,7 @@ func (es *EventServer) runSyncData() error {
 	var err error
 	var gseTaskClient *client.GseTaskServerClient
 	var gseApiClient *client.GseApiServerClient
-	var gwClient gse.GseClientInterface
+	var gwClient gse.ClientI
 	switch es.config.IdentifierConf.Version {
 	case eventtype.V1:
 		gseTaskClient, err = client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
@@ -308,11 +300,7 @@ func (es *EventServer) runSyncData() error {
 		}
 
 	case eventtype.V2:
-		gwClient, err = gse.NewGseApiGWClient(es.config.GseApiGWConfig, es.engine.Metric().Registry())
-		if err != nil {
-			blog.Errorf("new gse api gateway client error, err: %v", err)
-			return err
-		}
+		gwClient = apigw.Client().Gse()
 	}
 
 	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,

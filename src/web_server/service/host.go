@@ -90,7 +90,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 			Limit: 1,
 		},
 	}
-	resp, err := s.CoreAPI.ApiServer().ListHostWithoutApp(ctx, c.Request.Header, option)
+	resp, err := s.ApiCli.ListHostWithoutApp(ctx, c.Request.Header, option)
 	if err != nil {
 		blog.Errorf("get host by id failed, hostID: %d, err: %+v, rid: %s", hostID, err, rid)
 		result := metadata.BaseResp{Result: false, Code: common.CCErrHostGetFail,

@@ -15,18 +15,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+// Package apigw defines api-gateway client
+package apigw
 
 import (
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+	"configcenter/src/thirdparty/apigw"
+	"configcenter/src/thirdparty/apigw/apigwutil"
 
-	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+var (
+	client apigw.ClientSet
+)
+
+// Client returns api-gateway client set
+func Client() apigw.ClientSet {
+	return client
+}
+
+// Init the jwt handler.
+func Init(path string, metric prometheus.Registerer) error {
+	config, err := apigwutil.ParseApiGWConfig(path)
+	if err != nil {
+		blog.Errorf("parse %s api gateway config failed, err: %v", path, err)
+		return err
+	}
+
+	client, err = apigw.NewClientSet(config, metric)
+	if err != nil {
+		blog.Errorf("init %s api gateway client failed, err: %v", path, err)
+		return err
+	}
+
+	return nil
 }
