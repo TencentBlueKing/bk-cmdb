@@ -20,8 +20,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
@@ -38,12 +38,12 @@ type userDataResult struct {
 
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	rspBody := metadata.LonginSystemUserListResult{}
 
 	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
 	userList, rawErr := userManger.GetUserList(c)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 	if rawErr != nil && rawErr.ErrCode != 0 {
 		blog.Error("GetUserList failed, err: %s, rid: %s", rawErr.ToCCError(defErr).Error(), rid)
 		rspBody.Code = rawErr.ErrCode
@@ -62,7 +62,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 
 // UpdateUserLanguage TODO
 func (s *Service) UpdateUserLanguage(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 	language := c.Param("language")
 
@@ -93,7 +93,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 
 // UserInfo TODO
 func (s *Service) UserInfo(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 	resultData := metadata.LoginUserInfoResult{}
 	resultData.Result = true
@@ -137,7 +137,7 @@ func (s *Service) UserInfo(c *gin.Context) {
 // UpdateSupplier TODO
 func (s *Service) UpdateSupplier(c *gin.Context) {
 
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 
 	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)

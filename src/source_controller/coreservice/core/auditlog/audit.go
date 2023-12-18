@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -61,7 +62,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 		}
 		log.SupplierAccount = kit.SupplierAccount
 		log.User = kit.User
-		if appCode := kit.Header.Get(common.BKHTTPRequestAppCode); len(appCode) > 0 {
+		if appCode := httpheader.GetAppCode(kit.Header); len(appCode) > 0 {
 			log.AppCode = appCode
 		}
 		if rid := kit.Rid; len(rid) > 0 {
@@ -80,7 +81,8 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 }
 
 // SearchAuditLog TODO
-func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64, error) {
+func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64,
+	error) {
 	condition := param.Condition
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 

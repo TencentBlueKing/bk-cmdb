@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -49,7 +50,7 @@ func (s *service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 	// according to the topology display, put the folder to the front
 	if tableNames[0] == types.BKTableNameBaseNamespace && !isShared {
 		folderName := types.KubeFolderName
-		if util.GetLanguage(kit.Header) == string(common.English) {
+		if httpheader.GetLanguage(kit.Header) == string(common.English) {
 			folderName = types.KubeFolderNameEn
 		}
 		result.Info = append(result.Info, types.KubeObjectInfo{

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/thirdparty/apigw/apigwutil"
+	httpheader "configcenter/src/common/http/header"
 )
 
 // ListAgentState list gse agent state
@@ -36,7 +36,7 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(apigwutil.SetAuthHeaderKey(p.service.Auth, h)).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -62,7 +62,7 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(apigwutil.SetAuthHeaderKey(p.service.Auth, h)).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -88,7 +88,7 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(apigwutil.SetAuthHeaderKey(p.service.Auth, h)).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 

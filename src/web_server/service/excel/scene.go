@@ -28,9 +28,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/service/excel/core"
 	"configcenter/src/web_server/service/excel/operator"
@@ -119,7 +119,7 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommJSONUnmarshalFailed, ErrMsg: err.Error()})
 		return
 	}
-	lang := s.engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	lang := s.engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 	if err := input.Validate(kit, lang); err != nil {
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebGetObjectFail, err.Error()))
 		return

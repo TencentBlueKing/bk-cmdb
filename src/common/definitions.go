@@ -1173,65 +1173,11 @@ const (
 	ApiCacheLimiterRulePrefix = BKCacheKeyV3Prefix + "api:limiter_rule:"
 )
 
-const (
-	// BKHTTPHeaderUser current request http request header fields name for login user
-	BKHTTPHeaderUser = "BK_User"
-	// BKHTTPLanguage the language key word
-	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
-	// BKHTTPOwner ID the owner
-	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
-	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
-	// BKHTTPCookieLanugageKey TODO
-	BKHTTPCookieLanugageKey = "blueking_language"
-	// BKHTTPRequestAppCode TODO
-	BKHTTPRequestAppCode = "Bk-App-Code"
-	// BKHTTPRequestRealIP TODO
-	BKHTTPRequestRealIP = "X-Real-Ip"
+// ReadReferenceKey cmdb read preference key
+const ReadReferenceKey = "Cc_Read_Preference"
 
-	// BKHTTPCCRequestID cc request id cc_request_id
-	BKHTTPCCRequestID = "Cc_Request_Id"
-	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
-	BKHTTPOtherRequestID = "X-Bkapi-Request-Id"
-
-	// BKHTTPSecretsToken TODO
-	BKHTTPSecretsToken = "BK-Secrets-Token"
-	// BKHTTPSecretsProject TODO
-	BKHTTPSecretsProject = "BK-Secrets-Project"
-	// BKHTTPSecretsEnv TODO
-	BKHTTPSecretsEnv = "BK-Secrets-Env"
-	// BKHTTPReadReference  query db use secondary node
-	BKHTTPReadReference = "Cc_Read_Preference"
-)
-
-// new http header keys in the standard of api gateway
-const (
-	// BkHTTPHeaderRid is the request id http header key
-	BkHTTPHeaderRid = "X-Bkapi-Request-Id"
-
-	// BkHTTPHeaderUser is the username http header key.
-	BkHTTPHeaderUser = "X-Bkapi-User-Name"
-
-	// BkHTTPHeaderAppCode is the blueking app code http header key
-	BkHTTPHeaderAppCode = "X-Bkapi-App-Code"
-
-	// BkHTTPHeaderLanguage is the language http header key
-	BkHTTPHeaderLanguage = "X-Bkapi-Language"
-
-	// BkHTTPHeaderJWT is the blueking api gateway jwt http header key
-	BkHTTPHeaderJWT = "X-Bkapi-JWT"
-
-	// BkHTTPHeaderAuth is the blueking api gateway authorization http header key
-	BkHTTPHeaderAuth = "X-Bkapi-Authorization"
-
-	// BkHTTPHeaderSupplierAccount is supplier account http header key
-	BkHTTPHeaderSupplierAccount = "X-Bkcmdb-Supplier-Account"
-
-	// BKHTTPHeaderReqFromWeb is the http header key that represents if request is from web server
-	BKHTTPHeaderReqFromWeb = "X-Bkcmdb-Request-From-Web"
-)
-
-// ReadPreferenceMode TODO
+// ReadPreferenceMode mongodb read preference mode
+// https://www.mongodb.com/docs/manual/core/read-preference/
 type ReadPreferenceMode string
 
 // String 用于打印
@@ -1396,6 +1342,10 @@ const (
 	HTTPCookieBKToken = "bk_token"
 	// HTTPCookieBKTicket is the bk ticket cookie name
 	HTTPCookieBKTicket = "bk_ticket"
+	// HTTPCookieLanguage is the blueking language cookie name
+	HTTPCookieLanguage = "blueking_language"
+	// HTTPCookieSupplierAccount is the supplier account cookie name
+	HTTPCookieSupplierAccount = "HTTP_BLUEKING_SUPPLIER_ID"
 
 	// WEBSessionUinKey TODO
 	WEBSessionUinKey = "username"

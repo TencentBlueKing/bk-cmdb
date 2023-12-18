@@ -31,8 +31,8 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	commonUtil "configcenter/src/common/util"
@@ -276,8 +276,8 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 
 	// request time larger than the maxToleranceLatencyTime time, then log the request
 	blog.InfofDepthf(3, "[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, "+
-		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
-		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, r.body, rid)
+		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, httpheader.GetAppCode(r.headers),
+		httpheader.GetUser(r.headers), r.verb, url, r.body, rid)
 }
 
 // Do TODO
@@ -286,7 +286,7 @@ func (r *Request) Do() *Result {
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
-		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+		rid = httpheader.GetRid(r.headers)
 	}
 
 	if r.err != nil {

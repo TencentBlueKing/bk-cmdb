@@ -70,9 +70,6 @@ type ApiServerClientInterface interface {
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
 
-	GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (resp *metadata.InstDataInfo,
-		err error)
-
 	SearchNetCollectDevice(ctx context.Context, h http.Header,
 		cond condition.Condition) (resp *metadata.ResponseInstData, err error)
 	SearchNetDeviceProperty(ctx context.Context, h http.Header,

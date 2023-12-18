@@ -24,8 +24,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -78,8 +78,8 @@ func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, o
 	}
 
 	// if need to retry, retry for at most 3 times, each wait for a longer time than the previous one
-	rid := util.GetHTTPCCRequestID(h)
-	appCode := h.Get(common.BKHTTPRequestAppCode)
+	rid := httpheader.GetRid(h)
+	appCode := httpheader.GetAppCode(h)
 	for retryCount := 1; retryCount <= 3; retryCount++ {
 		// if the previous operation time exceeds half of the http timeout(25s), do not retry to avoid timeout
 		if time.Now().Sub(startTime).Seconds() > 10 {
@@ -193,7 +193,7 @@ func (t *transaction) AbortTransaction(ctx context.Context, h http.Header) (bool
 }
 
 func (t *transaction) autoRun(ctx context.Context, h http.Header, run func() error) (retry bool, err error) {
-	rid := util.GetHTTPCCRequestID(h)
+	rid := httpheader.GetRid(h)
 
 	defer func() {
 		// if panic ,abort the transaction to avoid WriteConflict when the uncommitted data was processed in another transaction

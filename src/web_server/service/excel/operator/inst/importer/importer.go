@@ -24,6 +24,7 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -182,7 +183,7 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 		blog.Errorf("create excel reader failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, i.GetKit().Rid)
 		return nil, err
 	}
-	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 
 	statisticalMap := make(map[string]metadata.ObjectAsstIDStatisticsInfo, 0)
 	asstIDs := make([]string, 0)
@@ -274,7 +275,7 @@ func (i *Importer) preCheck(excelMsg *ExcelMsg) error {
 	}
 
 	if instCount > common.ExcelImportMaxRow {
-		lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+		lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 		return errors.New(lang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
 	}
 
@@ -298,7 +299,7 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 		return nil, false, err
 	}
 
-	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 	result := mapstr.New()
 	var successMsg []int64
 	var errMsg []string
@@ -397,7 +398,7 @@ func (i *Importer) getPropertyMap(reader *excel.Reader) (map[int]PropWithTable, 
 	}
 	handleType := i.param.GetHandleType()
 	if handleType == core.UpdateHost || handleType == core.AddInst {
-		lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+		lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 		colProps = append(colProps, core.GetIDProp(core.PropDefaultColIdx, i.GetObjID(), lang))
 	}
 
@@ -612,7 +613,7 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 
 	var errMsg []string
 	legalHost := make(map[int]map[string]interface{})
-	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 
 	cloudNames := []string{common.DefaultCloudName}
 	for _, host := range hosts {
@@ -661,7 +662,7 @@ func (i *Importer) checkAddedHost(hosts map[int]map[string]interface{}) (map[int
 
 	var errMsg []string
 	legalHost := make(map[int]map[string]interface{})
-	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 
 	res, err := i.GetClient().GetSameIPRes(i.GetKit(), hosts)
 	if err != nil {
@@ -742,7 +743,7 @@ func (i *Importer) checkUpdatedHost(hosts map[int]map[string]interface{}) (map[i
 	}
 
 	var errMsg []string
-	lang := i.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(i.GetKit().Header))
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 	res, err := i.getCheckHostRes(hosts)
 	if err != nil {
 		blog.Errorf("get check updated host resource failed, err: %v, rid: %s", err, i.GetKit().Rid)

@@ -24,7 +24,7 @@ import (
 	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
+	httpheader "configcenter/src/common/http/header"
 	webCommon "configcenter/src/web_server/common"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +32,7 @@ import (
 
 // ProxyRequest to proxy third-party api request to solve cross domain issue.
 func (s *Service) ProxyRequest(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	webCommon.SetProxyHeader(c)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)

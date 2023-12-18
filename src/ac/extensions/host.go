@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -139,7 +140,7 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 					strconv.FormatInt(host.BKCloudID, 10)),
 				InstanceID: host.BKHostIDField,
 			},
-			SupplierAccount: util.GetOwnerID(header),
+			SupplierAccount: httpheader.GetSupplierAccount(header),
 		}
 
 		businessID := host.BKAppIDField
@@ -167,7 +168,8 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 }
 
 // AuthorizeByHosts TODO
-func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
+func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action,
+	hosts ...HostSimplify) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -185,7 +187,8 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 }
 
 // GenHostBatchNoPermissionResp TODO
-func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+	hostIDs []int64) (*metadata.BaseResp, error) {
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
@@ -252,7 +255,8 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 }
 
 // GenEditBizHostNoPermissionResp TODO
-func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header, hostIDs []int64) (*metadata.BaseResp, error) {
+func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header,
+	hostIDs []int64) (*metadata.BaseResp, error) {
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
@@ -283,7 +287,8 @@ func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, heade
 }
 
 // AuthorizeByHostsIDs TODO
-func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
+func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action,
+	hostIDs ...int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if !am.Enabled() {
