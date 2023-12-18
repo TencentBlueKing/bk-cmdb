@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"strings"
 
+	"configcenter/pkg/transfer"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/criteria/enumor"
@@ -252,6 +253,10 @@ func (ar *AtomRule) ToMgo(opts ...*RuleOption) (map[string]interface{}, error) {
 
 		switch opt.ParentType {
 		case enumor.Object:
+			// 由于目前使用版本的mongodb不支持key中包含的.的查询，所以在这里进行编码；注：需保证数据在存入db的时候，将.以编码的方式存入
+			if strings.Contains(ar.Field, ".") {
+				ar.Field = transfer.EncodeDot(ar.Field)
+			}
 			// add object parent field as prefix to generate object filter rules
 			return ar.Operator.Operator().ToMgo(opt.Parent+"."+ar.Field, ar.Value)
 		case enumor.Array:

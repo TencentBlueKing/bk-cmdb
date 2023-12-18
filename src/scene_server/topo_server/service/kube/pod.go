@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 )
 
@@ -526,4 +527,160 @@ func (s *service) checkContainerPod(kit *rest.Kit, req *types.ContainerQueryOpti
 		}
 	}
 	return nil
+}
+
+// ListContainerByTopo list container by topo
+func (s *service) ListContainerByTopo(ctx *rest.Contexts) {
+	req := new(types.GetContainerByTopoOption)
+	err := ctx.DecodeInto(req)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubeContainer, Action: acmeta.Find},
+		BusinessID: req.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+
+	if req.Page.Sort == "" {
+		req.Page.Sort = common.BKFieldID
+	}
+
+	podCond, err := req.GetPodCond()
+	if err != nil {
+		blog.Errorf("get pod condition failed, req: %+v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	containerCond, err := req.GetContainerCond()
+	if err != nil {
+		blog.Errorf("get container condition failed, req: %+v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	fields := make([]string, len(req.ContainerFields))
+	copy(fields, req.ContainerFields)
+	fields = append(req.ContainerFields, []string{common.BKFieldID, types.BKPodIDField}...)
+
+	query := &types.GetContainerByPodOption{
+		PodCond:       podCond,
+		ContainerCond: containerCond,
+		Page:          req.Page,
+		Fields:        fields,
+	}
+	containerResp, err := s.ClientSet.CoreService().Kube().ListContainerByPod(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		blog.Errorf("find container failed, cond: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if req.Page.EnableCount || len(containerResp.Info) == 0 {
+		ctx.RespEntityWithCount(containerResp.Count, make([]mapstr.MapStr, 0))
+		return
+	}
+
+	result, err := s.getContainerWithTopo(ctx.Kit, req.ContainerFields, req.PodFields, containerResp.Info)
+	if err != nil {
+		blog.Errorf("get container with topo failed, req: %+v,  err: %v, rid: %s", req, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntityWithCount(0, result)
+}
+
+func (s *service) getContainerWithTopo(kit *rest.Kit, containerFields []string, podFields []string,
+	containers []mapstr.MapStr) ([]types.ContainerWithTopo, error) {
+
+	// get pod detail and topo message
+	podIDs := make([]int64, 0)
+	containerPodMap := make(map[int64]int64)
+	for _, container := range containers {
+		podID, err := container.Int64(types.BKPodIDField)
+		if err != nil {
+			blog.Errorf("get container pod id failed, container: %+v, err: %v, rid: %s", container, err, kit.Rid)
+			return nil, err
+		}
+		podIDs = append(podIDs, podID)
+
+		id, err := container.Int64(common.BKFieldID)
+		if err != nil {
+			blog.Errorf("get container id failed, container: %+v, err: %v, rid: %s", container, err, kit.Rid)
+			return nil, err
+		}
+
+		containerPodMap[id] = podID
+	}
+	podIDs = util.IntArrayUnique(podIDs)
+
+	fields := make([]string, len(podFields))
+	copy(fields, podFields)
+	fields = append(fields, []string{types.BKBizIDField, types.BKClusterIDFiled, types.BKNamespaceIDField,
+		types.RefField, common.BKHostIDField}...)
+	query := &metadata.QueryCondition{
+		Condition: map[string]interface{}{types.BKIDField: map[string]interface{}{common.BKDBIN: podIDs}},
+		Page:      metadata.BasePage{Limit: common.BKNoLimit},
+		Fields:    fields,
+	}
+	podResp, err := s.ClientSet.CoreService().Kube().ListPod(kit.Ctx, kit.Header, query)
+	if err != nil {
+		blog.Errorf("find pod failed, cond: %+v, err: %v, rid: %s", query, err, kit.Rid)
+		return nil, err
+	}
+	if len(podResp.Info) != len(podIDs) {
+		blog.Errorf("can not find all pod from container, podIDs: %+v, pod count: %d, rid: %s", podIDs,
+			len(podResp.Info), kit.Rid)
+		return nil, fmt.Errorf("can not find all pod from container, podIDs : %+v", podIDs)
+	}
+
+	podMap := make(map[int64]mapstr.MapStr)
+	podTopoMap := make(map[int64]types.Topo)
+
+	for _, pod := range podResp.Info {
+		podTopoMap[pod.ID] = types.Topo{BizID: pod.BizID, ClusterID: pod.ClusterID, NamespaceID: pod.NamespaceID,
+			WorkloadID: pod.Ref.ID, WorkloadType: pod.Ref.Kind, HostID: pod.HostID}
+
+		podMap[pod.ID] = make(mapstr.MapStr)
+		podKV := mapstr.NewFromStruct(pod, "json")
+
+		for _, field := range podFields {
+			podMap[pod.ID][field] = podKV[field]
+		}
+	}
+
+	// construct the returned result
+	result := make([]types.ContainerWithTopo, len(containers))
+	for idx, container := range containers {
+		containerKV := make(mapstr.MapStr)
+		for _, field := range containerFields {
+			containerKV[field] = container[field]
+		}
+
+		id, err := container.Int64(common.BKFieldID)
+		if err != nil {
+			blog.Errorf("get container id failed, container: %+v, err: %v, rid: %s", container, err, kit.Rid)
+			return nil, err
+		}
+		podID := containerPodMap[id]
+
+		result[idx] = types.ContainerWithTopo{
+			Container: containerKV,
+			Pod:       podMap[podID],
+			Topo:      podTopoMap[podID],
+		}
+	}
+
+	return result, nil
 }

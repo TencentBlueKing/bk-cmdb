@@ -29,6 +29,8 @@ type Fields struct {
 	isEditable map[string]bool
 	// isRequired the type corresponding to the field.
 	isRequired map[string]bool
+	// fieldNames field names
+	fieldNames []string
 }
 
 // FieldsDescriptors table of field descriptor.
@@ -50,6 +52,7 @@ func MergeFields(all ...FieldsDescriptors) *Fields {
 			result.fieldType[f.Field] = f.Type
 			result.isEditable[f.Field] = f.IsEditable
 			result.isRequired[f.Field] = f.IsRequired
+			result.fieldNames = append(result.fieldNames, f.Field)
 		}
 	}
 	return result
@@ -101,6 +104,11 @@ func (f Fields) IsFieldRequiredByField(field string) bool {
 // IsFieldEditableByField returns the corresponding editable of specified field.
 func (f Fields) IsFieldEditableByField(field string) bool {
 	return f.isEditable[field]
+}
+
+// GetFieldNames returns the corresponding editable of specified field.
+func (f Fields) GetFieldNames() []string {
+	return f.fieldNames
 }
 
 // FieldDescriptor defines a table's field related information.

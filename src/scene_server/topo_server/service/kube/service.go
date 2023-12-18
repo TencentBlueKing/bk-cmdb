@@ -85,4 +85,6 @@ func InitKube(utility *rest.RestUtility, c *capability.Capability) {
 
 	// container
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/container", Handler: s.ListContainer})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/kube/container/by_topo",
+		Handler: s.ListContainerByTopo})
 }

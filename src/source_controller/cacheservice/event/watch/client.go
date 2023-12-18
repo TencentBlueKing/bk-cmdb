@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/transfer"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
+	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
@@ -546,6 +548,38 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 				return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
 			}
 			delete(detailMap, "_id")
+			detailJson, _ := json.Marshal(detailMap)
+			for _, index := range oidIndexMap[objectID.Hex()] {
+				oidDetailMap[index] = string(detailJson)
+			}
+		}
+		return oidDetailMap, nil
+
+	case kubetypes.BKTableNameBasePod:
+		detailArr := make([]map[string]interface{}, 0)
+		if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+			blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
+			return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
+		}
+
+		for _, detailMap := range detailArr {
+			objectID, ok := detailMap["_id"].(primitive.ObjectID)
+			if !ok {
+				return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
+			}
+			delete(detailMap, "_id")
+
+			if labels, ok := detailMap[kubetypes.LabelsField]; ok {
+				// 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
+				if labelMap, ok := labels.(map[string]string); ok {
+					newLabels := make(map[string]string)
+					for key, val := range labelMap {
+						newLabels[transfer.DecodeDot(key)] = val
+					}
+					detailMap[kubetypes.LabelsField] = newLabels
+				}
+			}
+
 			detailJson, _ := json.Marshal(detailMap)
 			for _, index := range oidIndexMap[objectID.Hex()] {
 				oidDetailMap[index] = string(detailJson)
