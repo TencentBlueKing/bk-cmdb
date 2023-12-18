@@ -43,7 +43,7 @@ axiosInstance.interceptors.request.use(
       // opentelementry TraceID
       traceparent: `00-${randomString(32, TRACE_CHARS)}-${randomString(16, TRACE_CHARS)}-01`,
       // 请求ID
-      Cc_Request_Id: `cc0000${xid.next()}`
+      'X-Bkapi-Request-Id': `cc0000${xid.next()}`
     }
     return config
   },
