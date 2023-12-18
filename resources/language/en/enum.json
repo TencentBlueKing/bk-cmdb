@@ -396,5 +396,8 @@
     "bk_project_property_bk_project_sec_lvl_enum_private": "Private",
     "bk_project_property_bk_project_sec_lvl_enum_classified": "Classified",
 
+    "host_property_bk_addressing_enum_static": "Static",
+    "host_property_bk_addressing_enum_dynamic": "Dynamic",
+
     "":""
 }

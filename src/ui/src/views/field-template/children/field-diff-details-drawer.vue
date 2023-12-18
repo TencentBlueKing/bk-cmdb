@@ -66,6 +66,8 @@
 
   const modelBeforeField = ref(cloneDeep(props.beforeField))
   const boundTemplate = ref({})
+  const isTemplateBindConflict = computed(() => props.diffType === DIFF_TYPES.CONFLICT
+    && props.fieldDiff?.data?.bk_template_id !== 0)
 
   watchEffect(async () => {
     modelBeforeField.value = props.diffType === DIFF_TYPES.NEW
@@ -88,9 +90,6 @@
       fromCache: true
     })
   }
-
-  const isTemplateBindConflict = computed(() => props.diffType === DIFF_TYPES.CONFLICT
-    && props.fieldDiff?.data?.bk_template_id !== 0)
 
   const isFieldIdSame = computed(() => props.afterField.bk_property_id === props.beforeField.bk_property_id)
   const isFieldNameSame = computed(() => props.afterField.bk_property_name === props.beforeField.bk_property_name)

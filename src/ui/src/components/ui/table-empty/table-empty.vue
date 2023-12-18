@@ -32,7 +32,7 @@
         <bk-exception type="403" scene="part">
           <i18n path="抱歉您没有查看权限">
             <template #link>
-              <bk-button class="text-btn"
+              <bk-button class="text-btn no-permission"
                 text
                 theme="primary"
                 @click="handleApplyPermission">
@@ -145,6 +145,12 @@
         .text-btn {
             font-size: 14px;
             height: auto;
+        }
+        .no-permission {
+          display: block;
+          width: 100%;
+          font-size: 12px;
+          margin-top: 10px;
         }
         .table-tips {
           margin-top: 15px;

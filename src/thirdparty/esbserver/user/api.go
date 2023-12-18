@@ -30,8 +30,7 @@ func (p *user) GetAllUsers(ctx context.Context, h http.Header) (resp *metadata.E
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -95,8 +94,7 @@ func (p *user) ListUsers(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef("/v2/usermanage/list_users/").
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -125,8 +123,7 @@ func (p *user) GetDepartment(ctx context.Context, h http.Header, u *url.URL) (
 		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
 		WithParam("no_page", "false").
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -146,8 +143,7 @@ func (p *user) GetAllDepartment(ctx context.Context, h http.Header, params map[s
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 
@@ -170,8 +166,7 @@ func (p *user) GetDepartmentProfile(ctx context.Context, q *http.Request) (resp 
 		// 确保只使用分页查找，指定一个大page_size同样能达到不分页的效果
 		WithParam("no_page", "false").
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 

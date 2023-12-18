@@ -59,22 +59,19 @@
           <bk-form-item class="">
             <form-property-list ref="propertyList" @remove="handleRemoveProperty"
               :disabled="isPreviewProp"></form-property-list>
-            <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
-              icon="icon-plus-circle"
-              :text="true"
-              :disabled="isPreviewProp"
-              @click="handleShowPropertySelector">
-              {{$t('添加条件')}}
-            </bk-button>
+            <condition-picker :text="$t('添加条件')" icon="icon-plus-circle" :selected="selectedProperties"
+              :property-map="propertyMap"
+              :handler="handlePropertySelected" :disabled="isPreviewProp"></condition-picker>
             <input type="hidden"
               v-validate="'min_value:1'"
               data-vv-name="condition"
+              data-vv-validate-on="submit"
               :data-vv-as="$t('查询条件')"
               v-model="selectedProperties.length">
             <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
           </bk-form-item>
         </bk-form>
-        <div class="dynamic-group-options" slot="footer">
+        <div :class="['dynamic-group-options', footerIsFixed ? '' : 'no-fixed']" slot="footer">
           <cmdb-auth :auth="saveAuth">
             <bk-button class="mr10" slot-scope="{ disabled }"
               theme="primary"
@@ -126,12 +123,15 @@
   import isEqual from 'lodash/isEqual'
   import PreviewResult from '../preview/preview-result.vue'
   import FilterStore from '../store'
+  import { $success } from '@/magicbox'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
       FormPropertyList,
       FormTarget,
-      PreviewResult
+      PreviewResult,
+      ConditionPicker
     },
     props: {
       id: [String, Number],
@@ -148,6 +148,7 @@
     },
     data() {
       return {
+        footerIsFixed: false,
         isPreviewData: false,
         bkObjId: 'host',
         previewCondition: {},
@@ -202,6 +203,14 @@
           text = '提交'
         }
         return text
+      }
+    },
+    watch: {
+      selectedProperties: {
+        deep: true,
+        handler() {
+          this.errors.remove('condition')
+        }
       }
     },
     async created() {
@@ -380,6 +389,20 @@
         })
         this.selectedProperties = this.$tools.clone(properties)
         this.originProperties = this.$tools.clone(properties)
+        this.setFooterCls()
+      },
+      setFooterCls() {
+        this.$nextTick(() => {
+          // 根据选择的条件 展示不同的样式
+          const el = document.querySelector('.dynamic-group-form')
+          const { clientHeight, scrollHeight } = el
+          // 是否出现了滚动条
+          if (scrollHeight > clientHeight) {
+            this.footerIsFixed = true
+          } else {
+            this.footerIsFixed = false
+          }
+        })
       },
       handleModelChange() {
         this.selectedProperties = []
@@ -395,12 +418,14 @@
       },
       handlePropertySelected(selected) {
         this.selectedProperties = selected
+        this.setFooterCls()
       },
       handleRemoveProperty(property) {
         const index = this.selectedProperties.findIndex(target => target.id === property.id)
         if (index > -1) {
           this.selectedProperties.splice(index, 1)
         }
+        this.setFooterCls()
       },
       async handlePreview() {
         const result = await this.$refs.propertyList.$validator.validateAll()
@@ -429,8 +454,10 @@
           }
           if (this.id) {
             await this.updateDynamicGroup()
+            $success('保存成功')
           } else {
             await this.createDynamicGroup()
+            $success('新建成功')
           }
           this.close('submit')
         } catch (error) {
@@ -574,8 +601,8 @@
   background: #F5F7FA;
 }
 .dynamic-group-form {
-  padding: 18px 16px;
-  height: 100%;
+  padding: 18px 16px 0;
+  max-height: 100%;
   @include scrollbar-y;
   .form-item {
     width: 100%;
@@ -634,5 +661,10 @@
       }
     }
   }
+}
+.no-fixed {
+  border-top: 0;
+  padding-top: 4px;
+  background: transparent;
 }
 </style>

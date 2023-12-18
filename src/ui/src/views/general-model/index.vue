@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="models-layout">
+  <div class="models-layout general-model-layout">
     <div class="models-options clearfix">
       <div class="options-button clearfix fl">
         <cmdb-auth class="fl mr10" :auth="{ type: $OPERATION.C_INST, relation: [model.id] }">
@@ -737,7 +737,7 @@
             })
           }
           const { filter, filter_adv: filterAdv } = this.$route.query
-          this.table.stuff.type = (filter && String(filter).length > 0) || filterAdv ? 'search' : 'default'
+          this.table.stuff.type = (typeof filter !== 'undefined' && String(filter).length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
         } catch (err) {
@@ -999,8 +999,16 @@
 </script>
 
 <style lang="scss" scoped>
+    .general-model-layout {
+      :deep(.bk-tag-selector .bk-tag-input .placeholder) {
+        left: 10px;
+      }
+    }
     .models-layout {
         padding: 15px 20px 0;
+    }
+    .option-filter:hover {
+        color: $primaryColor;
     }
     .options-filter{
         position: relative;
@@ -1012,6 +1020,9 @@
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
+            :deep(.bk-select-name) {
+              font-size: 12px;
+            }
         }
         .filter-value{
             flex: 1;

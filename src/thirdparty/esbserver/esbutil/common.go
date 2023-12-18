@@ -16,6 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
 // EsbConfig TODO
@@ -25,38 +26,23 @@ type EsbConfig struct {
 	AppSecret string
 }
 
-// EsbCommParams TODO
+// EsbCommParams is esb common parameters
 type EsbCommParams struct {
-	AppCode    string `json:"bk_app_code"`
-	AppSecret  string `json:"bk_app_secret"`
-	UserName   string `json:"bk_username"`
 	SupplierID string `json:"bk_supplier_id"`
 }
 
-// GetEsbRequestParams TODO
+// SetEsbAuthHeader set esb authorization header
+func SetEsbAuthHeader(esbConfig EsbConfig, header http.Header) http.Header {
+	appConf := apigwutil.AppAuthConfig{
+		AppCode:   esbConfig.AppCode,
+		AppSecret: esbConfig.AppSecret,
+	}
+	return apigwutil.SetAuthHeader(appConf, header)
+}
+
+// GetEsbRequestParams get esb request parameters
 func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
 	return &EsbCommParams{
-		AppCode:    esbConfig.AppCode,
-		AppSecret:  esbConfig.AppSecret,
-		UserName:   util.GetUser(header),
 		SupplierID: util.GetOwnerID(header),
-	}
-}
-
-// GetEsbQueryParameters TODO
-func GetEsbQueryParameters(esbConfig EsbConfig, header http.Header) map[string]string {
-	return map[string]string{
-		"bk_app_code":   esbConfig.AppCode,
-		"bk_app_secret": esbConfig.AppSecret,
-		"bk_username":   util.GetUser(header),
-	}
-}
-
-// GetEsbParameterWithToken get esb parameter with bk_token
-func GetEsbParameterWithToken(esbConfig EsbConfig, header http.Header) map[string]string {
-	return map[string]string{
-		"bk_app_code":   esbConfig.AppCode,
-		"bk_app_secret": esbConfig.AppSecret,
-		"bk_token":      util.GetBkToken(header),
 	}
 }

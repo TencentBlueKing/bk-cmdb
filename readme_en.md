@@ -32,7 +32,7 @@ The open source version will be in both BlueKing Community Edition and Enterpris
 * Universal Rights Management: Flexible User Group Based Rights Management
 * Operation Audit: Auditing and Backtracking of User Operational Behavior
 
-If you want to know more about the above features, please refer to the [Function Description (In Chinese)](http://bk.tencent.com/document/bkprod/000120.html)
+If you want to know more about the above features, please refer to the [Function Description (In Chinese)](https://bk.tencent.com/docs/markdown/CMDB/UserGuide/Introduce/Overview.md)
 
 ## Getting started
 * [Download and Compile (In Chinese)](docs/overview/source_compile.md)

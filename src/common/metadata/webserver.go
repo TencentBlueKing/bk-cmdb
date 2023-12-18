@@ -38,6 +38,7 @@ type LoginUserInfo struct {
 	Email         string                      `json:"email"`
 	Role          string                      `json:"-"`
 	BkToken       string                      `json:"bk_token"`
+	BkTicket      string                      `json:"bk_ticket"`
 	OnwerUin      string                      `json:"current_supplier"`
 	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` // user all owner uin
 	IsOwner       bool                        `json:"-"`             // is master

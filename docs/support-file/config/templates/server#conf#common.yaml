@@ -50,8 +50,8 @@ webServer:
     #前端基础页面位置
     htmlRoot: __BK_HOME__/cmdb/web/
     authscheme: iam
-    # 蓝鲸配置桌面地址
-    bkDesktopUrl:  http://__BK_PAAS_PUBLIC_ADDR__
+    # 蓝鲸 ESB url
+    bkComponentApiUrl:  http://bkapi.__BK_PAAS_PUBLIC_ADDR__
     # paas的地址，给前端的人员选择器使用
     paasDomainUrl: http://__BK_PAAS_PRIVATE_ADDR__
     # bkDomain 用于配置前端需要的cookie domain地址

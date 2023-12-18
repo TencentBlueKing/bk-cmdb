@@ -62,69 +62,78 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		}
 
 		if isAuthed(c, config) {
-			// http request header add user
-			session := sessions.Default(c)
-			userName, _ := session.Get(common.WEBSessionUinKey).(string)
-			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
-			bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
-			language := webCommon.GetLanguageByHTTPRequest(c)
-			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
-			c.Request.Header.Add(common.BKHTTPLanguage, language)
-			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
-			c.Request.Header.Add(common.HTTPCookieBKToken, bkToken)
+			handleAuthedReq(c, config, path1, disc, rid)
+			return
+		}
 
-			if config.LoginVersion == common.BKBluekingLoginPluginVersion {
-				resp, err := esb.EsbClient().LoginSrv().GetUser(c.Request.Context(), c.Request.Header)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError,
-						gin.H{"status": fmt.Sprintf("get user from bk-login failed, err: %v", err)})
-					c.Abort()
-					return
-				}
+		if path1 == "api" {
+			c.JSON(401, gin.H{
+				"status": "log out",
+			})
+			c.Abort()
+			return
+		}
 
-				if resp.Code == inaccessibleCode {
-					data := gin.H{
-						message: resp.Message,
-					}
-					c.HTML(http.StatusOK, webCommon.InaccessibleHtml, data)
-					c.Abort()
-					return
-				}
+		user := user.NewUser(config, Engine, CacheCli)
+		url := user.GetLoginUrl(c)
+		c.Redirect(302, url)
+		c.Abort()
+	}
+
+}
+
+func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc discovery.DiscoveryInterface,
+	rid string) {
+
+	// http request header add user
+	session := sessions.Default(c)
+	userName, _ := session.Get(common.WEBSessionUinKey).(string)
+	ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+	bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
+	bkTicket, _ := session.Get(common.HTTPCookieBKTicket).(string)
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
+	c.Request.Header.Add(common.BKHTTPLanguage, language)
+	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+	c.Request.Header.Add(common.HTTPCookieBKToken, bkToken)
+	c.Request.Header.Add(common.HTTPCookieBKTicket, bkTicket)
+
+	if config.LoginVersion == common.BKBluekingLoginPluginVersion {
+		resp, err := esb.EsbClient().LoginSrv().GetUser(c.Request.Context(), c.Request.Header)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"status": fmt.Sprintf("get user from bk-login failed, err: %v", err)})
+			c.Abort()
+			return
+		}
+
+		if resp.Code == inaccessibleCode {
+			data := gin.H{
+				message: resp.Message,
 			}
-
-			if path1 == "api" {
-				servers, err := disc.ApiServer().GetServers()
-				if nil != err || 0 == len(servers) {
-					blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
-					c.JSON(503, gin.H{
-						"status": "no api server can be used.",
-					})
-					c.Abort()
-					return
-				}
-				url := servers[0]
-				httpclient.ProxyHttp(c, url)
-
-			} else {
-				c.Next()
-			}
-		} else {
-			if path1 == "api" {
-				c.JSON(401, gin.H{
-					"status": "log out",
-				})
-				c.Abort()
-				return
-			} else {
-				user := user.NewUser(config, Engine, CacheCli)
-				url := user.GetLoginUrl(c)
-				c.Redirect(302, url)
-				c.Abort()
-			}
-
+			c.HTML(http.StatusOK, webCommon.InaccessibleHtml, data)
+			c.Abort()
+			return
 		}
 	}
 
+	if path1 == "api" {
+		servers, err := disc.ApiServer().GetServers()
+		if nil != err || 0 == len(servers) {
+			blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
+			c.JSON(503, gin.H{
+				"status": "no api server can be used.",
+			})
+			c.Abort()
+			return
+		}
+		url := servers[0]
+		httpclient.ProxyHttp(c, url)
+
+	} else {
+		c.Next()
+	}
+	return
 }
 
 // isAuthed check user is authed
