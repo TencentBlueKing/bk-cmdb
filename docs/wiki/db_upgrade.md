@@ -10,7 +10,7 @@
 db数据升级通过调用`cmdb_adminserver`的如下接口实现:
 
 ```bash
-curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/migrate/community/0
+curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/migrate/community/0
 ```
 
 其中 `${cmdb_adminserver_host}`和`${cmdb_adminserver_port}`分别是 adminserver 的监听的地址和端口。
@@ -100,7 +100,7 @@ db 升级相关字段
 注意：如果输出信息中没有出现 result，bk_error_code，bk_error_msg 等字段，可能是没有成功访问到cmdb_adminserver导致的，如果怀疑是网络原因可以结合curl命令的 -vvv 参数重试，会有详细的debug信息输出。
 
 ```bash
-curl -vvv -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/migrate/community/0
+curl -vvv -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/migrate/community/0
 ```
 
 升级接口请求失败，常见的一类原因是配置了错误的ip和端口，其中cmdb_adminserver ip需要是监听的ip，可能你的主机有多个网卡，adminserver只监听了其中一个，如果还不是很确定，可在adminserver所在服务器上通过如下命令获取：
@@ -115,7 +115,7 @@ curl -vvv -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HT
 权限升级也是通过方案cmdb_adminserver的http接口进行，需要访问的接口如下：
 
 ```bash
-curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/authcenter/init
+curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0' http://${cmdb_adminserver_host}:${cmdb_adminserver_port}/migrate/v3/authcenter/init
 ```
 
 
