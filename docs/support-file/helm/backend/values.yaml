@@ -1208,71 +1208,7 @@ common:
     ## 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
     ##
     disableOperationStatistic: false
-  ## webserver common config parameters
-  ##
-  webServer:
-    ## webserver common config site parameters
-    ## @param common.webServer.site.domainUrl bk-cmdb web domain address
-    ## @param common.webServer.site.httpsDomainUrl bk-cmdb web https domain address
-    ## @param common.webServer.site.bkDomain bk-cmdb web bk domain address
-    ## @param common.webServer.site.appCode bk-cmdb app code
-    ## @param common.webServer.site.checkUrl bk-login user check url
-    ## @param common.webServer.site.resourcesPath bk-cmdb frontend resource path
-    ## @param common.webServer.site.htmlRoot bk-cmdb frontend html root
-    ## @param common.webServer.site.authScheme bk-cmdb authentication scheme
-    ## @param common.webServer.site.helDocUrl bk-cmdb help documents url
-    ##
-    site:
-      domainUrl: http://cmdb.example.com
-      httpsDomainUrl:
-      appCode: bk_cmdb
-      resourcesPath: /tmp/
-      htmlRoot: /data/cmdb/cmdb_webserver/web
-      authScheme: internal
-      helpDocUrl:
-      bkDomain:
-    ## webserver common config session parameters
-    ## @param common.webServer.session.name bk-cmdb session name
-    ## @param common.webServer.session.multipleOwner Enable one user with multiple logins at the same time
-    ## @param common.webServer.session.userInfo bk-cmdb login user name and password
-    ##
-    session:
-      name: cc3
-      multipleOwner: "0"
-      userInfo:
-    ## webserver common config app parameters
-    ## @param common.webServer.app.authAppCode bk-iam app code
-    ## @param common.webServer.app.authUrl bk-iam url
-    ## @param common.webServer.app.agentAppUrl bk-nodeman url
-    ## @param common.webServer.app.authScheme bk-cmdb app authentication scheme
-    ##
-    app:
-      authAppCode:
-      authUrl:
-      authScheme:
-    ## webserver common config login parameters
-    ## @param common.webServer.login.version bk-cmdb login mode
-    ##
-    login:
-      version: skip-login
-    ## webserver common config changelogPath parameters
-    ## @param common.webServer.changelogPath.ch the Chinese changelog storage path
-    ## @param common.webServer.changelogPath.en the English changelog storage path
-    ##
-    # cmdb版本日志存放路径配置
-    changelogPath:
-      # 中文版版本日志存放路径
-      ch: /data/cmdb/cmdb_webserver/changelog_user/ch
-      # 英文版版本日志存放路径
-      en: /data/cmdb/cmdb_webserver/changelog_user/en
-    # web-server使用的jwt配置
-    jwt:
-      # 是否开启jwt认证功能
-      enabled: false
-      # jwt公钥路径
-      publicKeyPath:
-      # jwt私钥路径
-      privateKeyPath:
+
   ## monitor common config parameters
   ##
   monitor:

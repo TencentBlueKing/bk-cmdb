@@ -272,68 +272,6 @@ es:
 adminServer:
   #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
   syncIAMPeriodMinutes: 5
-# web_server专属配置
-webServer:
-  api:
-    #显示版本，比如v3为3.x
-    version: v3
-  #会话相关
-  session:
-    #会话名
-    name: cc3
-    #语言
-    defaultlanguage: zh-cn
-    #是否支持同时登录同一用户，0为不支持，1为支持
-    multipleOwner: "0"
-    #账号密码，以 : 分割
-    userInfo: $user_info
-  site:
-    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-    domainUrl: ${cc_url}
-    #登录地址
-    bkLoginUrl: ${paas_url}/login/?app_id=%s&c_url=%s
-    appCode: cc
-    checkUrl: ${paas_url}/login/accounts/get_user/?bk_token=
-    bkAccountUrl: ${paas_url}/login/accounts/get_all_user/?bk_token=%s
-    resourcesPath: /tmp/
-    #前端基础页面位置
-    htmlRoot: $ui_root
-    #帮助文档地址
-    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
-    paas:
-      # pass的tls相关配置
-      tls:
-        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-        insecureSkipVerify:
-        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
-        certFile:
-        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
-        keyFile:
-        # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
-        caFile:
-        # 用于解密根据RFC1423加密的证书密钥的PEM块
-        password:
-  app:
-    agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
-    #权限模式，web页面使用，可选值: internal, iam
-    authscheme: $auth_scheme
-  login:
-    #登录模式
-    version: $loginVersion
-  #cmdb版本日志存放路径配置
-  changelogPath:
-    #中文版版本日志存放路径
-    ch: ../changelog_user/ch
-    #英文版版本日志存放路径
-    en: ../changelog_user/en
-  # web-server使用的jwt配置
-  jwt:
-    # 是否开启jwt认证功能
-    enabled: false
-    # jwt公钥路径
-    publicKeyPath:
-    # jwt私钥路径
-    privateKeyPath:
 
 # operation_server专属配置
 operationServer:
@@ -569,6 +507,161 @@ apiGW:
     with open(output + "extra.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
+
+    # web.yaml
+    web_file_template_str = '''
+#elasticsearch配置
+es:
+  #全文检索功能开关(取值：off/on)，默认是off，开启是on
+  fullTextSearch: "$full_text_search"
+  #elasticsearch服务监听url，默认是[http://127.0.0.1:9200](http://127.0.0.1:9200/)
+  url: $es_url
+  #用户
+  usr: $es_user
+  #密码
+  pwd: $es_pass
+# 指定errors的路径
+errors:
+  res: conf/errors
+# 指定language的路径
+language:
+  res: conf/language
+# web_server专属配置
+webServer:
+  api:
+    #显示版本，比如v3为3.x
+    version: v3
+  #会话相关
+  session:
+    #会话名
+    name: cc3
+    #语言
+    defaultlanguage: zh-cn
+    #是否支持同时登录同一用户，0为不支持，1为支持
+    multipleOwner: "0"
+    #账号密码，以 : 分割
+    userInfo: $user_info
+  site:
+    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
+    domainUrl: ${cc_url}
+    #登录地址
+    bkLoginUrl: ${paas_url}/login/?app_id=%s&c_url=%s
+    appCode: cc
+    checkUrl: ${paas_url}/login/accounts/get_user/?bk_token=
+    bkAccountUrl: ${paas_url}/login/accounts/get_all_user/?bk_token=%s
+    resourcesPath: /tmp/
+    #前端基础页面位置
+    htmlRoot: $ui_root
+    #帮助文档地址
+    helpDocUrl: https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    paas:
+      # pass的tls相关配置
+      tls:
+        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+        insecureSkipVerify:
+        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+        certFile:
+        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+        keyFile:
+        # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+        caFile:
+        # 用于解密根据RFC1423加密的证书密钥的PEM块
+        password:
+  app:
+    agentAppUrl: ${agent_url}/console/?app=bk_agent_setup
+    #权限模式，web页面使用，可选值: internal, iam
+    authscheme: $auth_scheme
+  login:
+    #登录模式
+    version: $loginVersion
+  #cmdb版本日志存放路径配置
+  changelogPath:
+    #中文版版本日志存放路径
+    ch: ../changelog_user/ch
+    #英文版版本日志存放路径
+    en: ../changelog_user/en
+  # web-server使用的jwt配置
+  jwt:
+    # 是否开启jwt认证功能
+    enabled: false
+    # jwt公钥路径
+    publicKeyPath:
+    # jwt私钥路径
+    privateKeyPath:
+
+# 监控配置， monitor配置项必须存在
+monitor:
+    # 监控插件名称，有noop，blueking， 不填时默认为noop
+    pluginName: noop
+    # 是否开启监控
+    enableMonitor: false
+    # 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    dataID: 0
+    # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+    queueSize: 100
+    # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    gsecmdlinePath:
+    # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+    domainSocketPath:
+    # 用于对数据上报进行频率控制和限流
+    # qps的设置范围为1～50，默认值为10
+    # burst的设置范围为1～100，默认值为20
+    rateLimiter:
+      qps: 10
+      burst: 20
+
+# openTelemetry跟踪链接入相关配置
+openTelemetry:
+  # 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+  enable: false
+  # openTelemetry跟踪链功能的自定义上报服务地址
+  endpoint:
+  # openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报，和bkDataToken同时配置时，会取bkDataToken
+  bkDataID:
+  # openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报，和bkDataID同时配置时，会取bkDataToken
+  bkDataToken:
+  # 服务tls配置
+  tls:
+    # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+    insecureSkipVerify:
+    # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+    certFile:
+    # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+    keyFile:
+    # CA证书路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+    caFile:
+    # 用于解密根据RFC1423加密的证书密钥的PEM块
+    password:
+
+redis:
+  #公共redis配置信息,用于存取缓存，用户信息等数据
+  host: $redis_host:$redis_port
+  pwd: "$redis_pass"
+  sentinelPwd: "$sentinel_pass"
+  database: "0"
+  maxOpenConns: 3000
+  maxIDleConns: 1000
+
+mongodb:
+  host: $mongo_host
+  port: $mongo_port
+  usr: $mongo_user
+  pwd: "$mongo_pass"
+  database: $db
+  maxOpenConns: 3000
+  maxIdleConns: 100
+  mechanism: SCRAM-SHA-1
+  rsName: $rs_name
+  #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+  socketTimeoutSeconds: 10
+    '''
+
+    template = FileTemplate(web_file_template_str)
+    result = template.substitute(**context)
+    web_dir = os.getcwd() + "/cmdb_webserver/"
+    with open(web_dir + "web.yaml", 'w') as tmp_file:
+        tmp_file.write(result)
+
     # migrate.yaml
     migrate_file_template_str = '''
 #configServer:
@@ -660,6 +753,9 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                 filedata = filedata.replace('cmdb-port-placeholder', str(server_ports.get(d, 9999)))
                 if d == "cmdb_adminserver":
                     filedata = filedata.replace('rd_server_placeholder', "configures/migrate.yaml")
+                    filedata = filedata.replace('regdiscv', "config")
+                elif d == "cmdb_webserver":
+                    filedata = filedata.replace('rd_server_placeholder', "web.yaml")
                     filedata = filedata.replace('regdiscv', "config")
                 else:
                     filedata = filedata.replace('rd_server_placeholder', rd_server)

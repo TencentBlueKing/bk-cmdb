@@ -49,13 +49,11 @@ type BackboneParameter struct {
 	// ConfigUpdate handle process config change
 	ConfigUpdate cc.ProcHandlerFunc
 	ExtraUpdate  cc.ProcHandlerFunc
-
-	// service component addr
-	Regdiscv string
 	// config path
 	ConfigPath string
 	// http server parameter
 	SrvInfo *types.ServerInfo
+	SrvRegdiscv
 }
 
 func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
@@ -110,7 +108,7 @@ func newApiMachinery(disc discovery.DiscoveryInterface,
 }
 
 func validateParameter(input *BackboneParameter) error {
-	if input.Regdiscv == "" {
+	if !input.Disable && input.Regdiscv == "" {
 		return fmt.Errorf("regdiscv can not be emtpy")
 	}
 	if input.SrvInfo.IP == "" {
@@ -142,30 +140,15 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		ProcessInstance: input.SrvInfo.Instance()})
 
 	common.SetServerInfo(input.SrvInfo)
-	client, err := newSvcManagerClient(ctx, input.Regdiscv)
-	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
-	}
-	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
-	if err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
-	}
-	disc, err := NewServiceRegister(client)
-	if err != nil {
-		return nil, fmt.Errorf("new service discover failed, err:%v", err)
-	}
 
-	regPath := getRegisterPath(input.SrvInfo.IP)
-
-	engine, err := New(regPath, disc)
+	engine, err := New()
 	if err != nil {
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
-	engine.client = client
-	engine.discovery = serviceDiscovery
-	engine.ServiceManageInterface = serviceDiscovery
+	engine.registerPath = getRegisterPath(input.SrvInfo.IP)
 	engine.srvInfo = input.SrvInfo
 	engine.metric = metricService
+	engine.Disable = input.Disable
 
 	handler := &cc.CCHandler{
 		// 扩展这个函数， 新加传递错误
@@ -177,23 +160,60 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		OnRedisUpdate:    engine.onRedisUpdate,
 	}
 
-	// add default configcenter
-	zkdisc := crd.NewZkRegDiscover(client)
-	configCenter := &cc.ConfigCenter{
-		Type:               common.BKDefaultConfigCenter,
-		ConfigCenterDetail: zkdisc,
+	if !input.Disable {
+		client, err := newSvcManagerClient(ctx, input.Regdiscv)
+		if err != nil {
+			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		}
+		serviceDiscovery, err := discovery.NewServiceDiscovery(client)
+		if err != nil {
+			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+		}
+		disc, err := NewServiceRegister(client)
+		if err != nil {
+			return nil, fmt.Errorf("new service discover failed, err:%v", err)
+		}
+
+		engine.client = client
+		engine.discovery = serviceDiscovery
+		engine.ServiceManageInterface = serviceDiscovery
+		engine.SvcDisc = disc
+
+		// add default configcenter
+		zkdisc := crd.NewZkRegDiscover(client)
+		configCenter := &cc.ConfigCenter{
+			Type:               common.BKDefaultConfigCenter,
+			ConfigCenterDetail: zkdisc,
+		}
+		cc.AddConfigCenter(configCenter)
+
+		tlsConf, err := getTLSConf()
+		if err != nil {
+			blog.Errorf("get tls config error, err: %v", err)
+			return nil, err
+		}
+		engine.apiMachineryConfig = &util.APIMachineryConfig{
+			QPS:       1000,
+			Burst:     2000,
+			TLSConfig: tlsConf,
+		}
+
+		machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
+		if err != nil {
+			return nil, err
+		}
+		engine.CoreAPI = machinery
+
+		if err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance()); err != nil {
+			return nil, fmt.Errorf("handle notice failed, err: %v", err)
+		}
 	}
-	cc.AddConfigCenter(configCenter)
 
 	// get the real configuration center.
 	currentConfigCenter := cc.CurrentConfigCenter()
 
 	if err = cc.NewConfigCenter(ctx, currentConfigCenter, input.ConfigPath, handler); err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
-	}
-
-	if err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance()); err != nil {
-		return nil, fmt.Errorf("handle notice failed, err: %v", err)
 	}
 
 	if err := monitor.InitMonitor(); err != nil {
@@ -207,23 +227,6 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err := opentelemetry.InitTracer(ctx); err != nil {
 		return nil, fmt.Errorf("init tracer failed, err: %v", err)
 	}
-
-	tlsConf, err := getTLSConf()
-	if err != nil {
-		blog.Errorf("get tls config error, err: %v", err)
-		return nil, err
-	}
-	engine.apiMachineryConfig = &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: tlsConf,
-	}
-
-	machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
-	if err != nil {
-		return nil, err
-	}
-	engine.CoreAPI = machinery
 
 	return engine, nil
 }
@@ -257,55 +260,63 @@ func StartServer(ctx context.Context, cancel context.CancelFunc, e *Engine, HTTP
 	// to avoid registering an invalid server address on zk
 	time.Sleep(time.Second)
 
-	return e.SvcDisc.Register(e.RegisterPath, *e.srvInfo)
+	if e.Disable {
+		return nil
+	}
+
+	return e.SvcDisc.Register(e.registerPath, *e.srvInfo)
 }
 
 // New new engine
-func New(regPath string, disc ServiceRegisterInterface) (*Engine, error) {
+func New() (*Engine, error) {
 	return &Engine{
-		RegisterPath: regPath,
-		SvcDisc:      disc,
-		Language:     language.NewFromCtx(language.EmptyLanguageSetting),
-		CCErr:        errors.NewFromCtx(errors.EmptyErrorsSetting),
-		CCCtx:        newCCContext(),
+		Language: language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:    newCCContext(),
 	}, nil
+}
+
+// SrvRegdiscv service registration discovery
+type SrvRegdiscv struct {
+	client                 *zk.ZkClient
+	ServiceManageInterface discovery.ServiceManageInterface
+	SvcDisc                ServiceRegisterInterface
+	discovery              discovery.DiscoveryInterface
+	// registerPath the path registered to the Service Discovery Center
+	registerPath string
+	// service component addr
+	Regdiscv string
+	// Disable disable service registration discovery
+	Disable bool
+}
+
+// Discovery return discovery
+func (s *SrvRegdiscv) Discovery() discovery.DiscoveryInterface {
+	return s.discovery
+}
+
+// ServiceManageClient return service manage client
+func (s *SrvRegdiscv) ServiceManageClient() *zk.ZkClient {
+	return s.client
 }
 
 // Engine TODO
 type Engine struct {
 	CoreAPI            apimachinery.ClientSetInterface
 	apiMachineryConfig *util.APIMachineryConfig
-
-	client                 *zk.ZkClient
-	ServiceManageInterface discovery.ServiceManageInterface
-	SvcDisc                ServiceRegisterInterface
-	discovery              discovery.DiscoveryInterface
-	metric                 *metrics.Service
-
+	metric             *metrics.Service
 	sync.Mutex
-
-	RegisterPath string
-	server       Server
-	srvInfo      *types.ServerInfo
-
+	server   Server
+	srvInfo  *types.ServerInfo
 	Language language.CCLanguageIf
 	CCErr    errors.CCErrorIf
 	CCCtx    CCContextInterface
-}
-
-// Discovery TODO
-func (e *Engine) Discovery() discovery.DiscoveryInterface {
-	return e.discovery
+	SrvRegdiscv
 }
 
 // ApiMachineryConfig TODO
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
 	return e.apiMachineryConfig
-}
-
-// ServiceManageClient TODO
-func (e *Engine) ServiceManageClient() *zk.ZkClient {
-	return e.client
 }
 
 // Metric TODO

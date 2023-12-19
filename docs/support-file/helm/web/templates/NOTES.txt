@@ -12,10 +12,10 @@ ip {{- printf " "}} {{- printf "%s" .Values.webserver.ingress.host | trimPrefix 
   minikube addons enable ingress
 
 3、
-{{- if eq .Values.common.webServer.login.version "blueking" -}}
+{{- if eq .Values.web.webServer.login.version "blueking" -}}
 通过蓝鲸登陆方式进行账号登陆
-{{- else if eq .Values.common.webServer.login.version "skip-login" -}}
+{{- else if eq .Values.web.webServer.login.version "skip-login" -}}
 访问 {{- printf "%s" .Values.webserver.ingress.host | trimPrefix "[" | trimSuffix "]" }}
 {{- else -}}
-配置完后，通过访问 {{- printf "%s" .Values.webserver.ingress.host | trimPrefix "[" | trimSuffix "]" }}/login 地址进行登陆，账号:密码为 {{ .Values.common.webServer.session.userInfo }}
+配置完后，通过访问 {{- printf "%s" .Values.webserver.ingress.host | trimPrefix "[" | trimSuffix "]" }}/login 地址进行登陆，账号:密码为 {{ .Values.web.webServer.session.userInfo }}
 {{- end -}}
