@@ -28,8 +28,8 @@ spec:
           /bin/bash <<'EOF'
           res=$(curl -s -X POST \
           -H 'Content-Type:application/json' \
-          -H 'BK_USER:migrate' \
-          -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
+          -H 'X-Bkcmdb-User:migrate' \
+          -H 'X-Bkcmdb-Supplier-Account:0' \
           "http://{{ template "bk-cmdb.adminserver" . }}:80/migrate/v3/migrate/dataid"
           )
           echo "$res"
