@@ -331,9 +331,9 @@ webServer:
     # 是否开启jwt认证功能
     enabled: false
     # jwt公钥路径
-    publicKeyPath:
+    publicKey:
     # jwt私钥路径
-    privateKeyPath:
+    privateKey:
 
 # operation_server专属配置
 operationServer:
@@ -479,7 +479,7 @@ apiServer:
     # 是否开启jwt认证功能
     enabled: false
     # jwt公钥路径
-    publicKeyPath:
+    publicKey:
 
 # 直接调用gse服务相关配置
 gse:

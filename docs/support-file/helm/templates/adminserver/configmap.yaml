@@ -96,10 +96,10 @@ data:
       jwt:
         # 是否开启jwt认证功能
         enabled: {{ .Values.common.webServer.jwt.enabled }}
-        # jwt公钥路径
-        publicKeyPath: {{ .Values.common.webServer.jwt.publicKeyPath }}
-        # jwt私钥路径
-        privateKeyPath:  {{ .Values.common.webServer.jwt.privateKeyPath }}
+        # jwt公钥
+        publicKey: {{ .Values.common.webServer.jwt.publicKey }}
+        # jwt私钥
+        privateKey:  {{ .Values.common.webServer.jwt.privateKey }}
     # operation_server专属配置
     operationServer:
       timer:
@@ -265,8 +265,8 @@ data:
       jwt:
         # 是否开启jwt认证功能
         enabled: {{ .Values.common.apiServer.jwt.enabled }}
-        # jwt公钥路径
-        publicKeyPath: {{ .Values.common.apiServer.jwt.publicKeyPath }}
+        # jwt公钥
+        publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
 
     # 直接调用gse服务相关配置
     gse:
