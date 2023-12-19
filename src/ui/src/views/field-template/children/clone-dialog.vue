@@ -71,6 +71,7 @@
     :loading="$loading(requestId)"
     width="670"
     :title="$t('克隆字段组合模板')"
+    render-directive="if"
     @confirm="handleCloneConfirm">
     <bk-form :label-width="$i18n.locale === 'en' ? 140 : 90" :model="cloneForm">
       <bk-form-item :label="$t('模板名称')" :required="true" :property="'name'"

@@ -45,8 +45,8 @@ export const changeLocale = async (locale) => {
     domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
-  if (siteConfig?.desktopUrl) {
-    const url = `${siteConfig.desktopUrl}/api/c/compapi/v2/usermanage/fe_update_user_language/`
+  if (siteConfig?.componentApiUrl) {
+    const url = `${siteConfig.componentApiUrl}/api/c/compapi/v2/usermanage/fe_update_user_language/`
     try {
       await jsonp(url, { language: cookieValue })
     } finally {
