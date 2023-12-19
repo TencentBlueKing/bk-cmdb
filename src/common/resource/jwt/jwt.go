@@ -22,7 +22,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	cc "configcenter/src/common/backbone/configcenter"
@@ -70,32 +69,22 @@ func Init(prefix string) error {
 	}
 	handler.Enabled = true
 
-	if conf.PublicKeyPath != "" {
-		publicKey, err := ioutil.ReadFile(conf.PublicKeyPath)
+	if conf.PublicKey != "" {
+		jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(conf.PublicKey))
 		if err != nil {
-			return fmt.Errorf("get public key from %s failed, err: %v", conf.PublicKeyPath, err)
-		}
-
-		jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
-		if err != nil {
-			return fmt.Errorf("parse jwt public key %s failed, err: %v", string(publicKey), err)
+			return fmt.Errorf("parse jwt public key %s failed, err: %v", conf.PublicKey, err)
 		}
 
 		handler.PublicKey = jwtPublicKey
 	}
 
-	if conf.PrivateKeyPath != "" {
-		privateKey, err := ioutil.ReadFile(conf.PrivateKeyPath)
+	if conf.PrivateKey != "" {
+		jwtPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(conf.PrivateKey))
 		if err != nil {
-			return fmt.Errorf("get private key from %s failed, err: %v", conf.PrivateKeyPath, err)
+			return fmt.Errorf("parse jwt private key %s failed, err: %v", conf.PrivateKey, err)
 		}
 
-		jwPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
-		if err != nil {
-			return fmt.Errorf("parse jwt private key %s failed, err: %v", string(privateKey), err)
-		}
-
-		handler.PrivateKey = jwPrivateKey
+		handler.PrivateKey = jwtPrivateKey
 	}
 
 	return nil
@@ -104,10 +93,10 @@ func Init(prefix string) error {
 type config struct {
 	// Enabled is the flag to enable jwt authorization
 	Enabled bool `mapstructure:"enabled"`
-	// PublicKeyPath is the jwt public key path
-	PublicKeyPath string `mapstructure:"publicKeyPath"`
-	// PrivateKeyPath is the jwt private key path
-	PrivateKeyPath string `mapstructure:"privateKeyPath"`
+	// PublicKey is the jwt public key
+	PublicKey string `mapstructure:"publicKey"`
+	// PrivateKey is the jwt private key
+	PrivateKey string `mapstructure:"privateKey"`
 }
 
 // jwtHandler used to parse requests from blueking api-gateway.

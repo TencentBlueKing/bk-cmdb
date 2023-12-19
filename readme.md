@@ -33,7 +33,7 @@
 * 通用权限管理：灵活的基于用户组的权限管理
 * 操作审计：用户操作行为的审计与回溯
 
-如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
+如果想了解以上功能的详细说明，请参考[功能说明](https://bk.tencent.com/docs/markdown/CMDB/UserGuide/Introduce/Overview.md)
 
 ## Experience
 * [在线体验蓝鲸CMDB](https://cmdb-exp.bktencent.com/start) 🔥 **用户名密码：admin:admin**

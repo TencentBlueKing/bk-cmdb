@@ -948,6 +948,10 @@ func (ps *parseStream) host() *parseStream {
 					Type:   meta.HostInstance,
 					Action: meta.Update,
 				},
+				Layers: meta.Layers{{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				}},
 			},
 		}
 

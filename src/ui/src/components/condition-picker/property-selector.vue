@@ -11,17 +11,19 @@
 -->
 
 <template>
-  <div class="property-selector-content" slot="content" ref="propertySelector">
+  <div class="property-selector-content" :style="{
+    height: `${height}px`
+  }">
     <div class="property-selector-options">
       <bk-input class="options-filter"
         v-model.trim="filter"
         right-icon="icon-search"
         :placeholder="$t('请输入字段名称或唯一标识')"
         clearable
-        v-autofocus.update>
+        v-autofocus>
       </bk-input>
     </div>
-    <div class="all-property-selector">
+    <div class="property-selector-container">
       <div class="property-selector-group clearfix"
         v-for="model in models"
         v-show="isShowGroup(model)"
@@ -33,10 +35,11 @@
           </span>
         </label>
         <bk-checkbox
+          ref="checkboxRef"
           :indeterminate="indeterminate[model.bk_obj_id]"
           :checked="allChecked[model.bk_obj_id]"
           @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
-          class="allCheck"
+          class="all-check"
         >{{$t('全选')}}</bk-checkbox>
         <div class="group-property-list">
           <bk-checkbox
@@ -68,44 +71,35 @@
 </template>
 
 <script setup>
-  import { computed, ref, watch, inject, reactive, nextTick } from 'vue'
+  import { computed, ref, watch, reactive } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
-  import store from '@/store'
 
   const props = defineProps({
+    height: {
+      type: Number,
+      default: 490
+    },
     selected: {
       type: Array,
       default: () => ([])
     },
-    handler: Function
+    disabledPropertyMap: {
+      type: Object,
+      default: () => ({})
+    },
+    models: {
+      type: Array,
+      default: () => ([])
+    },
+    propertyMap: {
+      type: [Object, Array],
+      default: () => ({})
+    },
   })
-  const dynamicGroupForm = inject('dynamicGroupForm')
-  const propertySelector = ref('')
-
-  watch(() => propertySelector.value, (val) => {
-    const height  = store.state.appHeight
-    nextTick(() => {
-      const { bottom = 0 } = val?.getClientRects()?.[0]
-      const dis = bottom - height
-      if (dis > -10) {
-        // 改变气泡框的高度
-        val.getElementsByClassName('all-property-selector')[0].style.height = `${420 - Math.abs(dis)}px`
-      }
-    })
-  })
-
-  const indeterminate = reactive({
-    host: false,
-    set: false,
-    module: false
-  })
-  const allChecked = reactive({
-    host: false,
-    set: false,
-    module: false
-  })
-  const disabledPropertyMap = reactive(dynamicGroupForm.disabledPropertyMap)
+  const checkboxRef = ref('')
+  const indeterminate = reactive({})
+  const allChecked = reactive({})
   const dataEmpty = reactive({
     type: 'empty',
     payload: {
@@ -113,21 +107,18 @@
     }
   })
 
-  const matchedPropertyMap = ref(dynamicGroupForm.propertyMap)
+  const matchedPropertyMap = ref(props.propertyMap)
   const localSelected = ref([...props.selected])
   const filter = ref('')
 
-  const target = computed(() => dynamicGroupForm.formData.bk_obj_id)
-  const propertyMap = computed(() => dynamicGroupForm.propertyMap)
-  const models = computed(() => {
-    if (target.value === 'host') {
-      return dynamicGroupForm.availableModels
-    }
-    return dynamicGroupForm.availableModels.filter(model => model.bk_obj_id === target.value)
+  const propertyMap = computed(() => props.propertyMap)
+  const isShowEmpty = computed(() => {
+    let isNoData = true
+    Object.values(matchedPropertyMap.value)?.forEach((value) => {
+      if (value?.length > 0) isNoData = false
+    })
+    return isNoData
   })
-  const isShowEmpty = computed(() => matchedPropertyMap.value.host.length === 0
-    && matchedPropertyMap.value.module.length === 0
-    && matchedPropertyMap.value.set.length === 0)
 
   const handleFilter = debounce((filter) => {
     if (!filter.length) {
@@ -177,7 +168,7 @@
     indeterminate[bkObjId] = false
     allChecked[bkObjId] = checked
     matchedPropertyMap.value?.[bkObjId]?.forEach((target) => {
-      const isDisabled = disabledPropertyMap[bkObjId].includes(target.bk_property_id)
+      const isDisabled = props.disabledPropertyMap[bkObjId].includes(target.bk_property_id)
       if (!isDisabled) {
         updateLocalSelected(target, checked)
       }
@@ -203,24 +194,32 @@
         isIndeterminate = true
       }
     }
-
     indeterminate[bkObjId] = isIndeterminate
     allChecked[bkObjId] = isChecked
   }
 
   const handleClearFilter = () => filter.value = ''
 
-  defineExpose({
-    confirm: () => {
-      props.handler && props.handler([...localSelected.value])
-    }
-  })
+  const initChecked = () => {
+    props.models.forEach((model) => {
+      const objId = model?.bk_obj_id
+      if (objId) {
+        allCheckState({ bk_obj_id: objId })
+      }
+    })
+  }
+
+  initChecked()
 
   watch(() => filter.value, (filter) => {
     handleFilter(filter)
     dataEmpty.type = filter ? 'search' : 'empty'
   }, {
     immediate: true
+  })
+
+  defineExpose({
+    localSelected
   })
 
 </script>
@@ -232,7 +231,8 @@
   padding: 10px 14px;
   margin: -.3rem -.6rem;
 }
-.all-property-selector {
+.property-selector-container {
+  height: calc(100% - 42px);
   max-height: 440px;
   margin-right: -14px;
   margin-left: -14px;
@@ -256,7 +256,7 @@
     }
   }
 
-  .allCheck {
+  .all-check {
     float: right;
     :deep(.bk-checkbox-text) {
       font-size: 12px;
@@ -307,7 +307,7 @@
         }
       }
 
-      /deep/ {
+      :deep {
         .bk-checkbox {
           flex: 16px 0 0;
           opacity: 0;
