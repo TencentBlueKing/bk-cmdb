@@ -42,7 +42,7 @@ func (s *Service) Index(c *gin.Context) {
 		"helpDocUrl":                s.Config.Site.HelpDocUrl,
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
 		"cookieDomain":              s.Config.Site.BkDomain,
-		"bkDesktopUrl":              s.Config.Site.BkDesktopUrl,
+		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {

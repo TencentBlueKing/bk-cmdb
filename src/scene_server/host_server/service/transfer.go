@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/hooks"
 )
 
 /*
@@ -89,7 +90,8 @@ func (s *Service) TransferHostWithAutoClearServiceInstance(ctx *rest.Contexts) {
 	}
 
 	transToInnerOpt, transToNormalPlans := s.parseTransferPlans(bizID, option.IsRemoveFromAll,
-		len(option.RemoveFromModules) == 0, transferPlans, svcInstMap, option.Options.HostApplyTransPropertyRule.Changed)
+		len(option.RemoveFromModules) == 0, transferPlans, svcInstMap,
+		option.Options.HostApplyTransPropertyRule.Changed)
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		return s.transferHostWithAutoClearServiceInstance(ctx.Kit, bizID, option, transToInnerOpt, transToNormalPlans,
@@ -243,11 +245,15 @@ func (s *Service) transferHostWithAutoClearServiceInstance(
 		blog.Errorf("upsert service instance(%#v) failed, err: %v, svcInstMap: %#v, rid: %s", err, svcInstMap, kit.Rid)
 		return err
 	}
+
 	// update host properties according to specified rules.
-	err := s.updateHostApplyByRule(kit, option.Options.HostApplyTransPropertyRule, hostIDs)
+	ruleOpt := option.Options.HostApplyTransPropertyRule
+	if !ruleOpt.Changed {
+		return nil
+	}
+	err := s.updateHostApplyByRule(kit, ruleOpt.FinalRules, hostIDs)
 	if err != nil {
-		blog.Errorf("update host properties according to specified rules(%#v) failed, err: %v, rid: %s",
-			option.Options.HostApplyTransPropertyRule, err, kit.Rid)
+		blog.Errorf("update host properties by apply rules(%#v) failed, err: %v, rid: %s", ruleOpt, err, kit.Rid)
 		return err
 	}
 
@@ -327,15 +333,11 @@ func (s *Service) upsertServiceInstance(kit *rest.Kit, bizID int64,
 	return nil
 }
 
-func (s *Service) updateHostApplyByRule(kit *rest.Kit, rule metadata.HostApplyTransRules,
+func (s *Service) updateHostApplyByRule(kit *rest.Kit, rules []metadata.HostAttribute,
 	hostIDs []int64) errors.CCErrorCoder {
 
-	if !rule.Changed {
-		return nil
-	}
-
 	attributeIDs := make([]int64, 0)
-	for _, rule := range rule.FinalRules {
+	for _, rule := range rules {
 		attributeIDs = append(attributeIDs, rule.AttributeID)
 	}
 	attCond := &metadata.QueryCondition{
@@ -359,24 +361,16 @@ func (s *Service) updateHostApplyByRule(kit *rest.Kit, rule metadata.HostApplyTr
 		attrMap[attr.ID] = attr.PropertyID
 	}
 
-	planResult := make([]metadata.CreateHostApplyRuleOption, 0)
-	for _, r := range rule.FinalRules {
-		planResult = append(planResult, metadata.CreateHostApplyRuleOption{
-			AttributeID:   r.AttributeID,
-			PropertyValue: r.PropertyValue,
-		})
+	updateHostInfo, ccErr := hooks.GetHostApplyUpdateInfoHook(kit, s.CoreAPI, rules, hostIDs, attrMap)
+	if ccErr != nil {
+		return ccErr
 	}
-	attributes := make([]metadata.HostAttribute, 0)
 
-	for _, rule := range planResult {
-		attributes = append(attributes, metadata.HostAttribute{
-			AttributeID:   rule.AttributeID,
-			PropertyValue: rule.PropertyValue,
-		})
-	}
-	if err := s.updateHostAttributes(kit, attributes, hostIDs); err != nil {
-		blog.Errorf("update attributes failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+	for _, info := range updateHostInfo {
+		if err := s.updateHostAttributes(kit, info.Attributes, info.HostIDs); err != nil {
+			blog.Errorf("update attributes failed, err: %v, info: %+v, rid: %s", err, info, kit.Rid)
+			return err
+		}
 	}
 
 	return nil

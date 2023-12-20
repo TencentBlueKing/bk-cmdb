@@ -17,7 +17,7 @@
         <div>
           <i18n path="抱歉您没有查看权限">
             <template #link>
-              <bk-button class="text-btn"
+              <bk-button class="text-btn no-permission"
                 text
                 theme="primary"
                 @click="handleApplyPermission">
@@ -58,8 +58,15 @@
           width: 280px;
           height: auto;
         }
+
         :deep(.bk-exception-text) {
           font-size: 14px;
+        }
+
+        .no-permission {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
         }
     }
 </style>

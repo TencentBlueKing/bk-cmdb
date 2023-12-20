@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/thirdparty/hooks"
 
 	"github.com/google/go-cmp/cmp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -263,7 +264,7 @@ func preCheckRules(targetRules []metadata.HostApplyRule, attributeID int64, attr
 	return attribute, true
 }
 
-func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApplyRule,
+func (p *hostApplyRule) getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApplyRule,
 	attrMap map[int64]metadata.Attribute, hostID int64, host map[string]interface{}, moduleIDs []int64,
 	resolverMap map[int64]interface{}) (metadata.OneHostApplyPlan, errors.CCErrorCoder) {
 
@@ -345,6 +346,15 @@ func getOneHostApplyPlan(kit *rest.Kit, attrRules map[int64][]metadata.HostApply
 			break
 		}
 
+		canUpdate, err := hooks.CanUpdateHostApplyStatusHook(kit, p.cs, propertyIDField, originalValue, expectValue)
+		if err != nil {
+			return metadata.OneHostApplyPlan{}, err
+		}
+
+		if !canUpdate {
+			continue
+		}
+
 		plan.ExpectHost[propertyIDField] = expectValue
 		plan.UpdateFields = append(plan.UpdateFields, metadata.HostApplyUpdateField{
 			AttributeID:   attributeID,
@@ -393,7 +403,7 @@ func (p *hostApplyRule) generateOneHostApplyPlan(
 		attributeMap[attribute.ID] = attribute
 	}
 
-	plan, err := getOneHostApplyPlan(kit, attributeRules, attributeMap, hostID, host, moduleIDs, resolverMap)
+	plan, err := p.getOneHostApplyPlan(kit, attributeRules, attributeMap, hostID, host, moduleIDs, resolverMap)
 	if err != nil {
 		return metadata.OneHostApplyPlan{}, err
 	}

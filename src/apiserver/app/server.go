@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -76,6 +77,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	client, err := util.NewClient(&config)
 	if err != nil {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
+	}
+
+	// init jwt handler
+	if err = jwt.Init("apiServer"); err != nil {
+		return fmt.Errorf("init jwt failed, err: %v", err)
 	}
 
 	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)

@@ -331,6 +331,10 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 		return err
 	}
 
+	if err := hooks.ValidUpdateHostStatusHook(kit, m.clientSet, objID, instanceData, updateData); err != nil {
+		return err
+	}
+
 	if err := m.validMainlineInstanceData(kit, objID, updateData, isMainline); err != nil {
 		return err
 	}

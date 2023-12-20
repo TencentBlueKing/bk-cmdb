@@ -1,4 +1,4 @@
-## [Version: v3.12.3-feature-auth-alpha10] - 2023-11-28
+## [Version: v3.12.3-feature-auth-alpha11] - 2023-11-28
 **缺陷修复**
 - 修复查询模型多鉴了内置和主线模型的问题
 - 修复新添加模型的权限数据异常问题
@@ -65,6 +65,18 @@
 ## [Version: v3.10.23-feature-auth-alpha1] - 2023-03-30
 **新增功能**
 - 新增空间级查看权限控制能力
+
+## [Version: v3.12.4] - 2023-12-19
+**功能优化**
+- 优化了一些前端的显示问题
+- 修改文档中心默认首页的地址
+- 采用认证信息标准化方案调用esb API
+- 更新bkDesktopUrl配置为bkComponentApiUrl配置
+
+**缺陷修复**
+- 修复设置agentID缓存数据错误问题
+- 添加job资源限制
+- 修复add_host_to_business_idle接口鉴权问题
 
 ## [Version: v3.12.3] - 2023-11-17
 **新增功能**

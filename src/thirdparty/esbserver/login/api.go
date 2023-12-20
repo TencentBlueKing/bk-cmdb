@@ -21,6 +21,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
@@ -32,8 +33,8 @@ func (l *login) GetUser(ctx context.Context, h http.Header) (resp *UserResponse,
 	err = l.client.Get().
 		WithContext(ctx).
 		SubResourcef(subPath).
-		WithParams(esbutil.GetEsbParameterWithToken(l.config.GetConfig(), h)).
-		WithHeaders(h).
+		WithParams(map[string]string{"bk_token": util.GetBkToken(h)}).
+		WithHeaders(esbutil.SetEsbAuthHeader(l.config.GetConfig(), h)).
 		Do().
 		Into(resp)
 	return

@@ -24,7 +24,7 @@
     <div v-else class="editable-field-container">
       <div class="editable-field-content" v-bk-overflow-tips="{ content: label || value }">
         <span class="editable-field-text" v-show="!isEditing">{{ label || value || '--' }}</span>
-        <div class="editable-field-control" v-show="isEditing">
+        <div class="editable-field-control" v-if="isEditing">
           <cmdb-singlechar
             v-if="type === 'singlechar'"
             v-autofocus

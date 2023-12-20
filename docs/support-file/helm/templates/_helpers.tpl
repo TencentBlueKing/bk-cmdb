@@ -261,11 +261,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- end -}}
 {{- end -}}
 
-{{- define "cmdb.webserver.bk_desktop_url" -}}
+{{- define "cmdb.webserver.bkComponentApiUrl" -}}
   {{- if eq .Values.common.webServer.login.version "opensource" -}}
     {{- printf "%s" "" -}}
   {{- else -}}
-    {{- printf "%s" .Values.bkPaasUrl -}}
+    {{- printf "%s" .Values.bkComponentApiUrl -}}
   {{- end -}}
 {{- end -}}
 

@@ -58,7 +58,7 @@ data:
         #前端基础页面位置
         htmlRoot: {{ .Values.common.webServer.site.htmlRoot }}
         authscheme: {{ .Values.common.webServer.site.authScheme }}
-        bkDesktopUrl:  {{ include "cmdb.webserver.bk_desktop_url" . }}
+        bkComponentApiUrl:  {{ include "cmdb.webserver.bkComponentApiUrl" . }}
         paasDomainUrl: {{ include "cmdb.webserver.paas_domain_url" . }}
         # bkDomain 用于配置前端需要的cookie domain地址
         bkDomain: {{ .Values.common.webServer.site.bkDomain }}

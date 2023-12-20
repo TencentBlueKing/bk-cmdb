@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
@@ -35,7 +36,7 @@ type WebServer struct {
 	Config options.Config
 }
 
-// Run TODO
+// Run web-server
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -45,7 +46,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service := new(websvc.Service)
 
 	webSvr := new(WebServer)
-	service.Config = &webSvr.Config
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
@@ -79,21 +79,18 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
 		service.Session, redisErr = redis.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address,
 			webSvr.Config.Redis.Password, []byte("secret"))
-		if redisErr != nil {
-			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
-		}
 	} else {
 		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
 		address := strings.Split(webSvr.Config.Redis.Address, ";")
 		service.Session, redisErr = redis.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp",
 			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
-		if redisErr != nil {
-			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
-		}
 	}
-	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
+	if redisErr != nil {
+		return fmt.Errorf("create new redis store failed, err: %v", redisErr)
+	}
 
-	if nil != err {
+	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
+	if err != nil {
 		return err
 	}
 
@@ -104,6 +101,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	// init esb client
 	esb.InitEsbClient(nil)
+
+	// init jwt handler
+	if err = jwt.Init("webServer"); err != nil {
+		return fmt.Errorf("init jwt failed, err: %v", err)
+	}
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
@@ -146,7 +148,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
 	w.Config.Site.BkDomain, _ = cc.String("webServer.site.bkDomain")
 	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
-	w.Config.Site.BkDesktopUrl, _ = cc.String("webServer.site.bkDesktopUrl")
+	w.Config.Site.BkComponentApiUrl, _ = cc.String("webServer.site.bkComponentApiUrl")
 
 	w.Config.Session.Name, _ = cc.String("webServer.session.name")
 	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")

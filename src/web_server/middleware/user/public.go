@@ -77,6 +77,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionEmailKey, userInfo.Email)
 	session.Set(common.WEBSessionRoleKey, userInfo.Role)
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
+	session.Set(common.HTTPCookieBKTicket, userInfo.BkTicket)
 	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
 	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinList))
