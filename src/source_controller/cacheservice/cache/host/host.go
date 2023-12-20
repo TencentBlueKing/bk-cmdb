@@ -120,7 +120,8 @@ func (h *hostCache) onDelete(e *types.Event) {
 	doc := make(map[string]interface{})
 	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).One(context.Background(), &doc)
 	if err != nil {
-		blog.Errorf("received delete host event, but get archive deleted doc from mongodb failed, oid: %s, err: %v", e.Oid, err)
+		blog.Errorf("received delete host event, but get archive deleted doc from mongodb failed, oid: %s, err: %v",
+			e.Oid, err)
 		return
 	}
 
@@ -155,7 +156,8 @@ func (h *hostCache) onDelete(e *types.Event) {
 		blog.Errorf("received host delete event, oid: %s, but delete oid and detail failed, err: %v", e.Oid, err)
 		return
 	}
-	blog.Infof("received host delete event, oid: %s, delete oid and host id: %d, ip: %s detail success", e.Oid, hostID, ips)
+	blog.Infof("received host delete event, oid: %s, delete oid and host id: %d, ip: %s detail success", e.Oid, hostID,
+		ips)
 }
 
 func (h *hostCache) onListDone() {
@@ -205,7 +207,7 @@ func refreshHostDetailCache(rid string, host *hostBase) {
 	// a host can have multiple host inner ips
 	ttl := hostKey.WithRandomExpireSeconds()
 	if host.agentID != "" {
-		pipeline.Set(hostKey.AgentIDKey(host.agentID), host.hostID, ttl)
+		pipeline.Set(hostKey.AgentIDKey(host.agentID), host.detail, ttl)
 	}
 
 	if host.addressType == common.BKAddressingStatic && host.ip != "" {
@@ -303,7 +305,8 @@ func listHostDetailsFromMongoWithHostID(hostID []int64) (list []*hostBase, err e
 		},
 	}
 	host := make([]metadata.HostMapStr, 0)
-	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Sort(common.BKHostIDField).All(context.Background(), &host)
+	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Sort(common.BKHostIDField).All(
+		context.Background(), &host)
 	if err != nil {
 		blog.Errorf("get host data from mongodb for cache failed, err: %v", err)
 		return nil, err
@@ -354,14 +357,15 @@ func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (int64, []byte
 	host := make(metadata.HostMapStr)
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)
 	if err != nil {
-		blog.Errorf("get host data from mongodb with ip: %s, cloud: %d for cache failed, err: %v", innerIP, cloudID, err)
+		blog.Errorf("get host data from mongodb with ip: %s, cloud: %d for cache failed, err: %v", innerIP, cloudID,
+			err)
 		return 0, nil, err
 	}
 
 	id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 	if err != nil {
-		return 0, nil, fmt.Errorf("get host data from mongodb ip: %s, cloud: %d for cache, but got invalid host id: %v, err: %v",
-			innerIP, cloudID, host[common.BKHostIDField], err)
+		return 0, nil, fmt.Errorf("get host data from mongodb ip: %s, cloud: %d for cache, but got invalid host "+
+			"id: %v, err: %v", innerIP, cloudID, host[common.BKHostIDField], err)
 	}
 	js, _ := json.Marshal(host)
 
@@ -370,7 +374,7 @@ func getHostDetailsFromMongoWithIP(innerIP string, cloudID int64) (int64, []byte
 
 func getHostDetailsFromMongoWithAgentID(rid string, agentID string) (int64, string, []byte, error) {
 	filter := mapstr.MapStr{
-		common.BKAgentIDField: agentID,
+		common.BKAgentIDField: mapstr.MapStr{common.BKDBType: "string", common.BKDBEQ: agentID},
 	}
 	host := make(metadata.HostMapStr)
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).One(context.Background(), &host)

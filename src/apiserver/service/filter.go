@@ -26,8 +26,8 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metrics"
+	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdparty/hooks"
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -384,15 +384,17 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 // JwtFilter the filter that handles the source of the jwt request
 func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		if err := hooks.ValidRequestFromAPIGWHook(req); err != nil {
+		header, err := jwt.GetHandler().Parse(req.Request.Header)
+		if err != nil {
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrAPINoPassSourceCertification,
 				ErrMsg: err.Error(),
 				Result: false,
 			}
-			resp.WriteAsJson(rsp)
+			_ = resp.WriteAsJson(rsp)
 			return
 		}
+		req.Request.Header = header
 
 		fchain.ProcessFilter(req, resp)
 		return
