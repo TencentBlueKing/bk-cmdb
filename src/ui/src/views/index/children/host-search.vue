@@ -13,18 +13,22 @@
 <template>
   <div class="host-search-layout">
     <div class="search-bar">
-      <bk-input class="search-input" v-test-id
-        ref="searchInput"
-        type="textarea"
-        :placeholder="$t('首页主机搜索提示语')"
-        :rows="rows"
-        :clearable="true"
-        :show-clear-only-hover="true"
-        v-model="searchContent"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @keydown="handleKeydown">
-      </bk-input>
+      <div class="search-input-close">
+        <div class="search-input"
+          v-test-id
+          ref="searchInput"
+          :placeholder="$t('首页主机搜索提示语')"
+          :focusTip="$t('首页主机搜索聚焦提示')"
+          :blurTip="$t('首页主机搜索失焦焦提示')"
+          contenteditable="plaintext-only"
+          @blur="handleBlur"
+          @keydown="handleKeydown"
+          @focus="handleFocus"
+          @input="handleInput"
+          @paste="handlePaste">
+        </div>
+        <i class="search-close bk-icon icon-close-circle-shape" @mousedown="handleClear" v-if="searchContent"></i>
+      </div>
       <bk-popover v-bind="popoverProps" ref="popover">
         <bk-button theme="primary" class="search-btn" v-test-id="'search'"
           :loading="$loading(request.search)"
@@ -57,6 +61,7 @@
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
+  import { ALL_IP_REGEXP, LT_REGEXP } from '@/dictionary/regexp'
 
   export default {
     data() {
@@ -71,6 +76,11 @@
         return content
       }
       return {
+        pasteData: {
+          cursor: 0,
+          length: 0,
+          input: false
+        },
         rows: 1,
         searchContent: defaultSearchContent(),
         textareaDom: null,
@@ -102,9 +112,50 @@
       }
     },
     mounted() {
-      this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
+      this.textareaDom = this.$refs.searchInput
+      this.setInputHtml(this.searchContent)
     },
     methods: {
+      // 获取光标位置
+      getCursorPosition() {
+        const selection = window.getSelection()
+        const element = this.textareaDom
+        let caretOffset = 0
+        // false表示进行了范围选择
+        const { isCollapsed } = selection
+        // 选中的区域
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0)
+          // 克隆一个选中区域
+          const preCaretRange = range.cloneRange()
+          // 设置选中区域的节点内容为当前节点
+          preCaretRange.selectNodeContents(element)
+          // 重置选中区域的结束位置
+          preCaretRange.setEnd(range.endContainer, range.endOffset)
+          const { length } = preCaretRange.toString()
+          caretOffset = isCollapsed ? length : length - selection.toString().length
+        }
+        return caretOffset
+      },
+      // 设置光标位置
+      setCursorPostion() {
+        const selection = window.getSelection()
+        const element = document.getElementsByClassName('search-input')[0].getElementsByClassName('new-paste')[0]
+        // 创建一个选中区域
+        const range = document.createRange()
+        // 选中节点的内容
+        range.selectNodeContents(element)
+        if (element.innerHTML.length > 0) {
+          // 设置光标起始为指定位置
+          range.setStart(element, element.childNodes.length)
+        }
+        // 设置选中区域为一个点
+        range.collapse(true)
+        // 移除所有的选中范围
+        selection.removeAllRanges()
+        // 添加新建的范围
+        selection.addRange(range)
+      },
       getSearchList() {
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
         return FilterUtils.splitIP(this.searchContent)
@@ -113,24 +164,83 @@
         const rows = this.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
       },
+      // 清除一些结构不太完整的ip， 比如‘2.168.1.5]’
+      deleteIp(searchList) {
+        const ipList = Array.from(searchList)
+        const IPs = FilterUtils.parseIP(ipList)
+        const { assetList } = IPs
+        assetList?.map(ip => searchList.delete(ip))
+        return searchList
+      },
+      parseIp() {
+        if (!this.pasteData.input) return
+        this.pasteData = {
+          cursor: 0,
+          length: 0,
+          input: false
+        }
+        const ipList = new Set(this.searchContent.match(ALL_IP_REGEXP))
+        const newHtml = (Array.from(this.deleteIp(ipList))?.map(ip => ip) || []).join('\n')
+        this.searchContent = newHtml
+        this.setInputHtml(newHtml)
+      },
+      handleClear(event) {
+        this.pasteData = {
+          cursor: 0,
+          length: 0,
+          input: false
+        }
+        this.searchContent = ''
+        this.setInputHtml()
+        event.preventDefault()
+      },
       handleFocus() {
         this.$emit('focus', true)
         this.setRows()
       },
       handleBlur() {
-        if (!this.searchContent.trim().length) {
-          this.searchContent = ''
-        }
+        this.parseIp()
         this.textareaDom && this.textareaDom.blur()
         this.$emit('focus', false)
       },
-      handleKeydown(content, event) {
+      handleKeydown(event) {
         const agent = window.navigator.userAgent.toLowerCase()
         const isMac = /macintosh|mac os x/i.test(agent)
         const modifierKey = isMac ? event.metaKey : event.ctrlKey
         if (modifierKey && event.code.toLowerCase() === 'enter') {
           this.handleSearch()
         }
+      },
+      handlePaste(event) {
+        const val = event?.clipboardData?.getData('text')?.replace(/\r/g, '')
+        this.pasteData = {
+          cursor: this.getCursorPosition(),
+          length: val.length
+        }
+      },
+      handleInput(event) {
+        const { inputType } = event
+        const val = this.$refs.searchInput.innerText
+        this.searchContent = val
+        this.pasteData.input = true
+        // 如果是粘贴，需要处理实时高光逻辑
+        if (inputType === 'insertFromPaste') {
+          const { cursor, length } = this.pasteData
+          this.setHighLight(cursor, length)
+        }
+      },
+      // 处理粘贴数据高光
+      setHighLight(cursor, length) {
+        const content = this.searchContent
+        const start = content.substring(0, cursor).replace(LT_REGEXP, '&lt')
+        const end = content.substring(cursor + length).replace(LT_REGEXP, '&lt')
+        const paste = `<span class="new-paste">${content.substring(cursor, cursor + length).replace(LT_REGEXP, '&lt')}</span>`
+        const newHtml = start + paste.replace(ALL_IP_REGEXP, ' <span class="high-light">$<ip></span> ') + end
+        this.setInputHtml(newHtml)
+        this.setCursorPostion()
+      },
+      setInputHtml(html = '') {
+        this.textareaDom.innerHTML = html
       },
       async handleSearch(force = '') {
         const searchList = this.getSearchList()
@@ -238,6 +348,18 @@
 </script>
 
 <style lang="scss" scoped>
+    @mixin tip {
+        color: #C4C6CC;
+        position: sticky;
+        left: 0px;
+        bottom: -5px;
+        font-size: 12px;
+        line-height: 17px;
+        display: block;
+        width: 100%;
+        background: white;
+        padding-bottom: 5px;
+    }
     .host-search-layout {
         position: relative;
         width: 100%;
@@ -252,9 +374,44 @@
         z-index: 999;
         display: flex;
     }
+    .search-input-close {
+      flex: 1;
+      max-width: 646px;
+      position: relative;
+    }
+    .search-input[contenteditable]:empty::before {
+        content: attr(placeholder);
+        color: #C4C6CC;
+        cursor: text;
+        font-size: 12px;
+        position: absolute;
+        left: 16px;
+    }
+    .search-input[contenteditable]:focus {
+        border-color: #3A84FF;
+    }
+    .search-input[contenteditable]:not(:empty):focus::after {
+        content: attr(focusTip);
+        @include tip;
+    }
+    .search-input[contenteditable]:not(:empty):not(:focus)::after {
+        content: attr(blurTip);
+        @include tip;
+    }
     .search-input {
         flex: 1;
         max-width: 646px;
+        background: white;
+        min-height: 100%;
+        height: max-content;
+        padding: 5px 32px 5px 16px;
+        border: 1px solid #c4c6cc;
+        border-radius: 0 0 0 2px;
+        font-size: 14px;
+        line-height: 30px;
+        max-height: 400px;
+        position: relative;
+        @include scrollbar-y;
         /deep/ {
             .bk-textarea-wrapper {
                 border: 0;
@@ -271,7 +428,22 @@
             .right-icon {
               right: 20px !important;
             }
+            .high-light {
+              display: inline-block;
+              background: #FFE8C3;
+              border-radius: 2px;
+              cursor: pointer;
+              &:hover {
+                background: #FFD695;
+              }
+            }
         }
+    }
+    .search-close {
+      position: absolute;
+      right: 10px;
+      top: 13px;
+      cursor: pointer;
     }
     .search-btn {
         width: 86px;
