@@ -1,0 +1,41 @@
+spec_version: 1
+
+release:
+  # 发布版本号
+  version: 1.0.0
+  title: "1.0.0"
+  comment: "1.0.0"
+
+apigateway:
+  description: "蓝鲸配置平台"
+  description_en: "BlueKing Configuration Management DataBase"
+  is_public: true
+  maintainers:
+    - "admin"
+
+stage:
+  name: "prod"
+  description: "正式环境"
+  description_en: "Production Environment"
+  proxy_http:
+    timeout: 30
+    upstreams:
+      loadbalance: "roundrobin"
+      hosts:
+        - host: "http://bk-cmdb-api"
+          weight: 100
+
+# 资源文档
+# 资源文档的目录格式样例如下，en 为英文文档，zh 为中文文档：
+# ./
+# - en
+#   - anything.md
+# - zh
+#   - anything.md
+resource_docs:
+  basedir: "/data/apidocs/"
+
+# 主动授权，网关主动给应用，添加访问网关所有资源的权限
+grant_permissions:
+  - bk_app_code: "{{ settings.BK_APP_CODE }}"
+    grant_dimension: "gateway"
