@@ -1,0 +1,9 @@
+bkpkg: v1
+name: bk-cmdb
+type: chart
+description: 配置平台容器化版本。
+contains:
+  - type: file+tar
+    name: bk-cmdb
+relations:
+bkimports:
