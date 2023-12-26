@@ -1088,6 +1088,10 @@ bkLoginApiUrl: http://bk-login-web
 ##
 bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
 
+## @param bkApigatewayName apigateway name for cmdb
+##
+bkApigatewayName: "bk-cmdb"
+
 ## @section bk-cmdb common config parameters
 ##
 common:
@@ -1476,7 +1480,7 @@ common:
     password:
   ## api gateway config
   ##
-  ## 调用apigw接口相关配置
+  ## apigw配置
   apiGW:
     address: http://bkapi.example.com/api/{api_name}
     appCode: bk_cmdb
@@ -1870,3 +1874,9 @@ gseCert:
   ## certificate package and encoded in base64
   ##
   cmdbKey: ""
+
+apigatewaySync:
+  enabled: false
+  image:
+    repository: blueking/cmdb-apigw-manager
+    tag:
