@@ -29,17 +29,20 @@
     <cmdb-sticky-layout class="filter-layout" slot="content">
       <bk-form class="filter-form" form-type="vertical">
         <bk-form-item class="filter-ip" label="IP">
-          <bk-input type="textarea"
-            ref="ip"
-            :rows="4"
+          <editable-block
+            ref="textareaDom"
+            class="textareaDom"
+            :enter-search="false"
             :placeholder="$t('主机搜索提示语')"
+            :search-content.sync="IPCondition.text">
+          </editable-block>
+          <input type="hidden"
+            ref="ip"
+            name="ip"
+            data-vv-validate-on="change"
             data-vv-name="ip"
-            data-vv-validate-on="blur"
             v-validate="'ipSearchMaxCloud|ipSearchMaxCount'"
-            v-focus
-            v-model.trim="IPCondition.text"
-            @focus="errors.remove('ip')">
-          </bk-input>
+            v-model="IPCondition.text" />
           <p class="filter-ip-error" v-if="errors.has('ip')">
             {{errors.first('ip')}}
           </p>
@@ -176,21 +179,13 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
+  import EditableBlock from '@/components/editable-block/editable-block.vue'
 
   export default {
     components: {
       OperatorSelector,
-      ConditionPicker
-    },
-    directives: {
-      focus: {
-        inserted: (el) => {
-          const input = el.querySelector('textarea')
-          setTimeout(() => {
-            input.focus()
-          }, 0)
-        }
-      }
+      ConditionPicker,
+      EditableBlock
     },
     data() {
       return {
@@ -310,6 +305,9 @@
           }
         }
       }
+    },
+    mounted() {
+      setTimeout(() => this.$refs.textareaDom?.focus(), 0)
     },
     methods: {
       getLabelSuffix(property) {
@@ -514,6 +512,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .textareaDom {
+      :deep(.search-input) {
+        min-height: 42px;
+      }
+    }
     .filter-form-sideslider {
         pointer-events: none;
         /deep/ {
