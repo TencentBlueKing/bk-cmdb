@@ -74,7 +74,6 @@
   const initPasteData = () => {
     pasteData.cursor = 0
     pasteData.length = 0
-    pasteData.input = false
   }
 
   const getMatchIp = (ip) => {
@@ -113,14 +112,28 @@
   // 设置光标位置
   const setCursorPostion = () => {
     const selection = window.getSelection()
-    const element = document.getElementsByClassName('search-input')[0].getElementsByClassName('new-paste')[0]
+    const parent = document.getElementsByClassName('search-input')[0]
+    const child = parent.getElementsByClassName('new-data')[0]
     // 创建一个选中区域
     const range = document.createRange()
     // 选中节点的内容
-    range.selectNodeContents(element)
-    if (element.innerHTML.length > 0) {
-      // 设置光标起始为指定位置
-      range.setStart(element, element.childNodes.length)
+    range.selectNodeContents(child || parent)
+    if (child?.innerHTML?.length > 0) {
+      // 粘贴的直接设置光标到粘贴的末尾
+      range.setStart(child, child.childNodes.length)
+    } else {
+      // 非粘贴的数据通过计算文本节点的偏移量来设置光标
+      const parentAllNodes = parent.childNodes
+      let { cursor } = pasteData
+      for (let i = 0;i < parentAllNodes.length;i++) {
+        const nowNode = parentAllNodes[i]
+        const nodeLength = nowNode?.length ?? nowNode?.innerText?.length
+        if (cursor <= nodeLength) {
+          range.setStart(nowNode?.firstChild || nowNode, cursor)
+          break
+        }
+        cursor -= nodeLength
+      }
     }
     // 设置选中区域为一个点
     range.collapse(true)
@@ -137,22 +150,41 @@
     searchInput.value.innerHTML = html
   }
   // 处理数据高光
-  const setHighLight = (cursor, length) => {
+  const setHighLight = (inputType) => {
     const content = searchContent.value
+    if (inputType === 'insertFromPaste') {
+      const { cursor, length } = pasteData
+      setHighLightPaste(cursor, length, content)
+    } else {
+      const cursor = getCursorPosition()
+      pasteData.cursor = cursor
+      setHighLightOther(content)
+    }
+    setCursorPostion()
+  }
+  // 粘贴高亮
+  const setHighLightPaste = (cursor, length, content) => {
     const start = content.substring(0, cursor).replace(LT_REGEXP, '&lt')
     const end = content.substring(cursor + length).replace(LT_REGEXP, '&lt')
-    const paste = `<span class="new-paste">${content.substring(cursor, cursor + length).replace(LT_REGEXP, '&lt')}</span>`
-    const newHtml = start + paste.replace(ALL_PROBABLY_IP, (val) => {
+    const paste = `<span class="new-data">${content.substring(cursor, cursor + length).replace(LT_REGEXP, '&lt')}</span>`
+    const newHtml = (start + paste + end).replace(ALL_PROBABLY_IP, (val) => {
       // val为所有可能是IP的数据，在这里筛选出符合条件的IP
       const ans = getMatchIp(val)
-      return ans ? ` <span class="high-light">${val}</span> ` : val
-    }) + end
+      return ans ? `<span class="high-light">${val}</span>` : val
+    })
     setInputHtml(newHtml)
-    setCursorPostion()
+  }
+  // 非粘贴高亮
+  const setHighLightOther = (content) => {
+    const newHtml = content.replace(LT_REGEXP, '&lt').replace(ALL_PROBABLY_IP, (val) => {
+      // val为所有可能是IP的数据，在这里筛选出符合条件的IP
+      const ans = getMatchIp(val)
+      return ans ? `<span class="high-light">${val}</span>` : val
+    })
+    setInputHtml(newHtml)
   }
 
   const parseIp = () => {
-    if (!pasteData.input) return
     initPasteData()
     const propablyIp = searchContent.value.match(ALL_PROBABLY_IP)
     const ipList = []
@@ -168,8 +200,8 @@
 
   const handlePaste = (event) => {
     const val = event?.clipboardData?.getData('text')?.replace(/\r/g, '')
-    pasteData.cursor = getCursorPosition()
     pasteData.length = val.length
+    pasteData.cursor = getCursorPosition()
   }
   const handleBlur = (event) => {
     parseIp()
@@ -178,19 +210,17 @@
   }
   const handleInput = (event) => {
     const { inputType } = event
-    const { innerText, scrollHeight, clientHeight, scrollTop } = searchInput.value
+    const { innerText } = searchInput.value
     setSearchContent(innerText)
-    const bottom = scrollHeight - clientHeight - scrollTop
-    pasteData.input = true
-    // 防止光标被遮挡
-    if (bottom > 10) {
-      searchInput.value.scrollTop = scrollHeight - 10
-    }
-    // 如果是粘贴，需要处理实时高光逻辑
-    if (inputType === 'insertFromPaste') {
-      const { cursor, length } = pasteData
-      setHighLight(cursor, length)
-    }
+    setHighLight(inputType)
+    setTimeout(() => {
+      const { scrollHeight, clientHeight, scrollTop } = searchInput.value
+      const bottom = scrollHeight - clientHeight - scrollTop
+      // 防止光标被遮挡
+      if (bottom > 0 && bottom < 30) {
+        searchInput.value.scrollTop = scrollHeight - 10
+      }
+    }, 0)
   }
   const handleClear = (event) => {
     initPasteData()
@@ -199,6 +229,7 @@
     event.preventDefault()
   }
   const handleFocus = (event) => {
+    setHighLight('focus')
     emit('focus', event)
   }
   const handleSearch = (event) => {
@@ -228,13 +259,12 @@
   color: #C4C6CC;
   position: sticky;
   left: 0px;
-  bottom: -5px;
+  bottom: 0px;
   font-size: 12px;
   line-height: 17px;
   display: block;
   width: 100%;
   background: white;
-  padding-bottom: 5px;
 }
 .editable-block {
   flex: 1;
@@ -265,7 +295,7 @@
   background: white;
   min-height: 100%;
   height: max-content;
-  padding: 5px 32px 5px 16px;
+  padding: 5px 32px 0px 16px;
   border: 1px solid #c4c6cc;
   border-radius: 0 0 0 2px;
   font-size: 14px;
@@ -305,5 +335,6 @@
   right: 10px;
   top: 13px;
   cursor: pointer;
+  color: #c4c6cc;
 }
 </style>

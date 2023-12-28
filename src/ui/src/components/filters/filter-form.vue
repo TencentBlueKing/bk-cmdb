@@ -306,9 +306,6 @@
         }
       }
     },
-    mounted() {
-      setTimeout(() => this.$refs.textareaDom?.focus(), 0)
-    },
     methods: {
       getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
@@ -514,7 +511,13 @@
 <style lang="scss" scoped>
     .textareaDom {
       :deep(.search-input) {
-        min-height: 42px;
+        min-height: 36px;
+        font-size: 12px;
+        line-height: 24px;
+      }
+
+      :deep(.search-close) {
+        font-size: 12px;
       }
     }
     .filter-form-sideslider {
