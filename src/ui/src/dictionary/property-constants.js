@@ -12,6 +12,8 @@
 
 import { t } from '@/i18n'
 
+export const PROPERTY_TYPE_EXCLAMATION_TIPS = ['innertable', 'bool']
+
 export const PROPERTY_TYPES = Object.freeze({
   SINGLECHAR: 'singlechar',
   INT: 'int',

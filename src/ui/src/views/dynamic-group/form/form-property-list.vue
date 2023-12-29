@@ -37,7 +37,13 @@
               v-model="condition[property.id].value"
               display-tag
               :disabled="disabled"
-              v-validate="'required'">
+              v-validate="'required'"
+              v-bk-tooltips.top="{
+                disabled: !property.placeholder,
+                theme: 'light',
+                trigger: 'click',
+                content: property.placeholder
+              }">
             </component>
           </div>
           <i class="item-remove bk-icon icon-close" v-if="!disabled" @click="handleRemove(property)"></i>

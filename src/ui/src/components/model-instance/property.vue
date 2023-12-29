@@ -23,6 +23,14 @@
           :id="`property-item-${property.id}`">
           <div class="property-name" v-bk-overflow-tips>
             {{property.bk_property_name}}
+            <i class="property-name-tooltips icon-cc-tips"
+              v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+              v-bk-tooltips.top="{
+                theme: 'light',
+                trigger: 'mouseenter',
+                content: property.placeholder
+              }">
+            </i>
           </div>
           <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
             <div :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
@@ -81,6 +89,12 @@
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="editState.value"
+                      v-bk-tooltips.top="{
+                        disabled: !property.placeholder || isExclmationProperty(property.bk_property_type),
+                        theme: 'light',
+                        trigger: 'mouseenter',
+                        content: property.placeholder
+                      }"
                       :ref="`component-${property.bk_property_id}`">
                     </component>
                   </div>
@@ -141,7 +155,7 @@
   import businessSetService from '@/service/business-set/index.js'
   import projectService from '@/service/project/index.js'
   import authMixin from './mixin-auth'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { PROPERTY_TYPES, PROPERTY_TYPE_EXCLAMATION_TIPS } from '@/dictionary/property-constants'
   import { keyupCallMethod } from '@/utils/util'
 
   export default {
@@ -203,6 +217,9 @@
       ...mapActions('objectCommonInst', ['updateInst']),
       ...mapActions('objectBiz', ['updateBusiness']),
 
+      isExclmationProperty(type) {
+        return PROPERTY_TYPE_EXCLAMATION_TIPS.includes(type)
+      },
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')
@@ -305,6 +322,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .property-name-tooltips {
+      margin-right: 2px;
+    }
     .property {
         height: 100%;
         overflow: auto;

@@ -202,6 +202,7 @@
   position: relative;
   display: flex;
   width: 100%;
+  gap: 5px;
 }
 .innertable-container {
   width: 100%;

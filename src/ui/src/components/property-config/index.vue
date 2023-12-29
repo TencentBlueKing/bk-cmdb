@@ -18,6 +18,7 @@
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
   import PropertyModal from './property-modal.vue'
   import useProperty from './use-property.js'
+  import { isExclmationProperty } from '@/utils/util'
 
   interface IProperty {
     id: number,
@@ -142,6 +143,9 @@
       }
     },
     methods: {
+      isExclmationProperty(type) {
+        return isExclmationProperty(type)
+      },
       async validateAll() {
         // 获得每一个表单元素的校验方法
         const validates = (this.$refs.propertyFormEl || [])
@@ -207,6 +211,19 @@
               :key="property.id"
               :label="property.bk_property_name"
               :label-width="120">
+              <template #label>
+                <div class="label-text" v-bk-overflow-tips>
+                  {{property.bk_property_name}}
+                </div>
+                <i class="property-name-tooltips icon-cc-tips"
+                  v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+                  v-bk-tooltips.top="{
+                    theme: 'light',
+                    trigger: 'mouseenter',
+                    content: property.placeholder
+                  }">
+                </i>
+              </template>
               <property-form-element
                 ref="propertyFormEl"
                 :must-required="isRequired(property)"
@@ -285,6 +302,10 @@
 
         ::v-deep .form-error {
           margin-top: 4px;
+        }
+
+        :deep(.item-label) {
+          align-items: center;
         }
       }
     }

@@ -42,7 +42,7 @@
         @show="isTransferMenuOpen = true"
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'transfer'"
-          :disabled="!hasSelection">
+          :disabled="!hasSelection" class="flex-btn">
           <span>{{$t('转移至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
         </bk-button>
@@ -87,7 +87,7 @@
         @show="isAddToOpen = true"
         @hide="isAddToOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'addTo'"
-          :disabled="!hasSelection">
+          :disabled="!hasSelection" class="flex-btn">
           <span>{{$t('追加至')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
         </bk-button>
@@ -111,7 +111,7 @@
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'remove'"
-          :disabled="!hasSelection">
+          :disabled="!hasSelection" class="flex-btn">
           <span>{{$t('移出')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
         </bk-button>
@@ -137,7 +137,7 @@
         font-size="medium"
         @show="isMoreMenuOpen = true"
         @hide="isMoreMenuOpen = false">
-        <bk-button slot="dropdown-trigger" v-test-id="'more'">
+        <bk-button slot="dropdown-trigger" v-test-id="'more'" class="flex-btn">
           <span>{{$t('更多')}}</span>
           <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
         </bk-button>
@@ -314,8 +314,8 @@
         const IPWithCloudFields = {
           [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
           [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
-          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv4优先')})`,
-          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv6优先')})`
+          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv4优先')})`,
+          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv6优先')})`
         }
         const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
           id: key,
@@ -562,6 +562,13 @@
 </script>
 
 <style lang="scss" scoped>
+    .flex-btn{
+      :deep(>div>span) {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+    }
     .options-layout {
         margin-top: 12px;
     }
@@ -597,7 +604,6 @@
             top: 0px;
             font-size: 20px;
             &.open {
-                top: -1px;
                 transform: rotate(180deg);
             }
         }

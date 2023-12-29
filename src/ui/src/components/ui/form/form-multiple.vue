@@ -39,14 +39,14 @@
                         :class="{ required: property['isrequired'] && editable[property.bk_property_id] }">
                         {{property['bk_property_name']}}
                       </span>
+                      <i class="property-name-tooltips icon icon-cc-tips"
+                        v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+                        v-bk-tooltips="{
+                          trigger: 'mouseenter',
+                          content: property.placeholder
+                        }">
+                      </i>
                     </bk-checkbox>
-                    <i class="property-name-tooltips icon icon-cc-tips"
-                      v-if="property['placeholder']"
-                      v-bk-tooltips="{
-                        trigger: 'mouseenter',
-                        content: htmlEncode(property['placeholder'])
-                      }">
-                    </i>
                   </cmdb-auth>
                   <div class="property-value">
                     <component class="form-component"
@@ -61,6 +61,12 @@
                       :auto-select="false"
                       :multiple="property.ismultiple"
                       :placeholder="$tools.getPropertyPlaceholder(property)"
+                      v-bk-tooltips.top="{
+                        disabled: !property.placeholder,
+                        theme: 'light',
+                        trigger: 'click',
+                        content: property.placeholder
+                      }"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]">
@@ -110,6 +116,7 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
+  import { isExclmationProperty } from '@/utils/util'
 
   export default {
     name: 'cmdb-form-multiple',
@@ -203,6 +210,9 @@
       this.setChanged = setChanged
     },
     methods: {
+      isExclmationProperty(type) {
+        return isExclmationProperty(type)
+      },
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, {}, false)
         this.refrenceValues = this.$tools.clone(this.values)
@@ -343,6 +353,7 @@
                 height: 16px;
                 font-size: 16px;
                 color: #c3cdd7;
+                margin: 0 3px 0 -5px;
             }
             .property-value {
                 font-size: 0;

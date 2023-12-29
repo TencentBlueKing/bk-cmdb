@@ -74,6 +74,12 @@
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
+              v-bk-tooltips.top="{
+                disabled: !property.placeholder,
+                theme: 'light',
+                trigger: 'click',
+                content: property.placeholder
+              }"
               @active-change="handleComponentActiveChange(property, ...arguments)">
             </component>
           </div>
@@ -272,7 +278,6 @@
           bk_property_type: propertyType
         } = property
         const normal = `cmdb-search-${propertyType}`
-
         // 业务名在包含与非包含操作符时使用输入联想组件
         if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
           return `cmdb-search-${modelId}`
