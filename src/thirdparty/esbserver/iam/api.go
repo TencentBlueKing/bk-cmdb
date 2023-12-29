@@ -34,7 +34,7 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metada
 	err := i.client.Post().
 		SubResourcef(url).
 		WithContext(ctx).
-		WithHeaders(header).
+		WithHeaders(esbutil.SetEsbAuthHeader(i.config.GetConfig(), header)).
 		Body(params).
 		Do().
 		Into(&resp)
@@ -63,7 +63,7 @@ func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Hea
 	err := i.client.Post().
 		SubResourcef(url).
 		WithContext(ctx).
-		WithHeaders(header).
+		WithHeaders(esbutil.SetEsbAuthHeader(i.config.GetConfig(), header)).
 		Body(params).
 		Do().
 		Into(&resp)
@@ -92,7 +92,7 @@ func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header htt
 	err := i.client.Post().
 		SubResourcef(url).
 		WithContext(ctx).
-		WithHeaders(header).
+		WithHeaders(esbutil.SetEsbAuthHeader(i.config.GetConfig(), header)).
 		Body(params).
 		Do().
 		Into(&resp)
@@ -121,7 +121,7 @@ func (i *iam) BatchOperateInstanceAuth(ctx context.Context, header http.Header,
 	err := i.client.Post().
 		SubResourcef(url).
 		WithContext(ctx).
-		WithHeaders(header).
+		WithHeaders(esbutil.SetEsbAuthHeader(i.config.GetConfig(), header)).
 		Body(params).
 		Do().
 		Into(&resp)

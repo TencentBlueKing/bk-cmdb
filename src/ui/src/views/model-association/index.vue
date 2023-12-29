@@ -15,7 +15,7 @@
     <cmdb-tips
       class="mb10"
       tips-key="associationTips"
-      more-link="https://bk.tencent.com/docs/markdown/配置平台/产品白皮书/产品功能/ModelRelationType.md">
+      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/ModelRelationType.md`">
       {{$t('关联关系提示')}}
     </cmdb-tips>
     <p class="operation-box clearfix">

@@ -1007,6 +1007,9 @@
     .models-layout {
         padding: 15px 20px 0;
     }
+    .option-filter:hover {
+        color: $primaryColor;
+    }
     .options-filter{
         position: relative;
         margin-right: 5px;
@@ -1017,6 +1020,9 @@
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
+            :deep(.bk-select-name) {
+              font-size: 12px;
+            }
         }
         .filter-value{
             flex: 1;

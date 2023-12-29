@@ -86,9 +86,8 @@
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
         <bk-form-item>
-          <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
-            {{$t('添加其他条件')}}
-          </bk-button>
+          <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+            :type="3"></condition-picker>
         </bk-form-item>
       </bk-form>
       <div class="filter-options"
@@ -177,16 +176,17 @@
 
 <script>
   import has from 'has'
-  import PropertySelector from './property-selector'
   import FilterStore from './store'
   import OperatorSelector from './operator-selector'
   import { mapGetters } from 'vuex'
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
-      OperatorSelector
+      OperatorSelector,
+      ConditionPicker
     },
     directives: {
       focus: {
@@ -213,6 +213,57 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
+      propertyMap() {
+        let modelPropertyMap = { ...FilterStore.modelPropertyMap }
+        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
+        modelPropertyMap.host = modelPropertyMap.host
+          .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
+
+        // 暂时不支持node对象map类型的字段
+        modelPropertyMap.node = modelPropertyMap.node
+          ?.filter(property => !['map'].includes(property.bk_property_type))
+
+        const getPropertyMapExcludeBy = (exclude = []) => {
+          const excludes = !Array.isArray(exclude) ? [exclude] : exclude
+          const propertyMap = []
+          for (const [key, value] of Object.entries(modelPropertyMap)) {
+            if (!excludes.includes(key)) {
+              propertyMap[key] = value
+            }
+          }
+          return propertyMap
+        }
+
+        // 资源-主机视图
+        if (!FilterStore.bizId) {
+          // 非已分配
+          if (!FilterStore.isResourceAssigned) {
+            return getPropertyMapExcludeBy('node')
+          }
+          return modelPropertyMap
+        }
+
+        // 当前处于业务节点，使用除业务外全量的字段(包括node)
+        if (FilterStore.isBizNode) {
+          return getPropertyMapExcludeBy('biz')
+        }
+
+        // 容器拓扑
+        if (FilterStore.isContainerTopo) {
+          return {
+            host: modelPropertyMap.host || [],
+            node: modelPropertyMap.node || [],
+          }
+        }
+
+        // 业务拓扑主机，不需要业务和Node模型字段
+        modelPropertyMap = {
+          host: modelPropertyMap.host || [],
+          module: modelPropertyMap.module || [],
+          set: modelPropertyMap.set || []
+        }
+        return modelPropertyMap
+      },
       storageSelected() {
         return FilterStore.selected
       },
@@ -364,9 +415,6 @@
         await this.$nextTick()
         FilterStore.updateSelected([...this.selected])
         FilterStore.updateUserBehavior(this.selected)
-      },
-      handleSelectProperty() {
-        PropertySelector.show()
       },
       handleSearch() {
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
