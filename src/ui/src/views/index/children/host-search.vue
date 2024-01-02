@@ -12,42 +12,44 @@
 
 <template>
   <div class="host-search-layout">
-    <div class="search-bar">
-      <bk-input class="search-input" v-test-id
-        ref="searchInput"
-        type="textarea"
-        :placeholder="$t('首页主机搜索提示语')"
-        :rows="rows"
-        :clearable="true"
-        :show-clear-only-hover="true"
-        v-model="searchContent"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @keydown="handleKeydown">
-      </bk-input>
-      <bk-popover v-bind="popoverProps" ref="popover">
-        <bk-button theme="primary" class="search-btn" v-test-id="'search'"
-          :loading="$loading(request.search)"
-          @click="handleSearch()">
-          <i class="bk-icon icon-search"></i>
-          {{$t('搜索')}}
-        </bk-button>
-        <div class="picking-popover-content" slot="content">
-          <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
-          <div class="buttons">
-            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
-              @click="handleSearch('ip')">
-              {{$t('IP')}}
-            </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
-              @click="handleSearch('asset')">
-              {{$t('固资编号')}}
-            </bk-button>
+    <cmdb-auth-mask v-bind="getAuthMaskProps()">
+      <div class="search-bar">
+        <bk-input class="search-input" v-test-id
+          ref="searchInput"
+          type="textarea"
+          :placeholder="$t('首页主机搜索提示语')"
+          :rows="rows"
+          :clearable="true"
+          :show-clear-only-hover="true"
+          v-model="searchContent"
+          @focus="handleFocus"
+          @blur="handleBlur"
+          @keydown="handleKeydown">
+        </bk-input>
+        <bk-popover v-bind="popoverProps" ref="popover">
+          <bk-button theme="primary" class="search-btn" v-test-id="'search'"
+            :loading="$loading(request.search)"
+            @click="handleSearch()">
+            <i class="bk-icon icon-search"></i>
+            {{$t('搜索')}}
+          </bk-button>
+          <div class="picking-popover-content" slot="content">
+            <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
+            <div class="buttons">
+              <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
+                @click="handleSearch('ip')">
+                {{$t('IP')}}
+              </bk-button>
+              <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
+                @click="handleSearch('asset')">
+                {{$t('固资编号')}}
+              </bk-button>
+            </div>
           </div>
-        </div>
-      </bk-popover>
-      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
-    </div>
+        </bk-popover>
+        <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
+      </div>
+    </cmdb-auth-mask>
   </div>
 </template>
 
@@ -105,6 +107,14 @@
       this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
     },
     methods: {
+      getAuthMaskProps() {
+        const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+        return {
+          auth,
+          tag: 'div',
+          authorized: this.isViewAuthed(auth)
+        }
+      },
       getSearchList() {
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
         return FilterUtils.splitIP(this.searchContent)
@@ -244,6 +254,10 @@
         max-width: 806px;
         height: 42px;
         margin: 0 auto;
+
+        .auth-mask {
+          height: 100%;
+        }
     }
     .search-bar {
         position: absolute;

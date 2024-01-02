@@ -9,16 +9,22 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { FIELD_TEMPLATE_DRAFT } from '@/dictionary/storage-keys.js'
 
 const defaultTemplateDraft = () => ({
   basic: {},
   fieldList: null,
   uniqueList: null
 })
+const sessionTemplateDraft = () => Object.assign(
+  defaultTemplateDraft(),
+  JSON.parse(sessionStorage.getItem(FIELD_TEMPLATE_DRAFT)) || {}
+)
+const setSessionTemplateDraft = val =>  sessionStorage.setItem(FIELD_TEMPLATE_DRAFT, val)
 
 const state = {
   // 草稿数据，属性与唯一校验格式与接口参数一致
-  templateDraft: defaultTemplateDraft()
+  templateDraft: sessionTemplateDraft()
 }
 
 const getters = {
@@ -28,9 +34,11 @@ const getters = {
 const mutations = {
   setTemplateDraft(state, templateDraft) {
     state.templateDraft = Object.assign(state.templateDraft, templateDraft)
+    setSessionTemplateDraft(JSON.stringify(state.templateDraft))
   },
   clearTemplateDraft(state) {
     state.templateDraft = defaultTemplateDraft()
+    setSessionTemplateDraft(JSON.stringify(defaultTemplateDraft()))
   }
 }
 

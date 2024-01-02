@@ -65,6 +65,7 @@ const (
 	CloudResourceTask        ResourceType = "cloudResourceTask"
 	ConfigAdmin              ResourceType = "configAdmin"
 	Project                  ResourceType = "project"
+	FulltextSearch           ResourceType = "fulltextSearch"
 	FieldTemplate            ResourceType = "fieldTemplate"
 )
 

@@ -23,17 +23,23 @@
       <bk-option v-for="option in group.bk_objects"
         :key="option.bk_obj_id"
         :id="option.bk_obj_id"
-        :name="option.bk_obj_name">
-        <div
-          class="option-item-content"
-          :title="option.name">
-          <div class="text">
-            <span class="item-name">{{option.bk_obj_name}}</span>
+        :name="option.bk_obj_name"
+        :disabled="!getViewAuthMaskProps(option)?.ignore && !getViewAuthMaskProps(option)?.authorized">
+        <cmdb-auth-mask
+          tag="div"
+          class="model-auth-mask"
+          v-bind="getViewAuthMaskProps(option)">
+          <div
+            class="option-item-content"
+            :title="option.name">
+            <div class="text">
+              <span class="item-name">{{option.bk_obj_name}}</span>
+            </div>
+            <template v-if="isShowLink">
+              <i class="icon-cc-share link-icon" @click.prevent.stop="handleClickLink(option)"></i>
+            </template>
           </div>
-          <template v-if="isShowLink">
-            <i class="icon-cc-share link-icon" @click.prevent.stop="handleClickLink(option)"></i>
-          </template>
-        </div>
+        </cmdb-auth-mask>
       </bk-option>
     </bk-option-group>
   </bk-select>
@@ -41,6 +47,7 @@
 
 <script>
   import { MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
+  import { isViewAuthFreeModel } from '@/service/auth'
 
   export default {
     props: {
@@ -57,6 +64,10 @@
         default: () => ([])
       },
       isShowLink: {
+        type: Boolean,
+        default: true
+      },
+      isAuth: {
         type: Boolean,
         default: true
       }
@@ -99,6 +110,19 @@
           })
         } catch (error) {
           this.classifications = []
+        }
+      },
+      getViewAuthMaskProps(model) {
+        if (!this.isAuth || isViewAuthFreeModel(model)) {
+          return {
+            ignore: true
+          }
+        }
+
+        const auth = { type: this.$OPERATION.R_MODEL, relation: [model.id] }
+        return {
+          auth,
+          authorized: this.isViewAuthed(auth)
         }
       },
       handleClickLink(model) {

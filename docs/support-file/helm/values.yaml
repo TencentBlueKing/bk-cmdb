@@ -1111,6 +1111,10 @@ common:
       keyFile:
       caFile:
       password:
+    # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+    # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+    # 可以配置不进行业务访问鉴权
+    skipViewBizAuth: false
 
   ## bk-cmdb common config esb parameters
   ## @param common.esb.appCode bk-cmdb app code used in esb

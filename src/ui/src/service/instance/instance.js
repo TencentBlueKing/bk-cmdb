@@ -16,12 +16,11 @@ const find = async ({ bk_obj_id: objId, params, config }) => {
   try {
     const [{ info }, { count }] = await Promise.all([
       http.post(`search/instances/object/${objId}`, params, config),
-      http.post(`count/instances/object/${objId}`, params)
+      http.post(`count/instances/object/${objId}`, params, config)
     ])
     return { count, info: info || [] }
   } catch (error) {
-    console.error(error)
-    return { count: 0, info: [] }
+    return Promise.reject(error)
   }
 }
 
@@ -42,8 +41,7 @@ const findOne = async ({ bk_obj_id: objId, bk_inst_id: instId, config }) => {
     const [instance] = info || [null]
     return instance
   } catch (error) {
-    console.error(error)
-    return null
+    return Promise.reject(error)
   }
 }
 

@@ -17,7 +17,9 @@ import (
 	"sort"
 	"strconv"
 
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -41,6 +43,12 @@ func (s *Service) FindModuleHostRelation(ctx *rest.Contexts) {
 	}
 	if bizID == 0 {
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -169,17 +177,15 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	moduleCond := []meta.ConditionItem{
-		{
-			Field:    common.BKAppIDField,
-			Operator: common.BKDBEQ,
-			Value:    bizID,
-		},
-		{
-			Field:    common.BKServiceTemplateIDField,
-			Operator: common.BKDBIN,
-			Value:    option.ServiceTemplateIDs,
-		},
+		{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: bizID},
+		{Field: common.BKServiceTemplateIDField, Operator: common.BKDBIN, Value: option.ServiceTemplateIDs},
 	}
 	if len(option.ModuleIDs) > 0 {
 		moduleCond = append(moduleCond, meta.ConditionItem{
@@ -204,8 +210,9 @@ func (s *Service) FindHostsByServiceTemplates(ctx *rest.Contexts) {
 		ModuleIDArr:      moduleIDArr,
 	}
 	searchHostCond := &meta.QueryCondition{
-		Fields: option.Fields,
-		Page:   option.Page,
+		Fields:         option.Fields,
+		Page:           option.Page,
+		DisableCounter: true,
 	}
 
 	result, err := s.findDistinctHostInfo(ctx, distinctHostCond, searchHostCond)
@@ -303,6 +310,12 @@ func (s *Service) FindHostsBySetTemplates(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	setCond := []meta.ConditionItem{
 		{
 			Field:    common.BKAppIDField,
@@ -374,6 +387,12 @@ func (s *Service) FindHostsByTopo(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	// generate search condition,
 	// if node is not a set or a module, we need to traverse its child topo to the set level to get hosts by relation
 	distinctHostCond := &meta.DistinctHostIDByTopoRelationRequest{
@@ -441,8 +460,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	appResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, header, common.BKInnerObjIDApp,
 		filter)
 	if err != nil {
-		blog.Errorf("ListResourcePoolHosts failed, ReadInstance of default app failed, filter: %+v, err: %#v, "+
-			"rid:%s", filter, err, rid)
+		blog.Errorf("get default biz failed, filter: %+v, err: %v, rid:%s", filter, err, rid)
 		ccErr := defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		ctx.RespAutoError(ccErr)
 		return
@@ -475,8 +493,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	// get biz ID
 	bizID, err := util.GetInt64ByInterface(bizData[common.BKAppIDField])
 	if err != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, parse app data failed, bizData: %s, err: %s, rid: %s", bizData,
-			err.Error(), rid)
+		blog.Errorf("parse app data failed, biz: %s, err: %v, rid: %s", bizData, err, rid)
 		ccErr := defErr.Error(common.CCErrCommParseDataFailed)
 		ctx.RespAutoError(ccErr)
 		return
@@ -485,8 +502,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	// do host search
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
-		blog.ErrorJSON("ListResourcePoolHosts failed, listBizHosts failed, bizID: %s, parameter: %s, err: %s, "+
-			"rid:%s", bizID, parameter, ccErr.Error(), rid)
+		blog.Errorf("listBizHosts failed, bizID: %s, parameter: %s, err: %v, rid:%s", bizID, parameter, ccErr, rid)
 		ctx.RespAutoError(ccErr)
 		return
 	}
@@ -523,6 +539,13 @@ func (s *Service) ListBizHosts(ctx *rest.Contexts) {
 		ctx.RespAutoError(ccErr)
 		return
 	}
+
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	hostResult, ccErr := s.listBizHosts(ctx, bizID, parameter)
 	if ccErr != nil {
@@ -665,6 +688,12 @@ func (s *Service) ListBizHostsTopo(ctx *rest.Contexts) {
 
 	if bizID == 0 {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 
@@ -880,7 +909,7 @@ func (s *Service) getOtherInstInfo(kit *rest.Kit, objID string, ids []int64, ins
 	return instMap, nil
 }
 
-// ListHostDetailAndTopology TODO
+// ListHostDetailAndTopology obtain host details and corresponding topological relationships.
 func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 	header := ctx.Kit.Header
 	rid := ctx.Kit.Rid
@@ -920,13 +949,21 @@ func (s *Service) ListHostDetailAndTopology(ctx *rest.Contexts) {
 		return
 	}
 
-	hostTopo, err := s.Logic.ArrangeHostDetailAndTopology(ctx.Kit, options.WithBiz, hosts.Info)
+	hostTopo, bizList, err := s.Logic.ArrangeHostDetailAndTopology(ctx.Kit, options.WithBiz, hosts.Info)
 	if err != nil {
 		blog.Errorf("arrange host detail and topology failed, err: %v, rid :%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
+	if options.WithBiz && s.AuthManager.Enabled() {
+		if err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, acMeta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizList...); err != nil {
+			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizList, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
 	ctx.RespEntityWithCount(int64(hosts.Count), hostTopo)
 	return
 }
@@ -1061,6 +1098,13 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
+
+	// authorize
+	if resp, authorized := s.authHostUnderBiz(ctx.Kit, bizID); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	params := meta.FindHostTotalTopo{}
 	if err := ctx.DecodeInto(&params); err != nil {
 		ctx.RespAutoError(err)
@@ -1080,4 +1124,28 @@ func (s *Service) ListHostTotalMainlineTopo(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntityWithCount(int64(len(rsp)), rsp)
+}
+
+// authHostUnderBiz 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+// list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口, 可以通过配置变量，
+// 决定是否鉴业务访问权限
+func (s *Service) authHostUnderBiz(kit *rest.Kit, bizID int64) (*meta.BaseResp, bool) {
+	if !s.AuthManager.Enabled() {
+		return nil, true
+	}
+
+	config := "authServer.skipViewBizAuth"
+	skipAuth, err := cc.Bool(config)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", config, err, kit.Rid)
+	}
+
+	if skipAuth {
+		return nil, true
+	}
+
+	authRes := acMeta.ResourceAttribute{Basic: acMeta.Basic{Type: acMeta.HostInstance, Action: acMeta.Find},
+		BusinessID: bizID}
+
+	return s.AuthManager.Authorize(kit, authRes)
 }

@@ -429,11 +429,28 @@ func (hs *hostServer) MoveSetHost2IdleModule(ctx context.Context, h http.Header,
 	return
 }
 
-// SearchHost TODO
-func (hs *hostServer) SearchHost(ctx context.Context, h http.Header,
-	dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult, err error) {
+// SearchHostWithNoAuth host query without auth.
+func (hs *hostServer) SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
+	resp *metadata.SearchHostResult, err error) {
+
 	resp = new(metadata.SearchHostResult)
-	subPath := "/hosts/search"
+	subPath := "/findmany/hosts/search/noauth"
+
+	err = hs.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+// SearchHostWithBiz host search with business information
+func (hs *hostServer) SearchHostWithBiz(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
+	resp *metadata.SearchHostResult, err error) {
+	resp = new(metadata.SearchHostResult)
+	subPath := "/findmany/hosts/search/with_biz"
 
 	err = hs.client.Post().
 		WithContext(ctx).

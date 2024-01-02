@@ -92,6 +92,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   import HostTable from './host-table.vue'
   import debounce from 'lodash.debounce'
   import CmdbLoading from '@/components/loading/loading'
@@ -227,7 +228,7 @@
           operator: '$eq',
           value: node.data.bk_inst_id
         })
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getBizHosts({
           params,
           config: {
             requestId: this.request.host

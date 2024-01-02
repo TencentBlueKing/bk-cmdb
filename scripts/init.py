@@ -356,6 +356,10 @@ authServer:
        caFile:
        # 用于解密根据RFC1423加密的证书密钥的PEM块
        password:
+  # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+  # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+  # 可以配置不进行业务访问鉴权
+  skipViewBizAuth: false
 
 #cloudServer专属配置
 cloudServer:

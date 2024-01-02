@@ -422,7 +422,7 @@ export function transformIP(raw) {
   transformedIP.data.ipv6 = IPs.IPv6List
   IPs.IPv6WithCloudList.forEach(([cloud, ip]) => transformedIP.data.ipv6.push(`${cloud}:[${ip}]`))
 
-  transformedIP.data.assetList = IPs.assetList
+  transformedIP.data.assetList = IPs.assetList  // 没进到ipv4和ipv6原样返回，兼容ip模糊搜索
 
   return transformedIP
 }

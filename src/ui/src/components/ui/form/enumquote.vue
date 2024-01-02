@@ -108,6 +108,7 @@
     :placeholder="$t('请选择xx', { name: $t('模型实例') })"
     :search-placeholder="searchPlaceholder"
     :display-tag="true"
+    :disabled="disabled"
     :multiple="localMultiple"
     v-model="refModelInstIds">
   </model-instance-selector>

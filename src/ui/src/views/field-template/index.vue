@@ -487,10 +487,13 @@
         <template slot-scope="{ row }">
           <cmdb-loading :loading="$loading(requestIds.modelCount)">
             <span v-if="row.model_count === 0" class="cell-unbind">0（{{$t('未绑定')}}）</span>
-            <span v-else class="cell-link-content"
-              @mouseenter="(event) => handleBoundModelCountMouseenter(event, row)">
-              {{ row.model_count ?? '--' }}
-            </span>
+            <cmdb-auth v-else tag="div"
+              :auth="{ type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }">
+              <span class="cell-link-content"
+                @mouseenter="(event) => handleBoundModelCountMouseenter(event, row)">
+                {{ row.model_count ?? '--' }}
+              </span>
+            </cmdb-auth>
           </cmdb-loading>
         </template>
       </bk-table-column>
@@ -547,9 +550,9 @@
               </bk-button>
             </template>
           </cmdb-auth>
-          <cmdb-auth class="mr10" :auth="[
+          <cmdb-auth class="mr10" :ignore-passed-auth="true" :auth="[
             { type: $OPERATION.C_FIELD_TEMPLATE },
-            { type: $OPERATION.U_FIELD_TEMPLATE, relation: [row.id] }
+            { type: $OPERATION.R_FIELD_TEMPLATE, relation: [row.id] }
           ]">
             <template slot-scope="{ disabled }">
               <bk-button

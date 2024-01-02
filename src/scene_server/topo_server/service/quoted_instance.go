@@ -133,7 +133,25 @@ func (s *Service) ListQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	// skip find authorize, ** add it when confirmed **
+	// authorize, 传业务id时，代表是从业务的视角去查询实例的表格字段，此时根据是否有这个业务的业务访问权限进行鉴权
+	if opt.BizID != 0 {
+		if err := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.ViewBusinessResource,
+			common.BKInnerObjIDApp, opt.BizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", opt.BizID, err, cts.Kit.Rid)
+			cts.RespAutoError(err)
+			return
+		}
+	} else {
+		authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(cts.Kit, []string{opt.ObjID})
+		if err != nil {
+			cts.RespAutoError(err)
+			return
+		}
+		if !authorized {
+			cts.RespNoAuth(authResp)
+			return
+		}
+	}
 
 	// get quoted object id
 	objID, err := s.Logics.ModelQuoteOperation().GetQuotedObjID(cts.Kit, opt.ObjID, opt.PropertyID)

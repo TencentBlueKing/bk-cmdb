@@ -173,6 +173,7 @@
     "模型": "Model",
     "关联类型": "Association Type",
     "蓝鲸配置平台": "BK CMDB",
+    "配置平台": "CMDB",
     "基础资源": "Basic Resource",
     "后台管理": "Back-stage",
     "后台管理标题": "Back-stage Management",
@@ -1683,6 +1684,9 @@
     "枚举(多选)": "Enumeration(multiple)",
     "枚举(引用)": "Enumeration(quote)",
     "表格": "Table",
+    "不勾选“可编辑”，则创建实例时，初始化该字段值后不可再编辑":"If 'Editable' is not checked, the field value cannot be edited after initialization when creating an instance",
+    "请选择模型实例":"Please select a model instance",
+    "该字段暂无权限配置，点击申请权限":"This field does not have permission configuration",
     "引用模型": "Reference model",
     "默认以实例名称作为枚举选项": "Use Instance name as enumeration option by default",
     "模型实例": "model Instance",
@@ -1833,6 +1837,9 @@
     "保存&退出": "Save & Exit",
     "保存&下一步": "Save & Next",
     "字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板": "The field conflicts. The field has been bound to {other}. Delete the model or modify the template",
+    "你可以勾选页面内其他待申请的n个资源，一并申请": "You can check the other {n} resources to be applied for on the page and apply together.",
+    "暂无模型的查看与编辑权限，link": "There is currently no viewing and editing permissions for the model. {link}",
+    "立即申请": "Apply now",
     "动态分组详情": "Dynamic packet details【{name}】",
     "继续": "Continue",
     "已被模型绑定，不能删除": "Already bound to the model, can't delete",
@@ -1850,5 +1857,9 @@
     "确认解绑该模板": "Confirm to unbind the template",
     "解绑后，字段内容与唯一校验将会与模板脱离关系，不再受模板管理": "After being unbound, field content and unique check are detached from the template and no longer managed by the template",
     "IPv4优先": "IPv4 priority",
-    "IPv6优先": "IPv6 priority"
+    "IPv6优先": "IPv6 priority",
+    "无模型相关权限": "No model related permissions",
+    "请前往权限中心申请相关权限": "Please go to the Permission Center to apply for relevant permissions",
+    "我已申请": "Applied",
+    "初始化模型名称，不支持修改": "Initialize model name, modification is not supported"
 }
