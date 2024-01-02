@@ -26,6 +26,8 @@ type PropWithTable struct {
 
 var handleInstFieldFuncMap = make(map[string]handleInstFieldFunc)
 
+var handleSpecialFieldFuncMap = make(map[string]handleInstFieldFunc)
+
 func init() {
 	handleInstFieldFuncMap[common.FieldTypeInt] = getHandleIntFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeFloat] = getHandleFloatFieldFunc()
@@ -36,9 +38,16 @@ func init() {
 	handleInstFieldFuncMap[common.FieldTypeOrganization] = getHandleOrgFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeUser] = getHandleUserFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeInnerTable] = getHandleTableFieldFunc()
+
+	handleSpecialFieldFuncMap[common.BKCloudIDField] = getCloudAreaFieldFunc()
 }
 
 func getHandleInstFieldFunc(prop *PropWithTable) handleInstFieldFunc {
+	handleFunc, isSpecial := handleSpecialFieldFuncMap[prop.ID]
+	if isSpecial {
+		return handleFunc
+	}
+
 	handleFunc, ok := handleInstFieldFuncMap[prop.PropertyType]
 	if !ok {
 		handleFunc = getDefaultHandleFieldFunc()
@@ -300,5 +309,23 @@ func getDefaultHandleFieldFunc() handleInstFieldFunc {
 		}
 
 		return rows[0][property.ExcelColIndex], nil
+	}
+}
+
+func getCloudAreaFieldFunc() handleInstFieldFunc {
+	return func(i *Importer, property *PropWithTable, rows [][]string) (interface{}, error) {
+		if len(rows) == 0 || len(rows[0]) < property.ExcelColIndex {
+			blog.Errorf("cloud area data is invalid, data: %v, rid: %s", rows, i.GetKit().Rid)
+			return nil, fmt.Errorf("cloud area data is invalid")
+		}
+
+		// 查找 "[" 的位置,如果找到 "["，则截取字符串到 "[" 的位置
+		value := rows[0][property.ExcelColIndex]
+		openBracketIndex := strings.Index(value, "[")
+		if openBracketIndex != -1 {
+			value = value[:openBracketIndex]
+		}
+
+		return value, nil
 	}
 }
