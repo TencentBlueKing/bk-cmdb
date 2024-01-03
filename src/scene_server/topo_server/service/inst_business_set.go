@@ -693,15 +693,6 @@ func composeFilter(cond *metadata.QueryBusinessSetRequest, authSetID mapstr.MapS
 		filter = cond
 	}
 
-	// 如果存在 TimeCondition 将TimeCondition合并
-	if cond.TimeCondition != nil {
-		mergeFilter, err := cond.TimeCondition.MergeTimeCondition(filter)
-		if err != nil {
-			return nil, err
-		}
-		filter = mergeFilter
-	}
-
 	bizSetCond := mapstr.New()
 	if len(filter) > 0 {
 		if len(authSetID) > 0 {
@@ -760,33 +751,30 @@ func (s *Service) SearchBusinessSet(ctx *rest.Contexts) {
 		return
 	}
 
-	if searchCond.Page.EnableCount {
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKTableNameBaseBizSet, []map[string]interface{}{cond})
-		if err != nil {
-			blog.Errorf("count biz set failed, cond: %#v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		ctx.RespEntityWithCount(counts[0], make([]mapstr.MapStr, 0))
-		return
-	}
-
 	if searchCond.Page.Sort == "" {
 		searchCond.Page.Sort = common.BKBizSetIDField
 	}
 
 	query := &metadata.QueryCondition{
 		Condition:      cond,
+		TimeCondition:  searchCond.TimeCondition,
 		Page:           searchCond.Page,
 		Fields:         searchCond.Fields,
 		DisableCounter: true,
+	}
+	if searchCond.Page.EnableCount {
+		query.DisableCounter = false
 	}
 
 	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDBizSet, query)
 	if err != nil {
 		blog.Errorf("failed to find the biz set, query: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if searchCond.Page.EnableCount {
+		ctx.RespEntityWithCount(int64(res.Count), make([]mapstr.MapStr, 0))
 		return
 	}
 
