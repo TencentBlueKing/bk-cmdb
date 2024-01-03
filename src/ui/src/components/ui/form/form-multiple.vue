@@ -40,7 +40,7 @@
                         {{property['bk_property_name']}}
                       </span>
                       <i class="property-name-tooltips icon icon-cc-tips"
-                        v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+                        v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                         v-bk-tooltips="{
                           trigger: 'mouseenter',
                           content: property.placeholder
@@ -116,7 +116,6 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
-  import { isExclmationProperty } from '@/utils/util'
 
   export default {
     name: 'cmdb-form-multiple',
@@ -210,9 +209,6 @@
       this.setChanged = setChanged
     },
     methods: {
-      isExclmationProperty(type) {
-        return isExclmationProperty(type)
-      },
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, {}, false)
         this.refrenceValues = this.$tools.clone(this.values)

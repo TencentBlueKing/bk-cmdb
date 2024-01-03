@@ -24,7 +24,7 @@
           <span class="property-name" v-bk-overflow-tips>
             <span>{{property.bk_property_name}}</span>
             <i class="property-name-tooltips icon-cc-tips"
-              v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+              v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
               v-bk-tooltips.top="{
                 theme: 'light',
                 trigger: 'mouseenter',
@@ -101,7 +101,7 @@
                         @enter="confirm"
                         :ref="`component-${property.bk_property_id}`"
                         v-bk-tooltips.top="{
-                          disabled: !property.placeholder || isExclmationProperty(property.bk_property_type),
+                          disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                           theme: 'light',
                           trigger: 'mouseenter',
                           content: property.placeholder
@@ -195,7 +195,6 @@
   import { readonlyMixin } from '../mixin-readonly'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
-  import { isExclmationProperty } from '@/utils/util'
   export default {
     name: 'cmdb-host-property',
     filters: {
@@ -238,9 +237,6 @@
       }
     },
     methods: {
-      isExclmationProperty(type) {
-        return isExclmationProperty(type)
-      },
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')

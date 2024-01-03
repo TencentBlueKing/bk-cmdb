@@ -43,8 +43,10 @@
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'transfer'"
           :disabled="!hasSelection" class="flex-btn">
-          <span>{{$t('转移至')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
+          <div class="btn-content">
+            <span>{{$t('转移至')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'transfer'">
           <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferIdle'"
@@ -88,8 +90,10 @@
         @hide="isAddToOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'addTo'"
           :disabled="!hasSelection" class="flex-btn">
-          <span>{{$t('追加至')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+          <div class="btn-content">
+            <span>{{$t('追加至')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'addToBiz'"
@@ -112,8 +116,10 @@
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'remove'"
           :disabled="!hasSelection" class="flex-btn">
-          <span>{{$t('移出')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
+          <div class="btn-content">
+            <span>{{$t('移出')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'remove'"
@@ -138,8 +144,10 @@
         @show="isMoreMenuOpen = true"
         @hide="isMoreMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'more'" class="flex-btn">
-          <span>{{$t('更多')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
+          <div class="btn-content">
+            <span>{{$t('更多')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'more'">
           <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)"
@@ -563,7 +571,7 @@
 
 <style lang="scss" scoped>
     .flex-btn{
-      :deep(>div>span) {
+      :deep(.btn-content) {
         display: flex;
         align-items: center;
         gap: 5px;

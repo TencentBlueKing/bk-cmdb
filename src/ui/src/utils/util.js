@@ -9,7 +9,6 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { PROPERTY_TYPE_EXCLAMATION_TIPS } from '@/dictionary/property-constants'
 const hex2grb = (hex) => {
   const rgb = []
   hex = hex.substr(1)
@@ -127,5 +126,3 @@ export const downloadFile = (content, filename) => {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
-
-export const isExclmationProperty = type => PROPERTY_TYPE_EXCLAMATION_TIPS.includes(type)

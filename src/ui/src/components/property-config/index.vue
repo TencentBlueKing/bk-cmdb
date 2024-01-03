@@ -18,7 +18,6 @@
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
   import PropertyModal from './property-modal.vue'
   import useProperty from './use-property.js'
-  import { isExclmationProperty } from '@/utils/util'
 
   interface IProperty {
     id: number,
@@ -143,9 +142,6 @@
       }
     },
     methods: {
-      isExclmationProperty(type) {
-        return isExclmationProperty(type)
-      },
       async validateAll() {
         // 获得每一个表单元素的校验方法
         const validates = (this.$refs.propertyFormEl || [])
@@ -216,7 +212,7 @@
                   {{property.bk_property_name}}
                 </div>
                 <i class="property-name-tooltips icon-cc-tips"
-                  v-if="property.placeholder && isExclmationProperty(property.bk_property_type)"
+                  v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                   v-bk-tooltips.top="{
                     theme: 'light',
                     trigger: 'mouseenter',

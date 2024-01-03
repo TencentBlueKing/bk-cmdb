@@ -24,7 +24,7 @@
       <div slot-scope="{ row }" :class="{ ignore: row.__extra__.ignore }">
         <span>{{row.bk_property_name}}</span>
         <i class="property-name-tooltips icon-cc-tips"
-          v-if="row.placeholder && isExclmationProperty(row.bk_property_type)"
+          v-if="row.placeholder && $tools.isIconTipProperty(row.bk_property_type)"
           v-bk-tooltips.top="{
             theme: 'light',
             trigger: 'mouseenter',
@@ -108,7 +108,7 @@
           <property-form-element
             :property="row"
             v-bk-tooltips.top="{
-              disabled: !row.placeholder || isExclmationProperty(row.bk_property_type),
+              disabled: !row.placeholder || $tools.isIconTipProperty(row.bk_property_type),
               theme: 'light',
               trigger: 'click',
               content: row.placeholder
@@ -155,7 +155,6 @@
   import { CONFIG_MODE } from '@/service/service-template/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { getPropertyDefaultValue } from '@/utils/tools.js'
-  import { isExclmationProperty } from '@/utils/util'
 
   export default {
     components: {
@@ -252,9 +251,6 @@
       }
     },
     methods: {
-      isExclmationProperty(type) {
-        return isExclmationProperty(type)
-      },
       setPropertyRuleList() {
         // 当前属性列表中不存在，则添加
         this.checkedPropertyIdList.forEach((id) => {
