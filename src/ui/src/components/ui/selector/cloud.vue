@@ -18,6 +18,8 @@
     :clearable="allowClear"
     :disabled="disabled"
     :multiple="multiple"
+    :display-tag="multiple"
+    :selected-style="getSelectedStyle"
     :popover-options="popoverOptions"
   >
     <bk-option
@@ -67,6 +69,11 @@
         data: [],
         selected: this.multiple ? [] : ''
       }
+    },
+    computed: {
+      getSelectedStyle() {
+        return this.multiple ? 'checkbox' : 'check'
+      },
     },
     watch: {
       value: {

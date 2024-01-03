@@ -16,6 +16,8 @@
     v-model="localValue"
     v-bind="$attrs"
     :multiple="multiple"
+    :display-tag="true"
+    selected-style="checkbox"
     :loading="$loading(requestId)"
     :remote-method="searchArea"
     @clear="() => $emit('clear')"
