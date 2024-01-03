@@ -18,6 +18,7 @@
     v-model="localValue"
     v-bind="$attrs"
     :list="[]"
+    :has-delete-icon="true"
     @removeAll="() => $emit('clear')"
     @click.native="handleToggle(true)"
     @blur="handleToggle(false, ...arguments)">

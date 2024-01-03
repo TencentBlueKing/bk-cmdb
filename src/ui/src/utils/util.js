@@ -9,7 +9,6 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 const hex2grb = (hex) => {
   const rgb = []
   hex = hex.substr(1)
@@ -91,7 +90,7 @@ export const swapItem = (arr, fromIndex, toIndex) => {
 export const escapeRegexChar = (str) => {
   // eslint-disable-next-line no-useless-escape
   const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
-  return str.replace(escapeCharRE, '\\$1')
+  return String(str).replace(escapeCharRE, '\\$1')
 }
 
 /**

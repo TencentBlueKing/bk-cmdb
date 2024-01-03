@@ -42,9 +42,11 @@
         @show="isTransferMenuOpen = true"
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'transfer'"
-          :disabled="!hasSelection">
-          <span>{{$t('转移至')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
+          :disabled="!hasSelection" class="flex-btn">
+          <div class="btn-content">
+            <span>{{$t('转移至')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'transfer'">
           <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferIdle'"
@@ -87,9 +89,11 @@
         @show="isAddToOpen = true"
         @hide="isAddToOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'addTo'"
-          :disabled="!hasSelection">
-          <span>{{$t('追加至')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+          :disabled="!hasSelection" class="flex-btn">
+          <div class="btn-content">
+            <span>{{$t('追加至')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'addToBiz'"
@@ -111,9 +115,11 @@
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'remove'"
-          :disabled="!hasSelection">
-          <span>{{$t('移出')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
+          :disabled="!hasSelection" class="flex-btn">
+          <div class="btn-content">
+            <span>{{$t('移出')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'remove'"
@@ -137,9 +143,11 @@
         font-size="medium"
         @show="isMoreMenuOpen = true"
         @hide="isMoreMenuOpen = false">
-        <bk-button slot="dropdown-trigger" v-test-id="'more'">
-          <span>{{$t('更多')}}</span>
-          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
+        <bk-button slot="dropdown-trigger" v-test-id="'more'" class="flex-btn">
+          <div class="btn-content">
+            <span>{{$t('更多')}}</span>
+            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
+          </div>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'more'">
           <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)"
@@ -314,8 +322,8 @@
         const IPWithCloudFields = {
           [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
           [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
-          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv4优先')})`,
-          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv6优先')})`
+          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv4优先')})`,
+          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv6优先')})`
         }
         const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
           id: key,
@@ -562,6 +570,13 @@
 </script>
 
 <style lang="scss" scoped>
+    .flex-btn{
+      :deep(.btn-content) {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+    }
     .options-layout {
         margin-top: 12px;
     }
@@ -597,7 +612,6 @@
             top: 0px;
             font-size: 20px;
             &.open {
-                top: -1px;
                 transform: rotate(180deg);
             }
         }
