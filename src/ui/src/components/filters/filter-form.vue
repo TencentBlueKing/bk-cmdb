@@ -28,13 +28,18 @@
     </div>
     <cmdb-sticky-layout class="filter-layout" slot="content">
       <bk-form class="filter-form" form-type="vertical">
-        <bk-form-item class="filter-ip" label="IP">
+        <bk-form-item class="filter-ip filter-item">
+          <label class="item-label">
+            IP
+            <span class="item-label-suffix">({{$t('自动解析IP目标')}})</span>
+          </label>
           <editable-block
-            ref="textareaDom"
-            class="textareaDom"
+            ref="ipEditableBlock"
+            class="ip-editable-block"
             :enter-search="false"
             :placeholder="$t('主机搜索提示语')"
-            :search-content.sync="IPCondition.text">
+            v-model="IPCondition.text"
+            @updateValue="(val) => IPCondition.text = val">
           </editable-block>
           <input type="hidden"
             ref="ip"
@@ -96,7 +101,7 @@
           content: $t('条件无效，Node条件属性与其他条件属性不能同时设置')
         }">
           <bk-button
-            class="option-search mr10"
+            class="option-search mr10 search-btn"
             theme="primary"
             :disabled="errors.any() || searchDisabled"
             @click="handleSearch">
@@ -179,7 +184,8 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
-  import EditableBlock from '@/components/editable-block/editable-block.vue'
+  import { setCursorPosition } from '@/utils/util'
+  import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
     components: {
@@ -306,6 +312,13 @@
         }
       }
     },
+    created() {
+      setTimeout(() => {
+        const ele = this.$refs.ipEditableBlock
+        ele?.focus()
+        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
+      }, 0)
+    },
     methods: {
       getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
@@ -407,6 +420,10 @@
         FilterStore.updateUserBehavior(this.selected)
       },
       handleSearch() {
+        const { hasIP } = this.$refs.ipEditableBlock
+        if (!hasIP) {
+          return
+        }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
@@ -509,9 +526,9 @@
 </script>
 
 <style lang="scss" scoped>
-    .textareaDom {
+    .ip-editable-block {
       :deep(.search-input) {
-        min-height: 36px;
+        min-height: 82px;
         font-size: 12px;
         line-height: 24px;
       }

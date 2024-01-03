@@ -15,11 +15,11 @@
     <div class="search-bar">
       <editable-block
         v-test-id
-        ref="textareaDom"
+        ref="ipEditableBlock"
         :placeholder="$t('首页主机搜索提示语')"
         :focus-tip="$t('首页主机搜索聚焦提示')"
         :blur-tip="$t('首页主机搜索失焦焦提示')"
-        :search-content="searchContent"
+        :value="searchContent"
         @search="handleSearch"
         @blur="handleBlur"
         @focus="handleFocus">
@@ -56,7 +56,7 @@
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
-  import EditableBlock from '@/components/editable-block/editable-block.vue'
+  import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
     components: {
@@ -76,7 +76,7 @@
       return {
         rows: 1,
         searchContent: defaultSearchContent(),
-        textareaDom: null,
+        ipEditableBlock: null,
         popoverProps: {
           width: 280,
           trigger: 'manual',
@@ -103,22 +103,22 @@
         },
         immediate: true
       },
-      'textareaDom.searchContent': {
+      'ipEditableBlock.searchContent': {
         handler() {
           this.$nextTick(this.setRows)
         }
       },
     },
     mounted() {
-      this.textareaDom = this.$refs.textareaDom
+      this.ipEditableBlock = this.$refs.ipEditableBlock
     },
     methods: {
       getSearchList() {
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
-        return FilterUtils.splitIP(this.textareaDom.searchContent)
+        return FilterUtils.splitIP(this.ipEditableBlock.searchContent)
       },
       setRows() {
-        const rows = this.textareaDom.searchContent.split('\n').length || 1
+        const rows = this.ipEditableBlock.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
       },
       handleFocus() {
@@ -129,7 +129,11 @@
         this.$emit('focus', false)
       },
       async handleSearch(force = '') {
-        this.textareaDom.parseIp()
+        const { hasIP, searchContent } = this.ipEditableBlock
+        if (!hasIP || !searchContent.length) {
+          this.ipEditableBlock?.focus()
+          return
+        }
         const searchList = this.getSearchList()
         if (searchList.length > IP_SEARCH_MAX_COUNT) {
           this.$warn(this.$t('最多支持搜索10000条数据'))
@@ -139,55 +143,50 @@
         // 保存本次搜索内容
         window.sessionStorage.setItem(
           HOME_HOST_SEARCH_CONTENT_STORE_KEY,
-          JSON.stringify(this.textareaDom.searchContent)
+          JSON.stringify(this.ipEditableBlock.searchContent)
         )
 
-        if (searchList.length) {
-          const IPs = FilterUtils.parseIP(searchList)
-          const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
+        const IPs = FilterUtils.parseIP(searchList)
+        const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
 
-          this.searchFlag.ip = IPv4List.length
-            || IPv4WithCloudList.length
-            || IPv6List.length
-            || IPv6WithCloudList.length
-          this.searchFlag.asset = assetList.length > 0
-          const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
+        this.searchFlag.ip = IPv4List.length
+          || IPv4WithCloudList.length
+          || IPv6List.length
+          || IPv6WithCloudList.length
+        this.searchFlag.asset = assetList.length > 0
+        const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
 
-          // 判断是否存在IP、IPv6、固资编号混合搜索
-          if (!force && isMixSearch) {
-            this.$refs.popover.showHandler()
-            return
+        // 判断是否存在IP、IPv6、固资编号混合搜索
+        if (!force && isMixSearch) {
+          this.$refs.popover.showHandler()
+          return
+        }
+
+        const assetSearch = () => this.handleAssetSearch(assetList)
+
+        const ipSearch = () => {
+          // 不同管控区域+IP的混合搜索
+          if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
+            return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
           }
 
-          const assetSearch = () => this.handleAssetSearch(assetList)
+          this.handleIPSearch(IPs)
+        }
 
-          const ipSearch = () => {
-            // 不同管控区域+IP的混合搜索
-            if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
-              return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
-            }
+        // 优先使用混合搜索下的选择
+        if (force === 'asset') {
+          return assetSearch()
+        }
+        if (force === 'ip') {
+          return ipSearch()
+        }
 
-            this.handleIPSearch(IPs)
-          }
-
-          // 优先使用混合搜索下的选择
-          if (force === 'asset') {
-            return assetSearch()
-          }
-          if (force === 'ip') {
-            return ipSearch()
-          }
-
-          // 非混合搜索
-          if (this.searchFlag.asset) {
-            return assetSearch()
-          }
-          if (this.searchFlag.ip) {
-            return ipSearch()
-          }
-        } else {
-          this.searchContent = ''
-          this.textareaDom && this.textareaDom.focus()
+        // 非混合搜索
+        if (this.searchFlag.asset) {
+          return assetSearch()
+        }
+        if (this.searchFlag.ip) {
+          return ipSearch()
         }
       },
       handleIPSearch(IPs) {

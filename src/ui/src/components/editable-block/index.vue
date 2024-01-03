@@ -18,6 +18,7 @@
       :focusTip="focusTip"
       :blurTip="blurTip"
       contenteditable="plaintext-only"
+      spellcheck="false"
       @blur="handleBlur"
       @keydown.enter="handleSearch"
       @focus="handleFocus"
@@ -31,11 +32,14 @@
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
   import { LT_REGEXP, ALL_PROBABLY_IP } from '@/dictionary/regexp'
+  import { $error } from '@/magicbox'
+  import { t } from '@/i18n'
+  import { getCursorPosition, setCursorPosition } from '@/utils/util'
   import isIP from 'validator/es/lib/isIP'
   import isInt from 'validator/es/lib/isInt'
 
   const props = defineProps({
-    searchContent: {
+    value: {
       type: String,
       default: ''
     },
@@ -54,17 +58,22 @@
     enterSearch: {
       type: Boolean,
       default: true
-    }
+    },
+    noBlurClass: {
+      type: String,
+      default: 'search-btn'
+    },
   })
 
-  const emit = defineEmits(['keydown', 'focus', 'blur'])
+  const emit = defineEmits(['keydown', 'focus', 'blur', 'updateValue'])
 
   onMounted(() => {
     setInputHtml(searchContent.value)
   })
 
+  const hasIP = ref(false)
   const searchInput = ref(null)
-  const searchContent = ref(props.searchContent)
+  const searchContent = ref(props.value)
   const pasteData = reactive({
     cursor: 0,
     length: 0,
@@ -76,8 +85,8 @@
     pasteData.length = 0
   }
 
-  const getMatchIp = (ip) => {
-    // 先判断是不是常规Ip
+  const getMatchIP = (ip) => {
+    // 先判断是不是常规IP
     if (isIP(ip)) {
       return ip
     }
@@ -87,112 +96,43 @@
     if (matchedV6 && isIP(matchedV6[2])) return ip
     return null
   }
-  // 获取光标位置
-  const getCursorPosition = () => {
-    const selection = window.getSelection()
-    const element = searchInput.value
-    let caretOffset = 0
-    // false表示进行了范围选择
-    const { isCollapsed } = selection
-    // 选中的区域
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0)
-      // 克隆一个选中区域
-      const preCaretRange = range.cloneRange()
-      // 设置选中区域的节点内容为当前节点
-      preCaretRange.selectNodeContents(element)
-      // 重置选中区域的结束位置
-      preCaretRange.setEnd(range.endContainer, range.endOffset)
-      const { length } = preCaretRange.toString()
-      caretOffset = isCollapsed ? length : length - selection.toString().length
-    }
-    return caretOffset
-  }
+  const getNewHtml = content => content.replace(ALL_PROBABLY_IP, (val) => {
+    // val为所有可能是IP的数据，在这里筛选出符合条件的IP
+    const matched = getMatchIP(val)
+    return matched ? `<span class="high-light">${val}</span>` : val
+  })
 
-  // 设置光标位置
-  const setCursorPostion = () => {
-    const selection = window.getSelection()
-    const parent = document.getElementsByClassName('search-input')[0]
-    const child = parent.getElementsByClassName('new-data')[0]
-    // 创建一个选中区域
-    const range = document.createRange()
-    // 选中节点的内容
-    range.selectNodeContents(child || parent)
-    if (child?.innerHTML?.length > 0) {
-      // 粘贴的直接设置光标到粘贴的末尾
-      range.setStart(child, child.childNodes.length)
-    } else {
-      // 非粘贴的数据通过计算文本节点的偏移量来设置光标
-      const parentAllNodes = parent.childNodes
-      let { cursor } = pasteData
-      for (let i = 0;i < parentAllNodes.length;i++) {
-        const nowNode = parentAllNodes[i]
-        const nodeLength = nowNode?.length ?? nowNode?.innerText?.length
-        if (cursor <= nodeLength) {
-          range.setStart(nowNode?.firstChild || nowNode, cursor)
-          break
-        }
-        cursor -= nodeLength
-      }
-    }
-    // 设置选中区域为一个点
-    range.collapse(true)
-    // 移除所有的选中范围
-    selection.removeAllRanges()
-    // 添加新建的范围
-    selection.addRange(range)
-  }
   const setSearchContent = (val = '') => {
     searchContent.value = val
-    emit('update:search-content', val)
+    emit('updateValue', val)
   }
   const setInputHtml = (html = '') => {
     searchInput.value.innerHTML = html
   }
   // 处理数据高光
-  const setHighLight = (inputType) => {
+  const setHighlight = () => {
     const content = searchContent.value
-    if (inputType === 'insertFromPaste') {
-      const { cursor, length } = pasteData
-      setHighLightPaste(cursor, length, content)
-    } else {
-      const cursor = getCursorPosition()
-      pasteData.cursor = cursor
-      setHighLightOther(content)
-    }
-    setCursorPostion()
-  }
-  // 粘贴高亮
-  const setHighLightPaste = (cursor, length, content) => {
-    const start = content.substring(0, cursor).replace(LT_REGEXP, '&lt')
-    const end = content.substring(cursor + length).replace(LT_REGEXP, '&lt')
-    const paste = `<span class="new-data">${content.substring(cursor, cursor + length).replace(LT_REGEXP, '&lt')}</span>`
-    const newHtml = (start + paste + end).replace(ALL_PROBABLY_IP, (val) => {
-      // val为所有可能是IP的数据，在这里筛选出符合条件的IP
-      const ans = getMatchIp(val)
-      return ans ? `<span class="high-light">${val}</span>` : val
-    })
-    setInputHtml(newHtml)
-  }
-  // 非粘贴高亮
-  const setHighLightOther = (content) => {
-    const newHtml = content.replace(LT_REGEXP, '&lt').replace(ALL_PROBABLY_IP, (val) => {
-      // val为所有可能是IP的数据，在这里筛选出符合条件的IP
-      const ans = getMatchIp(val)
-      return ans ? `<span class="high-light">${val}</span>` : val
-    })
-    setInputHtml(newHtml)
+    const cursor = getCursorPosition(searchInput.value)
+    pasteData.cursor = cursor
+    setInputHtml(getNewHtml(content.replace(LT_REGEXP, '&lt')))
+    setCursorPosition(searchInput.value, cursor)
   }
 
-  const parseIp = () => {
+  const parseIP = (type = 'blur') => {
     initPasteData()
-    const propablyIp = searchContent.value.match(ALL_PROBABLY_IP)
+    const propablyIP = searchContent.value.match(ALL_PROBABLY_IP)
     const ipList = []
-    propablyIp?.forEach((ip) => {
-      if (getMatchIp(ip)) {
+    propablyIP?.forEach((ip) => {
+      if (getMatchIP(ip)) {
         ipList.push(ip)
       }
     })
+    if (!ipList.length && searchContent.value && type === 'search') {
+      hasIP.value = false
+      $error(t('未解析出主机对象，请修改输入词'))
+      return
+    }
+    hasIP.value = true
     const newHtml = ipList.join('\n')
     setSearchContent(newHtml)
     setInputHtml(newHtml)
@@ -201,18 +141,17 @@
   const handlePaste = (event) => {
     const val = event?.clipboardData?.getData('text')?.replace(/\r/g, '')
     pasteData.length = val.length
-    pasteData.cursor = getCursorPosition()
   }
   const handleBlur = (event) => {
-    parseIp()
-    searchInput.value.blur()
+    const classList = Array.from(event?.relatedTarget?.classList ?? [])
+    const type = classList.includes(props.noBlurClass) ? 'search' : 'blur'
+    parseIP(type)
     emit('blur', event)
   }
-  const handleInput = (event) => {
-    const { inputType } = event
+  const handleInput = () => {
     const { innerText } = searchInput.value
     setSearchContent(innerText)
-    setHighLight(inputType)
+    setHighlight()
     setTimeout(() => {
       const { scrollHeight, clientHeight, scrollTop } = searchInput.value
       const bottom = scrollHeight - clientHeight - scrollTop
@@ -229,7 +168,7 @@
     event.preventDefault()
   }
   const handleFocus = (event) => {
-    setHighLight('focus')
+    setHighlight()
     emit('focus', event)
   }
   const handleSearch = (event) => {
@@ -239,6 +178,7 @@
     const isMac = /macintosh|mac os x/i.test(agent)
     const modifierKey = isMac ? metaKey : ctrlKey
     if (!modifierKey && !shiftKey) {
+      parseIP('search')
       emit('search')
       event.preventDefault()
     }
@@ -250,7 +190,7 @@
   defineExpose({
     focus,
     searchContent,
-    parseIp
+    hasIP
   })
 </script>
 
@@ -265,6 +205,7 @@
   display: block;
   width: 100%;
   background: white;
+  padding-bottom: 4px;
 }
 .editable-block {
   flex: 1;
@@ -323,10 +264,6 @@
       display: inline-block;
       background: #FFE8C3;
       border-radius: 2px;
-      cursor: pointer;
-      &:hover {
-        background: #FFD695;
-      }
     }
   }
 }
