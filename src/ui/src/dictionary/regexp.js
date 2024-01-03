@@ -11,3 +11,8 @@
  */
 
 export const MULTIPLE_IP_REGEXP = /^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])(,((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5]))*$/
+
+// 所有可能是IP的
+export const ALL_PROBABLY_IP = /([a-zA-Z0-9]+[:|.]\[?){3,}([a-zA-Z0-9]+\]?)/g
+
+export const LT_REGEXP = /</g

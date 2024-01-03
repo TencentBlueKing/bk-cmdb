@@ -28,18 +28,26 @@
     </div>
     <cmdb-sticky-layout class="filter-layout" slot="content">
       <bk-form class="filter-form" form-type="vertical">
-        <bk-form-item class="filter-ip" label="IP">
-          <bk-input type="textarea"
-            ref="ip"
-            :rows="4"
+        <bk-form-item class="filter-ip filter-item">
+          <label class="item-label">
+            IP
+            <span class="item-label-suffix">({{$t('自动解析IP目标')}})</span>
+          </label>
+          <editable-block
+            ref="ipEditableBlock"
+            class="ip-editable-block"
+            :enter-search="false"
             :placeholder="$t('主机搜索提示语')"
+            v-model="IPCondition.text"
+            @updateValue="(val) => IPCondition.text = val">
+          </editable-block>
+          <input type="hidden"
+            ref="ip"
+            name="ip"
+            data-vv-validate-on="change"
             data-vv-name="ip"
-            data-vv-validate-on="blur"
             v-validate="'ipSearchMaxCloud|ipSearchMaxCount'"
-            v-focus
-            v-model.trim="IPCondition.text"
-            @focus="errors.remove('ip')">
-          </bk-input>
+            v-model="IPCondition.text" />
           <p class="filter-ip-error" v-if="errors.has('ip')">
             {{errors.first('ip')}}
           </p>
@@ -99,7 +107,7 @@
           content: $t('条件无效，Node条件属性与其他条件属性不能同时设置')
         }">
           <bk-button
-            class="option-search mr10"
+            class="option-search mr10 search-btn"
             theme="primary"
             :disabled="errors.any() || searchDisabled"
             @click="handleSearch">
@@ -182,21 +190,14 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
+  import { setCursorPosition } from '@/utils/util'
+  import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
     components: {
       OperatorSelector,
-      ConditionPicker
-    },
-    directives: {
-      focus: {
-        inserted: (el) => {
-          const input = el.querySelector('textarea')
-          setTimeout(() => {
-            input.focus()
-          }, 0)
-        }
-      }
+      ConditionPicker,
+      EditableBlock
     },
     data() {
       return {
@@ -317,6 +318,13 @@
         }
       }
     },
+    created() {
+      setTimeout(() => {
+        const ele = this.$refs.ipEditableBlock
+        ele?.focus()
+        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
+      }, 0)
+    },
     methods: {
       getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
@@ -417,6 +425,10 @@
         FilterStore.updateUserBehavior(this.selected)
       },
       handleSearch() {
+        const { hasIP } = this.$refs.ipEditableBlock
+        if (!hasIP) {
+          return
+        }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
@@ -519,6 +531,17 @@
 </script>
 
 <style lang="scss" scoped>
+    .ip-editable-block {
+      :deep(.search-input) {
+        min-height: 82px;
+        font-size: 12px;
+        line-height: 24px;
+      }
+
+      :deep(.search-close) {
+        font-size: 12px;
+      }
+    }
     .filter-form-sideslider {
         pointer-events: none;
         /deep/ {
