@@ -97,6 +97,9 @@ export default function useItem(list) {
       params: {
         id: host.bk_host_id
       },
+      query: {
+        from: 'resource'
+      },
       history: true
     }
 

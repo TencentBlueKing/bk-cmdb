@@ -266,7 +266,8 @@
           id: 'delete',
           text: this.$t('删除'),
           handler: this.handleMultipleDelete,
-          disabled: !this.table.checked.length
+          disabled: !this.table.checked.length,
+          auth: this.deleteAuth
         }, {
           id: 'export',
           text: this.$t('导出选中'),
@@ -303,6 +304,12 @@
             relation: [module[0].bk_module_id, host.bk_host_id]
           }
         })
+      },
+      deleteAuth() {
+        return this.table.selection.map(({ host, module }) => ({
+          type: this.$OPERATION.D_RESOURCE_HOST,
+          relation: [module[0].bk_module_id, host.bk_host_id]
+        }))
       },
       editButtonGroup() {
         const buttonConfig = [{

@@ -1,0 +1,63 @@
+swagger: '2.0'
+basePath: /
+info:
+  version: '0.1'
+  title: API Gateway Resources
+  description: ''
+schemes:
+- http
+paths:
+  /api/v3/cache/find/biz/kube/topo:
+    post:
+      operationId: get_biz_kube_cache_topo
+      description: 查询业务的容器拓扑树缓存信息，包含业务、Cluster、Namespace、Workload层级的数据
+      tags:
+      - job
+      - topo
+      - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/cache/find/biz/kube/topo
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/kube/container/by_topo:
+    post:
+      operationId: list_kube_container_by_topo
+      description: 根据容器拓扑获取container信息
+      tags:
+      - job
+      - topo
+      - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/kube/container/by_topo
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:

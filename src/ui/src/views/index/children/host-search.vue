@@ -113,6 +113,14 @@
       this.ipEditableBlock = this.$refs.ipEditableBlock
     },
     methods: {
+      getAuthMaskProps() {
+        const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+        return {
+          auth,
+          tag: 'div',
+          authorized: this.isViewAuthed(auth)
+        }
+      },
       getSearchList() {
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
         return FilterUtils.splitIP(this.ipEditableBlock.searchContent)
@@ -249,6 +257,10 @@
         max-width: 806px;
         height: 42px;
         margin: 0 auto;
+
+        .auth-mask {
+          height: 100%;
+        }
     }
     .search-bar {
         position: absolute;

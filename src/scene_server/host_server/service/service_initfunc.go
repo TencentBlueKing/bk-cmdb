@@ -122,12 +122,25 @@ func (s *Service) initHost(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/resource",
 		Handler: s.AddHostToResourcePool})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/hosts/search/with_biz",
+		Handler: s.SearchHost})
+
+	// search host for front page, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/hosts/search/resource",
+		Handler: s.SearchHostForResource})
+
+	// search host for front page, **only for ui**
+	utility.AddHandler(rest.Action{Verb: http.MethodPost,
+		Path:    "/findmany/hosts/search/noauth",
+		Handler: s.SearchHostWithNoAuth})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add/business_idle",
 		Handler: s.AddHostToBusinessIdle})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search", Handler: s.SearchHost})
+
 	// search host by biz set, **only for ui**
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/hosts/biz_set/{bk_biz_set_id}",
-		Handler: s.SearchHost})
+		Handler: s.SearchHostWithBizSet})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/search/asstdetail",
 		Handler: s.SearchHostWithAsstDetail})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/batch", Handler: s.UpdateHostBatch})

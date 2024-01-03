@@ -74,6 +74,7 @@ func GenerateCommonActions() []CommonAction {
 			Name:        "主机资源管理员",
 			EnglishName: "Host Maintainer",
 			Actions: []ActionWithID{
+				{ID: ViewResourcePoolHost},
 				{ID: CreateResourcePoolHost},
 				{ID: EditResourcePoolHost},
 				{ID: DeleteResourcePoolHost},

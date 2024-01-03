@@ -136,24 +136,28 @@
         this.$emit('on-value-change', escapeRegexChar(value))
       },
       async objId(objId) {
-        const properties = await this.searchObjectAttribute({
-          params: {
-            bk_obj_id: objId,
-            bk_supplier_account: this.supplierAccount
-          },
-          config: {
-            requestId: `post_searchObjectAttribute_${objId}`,
-            fromCache: true
-          }
-        })
-        this.filteredProperties = properties.filter((property) => {
-          const {
-            bk_isapi: bkIsapi,
-            bk_property_type: bkPropertyType,
-            bk_property_id: bkPropertyId
-          } = property
-          return !bkIsapi && !this.excludeType.includes(bkPropertyType) && !this.excludeId.includes(bkPropertyId)
-        })
+        try {
+          const properties = await this.searchObjectAttribute({
+            params: {
+              bk_obj_id: objId,
+              bk_supplier_account: this.supplierAccount
+            },
+            config: {
+              requestId: `post_searchObjectAttribute_${objId}`,
+              fromCache: true
+            }
+          })
+          this.filteredProperties = properties.filter((property) => {
+            const {
+              bk_isapi: bkIsapi,
+              bk_property_type: bkPropertyType,
+              bk_property_id: bkPropertyId
+            } = property
+            return !bkIsapi && !this.excludeType.includes(bkPropertyType) && !this.excludeId.includes(bkPropertyId)
+          })
+        } catch (err) {
+          console.error(err)
+        }
       }
     },
     methods: {

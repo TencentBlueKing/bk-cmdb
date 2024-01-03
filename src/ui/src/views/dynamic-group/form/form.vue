@@ -223,11 +223,6 @@
       this.beforeClose = beforeClose
       this.setChanged = setChanged
       this.isPreviewData = this.isPreview
-      if (this.isPreview || this.id) {
-        setTimeout(() => {
-          this.initPreviewParams()
-        }, 300)
-      }
     },
     methods: {
       async getMainLineModels() {
@@ -307,6 +302,9 @@
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
           setTimeout(this.$refs.propertyList?.setDetailsCondition, 0)
+          if (this.isPreview || this.id) {
+            setTimeout(() => this.initPreviewParams(), 0)
+          }
         } catch (error) {
           console.error(error)
         }

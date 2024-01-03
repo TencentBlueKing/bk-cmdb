@@ -14,27 +14,46 @@
   import { defineComponent } from 'vue'
 
   export default defineComponent({
+    name: 'cmdb-auth-mask',
     props: {
-      auth: Object,
+      auth: [Object, Array],
       authorized: Boolean,
       tag: {
         type: String,
         default: 'span'
+      },
+      ignore: Boolean,
+      callbackUrl: String
+    },
+    data() {
+      return {
+        useIAM: this.$Site.authscheme === 'iam'
       }
     },
     render(h) {
+      if (!this.useIAM || this.ignore) {
+        return this.$scopedSlots.default({
+          disabled: false
+        })
+      }
+
       return h(this.tag, {
         directives: [
           {
             name: 'cursor',
             value: {
               auth: this.auth,
-              active: !this.authorized
+              active: !this.authorized,
+              callbackUrl: this.callbackUrl
             }
           }
         ],
-        staticClass: 'auth-mask'
-      }, this.$slots.default)
+        staticClass: 'auth-mask',
+      }, [
+        this.$scopedSlots.default({
+          disabled: !this.authorized
+        })
+      ])
     }
   })
 </script>

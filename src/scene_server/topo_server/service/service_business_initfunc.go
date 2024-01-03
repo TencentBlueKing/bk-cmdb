@@ -139,6 +139,7 @@ func (s *Service) initBusinessGraphics(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+// NOCC:golint/fnsize(需要放到一个函数中)
 func (s *Service) initBusinessAssociation(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -174,6 +175,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 		Handler: s.UpdateAssociationType})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/associationtype/{id}",
 		Handler: s.DeleteAssociationType})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/count/topoassociationtype",
+		Handler: s.CountAssocWithAssocKindList})
 
 	// object association methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objectassociation",
@@ -206,6 +209,8 @@ func (s *Service) initBusinessAssociation(web *restful.WebService) {
 		Handler: s.SearchModuleAssociation})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}/inst/detail",
 		Handler: s.SearchInstAssociationAndInstDetail})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/instassociation/biz/{bk_biz_id}",
+		Handler: s.SearchAssociationInstWithBizID})
 
 	// topo search methods
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,

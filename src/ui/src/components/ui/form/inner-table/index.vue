@@ -92,6 +92,9 @@
       type: [String, Number],
       default: ''
     },
+    bizId: {
+      type: Number
+    },
     // 是否立即保存
     immediate: {
       type: Boolean,
@@ -166,6 +169,7 @@
 
     isLoading.value = true
     const { info = [] } = await instanceTableService.find({
+      bk_biz_id: props.bizId,
       bk_obj_id: props.objId,
       bk_property_id: props.property.bk_property_id,
       filter: {

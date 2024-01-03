@@ -38,6 +38,7 @@
       v-show="expanded"
       :data="list"
       :max-height="462"
+      empty-block-class-name="empty-block"
       :row-style="{ cursor: 'pointer' }"
       @row-click="handleShowDetails">
       <bk-table-column v-for="(column, index) in header"
@@ -56,9 +57,9 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')">
+      <bk-table-column :label="$t('操作')" v-if="table.stuff.type !== 'permission'">
         <template slot-scope="{ row }">
-          <cmdb-auth :auth="authResources">
+          <cmdb-auth :auth="getInstanceAuth(row)" :ignore-passed-auth="true">
             <bk-button slot-scope="{ disabled }"
               text
               theme="primary"
@@ -69,7 +70,7 @@
           </cmdb-auth>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff" :auth="permissionAuth"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
     </bk-table>
     <div class="confirm-tips" ref="confirmTips" v-show="confirm.show">
       <p class="tips-content">{{$t('确认取消')}}</p>
@@ -86,12 +87,14 @@
   import { mapGetters } from 'vuex'
   import authMixin from '../mixin-auth'
   import instanceService from '@/service/instance/instance'
+  import hostSearchService from '@/service/host/search'
   import businessSetService from '@/service/business-set/index.js'
   import {
     BUILTIN_MODELS,
     BUILTIN_MODEL_PROPERTY_KEYS,
     BUILTIN_MODEL_RESOURCE_TYPES
   } from '@/dictionary/model-constants.js'
+  import { translateAuth } from '@/setup/permission'
 
   export default {
     name: 'cmdb-relation-list-table',
@@ -122,6 +125,7 @@
       return {
         properties: [],
         list: [],
+        hostOriginalList: [],
         pagination: {
           count: 0,
           current: 1,
@@ -149,14 +153,6 @@
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
       model() {
         return this.getModelById(this.targetObjId) || {}
-      },
-      permissionAuth() {
-        if (this.model.bk_obj_id === 'biz') {
-          return {
-            type: this.$OPERATION.R_BUSINESS
-          }
-        }
-        return null
       },
       title() {
         const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
@@ -241,6 +237,20 @@
         this.getProperties()
         this.getInstances()
       },
+      getModelPermission() {
+        const permissions = {
+          [BUILTIN_MODELS.BUSINESS]: {
+            type: this.$OPERATION.R_BUSINESS,
+            relation: []
+          },
+          [BUILTIN_MODELS.BUSINESS_SET]: {
+            type: this.$OPERATION.R_BUSINESS_SET,
+            relation: []
+          }
+        }
+
+        return translateAuth(permissions[this.targetObjId])
+      },
       async getProperties() {
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
@@ -249,12 +259,17 @@
             },
             config: {
               fromCache: true,
-              requestId: this.propertyRequest
+              requestId: this.propertyRequest,
+              globalPermission: false
             }
           })
         } catch (e) {
-          console.error(e)
-          this.properties = []
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
       },
       async getInstances() {
@@ -292,15 +307,71 @@
           this.pagination.count = this.associationInstances?.length
 
           // 向前翻一页
-          if (this.pagination.count && !data[dataListKey].length) {
+          if (data.count && this.pagination.count && !data[dataListKey].length) {
             this.pagination.current -= 1
             this.getInstances()
           }
+
+          // 业务/业务集有自身的查看权限，当无权限时接口不会返回permission，此处通过存在关联实例但是未查询到数据判定为无权限
+          if ([BUILTIN_MODELS.BUSINESS, BUILTIN_MODELS.BUSINESS_SET].includes(this.targetObjId)
+            && this.associationInstances?.length > 0
+            && data.count === 0) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: this.getModelPermission() }
+            }
+          }
         } catch (e) {
-          console.warn(e)
-          this.list = []
-          this.pagination.count = 0
+          if (e.permission) {
+            this.table.stuff = {
+              type: 'permission',
+              payload: { permission: e.permission }
+            }
+          }
         }
+      },
+      getInstanceAuth(row) {
+        const auth = [this.authResources]
+        switch (this.model.bk_obj_id) {
+          case BUILTIN_MODELS.BUSINESS: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS,
+              relation: [row.bk_biz_id]
+            })
+            break
+          }
+          case BUILTIN_MODELS.BUSINESS_SET: {
+            auth.push({
+              type: this.$OPERATION.U_BUSINESS_SET,
+              relation: [row[BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]]
+            })
+            break
+          }
+          case BUILTIN_MODELS.HOST: {
+            const originalData = this.hostOriginalList.find(data => data.host.bk_host_id === row.bk_host_id)
+            const [biz] = originalData.biz
+            if (biz.default === 0) {
+              auth.push({
+                type: this.$OPERATION.U_HOST,
+                relation: [biz.bk_biz_id, row.bk_host_id]
+              })
+            } else {
+              const [module] = originalData.module
+              auth.push({
+                type: this.$OPERATION.U_RESOURCE_HOST,
+                relation: [module.bk_module_id, row.bk_host_id]
+              })
+            }
+            break
+          }
+          default: {
+            auth.push({
+              type: this.$OPERATION.U_INST,
+              relation: [this.model.id, row.bk_inst_id]
+            })
+          }
+        }
+        return auth
       },
       getHostInstances(config) {
         const models = ['biz', 'set', 'module', 'host']
@@ -314,7 +385,7 @@
           fields: [],
           condition: model === 'host' ? [hostCondition] : []
         }))
-        return this.$store.dispatch('hostSearch/searchHost', {
+        return hostSearchService.getHosts({
           params: {
             bk_biz_id: -1,
             condition,
@@ -329,10 +400,13 @@
             }
           },
           config
-        }).then(data => ({
-          count: data.count,
-          info: data.info.map(item => item.host)
-        }))
+        }).then((data) => {
+          this.hostOriginalList = data.info
+          return {
+            count: data.count,
+            info: data.info.map(item => item.host)
+          }
+        })
       },
       getBusinessInstances(config) {
         return this.$store.dispatch('objectBiz/searchBusiness', {
@@ -545,5 +619,11 @@
                 font-size: 12px;
             }
         }
+    }
+
+    .association-table {
+      :deep(.empty-block) {
+        width: 100% !important;
+      }
     }
 </style>

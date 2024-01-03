@@ -12,6 +12,7 @@
 
 import Meta from '@/router/meta'
 import { MENU_MODEL_MANAGEMENT, MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 export default [
   {
@@ -38,6 +39,13 @@ export default [
         const { modelId } = to.params
         const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
         return !!model
+      },
+      auth: {
+        view: (to, app) => {
+          const { modelId } = to.params
+          const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+          return ({ type: OPERATION.R_MODEL, relation: [model.id] })
+        }
       }
     })
   }

@@ -37,8 +37,8 @@
     mixins: [permissionMixins],
     props: {
       permission: {
-        type: Array,
-        default: () => []
+        type: Object,
+        default: () => {}
       }
     }
   }
@@ -53,6 +53,16 @@
             font-size: 14px;
             height: auto;
         }
+
+        :deep(.bk-exception-img) {
+          width: 280px;
+          height: auto;
+        }
+
+        :deep(.bk-exception-text) {
+          font-size: 14px;
+        }
+
         .no-permission {
             display: block;
             width: 100%;

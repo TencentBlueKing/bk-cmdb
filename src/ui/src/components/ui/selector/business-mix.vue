@@ -29,7 +29,7 @@
       :id="option.id"
       :name="option.name"
       :disabled="!option.authorized">
-      <auth-mask tag="div" :auth="option.auth" :authorized="option.authorized">
+      <cmdb-auth-mask tag="div" :auth="option.auth" :authorized="option.authorized">
         <div
           :class="['option-item-content', { disabled: !option.authorized }]"
           :title="option.name">
@@ -42,7 +42,7 @@
             @click.prevent.stop="handleCollect(option)">
           </i>
         </div>
-      </auth-mask>
+      </cmdb-auth-mask>
     </bk-option>
     <div class="business-extension" slot="extension">
       <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" tag="div" class="extension-link"
@@ -64,7 +64,6 @@
   import businessSetService from '@/service/business-set/index.js'
   import { verifyAuth } from '@/service/auth.js'
   import { TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
-  import AuthMask from '@/components/ui/auth/auth-mask.vue'
   import {
     BUSINESS_SELECTOR_COLLECTION,
     MENU_RESOURCE_BUSINESS,
@@ -73,9 +72,6 @@
 
   export default {
     name: 'cmdb-business-mix-selector',
-    components: {
-      AuthMask
-    },
     props: {
       value: {
         type: String

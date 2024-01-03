@@ -27,7 +27,7 @@ func (s *coreService) LockHost(ctx *rest.Contexts) {
 	}
 
 	err := s.core.HostOperation().LockHost(ctx.Kit, input)
-	if err !=nil  {
+	if err != nil {
 		blog.Errorf("LockHost failed, lock host handle failed, err: %+v, input:%+v, rid:%s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -44,7 +44,7 @@ func (s *coreService) UnlockHost(ctx *rest.Contexts) {
 		return
 	}
 	err := s.core.HostOperation().UnlockHost(ctx.Kit, input)
-	if err !=nil  {
+	if err != nil {
 		blog.Errorf("UnlockHost failed, unlock host handle failed, err: %s, input:%+v, rid:%s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -61,7 +61,7 @@ func (s *coreService) QueryLockHost(ctx *rest.Contexts) {
 		return
 	}
 	hostLockArr, err := s.core.HostOperation().QueryHostLock(ctx.Kit, input)
-	if err !=nil  {
+	if err != nil {
 		blog.Errorf("QueryLockHost failed, query host handle failed, err: %s, input:%+v, rid: %s", err.Error(), input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

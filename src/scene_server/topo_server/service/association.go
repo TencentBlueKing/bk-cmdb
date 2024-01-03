@@ -126,7 +126,18 @@ func (s *Service) SearchObjectByClassificationID(ctx *rest.Contexts) {
 
 // SearchBusinessTopoWithStatistics calculate how many service instances on each topo instance node
 func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, true)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the path params: %s, err: %v , rid: %s", common.BKAppIDField, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	withDefault := false
+	if len(ctx.Request.QueryParameter("with_default")) > 0 {
+		withDefault = true
+	}
+
+	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, true, withDefault)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -136,7 +147,18 @@ func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
 
 // SearchBusinessTopo search business topo without statistics
 func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
-	resp, err := s.searchBusinessTopo(ctx, false)
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		blog.Errorf("failed to parse the path params: %s, err: %v , rid: %s", common.BKAppIDField, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+	}
+
+	withDefault := false
+	if len(ctx.Request.QueryParameter("with_default")) > 0 {
+		withDefault = true
+	}
+
+	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, false, withDefault)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -145,22 +167,11 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 }
 
 // searchBusinessTopo search the business topo, sort by topo instance name
-func (s *Service) searchBusinessTopo(ctx *rest.Contexts, withStatistics bool) ([]*metadata.TopoInstRst, error) {
-	id, err := strconv.ParseInt(ctx.Request.PathParameter("bk_biz_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("failed to parse the path params id(%s), err: %v , rid: %s", ctx.Request.PathParameter("app_id"),
-			err, ctx.Kit.Rid)
+func (s *Service) searchBusinessTopo(kit *rest.Kit, bizID int64, withStatistics, withDefault bool) (
+	[]*metadata.TopoInstRst, error) {
 
-		return nil, err
-	}
-
-	withDefault := false
-	if len(ctx.Request.QueryParameter("with_default")) > 0 {
-		withDefault = true
-	}
-
-	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(ctx.Kit,
-		common.BKInnerObjIDApp, id, withStatistics, withDefault)
+	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(kit,
+		common.BKInnerObjIDApp, bizID, withStatistics, withDefault)
 	if err != nil {
 		return nil, err
 	}
@@ -568,6 +579,59 @@ func (s *Service) SearchObjectAssocWithAssocKindList(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+
+	// authorize
+	objIDs := make([]string, 0)
+	unique := make(map[string]struct{})
+	for _, v := range resp.Associations {
+		for _, association := range v.Associations {
+			if _, ok := unique[association.ObjectID]; !ok {
+				unique[association.ObjectID] = struct{}{}
+				objIDs = append(objIDs, association.ObjectID)
+			}
+		}
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	ctx.RespEntity(resp)
+}
+
+// CountAssocWithAssocKindList count association by association kind
+func (s *Service) CountAssocWithAssocKindList(ctx *rest.Contexts) {
+
+	ids := new(metadata.AssociationKindIDs)
+	if err := ctx.DecodeInto(ids); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsInvalid))
+		return
+	}
+
+	assocKindList, err := s.Logics.AssociationOperation().SearchObjectAssocWithAssocKindList(ctx.Kit, ids.AsstIDs)
+	if nil != err {
+		ctx.RespAutoError(err)
+		return
+	}
+	assoMap := make(map[string]int, len(assocKindList.Associations))
+	for _, asso := range assocKindList.Associations {
+		assoMap[asso.AssociationKindID] = len(asso.Associations)
+	}
+
+	resp := new(metadata.AssociationCountList)
+	for _, id := range ids.AsstIDs {
+		resp.Associations = append(resp.Associations, metadata.AssociationCount{
+			AssociationKindID: id,
+			Count:             assoMap[id],
+		})
+	}
+
 	ctx.RespEntity(resp)
 }
 
@@ -703,6 +767,17 @@ func (s *Service) SearchInstanceAssociations(ctx *rest.Contexts) {
 	// set read preference.
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
+	// authorize
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	// search instance associations.
 	result, err := s.Logics.InstAssociationOperation().SearchInstanceAssociations(ctx.Kit, objID, input)
 	if err != nil {
@@ -766,6 +841,17 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 		ObjID: request.ObjID,
 	}
 
+	// authorize
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{request.ObjID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {
@@ -802,6 +888,17 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	// check Maximum limit
 	if request.Page.Limit > common.BKMaxInstanceLimit {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommPageLimitIsExceeded))
+		return
+	}
+
+	// authorize
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{request.Condition.ObjectID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 
@@ -857,15 +954,22 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 	}
 
 	objID := ctx.Request.PathParameter(common.BKObjIDField)
-	cond := &metadata.InstAsstQueryCondition{
-		Cond: metadata.QueryCondition{
-			Condition:      assocFilter,
-			Fields:         request.Condition.AsstFields,
-			Page:           request.Page,
-			DisableCounter: true,
-		},
-		ObjID: objID,
+	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	cond := &metadata.InstAsstQueryCondition{ObjID: objID, Cond: metadata.QueryCondition{
+		Condition:      assocFilter,
+		Fields:         request.Condition.AsstFields,
+		Page:           request.Page,
+		DisableCounter: true,
+	}}
 
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 	assocRsp, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
@@ -883,21 +987,54 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 
 	srcObjInst := make(map[string][]int64)
 	dstObjInst := make(map[string][]int64)
+	objIDs := make([]string, 0)
+	unique := make(map[string]struct{}, 0)
 	for _, item := range assocRsp.Info {
 		srcObjInst[item.ObjectID] = append(srcObjInst[item.ObjectID], item.InstID)
 		dstObjInst[item.AsstObjectID] = append(dstObjInst[item.AsstObjectID], item.AsstInstID)
+		if _, ok := unique[item.ObjectID]; !ok {
+			unique[item.ObjectID] = struct{}{}
+			objIDs = append(objIDs, item.ObjectID)
+		}
+
+		if _, ok := unique[item.AsstObjectID]; !ok {
+			unique[item.AsstObjectID] = struct{}{}
+			objIDs = append(objIDs, item.AsstObjectID)
+		}
 	}
 
+	authResp, authorized, err = s.AuthManager.HasFindModelInstAuth(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	resp.Src, resp.Dst, err = s.getInstDetail(ctx, request, srcObjInst, dstObjInst)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(resp)
+}
+
+func (s *Service) getInstDetail(ctx *rest.Contexts, request metadata.InstAndAssocRequest,
+	srcObjInst map[string][]int64, dstObjInst map[string][]int64) ([]mapstr.MapStr, []mapstr.MapStr, error) {
+	var srcRes []mapstr.MapStr
+	var dstRes []mapstr.MapStr
 	if request.Condition.SrcDetail {
 		for obj, insts := range srcObjInst {
 			srcRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.SrcFields, insts)
 			if err != nil {
 				blog.Errorf("search src inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
-				return
+				return nil, nil, err
 			}
 
-			resp.Src = append(resp.Src, srcRsp...)
+			srcRes = append(srcRes, srcRsp...)
 		}
 	}
 
@@ -906,15 +1043,14 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 			dstRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.DstFields, insts)
 			if err != nil {
 				blog.Errorf("search dst inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-				ctx.RespAutoError(err)
-				return
+				return nil, nil, err
 			}
 
-			resp.Dst = append(resp.Dst, dstRsp...)
+			dstRes = append(dstRes, dstRsp...)
 		}
 	}
 
-	ctx.RespEntity(resp)
+	return srcRes, dstRes, nil
 }
 
 func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fields []string, insts []int64) (
@@ -1125,9 +1261,10 @@ func (s *Service) SearchTopoPath(ctx *rest.Contexts) {
 		return
 	}
 
-	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, false)
+	topoRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header,
+		bizID, false)
 	if err != nil {
-		blog.Errorf("SearchTopoPath failed, SearchMainlineInstanceTopo failed, bizID:%d, err:%s, rid:%s", bizID, err.Error(), rid)
+		blog.Errorf("search mainline instance topo failed, bizID: %d, err: %v, rid:%s", bizID, err, rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1227,4 +1364,58 @@ func (s *Service) SearchHostTopoPath(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(result)
+}
+
+// SearchAssociationInstWithBizID search instance association with bizID
+func (s *Service) SearchAssociationInstWithBizID(ctx *rest.Contexts) {
+	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if bizID == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
+		return
+	}
+
+	if s.AuthManager.Enabled() {
+		if err := s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, meta.ViewBusinessResource,
+			common.BKInnerObjIDApp, bizID); err != nil {
+			blog.Errorf("authorize failed, bizID: %d, err: %v, rid: %s", bizID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
+	request := &metadata.SearchAssociationInstRequest{}
+	if err := ctx.DecodeInto(request); err != nil {
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
+
+	if len(request.ObjID) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
+	// 目前只支持查询主机实例关联
+	if request.ObjID != common.BKInnerObjIDHost {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKObjIDField))
+		return
+	}
+
+	cond := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: request.Condition},
+		ObjID: request.ObjID,
+	}
+
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(ret.Info)
 }

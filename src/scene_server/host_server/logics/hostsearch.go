@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac"
+	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -29,13 +31,51 @@ import (
 	"configcenter/src/common/util"
 )
 
-// SearchHost TODO
-func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch) (*metadata.SearchHost, error) {
+// SearchHost query the host flag: true for business access, false for no authentication in this function.
+func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, flag bool) (
+	*metadata.SearchHost, *metadata.BaseResp, error) {
 	searchHostInst := NewSearchHost(kit, lgc, data)
 	searchHostInst.ParseCondition()
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
+
+	if flag {
+		// for scenarios that require business access authentication,
+		// the user must pass the business attribute field.
+		if !searchHostInst.GetTopologyBizFlag() {
+			return nil, nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
+		}
+		if authResp, authorized := searchHostInst.AuthorizeSearchHost(); !authorized {
+			return retHostInfo, authResp, ac.NoAuthorizeError
+		}
+	}
+
+	err := searchHostInst.SearchHostByConds()
+	if err != nil {
+		return retHostInfo, nil, err
+	}
+	hostInfoArr, cnt, err := searchHostInst.FillTopologyData()
+	if err != nil {
+		return retHostInfo, nil, err
+	}
+
+	retHostInfo.Count = cnt
+	if cnt > 0 {
+		retHostInfo.Info = hostInfoArr
+	}
+	return retHostInfo, nil, nil
+}
+
+// SearchHostForResource in the host pool view host scenario, authentication is performed through
+// the host pool host view permission
+func (lgc *Logics) SearchHostForResource(kit *rest.Kit, data *metadata.HostCommonSearch) (*metadata.SearchHost, error) {
+	searchHostInst := NewSearchHost(kit, lgc, data)
+	searchHostInst.ParseCondition()
+	retHostInfo := &metadata.SearchHost{
+		Info: make([]mapstr.MapStr, 0),
+	}
+
 	err := searchHostInst.SearchHostByConds()
 	if err != nil {
 		return retHostInfo, err
@@ -133,7 +173,9 @@ type appLevelInfo struct {
 type searchHostInterface interface {
 	ParseCondition()
 	SearchHostByConds() errors.CCError
+	AuthorizeSearchHost() (*metadata.BaseResp, bool)
 	FillTopologyData() ([]mapstr.MapStr, int, errors.CCError)
+	GetTopologyBizFlag() bool
 }
 
 // NewSearchHost TODO
@@ -168,7 +210,12 @@ func (sh *searchHost) ParseCondition() {
 			sh.topoShowSection.module = true
 		} else if object.ObjectID == common.BKInnerObjIDApp {
 			sh.conds.appCond = object
-			sh.topoShowSection.app = true
+			// 只有关于biz的条件大于0才被视为通过业务进行查询主机，
+			// 因为不通过业务进行查询主机也需要返回主机的业务信息，
+			// 这里如果不区分场景直接置为标记后面的流程走不通。
+			if len(object.Condition) > 0 {
+				sh.topoShowSection.app = true
+			}
 		} else if object.ObjectID == common.BKInnerObjIDObject {
 			sh.conds.mainlineCond = object
 		} else if object.ObjectID == common.BKInnerObjIDPlat {
@@ -181,6 +228,96 @@ func (sh *searchHost) ParseCondition() {
 
 	sh.tryParseAppID()
 
+}
+
+// AuthorizeSearchHost query the host according to the business access authority.
+func (sh *searchHost) AuthorizeSearchHost() (*metadata.BaseResp, bool) {
+
+	if !sh.lgc.AuthManager.Enabled() {
+		return nil, true
+	}
+
+	bizMap := make(map[int64]struct{})
+	if sh.hostSearchParam.AppID > 0 {
+		bizMap[sh.hostSearchParam.AppID] = struct{}{}
+	}
+
+	bizCond := make(map[string]interface{})
+	if len(sh.conds.appCond.Condition) > 0 {
+		for _, cond := range sh.conds.appCond.Condition {
+			if cond.Field == common.BKAppIDField {
+				id, err := util.GetInt64ByInterface(cond.Value)
+				if err != nil {
+					return &metadata.BaseResp{
+						Result: false,
+						Code:   common.CCErrCommParamsInvalid,
+						ErrMsg: err.Error(),
+					}, false
+				}
+				bizMap[id] = struct{}{}
+				continue
+			}
+
+			// 这里如果还有条件是非bizID，需要查询对应的业务列表
+			bizCond[cond.Field] = map[string]interface{}{
+				cond.Operator: cond.Value,
+			}
+		}
+
+		if len(bizCond) > 0 {
+
+			input := &metadata.QueryCondition{
+				Condition:      bizCond,
+				Fields:         []string{common.BKAppIDField},
+				Page:           metadata.BasePage{Limit: common.BKNoLimit},
+				DisableCounter: true,
+			}
+
+			result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.kit.Ctx, sh.kit.Header,
+				common.BKInnerObjIDApp, input)
+			if err != nil {
+				blog.Errorf("get biz info failed, input: %+v, err: %v, rid: %s", input, err, sh.kit.Rid)
+				return &metadata.BaseResp{
+					Result: false,
+					Code:   common.CCErrCommParamsValueInvalidError,
+					ErrMsg: err.Error(),
+				}, false
+			}
+
+			for _, biz := range result.Info {
+				bizID, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
+				if err != nil {
+					blog.Errorf("get biz id failed, biz: %v, err: %v, rid: %s", biz, err, sh.kit.Rid)
+					return &metadata.BaseResp{
+						Result: false,
+						Code:   common.CCErrCommParamsValueInvalidError,
+						ErrMsg: common.BKAppIDField,
+					}, false
+				}
+				bizMap[bizID] = struct{}{}
+			}
+		}
+	}
+
+	bizIDs := make([]int64, 0)
+	for id := range bizMap {
+		bizIDs = append(bizIDs, id)
+	}
+
+	if err := sh.lgc.AuthManager.AuthorizeByInstanceID(sh.kit.Ctx, sh.kit.Header, acMeta.ViewBusinessResource,
+		common.BKInnerObjIDApp, bizIDs...); err != nil {
+		authResources := make([]acMeta.ResourceAttribute, len(bizIDs))
+		for id, biz := range bizIDs {
+			authResources[id] = acMeta.ResourceAttribute{Basic: acMeta.Basic{InstanceID: biz, Type: acMeta.Business,
+				Action: acMeta.ViewBusinessResource}}
+		}
+
+		base, flag := sh.lgc.AuthManager.Authorize(sh.kit, authResources...)
+		blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", bizIDs, err, sh.kit.Rid)
+		return base, flag
+	}
+
+	return nil, true
 }
 
 // SearchHostByConds TODO
@@ -203,6 +340,9 @@ func (sh *searchHost) SearchHostByConds() errors.CCError {
 
 	return nil
 
+}
+func (sh *searchHost) GetTopologyBizFlag() bool {
+	return sh.topoShowSection.app
 }
 
 // FillTopologyData TODO
@@ -902,12 +1042,15 @@ func (sh *searchHost) searchByAssociation() errors.CCError {
 
 func (sh *searchHost) tryParseAppID() {
 	// search appID by cond
-	if -1 != sh.hostSearchParam.AppID && 0 != sh.hostSearchParam.AppID {
+	if sh.hostSearchParam.AppID != -1 && sh.hostSearchParam.AppID != 0 {
 		sh.conds.appCond.Condition = append(sh.conds.appCond.Condition, metadata.ConditionItem{
 			Field:    common.BKAppIDField,
 			Operator: common.BKDBEQ,
 			Value:    sh.hostSearchParam.AppID,
 		})
+	}
+	if sh.hostSearchParam.AppID != 0 && sh.hostSearchParam.AppID != -1 {
+		sh.topoShowSection.app = true
 	}
 }
 
