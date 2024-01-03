@@ -71,6 +71,7 @@ enterprise:
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/monstache/etc
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/support-files/
 	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/server/changelog_user/
+	mkdir -p $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs/
 
 	cp -R ${RESOURCE_DIR}/errors/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/errors
 	cp -R ${RESOURCE_DIR}/language/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/language
@@ -82,6 +83,11 @@ enterprise:
 	cp -R ${DOCS_DIR}/support-file/config/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/support-files
 	cp -R ${DOCS_DIR}/support-file/changelog/*  $(SOURCE_ROOT)/bin/enterprise/cmdb
 	cp -R ${DOCS_DIR}/support-file/changelog_user/*  $(SOURCE_ROOT)/bin/enterprise/cmdb/server/changelog_user
+	cp -R ${DOCS_DIR}/apidoc/apigw/definition.yaml  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/definition.yaml
+	cp -R ${DOCS_DIR}/apidoc/apigw/backend/bk_apigw_resources_bk-cmdb.yaml  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/resources.yaml
+	cp -R ${DOCS_DIR}/apidoc/apigw/bin  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs
+	cp -R ${DOCS_DIR}/apidoc/apigw/backend/en  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs
+	cp -R ${DOCS_DIR}/apidoc/apigw/backend/zh  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs
 
 .PHONY:clean
 clean:
