@@ -81,20 +81,11 @@ spec:
         - containerPort: {{ .Values.toposerver.port }}
 
         volumeMounts:
-          {{- if .Values.common.monitor.enabled }}
-          - name: plugin-path
-            mountPath: {{ .Values.common.monitor.pluginPath }}
-          {{- end }}
           {{- if .Values.toposerver.configDir }}
           - name: configures
             mountPath: {{ .Values.toposerver.configDir }}
           {{- end }}
       volumes:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          hostPath:
-            path: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         {{- if .Values.toposerver.configDir }}
         - name: configures
           configMap:
