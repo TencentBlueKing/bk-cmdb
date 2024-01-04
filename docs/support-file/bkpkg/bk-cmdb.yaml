@@ -1,0 +1,19 @@
+bkpkg: v1
+name: bk-cmdb
+type: file+tar
+description: 配置平台。
+contains:
+relations:
+  - rationale: "基础权限体系"
+    requires:
+      - usermgr^2.5.4
+      - bkiam^1.12.0
+      - bk_iam^1.10.0
+  - rationale: "ESB"
+    requires:
+      - "bkpaas^2.14.0 OR bk-apigateway^1.12.0"
+  - rationale: "下发hostid"
+    suggests:
+      - bk_apigateway^1.11.0
+      - bk-gse^2.1.0
+bkimports:
