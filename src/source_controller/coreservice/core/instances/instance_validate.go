@@ -450,7 +450,8 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 
 	// validate bk_parent_id
 	if instanceData.Exists(common.BKParentIDField) {
-		if parentID, err := instanceData.Int64(common.BKParentIDField); err != nil || parentID <= 0 {
+		parentID, err := util.GetInt64ByInterface(instanceData[common.BKParentIDField])
+		if err != nil || parentID <= 0 {
 			blog.Errorf("invalid bk_parent_id value: %#v, err: %v, rid: %s", instanceData[common.BKParentIDField], err,
 				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKParentIDField)
