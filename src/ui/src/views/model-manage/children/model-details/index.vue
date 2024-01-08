@@ -46,6 +46,8 @@
               <editable-field
                 class="model-name-edit"
                 :editing.sync="modelNameIsEditing"
+                :disabled="disableEditing"
+                :disabled-tips="$t('初始化模型名称，不支持修改')"
                 v-model="activeModel.bk_obj_name"
                 font-size="12px"
                 @confirm="handleModelNameUpdateConfirm"
@@ -392,6 +394,10 @@
           return !this.activeModel.ispre && !this.activeModel.bk_ispaused
         }
         return false
+      },
+      disableEditing() {
+        const modelIds = ['bk_switch', 'bk_router', 'bk_load_balance', 'bk_firewall']
+        return modelIds.includes(this.activeModel.bk_obj_id)
       },
       modelClassificationName() {
         return this.classifications

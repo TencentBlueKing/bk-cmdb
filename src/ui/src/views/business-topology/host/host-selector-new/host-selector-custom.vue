@@ -30,6 +30,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   import HostTable from './host-table.vue'
   import isIP from 'validator/es/lib/isIP'
 
@@ -128,7 +129,7 @@
         if (IPList.length) {
           const params = defaultParams()
           params.ip = { data: IPList, exact: 1, flag: 'bk_host_innerip' }
-          reqs.push(this.$store.dispatch('hostSearch/searchHost', {
+          reqs.push(hostSearchService.getBizHosts({
             params,
             config: {
               requestId: this.request.host
@@ -144,7 +145,7 @@
             operator: '$in',
             value: IPv6List
           }]
-          reqs.push(this.$store.dispatch('hostSearch/searchHost', {
+          reqs.push(hostSearchService.getBizHosts({
             params,
             config: {
               requestId: this.request.host

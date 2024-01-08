@@ -14,6 +14,9 @@
   import { computed, ref, watch, onMounted } from 'vue'
   import debounce from 'lodash.debounce'
   import { getModelInstanceOptions } from '@/service/instance/common'
+  import { t } from '@/i18n'
+  import store from '@/store'
+  import { OPERATION } from '@/dictionary/iam-auth'
 
   const props = defineProps({
     value: {
@@ -24,6 +27,10 @@
     multiple: {
       type: Boolean,
       default: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   })
   const emit = defineEmits(['input', 'toggle'])
@@ -34,12 +41,32 @@
   const list = ref([])
   const loading = ref(false)
   const selector = ref(null)
+  const placeholder = ref('')
+  const isNoauth = ref(false)
+  const isReadonly = ref(false)
 
   const search = async (keyword) => {
     loading.value = true
-    const results = await getModelInstanceOptions(props.objId, keyword, props.value, { page: { limit: 50 } })
-    list.value = results
-    loading.value = false
+    try {
+      const results = await getModelInstanceOptions(
+        props.objId, keyword, props.value,
+        { page: { limit: 50 } },
+        { globalPermission: false }
+      )
+      placeholder.value = t('请选择模型实例')
+      localValue.value = getInitValue()
+      isNoauth.value = false
+      isReadonly.value = false
+      list.value = results
+      loading.value = false
+    } catch ({ permission }) {
+      if (permission) {
+        localValue.value = resetValue()
+        isNoauth.value = true
+        isReadonly.value = true
+      }
+      loading.value = false
+    }
   }
 
   const remoteSearch = debounce(search, 200)
@@ -78,6 +105,10 @@
     isActive.value = active
     emit('toggle', active)
   }
+  const auth = computed(() => {
+    const relationModel = store.getters['objectModelClassify/getModelById'](props.objId)
+    return { type: OPERATION.R_INST, relation: [relationModel.id] }
+  })
 
   defineExpose({
     focus: () => selector?.value?.show?.()
@@ -93,19 +124,26 @@
       v-model="localValue"
       searchable
       :multiple="multiple"
+      :placeholder="placeholder"
+      :disabled="disabled"
       font-size="normal"
       :loading="loading"
       :is-tag-width-limit="true"
       :remote-method="remoteSearch"
+      :readonly="isReadonly"
       @toggle="handleToggle">
       <bk-option v-for="option in list"
         :key="option.id"
         :id="option.id"
         :name="option.name">
       </bk-option>
+      <template v-if="isNoauth" slot="trigger">
+        <cmdb-auth-mask class="auth-mask" :auth="auth" :authorized="!isNoauth">
+          <p class="auth-tips">{{t('该字段暂无权限配置，点击申请权限')}}</p>
+        </cmdb-auth-mask>
+      </template>
     </bk-select>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
@@ -120,5 +158,12 @@
                 z-index: 2;
             }
           }
+        .auth-tips{
+            font-size: 12px;
+            color: #c4c6cc;
+            padding: 0 10px;
+            background-color: #fafbfd;
+            border-color: #dcdee5;
+        }
     }
 </style>

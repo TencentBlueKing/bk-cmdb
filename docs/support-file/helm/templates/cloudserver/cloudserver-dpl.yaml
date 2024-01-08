@@ -82,20 +82,11 @@ spec:
         - containerPort: {{ .Values.cloudserver.port }}
 
         volumeMounts:
-          {{- if .Values.common.monitor.enabled }}
-          - name: plugin-path
-            mountPath: {{ .Values.common.monitor.pluginPath }}
-          {{- end }}
           {{- if .Values.cloudserver.configDir }}
           - name: configures
             mountPath: {{ .Values.cloudserver.configDir }}
           {{- end }}
       volumes:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          hostPath:
-            path: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         {{- if .Values.cloudserver.configDir }}
         - name: configures
           configMap:

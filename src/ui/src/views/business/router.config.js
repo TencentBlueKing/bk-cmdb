@@ -14,7 +14,8 @@ import Meta from '@/router/meta'
 import {
   MENU_RESOURCE_BUSINESS,
   MENU_RESOURCE_BUSINESS_DETAILS,
-  MENU_RESOURCE_BUSINESS_HISTORY
+  MENU_RESOURCE_BUSINESS_HISTORY,
+  MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
 
 import { OPERATION } from '@/dictionary/iam-auth'
@@ -24,7 +25,8 @@ export default [{
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '业务'
+      i18n: '业务',
+      relative: MENU_RESOURCE_MANAGEMENT
     },
     layout: {}
   })

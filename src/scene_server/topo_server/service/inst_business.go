@@ -44,6 +44,13 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.Business, Action: meta.Create}}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
 	if err := hooks.ValidateCreateBusinessHook(ctx.Kit, s.Engine.CoreAPI, data); err != nil {
 		blog.Errorf("validate create business hook failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

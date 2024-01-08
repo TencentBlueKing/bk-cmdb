@@ -37,9 +37,18 @@ func (s *service) CompareFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	// check if user has the permission of the field template
-	// TODO add find object auth check too after find object operation authorization is supported
 	if authResp, authorized := s.auth.Authorize(cts.Kit, meta.ResourceAttribute{Basic: meta.Basic{
 		Type: meta.FieldTemplate, Action: meta.Find, InstanceID: opt.TemplateID}}); !authorized {
+		cts.RespNoAuth(authResp)
+		return
+	}
+
+	authResp, authorized, err := s.auth.HasFindModelAuthUseID(cts.Kit, []int64{opt.ObjectID})
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
 		cts.RespNoAuth(authResp)
 		return
 	}
@@ -67,9 +76,18 @@ func (s *service) CompareFieldTemplateUnique(cts *rest.Contexts) {
 	}
 
 	// check if user has the permission of the field template
-	// TODO add find object auth check too after find object operation authorization is supported
 	if authResp, authorized := s.auth.Authorize(cts.Kit, meta.ResourceAttribute{Basic: meta.Basic{
 		Type: meta.FieldTemplate, Action: meta.Find, InstanceID: opt.TemplateID}}); !authorized {
+		cts.RespNoAuth(authResp)
+		return
+	}
+
+	authResp, authorized, err := s.auth.HasFindModelAuthUseID(cts.Kit, []int64{opt.ObjectID})
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
 		cts.RespNoAuth(authResp)
 		return
 	}

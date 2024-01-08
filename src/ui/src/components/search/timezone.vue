@@ -13,6 +13,8 @@
 <template>
   <bk-select
     multiple
+    display-tag
+    selected-style="checkbox"
     searchable
     v-model="localValue"
     v-bind="$attrs"

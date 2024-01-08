@@ -87,14 +87,14 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
-          <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.U_PROJECT }">
+          <cmdb-auth @click.native.stop :auth="{ type: $OPERATION.U_PROJECT, relation: [row.id] }">
             <template slot-scope="{ disabled }">
               <bk-popconfirm
                 v-if="row.bk_status === 'disabled'"
                 :content="$t('启用操作提示语')"
                 width="288"
                 trigger="click"
-                @confirm="handleConfirm('enable',row)">
+                @confirm="handleConfirm('enable', row)">
                 <bk-button
                   theme="primary"
                   :disabled="disabled"
@@ -107,7 +107,7 @@
                 :content="$t('停用操作提示语')"
                 width="288"
                 trigger="click"
-                @confirm="handleConfirm('disabled',row)">
+                @confirm="handleConfirm('disabled', row)">
                 <bk-button
                   theme="primary"
                   :disabled="disabled"
@@ -323,6 +323,9 @@
         return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
       },
       batchUpdateAuth() {
+        if (!this.selectedRows.length) {
+          return null
+        }
         return this.selectedRows.map(item => ({
           type: this.$OPERATION.U_PROJECT,
           relation: [parseInt(item.id, 10)]

@@ -11,6 +11,7 @@
  */
 
 import Meta from '@/router/meta'
+import { OPERATION } from '@/dictionary/iam-auth'
 import {
   MENU_MODEL_FIELD_TEMPLATE,
   MENU_MODEL_FIELD_TEMPLATE_CREATE,
@@ -88,6 +89,12 @@ export default [
       menu: {
         i18n: '编辑字段组合模板',
         relative: MENU_MODEL_FIELD_TEMPLATE
+      },
+      auth: {
+        view: (to) => {
+          const { id } = to.params
+          return ({ type: OPERATION.R_FIELD_TEMPLATE, relation: [Number(id)] })
+        }
       }
     })
   },
@@ -99,6 +106,12 @@ export default [
       menu: {
         i18n: '编辑字段组合模板',
         relative: MENU_MODEL_FIELD_TEMPLATE
+      },
+      auth: {
+        view: (to) => {
+          const { id } = to.params
+          return ({ type: OPERATION.R_FIELD_TEMPLATE, relation: [Number(id)] })
+        }
       }
     })
   },
@@ -110,6 +123,12 @@ export default [
       menu: {
         i18n: '绑定模型',
         relative: MENU_MODEL_FIELD_TEMPLATE
+      },
+      auth: {
+        view: (to) => {
+          const { id } = to.params
+          return ({ type: OPERATION.R_FIELD_TEMPLATE, relation: [Number(id)] })
+        }
       }
     })
   },

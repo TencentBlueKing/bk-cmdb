@@ -145,7 +145,6 @@ const (
 	EmptyAction Action = "" // used for register resources
 	// SkipAction TODO
 	SkipAction Action = "skip"
-
 	// Execute TODO
 	Execute Action = "execute"
 	// DefaultHostApply TODO

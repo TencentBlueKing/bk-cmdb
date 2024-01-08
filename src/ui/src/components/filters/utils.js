@@ -378,13 +378,13 @@ export function parseIP(list) {
       const matchedV6 = text.match(/^(\d+):\[([0-9a-fA-F:.]+)\]$/)
       if (matchedV4.length === 2 && isInt(matchedV4[0]) && isIP(matchedV4[1], 4)) {
         const cloudId = Number(matchedV4[0])
-        IPv4WithCloudList.push([cloudId, matchedV4[1]])
+        IPv4WithCloudList.push([cloudId, matchedV4[1], 0]) // 0表示不带中括号
         cloudIdSet.add(cloudId)
       } else if (matchedV6 && isIP(matchedV6[2])) {
         const cloudId = Number(matchedV6[1])
         const ip = matchedV6[2]
         if (isIP(ip, 4)) {
-          IPv4WithCloudList.push([cloudId, ip])
+          IPv4WithCloudList.push([cloudId, ip, 1]) // 1表示带中括号
         } else {
           IPv6WithCloudList.push([cloudId, ip])
         }
@@ -422,7 +422,7 @@ export function transformIP(raw) {
   transformedIP.data.ipv6 = IPs.IPv6List
   IPs.IPv6WithCloudList.forEach(([cloud, ip]) => transformedIP.data.ipv6.push(`${cloud}:[${ip}]`))
 
-  transformedIP.data.assetList = IPs.assetList
+  transformedIP.data.assetList = IPs.assetList  // 没进到ipv4和ipv6原样返回，兼容ip模糊搜索
 
   return transformedIP
 }

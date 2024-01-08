@@ -15,6 +15,8 @@
     v-model="selected"
     searchable
     :multiple="multiple"
+    :display-tag="multiple"
+    :selected-style="getSelectedStyle"
     :clearable="allowClear"
     :disabled="disabled"
     :placeholder="placeholder"
@@ -81,7 +83,10 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapState('businessHost', [
         'categoryMap'
-      ])
+      ]),
+      getSelectedStyle() {
+        return this.multiple ? 'checkbox' : 'check'
+      }
     },
     watch: {
       value(value) {

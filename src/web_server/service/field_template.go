@@ -165,29 +165,12 @@ func (s *Service) CountFieldTemplateObj(c *gin.Context) {
 		return
 	}
 
-	// get field template and object relations
-	objOpt := &metadata.ListObjFieldTmplRelOption{
-		TemplateIDs: opt.TemplateIDs,
-	}
-	relRes, err := s.ApiCli.FieldTemplate().ListObjFieldTmplRel(kit.Ctx, kit.Header, objOpt)
+	result, err := s.CoreAPI.ApiServer().FieldTemplate().CountFieldTemplateObj(kit.Ctx, kit.Header, opt)
 	if err != nil {
 		blog.Errorf("list field template and object relation failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: err.GetCode(), ErrMsg: err.Error()})
 		return
 	}
 
-	countMap := make(map[int64]int, 0)
-	for _, relation := range relRes.Info {
-		countMap[relation.TemplateID]++
-	}
-
-	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
-	for i, templateID := range opt.TemplateIDs {
-		countInfos[i] = metadata.FieldTmplResCount{
-			TemplateID: templateID,
-			Count:      countMap[templateID],
-		}
-	}
-
-	c.JSON(http.StatusOK, metadata.NewSuccessResp(countInfos))
+	c.JSON(http.StatusOK, metadata.NewSuccessResp(result))
 }

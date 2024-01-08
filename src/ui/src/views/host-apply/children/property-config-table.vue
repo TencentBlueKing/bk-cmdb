@@ -22,7 +22,15 @@
       :label="$t('字段名称')"
       prop="bk_property_name">
       <div slot-scope="{ row }" :class="{ ignore: row.__extra__.ignore }">
-        {{row.bk_property_name}}
+        <span>{{row.bk_property_name}}</span>
+        <i class="property-name-tooltips icon-cc-tips"
+          v-if="row.placeholder && $tools.isIconTipProperty(row.bk_property_type)"
+          v-bk-tooltips.top="{
+            theme: 'light',
+            trigger: 'mouseenter',
+            content: row.placeholder
+          }">
+        </i>
       </div>
     </bk-table-column>
     <bk-table-column
@@ -99,6 +107,12 @@
         <div class="form-element-content">
           <property-form-element
             :property="row"
+            v-bk-tooltips.top="{
+              disabled: !row.placeholder || $tools.isIconTipProperty(row.bk_property_type),
+              theme: 'light',
+              trigger: 'click',
+              content: row.placeholder
+            }"
             @value-change="handlePropertyValueChange"
             @valid-change="handlePropertyValidChange">
           </property-form-element>

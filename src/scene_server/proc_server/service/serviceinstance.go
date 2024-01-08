@@ -500,10 +500,7 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 	}
 
 	// query modules by set_template_id
-	cond := mapstr.MapStr{
-		common.BKAppIDField:         bizID,
-		common.BKSetTemplateIDField: input.SetTemplateID,
-	}
+	cond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKSetTemplateIDField: input.SetTemplateID}
 	qc := &metadata.QueryCondition{
 		Fields: []string{common.BKModuleIDField},
 		Page: metadata.BasePage{
@@ -517,6 +514,11 @@ func (ps *ProcServer) SearchServiceInstancesBySetTemplate(ctx *rest.Contexts) {
 		blog.Errorf("SearchServiceInstancesBySetTemplate failed, http request failed, err: %v, rid: %s", err,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed))
+		return
+	}
+
+	if moduleInsts.Count == 0 {
+		ctx.RespEntityWithCount(0, make([]metadata.ServiceInstance, 0))
 		return
 	}
 

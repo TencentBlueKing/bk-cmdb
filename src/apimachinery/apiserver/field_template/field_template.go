@@ -74,3 +74,28 @@ func (t template) ListObjFieldTmplRel(ctx context.Context, h http.Header, opt *m
 
 	return &resp.Data, nil
 }
+
+// CountFieldTemplateObj count field templates related objects
+func (t template) CountFieldTemplateObj(ctx context.Context, h http.Header, opt *metadata.CountFieldTmplResOption) (
+	[]metadata.FieldTmplResCount, errors.CCErrorCoder) {
+
+	resp := new(metadata.CountFieldTemplateObjResp)
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef("/findmany/field_template/object/count").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}

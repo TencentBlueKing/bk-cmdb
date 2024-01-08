@@ -1,6 +1,6 @@
 ### Functional description
 
-list quoted model instances by condition (version: v3.10.30+, permission: view permission of the source model instance)
+list quoted model instances by condition (version: v3.10.30+, permission: when there is a business id, it is the business access permission of the business, otherwise, it is the view permission of the source model instance.)
 
 ### Request Parameters
 
@@ -10,6 +10,7 @@ list quoted model instances by condition (version: v3.10.30+, permission: view p
 
 | Field          | Type   | Required | Description                                                                                                                                                |
 |----------------|--------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id        | string       | no       | business                                                                                                                                                   |
 | bk_obj_id      | string | yes      | source model id                                                                                                                                            |
 | bk_property_id | string | yes      | source model quoted property id                                                                                                                            |
 | filter         | object | no       | query filter of the quoted instance                                                                                                                        |

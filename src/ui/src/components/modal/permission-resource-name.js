@@ -14,6 +14,7 @@ import { IAM_VIEWS } from '@/dictionary/iam-auth'
 import CombineRequest from '@/api/combine-request.js'
 import { foreignkey } from '@/filters/formatter.js'
 import instanceService from '@/service/instance/instance'
+import hostSearchService from '@/service/host/search'
 import projectService from '@/service/project'
 import businessSetService from '@/service/business-set/index.js'
 import fieldTemplateService from '@/service/field-template'
@@ -66,12 +67,10 @@ export const IAM_VIEWS_INST_NAME = {
     return inst ? inst.bk_inst_name : id
   },
   async [IAM_VIEWS.PROJECT](vm, id) {
-    const models = vm.$store.getters['objectModelClassify/models']
-    const objId = (models.find(item => item.id === Number(id)) || {}).bk_obj_id
     const project = await projectService.findOne({
-      id: objId
+      id: Number(id)
     }, { ...requestConfigBase(`find_project_${id}`) })
-    return project ? project.bk_inst_name : id
+    return project ? project.bk_project_name : id
   },
   [IAM_VIEWS.INSTANCE_MODEL](vm, id) {
     const models = vm.$store.getters['objectModelClassify/models']
@@ -125,7 +124,9 @@ export const IAM_VIEWS_INST_NAME = {
         })),
         ip: { flag: 'bk_host_innerip', exact: 1, data: [] }
       }
-      const { info } = await vm.$store.dispatch(action, {
+
+      // 这个的前置场景是主机的编辑，无论编辑的业务主机/资源池主机，在进入到操作入口时应该具体了入口权限，因此这里使用无需鉴权的查询
+      const { info } = await hostSearchService.getHosts({
         params,
         config: { ...requestConfigBase(`${action}${hostIdList.join('')}`) }
       })
@@ -218,12 +219,11 @@ export const IAM_VIEWS_INST_NAME = {
   },
   async [IAM_VIEWS.CLOUD_RESOURCE_TASK](vm, id) {
     const action = 'cloud/resource/findOneTask'
-    const res = await vm.$store.dispatch(action, {
+    const task = await vm.$store.dispatch(action, {
       id: Number(id),
       config: { ...requestConfigBase(`${action}${id}`) }
     })
-    const data = res.info[0] || {}
-    return data.bk_task_name
+    return task?.bk_task_name
   },
   async [IAM_VIEWS.FIELD_TEMPLATE](vm, id) {
     const res = await fieldTemplateService.findById(id, requestConfigBase('field_template'))

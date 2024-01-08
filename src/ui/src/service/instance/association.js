@@ -105,7 +105,8 @@ const find = async (params, config) => {
 const MAX_LIMIT = 500
 const findAll = async (params) => {
   try {
-    const { count } = await http.post(`count/instance_associations/object/${params.bk_obj_id}`, params)
+    const config = { globalPermission: false }
+    const { count } = await http.post(`count/instance_associations/object/${params.bk_obj_id}`, params, config)
     if (count === 0) {
       return []
     }
@@ -115,7 +116,7 @@ const findAll = async (params) => {
       return http.post(`search/instance_associations/object/${params.bk_obj_id}`, {
         ...params,
         page
-      })
+      }, config)
     }))
     return all.reduce((acc, { info }) => {
       acc.push(...info)

@@ -870,14 +870,43 @@ func (lgc *Logics) IPCloudToHost(kit *rest.Kit, ip string, cloudID int64) (HostM
 	return hostInfoArr[0], hostID, nil
 }
 
+func arrangeBaseInfo(relations []metadata.ModuleHost) ([]int64, []int64, []int64, map[int64][]int64) {
+
+	hostModule := make(map[int64][]int64)
+	bizMap, moduleMap, setMap := make(map[int64]struct{}), make(map[int64]struct{}), make(map[int64]struct{})
+
+	for _, one := range relations {
+		bizMap[one.AppID] = struct{}{}
+		moduleMap[one.ModuleID] = struct{}{}
+		setMap[one.SetID] = struct{}{}
+		hostModule[one.HostID] = append(hostModule[one.HostID], one.ModuleID)
+	}
+
+	bizList := make([]int64, 0)
+	for id := range bizMap {
+		bizList = append(bizList, id)
+	}
+
+	moduleList := make([]int64, 0)
+	for id := range moduleMap {
+		moduleList = append(moduleList, id)
+	}
+
+	setList := make([]int64, 0)
+	for id := range setMap {
+		setList = append(setList, id)
+	}
+	return bizList, moduleList, setList, hostModule
+}
+
 // ArrangeHostDetailAndTopology arrange host's detail and it's topology node's info along with it.
 func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hosts []map[string]interface{}) (
-	[]*metadata.HostDetailWithTopo, error) {
+	[]*metadata.HostDetailWithTopo, []int64, error) {
 
 	// get mainline topology rank data, it's the order to arrange the host's topology data.
 	rankMap, reverseRankMap, rank, err := lgc.getTopologyRank(kit)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// search all hosts' host module relations
@@ -886,7 +915,7 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			blog.ErrorJSON("got invalid bk_host_id field in host: %s, rid: %s", host, kit.Rid)
-			return nil, err
+			return nil, nil, err
 		}
 		hostIDs = append(hostIDs, hostID)
 	}
@@ -896,7 +925,7 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 	relations, err := lgc.GetHostRelations(kit, relationCond)
 	if err != nil {
 		blog.ErrorJSON("read host module relation error: %s, input: %s, rid: %s", err, hosts, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	bizList, moduleList, setList := make([]int64, 0), make([]int64, 0), make([]int64, 0)
@@ -911,19 +940,24 @@ func (lgc *Logics) ArrangeHostDetailAndTopology(kit *rest.Kit, withBiz bool, hos
 	// get all the inner object's details info
 	bizDetails, setDetails, moduleDetails, err := lgc.getInnerObjectDetails(kit, withBiz, bizList, moduleList, setList)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// now we get all the custom object's instances with set's parent instance id
 	// from low level to the top business level.
 	customObjInstMap, err := lgc.getCustomTopoInfo(kit, rank, rankMap, setDetails)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// now, we have already get all the data we need, it's time to arrange the data.
-	return lgc.rearrangeHostDetailAndTopo(kit, withBiz, hosts, bizDetails, setDetails, moduleDetails, rank, hostModule,
-		rankMap, reverseRankMap, customObjInstMap)
+	topo, err := lgc.rearrangeHostDetailAndTopo(kit, withBiz, hosts, bizDetails, setDetails, moduleDetails, rank,
+		hostModule, rankMap, reverseRankMap, customObjInstMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return topo, bizList, nil
 }
 
 func (lgc *Logics) rearrangeHostDetailAndTopo(kit *rest.Kit, withBiz bool, hosts []map[string]interface{},
@@ -1820,7 +1854,7 @@ func (lgc *Logics) getHostMainlineRelation(kit *rest.Kit, bizID int64, params me
 		return []*metadata.HostDetailWithTopo{}, nil
 	}
 
-	topo, err := lgc.ArrangeHostDetailAndTopology(kit, false, hosts.Info)
+	topo, _, err := lgc.ArrangeHostDetailAndTopology(kit, false, hosts.Info)
 	if err != nil {
 		blog.Errorf("arrange host detail and topology failed, err: %v, rid: %s", topo, kit.Rid)
 		return nil, err

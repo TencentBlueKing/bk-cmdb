@@ -81,6 +81,8 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 		}
 	case meta.SystemBase:
 		return make([]types.Resource, 0), nil
+	case meta.FulltextSearch:
+		return make([]types.Resource, 0), nil
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
@@ -330,7 +332,7 @@ func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Res
 		Attribute: nil,
 	}
 
-	if act == CreateCloudArea {
+	if act == CreateCloudArea || act == ViewCloudArea {
 		return make([]types.Resource, 0), nil
 	}
 
@@ -694,6 +696,16 @@ func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute
 		return []types.Resource{r}, nil
 	}
 
+	// find business host
+	if act == ViewBusinessResource {
+		r := types.Resource{
+			System: SystemIDCMDB,
+			Type:   types.ResourceType(Business),
+			ID:     strconv.FormatInt(a.BusinessID, 10),
+		}
+		return []types.Resource{r}, nil
+	}
+
 	return []types.Resource{}, nil
 }
 
@@ -719,7 +731,8 @@ func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 	}
 
 	// create action do not related to instance authorize
-	if att.Action == meta.Create || att.Action == meta.CreateMany {
+	if att.Action == meta.Create || att.Action == meta.CreateMany || att.Action == meta.FindMany ||
+		att.Action == meta.Find {
 		return make([]types.Resource, 0), nil
 	}
 

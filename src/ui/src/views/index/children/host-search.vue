@@ -13,18 +13,17 @@
 <template>
   <div class="host-search-layout">
     <div class="search-bar">
-      <bk-input class="search-input" v-test-id
-        ref="searchInput"
-        type="textarea"
+      <editable-block
+        v-test-id
+        ref="ipEditableBlock"
         :placeholder="$t('首页主机搜索提示语')"
-        :rows="rows"
-        :clearable="true"
-        :show-clear-only-hover="true"
-        v-model="searchContent"
-        @focus="handleFocus"
+        :focus-tip="$t('首页主机搜索聚焦提示')"
+        :blur-tip="$t('首页主机搜索失焦焦提示')"
+        :value="searchContent"
+        @search="handleSearch"
         @blur="handleBlur"
-        @keydown="handleKeydown">
-      </bk-input>
+        @focus="handleFocus">
+      </editable-block>
       <bk-popover v-bind="popoverProps" ref="popover">
         <bk-button theme="primary" class="search-btn" v-test-id="'search'"
           :loading="$loading(request.search)"
@@ -57,8 +56,12 @@
   import FilterUtils from '@/components/filters/utils.js'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
+  import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
+    components: {
+      EditableBlock
+    },
     data() {
       const defaultSearchContent = () => {
         let content = ''
@@ -73,7 +76,7 @@
       return {
         rows: 1,
         searchContent: defaultSearchContent(),
-        textareaDom: null,
+        ipEditableBlock: null,
         popoverProps: {
           width: 280,
           trigger: 'manual',
@@ -99,18 +102,31 @@
           this.$nextTick(this.setRows)
         },
         immediate: true
-      }
+      },
+      'ipEditableBlock.searchContent': {
+        handler() {
+          this.$nextTick(this.setRows)
+        }
+      },
     },
     mounted() {
-      this.textareaDom = this.$refs.searchInput && this.$refs.searchInput.$refs.textarea
+      this.ipEditableBlock = this.$refs.ipEditableBlock
     },
     methods: {
+      getAuthMaskProps() {
+        const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+        return {
+          auth,
+          tag: 'div',
+          authorized: this.isViewAuthed(auth)
+        }
+      },
       getSearchList() {
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
-        return FilterUtils.splitIP(this.searchContent)
+        return FilterUtils.splitIP(this.ipEditableBlock.searchContent)
       },
       setRows() {
-        const rows = this.searchContent.split('\n').length || 1
+        const rows = this.ipEditableBlock.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
       },
       handleFocus() {
@@ -118,21 +134,14 @@
         this.setRows()
       },
       handleBlur() {
-        if (!this.searchContent.trim().length) {
-          this.searchContent = ''
-        }
-        this.textareaDom && this.textareaDom.blur()
         this.$emit('focus', false)
       },
-      handleKeydown(content, event) {
-        const agent = window.navigator.userAgent.toLowerCase()
-        const isMac = /macintosh|mac os x/i.test(agent)
-        const modifierKey = isMac ? event.metaKey : event.ctrlKey
-        if (modifierKey && event.code.toLowerCase() === 'enter') {
-          this.handleSearch()
-        }
-      },
       async handleSearch(force = '') {
+        const { hasIP, searchContent } = this.ipEditableBlock
+        if (!hasIP || !searchContent.length) {
+          this.ipEditableBlock?.focus()
+          return
+        }
         const searchList = this.getSearchList()
         if (searchList.length > IP_SEARCH_MAX_COUNT) {
           this.$warn(this.$t('最多支持搜索10000条数据'))
@@ -140,59 +149,63 @@
         }
 
         // 保存本次搜索内容
-        window.sessionStorage.setItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY, JSON.stringify(this.searchContent))
+        window.sessionStorage.setItem(
+          HOME_HOST_SEARCH_CONTENT_STORE_KEY,
+          JSON.stringify(this.ipEditableBlock.searchContent)
+        )
 
-        if (searchList.length) {
-          const IPs = FilterUtils.parseIP(searchList)
-          const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
+        const IPs = FilterUtils.parseIP(searchList)
+        const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
 
-          this.searchFlag.ip = IPv4List.length
-            || IPv4WithCloudList.length
-            || IPv6List.length
-            || IPv6WithCloudList.length
-          this.searchFlag.asset = assetList.length > 0
-          const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
+        this.searchFlag.ip = IPv4List.length
+          || IPv4WithCloudList.length
+          || IPv6List.length
+          || IPv6WithCloudList.length
+        this.searchFlag.asset = assetList.length > 0
+        const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
 
-          // 判断是否存在IP、IPv6、固资编号混合搜索
-          if (!force && isMixSearch) {
-            this.$refs.popover.showHandler()
-            return
+        // 判断是否存在IP、IPv6、固资编号混合搜索
+        if (!force && isMixSearch) {
+          this.$refs.popover.showHandler()
+          return
+        }
+
+        const assetSearch = () => this.handleAssetSearch(assetList)
+
+        const ipSearch = () => {
+          // 不同管控区域+IP的混合搜索
+          if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
+            return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
           }
 
-          const assetSearch = () => this.handleAssetSearch(assetList)
+          this.handleIPSearch(IPs)
+        }
 
-          const ipSearch = () => {
-            // 不同管控区域+IP的混合搜索
-            if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
-              return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
-            }
+        // 优先使用混合搜索下的选择
+        if (force === 'asset') {
+          return assetSearch()
+        }
+        if (force === 'ip') {
+          return ipSearch()
+        }
 
-            this.handleIPSearch(IPs)
-          }
-
-          // 优先使用混合搜索下的选择
-          if (force === 'asset') {
-            return assetSearch()
-          }
-          if (force === 'ip') {
-            return ipSearch()
-          }
-
-          // 非混合搜索
-          if (this.searchFlag.asset) {
-            return assetSearch()
-          }
-          if (this.searchFlag.ip) {
-            return ipSearch()
-          }
-        } else {
-          this.searchContent = ''
-          this.textareaDom && this.textareaDom.focus()
+        // 非混合搜索
+        if (this.searchFlag.asset) {
+          return assetSearch()
+        }
+        if (this.searchFlag.ip) {
+          return ipSearch()
         }
       },
       handleIPSearch(IPs) {
         const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
-        IPs.IPv4WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
+        IPs.IPv4WithCloudList.forEach(([cloud, ip, type]) => {
+          let val = `${cloud}:[${ip}]`
+          if (type === 0) {
+            val = val.replace(/\[|\]/g, '')
+          }
+          IPList.push(val)
+        })
         IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
 
         const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
@@ -244,6 +257,10 @@
         max-width: 806px;
         height: 42px;
         margin: 0 auto;
+
+        .auth-mask {
+          height: 100%;
+        }
     }
     .search-bar {
         position: absolute;
@@ -251,27 +268,6 @@
         height: 42px;
         z-index: 999;
         display: flex;
-    }
-    .search-input {
-        flex: 1;
-        max-width: 646px;
-        /deep/ {
-            .bk-textarea-wrapper {
-                border: 0;
-                border-radius: 0 0 0 2px;
-            }
-            .bk-form-textarea {
-                min-height: 42px;
-                line-height: 30px;
-                font-size: 14px;
-                border: 1px solid #C4C6CC;
-                padding: 5px 32px 5px 16px;
-                border-radius: 0 0 0 2px;
-            }
-            .right-icon {
-              right: 20px !important;
-            }
-        }
     }
     .search-btn {
         width: 86px;

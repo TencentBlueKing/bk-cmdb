@@ -17,6 +17,7 @@ import (
 	"errors"
 	"net"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 )
 
@@ -50,12 +51,10 @@ var (
 
 // MonitorConfig is the config of monitor
 type MonitorConfig struct {
-	// PluginName current plugin name
-	PluginName string
 	// EnableMonitor enable monitor or not
 	EnableMonitor bool
-	// DataID is identifier for report data
-	DataID int64
+	// PluginName current plugin name
+	PluginName string
 	// QueueSize is queue size to cache the collected data
 	QueueSize int64
 	// QPS used for rate limit
@@ -64,10 +63,18 @@ type MonitorConfig struct {
 	Burst int64
 	// SourceIP is the source ip address to report data
 	SourceIP string
-	// Gse cmd path
-	GsecmdlinePath string
-	// Domain Socket Path
-	DomainSocketPath string
+
+	BluekingPluginConfig
+}
+
+// BluekingPluginConfig is the config of blueking monitor plugin
+type BluekingPluginConfig struct {
+	// DataID is identifier for report data
+	DataID int64
+	// BkMonitorReportUrl blueking monitor report url
+	BkMonitorReportUrl string
+	// AccessToken blueking monitor report access token
+	AccessToken string
 }
 
 // SetMonitorSourceIP set monitor source ip
@@ -104,19 +111,22 @@ func CheckAndCorrectCfg() error {
 		MonitorCfg.Burst = BurstDefault
 	}
 
-	if MonitorCfg.DataID == 0 {
-		blog.Errorf("init monitor failed, config monitor.dataID is not set")
-		return errors.New("config monitor.dataID is not set")
-	}
+	switch MonitorCfg.PluginName {
+	case common.BKBluekingMonitorPlugin:
+		if MonitorCfg.DataID == 0 {
+			blog.Errorf("init monitor failed, config monitor.dataID is not set")
+			return errors.New("config monitor.dataID is not set")
+		}
 
-	if MonitorCfg.DomainSocketPath == "" {
-		blog.Errorf("init monitor failed, config monitor.domainSocketPath is not set")
-		return errors.New("config monitor.domainSocketPath is not set")
-	}
+		if MonitorCfg.BkMonitorReportUrl == "" {
+			blog.Errorf("init monitor failed, config monitor.bkMonitorReportUrl is not set")
+			return errors.New("config monitor.bkMonitorReportUrl is not set")
+		}
 
-	if MonitorCfg.GsecmdlinePath == "" {
-		blog.Errorf("init monitor failed, config monitor.gsecmdlinePath is not set")
-		return errors.New("config monitor.gsecmdlinePath is not set")
+		if MonitorCfg.AccessToken == "" {
+			blog.Errorf("init monitor failed, config monitor.accessToken is not set")
+			return errors.New("config monitor.accessToken is not set")
+		}
 	}
 
 	return nil

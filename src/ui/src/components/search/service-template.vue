@@ -16,6 +16,7 @@
     multiple
     searchable
     display-tag
+    selected-style="checkbox"
     v-bind="$attrs"
     v-model="localValue"
     @clear="() => $emit('clear')"

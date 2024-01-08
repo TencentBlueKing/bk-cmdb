@@ -86,6 +86,7 @@
 
 <script>
   import { mapGetters, mapState, mapActions } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   import applyStatusModal from './children/apply-status'
   import {
     MENU_BUSINESS_HOST_AND_SERVICE,
@@ -166,7 +167,7 @@
       },
       async getHostList() {
         try {
-          const { info, count } = await this.$store.dispatch('hostSearch/searchHost', {
+          const { info, count } = await hostSearchService.getBizHosts({
             params: this.getSearchHostParams()
           })
           this.table.list = info

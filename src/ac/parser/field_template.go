@@ -187,6 +187,13 @@ var FieldTemplateAuthConfigs = []AuthConfig{
 		HTTPMethod:     http.MethodPost,
 		ResourceAction: meta.SkipAction,
 	},
+	{
+		Name:           "CountFieldTemplateObj",
+		Description:    "查询字段组合模版关联的模型数量",
+		Pattern:        "/api/v3/findmany/field_template/object/count",
+		HTTPMethod:     http.MethodPost,
+		ResourceAction: meta.SkipAction,
+	},
 }
 
 func (ps *parseStream) fieldTemplate() *parseStream {
