@@ -133,10 +133,14 @@ func (s *Service) ListQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	// authorize, 传业务id时，代表是从业务的视角去查询实例的表格字段，此时根据是否有这个业务的业务访问权限进行鉴权
+	// 传业务id时，代表是从业务的视角去查询实例的表格字段，当模型是业务时，鉴业务查看权限，否则鉴业务访问权限；其他的鉴对应模型实例的查看权限
 	if opt.BizID != 0 {
-		if err := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.ViewBusinessResource,
-			common.BKInnerObjIDApp, opt.BizID); err != nil {
+		bizAction := meta.ViewBusinessResource
+		if opt.ObjID == common.BKInnerObjIDApp {
+			bizAction = meta.Find
+		}
+		if err := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, bizAction, common.BKInnerObjIDApp,
+			opt.BizID); err != nil {
 			blog.Errorf("authorize failed, bizID: %v, err: %v, rid: %s", opt.BizID, err, cts.Kit.Rid)
 			cts.RespAutoError(err)
 			return
