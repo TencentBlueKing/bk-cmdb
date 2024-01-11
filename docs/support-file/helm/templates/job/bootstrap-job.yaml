@@ -26,8 +26,8 @@ spec:
               do
                   res=$(curl -s -X GET \
                   -H 'Content-Type:application/json' \
-                  -H 'X-Bkcmdb-User:migrate' \
-                  -H 'X-Bkcmdb-Supplier-Account:0' \
+                  -H 'BK_USER:migrate' \
+                  -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
                   "http://{{ template "bk-cmdb.adminserver" . }}:80/migrate/v3/healthz"
                   )
                   echo "$res"
@@ -58,8 +58,8 @@ spec:
           /bin/bash <<'EOF'
           res=$(curl -s -X POST \
           -H 'Content-Type:application/json' \
-          -H 'X-Bkcmdb-User:migrate' \
-          -H 'X-Bkcmdb-Supplier-Account:0' \
+          -H 'BK_USER:migrate' \
+          -H 'HTTP_BLUEKING_SUPPLIER_ID:0' \
           "http://{{ template "bk-cmdb.adminserver" . }}:80/migrate/v3/migrate/community/0"
           )
           echo "$res"

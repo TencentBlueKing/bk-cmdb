@@ -18,8 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 )
@@ -44,18 +42,25 @@ func CovertInstState(instState string) string {
 
 // NewHeader 创建云资源同步需要的header
 func NewHeader() http.Header {
-	header := headerutil.BuildHeader(common.BKCloudSyncUser, common.BKSuperOwnerID)
-	httpheader.SetLanguage(header, "cn")
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	header.Add(common.BKHTTPHeaderUser, common.BKCloudSyncUser)
+	header.Add(common.BKHTTPLanguage, "cn")
+	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
+	header.Add("Content-Type", "application/json")
 	return header
 }
 
 // NewKit 创建新的Kit
 func NewKit() *rest.Kit {
 	header := NewHeader()
+	if header.Get(common.BKHTTPCCRequestID) == "" {
+		header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
+	}
 	ctx := util.NewContextFromHTTPHeader(header)
-	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	rid := util.GetHTTPCCRequestID(header)
+	user := util.GetUser(header)
+	supplierAccount := util.GetOwnerID(header)
 	defaultCCError := util.GetDefaultCCError(header)
 
 	return &rest.Kit{
@@ -78,7 +83,7 @@ func NewReadwKit() *rest.Kit {
 // SupplierAccount为与当前环境匹配的开发商
 func NewWriteKit(supplierAccount string) *rest.Kit {
 	kit := NewKit()
-	httpheader.SetSupplierAccount(kit.Header, supplierAccount)
+	kit.Header.Set(common.BKHTTPOwnerID, supplierAccount)
 	kit.SupplierAccount = supplierAccount
 	return kit
 }

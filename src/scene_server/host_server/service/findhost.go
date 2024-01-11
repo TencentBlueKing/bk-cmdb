@@ -22,7 +22,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
@@ -479,7 +478,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 	bizCount := 0
 	for _, biz := range appResult.Info {
 		supplier, _ := biz.String(common.BkSupplierAccount)
-		if supplier == httpheader.GetSupplierAccount(header) {
+		if supplier == util.GetOwnerID(header) {
 			bizCount++
 			bizData = biz
 		}

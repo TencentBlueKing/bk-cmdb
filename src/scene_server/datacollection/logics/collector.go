@@ -22,8 +22,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/esbserver/nodeman"
 
 	"gopkg.in/yaml.v2"
@@ -33,8 +33,7 @@ import (
 const Netdevicebeat = "netdevicebeat"
 
 // SearchCollector TODO
-func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcollectorSearch) (int64,
-	[]metadata.Netcollector, error) {
+func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcollectorSearch) (int64, []metadata.Netcollector, error) {
 	collectors := make([]metadata.Netcollector, 0)
 
 	// fetch package info
@@ -60,8 +59,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	}
 	if !pluginHostResp.Result {
 		blog.Errorf("[NetDevice][SearchCollector] SearchPluginHost by %s failed: %+v", Netdevicebeat, packageResp)
-		return 0, nil, fmt.Errorf("search plugin host from nodeman by %s failed: %s", Netdevicebeat,
-			pluginHostResp.Message)
+		return 0, nil, fmt.Errorf("search plugin host from nodeman by %s failed: %s", Netdevicebeat, pluginHostResp.Message)
 	}
 
 	// build collectors
@@ -138,8 +136,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 			} else {
 				taskStatus, err = lgc.queryCollectTask(header, collector.BizID, existsOne.TaskID)
 				if err != nil {
-					blog.Warnf("[NetDevice][SearchCollector] queryNodemanTask by BizID [%v], TaskID [%v], failed: %v",
-						collector.BizID, existsOne.TaskID, err)
+					blog.Warnf("[NetDevice][SearchCollector] queryNodemanTask by BizID [%v], TaskID [%v], failed: %v", collector.BizID, existsOne.TaskID, err)
 				}
 			}
 			existsOne.Status.ConfigStatus = taskStatus
@@ -296,14 +293,12 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 			continue
 		}
 
-		upgradeReq, err := lgc.buildUpgradePluginRequest(&collector, httpheader.GetUser(header), &pkg, &procResp.Data,
-			&procInfoResp.Data)
+		upgradeReq, err := lgc.buildUpgradePluginRequest(&collector, util.GetUser(header), &pkg, &procResp.Data, &procInfoResp.Data)
 		if err != nil {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] buildUpgradePluginRequest %s failed, %v", key, err)
 		}
 		blog.InfoJSON("[NetDevice][DiscoverNetDevice] UpgradePlugin request %s", upgradeReq)
-		upgradeResp, err := lgc.ESB.NodemanSrv().UpgradePlugin(context.Background(), header,
-			strconv.FormatInt(collector.BizID, 10), upgradeReq)
+		upgradeResp, err := lgc.ESB.NodemanSrv().UpgradePlugin(context.Background(), header, strconv.FormatInt(collector.BizID, 10), upgradeReq)
 		if err != nil {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] UpgradePlugin %s failed", key)
 			continue
@@ -314,8 +309,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		}
 
 		blog.V(3).Infof("[NetDevice][DiscoverNetDevice] UpgradePlugin response %+v ", upgradeResp)
-		if err := lgc.saveCollectTask(&collector, upgradeResp.Data.ID,
-			metadata.CollectorConfigStatusPending); err != nil {
+		if err := lgc.saveCollectTask(&collector, upgradeResp.Data.ID, metadata.CollectorConfigStatusPending); err != nil {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] saveCollectTask %s failed, %v", key, err)
 		}
 	}
@@ -339,8 +333,7 @@ func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int6
 	return lgc.db.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, filter, data)
 }
 
-func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, user string, pkg *nodeman.PluginPackage,
-	proc *nodeman.PluginProcess, porcInfo *nodeman.PluginProcessInfo) (*nodeman.UpgradePluginRequest, error) {
+func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, user string, pkg *nodeman.PluginPackage, proc *nodeman.PluginProcess, porcInfo *nodeman.PluginProcessInfo) (*nodeman.UpgradePluginRequest, error) {
 	pluginConfig, err := lgc.buildNetdevicebeatConfigFile(collector)
 	if err != nil {
 		return nil, err

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -36,8 +35,8 @@ import (
 // GetObjectCount search object count
 func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond *metadata.ObjectCountParams) (
 	*metadata.ObjectCountResult, error) {
-	rid := httpheader.GetRid(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	objIDs := cond.Condition.ObjectIDs
 	if len(objIDs) > 20 {
@@ -120,8 +119,8 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 // ProcessObjectIDArray process objectIDs
 func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header, objectArray []string) ([]string,
 	[]string, error) {
-	rid := httpheader.GetRid(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
 	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
@@ -158,7 +157,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data interface{},
 	exportType string) ([]byte, error) {
 
-	rid := httpheader.GetRid(header)
+	rid := util.GetHTTPCCRequestID(header)
 	nowTime := time.Now().Local()
 
 	expirationTime := nowTime.UnixNano()
@@ -185,7 +184,7 @@ func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data in
 func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName string, password string,
 	data []byte) error {
 
-	rid := httpheader.GetRid(header)
+	rid := util.GetHTTPCCRequestID(header)
 	fh := &zip.FileHeader{
 		Name:   fileName,
 		Method: zip.Deflate,
@@ -212,8 +211,8 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, password string,
 	result *metadata.AnalysisResult) (int, error) {
 
-	rid := httpheader.GetRid(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	if file.IsEncrypted() {
 		if len(password) == 0 {

@@ -29,7 +29,6 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
@@ -1208,7 +1207,7 @@ func (a *authorizer) AuthorizeAnyBatch(ctx context.Context, h http.Header, user 
 func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bool, user meta.UserInfo,
 	resources ...meta.ResourceAttribute) ([]types.Decision, error) {
 
-	rid := httpheader.GetRid(h)
+	rid := commonutil.GetHTTPCCRequestID(h)
 
 	opts, decisions, err := parseAttributesToBatchOptions(rid, user, resources...)
 	if err != nil {

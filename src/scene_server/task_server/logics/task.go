@@ -21,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -427,9 +426,20 @@ func (lgc *Logics) DeleteTask(kit *rest.Kit, taskCond *metadata.DeleteOption) er
 	return nil
 }
 
-// GetDBHTTPHeader get db http header
+// GetDBHTTPHeader TODO
 func GetDBHTTPHeader(header http.Header) http.Header {
-	return headerutil.CCHeader(header)
+
+	newHeader := make(http.Header, 0)
+	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
+	newHeader.Add(common.BKHTTPCookieLanugageKey, header.Get(common.BKHTTPCookieLanugageKey))
+	newHeader.Add(common.BKHTTPHeaderUser, header.Get(common.BKHTTPHeaderUser))
+	newHeader.Add(common.BKHTTPLanguage, header.Get(common.BKHTTPLanguage))
+	newHeader.Add(common.BKHTTPOwner, header.Get(common.BKHTTPOwner))
+	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
+	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
+	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
+
+	return newHeader
 }
 
 func getStrTaskID(prefix string) string {

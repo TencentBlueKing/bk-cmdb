@@ -22,10 +22,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // GetInst get instance
@@ -64,7 +64,7 @@ func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int6
 	if err != nil {
 		blog.Errorf("add instance failed, err: %v, rid: %s", err, kit.Rid)
 		errMsg := make([]string, 0)
-		defLang := param.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
+		defLang := param.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 		for idx := range param.Instances {
 			errMsg = append(errMsg, defLang.Languagef("import_data_fail", idx, err.Error()))
 		}

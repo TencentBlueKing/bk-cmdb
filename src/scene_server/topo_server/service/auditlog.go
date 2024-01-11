@@ -15,16 +15,16 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/common/util"
 )
 
 // SearchAuditDict returns all audit types with their name and actions for front-end display
 func (s *Service) SearchAuditDict(ctx *rest.Contexts) {
-	languageType := common.LanguageType(httpheader.GetLanguage(ctx.Kit.Header))
+	languageType := common.LanguageType(util.GetLanguage(ctx.Kit.Header))
 	if languageType != common.Chinese && languageType != common.English {
 		blog.Errorf("can not find language, transform to Chinese, language: %v, rid: %s", languageType, ctx.Kit.Rid)
 		languageType = common.Chinese

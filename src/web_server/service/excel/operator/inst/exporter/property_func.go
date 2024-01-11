@@ -6,8 +6,8 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 )
 
@@ -145,7 +145,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		ccLang := t.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(t.GetKit().Header))
+		ccLang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)
@@ -226,7 +226,7 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 
-		ccLang := t.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(t.GetKit().Header))
+		ccLang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)

@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -60,8 +59,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 }
 
 // MakeResourcesByBusiness TODO
-func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action,
-	businesses ...BusinessSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action, businesses ...BusinessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, business := range businesses {
 		resource := meta.ResourceAttribute{
@@ -71,7 +69,7 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 				Name:       business.BKAppNameField,
 				InstanceID: business.BKAppIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			SupplierAccount: util.GetOwnerID(header),
 		}
 
 		resources = append(resources, resource)
@@ -111,8 +109,7 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 }
 
 // AuthorizeByBusinessID TODO
-func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action,
-	businessIDs ...int64) error {
+func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}

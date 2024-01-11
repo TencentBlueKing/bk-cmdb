@@ -165,7 +165,7 @@ supervisorctl -c ${BKCE}/etc/supervisor-cmdb-server.conf status
 ### 2.7 migrate
 开源版本中有个 `init_db.sh` 脚本用来升级数据库，该脚本其实是想adminserver发起一个请求，由adminserver执行升级操作。做mongodb数据升级时，可以直接执行该脚本，或者直接调用adminserver的http接口。
 
-`curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0' http://${adminserver}:60004/migrate/v3/migrate/community/0`
+`curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0' http://${adminserver}:60004/migrate/v3/migrate/community/0`
 
 ### 2.8 验证
 执行到这一步，说明升级操作流程基本执行完了，但是这并不意味着升级成功，只有经过您反复验证后的升级才算完成。

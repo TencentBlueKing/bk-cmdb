@@ -39,14 +39,13 @@ func init() {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
-	loginSucc bool) {
+func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
 
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieSupplierAccount)
+	cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
 	if "" == cookieOwnerID || nil != err {
-		c.SetCookie(common.HTTPCookieSupplierAccount, common.BKDefaultOwnerID, 0, "/", "", false, false)
+		c.SetCookie(common.BKHTTPOwnerID, common.BKDefaultOwnerID, 0, "/", "", false, false)
 		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 	} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
@@ -99,8 +98,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo,
-	*errors.RawErrorInfo) {
+func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	return []*metadata.LoginSystemUserInfo{
 		{
 			CnName: "admin",

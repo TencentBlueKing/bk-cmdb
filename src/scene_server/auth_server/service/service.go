@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -86,25 +85,25 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		// use iam request id as cc rid
 		rid := req.Request.Header.Get(iam.IamRequestHeader)
 		resp.Header().Set(iam.IamRequestHeader, rid)
-		if rid == "" {
-			if rid = httpheader.GetRid(req.Request.Header); rid == "" {
-				rid = util.GenerateRID()
-			}
+		if rid != "" {
+			req.Request.Header.Set(common.BKHTTPCCRequestID, rid)
+		} else if rid = util.GetHTTPCCRequestID(req.Request.Header); rid == "" {
+			rid = util.GenerateRID()
+			req.Request.Header.Set(common.BKHTTPCCRequestID, rid)
 		}
-		httpheader.SetRid(req.Request.Header, rid)
-		httpheader.SetRid(resp.Header(), rid)
+		resp.Header().Set(common.BKHTTPCCRequestID, rid)
 
 		// use iam language as cc language
-		httpheader.SetLanguage(req.Request.Header, req.Request.Header.Get("Blueking-Language"))
+		req.Request.Header.Set(common.BKHTTPLanguage, req.Request.Header.Get("Blueking-Language"))
 
 		req.Request.Header = util.SetHTTPReadPreference(req.Request.Header, common.SecondaryPreferredMode)
 
 		// set supplierID
 		setSupplierID(req.Request)
 
-		user := httpheader.GetUser(req.Request.Header)
+		user := req.Request.Header.Get(common.BKHTTPHeaderUser)
 		if len(user) == 0 {
-			httpheader.SetUser(req.Request.Header, "auth")
+			req.Request.Header.Set(common.BKHTTPHeaderUser, "auth")
 		}
 
 		chain.ProcessFilter(req, resp)
@@ -144,13 +143,13 @@ func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (b
 
 // setSupplierID set suitable supplier account for the different version type, like ee, oa version
 func setSupplierID(req *http.Request) {
-	supplierID := httpheader.GetSupplierAccount(req.Header)
+	supplierID := req.Header.Get(common.BKHTTPOwnerID)
 	if len(supplierID) == 0 {
 		sID, _ := cc.String("authServer.supplierID")
 		if len(sID) == 0 {
 			sID = common.BKDefaultOwnerID
 		}
-		httpheader.SetSupplierAccount(req.Header, sID)
+		req.Header.Set(common.BKHTTPOwnerID, sID)
 	}
 }
 

@@ -22,12 +22,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	"configcenter/src/scene_server/synchronize_server/logics"
@@ -64,17 +64,17 @@ func (s *Service) SetSynchronizeServer(synchronizeSrv synchronize.SynchronizeCli
 }
 
 func (s *Service) newSrvComm(header http.Header) *srvComm {
-	lang := httpheader.GetLanguage(header)
+	lang := util.GetLanguage(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
 	return &srvComm{
 		header:        header,
-		rid:           httpheader.GetRid(header),
+		rid:           util.GetHTTPCCRequestID(header),
 		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
 		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
 		ctx:           ctx,
 		ctxCancelFunc: cancel,
-		user:          httpheader.GetUser(header),
-		ownerID:       httpheader.GetSupplierAccount(header),
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
 		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB, s.synchronizeSrv),
 	}
 }
@@ -148,12 +148,12 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(answer)
 }
 
-// InitBackground  initialization background task
+// InitBackground  initialization backgroud task
 func (s *Service) InitBackground() {
 	header := make(http.Header, 0)
-	if httpheader.GetSupplierAccount(header) == "" {
-		httpheader.SetSupplierAccount(header, common.BKSuperOwnerID)
-		httpheader.SetUser(header, common.BKSynchronizeDataTaskDefaultUser)
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKSynchronizeDataTaskDefaultUser)
 	}
 
 	srvData := s.newSrvComm(header)

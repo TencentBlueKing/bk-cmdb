@@ -18,7 +18,6 @@
 package excel
 
 import (
-	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
 	"configcenter/src/web_server/capability"
 
@@ -28,14 +27,12 @@ import (
 type service struct {
 	ws     *gin.Engine
 	engine *backbone.Engine
-	apiCli apiserver.ApiServerClientInterface
 }
 
 // Init init excel service
 func Init(c *capability.Capability) {
 	s := &service{
 		engine: c.Engine,
-		apiCli: c.ApiCli,
 	}
 
 	c.Ws.POST("/importtemplate/:bk_obj_id", s.BuildTemplate)

@@ -19,9 +19,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
@@ -70,8 +70,7 @@ type coreService struct {
 }
 
 // SetConfig TODO
-func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
-	lang language.CCLanguageIf) error {
+func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
@@ -157,7 +156,7 @@ func (s *coreService) WebService() *restful.Container {
 
 // Language TODO
 func (s *coreService) Language(header http.Header) language.DefaultCCLanguageIf {
-	lang := httpheader.GetLanguage(header)
+	lang := util.GetLanguage(header)
 	l, exist := s.langFactory[common.LanguageType(lang)]
 	if !exist {
 		return s.langFactory[common.Chinese]

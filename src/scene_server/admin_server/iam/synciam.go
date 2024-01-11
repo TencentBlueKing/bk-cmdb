@@ -21,8 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -70,18 +68,25 @@ func (s *syncor) SetDB(db dal.RDB) {
 
 // newHeader 创建IAM同步需要的header
 func newHeader() http.Header {
-	header := headerutil.BuildHeader(common.BKIAMSyncUser, common.BKSuperOwnerID)
-	httpheader.SetLanguage(header, "cn")
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	header.Add(common.BKHTTPHeaderUser, common.BKIAMSyncUser)
+	header.Add(common.BKHTTPLanguage, "cn")
+	header.Add(common.BKHTTPCCRequestID, util.GenerateRID())
+	header.Add("Content-Type", "application/json")
 	return header
 }
 
 // newKit 创建新的Kit
 func newKit() *rest.Kit {
 	header := newHeader()
+	if header.Get(common.BKHTTPCCRequestID) == "" {
+		header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
+	}
 	ctx := util.NewContextFromHTTPHeader(header)
-	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	rid := util.GetHTTPCCRequestID(header)
+	user := util.GetUser(header)
+	supplierAccount := util.GetOwnerID(header)
 	defaultCCError := util.GetDefaultCCError(header)
 
 	return &rest.Kit{

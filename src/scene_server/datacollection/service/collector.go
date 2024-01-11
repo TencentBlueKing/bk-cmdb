@@ -20,20 +20,19 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // SearchCollector TODO
 func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.ParamNetcollectorSearch{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
 		blog.Errorf("[NetDevice][SearchCollector] decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	blog.Infof("[NetDevice][SearchCollector] search by %+v", cond)
@@ -55,25 +54,22 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 // UpdateCollector TODO
 func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.Netcollector{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
 		blog.Errorf("[NetDevice][UpdateCollector] decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	blog.Infof("[NetDevice][UpdateCollector] update by %+v", cond)
 
 	if cond.BizID <= 0 {
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKAppIDField)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKAppIDField)})
 		return
 	}
 	if len(cond.InnerIP) <= 0 {
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKHostInnerIPField)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKHostInnerIPField)})
 		return
 	}
 
@@ -91,13 +87,12 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 // DiscoverNetDevice TODO
 func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.ParamNetcollectDiscover{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
 		blog.Errorf("[NetDevice][DiscoverNetDevice] decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	blog.Infof("[NetDevice][DiscoverNetDevice] discover by %+v", cond)

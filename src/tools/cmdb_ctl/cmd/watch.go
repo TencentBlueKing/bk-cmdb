@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -181,8 +180,10 @@ func runStartFromWatch(c *watchConf) error {
 	if err != nil {
 		return err
 	}
-
-	req.Header = headerutil.GenCommonHeader("cmdb_tool", "0", rid)
+	req.Header.Add("HTTP_BLUEKING_SUPPLIER_ID", "0")
+	req.Header.Add("BK_User", "cmdb_tool")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Cc_Request_Id", rid)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -268,7 +269,10 @@ func loopWatchEvent(c *watchConf, resp *http.Response, filter map[string]string,
 		if err != nil {
 			return err
 		}
-		req.Header = headerutil.GenCommonHeader("cmdb_tool", "0", "666666666666666666")
+		req.Header.Add("HTTP_BLUEKING_SUPPLIER_ID", "0")
+		req.Header.Add("BK_User", "cmdb_tool")
+		req.Header.Add("Content-Type", "application/json")
+		req.Header.Add("Cc_Request_Id", "666666666666666666")
 		resp, err := client.Do(req)
 		if err != nil {
 			return err

@@ -15,7 +15,7 @@ package rest
 import (
 	"sync"
 
-	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common"
 	"configcenter/src/common/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -58,7 +58,7 @@ type restMetric struct {
 
 func (c *Contexts) collectErrorMetric() {
 	rm.totalErrorCount.With(prometheus.Labels{
-		"app_code": httpheader.GetAppCode(c.Kit.Header),
+		"app_code": c.Kit.Header.Get(common.BKHTTPRequestAppCode),
 		"uri":      c.uri,
 	}).Inc()
 }
@@ -67,7 +67,7 @@ func (c *Contexts) collectNoAuthMetric() {
 	rm.noPermissionRequestTotal.With(
 		prometheus.Labels{
 			metrics.LabelHandler: c.Request.Request.URL.Path,
-			metrics.LabelAppCode: httpheader.GetAppCode(c.Kit.Header),
+			metrics.LabelAppCode: c.Kit.Header.Get(common.BKHTTPRequestAppCode),
 		},
 	).Inc()
 }
