@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -36,8 +35,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	hostInfos := make([]metadata.HostMapStr, 0)
 	limit := uint64(len(input.IDS))
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx,
-		&hostInfos)
+	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx, &hostInfos)
 	if nil != err {
 		blog.Errorf("lock host, query host from db error, condition: %+v, err: %+v, rid: %s", condition, err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommDBSelectFailed)
@@ -49,7 +47,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, fmt.Sprintf(" id_list %v", diffID))
 	}
 
-	user := httpheader.GetUser(kit.Header)
+	user := util.GetUser(kit.Header)
 	var insertDataArr []interface{}
 	ts := time.Now().UTC()
 	for _, id := range input.IDS {
@@ -67,7 +65,7 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 				User:       user,
 				ID:         id,
 				CreateTime: ts,
-				OwnerID:    httpheader.GetSupplierAccount(kit.Header),
+				OwnerID:    util.GetOwnerID(kit.Header),
 			})
 		}
 	}
@@ -98,8 +96,7 @@ func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest
 }
 
 // QueryHostLock TODO
-func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData,
-	errors.CCError) {
+func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError) {
 	hostLockInfoArr := make([]metadata.HostLockData, 0)
 	conds := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},

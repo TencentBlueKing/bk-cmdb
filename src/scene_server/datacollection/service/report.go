@@ -18,8 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -28,22 +28,20 @@ import (
 func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
-	rid := httpheader.GetRid(pHeader)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pHeader))
+	rid := util.GetHTTPCCRequestID(pHeader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	param := metadata.ParamSearchNetcollectReport{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] decode body failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	result, err := s.logics.SearchReportSummary(pHeader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusInternalServerError,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
 		return
 	}
 
@@ -56,22 +54,20 @@ func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Respon
 func (s *Service) SearchReport(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
-	rid := httpheader.GetRid(pHeader)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pHeader))
+	rid := util.GetHTTPCCRequestID(pHeader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	param := metadata.ParamSearchNetcollectReport{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] decode body failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	count, result, err := s.logics.SearchReport(pHeader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusOK,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
 		return
 	}
 
@@ -86,14 +82,13 @@ func (s *Service) SearchReport(req *restful.Request, resp *restful.Response) {
 func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
-	rid := httpheader.GetRid(pHeader)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pHeader))
+	rid := util.GetHTTPCCRequestID(pHeader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	param := metadata.ParamNetcollectComfirm{}
 	if err = json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] decode body failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -115,22 +110,20 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 func (s *Service) SearchHistory(req *restful.Request, resp *restful.Response) {
 	var err error
 	pHeader := req.Request.Header
-	rid := httpheader.GetRid(pHeader)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pHeader))
+	rid := util.GetHTTPCCRequestID(pHeader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pHeader))
 
 	param := metadata.ParamSearchNetcollectReport{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] decode body failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		_ = resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	count, result, err := s.logics.SearchHistory(pHeader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
-		_ = resp.WriteError(http.StatusInternalServerError,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetHistorySearchFail)})
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetHistorySearchFail)})
 		return
 	}
 

@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -31,10 +30,11 @@ import (
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
-	if httpheader.GetSupplierAccount(req.Request.Header) == "" {
+	util.SetOwnerIDAndAccount(req)
+	if "" == util.GetOwnerID(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
-	if httpheader.GetUser(req.Request.Header) == "" {
+	if "" == util.GetUser(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
 	}
 
@@ -48,9 +48,9 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		defer func() {
 			if fetalErr := recover(); fetalErr != nil {
-				rid := httpheader.GetRid(req.Request.Header)
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 				blog.Errorf("server panic, err: %v, rid: %s, debug strace: %s", fetalErr, rid, debug.Stack())
-				ccErrTip := errFunc().CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header)).
+				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).
 					Errorf(common.CCErrCommInternalServerError, common.GetIdentification())
 				respErrInfo := &metadata.RespError{Msg: ccErrTip}
 				io.WriteString(resp, respErrInfo.Error())
@@ -67,7 +67,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 				return
 			}
 		}
-		language := httpheader.GetLanguage(req.Request.Header)
+		language := util.GetLanguage(req.Request.Header)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
@@ -90,8 +90,8 @@ func RequestLogFilter() func(req *restful.Request, resp *restful.Response, fchai
 		header := req.Request.Header
 		body, _ := util.PeekRequest(req.Request)
 		blog.Infof("code: %s, user: %s, rip: %s, uri: %s, body: %s, rid: %s",
-			httpheader.GetAppCode(header), httpheader.GetUser(header), httpheader.GetReqRealIP(header),
-			req.Request.RequestURI, body, httpheader.GetRid(header))
+			header.Get("Bk-App-Code"), header.Get("Bk_user"), header.Get("X-Real-Ip"),
+			req.Request.RequestURI, body, util.GetHTTPCCRequestID(header))
 
 		fchain.ProcessFilter(req, resp)
 		return
@@ -129,14 +129,18 @@ func createAPIRspStr(errcode int, info string) (string, error) {
 	return string(s), err
 }
 
-// GenerateHttpHeaderRID generate http header request id
+// GenerateHttpHeaderRID generate http header Cc_Request_Id
 func GenerateHttpHeaderRID(req *http.Request, resp http.ResponseWriter) {
-	rid := httpheader.GetRid(req.Header)
-	if rid == "" {
-		rid = util.GenerateRID()
-		httpheader.SetRid(req.Header, rid)
+	cid := util.GetHTTPCCRequestID(req.Header)
+	if "" == cid {
+		cid = GetHTTPOtherRequestID(req.Header)
+		if cid == "" {
+			cid = util.GenerateRID()
+		}
+		req.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
-	httpheader.SetRid(resp.Header(), rid)
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+	return
 }
 
 // ServiceErrorHandler TODO
@@ -151,4 +155,9 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 	}
 
 	resp.WriteHeaderAndJson(err.Code, ret, "application/json")
+}
+
+// GetHTTPOtherRequestID return other system request id from http header
+func GetHTTPOtherRequestID(header http.Header) string {
+	return header.Get(common.BKHTTPOtherRequestID)
 }

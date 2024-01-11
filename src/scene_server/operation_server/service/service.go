@@ -27,13 +27,13 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
 	"configcenter/src/scene_server/operation_server/logics"
@@ -63,20 +63,20 @@ type OperationServer struct {
 }
 
 func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
-	rid := httpheader.GetRid(header)
-	lang := httpheader.GetLanguage(header)
+	rid := util.GetHTTPCCRequestID(header)
+	lang := util.GetLanguage(header)
 	ctx, cancel := o.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
 	return &srvComm{
 		header:        header,
-		rid:           httpheader.GetRid(header),
+		rid:           util.GetHTTPCCRequestID(header),
 		ccErr:         o.CCErr.CreateDefaultCCErrorIf(lang),
 		ccLang:        o.Language.CreateDefaultCCLanguageIf(lang),
 		ctx:           ctx,
 		ctxCancelFunc: cancel,
-		user:          httpheader.GetUser(header),
-		ownerID:       httpheader.GetSupplierAccount(header),
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
 		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager, o.Config.Timer),
 	}
 }

@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -27,12 +26,12 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/thirdparty/hooks"
 )
@@ -78,7 +77,7 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 	// for audit log.
 	logContents := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
+	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
 	for _, index := range util.SortedMapInt64Keys(hostInfos) {
 		host := hostInfos[index]
@@ -252,7 +251,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 	successMsg := make([]int64, 0)
 	errMsg := make([]string, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
+	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 	for _, index := range util.SortedMapInt64Keys(hosts) {
 		host := hosts[index]
 		delete(host, common.BKHostIDField)
@@ -334,7 +333,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 
 	// for audit log
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
-	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
+	ccLang := lgc.Engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
 
 	for _, index := range util.SortedMapInt64Keys(hostInfos) {
 		host := hostInfos[index]
@@ -688,7 +687,7 @@ type importInstance struct {
 
 // NewImportInstance TODO
 func NewImportInstance(kit *rest.Kit, ownerID string, lgc *Logics) *importInstance {
-	lang := httpheader.GetLanguage(kit.Header)
+	lang := util.GetLanguage(kit.Header)
 	return &importInstance{
 		pheader: kit.Header,
 		Engine:  lgc.Engine,

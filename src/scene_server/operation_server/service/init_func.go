@@ -16,15 +16,15 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/util"
 )
 
 // InitFunc TODO
 func (o *OperationServer) InitFunc() {
 	header := make(http.Header, 0)
-	if "" == httpheader.GetSupplierAccount(header) {
-		httpheader.SetSupplierAccount(header, common.BKSuperOwnerID)
-		httpheader.SetUser(header, common.BKProcInstanceOpUser)
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
 
 	srvData := o.newSrvComm(header)

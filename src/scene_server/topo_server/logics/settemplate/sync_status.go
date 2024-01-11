@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -212,7 +211,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 }
 
 func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	detail.Header = util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {

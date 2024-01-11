@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/iam"
 
 	"github.com/emicklei/go-restful/v3"
@@ -35,8 +35,8 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -89,7 +89,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 /**
 	此接口用于在全新环境部署时，需要进行调用，目的是注册CMDB平台信息到IAM接口
 	需要传入host参数，是authserver的ip:port信息，如下通过curl调用：
-	curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0'
+	curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0'
 	--data '{"host": "http://cmdb-auth.service.consul:'$BK_CMDB_AUTH_PORT'"}'
     http://cmdb-admin.service.consul:$BK_CMDB_ADMIN_PORT/migrate/v3/authcenter/register
 */
@@ -101,8 +101,8 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 	}
 
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam register request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))

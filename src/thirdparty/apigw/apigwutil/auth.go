@@ -21,8 +21,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/util"
 )
 
 // AuthConfig defines the api gateway authorization config
@@ -44,44 +45,17 @@ type AppAuthConfig struct {
 func SetAuthHeader(appConf AppAuthConfig, header http.Header) http.Header {
 	conf := AuthConfig{
 		AppAuthConfig: appConf,
-		BkToken:       httpheader.GetUserToken(header),
-		BkTicket:      httpheader.GetUserTicket(header),
-		UserName:      httpheader.GetUser(header),
+		BkToken:       util.GetBkToken(header),
+		BkTicket:      util.GetBkTicket(header),
+		UserName:      util.GetUser(header),
 	}
 
 	authInfo, err := json.Marshal(conf)
 	if err != nil {
-		blog.Errorf("marshal api auth config %+v failed, err: %v, rid: %s", conf, err, httpheader.GetRid(header))
+		blog.Errorf("marshal api auth config %+v failed, err: %v, rid: %s", conf, err, util.GetHTTPCCRequestID(header))
 		return header
 	}
 
-	return httpheader.SetBkAuth(header, string(authInfo))
-}
-
-// GenDefaultAuthHeader generate api gateway default authorization header
-func GenDefaultAuthHeader(conf *ApiGWConfig) (string, error) {
-	authConf := AuthConfig{
-		AppAuthConfig: AppAuthConfig{
-			AppCode:   conf.AppCode,
-			AppSecret: conf.AppSecret,
-		},
-		UserName: conf.Username,
-	}
-
-	authInfo, err := json.Marshal(authConf)
-	if err != nil {
-		blog.Errorf("marshal default api auth config %+v failed, err: %v", conf, err)
-		return "", err
-	}
-
-	return string(authInfo), nil
-}
-
-// SetApiGWAuthHeader set authorization header by api gateway config
-func SetApiGWAuthHeader(conf *ApiGWConfig, header http.Header) http.Header {
-	appConf := AppAuthConfig{
-		AppCode:   conf.AppCode,
-		AppSecret: conf.AppSecret,
-	}
-	return SetAuthHeader(appConf, header)
+	header.Set(common.BkHTTPHeaderAuth, string(authInfo))
+	return header
 }

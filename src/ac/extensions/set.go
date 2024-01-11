@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -70,8 +69,7 @@ func (am *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, er
 }
 
 // MakeResourcesBySet TODO
-func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64,
-	sets ...SetSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64, sets ...SetSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, set := range sets {
 		resource := meta.ResourceAttribute{
@@ -81,7 +79,7 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 				Name:       set.BKSetNameField,
 				InstanceID: set.BKSetIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
 		}
 
@@ -91,8 +89,7 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 }
 
 // AuthorizeBySetID TODO
-func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action,
-	ids ...int64) error {
+func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -112,8 +109,7 @@ func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header,
 }
 
 // AuthorizeBySet TODO
-func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action,
-	sets ...SetSimplify) error {
+func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if !am.Enabled() {

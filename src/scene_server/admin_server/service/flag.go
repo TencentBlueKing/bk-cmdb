@@ -22,8 +22,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 var (
@@ -38,8 +38,8 @@ var (
 // SetSystemConfiguration used for set variable in cc_System table
 func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
 	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
@@ -111,8 +111,8 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 }
 
 func (s *Service) getCommObject(header http.Header) (ownerID, rid string, defErr errors.DefaultCCErrorIf) {
-	rid = httpheader.GetRid(header)
-	defErr = s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	rid = util.GetHTTPCCRequestID(header)
+	defErr = s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	ownerID = common.BKDefaultOwnerID
 	return
 }

@@ -19,9 +19,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -83,7 +83,7 @@ func (s *coreService) CreateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
-	ownerID := httpheader.GetSupplierAccount(ctx.Kit.Header)
+	ownerID := util.GetOwnerID(ctx.Kit.Header)
 	chartConfig.CreateTime.Time = time.Now()
 	chartConfig.OwnerID = ownerID
 	result, err := s.core.StatisticOperation().CreateOperationChart(ctx.Kit, chartConfig)
@@ -195,8 +195,7 @@ func (s *coreService) SearchChartCommon(ctx *rest.Contexts) {
 	}
 
 	chartConfig := make([]metadata.ChartConfig, 0)
-	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx,
-		&chartConfig); err != nil {
+	if err := mongodb.Client().Table(common.BKTableNameChartConfig).Find(opt).All(ctx.Kit.Ctx, &chartConfig); err != nil {
 		blog.Errorf("search chart config fail, option: %v, err: %v, rid: %v", opt, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

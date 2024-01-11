@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	httpheader "configcenter/src/common/http/header"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -23,7 +21,7 @@ var _ = Describe("Transaction Test", func() {
 		It("test txn", func() {
 			ctx := context.Background()
 			h := test.GetHeader()
-			httpheader.SetRid(h, "integration-test")
+			h.Add(common.BKHTTPCCRequestID, "integration-test")
 			objectID := "transaction"
 
 			By("create transaction object with transaction")
@@ -46,6 +44,7 @@ var _ = Describe("Transaction Test", func() {
 				result, err := clientSet.CoreService().Model().CreateModel(ctx, h, &inputTxn)
 				Expect(err).Should(BeNil())
 				fmt.Printf("result: %v", result)
+				Expect(result.Result).Should(BeTrue())
 
 				return nil
 			})
@@ -55,7 +54,7 @@ var _ = Describe("Transaction Test", func() {
 			By("pretend to delete start property in transaction object, and let the transaction failed.")
 			// delete "start" attributes, and then failed.
 			pretendErr := errors.New("pretend failed")
-			pretendHeader := headerutil.CCHeader(h)
+			pretendHeader := util.CCHeader(h)
 			err = clientSet.CoreService().Txn().AutoRunTxn(ctx, pretendHeader, func() error {
 				// pretend to delete a attribute
 				opt := metadata.DeleteOption{
@@ -84,7 +83,8 @@ var _ = Describe("Transaction Test", func() {
 			// so the model is still exist for now.
 			attResult, err := clientSet.CoreService().Model().ReadModel(ctx, test.GetHeader(), &query)
 			Expect(err).Should(BeNil())
-			Expect(attResult.Info[0].ObjectID).Should(Equal(objectID))
+			Expect(attResult.Result).Should(BeTrue())
+			Expect(attResult.Data.Info[0].ObjectID).Should(Equal(objectID))
 
 			// use commit and abort transaction to test transaction.
 			ops := metadata.TxnOption{
@@ -129,11 +129,12 @@ var _ = Describe("Transaction Test", func() {
 			}
 
 			// do business logic.
-			_, err = clientSet.CoreService().Model().CreateModelAttrs(ctx, txnHeader, objectID, &attributeTxn)
+			result, err := clientSet.CoreService().Model().CreateModelAttrs(ctx, txnHeader, objectID, &attributeTxn)
 			Expect(err).Should(BeNil())
 			// commit the transaction so that the attributes is committed.
 			cmtErr := txn.CommitTransaction(context.Background(), txnHeader)
 			Expect(cmtErr).Should(BeNil())
+			Expect(result.Result).Should(BeTrue())
 		})
 	})
 

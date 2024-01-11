@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -73,8 +72,7 @@ func (am *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (
 }
 
 // MakeResourcesByModule TODO
-func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64,
-	modules ...ModuleSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64, modules ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, module := range modules {
 		resource := meta.ResourceAttribute{
@@ -84,7 +82,7 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 				Name:       module.BKModuleNameField,
 				InstanceID: module.BKModuleIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
 		}
 
@@ -94,8 +92,7 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 }
 
 // AuthorizeByModuleID TODO
-func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action,
-	ids ...int64) error {
+func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -128,8 +125,7 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 }
 
 // AuthorizeByModule TODO
-func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action,
-	modules ...ModuleSimplify) error {
+func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if !am.Enabled() {

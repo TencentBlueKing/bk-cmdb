@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -337,7 +336,7 @@ func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []met
 
 		if common.AttributeIDMaxLength < utf8.RuneCountInString(header[index].PropertyID) {
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)).Language(
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
 					"model_attr_bk_property_id"), common.AttributeIDMaxLength)
 		}
 
@@ -356,7 +355,7 @@ func (a *attribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header []met
 
 		if common.AttributeNameMaxLength < utf8.RuneCountInString(header[index].PropertyName) {
 			return nil, kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-				a.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)).Language(
+				a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
 					"model_attr_bk_property_name"), common.AttributeNameMaxLength)
 		}
 
@@ -412,7 +411,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 		if data.PropertyName != "" {
 			if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
 				return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-					a.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)).Language(
+					a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language(
 						"model_attr_bk_property_name"), common.AttributeNameMaxLength)
 			}
 		}
@@ -432,7 +431,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	if data.Placeholder != "" && common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(data.Placeholder) {
 		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed,
-			a.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)).Language("model_attr_placeholder"),
+			a.lang.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header)).Language("model_attr_placeholder"),
 			common.AttributePlaceHolderMaxLength)
 	}
 
@@ -461,7 +460,7 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 
 	if common.AttributeNameMaxLength < utf8.RuneCountInString(data.PropertyName) {
 		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.CreateDefaultCCLanguageIf(
-			httpheader.GetLanguage(kit.Header)).Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
+			util.GetLanguage(kit.Header)).Language("model_attr_bk_property_name"), common.AttributeNameMaxLength)
 	}
 
 	// check option validity for creation,
@@ -478,7 +477,7 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 func (a *attribute) validateAttrPropertyID(kit *rest.Kit, propertyID string) error {
 	if common.AttributeIDMaxLength < utf8.RuneCountInString(propertyID) {
 		return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, a.lang.CreateDefaultCCLanguageIf(
-			httpheader.GetLanguage(kit.Header)).Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
+			util.GetLanguage(kit.Header)).Language("model_attr_bk_property_id"), common.AttributeIDMaxLength)
 	}
 
 	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, propertyID)

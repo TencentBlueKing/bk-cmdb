@@ -13,15 +13,15 @@
 package middleware
 
 import (
-	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common"
 	"configcenter/src/common/rdapi"
 
 	"github.com/gin-gonic/gin"
 )
 
-// RequestIDMiddleware is the http middleware to set request id
+// RequestIDMiddleware TODO
 func RequestIDMiddleware(c *gin.Context) {
 	rdapi.GenerateHttpHeaderRID(c.Request, c.Writer)
-	httpheader.SetReqFromWeb(c.Request.Header)
+	c.Request.Header.Set(common.BKHTTPRequestFromWeb, "true")
 	c.Next()
 }

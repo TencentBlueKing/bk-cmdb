@@ -9,7 +9,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -124,7 +123,7 @@ func (h *HostSyncor) Sync(task *metadata.CloudSyncTask) error {
 	// 将云同步任务的开发商ID作为写kit的开发商ID
 	h.writeKit = ccom.NewWriteKit(task.OwnerID)
 	// 让读写kit的requestID保持一致，以追踪同一个task的日志
-	httpheader.SetRid(h.writeKit.Header, httpheader.GetRid(h.readKit.Header))
+	h.writeKit.Header.Set(common.BKHTTPCCRequestID, h.readKit.Header.Get(common.BKHTTPCCRequestID))
 
 	startTime := time.Now()
 	blog.Infof("start sync taskid:%d, rid:%s", task.TaskID, h.readKit.Rid)

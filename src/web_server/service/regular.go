@@ -18,8 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 
 	"github.com/gin-gonic/gin"
@@ -68,7 +68,7 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 
 // VerifyRegularContentBatch verify regular content batch
 func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
-	rid := httpheader.GetRid(c.Request.Header)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	webCommon.SetProxyHeader(c)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)

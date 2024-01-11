@@ -19,18 +19,14 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
-	webcomm "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
 )
@@ -47,9 +43,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	webSvr := new(WebServer)
-	webSvr.Config.DeploymentMethod = op.DeploymentMethod
+	service := new(websvc.Service)
 
+	webSvr := new(WebServer)
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
@@ -70,36 +66,14 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			break
 		}
 	}
-	if !configReady {
+	if false == configReady {
 		return errors.New("configuration item not found")
 	}
 
-	service, err := initWebService(webSvr, engine)
-	if err != nil {
-		return err
-	}
-
-	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
-	if err != nil {
-		return err
-	}
-
-	select {
-	case <-ctx.Done():
-	}
-
-	return nil
-}
-
-func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service, error) {
-	service := new(websvc.Service)
-
-	var err error
 	webSvr.Config.Redis, err = engine.WithRedis()
 	if err != nil {
-		return nil, err
+		return err
 	}
-
 	var redisErr error
 	if webSvr.Config.Redis.MasterName == "" {
 		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
@@ -112,12 +86,12 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
 	}
 	if redisErr != nil {
-		return nil, fmt.Errorf("create new redis store failed, err: %v", redisErr)
+		return fmt.Errorf("create new redis store failed, err: %v", redisErr)
 	}
 
 	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	service.Engine = engine
@@ -130,24 +104,19 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 
 	// init jwt handler
 	if err = jwt.Init("webServer"); err != nil {
-		return nil, fmt.Errorf("init jwt failed, err: %v", err)
+		return fmt.Errorf("init jwt failed, err: %v", err)
 	}
 
-	// init api gateway client
-	switch webSvr.Config.DeploymentMethod {
-	case common.BluekingDeployment:
-		if err = apigw.Init("apiGW", engine.Metric().Registry()); err != nil {
-			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
-		}
-
-		cmdbCli := apigw.Client().Cmdb()
-		headerWrapper := rest.HeaderWrapper(cmdbCli.SetApiGWAuthHeader)
-		baseUrlWrapper := rest.BaseUrlWrapper(fmt.Sprintf("/api/%s/", webcomm.API_VERSION))
-		service.ApiCli = apiserver.NewWrappedApiServerClientI(cmdbCli.Client(), baseUrlWrapper, headerWrapper)
-	default:
-		service.ApiCli = engine.CoreAPI.ApiServer()
+	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
+	if err != nil {
+		return err
 	}
-	return service, nil
+
+	select {
+	case <-ctx.Done():
+	}
+
+	return nil
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {

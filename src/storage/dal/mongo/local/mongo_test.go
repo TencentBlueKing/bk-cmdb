@@ -22,7 +22,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 
@@ -42,7 +41,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 	require.NoError(b, err)
 
 	header := http.Header{}
-	httpheader.SetRid(header, "xxxxx")
+	header.Set(common.BKHTTPCCRequestID, "xxxxx")
 	sessionID, _ := uuid.New()
 	ctx := context.WithValue(context.Background(), common.TransactionTimeoutHeader, sessionID[:])
 	ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, time.Second)

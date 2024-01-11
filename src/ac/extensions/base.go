@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -124,7 +123,7 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 		return 0, err
 	}
 
-	supplier := httpheader.GetSupplierAccount(header)
+	supplier := util.GetOwnerID(header)
 	for idx, biz := range result.Info {
 		if supplier == biz[common.BkSupplierAccount].(string) {
 			if !result.Info[idx].Exists(common.BKAppIDField) {
@@ -145,9 +144,8 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 
 }
 
-func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header,
-	resources ...meta.ResourceAttribute) error {
-	commonInfo, err := parser.ParseCommonInfo(header)
+func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, resources ...meta.ResourceAttribute) error {
+	commonInfo, err := parser.ParseCommonInfo(&header)
 	if err != nil {
 		return fmt.Errorf("authentication failed, parse user info from header failed, err: %+v", err)
 	}

@@ -21,11 +21,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
-	"configcenter/src/common/resource/jwt"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
@@ -50,7 +48,7 @@ const (
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		rid := httpheader.GetRid(c.Request.Header)
+		rid := util.GetHTTPCCRequestID(c.Request.Header)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
@@ -94,9 +92,9 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
 	bkTicket, _ := session.Get(common.HTTPCookieBKTicket).(string)
 	language := webCommon.GetLanguageByHTTPRequest(c)
-	httpheader.AddUser(c.Request.Header, userName)
-	httpheader.AddLanguage(c.Request.Header, language)
-	httpheader.AddSupplierAccount(c.Request.Header, ownerID)
+	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
+	c.Request.Header.Add(common.BKHTTPLanguage, language)
+	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
 	c.Request.Header.Add(common.HTTPCookieBKToken, bkToken)
 	c.Request.Header.Add(common.HTTPCookieBKTicket, bkTicket)
 
@@ -120,23 +118,8 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	}
 
 	if path1 == "api" {
-		// proxy request to api gateway for blueking deployment method
-		if config.DeploymentMethod == common.BluekingDeployment {
-			apigw.Client().Cmdb().Proxy(c.Request, c.Writer)
-			return
-		}
-
-		// proxy request to api-server for independent deployment method
-		header, err := jwt.GetHandler().Sign(c.Request.Header)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": fmt.Sprintf("sign jwt info failed, err: %v", err)})
-			c.Abort()
-			return
-		}
-		c.Request.Header = header
-
 		servers, err := disc.ApiServer().GetServers()
-		if err != nil || len(servers) == 0 {
+		if nil != err || 0 == len(servers) {
 			blog.Errorf("no api server can be used. err: %v, rid: %s", err, rid)
 			c.JSON(503, gin.H{
 				"status": "no api server can be used.",
@@ -146,14 +129,16 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 		}
 		url := servers[0]
 		httpclient.ProxyHttp(c, url)
-		return
+
+	} else {
+		c.Next()
 	}
-	c.Next()
+	return
 }
 
 // isAuthed check user is authed
 func isAuthed(c *gin.Context, config options.Config) bool {
-	rid := httpheader.GetRid(c.Request.Header)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	user := user.NewUser(config, Engine, CacheCli)
 	session := sessions.Default(c)
 

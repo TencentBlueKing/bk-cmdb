@@ -18,30 +18,27 @@
 package apigw
 
 import (
+	"fmt"
+
 	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdparty/apigw/apigwutil"
-	"configcenter/src/thirdparty/apigw/cmdb"
-	"configcenter/src/thirdparty/apigw/gse"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// ClientSet is the api gateway client set
-type ClientSet interface {
-	Gse() gse.ClientI
-	Cmdb() cmdb.ClientI
+var AuthKey = "x-bkapi-authorization"
+
+// ApiGWSrv api gateway service
+type ApiGWSrv struct {
+	Client rest.ClientInterface
+	Auth   string
 }
 
-type clientSet struct {
-	gse  gse.ClientI
-	cmdb cmdb.ClientI
+// NewApiGW new a api gateway client
+func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWSrv, error) {
 
-	options *apigwutil.ApiGWOptions
-}
-
-// NewClientSet new api gateway client set
-func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (ClientSet, error) {
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       2000,
 		Burst:     2000,
@@ -49,40 +46,25 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (
 	}
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
-	if err != nil {
+	if nil != err {
 		return nil, err
 	}
 
 	flowControl := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
 
-	options := &apigwutil.ApiGWOptions{
-		Config: config,
-		Capability: util.Capability{
-			Client:     client,
-			Throttle:   flowControl,
-			MetricOpts: util.MetricOption{Register: metric},
+	esbCapability := &util.Capability{
+		Client: client,
+		Discover: &apigwutil.ApiGWDiscovery{
+			Servers: config.Address,
 		},
+		Throttle:   flowControl,
+		MetricOpts: util.MetricOption{Register: reg},
 	}
 
-	if options.Auth, err = apigwutil.GenDefaultAuthHeader(config); err != nil {
-		return nil, err
+	apigw := &ApiGWSrv{
+		Client: rest.NewRESTClient(esbCapability, "/"),
+		Auth: fmt.Sprintf(`{"bk_username": "%s", "bk_app_code": "%s", "bk_app_secret": "%s"}`, config.Username,
+			config.AppCode, config.AppSecret),
 	}
-
-	return &clientSet{options: options}, nil
-}
-
-// Gse returns gse client
-func (c *clientSet) Gse() gse.ClientI {
-	if c.gse == nil {
-		c.gse = gse.NewClient(c.options)
-	}
-	return c.gse
-}
-
-// Cmdb returns cmdb client
-func (c *clientSet) Cmdb() cmdb.ClientI {
-	if c.cmdb == nil {
-		c.cmdb = cmdb.NewClient(c.options)
-	}
-	return c.cmdb
+	return apigw, nil
 }
