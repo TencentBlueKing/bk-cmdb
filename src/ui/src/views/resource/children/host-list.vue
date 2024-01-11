@@ -81,6 +81,7 @@
   import HostFilterTag from '@/components/filters/filter-tag'
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
+  import hostSearchService from '@/service/host/search'
   import containerHostService from '@/service/container/host.js'
 
   export default {
@@ -310,7 +311,7 @@
           return containerHostService.findAll(params, config)
         }
 
-        return this.$store.dispatch('hostSearch/searchHost', { params, config })
+        return hostSearchService.getResourceHosts({ params, config })
       },
       getParams() {
         const params = {

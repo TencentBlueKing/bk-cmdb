@@ -613,6 +613,7 @@
           },
           config: {
             requestId: this.request.properties,
+            globalPermission: false
           }
         })
       },
@@ -620,7 +621,10 @@
         return this.searchGroup({
           objId: this.objId,
           params: {},
-          config: { requestId: this.request.groups }
+          config: {
+            requestId: this.request.groups,
+            globalPermission: false
+          }
         })
       },
       getMainLine() {
@@ -741,7 +745,6 @@
           this.table.list = info
           this.table.pagination.count = count
         } catch (err) {
-          console.error(err)
           if (err.permission) {
             this.table.stuff = {
               type: 'permission',

@@ -74,10 +74,6 @@ spec:
         ports:
         - containerPort: {{ .Values.adminserver.port }}
         volumeMounts:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          mountPath: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         - name: configures
           mountPath: {{ .Values.adminserver.configDir }}
         {{- if .Values.adminserver.volumeMounts }}
@@ -86,11 +82,6 @@ spec:
         {{- end }}
         {{- end }}
       volumes:
-      {{- if .Values.common.monitor.enabled }}
-      - name: plugin-path
-        hostPath:
-          path: {{ .Values.common.monitor.pluginPath }}
-      {{- end }}
       - name: configures
         configMap:
           name: {{ .Release.Name }}-adminserver-configures

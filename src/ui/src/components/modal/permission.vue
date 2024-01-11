@@ -19,8 +19,9 @@
     :close-icon="false"
     :mask-close="true"
     :show-footer="false"
+    :position="dialogPos"
     @cancel="onCloseDialog">
-    <permission-main ref="main" :permission="permission" :applied="applied"
+    <permission-main ref="main" :permission="permission" :related-permission="relatedPermission" :applied="applied"
       @close="onCloseDialog"
       @apply="handleApply"
       @refresh="handleRefresh" />
@@ -43,7 +44,10 @@
         isModalShow: false,
         permission: {
           actions: []
-        }
+        },
+        callbackUrl: '',
+        relatedPermission: null,
+        dialogPos: {}
       }
     },
     watch: {
@@ -51,27 +55,38 @@
         if (val) {
           setTimeout(() => {
             this.$refs.main.doTableLayout()
+            this.setDialogPos()
           }, 0)
         }
+      },
+      '$APP.height'() {
+        this.setDialogPos()
       }
     },
     methods: {
-      show(permission, authResults) {
+      show(permission, authResults, callbackUrl = '', relatedPermission = null) {
         this.permission = this.getPermission(permission, authResults)
         this.applied = false
+        this.callbackUrl = callbackUrl
+        this.relatedPermission = relatedPermission
         this.isModalShow = true
       },
       onCloseDialog() {
         this.isModalShow = false
       },
-      async handleApply() {
+      async handleApply(permission) {
+        const finalPermission = permission || this.permission
         try {
-          await this.handleApplyPermission()
+          await this.handleApplyPermission(finalPermission)
           this.applied = true
         } catch (error) {}
       },
       handleRefresh() {
-        window.location.reload()
+        if (this.callbackUrl) {
+          window.location.replace(this.callbackUrl)
+        } else {
+          window.location.reload()
+        }
       },
       getPermission(permission, authResults) {
         if (!authResults) {
@@ -100,6 +115,14 @@
         })
 
         return permission
+      },
+      setDialogPos() {
+        const dialogHeight = document.querySelector('.permission-dialog .bk-dialog .bk-dialog-content')?.getBoundingClientRect()?.height
+        if (dialogHeight) {
+          this.dialogPos = {
+            top: `${Math.floor(Math.max(this.$APP.height * 0.4 - (parseInt(dialogHeight, 10) / 2), 20))}`
+          }
+        }
       }
     }
   }

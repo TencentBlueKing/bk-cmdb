@@ -204,6 +204,9 @@
     return unique.keys?.[0]
   }
 
+  const isMultiple = unique => (isFieldMode.value
+    ? props.type === UNIUQE_TYPES.UNION : unique.type === UNIUQE_TYPES.UNION)
+
   const handleRuleKeysChange = (keys, id) => {
     // 更新数据
     const unique = uniqueListLocal.value.find(item => item.id === id)
@@ -299,7 +302,9 @@
             :key="unique.type"
             :value="getUniqueValue(unique)"
             :searchable="getDisplayProperties(unique).length > 10"
-            :multiple="isFieldMode ? type === UNIUQE_TYPES.UNION : unique.type === UNIUQE_TYPES.UNION"
+            :multiple="isMultiple(unique)"
+            :display-tag="isMultiple(unique)"
+            :selected-style="isMultiple(unique) ? 'checkbox' : 'check'"
             :clearable="false"
             :data-vv-name="`ruleSelector${unique.id}`"
             data-vv-validate-on="change"

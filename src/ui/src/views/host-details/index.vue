@@ -110,6 +110,12 @@
         return this.$route.query.from === 'resource'
       }
     },
+    provide() {
+      return {
+        business: this.business,
+        isFromResource: this.isFromResource
+      }
+    },
     watch: {
       info(info) {
         const hostList = info.host.bk_host_innerip ? info.host.bk_host_innerip.split(',') : info.host.bk_host_innerip_v6.split(',')
@@ -156,7 +162,7 @@
       },
       async getHostInfo() {
         try {
-          const { info } = await hostInfoProxy(this.getSearchHostParams())
+          const { info } = await hostInfoProxy(this.getSearchHostParams(), {}, this.isFromResource)
 
           if (info.length) {
             this.$store.commit('hostDetails/setHostInfo', info[0])

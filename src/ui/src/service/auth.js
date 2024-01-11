@@ -11,6 +11,8 @@
  */
 
 import $http from '@/api'
+import store from '@/store'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
 /**
  * @typedef ParentLayers 父级依赖关系
@@ -35,3 +37,56 @@ import $http from '@/api'
 export const verifyAuth = resources => $http.post('auth/verify', {
   resources
 })
+
+/**
+ * 获取免查看鉴权的模型
+ */
+export const getViewAuthFreeModels = () => {
+  const allModels = store.getters['objectModelClassify/models']
+  const presetModels = store.getters['objectModelClassify/presetModels']
+
+  // mainLineModel中默认没有id，在此先补充
+  const mainLineModels = store.state.objectMainLineModule.mainLineModels.map(mainItem => ({
+    id: allModels.find(preItem => preItem.bk_obj_id === mainItem.bk_obj_id)?.id,
+    bk_obj_id: mainItem.bk_obj_id,
+    bk_obj_name: mainItem.bk_obj_name
+  }))
+
+  return ([...mainLineModels, ...presetModels]).map(model => ({
+    id: model.id,
+    bk_obj_id: model.bk_obj_id,
+    bk_obj_name: model.bk_obj_name
+  }))
+}
+
+/**
+ * 判断一个模型是否为免查看鉴权
+ * @param {Object} model 单个模型
+ */
+export const isViewAuthFreeModel = (model) => {
+  const authFreeModels = getViewAuthFreeModels()
+  const dataKey = model.bk_obj_id ? 'bk_obj_id' : 'id'
+  return authFreeModels.some(item => item[dataKey] === model[dataKey])
+}
+
+/**
+ * 根据模型判断其实例是否为免查看鉴权
+ * @param {Object} model 单个模型
+ */
+export const isViewAuthFreeModelInstance = (model) => {
+  const models = store.getters['objectModelClassify/models']
+  const authFreeModelInstances = [
+    BUILTIN_MODELS.BUSINESS,
+    BUILTIN_MODELS.BUSINESS_SET,
+    BUILTIN_MODELS.HOST,
+    BUILTIN_MODELS.SET,
+    BUILTIN_MODELS.MODULE,
+    BUILTIN_MODELS.PROJECT
+  ]
+  const dataKey = model.bk_obj_id ? 'bk_obj_id' : 'id'
+  let objId = model[dataKey]
+  if (dataKey === 'id') {
+    objId = models.find(item => item.id === model.id)?.bk_obj_id
+  }
+  return authFreeModelInstances.includes(objId)
+}

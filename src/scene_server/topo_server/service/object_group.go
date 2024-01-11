@@ -195,19 +195,27 @@ func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
 
 // SearchGroupByObject search the groups by the object
 func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
-	cond := mapstr.MapStr{}
-
 	modelType := new(ModelType)
 	if err := ctx.DecodeInto(modelType); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	resp, err := s.Logics.GroupOperation().FindGroupByObject(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"),
-		cond, modelType.BizID)
+	objID := ctx.Request.PathParameter(common.BKObjIDField)
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{objID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	resp, err := s.Logics.GroupOperation().FindGroupByObject(ctx.Kit, objID, mapstr.MapStr{}, modelType.BizID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(resp)
-
 }

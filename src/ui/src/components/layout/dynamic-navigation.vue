@@ -34,13 +34,16 @@
       </div>
       <div class="menu-list">
         <template v-for="(menu, index) in currentMenus">
-          <router-link class="menu-item is-link" tag="a" active-class="active" style="display: block;"
+          <router-link
+            :key="index"
+            tag="a"
+            active-class="active"
+            style="display: block;"
             v-if="menu.hasOwnProperty('route')"
             ref="menuLink"
-            :class="{
+            :class="['menu-item', 'is-link', {
               'is-relative-active': isRelativeActive(menu)
-            }"
-            :key="index"
+            }]"
             :to="getMenuLink(menu)"
             :title="$t(menu.i18n)">
             <h3 class="menu-info clearfix">
@@ -72,7 +75,7 @@
     MENU_BUSINESS_SET_TOPOLOGY,
     MENU_BUSINESS_HOST_AND_SERVICE,
     MENU_RESOURCE,
-    MENU_RESOURCE_INSTANCE,
+    MENU_RESOURCE_INSTANCE
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
 

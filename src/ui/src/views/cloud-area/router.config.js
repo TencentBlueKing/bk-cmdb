@@ -12,6 +12,8 @@
 
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_CLOUD_AREA } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
+
 export default {
   name: MENU_RESOURCE_CLOUD_AREA,
   path: 'cloud-area',
@@ -21,7 +23,7 @@ export default {
       i18n: '管控区域'
     },
     auth: {
-      view: null
+      view: { type: OPERATION.R_CLOUD_AREA }
     }
   })
 }

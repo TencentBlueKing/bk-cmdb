@@ -154,6 +154,7 @@ func (c *BatchDeleteQuotedInstOption) Validate() errors.RawErrorInfo {
 
 // ListQuotedInstOption list quoted instance option
 type ListQuotedInstOption struct {
+	BizID             int64  `json:"bk_biz_id"`
 	ObjID             string `json:"bk_obj_id"`
 	PropertyID        string `json:"bk_property_id"`
 	CommonQueryOption `json:",inline"`

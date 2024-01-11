@@ -30,7 +30,7 @@ const modelOptions = computed(() => ({ bk_obj_id: state.bk_obj_id, bk_biz_id: st
 const instanceOptions = computed(() => ({ bk_inst_id: state.bk_inst_id, ...modelOptions.value }))
 const [{ properties, pending: propertyPending, invisibleProperties }] = useProperty(modelOptions)
 const [{ groups, pending: groupPneding }] = useGroup(modelOptions)
-const [{ instance, pending: instancePending }] = useInstance(instanceOptions)
+const [{ instance, pending: instancePending, error: instanceError }] = useInstance(instanceOptions)
 const pending = usePending([propertyPending, groupPneding, instancePending], true)
 
 const createDetails = () => {
@@ -51,14 +51,22 @@ const createDetails = () => {
           title={ title.value }
           transfer={ true }
           { ...{ on: { 'update:isShow': close } } }>
-          <cmdb-details slot="content"
-            { ...{ directives } }
-            show-options={ false }
-            inst={ instance.value }
-            properties={ properties.value }
-            property-groups={ groups.value }
-            invisibleProperties={invisibleProperties.value}>
-          </cmdb-details>
+          <template slot="content">
+            {
+              (!instanceError.value?.permission)
+                ? <cmdb-details
+                  { ...{ directives } }
+                  show-options={ false }
+                  inst={ instance.value }
+                  properties={ properties.value }
+                  property-groups={ groups.value }
+                  invisibleProperties={invisibleProperties.value}>
+                </cmdb-details>
+                : <cmdb-permission style={{ paddingTop: '120px' }}
+                  permission={instanceError.value.permission}>
+                </cmdb-permission>
+            }
+          </template>
         </bk-sideslider>
       )
     }

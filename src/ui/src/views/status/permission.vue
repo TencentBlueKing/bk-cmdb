@@ -14,28 +14,75 @@
   <div class="tips-wrapper">
     <div class="content-wrapper">
       <bk-exception type="403">
-        <div class="title">
-          <h2>{{$t('无功能权限')}}</h2>
-          <p>{{$t('点击下方按钮申请')}}</p>
-        </div>
-        <div class="btns">
-          <bk-button theme="primary" @click="handleApplyPermission" :loading="$loading('getSkipUrl')">
-            {{$t('申请功能权限')}}
-          </bk-button>
-        </div>
+        <template v-if="isResourceInstanceView">
+          <div class="title">
+            <h2>{{$t('无模型相关权限')}}</h2>
+            <p>{{$t('请前往权限中心申请相关权限')}}</p>
+          </div>
+          <div class="btns">
+            <bk-button theme="primary" @click="handleApplyPermission" :loading="$loading('getSkipUrl')">
+              {{$t('去申请')}}
+            </bk-button>
+          </div>
+        </template>
+        <template v-else>
+          <div class="title">
+            <h2>{{$t('无功能权限')}}</h2>
+            <p>{{$t('点击下方按钮申请')}}</p>
+          </div>
+          <div class="btns">
+            <bk-button theme="primary" @click="handleApplyPermission" :loading="$loading('getSkipUrl')">
+              {{$t('申请功能权限')}}
+            </bk-button>
+          </div>
+        </template>
       </bk-exception>
     </div>
   </div>
 </template>
 <script>
   import { translateAuth } from '@/setup/permission'
+  import {
+    MENU_RESOURCE_INSTANCE
+  } from '@/dictionary/menu-symbol'
+
   export default {
+    computed: {
+      isResourceInstanceView() {
+        return this.$route.name === MENU_RESOURCE_INSTANCE
+      }
+    },
+    created() {
+      if (this.isResourceInstanceView) {
+        const modelId = this.$route.params.objId
+        const model = this.$store.getters['objectModelClassify/getModelById'](modelId)
+        this.$store.commit('setTitle', model?.bk_obj_name ?? '')
+      }
+    },
     methods: {
       async handleApplyPermission() {
         try {
-          const { view, permission } = this.$route.meta.auth || {}
+          // authKey确定用哪个权限申请
+          const { authKey } = this.$route.meta
+
+          const { permission } = this.$route.meta.auth || {}
+          const view = this.$route.meta.auth[authKey]
+
+          const viewAuth = typeof view === 'function' ? view(this.$route, this) : view
+          const viewAuths = [viewAuth]
+
+          // 如果存在superView并且未鉴权通过，则需要一起申请
+          if (this.$route.meta.auth.superView) {
+            const { superView } = this.$route.meta.auth
+            const superAuth = typeof superView === 'function' ? superView(this.$route, this) : superView
+            const authSuperViewResult = await this.$store.dispatch('auth/getViewAuth', superAuth)
+            if (!authSuperViewResult) {
+              viewAuths.unshift(superAuth)
+            }
+          }
+
           const skipUrl = await this.$store.dispatch('auth/getSkipUrl', {
-            params: view ? translateAuth(view) : permission,
+            params: view ? translateAuth(viewAuths) : permission,
             config: {
               requestId: 'getSkipUrl'
             }
@@ -76,9 +123,7 @@
         .btns {
             margin-top: 24px;
             .bk-button {
-                border-radius: 3px;
-                padding-left: 10px;
-                padding-right: 10px;
+                min-width: 100px;
             }
         }
     }

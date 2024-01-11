@@ -504,11 +504,12 @@ const FilterStore = new Vue({
       const flag = []
       this.IP.inner && flag.push('bk_host_innerip')
       this.IP.outer && flag.push('bk_host_outerip')
+      const { ipv4 = [], assetList = [] } = transformedIP.data
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
         // assetList存放非法ip，当查询非法ip时，支持模糊查询和精确查询
         ip: {
-          data: [...transformedIP.data.ipv4, ...transformedIP.data.assetList],
+          data: [...ipv4, ...assetList], // 兼容ip模糊搜索
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         },

@@ -850,3 +850,14 @@ type HostTopoPath struct {
 	HostID int64                         `json:"id"`
 	Path   [][]*TopoInstanceNodeSimplify `json:"topo_path"`
 }
+
+// AssociationCountList association count list
+type AssociationCountList struct {
+	Associations []AssociationCount `json:"associations"`
+}
+
+// AssociationCount association count
+type AssociationCount struct {
+	AssociationKindID string `json:"bk_asst_id"`
+	Count             int    `json:"count"`
+}

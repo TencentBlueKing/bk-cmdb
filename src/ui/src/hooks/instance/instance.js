@@ -35,7 +35,12 @@ const getServiceOptions = (options) => {
     [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID],
     [BUILTIN_MODELS.PROJECT]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.PROJECT].ID]
   }
-  return { ...options, [idMapping[options.bk_obj_id] || 'bk_inst_id']: options.bk_inst_id }
+  return {
+    ...options, [idMapping[options.bk_obj_id] || 'bk_inst_id']: options.bk_inst_id,
+    config: {
+      globalPermission: false
+    }
+  }
 }
 /**
  * options.bk_obj_id 模型id
@@ -45,16 +50,25 @@ const getServiceOptions = (options) => {
 export default function (options) {
   const state = reactive({
     instance: {},
-    pending: false
+    pending: false,
+    error: null
   })
   const refresh = async (value) => {
     if (!value.bk_inst_id) return
     state.pending = true
+    state.error = null
     const service = getService(value)
     const serviceOptions = getServiceOptions(value)
-    const instance = await service.findOne(serviceOptions)
-    state.instance = instance || {}
-    state.pending = false
+
+    try {
+      const instance = await service.findOne(serviceOptions)
+      state.instance = instance || {}
+    } catch (err) {
+      console.log(err)
+      state.error = err
+    } finally {
+      state.pending = false
+    }
   }
   watch(() => (isRef(options) ? options.value : options), refresh, { immediate: true, deep: true })
   return [toRefs(state), { refresh }]

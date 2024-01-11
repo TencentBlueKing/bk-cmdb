@@ -11,3 +11,4 @@
  */
 
 export const HOME_HOST_SEARCH_CONTENT_STORE_KEY = 'homeHostSearchContent'
+export const FIELD_TEMPLATE_DRAFT = 'fieldTemplateDraft'

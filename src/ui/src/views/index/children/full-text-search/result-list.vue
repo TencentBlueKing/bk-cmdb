@@ -17,6 +17,7 @@
         <component v-for="(item, index) in list" :key="index"
           :is="`item-${item.comp || item.type}`"
           :property-map="propertyMap"
+          :property-group-map="propertyGroupMap"
           :data="item" />
       </div>
 
@@ -44,8 +45,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch } from 'vue'
-  import store from '@/store'
+  import { computed, defineComponent, reactive, watch, ref } from 'vue'
   import routerActions from '@/router/actions'
   import RouterQuery from '@/router/query'
   import NoSearchResults from '@/views/status/no-search-results.vue'
@@ -121,23 +121,12 @@
         }
       })
 
-      // 统一查询对象属性
-      const propertyMap = ref({})
+      // 在空间级查看权限迭代中，搜索的模型属性由搜索结果接口统一返回，不再由前端获取
+      const propertyMap = computed(() => result.value.attrs.attributes || {})
+      const propertyGroupMap = computed(() => result.value.attrs.groups || {})
+
       watch(result, async (result) => {
         emit('complete', result)
-
-        const hits = result.hits || []
-        const modelIds = hits.map(item => item.key)
-        if (!modelIds.length) {
-          return
-        }
-
-        propertyMap.value = await store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
-          params: {
-            bk_obj_id: { $in: [...new Set(modelIds)] },
-            bk_supplier_account: store.getters.supplierAccount
-          }
-        })
       })
 
       watch(fetching, fetching => emit('update:fetching', fetching))
@@ -175,6 +164,7 @@
         pagination,
         fetching,
         propertyMap,
+        propertyGroupMap,
         handleLimitChange,
         handlePageChange,
         dataEmpty,

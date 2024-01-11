@@ -47,10 +47,8 @@ func (ps *parseStream) topology() *parseStream {
 }
 
 var (
-	createBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
 	updateBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
 	// deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	findBusinessRegexp               = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
 	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
 	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
 	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
@@ -73,20 +71,6 @@ func (ps *parseStream) business() *parseStream {
 
 	ps = ps.findBiz()
 	if ps.shouldReturn() {
-		return ps
-	}
-
-	// create business, this is not a normalize api.
-	// TODO: update this api format.
-	if ps.hitRegexp(createBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.Create,
-				},
-			},
-		}
 		return ps
 	}
 
@@ -190,22 +174,6 @@ func (ps *parseStream) findBiz() *parseStream {
 		return ps
 	}
 
-	// find business, this is not a normalize api.
-	// TODO: update this api format
-	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
-
 	// find resource pool business
 	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -279,11 +247,30 @@ func (ps *parseStream) updateBiz() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
-			Type:       meta.Business,
-			Action:     meta.Delete,
-			InstanceID: bizID,
-		}}}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					Action:     meta.Delete,
+					InstanceID: bizID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find resource pool business
+	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
 		return ps
 	}
 
@@ -1511,7 +1498,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.FindMany,
 				},
 			},
 		}
@@ -1585,7 +1572,7 @@ func (ps *parseStream) cloudArea() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.CloudAreaInstance,
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}

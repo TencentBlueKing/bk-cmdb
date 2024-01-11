@@ -13,7 +13,8 @@
 import Meta from '@/router/meta'
 import {
   MENU_RESOURCE_BUSINESS_SET,
-  MENU_RESOURCE_BUSINESS_SET_DETAILS
+  MENU_RESOURCE_BUSINESS_SET_DETAILS,
+  MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol.js'
 
 export default [
@@ -23,7 +24,8 @@ export default [
     component: () => import('./index.vue'),
     meta: new Meta({
       menu: {
-        i18n: '业务集'
+        i18n: '业务集',
+        relative: MENU_RESOURCE_MANAGEMENT
       }
     })
   },

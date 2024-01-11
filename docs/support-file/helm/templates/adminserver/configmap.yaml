@@ -132,6 +132,10 @@ data:
           caFile: {{ .Values.common.auth.tls.caFile }}
           # 用于解密根据RFC1423加密的证书密钥的PEM块
           password: {{ .Values.common.auth.tls.password }}
+      # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+      # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+      # 可以配置不进行业务访问鉴权
+      skipViewBizAuth: {{ .Values.common.auth.skipViewBizAuth }}
     #cloudServer专属配置
     cloudServer:
       # 加密服务使用
@@ -187,10 +191,10 @@ data:
       dataID: {{ .Values.common.monitor.dataId }}
       # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
       queueSize: {{ .Values.common.monitor.queueSize }}
-      # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
-      gsecmdlinePath: {{ .Values.common.monitor.gsecmdlinePath }}
-      # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
-      domainSocketPath: {{ .Values.common.monitor.domainSocketPath }}
+      # 当使用blueking监控插件时，上报数据的接收端URL
+      bkMonitorReportUrl: {{ .Values.common.monitor.bkMonitorReportUrl }}
+      # 当使用blueking监控插件时，上报数据所需要的数据通道标识验证码，防止数据误上报至其他管道
+      accessToken: {{ .Values.common.monitor.accessToken }}
       # 用于对数据上报进行频率控制和限流
       # qps的设置范围为1～50，默认值为10
       # burst的设置范围为1～100，默认值为20
