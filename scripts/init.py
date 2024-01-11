@@ -326,6 +326,14 @@ webServer:
     ch: ../changelog_user/ch
     #英文版版本日志存放路径
     en: ../changelog_user/en
+  # web-server使用的jwt配置
+  jwt:
+    # 是否开启jwt认证功能
+    enabled: false
+    # jwt公钥路径
+    publicKeyPath:
+    # jwt私钥路径
+    privateKeyPath:
 
 # operation_server专属配置
 operationServer:
@@ -467,6 +475,15 @@ eventServer:
       fileOwner: "root"
       # 下发主机身份文件权限值
       filePrivilege: 644
+
+# apiServer相关配置
+apiServer:
+  # api-server使用的jwt配置
+  jwt:
+    # 是否开启jwt认证功能
+    enabled: false
+    # jwt公钥路径
+    publicKeyPath:
 
 # 直接调用gse服务相关配置
 gse:

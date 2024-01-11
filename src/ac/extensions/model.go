@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -73,7 +74,7 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 				Name:       object.ObjectName,
 				InstanceID: object.ID,
 			},
-			SupplierAccount: util.GetOwnerID(header),
+			SupplierAccount: httpheader.GetSupplierAccount(header),
 			BusinessID:      0,
 		}
 		resources = append(resources, resource)
@@ -162,7 +163,7 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 			Type:   resourceType,
 			Action: meta.Create,
 		},
-		SupplierAccount: util.GetOwnerID(header),
+		SupplierAccount: httpheader.GetSupplierAccount(header),
 		BusinessID:      businessID,
 	}
 

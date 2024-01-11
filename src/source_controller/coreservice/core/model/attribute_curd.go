@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -210,7 +211,7 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
-	language := util.GetLanguage(kit.Header)
+	language := httpheader.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	for _, attrItem := range resultAttrs {
 		if attrItem.PropertyID == propertyID {
@@ -255,7 +256,7 @@ func (m *modelAttribute) checkAttributeMustNotEmpty(kit *rest.Kit, attribute met
 
 func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute metadata.Attribute) error {
 
-	lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	lang := m.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 
 	if attribute.PropertyID != "" {
 		attribute.PropertyID = strings.TrimSpace(attribute.PropertyID)
@@ -472,7 +473,7 @@ var validAttrPropertyTypes = map[string]struct{}{
 
 func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
-	language := util.GetLanguage(kit.Header)
+	language := httpheader.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
 		if err := m.validateAttrPropertyID(kit, attribute, lang); err != nil {
@@ -1642,7 +1643,7 @@ func (m *modelAttribute) checkChangeField(kit *rest.Kit, attr metadata.Attribute
 
 func (m *modelAttribute) getLangObjID(kit *rest.Kit, objID string) string {
 	langKey := "object_" + objID
-	language := util.GetLanguage(kit.Header)
+	language := httpheader.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	langObjID := lang.Language(langKey)
 	if langObjID == langKey {

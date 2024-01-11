@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -83,8 +84,8 @@ func (s *set) getSetTemplate(kit *rest.Kit, data mapstr.MapStr, bizID int64) (me
 	setTemplateID, err := util.GetInt64ByInterface(setTemplateIDIf)
 	if err != nil {
 		blog.Errorf("parse set_template_id field into int failed, err: %v, rid: %s", err, kit.Rid)
-		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(util.
-			GetLanguage(kit.Header)).Language("set_property_set_template_id"))
+		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, s.language.CreateDefaultCCLanguageIf(
+			httpheader.GetLanguage(kit.Header)).Language("set_property_set_template_id"))
 		return setTemplate, err
 	}
 	if setTemplateID == common.SetTemplateIDNotSet {

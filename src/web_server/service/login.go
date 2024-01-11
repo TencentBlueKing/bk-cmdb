@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-contrib/sessions"
@@ -48,8 +48,8 @@ func (s *Service) Login(c *gin.Context) {
 
 // LoginUser log in user
 func (s *Service) LoginUser(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(c.Request.Header))
+	rid := httpheader.GetRid(c.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 	userName := c.PostForm("username")
 	password := c.PostForm("password")
 	if userName == "" || password == "" {

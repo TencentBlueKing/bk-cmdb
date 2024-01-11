@@ -18,6 +18,7 @@
 package capability
 
 import (
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
 
 	"github.com/gin-gonic/gin"
@@ -27,4 +28,5 @@ import (
 type Capability struct {
 	Ws     *gin.Engine
 	Engine *backbone.Engine
+	ApiCli apiserver.ApiServerClientInterface
 }

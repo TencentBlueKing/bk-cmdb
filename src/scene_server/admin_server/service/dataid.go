@@ -22,10 +22,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -48,9 +48,9 @@ const (
 // migrateDataID register, update or delete cc related data id in gse
 func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 	header := req.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
-	user := util.GetUser(header)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := httpheader.GetRid(header)
+	user := httpheader.GetUser(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	if s.Config.SnapDataID == 0 {
 		blog.Errorf("host snap data id not set in configuration, rid: %s", rid)
@@ -104,9 +104,9 @@ func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 // migrateOldDataID migrate old version data id, register it when it is not exist
 func (s *Service) migrateOldDataID(req *restful.Request, resp *restful.Response) {
 	header := req.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
-	user := util.GetUser(header)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := httpheader.GetRid(header)
+	user := httpheader.GetUser(header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	if err := s.migrateOldVersionDataID(header, user, defErr, rid); err != nil {
 		_ = resp.WriteError(http.StatusOK, err)

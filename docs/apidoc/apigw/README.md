@@ -1,9 +1,10 @@
 # apigw
 
 存放cmdb在API Gateway的接口文档与映射关系，包括以下几部分：
-- definition.yaml：API Gateway 的网关定义文件，用于注册网关，[注册方式](https://github.com/TencentBlueKing/bkpaas-python-sdk/blob/master/sdks/apigw-manager/docs/sync-apigateway-with-docker.md)
-- bin/sync-apigateway.sh：API Gateway 同步脚本，用于注册网关
 - backend：存放cmdb后台在API Gateway的接口文档与映射关系。
+- saas：存放cmdb官方SaaS在API Gateway的接口文档与映射关系。
+- definition.yaml：API Gateway 的网关定义文件，用于注册网关，[注册方式](https://github.com/TencentBlueKing/bkpaas-python-sdk/blob/master/sdks/apigw-manager/docs/sync-apigateway-with-docker.md)
+- bin/sync-apigateway.sh：API Gateway 同步脚本，用于注册网关。
 
 每部分的目录结构如下：
 
