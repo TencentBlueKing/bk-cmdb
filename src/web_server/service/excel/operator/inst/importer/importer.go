@@ -312,8 +312,7 @@ func (i *Importer) isAsstExist() (bool, error) {
 			continue
 		}
 
-		exist = true
-		break
+		return true, nil
 	}
 
 	return exist, nil
