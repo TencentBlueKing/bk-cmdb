@@ -1,6 +1,6 @@
 ### 功能描述
 
-批量创建进程模板
+批量创建进程模板.(权限：业务访问权限)
 
 ### 请求参数
 
@@ -21,7 +21,6 @@ as_default_value: 进程的值是否以模板为准
 | 字段|类型|必选|说明|
 |---|---|---|---|
 |auto_start|bool|否|是否自动拉起|
-|auto_time_gap|int|否|拉起间隔|
 |bk_biz_id|int|否|业务id|
 |bk_func_id|string|否|功能ID|
 |bk_func_name|string|否|进程名称|
@@ -107,10 +106,6 @@ as_default_value: 进程的值是否以模板为准
               "value": false,
               "as_default_value": false
           },
-          "auto_time_gap": {
-              "value": null,
-              "as_default_value": false
-          },
           "start_cmd": {
               "value": "",
               "as_default_value": false
@@ -174,7 +169,7 @@ as_default_value: 进程的值是否以模板为准
   "message": "success",
   "permission": null,
   "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": [[52]]
+  "data": [52]
 }
 ```
 

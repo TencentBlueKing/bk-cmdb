@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询业务集(v3.10.12+)
+查询业务集(版本：v3.10.12+，权限：业务集查看权限)
 
 ### 请求参数
 
@@ -202,15 +202,19 @@
 
 #### info
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_biz_set_id   |  int  | 是   | 业务集ID|
-| create_time   |  string  | 否   | 业务集创建时间|
-| last_time   |  string  | 否   | 业务集修改时间|
-| bk_biz_set_name   |  string  | 是   | 业务集名称|
-| bk_biz_maintainer |  string  | 否   | 运维人员 |
-| bk_biz_set_desc   |  string  | 否   | 业务集描述 |
-| bk_scope   |  object  | 否   | 业务集所选业务范围 |
+| 字段      |  类型      | 必选        |  描述      |
+|-----------|------------|-----------|------------|
+| bk_biz_set_id   |  int  | 业务集ID     |
+| create_time   |  string  | 业务集创建时间   |
+| last_time   |  string  | 业务集修改时间   |
+| bk_biz_set_name   |  string  | 业务集名称     |
+| bk_biz_maintainer |  string  | 运维人员      |
+| bk_biz_set_desc   |  string  | 业务集描述     |
+| bk_scope   |  object  | 业务集所选业务范围 |
+| bk_created_at   |  string  | 创建时间      |
+| bk_created_by   |  string  | 创建人       |
+| bk_updated_at   |  string  | 更新时间      |
+
 
 #### bk_scope
 

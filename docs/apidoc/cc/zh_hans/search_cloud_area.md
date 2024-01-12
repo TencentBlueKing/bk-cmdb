@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询云区域
+查询云区域(权限：管控区域查看权限)
 
 ### 请求参数
 
@@ -39,7 +39,7 @@
     "bk_token": "xxx",
     "condition": {
         "bk_cloud_id": 12,
-        "bk_cloud_name" "aws",
+        "bk_cloud_name": "aws"
     },
     "page":{
         "start":0,

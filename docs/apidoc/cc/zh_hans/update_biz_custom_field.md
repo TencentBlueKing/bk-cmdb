@@ -1,6 +1,6 @@
 ### 功能描述
 
-更新业务自定义模型属性
+更新业务自定义模型属性(权限：业务自定义字段编辑权限)
 
 ### 请求参数
 
@@ -23,6 +23,7 @@
 | unit                | string  | 否     | 单位                                    |
 | placeholder         | string  | 否     | 占位符                                  |
 | bk_asst_obj_id      | string  | 否     | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置 |
+| default      | 随bk_property_type字段类型 | 否     | 默认值                                                                              |
 
 #### bk_property_type
 
@@ -35,10 +36,11 @@
 | date       | 日期     |
 | time       | 时间     |
 | objuser    | 用户     |
-| singleasst | 单关联   |
-| multiasst  | 多关联   |
 | timezone   | 时区     |
 | bool       | 布尔     |
+| enummulti       | 枚举多选类型 |
+| innertable       | 表格类型   |
+| float       | 浮点类型   |
 
 
 ### 请求参数示例

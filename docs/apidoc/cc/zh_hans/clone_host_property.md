@@ -1,6 +1,6 @@
 ### 功能描述
 
-克隆主机属性
+克隆主机属性(权限：业务主机编辑权限)
 
 ### 请求参数
 
@@ -56,7 +56,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": null

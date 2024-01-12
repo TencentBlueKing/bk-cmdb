@@ -1,6 +1,6 @@
 ### 功能描述
 
-创建动态分组 (V3.9.6)
+创建动态分组 (版本：V3.9.6+，权限：动态分组新建权限)
 
 ### 请求参数
 
@@ -84,7 +84,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {

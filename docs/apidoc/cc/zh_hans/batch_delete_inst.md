@@ -1,6 +1,6 @@
 ### 功能描述
 
-批量删除对象实例
+批量删除对象实例(权限：模型实例删除权限)
 
 ### 请求参数
 
@@ -26,9 +26,11 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_obj_id": "test",
-    "delete":{
-    "inst_ids":[123]
+    "bk_obj_id": "bk_firewall",
+    "delete": {
+        "inst_ids": [
+            46,47
+        ]
     }
 }
 ```
@@ -40,7 +42,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"

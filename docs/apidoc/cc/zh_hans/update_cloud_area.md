@@ -1,6 +1,6 @@
 ### 功能描述
 
-更新云区域
+更新管控区域(权限：管控区域编辑权限)
 
 ### 请求参数
 
@@ -11,6 +11,7 @@
 | 字段                 |  类型      | 必选   |  描述       |
 |----------------------|------------|--------|-------------|
 | bk_cloud_id  | int      | 是      | 云区域ID       |
+| bk_cloud_name  | string | 否  | 管控区域名称           |
 
 
 ### 请求参数示例
@@ -34,7 +35,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
