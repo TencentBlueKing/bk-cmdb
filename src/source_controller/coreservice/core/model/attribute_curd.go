@@ -1561,7 +1561,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 
 	for _, dbAttribute := range dbAttributeArr {
 		err = m.checkUnique(kit, false, dbAttribute.ObjectID, dbAttribute.PropertyID, attribute.PropertyName,
-			attribute.BizID)
+			dbAttribute.BizID)
 		if err != nil {
 			blog.Errorf("save attribute check unique attribute: %+v, err: %v, rid:%s", attribute, err, kit.Rid)
 			return err
