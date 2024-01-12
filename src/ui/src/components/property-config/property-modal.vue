@@ -31,7 +31,7 @@
     </bk-input>
     <dl class="property-container">
       <div class="property-group" v-for="(group, groupIndex) in sortedGroups" :key="groupIndex">
-        <dt class="group-title">{{group.bk_group_name}}</dt>
+        <dt class="group-title" v-if="groupedPropertyList[groupIndex].length">{{group.bk_group_name}}</dt>
         <dd class="group-content">
           <ul class="property-list">
             <li
@@ -51,6 +51,9 @@
           </ul>
         </dd>
       </div>
+      <cmdb-data-empty v-if="!hasField" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </dl>
   </bk-dialog>
 </template>
@@ -85,8 +88,22 @@
         localSelected: [],
         searchName: '',
         propertyGroups: [],
-        groupedPropertyList: []
+        groupedPropertyList: [],
+        dataEmpty: {
+          type: 'search',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
+    },
+    computed: {
+      hasField() {
+        for (let groupIndex = 0; groupIndex < this.groupedPropertyList.length; groupIndex++) {
+          if (this.groupedPropertyList[groupIndex].length) return true
+        }
+        return false
+      },
     },
     watch: {
       visible(val) {
@@ -132,6 +149,13 @@
         this.$emit('update:selectedList', this.localSelected)
       },
       hanldeFilterProperty() {
+        this.setPropertyList()
+      },
+      handleClearFilter() {
+        this.searchName = ''
+        this.setPropertyList()
+      },
+      setPropertyList() {
         const keyword = this.searchName.toLowerCase()
         if (keyword) {
           this.groupedPropertyList = this.groupedProperties
@@ -152,11 +176,14 @@
   .property-container {
     height: 264px;
     @include scrollbar-y;
+    .data-empty {
+      width: 100%;
+    }
   }
 
   .property-group {
-    margin-top: 14px;
     .group-title {
+      margin-top: 14px;
       position: relative;
       padding: 0 0 0 15px;
       line-height: 20px;

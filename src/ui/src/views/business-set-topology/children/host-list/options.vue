@@ -24,7 +24,7 @@
     <div class="options options-right">
       <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
       <filter-collection class="option-collection ml10" v-test-id></filter-collection>
-      <icon-button class="option-filter ml10" v-test-id="'advancedSearch'"
+      <icon-button :class="['option-filter', 'ml10', { active: hasCondition }]" v-test-id="'advancedSearch'"
         icon="icon-cc-funnel" v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
@@ -81,6 +81,9 @@
       },
       tableHeaderPropertyIdList() {
         return this.$parent.tableHeader.map(item => item.bk_property_id)
+      },
+      hasCondition() {
+        return FilterStore.hasCondition
       }
     },
     methods: {
@@ -136,7 +139,8 @@
         .option-collection,
         .option-filter {
             flex: 32px 0 0;
-            &:hover {
+            &:hover,
+            .active {
                 color: $primaryColor;
             }
         }

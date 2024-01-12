@@ -59,7 +59,7 @@
         </cmdb-auth>
       </div>
       <div class="options-button fr">
-        <icon-button class="option-filter ml5" icon="icon-cc-funnel"
+        <icon-button :class="['option-filter', 'ml5', { active: hasCondition }]" icon="icon-cc-funnel"
           v-bk-tooltips.top="$t('高级筛选')"
           @click="handleSetFilters">
         </icon-button>
@@ -369,6 +369,9 @@
       },
       fastSearchProperties() {
         return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
+      },
+      hasCondition() {
+        return this.filterTagHeight !== 0
       }
     },
     watch: {
@@ -1010,8 +1013,11 @@
     .models-layout {
         padding: 15px 20px 0;
     }
-    .option-filter:hover {
-        color: $primaryColor;
+    .option-filter {
+        &:hover,
+        .active {
+            color: $primaryColor;
+        }
     }
     .options-filter{
         position: relative;

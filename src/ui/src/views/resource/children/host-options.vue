@@ -65,7 +65,7 @@
     </div>
     <div class="options-right">
       <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
-      <icon-button class="option-filter ml10" icon="icon-cc-funnel"
+      <icon-button :class="['option-filter', 'ml10', { active: hasCondition }]" icon="icon-cc-funnel"
         v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
@@ -334,6 +334,9 @@
           return importInstError.bk_error_msg
         }
         return importInstError.message || ''
+      },
+      hasCondition() {
+        return FilterStore.hasCondition
       }
     },
     watch: {
@@ -811,8 +814,11 @@
             margin-left: 10px;
             max-width: 300px;
         }
-        .option-filter:hover {
-            color: $primaryColor;
+        .option-filter {
+            &:hover,
+            .active {
+                color: $primaryColor;
+            }
         }
     }
     .import-prepend {

@@ -107,6 +107,7 @@
     }
   })
 
+  const disabledPropertyLength = reactive({})
   const matchedPropertyMap = ref(props.propertyMap)
   const localSelected = ref([...props.selected])
   const filter = ref('')
@@ -178,6 +179,7 @@
   // 判断相应的全选/半选状态
   const allCheckState = ({ bk_obj_id: bkObjId }) => {
     const length = matchedPropertyMap.value[bkObjId]?.length || 0
+    const disabledLength = disabledPropertyLength[bkObjId] || 0
     if (length === 0) return
     const matchedPropertyMapIdSet = new Set()
     matchedPropertyMap.value[bkObjId]?.forEach(property => matchedPropertyMapIdSet.add(property?.id))
@@ -188,7 +190,7 @@
     let isChecked = false
 
     if (nowChecked > 0) {
-      if (nowChecked === length) {
+      if (nowChecked === length - disabledLength) {
         isChecked = true
       } else {
         isIndeterminate = true
@@ -209,6 +211,20 @@
     })
   }
 
+  const initDisabledProperty = () => {
+    Object.keys(matchedPropertyMap.value)?.forEach((bkObjId) => {
+      let length = 0
+      matchedPropertyMap.value[bkObjId]?.forEach((target) => {
+        const isDisabled = props.disabledPropertyMap[bkObjId].includes(target.bk_property_id)
+        if (isDisabled) {
+          length += 1
+        }
+      })
+      disabledPropertyLength[bkObjId] = length
+    })
+  }
+
+  initDisabledProperty()
   initChecked()
 
   watch(() => filter.value, (filter) => {
@@ -232,8 +248,7 @@
   margin: -.3rem -.6rem;
 }
 .property-selector-container {
-  height: calc(100% - 42px);
-  max-height: 440px;
+  max-height: calc(100% - 32px);
   margin-right: -14px;
   margin-left: -14px;
   padding: 0 14px;

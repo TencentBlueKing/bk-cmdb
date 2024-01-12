@@ -45,7 +45,7 @@
           </div>
         </div>
       </bk-popover>
-      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
+      <bk-link theme="primary" class="advanced-link" @click="handleSetFilters">{{$t('高级筛选')}}</bk-link>
     </div>
   </div>
 </template>
@@ -57,6 +57,8 @@
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
   import EditableBlock from '@/components/editable-block/index.vue'
+  import FilterStore, { setupFilterStore } from '@/components/filters/store'
+  import FilterForm from '@/components/filters/filter-form.js'
 
   export default {
     components: {
@@ -111,8 +113,16 @@
     },
     mounted() {
       this.ipEditableBlock = this.$refs.ipEditableBlock
+      this.initFilterStore()
     },
     methods: {
+      async initFilterStore() {
+        const currentRouteName = this.$route.name
+        if (this.storageRouteName === currentRouteName) return
+        this.storageRouteName = currentRouteName
+        await setupFilterStore()
+        FilterStore.setResourceScope('all')
+      },
       getAuthMaskProps() {
         const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
         return {
@@ -236,16 +246,26 @@
           console.error(true)
         }
       },
-      handleClickAdvancedSearch() {
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            adv: 1,
-            scope: 'all'
-          },
-          history: false
+      handleSetFilters() {
+        FilterStore.setIPField('text', this.ipEditableBlock.searchContent)
+        this.ipEditableBlock.clear()
+        FilterForm.show({
+          type: 'index',
+          searchFilter: (allCondition) => {
+            const { IP, condition } = allCondition
+            FilterStore.setIP(IP)
+            const query = FilterStore.getQuery(condition)
+            this.$routerActions.open({
+              name: MENU_RESOURCE_HOST,
+              query: {
+                ...query,
+                adv: 1,
+                scope: 'all'
+              }
+            })
+          }
         })
-      }
+      },
     }
   }
 </script>

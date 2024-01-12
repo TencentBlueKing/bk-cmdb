@@ -316,6 +316,12 @@ const FilterStore = new Vue({
         { createOnly: true, useDefaultData: true }
       )
     },
+    setIP(ip) {
+      this.IP = ip
+    },
+    setIPField(field, val) {
+      this.IP[field] = val
+    },
     setupIPQuery() {
       const query = QS.parse(RouterQuery.get('ip'))
       const { text = '', exact = 'true', inner = 'true', outer = 'true' } = query
@@ -345,7 +351,7 @@ const FilterStore = new Vue({
     },
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
-      this.IP = data.IP || this.IP
+      this.setIP(data.IP || this.IP)
       this.throttleSearch()
     },
     updateCondition(property, operator, value) {
@@ -418,20 +424,22 @@ const FilterStore = new Vue({
       this.searchHandler(this.condition)
       this.resetPage(false)
     },
-    setQuery() {
+    getQuery(condition) {
       const query = {}
-      Object.keys(this.condition).forEach((id) => {
-        const { operator, value } = this.condition[id]
+      Object.keys(condition).forEach((id) => {
+        const { operator, value } = condition[id]
         if (String(value).length) {
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
         }
       })
-
-      const allQuery = {
+      return {
         filter: QS.stringify(query, { encode: false }),
         ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
         _t: Date.now()
       }
+    },
+    setQuery() {
+      const allQuery = this.getQuery(this.condition)
 
       // 在触发搜索的场景中会设置needResetPage为true，同时需要满足当前业务存在分页的场景
       if (this.needResetPage && RouterQuery.get('page')) {
