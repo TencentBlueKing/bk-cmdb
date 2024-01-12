@@ -571,6 +571,9 @@
 
 <style lang="scss" scoped>
     .flex-btn{
+      &.is-disabled {
+        overflow: hidden;
+      }
       :deep(.btn-content) {
         display: flex;
         align-items: center;

@@ -452,10 +452,10 @@
           }
           if (this.id) {
             await this.updateDynamicGroup()
-            $success('保存成功')
+            $success(t('保存成功'))
           } else {
             await this.createDynamicGroup()
-            $success('新建成功')
+            $success(t('新建成功'))
           }
           this.close('submit')
         } catch (error) {

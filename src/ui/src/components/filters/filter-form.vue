@@ -18,13 +18,13 @@
     :show-mask="false"
     :transfer="true"
     :quick-close="false"
-    @hidden="handleClosed">
+    :before-close="handleSliderBeforeClose"
+    @hidden="handleHidden">
     <div class="filter-form-header" slot="header">
       {{$t('高级筛选')}}
       <template v-if="collectable && collection">
         {{`(${collection.name})`}}
       </template>
-      <i class="bk-icon icon-close" @click="close"></i>
     </div>
     <cmdb-sticky-layout class="filter-layout" slot="content">
       <bk-form class="filter-form" form-type="vertical">
@@ -93,10 +93,8 @@
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
-        <bk-form-item>
-          <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
-            :type="3"></condition-picker>
-        </bk-form-item>
+        <condition-picker :text="$t('添加')" icon="icon-plus-circle" :selected="selected" :property-map="propertyMap"
+          :type="3"></condition-picker>
       </bk-form>
       <div class="filter-options"
         slot="footer"
@@ -191,6 +189,8 @@
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
   import { setCursorPosition } from '@/utils/util'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
@@ -199,12 +199,24 @@
       ConditionPicker,
       EditableBlock
     },
+    props: {
+      type: {
+        type: String,
+        default: '' // index - 系统首页高级筛选
+      },
+      searchAction: {
+        type: Function,
+        default: () => {}
+      },
+    },
     data() {
       return {
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         IPCondition: Utils.getDefaultIP(),
+        originIPCondition: Utils.getDefaultIP(),
         condition: {},
+        originCondition: {},
         selected: [],
         collectionForm: {
           name: '',
@@ -298,13 +310,7 @@
       storageSelected: {
         immediate: true,
         handler() {
-          const newCondition = this.$tools.clone(FilterStore.condition)
-          Object.keys(newCondition).forEach((id) => {
-            if (has(this.condition, id)) {
-              newCondition[id] = this.condition[id]
-            }
-          })
-          this.condition = newCondition
+          this.condition = this.setCondition(this.condition)
           const filterCondition = ['bk_host_innerip_v6', 'bk_host_outerip_v6']
           this.selected = [...this.storageSelected].filter(item => !filterCondition.includes(item.bk_property_id))
         }
@@ -320,12 +326,23 @@
     },
     created() {
       setTimeout(() => {
-        const ele = this.$refs.ipEditableBlock
-        ele?.focus()
-        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
+        this.focusIP()
       }, 0)
+      this.originCondition = this.setCondition(this.originCondition)
+      const { beforeClose, setChanged } = useSideslider()
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
     },
     methods: {
+      setCondition(nowCondition) {
+        const newCondition = this.$tools.clone(FilterStore.condition)
+        Object.keys(nowCondition).forEach((id) => {
+          if (has(nowCondition, id)) {
+            newCondition[id] = nowCondition[id]
+          }
+        })
+        return newCondition
+      },
       getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
         return model ? model.bk_obj_name : model.bk_obj_id
@@ -426,18 +443,22 @@
       },
       handleSearch() {
         const { hasIP } = this.$refs.ipEditableBlock
+        const condition = {
+          condition: this.$tools.clone(this.condition),
+          IP: this.$tools.clone(this.IPCondition)
+        }
         if (!hasIP) {
           return
+        }
+        if (this.type === 'index') {
+          return this.searchAction(condition)
         }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
           FilterStore.resetPage(true)
           FilterStore.updateSelected(this.selected) // 此处会额外触发一次watch
-          FilterStore.setCondition({
-            condition: this.$tools.clone(this.condition),
-            IP: this.$tools.clone(this.IPCondition)
-          })
+          FilterStore.setCondition(condition)
           this.close()
         }, 300)
       },
@@ -498,7 +519,7 @@
         }
       },
       handleReset() {
-        this.IPCondition.text = ''
+        this.$refs.ipEditableBlock.clear()
         Object.keys(this.condition).forEach((id) => {
           const property = this.selected.find(property => property.id.toString() === id.toString())
           const propertyCondititon = this.condition[id]
@@ -514,7 +535,18 @@
         this.collectionForm.name = ''
         this.closeCollectionForm.error = ''
       },
-      handleClosed() {
+      handleSliderBeforeClose() {
+        const changedIPCondtion = !isEqual(this.IPCondition, this.originIPCondition)
+        const changedCondition =  !isEqual(this.condition, this.originCondition)
+        if (changedIPCondtion || changedCondition) {
+          this.setChanged(true)
+          return this.beforeClose(() => {
+            this.close()
+          })
+        }
+        this.close()
+      },
+      handleHidden() {
         this.$emit('closed')
       },
       open() {
@@ -524,7 +556,9 @@
         this.isShow = false
       },
       focusIP() {
-        this.$refs?.ip?.$el.querySelector('textarea').focus()
+        const ele = this.$refs.ipEditableBlock
+        ele?.focus()
+        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
       }
     }
   }
@@ -539,7 +573,10 @@
       }
 
       :deep(.search-close) {
-        font-size: 12px;
+        font-size: 14px;
+        &:hover {
+            color: #979ba5;
+        }
       }
     }
     .filter-form-sideslider {
@@ -548,29 +585,11 @@
             .bk-sideslider-wrapper {
                 pointer-events: initial;
             }
-            .bk-sideslider-closer {
-                display: none;
-            }
-            .bk-sideslider-title {
-                border-bottom: none;
-            }
         }
     }
     .filter-form-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-left: -30px;
-        .icon-close {
-            font-size: 32px;
-            margin-right: 6px;
-            margin-top: -14px;
-            cursor: pointer;
-            opacity: .75;
-            &:hover {
-                opacity: 1;
-            }
-        }
+        cursor: pointer;
+        @include ellipsis;
     }
     .filter-layout {
         height: 100%;
@@ -593,7 +612,7 @@
     .filter-item {
         padding: 2px 10px 10px;
         margin-top: 5px !important;
-        &:hover {
+        &:not(.filter-ip):hover {
             background: #f5f6fa;
             .item-remove {
                 opacity: 1;

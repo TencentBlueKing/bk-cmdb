@@ -31,12 +31,10 @@
 
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
-  import { LT_REGEXP, ALL_PROBABLY_IP } from '@/dictionary/regexp'
+  import { LT_REGEXP, ALL_PROBABLY_IP, AREA_IPV6_IP, AREA_IPV4_IP, IPV6_IP, IPV4_IP } from '@/dictionary/regexp'
   import { $error } from '@/magicbox'
   import { t } from '@/i18n'
   import { getCursorPosition, setCursorPosition } from '@/utils/util'
-  import isIP from 'validator/es/lib/isIP'
-  import isInt from 'validator/es/lib/isInt'
 
   const props = defineProps({
     value: {
@@ -84,22 +82,45 @@
     pasteData.cursor = 0
     pasteData.length = 0
   }
-
   const getMatchIP = (ip) => {
-    // 先判断是不是常规IP
-    if (isIP(ip)) {
-      return ip
+    const reg = []
+    const match = []
+
+    const matchedAreaV6 = ip.match(AREA_IPV6_IP)
+    if (matchedAreaV6) {
+      match.push(...matchedAreaV6)
+      reg.push(AREA_IPV6_IP)
     }
-    const matchedV4 = ip.split(':')
-    const matchedV6 = ip.match(/^(\d+):\[([0-9a-fA-F:.]+)\]$/)
-    if (matchedV4.length === 2 && isInt(matchedV4[0]) && isIP(matchedV4[1], 4)) return ip
-    if (matchedV6 && isIP(matchedV6[2])) return ip
-    return null
+
+    const matchedAreaV4 = ip.match(AREA_IPV4_IP)
+    if (matchedAreaV4) {
+      match.push(...matchedAreaV4)
+      reg.push(AREA_IPV4_IP)
+    }
+
+    const matchedV6 = ip.match(IPV6_IP)
+    if (matchedV6 && !reg.includes(AREA_IPV6_IP)) {
+      match.push(...matchedV6)
+      reg.push(IPV6_IP)
+    }
+
+    const matchedV4 = ip.match(IPV4_IP)
+    if (matchedV4 && !reg.includes(AREA_IPV4_IP)) {
+      match.push(...matchedV4)
+      reg.push(IPV4_IP)
+    }
+
+    return [reg, ip, match]
+  }
+
+  const replaceRealIP = (allReg, ip) => {
+    allReg.forEach(reg => ip = ip.replace(reg, '<span class="high-light">$<ip></span>'))
+    return ip
   }
   const getNewHtml = content => content.replace(ALL_PROBABLY_IP, (val) => {
     // val为所有可能是IP的数据，在这里筛选出符合条件的IP
-    const matched = getMatchIP(val)
-    return matched ? `<span class="high-light">${val}</span>` : val
+    const [reg, ip, matched] = getMatchIP(val)
+    return matched[0] ? replaceRealIP(reg, ip) : val
   })
 
   const setSearchContent = (val = '') => {
@@ -121,19 +142,20 @@
   const parseIP = (type = 'blur') => {
     initPasteData()
     const propablyIP = searchContent.value.match(ALL_PROBABLY_IP)
-    const ipList = []
+    const ipList = new Set()
     propablyIP?.forEach((ip) => {
-      if (getMatchIP(ip)) {
-        ipList.push(ip)
+      const [, , matched] = getMatchIP(ip)
+      if (matched[0]) {
+        matched.forEach(ip => ipList.add(ip))
       }
     })
-    if (!ipList.length && searchContent.value && type === 'search') {
+    if (!ipList.size && searchContent.value && type === 'search') {
       hasIP.value = false
       $error(t('未解析出主机对象，请修改输入词'))
       return
     }
     hasIP.value = true
-    const newHtml = ipList.join('\n')
+    const newHtml = Array.from(ipList).join('\n')
     setSearchContent(newHtml)
     setInputHtml(newHtml)
   }
@@ -165,7 +187,7 @@
     initPasteData()
     setSearchContent()
     setInputHtml()
-    event.preventDefault()
+    event?.preventDefault()
   }
   const handleFocus = (event) => {
     setHighlight()
@@ -190,7 +212,8 @@
   defineExpose({
     focus,
     searchContent,
-    hasIP
+    hasIP,
+    clear: handleClear
   })
 </script>
 

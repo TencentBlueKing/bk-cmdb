@@ -442,7 +442,6 @@
       },
       handleCloseEditMain() {
         this.editMainStatus = null
-        this.isMainAuthCompleted = false
       },
       handleEditChild(id, name) {
         this.editChildStatus = id
