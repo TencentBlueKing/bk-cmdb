@@ -145,7 +145,6 @@
     const ipList = new Set()
     propablyIP?.forEach((ip) => {
       const [, , matched] = getMatchIP(ip)
-      console.log(matched, 'parseIp')
       if (matched[0]) {
         matched.forEach(ip => ipList.add(ip))
       }
