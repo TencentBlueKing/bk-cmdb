@@ -107,7 +107,7 @@
     }
   })
 
-  const disabledPropertyLength = reactive({})
+  const disabledPropertyCounts = reactive({})
   const matchedPropertyMap = ref(props.propertyMap)
   const localSelected = ref([...props.selected])
   const filter = ref('')
@@ -179,18 +179,18 @@
   // 判断相应的全选/半选状态
   const allCheckState = ({ bk_obj_id: bkObjId }) => {
     const length = matchedPropertyMap.value[bkObjId]?.length || 0
-    const disabledLength = disabledPropertyLength[bkObjId] || 0
+    const disabledLength = disabledPropertyCounts[bkObjId] || 0
     if (length === 0) return
     const matchedPropertyMapIdSet = new Set()
     matchedPropertyMap.value[bkObjId]?.forEach(property => matchedPropertyMapIdSet.add(property?.id))
-    const nowChecked = localSelected.value.filter(target => target.bk_obj_id === bkObjId
+    const currentCheckedCount = localSelected.value.filter(target => target.bk_obj_id === bkObjId
       && matchedPropertyMapIdSet.has(target.id))?.length || 0
     // 默认是一个都没选的状态
     let isIndeterminate = false // 半选
     let isChecked = false
 
-    if (nowChecked > 0) {
-      if (nowChecked === length - disabledLength) {
+    if (currentCheckedCount > 0) {
+      if (currentCheckedCount === length - disabledLength) {
         isChecked = true
       } else {
         isIndeterminate = true
@@ -220,7 +220,7 @@
           length += 1
         }
       })
-      disabledPropertyLength[bkObjId] = length
+      disabledPropertyCounts[bkObjId] = length
     })
   }
 

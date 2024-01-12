@@ -99,10 +99,7 @@
     },
     computed: {
       hasField() {
-        for (let groupIndex = 0; groupIndex < this.groupedPropertyList.length; groupIndex++) {
-          if (this.groupedPropertyList[groupIndex].length) return true
-        }
-        return false
+        return this.groupedPropertyList.some(group => group.length)
       },
     },
     watch: {

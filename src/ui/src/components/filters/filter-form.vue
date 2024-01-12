@@ -62,7 +62,6 @@
           </div>
         </bk-form-item>
         <bk-form-item class="filter-item"
-          hover="true"
           v-for="property in selected"
           :key="property.id"
           :class="`filter-item-${property.bk_property_type}`">
@@ -205,7 +204,7 @@
         type: String,
         default: '' // index - 系统首页高级筛选
       },
-      searchFilter: {
+      searchAction: {
         type: Function,
         default: () => {}
       },
@@ -444,15 +443,15 @@
       },
       handleSearch() {
         const { hasIP } = this.$refs.ipEditableBlock
-        if (!hasIP) {
-          return
-        }
         const condition = {
           condition: this.$tools.clone(this.condition),
           IP: this.$tools.clone(this.IPCondition)
         }
+        if (!hasIP) {
+          return
+        }
         if (this.type === 'index') {
-          return this.searchFilter(condition)
+          return this.searchAction(condition)
         }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
@@ -613,7 +612,7 @@
     .filter-item {
         padding: 2px 10px 10px;
         margin-top: 5px !important;
-        &[hover=true]:hover {
+        &:not(.filter-ip):hover {
             background: #f5f6fa;
             .item-remove {
                 opacity: 1;
