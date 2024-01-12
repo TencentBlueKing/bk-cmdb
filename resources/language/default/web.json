@@ -5,7 +5,7 @@
     "web_bk_alias_name_required": "中文名(必填)",
     "web_bk_data_type_required": "数据类型(必填)",
     "web_excel_import_too_much": "excel文件中导入过多数据，最大可导入数据行数为%d",
-    "web_excel_not_data": "excel文件中没有数据",
+    "web_excel_not_data": "未检测到任何数据需要导入",
     "web_import_field_not_found": "导入不存在的字段，请重新下载模板，并且不要删除excel前三行",
     "web_excel_row_handle_error": "%s %d行无法处理内容;",
     "web_excel_header_required": "(必填)",
