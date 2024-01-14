@@ -43,11 +43,33 @@
       const $secCategory = ref(null)
       const loading = ref(true)
 
-      const createElement = h.bind($this)
-
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
       const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
+
+      const tipsLink = h('bk-link', {
+        slot: 'link',
+        props: { theme: 'primary' },
+        on: {
+          click() {
+            emit('active-change', 'instance')
+          }
+        }
+      }, t('同步功能'))
+      const tipsProcessMessage = h('i18n', {
+        class: 'process-success-message',
+        props: {
+          path: '成功更新模板进程，您可以通过XXX',
+          tag: 'div',
+        }
+      }, [tipsLink])
+      const tipsConfigMessage = h('i18n', {
+        class: 'process-success-message',
+        props: {
+          path: '成功更新模板，您可以通过XXX',
+          tag: 'div',
+        }
+      }, [tipsLink])
 
       const state = reactive({
         moduleProperties: [],
@@ -308,26 +330,12 @@
       }
 
       // 显示同步提示的方法
-      const showSyncInstanceTips = (text = '成功更新模板进程，您可以通过XXX') => {
-        const link = createElement('bk-link', {
-          slot: 'link',
-          props: { theme: 'primary' },
-          on: {
-            click() {
-              emit('active-change', 'instance')
-            }
-          }
-        }, t('同步功能'))
-
-        const message = createElement('i18n', {
-          class: 'process-success-message',
-          props: {
-            path: text,
-            tag: 'div',
-          }
-        }, [link])
-
-        $success(message)
+      const showSyncInstanceTips = (from = 'process') => {
+        const messages = {
+          config: tipsConfigMessage,
+          process: tipsProcessMessage
+        }
+        $success(messages[from])
         emit('sync-change')
       }
 
@@ -355,7 +363,7 @@
 
           state.propertyConfig[property.id] = value
 
-          showSyncInstanceTips('成功更新模板，您可以通过XXX')
+          showSyncInstanceTips('config')
         } finally {
           propertyConfigLoadingState.value = propertyConfigLoadingState.value.filter(item => item !== property)
         }
@@ -372,7 +380,7 @@
 
         del(state.propertyConfig, property.id)
 
-        showSyncInstanceTips('成功更新模板，您可以通过XXX')
+        showSyncInstanceTips('config')
       }
 
       const handleCreateProcess = () => {

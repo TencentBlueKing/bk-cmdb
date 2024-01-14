@@ -38,11 +38,26 @@
       const $templateName = ref(null)
       const loading = ref(true)
 
-      const createElement = h.bind($this)
-
       const bizId = computed(() => store.getters['objectBiz/bizId'])
 
       const templateId = computed(() => parseInt(router.app.$route.params.templateId, 10))
+
+      const tipsLink = h('bk-link', {
+        slot: 'link',
+        props: { theme: 'primary' },
+        on: {
+          click() {
+            emit('active-change', 'instance')
+          }
+        }
+      }, t('同步功能'))
+      const tipsConfigMessage = h('i18n', {
+        class: 'process-success-message',
+        props: {
+          path: '成功更新模板，您可以通过XXX',
+          tag: 'div',
+        }
+      }, [tipsLink])
 
       const state = reactive({
         templateName: '',
@@ -172,26 +187,11 @@
       const propertyConfigLoadingState = ref([])
 
       // 显示同步提示的方法
-      const showSyncInstanceTips = (text = '成功更新模板，您可以通过XXX') => {
-        const link = createElement('bk-link', {
-          slot: 'link',
-          props: { theme: 'primary' },
-          on: {
-            click() {
-              emit('active-change', 'instance')
-            }
-          }
-        }, t('同步功能'))
-
-        const message = createElement('i18n', {
-          class: 'process-success-message',
-          props: {
-            path: text,
-            tag: 'div',
-          }
-        }, [link])
-
-        $success(message)
+      const showSyncInstanceTips = (from = 'config') => {
+        const messages = {
+          config: tipsConfigMessage
+        }
+        $success(messages[from])
         emit('sync-change')
       }
 
