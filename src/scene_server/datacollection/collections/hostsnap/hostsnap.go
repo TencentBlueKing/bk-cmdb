@@ -284,6 +284,10 @@ func needToUpdate(src, toCompare string) bool {
 			// 忽略变更对比的字段直接过滤掉
 			continue
 		}
+		// 当不存在该字段时，需要跳过，防止对比出现差异记录了审计
+		if !srcElements[idx].Exists() {
+			continue
+		}
 		// compare these value with string directly to avoid empty value or null value.
 		if srcElements[idx].String() != compareElements[idx].String() {
 			compareField := compareFields[idx]
