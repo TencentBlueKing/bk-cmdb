@@ -17,7 +17,6 @@
     :width="400"
     :show-mask="false"
     :transfer="true"
-    :quick-close="false"
     :before-close="handleSliderBeforeClose"
     @hidden="handleHidden">
     <div class="filter-form-header" slot="header">
@@ -214,7 +213,7 @@
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         IPCondition: Utils.getDefaultIP(),
-        originIPCondition: Utils.getDefaultIP(),
+        originIPCondition: { ...FilterStore.IP },
         condition: {},
         originCondition: {},
         selected: [],
@@ -442,13 +441,9 @@
         FilterStore.updateUserBehavior(this.selected)
       },
       handleSearch() {
-        const { hasIP } = this.$refs.ipEditableBlock
         const condition = {
           condition: this.$tools.clone(this.condition),
           IP: this.$tools.clone(this.IPCondition)
-        }
-        if (!hasIP) {
-          return
         }
         if (this.type === 'index') {
           return this.searchAction(condition)
@@ -523,7 +518,7 @@
         Object.keys(this.condition).forEach((id) => {
           const property = this.selected.find(property => property.id.toString() === id.toString())
           const propertyCondititon = this.condition[id]
-          const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, null)
+          const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, '')
           propertyCondititon.value = defaultValue
         })
         this.errors.clear()
@@ -580,7 +575,6 @@
       }
     }
     .filter-form-sideslider {
-        pointer-events: none;
         /deep/ {
             .bk-sideslider-wrapper {
                 pointer-events: initial;
@@ -631,7 +625,7 @@
         }
         .item-content-wrapper {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
         }
         .item-operator {
             flex: 110px 0 0;

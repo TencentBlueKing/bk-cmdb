@@ -354,6 +354,20 @@ const FilterStore = new Vue({
       this.setIP(data.IP || this.IP)
       this.throttleSearch()
     },
+    setConditonField(key, value) {
+      this.setCondition({
+        condition: {
+          ...this.condition,
+          [key]: { operator: '$in', value }
+        }
+      })
+    },
+    setSelectedField(key) {
+      const hasSelected = this.selected.some(property => +property?.id === +key)
+      if (!hasSelected) {
+        this.updateSelected([Utils.findProperty(key, this.properties), ...this.selected])
+      }
+    },
     updateCondition(property, operator, value) {
       this.condition[property.id] = {
         operator,
