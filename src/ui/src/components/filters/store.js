@@ -354,8 +354,8 @@ const FilterStore = new Vue({
       this.setIP(data.IP || this.IP)
       this.throttleSearch()
     },
-    setConditonField(propertyId, value) {
-      const { id } = this.getProperty(propertyId, 'host')
+    setConditonField(propertyId, value, modelId = 'host') {
+      const { id } = this.getProperty(propertyId, modelId)
       this.setCondition({
         condition: {
           ...this.condition,
@@ -363,8 +363,8 @@ const FilterStore = new Vue({
         }
       })
     },
-    setSelectedField(propertyId) {
-      const { id } = this.getProperty(propertyId, 'host')
+    setSelectedField(propertyId, modelId = 'host') {
+      const { id } = this.getProperty(propertyId, modelId)
       const hasSelected = this.selected.some(property => property?.id === id)
       if (!hasSelected) {
         this.updateSelected([Utils.findProperty(id, this.properties), ...this.selected])
