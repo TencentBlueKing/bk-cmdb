@@ -87,7 +87,7 @@ export function getDefaultData(property, defaultData = { operator: QUERY_OPERATO
   return {
     operator: defaultData.operator,
     value: defaultData.value,
-    ...defaultMap[property.bk_property_type]
+    ...defaultMap[property?.bk_property_type]
   }
 }
 
@@ -390,7 +390,7 @@ export function parseIP(list) {
         }
         cloudIdSet.add(cloudId)
       } else {
-        assetList.push(text)
+        assetList.push(text.replace(/&lt/g, '<'))
       }
     }
   })
