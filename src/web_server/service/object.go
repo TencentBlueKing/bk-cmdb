@@ -19,6 +19,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,6 +51,7 @@ var sortFields = []string{
 	"isrequired",
 	"isreadonly",
 	"isonly",
+	common.BKPropertyIndexField,
 }
 
 // ImportObject import object attribute
@@ -197,6 +199,13 @@ func setExcelRow(ctx context.Context, row *xlsx.Row, item interface{}) *xlsx.Row
 		switch t := keyVal.(type) {
 		case bool:
 			cell.SetBool(t)
+		case json.Number:
+			int64Value, err := strconv.ParseInt(t.String(), 10, 64)
+			if err != nil {
+				blog.V(5).Infof("convert json.Number type to int64 failed, rid: %s", rid)
+				return row
+			}
+			cell.SetInt64(int64Value)
 		case string:
 			if "\"\"" == t {
 				cell.SetValue("")

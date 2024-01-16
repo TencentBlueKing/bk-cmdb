@@ -1,6 +1,7 @@
 {
     "val_type_text":"文本",
     "val_type_bool":"布尔",
+    "val_type_integer":"整型",
     "unit":"单位",
     "placeholder":"提示",
     "desc":"描述",
@@ -12,5 +13,6 @@
     "app_not_exist":"业务不存在",
     "import_row_int_error_str":"%d行%s",
     "property_group":"字段分组",
+    "property_index":"字段索引",
     "":""
 }
