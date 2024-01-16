@@ -354,18 +354,20 @@ const FilterStore = new Vue({
       this.setIP(data.IP || this.IP)
       this.throttleSearch()
     },
-    setConditonField(key, value) {
+    setConditonField(propertyId, value) {
+      const { id } = this.getProperty(propertyId, 'host')
       this.setCondition({
         condition: {
           ...this.condition,
-          [key]: { operator: '$in', value }
+          [id]: { operator: '$in', value }
         }
       })
     },
-    setSelectedField(key) {
-      const hasSelected = this.selected.some(property => +property?.id === +key)
+    setSelectedField(propertyId) {
+      const { id } = this.getProperty(propertyId, 'host')
+      const hasSelected = this.selected.some(property => property?.id === id)
       if (!hasSelected) {
-        this.updateSelected([Utils.findProperty(key, this.properties), ...this.selected])
+        this.updateSelected([Utils.findProperty(id, this.properties), ...this.selected])
       }
     },
     updateCondition(property, operator, value) {

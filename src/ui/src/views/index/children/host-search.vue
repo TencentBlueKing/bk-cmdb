@@ -226,15 +226,15 @@
         this.setSearch(this.getSearchList())
         const { ip, asset } = this.searchFlag
         const { assetList } = this.searchIPs
+        const propertyId = 'bk_asset_id'
         let IPText = ''
-
         if (ip) {
           IPText = this.ipEditableBlock.searchContent
         } else if (asset) {
-          FilterStore.setSelectedField('30')
+          FilterStore.setSelectedField(propertyId)
         }
         FilterStore.setIPField('text', IPText)
-        FilterStore.setConditonField('30', assetList)
+        FilterStore.setConditonField(propertyId, assetList)
         this.ipEditableBlock.clear()
         FilterForm.show({
           type: 'index',
