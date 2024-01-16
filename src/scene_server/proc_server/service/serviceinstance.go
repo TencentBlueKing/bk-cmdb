@@ -1926,6 +1926,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	tasks := make([]metadata.CreateTaskRequest, 0)
 	for _, moduleID := range syncOpt.ModuleIDs {
 		syncOneModuleOpt.ModuleID = moduleID
+		syncOneModuleOpt.HostIDs = nil
+		syncOneModuleOpt.IsSyncModule = true
 
 		taskReq := metadata.CreateTaskRequest{
 			TaskType: common.SyncModuleTaskFlag,
