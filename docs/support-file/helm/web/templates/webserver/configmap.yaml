@@ -72,10 +72,10 @@ data:
       jwt:
         # 是否开启jwt认证功能
         enabled: {{ .Values.web.webServer.jwt.enabled }}
-        # jwt公钥路径
-        publicKeyPath: {{ .Values.web.webServer.jwt.publicKeyPath }}
-        # jwt私钥路径
-        privateKeyPath:  {{ .Values.web.webServer.jwt.privateKeyPath }}
+        # jwt公钥
+        publicKey: {{ .Values.web.webServer.jwt.publicKey }}
+        # jwt私钥
+        privateKey:  {{ .Values.web.webServer.jwt.privateKey }}
 
     # cmdb服务tls配置
     tls:

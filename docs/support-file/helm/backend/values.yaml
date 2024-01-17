@@ -1345,8 +1345,8 @@ common:
     jwt:
       # 是否开启jwt认证功能
       enabled: false
-      # jwt公钥路径
-      publicKeyPath:
+      # jwt公钥
+      publicKey:
 
   ## gse server config
   ##

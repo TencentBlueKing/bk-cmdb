@@ -420,8 +420,8 @@ apiServer:
   jwt:
     # 是否开启jwt认证功能
     enabled: false
-    # jwt公钥路径
-    publicKeyPath:
+    # jwt公钥
+    publicKey:
 
 # 直接调用gse服务相关配置
 gse:
@@ -584,10 +584,10 @@ webServer:
   jwt:
     # 是否开启jwt认证功能
     enabled: false
-    # jwt公钥路径
-    publicKeyPath:
-    # jwt私钥路径
-    privateKeyPath:
+    # jwt公钥
+    publicKey:
+    # jwt私钥
+    privateKey:
 
 # 监控配置， monitor配置项必须存在
 monitor:

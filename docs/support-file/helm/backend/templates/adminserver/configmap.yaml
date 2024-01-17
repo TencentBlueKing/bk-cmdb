@@ -201,8 +201,8 @@ data:
       jwt:
         # 是否开启jwt认证功能
         enabled: {{ .Values.common.apiServer.jwt.enabled }}
-        # jwt公钥路径
-        publicKeyPath: {{ .Values.common.apiServer.jwt.publicKeyPath }}
+        # jwt公钥
+        publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
 
     # 直接调用gse服务相关配置
     gse:

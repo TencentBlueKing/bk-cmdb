@@ -248,10 +248,10 @@ web:
     jwt:
       # 是否开启jwt认证功能
       enabled: false
-      # jwt公钥路径
-      publicKeyPath:
-      # jwt私钥路径
-      privateKeyPath:
+      # jwt公钥
+      publicKey:
+      # jwt私钥
+      privateKey:
 
   ## monitor common config parameters
   ##
