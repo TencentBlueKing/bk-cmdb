@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询业务
+查询业务(权限：业务查询权限)
 
 ### 请求参数
 
@@ -23,8 +23,20 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
 - 参数`biz_property_filter` 中涉及到的数组类元素个数不超过500个。参数`biz_property_filter`中涉及到的`rules`数量不超过20个。参数`biz_property_filter`
 的嵌套层级不超过3层。
 
-#### page
+#### biz_property_filter
+| 字段      | 类型     | 必选 | 描述            |
+|-----------|--------|----|----------------------------|
+| condition    | string | 是  | 聚合条件          |
+| rules    | array    | 是  | 规则         |
 
+#### rules
+| 字段      | 类型     | 必选 | 描述  |
+|-----------|--------|----|-----|
+| field    | string | 是  | 字段  |
+| operator    | string | 是  | 操作符 |
+| value    | object | 是  | 值   |
+
+#### page
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
 | start    |  int    | 是     | 记录开始位置 |
@@ -122,8 +134,23 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
 | info      | array     | 业务实际数据 |
 
 #### info
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| bk_biz_id     | int       | 业务id |
-| bk_biz_name     | string       | 业务名称 |
+| 字段      | 类型      | 描述         |
+|-----------|-----------|--------------|
+| bk_biz_id | int | 业务id |
+| bk_biz_name       |  string       | 业务名 |
+| bk_biz_maintainer |  string       | 运维人员 |
+| bk_biz_productor  |  string      | 产品人员 |
+| bk_biz_developer  |  string      | 开发人员 |
+| bk_biz_tester     |  string       | 测试人员 |
+| time_zone         |  string       | 时区 |
+| language          |  string      | 语言, "1"代表中文, "2"代表英文 |
+| bk_supplier_account | string       | 开发商账号   |
+| create_time         | string | 创建时间     |
+| last_time           | string | 更新时间     |
 |default | int | 表示业务类型 |
+| operator | string | 主要维护人 |
+|life_cycle|string|业务生命周期|
+| bk_created_at      | string |  创建时间        |
+| bk_updated_at      | string |  更新时间        |
+| bk_created_by      | string |  创建人         |
+**注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**

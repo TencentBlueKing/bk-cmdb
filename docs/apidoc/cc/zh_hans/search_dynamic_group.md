@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询动态分组列表 (V3.9.6)
+查询动态分组列表 (版本：v3.9.6，权限：业务访问权限)
 
 ### 请求参数
 
@@ -12,7 +12,7 @@
 |-----------|------------|--------|------------|
 | bk_biz_id |  int     | 是     | 业务ID |
 | condition |  object    | 否     | 查询条件，condition 字段为自定义查询的属性字段, 可以是create_user, modify_user, name |
-| disable_counter |  bool | 否     | 是否返回总记录条数，默认返回 |
+| disable_counter |  bool | 否     | 是否不返回总记录条数，默认返回                                                 |
 | page     |  object   | 是     | 分页设置 |
 
 #### page

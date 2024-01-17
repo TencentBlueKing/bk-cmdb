@@ -28,7 +28,7 @@
 
 过滤规则为三元组 `field`, `operator`, `value`
 
-| 名称       | 类型     | 必填  | 默认值 | 说明  | Description                                                                                   |
+| 名称       | 类型     | 必填  | 默认值 | 说明  | 描述                                                                                   |
 |----------|--------|-----|-----|-----|-----------------------------------------------------------------------------------------------|
 | field    | string | 是   | 无   | 字段名 |                                                                                               |
 | operator | string | 是   | 无   | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |

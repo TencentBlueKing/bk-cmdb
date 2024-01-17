@@ -1,6 +1,6 @@
 ### 功能描述
 
- 根据实例关联关系的ID删除实例之间的关联。(生效版本：3.5.40)
+ 根据实例关联关系的ID删除实例之间的关联。(版本：v3.5.40，权限：模型实例删除权限)
 
 ### 请求参数
 
@@ -36,7 +36,7 @@
     "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": null
+    "data": 2
 }
 ```
 
@@ -49,4 +49,4 @@
 | message | string | 请求失败返回的错误信息 |
 | permission    | object | 权限信息    |
 | request_id    | string | 请求链id    |
-| data | object | 请求返回的数据 |
+| data | int | 删除掉的关联数量 |

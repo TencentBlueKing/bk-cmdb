@@ -109,9 +109,7 @@
 | 字段|类型|说明|
 |---|---|---|
 |auto_start|bool|是否自动拉起|
-|auto_time_gap|int|拉起间隔|
 |bk_biz_id|int|业务id|
-|bk_func_id|string|功能ID|
 |bk_func_name|string|进程名称|
 |bk_process_id|int|进程id|
 |bk_process_name|string|进程别名|
@@ -131,6 +129,10 @@
 |timeout|int|操作超时时长|
 |user|string|启动用户|
 |work_path|string|工作路径|
+|bk_created_at|string| 创建时间    |
+|bk_created_by|string| 创建人     |
+|bk_updated_at|string| 更新时间    |
+|bk_updated_by|string| 更新人     |
 |bind_info|object|绑定信息|
 
 #### data[x].property.bind_info[n] 字段说明

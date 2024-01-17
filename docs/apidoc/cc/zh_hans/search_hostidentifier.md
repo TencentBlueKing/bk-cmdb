@@ -18,7 +18,7 @@
 | 字段        | 类型    | 必选 | 描述       |
 | ----------- | ------- | ---- | ---------- |
 | data        | array | 否   | 主机ip列表 |
-| bk_cloud_id | int     | 否   | 云区域ID   |
+| bk_cloud_id | int     | 否   | 管控区域ID   |
 
 #### page
 
@@ -136,7 +136,7 @@
 | ------------------- | ------ | ----------------------------------- |
 | bk_host_id          | int    | 主机ID                              |
 | bk_supplier_account | string | 开发商账号                          |
-| bk_cloud_id         | int    | 云区域ID                            |
+| bk_cloud_id         | int    | 管控区域ID                            |
 | bk_host_innerip     | string | 内网IP                              |
 | bk_os_type          | string | 操作系统类型                        |
 | associations        | dict   | 主机主线关联，key为主机所属的模块ID |

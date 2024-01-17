@@ -1,6 +1,6 @@
 ### 功能描述
 
-资源池主机分配至业务的空闲机模块
+资源池主机分配至业务的空闲机模块(权限：主机池主机分配到业务权限)
 
 ### 请求参数
 
@@ -38,10 +38,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
 ### 返回结果参数说明

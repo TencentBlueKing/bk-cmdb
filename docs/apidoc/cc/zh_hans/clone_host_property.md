@@ -1,6 +1,6 @@
 ### 功能描述
 
-克隆主机属性
+克隆主机属性(权限：业务主机编辑权限)
 
 ### 请求参数
 
@@ -15,7 +15,7 @@
 | bk_org_id   | int  | 是     | 源主机ID    |
 | bk_dst_id   | int  | 是     | 目标主机ID |
 | bk_biz_id   | int     | 是     | 业务ID                      |
-| bk_cloud_id | int     | 否     | 云区域ID                    |
+| bk_cloud_id | int     | 否     | 管控区域ID                    |
 
 
 注： 使用主机内网IP进行克隆与使用主机身份ID进行克隆，这两种方式只能使用期中的一种，不能混用。
@@ -56,7 +56,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": null
