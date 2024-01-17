@@ -328,7 +328,8 @@
         this.focusIP()
       }, 0)
       this.originCondition = this.setCondition(this.originCondition)
-      const { beforeClose, setChanged } = useSideslider()
+      const subTitle = this.type === 'index' ? '离开将会导致表单填写的内容丢失' : '离开将会导致未保存信息丢失'
+      const { beforeClose, setChanged } = useSideslider('', { subTitle })
       this.beforeClose = beforeClose
       this.setChanged = setChanged
     },
