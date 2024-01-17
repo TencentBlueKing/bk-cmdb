@@ -53,9 +53,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		SrvInfo:      svrInfo,
 	}
+	if op.DeploymentMethod == common.BluekingDeployment {
+		input.Disable = true
+	}
+
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)

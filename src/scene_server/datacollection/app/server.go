@@ -170,7 +170,7 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
 		ConfigUpdate: newDataCollection.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {

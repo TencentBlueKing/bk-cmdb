@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/blog"
 	ccerr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -40,7 +39,7 @@ var redisParser *viperParser
 var mongodbParser *viperParser
 var commonParser *viperParser
 var extraParser *viperParser
-var migrateParser *viperParser
+var localParser *viperParser
 
 var confLock sync.RWMutex
 
@@ -80,9 +79,11 @@ func loadErrorAndLanguage(errorres string, languageres string, handler *CCHandle
 	return nil
 }
 
-// LoadConfigFromLocalFile TODO
-func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
-	cnfDir, _ := String("confs.dir")
+// GetLocalConf get local config
+func GetLocalConf(confPath string, handler *CCHandler) error {
+	if err := SetLocalFile(confPath); err != nil {
+		return fmt.Errorf("parse config file: %s failed, err: %v", confPath, err)
+	}
 
 	// load local error and language
 	errorres, _ := String("errors.res")
@@ -91,41 +92,8 @@ func LoadConfigFromLocalFile(confPath string, handler *CCHandler) error {
 		return err
 	}
 
-	// load local common
-	commonPath := cnfDir + "/" + types.CCConfigureCommon
-	if err := SetCommonFromFile(commonPath); err != nil {
-		blog.Errorf("load config from file[%s], but can not found common config", commonPath)
-		return err
-	}
 	if handler.OnProcessUpdate != nil {
 		handler.OnProcessUpdate(ProcessConfig{}, ProcessConfig{})
-	}
-
-	// if it is admin_server, skip the loading of other files,load only error, language and common
-	if common.GetIdentification() == types.CC_MODULE_MIGRATE {
-		return nil
-	}
-
-	// load local extra
-	extraPath := cnfDir + "/" + types.CCConfigureExtra
-	if err := SetExtraFromFile(extraPath); err != nil {
-		blog.Errorf("load config from file[%s], but can not found extra config", extraPath)
-		return err
-	}
-	if handler.OnExtraUpdate != nil {
-		handler.OnExtraUpdate(ProcessConfig{}, ProcessConfig{})
-	}
-
-	// load local redis
-	redisPath := cnfDir + "/" + types.CCConfigureRedis
-	if err := SetRedisFromFile(redisPath); err != nil {
-		return err
-	}
-
-	// load local mongodb
-	mongodbPath := cnfDir + "/" + types.CCConfigureMongo
-	if err := SetMongodbFromFile(mongodbPath); err != nil {
-		return err
 	}
 
 	return nil
@@ -269,38 +237,17 @@ func SetExtraFromFile(target string) error {
 	return nil
 }
 
-// SetMigrateFromByte TODO
-func SetMigrateFromByte(data []byte) error {
-	var err error
-	confLock.Lock()
-	defer confLock.Unlock()
-	if migrateParser != nil {
-		err := migrateParser.parser.ReadConfig(bytes.NewBuffer(data))
-		if err != nil {
-			blog.Errorf("fail to read configure from migrate")
-			return err
-		}
-		return nil
-	}
-	migrateParser, err = newViperParser(data)
-	if err != nil {
-		blog.Errorf("fail to read configure from migrate")
-		return err
-	}
-	return nil
-}
-
-// SetMigrateFromFile TODO
-func SetMigrateFromFile(target string) error {
+// SetLocalFile set localParser from file
+func SetLocalFile(target string) error {
 	var err error
 	confLock.Lock()
 	defer confLock.Unlock()
 	// /data/migrate.yaml -> /data/migrate
 	split := strings.Split(target, ".")
 	filePath := split[0]
-	migrateParser, err = newViperParserFromFile(filePath)
+	localParser, err = newViperParserFromFile(filePath)
 	if err != nil {
-		blog.Errorf("fail to read configure from migrate")
+		blog.Errorf("set local file failed, target: %s, err: %v", target, err)
 		return err
 	}
 	return nil
@@ -532,7 +479,7 @@ func IsExist(key string) bool {
 	defer confLock.RUnlock()
 
 	// 在所有的配置文件中判断
-	if (migrateParser == nil || !migrateParser.isSet(key)) && (commonParser == nil || !commonParser.isSet(key)) &&
+	if (localParser == nil || !localParser.isSet(key)) && (commonParser == nil || !commonParser.isSet(key)) &&
 		(extraParser == nil || !extraParser.isSet(key)) {
 		return false
 	}
@@ -553,21 +500,33 @@ func UnmarshalKey(key string, val interface{}) error {
 }
 
 func getRedisParser() *viperParser {
-	return redisParser
+	if redisParser != nil {
+		return redisParser
+	}
+
+	return localParser
 }
 
 func getMongodbParser() *viperParser {
-	return mongodbParser
+	if mongodbParser != nil {
+		return mongodbParser
+	}
+
+	return localParser
 }
 
 func getCommonParser() *viperParser {
-	return commonParser
+	if commonParser != nil {
+		return commonParser
+	}
+
+	return localParser
 }
 
 // getKeyValueParser get viper parser for common key value in the order of migrate->common->extra
 func getKeyValueParser(key string) (*viperParser, error) {
-	if migrateParser != nil && migrateParser.isSet(key) {
-		return migrateParser, nil
+	if localParser != nil && localParser.isSet(key) {
+		return localParser, nil
 	}
 
 	if commonParser != nil && commonParser.isSet(key) {

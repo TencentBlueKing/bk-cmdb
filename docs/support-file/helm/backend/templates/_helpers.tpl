@@ -66,10 +66,6 @@ app: "{{ template "bk-cmdb.name" . }}"
   {{- printf "%s-topo" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
 
-{{- define "bk-cmdb.webserver" -}}
-  {{- printf "%s-web" (include "bk-cmdb.fullname" .) -}}
-{{- end -}}
-
 {{- define "bk-cmdb.procserver" -}}
   {{- printf "%s-proc" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
@@ -245,34 +241,3 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:v{{ default .Chart.AppVersion .Values.migrate.image.tag }}
 {{- end -}}
 
-{{- define "cmdb.webserver.bkLoginUrl" -}}
-  {{- if eq .Values.common.webServer.login.version "opensource" -}}
-    {{- printf "%s" "" -}}
-  {{- else -}}
-    {{- printf "%s" .Values.bkPaasUrl -}}/login/?app_id=%s&c_url=%s
-  {{- end -}}
-{{- end -}}
-
-{{- define "cmdb.webserver.bkHttpsLoginUrl" -}}
-  {{- if eq .Values.common.webServer.login.version "opensource" -}}
-    {{- printf "%s" "" -}}
-  {{- else -}}
-    {{- printf "%s" .Values.bkPaasUrl -}}/login/?app_id=%s&c_url=%s
-  {{- end -}}
-{{- end -}}
-
-{{- define "cmdb.webserver.bkComponentApiUrl" -}}
-  {{- if eq .Values.common.webServer.login.version "opensource" -}}
-    {{- printf "%s" "" -}}
-  {{- else -}}
-    {{- printf "%s" .Values.bkComponentApiUrl -}}
-  {{- end -}}
-{{- end -}}
-
-{{- define "cmdb.webserver.paas_domain_url" -}}
-  {{- if eq .Values.common.webServer.login.version "opensource" -}}
-    {{- printf "%s" "" -}}
-  {{- else -}}
-    {{- printf "%s" .Values.bkComponentApiUrl -}}
-  {{- end -}}
-{{- end -}}

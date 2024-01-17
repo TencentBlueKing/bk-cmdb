@@ -39,9 +39,8 @@ spec:
         - ./cmdb_webserver
         - --addrport=$(POD_IP):{{ .Values.webserver.port }}
         {{- if .Values.webserver.configDir }}
-        - --config={{ .Values.webserver.configDir }}
+        - --config={{ .Values.webserver.configDir }}/web.yaml
         {{- end }}
-        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
         {{- if .Values.webserver.command.logDir }}
         - --log-dir={{ .Values.webserver.command.logDir }}
         {{- end }}
