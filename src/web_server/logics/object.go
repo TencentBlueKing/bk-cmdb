@@ -61,17 +61,19 @@ func (lgc *Logics) GetObjectData(objID string, header http.Header, modelBizID in
 // GetPropertyFieldType TODO
 func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 	var fieldType = map[string]string{
-		"bk_property_id":         lang.Language("val_type_text"), // "文本",
-		"bk_property_name":       lang.Language("val_type_text"), // "文本",
-		"bk_property_type":       lang.Language("val_type_text"), // "文本",
-		"bk_property_group_name": lang.Language("val_type_text"), //  文本
-		"option":                 lang.Language("val_type_text"), // "文本",
-		"unit":                   lang.Language("val_type_text"), // "文本",
-		"description":            lang.Language("val_type_text"), // "文本",
-		"placeholder":            lang.Language("val_type_text"), // "文本",
-		"editable":               lang.Language("val_type_bool"), // "布尔",
-		"isrequired":             lang.Language("val_type_bool"), // "布尔",
-		"isreadonly":             lang.Language("val_type_bool"), // "布尔",
+		"bk_property_id":            lang.Language("val_type_text"),    // "文本",
+		"bk_property_name":          lang.Language("val_type_text"),    // "文本",
+		"bk_property_type":          lang.Language("val_type_text"),    // "文本",
+		"bk_property_group_name":    lang.Language("val_type_text"),    //  文本
+		"option":                    lang.Language("val_type_text"),    // "文本",
+		"unit":                      lang.Language("val_type_text"),    // "文本",
+		"description":               lang.Language("val_type_text"),    // "文本",
+		"placeholder":               lang.Language("val_type_text"),    // "文本",
+		"editable":                  lang.Language("val_type_bool"),    // "布尔",
+		"isrequired":                lang.Language("val_type_bool"),    // "布尔",
+		"isreadonly":                lang.Language("val_type_bool"),    // "布尔",
+		common.BKIsOnlyField:        lang.Language("val_type_bool"),    // "布尔",
+		common.BKPropertyIndexField: lang.Language("val_type_integer"), // "整型",
 	}
 	return fieldType
 }
@@ -80,17 +82,19 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 
 	var fields = map[string]string{
-		"bk_property_id":         lang.Language("web_en_name_required"),       // "英文名(必填)",
-		"bk_property_name":       lang.Language("web_bk_alias_name_required"), // "中文名(必填)",
-		"bk_property_type":       lang.Language("web_bk_data_type_required"),  // "数据类型(必填)",
-		"bk_property_group_name": lang.Language("property_group"),             //  字段分组
-		"option":                 lang.Language("property_option"),            // "数据配置",
-		"unit":                   lang.Language("unit"),                       // "单位",
-		"description":            lang.Language("desc"),                       // "描述",
-		"placeholder":            lang.Language("placeholder"),                // "提示",
-		"editable":               lang.Language("is_editable"),                // "是否可编辑",
-		"isrequired":             lang.Language("property_is_required"),       // "是否必填",
-		"isreadonly":             lang.Language("property_is_readonly"),       // "是否只读",
+		"bk_property_id":            lang.Language("web_en_name_required"),       // "英文名(必填)",
+		"bk_property_name":          lang.Language("web_bk_alias_name_required"), // "中文名(必填)",
+		"bk_property_type":          lang.Language("web_bk_data_type_required"),  // "数据类型(必填)",
+		"bk_property_group_name":    lang.Language("property_group"),             //  字段分组
+		"option":                    lang.Language("property_option"),            // "数据配置",
+		"unit":                      lang.Language("unit"),                       // "单位",
+		"description":               lang.Language("desc"),                       // "描述",
+		"placeholder":               lang.Language("placeholder"),                // "提示",
+		"editable":                  lang.Language("is_editable"),                // "是否可编辑",
+		"isrequired":                lang.Language("property_is_required"),       // "是否必填",
+		"isreadonly":                lang.Language("property_is_readonly"),       // "是否只读",
+		common.BKIsOnlyField:        lang.Language("property_is_only"),           // "是否唯一",
+		common.BKPropertyIndexField: lang.Language("property_index"),             // "字段索引",
 	}
 
 	return fields
