@@ -1747,6 +1747,7 @@
     "模型信息与模板信息有差异提示语": "Model information differs from template information, {link}",
     "确认离开当前页？": "Are you sure you want to leave the current page",
     "离开将会导致未保存信息丢失": "Leaving will cause the loss of any unsaved data",
+    "离开将会导致表单填写的内容丢失": "Leaving will result in the loss of the content filled in the form",
     "离开": "Leave",
     "请输入模板描述": "Please enter the template description",
     "克隆字段组合模板": "Clone field template",
