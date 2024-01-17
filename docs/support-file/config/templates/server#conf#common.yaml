@@ -21,83 +21,6 @@ esb:
   caFile:
   password:
 
-# web_server专属配置
-webServer:
-  api:
-    host: __BK_CMDB_API_HOST__
-    port: __BK_CMDB_API_PORT__
-    #显示版本，比如v3为3.x
-    version: v3
-  #会话相关
-  session:
-    #会话名
-    name: cc3
-    skip: "0"
-    #是否支持同时登录同一用户，0为不支持，1为支持
-    multipleOwner: "0"
-    #登陆方式为opensource时的用户密码，用户和密码以:分割，多个账户以逗号分割，如user1:password1,user2:password2
-    userInfo:
-  site:
-    #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-    domainUrl: __BK_CMDB_PUBLIC_URL__
-    httpsDomainUrl: __BK_CMDB_PUBLIC_URL__
-    #登录地址
-    bkLoginUrl: http://__BK_PAAS_PUBLIC_ADDR__/login/?app_id=%s&c_url=%s
-    bkHttpsLoginUrl: https://__BK_PAAS_PUBLIC_ADDR__/login/?app_id=%s&c_url=%s
-    appCode: __BK_CMDB_APP_CODE__
-    checkUrl: http://__BK_PAAS_PRIVATE_ADDR__/login/accounts/get_user/?bk_token=
-    resourcesPath: /tmp/
-    #前端基础页面位置
-    htmlRoot: __BK_HOME__/cmdb/web/
-    authscheme: iam
-    # 蓝鲸 ESB url
-    bkComponentApiUrl:  http://bkapi.__BK_PAAS_PUBLIC_ADDR__
-    # paas的地址，给前端的人员选择器使用
-    paasDomainUrl: http://__BK_PAAS_PRIVATE_ADDR__
-    # bkDomain 用于配置前端需要的cookie domain地址
-    bkDomain: .__BK_DOMAIN__
-    #帮助文档地址
-    helpDocUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
-    paas:
-      # pass的tls相关配置
-      tls:
-        # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-        insecureSkipVerify:
-        # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
-        certFile:
-        # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
-        keyFile:
-        # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
-        caFile:
-        # 用于解密根据RFC1423加密的证书密钥的PEM块
-        password:
-  app:
-    #蓝鲸权限中心的应用编码
-    authAppCode: bk_iam
-    # 权限中心地址
-    authUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_iam/apply-custom-perm
-    # 用来配置节点管理平台的url
-    agentAppUrl: __BK_HTTP_SCHEMA__://__BK_PAAS_PUBLIC_ADDR__/o/bk_nodeman/
-    #权限模式，web页面使用，可选值: internal, iam
-    authscheme: iam
-  login:
-    # 使用的登录系统， skip-login 免登陆模式， blueking 默认登录模式， 使用蓝鲸登录
-    version: blueking
-  #cmdb版本日志存放路径配置
-  changelogPath:
-    #中文版版本日志存放路径
-    ch: __BK_HOME__/cmdb/server/changelog_user/ch
-    #英文版版本日志存放路径
-    en: __BK_HOME__/cmdb/server/changelog_user/en
-  # web-server使用的jwt配置
-  jwt:
-    # 是否开启jwt认证功能
-    enabled: false
-    # jwt公钥路径
-    publicKey:
-    # jwt私钥路径
-    privateKey:
-
 # operation_server专属配置
 operationServer:
   timer:
@@ -130,6 +53,10 @@ authServer:
       password:
   #开发商ID
   supplierID: "0"
+  # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+  # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+  # 可以配置不进行业务访问鉴权
+  skipViewBizAuth: false
 
 #cloudServer专属配置
 cloudServer:
@@ -186,10 +113,10 @@ monitor:
   dataID: 0
   # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
   queueSize: 100
-  # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2，默认路径：__BK_GSE_AGENT_HOME__/plugins/bin/gsecmdline
-  gsecmdlinePath: __BK_GSE_AGENT_HOME__/plugins/bin/gsecmdline
-  # 对应的domainsocket绝对路径，默认路径：__BK_GSE_AGENT_HOME__/agent/data/ipc.state.report
-  domainSocketPath: __BK_GSE_AGENT_HOME__/agent/data/ipc.state.report
+  # 当使用blueking监控插件时，上报数据的接收端URL
+  bkMonitorReportUrl:
+  # 当使用blueking监控插件时，上报数据所需要的数据通道标识验证码，防止数据误上报至其他管道
+  accessToken:
   # 用于对数据上报进行频率控制和限流
   # qps的设置范围为1～50，默认值为10
   # burst的设置范围为1～100，默认值为20
@@ -265,7 +192,7 @@ apiServer:
   jwt:
     # 是否开启jwt认证功能
     enabled: false
-    # jwt公钥路径
+    # jwt公钥
     publicKey:
 
 # 直接调用gse服务相关配置

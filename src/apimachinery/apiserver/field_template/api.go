@@ -35,6 +35,8 @@ type Interface interface {
 		*metadata.FieldTemplateAttrInfo, errors.CCErrorCoder)
 	ListObjFieldTmplRel(ctx context.Context, h http.Header, opt *metadata.ListObjFieldTmplRelOption) (
 		*metadata.ObjFieldTmplRelInfo, errors.CCErrorCoder)
+	CountFieldTemplateObj(ctx context.Context, h http.Header, opt *metadata.CountFieldTmplResOption) (
+		[]metadata.FieldTmplResCount, errors.CCErrorCoder)
 }
 
 // New field template api client.

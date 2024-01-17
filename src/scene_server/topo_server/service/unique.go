@@ -256,6 +256,17 @@ func (s *Service) DeleteObjectUnique(ctx *rest.Contexts) {
 // SearchObjectUnique search object uniques
 func (s *Service) SearchObjectUnique(ctx *rest.Contexts) {
 	objectID := ctx.Request.PathParameter(common.BKObjIDField)
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{objectID})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	cond := metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: objectID}}
 	uniques, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrUnique(ctx.Kit.Ctx, ctx.Kit.Header, cond)
 	if err != nil {

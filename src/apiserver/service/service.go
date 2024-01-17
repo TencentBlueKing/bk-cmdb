@@ -80,24 +80,12 @@ func (s *service) WebServices() []*restful.WebService {
 	ws.Filter(rdapi.RequestLogFilter())
 	ws.Filter(s.LimiterFilter())
 	ws.Produces(restful.MIME_JSON)
-	if auth.EnableAuthorize() {
-		s.noPermissionRequestTotal = prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "cmdb_no_permission_request_total",
-				Help: "total number of request without permission.",
-			},
-			[]string{metrics.LabelHandler, metrics.LabelAppCode},
-		)
-		s.engine.Metric().Registry().MustRegister(s.noPermissionRequestTotal)
-		ws.Filter(s.authFilter(getErrFun))
-	}
-	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
-	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
-	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
-	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
-	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
-	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
-	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
+
+	// route skip auth api
+	s.routeSkipAuthAPI(ws)
+
+	// route need auth api
+	s.routeNeedAuthAPI(ws, getErrFun)
 
 	allWebServices := make([]*restful.WebService, 0)
 	allWebServices = append(allWebServices, ws)
@@ -109,4 +97,38 @@ func (s *service) WebServices() []*restful.WebService {
 	allWebServices = append(allWebServices, commonAPI)
 
 	return allWebServices
+}
+
+// routeSkipAuthAPI route apis that need skip api server authorization, and authorize in its scene server logics
+// note: this is only temporary, delete the api server authorize logic when all api is updated
+func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
+	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
+	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
+	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
+
+	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
+	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/findmany/hosts/by_service_templates/biz/{.*}").Filter(s.HostFilterChan).To(s.Post))
+	ws.Route(ws.POST("/findmany/module_relation/bk_biz_id/{.*}").Filter(s.HostFilterChan).To(s.Post))
+	ws.Route(ws.POST("/findmany/hosts/relation/with_topo").Filter(s.HostFilterChan).To(s.Post))
+}
+
+func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {
+	if auth.EnableAuthorize() {
+		s.noPermissionRequestTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "cmdb_no_permission_request_total",
+				Help: "total number of request without permission.",
+			},
+			[]string{metrics.LabelHandler, metrics.LabelAppCode},
+		)
+		s.engine.Metric().Registry().MustRegister(s.noPermissionRequestTotal)
+
+	}
+
+	ws.Route(ws.GET("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Get))
+	ws.Route(ws.POST("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Post))
+	ws.Route(ws.PUT("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Put))
+	ws.Route(ws.DELETE("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Delete))
 }

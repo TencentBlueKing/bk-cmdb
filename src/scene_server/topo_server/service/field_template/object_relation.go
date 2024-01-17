@@ -20,6 +20,7 @@ package fieldtmpl
 import (
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -41,7 +42,15 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 		return
 	}
 
-	// TODO add find object or template auth check after find object operation authorization is supported
+	authResp, authorized, err := s.hasObjOrTmplAuth(cts.Kit, opt.ObjectIDs, opt.TemplateIDs, any)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		cts.RespNoAuth(authResp)
+		return
+	}
 
 	// list field templates and object relations
 	var relFilter *filter.Expression
@@ -73,6 +82,62 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 	cts.RespEntity(res)
 }
 
+// priority 当没权限时，决定优先返回是因为什么原因而没权限
+type priority string
+
+const (
+	object   priority = "object"
+	template priority = "template"
+	any      priority = "any"
+)
+
+func (s *service) hasObjOrTmplAuth(kit *rest.Kit, tmplIDs []int64, objectIDs []int64, priorityVal priority) (
+	*metadata.BaseResp, bool, error) {
+
+	var tmplAuthResp *metadata.BaseResp
+	var tmplAuthorized bool
+	if len(tmplIDs) != 0 {
+		// check if user has the permission of the field template
+		resAttr := make([]meta.ResourceAttribute, len(tmplIDs))
+		for idx, tmplID := range tmplIDs {
+			resAttr[idx] = meta.ResourceAttribute{Basic: meta.Basic{Type: meta.FieldTemplate, Action: meta.Find,
+				InstanceID: tmplID}}
+		}
+
+		tmplAuthResp, tmplAuthorized = s.auth.Authorize(kit, resAttr...)
+	}
+
+	var objAuthResp *metadata.BaseResp
+	var objAuthorized bool
+	if len(objectIDs) != 0 {
+		var err error
+		objAuthResp, objAuthorized, err = s.auth.HasFindModelAuthUseID(kit, objectIDs)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	if tmplAuthorized || objAuthorized {
+		return nil, true, nil
+	}
+
+	switch priorityVal {
+	case template:
+		return tmplAuthResp, false, nil
+	case object:
+		return objAuthResp, false, nil
+	case any:
+		if tmplAuthResp != nil {
+			return tmplAuthResp, false, nil
+		}
+		if objAuthResp != nil {
+			return objAuthResp, false, nil
+		}
+	}
+
+	return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "priority")
+}
+
 // ListFieldTmplByObj list field template by related object id.
 func (s *service) ListFieldTmplByObj(cts *rest.Contexts) {
 	opt := new(metadata.ListFieldTmplByObjOption)
@@ -86,7 +151,15 @@ func (s *service) ListFieldTmplByObj(cts *rest.Contexts) {
 		return
 	}
 
-	// TODO add find object or template auth check after find object operation authorization is supported
+	authResp, authorized, err := s.hasObjOrTmplAuth(cts.Kit, nil, []int64{opt.ObjectID}, object)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		cts.RespNoAuth(authResp)
+		return
+	}
 
 	// get field templates ids by object id
 	relOpt := &metadata.CommonQueryOption{
@@ -140,7 +213,16 @@ func (s *service) ListObjByFieldTmpl(cts *rest.Contexts) {
 		return
 	}
 
-	// TODO add find object or template auth check after find object operation authorization is supported
+	authResp, authorized, err := s.hasObjOrTmplAuth(cts.Kit, []int64{opt.TemplateID}, nil, template)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		cts.RespNoAuth(authResp)
+		return
+	}
+
 	// if object detail is needed later, add object auth check
 
 	// get object ids by field template id
@@ -584,4 +666,46 @@ func (s *service) doSyncFieldTemplateTask(kit *rest.Kit, option *metadata.SyncOb
 		return txnErr
 	}
 	return nil
+}
+
+// CountFieldTemplateObj count field templates related objects
+func (s *service) CountFieldTemplateObj(cts *rest.Contexts) {
+	opt := new(metadata.CountFieldTmplResOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
+		return
+	}
+
+	relFilter := filtertools.GenAtomFilter(common.BKTemplateID, filter.In, opt.TemplateIDs)
+	listOpt := &metadata.CommonQueryOption{
+		CommonFilterOption: metadata.CommonFilterOption{Filter: relFilter},
+		Page:               metadata.BasePage{Limit: common.BKNoLimit},
+	}
+
+	res, err := s.clientSet.CoreService().FieldTemplate().ListObjFieldTmplRel(cts.Kit.Ctx, cts.Kit.Header, listOpt)
+	if err != nil {
+		blog.Errorf("list field templates failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
+
+	countMap := make(map[int64]int, 0)
+	for _, relation := range res.Info {
+		countMap[relation.TemplateID]++
+	}
+
+	countInfos := make([]metadata.FieldTmplResCount, len(opt.TemplateIDs))
+	for i, templateID := range opt.TemplateIDs {
+		countInfos[i] = metadata.FieldTmplResCount{
+			TemplateID: templateID,
+			Count:      countMap[templateID],
+		}
+	}
+
+	cts.RespEntity(countInfos)
 }

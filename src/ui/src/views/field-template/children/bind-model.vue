@@ -14,6 +14,9 @@
   import { ref, watch, watchEffect, onBeforeUnmount, computed, set, del } from 'vue'
   import { useHttp } from '@/api'
   import { t } from '@/i18n'
+  import { OPERATION, TRANSFORM_TO_INTERNAL } from '@/dictionary/iam-auth'
+  import { translateAuth, filterPassedAuth } from '@/setup/permission'
+  import applyPermission from '@/utils/apply-permission.js'
   import Loading from '@/components/loading/index.vue'
   import MiniTag from '@/components/ui/other/mini-tag.vue'
   import SelectModelDialog from './select-model-dialog.vue'
@@ -21,6 +24,7 @@
   import UniqueDiff from './unique-diff.vue'
   import CombineRequest from '@/api/combine-request.js'
   import fieldTemplateService from '@/service/field-template'
+  import { isViewAuthFreeModel, verifyAuth } from '@/service/auth'
 
   const props = defineProps({
     modelList: {
@@ -71,16 +75,24 @@
   const selectedModel = ref(null)
   const currentTab = ref('field')
 
+  const allApplyAuthList = ref([])
+  const isNoPerm = ref(false)
+
   const fieldDiffs = ref({})
   const uniqueDiffs = ref({})
   const diffLoadingIds = ref({})
   const unmountCallbacks = []
   const hasDiffError = ref(false)
 
-  const modelEditAuths = ref({})
+  const modelAuthResult = ref({})
 
   const fetchFieldDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+
+    if (!modelIds.length) {
+      return
+    }
+
     const allResult = await CombineRequest.setup(Symbol(), (params) => {
       const [modelId] = params
       const requestId = Symbol(modelId)
@@ -96,7 +108,8 @@
         attributes: props.fieldList
       }, {
         requestId,
-        globalError: true
+        globalError: true,
+        globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
 
@@ -122,6 +135,11 @@
 
   const fetchUniqueDiff = async (modelList) => {
     const modelIds = modelList.filter(item => !item.bk_ispaused).map(item => item.id)
+
+    if (!modelIds.length) {
+      return
+    }
+
     const allResult = await CombineRequest.setup(Symbol(), (params) => {
       const [modelId] = params
 
@@ -138,7 +156,8 @@
         uniques: props.uniqueList
       }, {
         requestId,
-        globalError: true
+        globalError: true,
+        globalPermission: false
       })
     }, { segment: 1, concurrency: 5 }).add(modelIds)
 
@@ -162,17 +181,65 @@
     unmountCallbacks.push(() => allResult?.return())
   }
 
+  const getModelAuth = (model) => {
+    const auth = [{ type: OPERATION.U_MODEL, relation: [model.id] }]
+    if (!isViewAuthFreeModel({ id: model.id })) {
+      auth.push({ type: OPERATION.R_MODEL, relation: [model.id] })
+    }
+    return auth
+  }
+
+  const getModelRelatedPermission = (model) => {
+    const otherApplyAuthList = allApplyAuthList.value.filter((auth) => {
+      const [modelId] = auth.relation
+      return modelId !== model.id
+    })
+    const permission = translateAuth(otherApplyAuthList)
+    return permission
+  }
+
   watchEffect(async () => {
     const initModelList = props.modelList.slice()
+    const modelAuthList = []
     if (initModelList.length) {
-      fetchFieldDiff(initModelList)
-      fetchUniqueDiff(initModelList)
+      initModelList.forEach((model) => {
+        modelAuthList.push(...getModelAuth(model))
+      })
+      const authResult = await verifyAuth(TRANSFORM_TO_INTERNAL(modelAuthList)) || []
+      const applyAuthList = filterPassedAuth(modelAuthList, authResult)
+
+      if (applyAuthList.length) {
+        const permission = translateAuth(applyAuthList)
+        allApplyAuthList.value = applyAuthList
+        window?.permissionModal?.show(permission)
+      }
     }
+
     modelListLocal.value = initModelList
   })
 
+  watch(modelAuthResult, (modelAuths) => {
+    const authResult = Object.values(modelAuths)
+    isNoPerm.value = authResult.every(isPass => isPass === false)
+
+    // 只当全部数据都有权限才获取diff数据
+    if (authResult.every(isPass => isPass)) {
+      fetchFieldDiff(props.modelList)
+      fetchUniqueDiff(props.modelList)
+    }
+  }, { deep: true })
+
+  watch(selectedModel, (model) => {
+    if (!fieldDiffs[model.id]) {
+      fetchFieldDiff([model])
+    }
+    if (!uniqueDiffs[model.id]) {
+      fetchUniqueDiff([model])
+    }
+  })
+
   // 查找匹配第1个可用的模型作为选中模型
-  watch([modelListLocal, modelEditAuths], ([modelList, modelAuths]) => {
+  watch([modelListLocal, modelAuthResult], ([modelList, modelAuths]) => {
     // 当前存在选中的模型则不变更
     if (selectedModel.value) {
       return
@@ -288,7 +355,7 @@
     }
   }
 
-  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? 0) + (uniqueDiffCounts.value[id]?.total ?? 0)
+  const getTotal = id => (fieldDiffCounts.value[id]?.total ?? '-') + (uniqueDiffCounts.value[id]?.total ?? '-')
 
   const handleClickAddModel = () => {
     selectModelDialogRef.value.show()
@@ -305,7 +372,7 @@
     del(fieldDiffs.value, model.id)
     del(uniqueDiffs.value, model.id)
 
-    del(modelEditAuths.value, model.id)
+    del(modelAuthResult.value, model.id)
   }
   const handleSelectModel = (model) => {
     if (model.bk_ispaused) {
@@ -318,8 +385,16 @@
   }
 
   const handleModelAuthUpdate = (model, isPass) => {
-    set(modelEditAuths.value, model.id, isPass)
+    set(modelAuthResult.value, model.id, isPass)
     emit('update-model-auth', model, isPass)
+  }
+
+  const handleApplyPermission = async () => {
+    try {
+      await applyPermission(allApplyAuthList.value)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   defineExpose({
@@ -348,7 +423,9 @@
             <cmdb-auth
               :key="modelIndex"
               tag="div"
-              :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+              :ignore-passed-auth="true"
+              :auth="getModelAuth(model)"
+              :related-permission="getModelRelatedPermission(model)"
               @update-auth="isPass => handleModelAuthUpdate(model, isPass)">
               <template #default="{ disabled }">
                 <div :key="modelIndex"
@@ -443,6 +520,13 @@
             </unique-diff>
           </div>
         </div>
+        <bk-exception v-else-if="isNoPerm" type="403" scene="part" class="no-perm">
+          <i18n path="暂无模型的查看与编辑权限，link">
+            <template #link>
+              <bk-link theme="primary" @click="handleApplyPermission">{{ $t('立即申请') }}</bk-link>
+            </template>
+          </i18n>
+        </bk-exception>
         <bk-exception v-else type="empty" scene="part" class="empty">
           <div>{{$t('暂无对比，请先绑定模型')}}</div>
         </bk-exception>
@@ -478,20 +562,23 @@
         top: 0;
         padding-top: 18px;
         background: #fff;
+        z-index: 1;
       }
     }
 
     .main {
       height: 100%;
-      &.empty {
+      &.empty,
+      &.no-perm {
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .empty {
+      .empty,
+      .no-perm {
         :deep(.bk-exception-img.part-img) {
           width: 240px;
-          height: 180px;
+          height: 150px;
         }
       }
 

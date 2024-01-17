@@ -36,7 +36,7 @@
 </template>
 
 <script>
-  import { defineComponent, toRefs, computed, watchEffect, ref } from 'vue'
+  import { defineComponent, toRefs, computed } from 'vue'
   import store from '@/store'
   import { getText, getHighlightValue } from './use-item.js'
   import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
@@ -51,10 +51,14 @@
       propertyMap: {
         type: Object,
         default: () => ({})
+      },
+      propertyGroupMap: {
+        type: Object,
+        default: () => ({})
       }
     },
     setup(props) {
-      const { data, propertyMap } = toRefs(props)
+      const { data, propertyMap, propertyGroupMap } = toRefs(props)
 
       const objId = computed(() => data.value.source.bk_obj_id)
       const properties = computed(() => propertyMap.value[objId.value])
@@ -65,17 +69,7 @@
         return (classifications.find(item => item.bk_classification_id === id) || {}).bk_classification_name
       })
 
-      const propertyGroups = ref([])
-      watchEffect(async () => {
-        propertyGroups.value = await store.dispatch('objectModelFieldGroup/searchGroup', {
-          objId: objId.value,
-          config: {
-            requestId: `get_searchGroup_${objId.value}`,
-            fromCache: true,
-            cancelPrevious: true
-          }
-        })
-      })
+      const propertyGroups = computed(() => propertyGroupMap.value[objId.value])
 
       // eslint-disable-next-line max-len
       const sortProperties = computed(() => (properties.value || []).sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index))

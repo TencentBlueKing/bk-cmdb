@@ -116,6 +116,10 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				ResourceID: SysModel,
 				Actions: []CreatorRelatedAction{
 					{
+						ID:         ViewSysModel,
+						IsRequired: false,
+					},
+					{
 						ID:         EditSysModel,
 						IsRequired: false,
 					},
@@ -177,6 +181,24 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 					},
 					{
 						ID:         DeleteBusinessCustomQuery,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
+			{
+				ResourceID: FieldGroupingTemplate,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditFieldGroupingTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteFieldGroupingTemplate,
+						IsRequired: false,
+					},
+					{
+						ID:         ViewFieldGroupingTemplate,
 						IsRequired: false,
 					},
 				},

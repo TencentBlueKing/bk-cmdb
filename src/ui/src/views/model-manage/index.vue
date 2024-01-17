@@ -176,7 +176,7 @@
               :sort="false"
               :animation="200"
               :disabled="isModelSelectable"
-              draggable=".model-item"
+              draggable=".model-item-draggable"
               group="model-list"
               ghost-class="model-item-ghost"
               :data-group-id="classification.bk_classification_id"
@@ -193,56 +193,70 @@
                 :data-model-id="model.id"
                 :class="{
                   'is-paused': model['bk_ispaused'],
-                  'is-builtin': model.ispre
+                  'is-builtin': model.ispre,
+                  'model-item-draggable': hasEditAuth(model)
                 }"
-                @mouseenter="handleModelMouseEnterDebounce(model)"
               >
-                <div
-                  class="model-info"
-                  :class="{
-                    'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id)
-                  }"
-                  @click="handleModelClick(model, classification)"
-                >
-                  <div class="drag-icon"></div>
-                  <div class="model-icon">
-                    <i class="icon" :class="[model['bk_obj_icon']]"></i>
-                  </div>
-                  <div class="model-details">
-                    <p class="model-name" :title="model['bk_obj_name']">
-                      {{ model["bk_obj_name"] }}
-                    </p>
-                    <p class="model-id" :title="model['bk_obj_id']">
-                      {{ model["bk_obj_id"] }}
-                    </p>
-                  </div>
-                  <bk-checkbox
-                    v-model="modelSelectionState[model.bk_obj_id]"
-                    @change="handleModelSelectionChange(classification)"
-                    :disabled="isBuiltinModel(model)"
-                    v-bk-tooltips="{
-                      content: $t('内置模型不允许导出'),
-                      disabled: !isBuiltinModel(model)
-                    }"
-                    @click.stop.native
-                    class="model-checkbox"
-                  >
-                  </bk-checkbox>
-                </div>
-                <div
-                  v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id)"
-                  class="model-instance-count"
-                  @click="handleGoInstance(model)"
-                >
-                  <span class="count-number">
-                    <cmdb-loading
-                      :loading="!modelStatisticsSet[model.bk_obj_id] ||
-                        $loading(requestIds.statistics[model.bk_obj_id])"
-                    >
-                      {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
-                    </cmdb-loading>
-                  </span>
-                </div>
+                <cmdb-auth-mask
+                  tag="div"
+                  class="model-auth-mask"
+                  v-bind="getViewAuthMaskProps(model)">
+                  <template #default="{ disabled }">
+                    <div class="model-auth-mask-inner" @mouseenter="handleModelMouseEnterDebounce(model)">
+                      <div
+                        class="model-info"
+                        :class="{
+                          'no-instance-count': model.bk_ispaused || isNoInstanceModel(model.bk_obj_id),
+                          'noauth': disabled
+                        }"
+                        @click="handleModelClick(model, classification)"
+                      >
+                        <!-- 用于获取模型编辑权限 -->
+                        <cmdb-auth :auth="{ type: $OPERATION.U_MODEL, relation: [model.id] }"
+                          @update-auth="isPass => handleEditUpdateAuth(model, isPass)">
+                        </cmdb-auth>
+                        <div class="drag-icon"></div>
+                        <div class="model-icon">
+                          <i class="icon" :class="[model['bk_obj_icon']]"></i>
+                        </div>
+                        <div class="model-details">
+                          <p class="model-name" :title="model['bk_obj_name']">
+                            {{ model["bk_obj_name"] }}
+                          </p>
+                          <p class="model-id" :title="model['bk_obj_id']">
+                            {{ model["bk_obj_id"] }}
+                          </p>
+                        </div>
+                        <bk-checkbox
+                          v-model="modelSelectionState[model.bk_obj_id]"
+                          @change="handleModelSelectionChange(classification)"
+                          :disabled="isBuiltinModel(model)"
+                          v-bk-tooltips="{
+                            content: $t('内置模型不允许导出'),
+                            disabled: !isBuiltinModel(model)
+                          }"
+                          @click.stop.native
+                          class="model-checkbox"
+                        >
+                        </bk-checkbox>
+                      </div>
+                      <div
+                        v-if="!model.bk_ispaused && !isNoInstanceModel(model.bk_obj_id) && !disabled"
+                        class="model-instance-count"
+                        @click="handleGoInstance(model)"
+                      >
+                        <span class="count-number">
+                          <cmdb-loading
+                            :loading="!modelStatisticsSet[model.bk_obj_id] ||
+                              $loading(requestIds.statistics[model.bk_obj_id])"
+                          >
+                            {{ modelStatisticsSet[model.bk_obj_id] | instanceCount }}
+                          </cmdb-loading>
+                        </span>
+                      </div>
+                    </div>
+                  </template>
+                </cmdb-auth-mask>
               </div>
               <div class="group-empty-model"
                 v-if="classification.bk_objects.length === 0">
@@ -427,6 +441,9 @@
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, UNCATEGORIZED_GROUP_ID } from '@/dictionary/model-constants.js'
   import Bus from '@/utils/bus'
+  import { isViewAuthFreeModel } from '@/service/auth'
+  import workerTask from '@/setup/worker-task'
+
   export default {
     name: 'ModelManagement',
     filters: {
@@ -505,7 +522,9 @@
             path: '暂无相关xxx',
             resource: this.$t('模型'),
           }
-        }
+        },
+
+        editAuthResult: {}
       }
     },
     computed: {
@@ -744,6 +763,30 @@
       toggleModelList(classification) {
         this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
       },
+      getModelViewAuth(model) {
+        return { type: this.$OPERATION.R_MODEL, relation: [model.id] }
+      },
+      getViewAuthMaskProps(model) {
+        if (isViewAuthFreeModel(model)) {
+          return {
+            ignore: true
+          }
+        }
+        const auth = this.getModelViewAuth(model)
+        return {
+          auth,
+          authorized: this.isViewAuthed(auth)
+        }
+      },
+      hasViewAuth(model) {
+        return isViewAuthFreeModel(model) || this.isViewAuthed(this.getModelViewAuth(model))
+      },
+      hasEditAuth(model) {
+        return this.editAuthResult[model.id]
+      },
+      handleEditUpdateAuth(model, isPass) {
+        this.$set(this.editAuthResult, model.id, isPass)
+      },
       handleModelDragStart() {
         this.isDragging = true
       },
@@ -871,9 +914,10 @@
         this.importPaneVisible = false
         Bus.$emit('disable-customize-breadcrumbs')
       },
-      doneImport() {
+      async doneImport() {
         this.importPaneVisible = false
-        this.loadAllModels()
+        await this.loadAllModels()
+        workerTask.iam()
       },
       doubleCheckCancelImport() {
         this.$bkInfo({
@@ -1088,10 +1132,12 @@
           this.modelCreatedDialogVisible = true
           this.$http.cancel('post_searchClassificationsObjects')
           this.getModelInstanceCount(params.bk_obj_id)
-          this.loadAllModels()
           this.modelDialog.isShow = false
           this.modelDialog.groupId = ''
           this.modelSearchKey = ''
+          await this.loadAllModels()
+          // 重新获取所有模型的鉴权
+          workerTask.iam()
         } catch (error) {
           console.log(error)
         }

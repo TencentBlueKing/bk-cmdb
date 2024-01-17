@@ -23,7 +23,7 @@
 <template>
   <div class="more-action-menu">
     <slot name="append"></slot>
-    <cmdb-dot-menu color="#979BA5">
+    <cmdb-dot-menu color="#979BA5" hover-color="#63656E">
       <ul v-if="commands.length">
         <li v-for="(cmd, cmdIndex) in commands" :key="cmdIndex">
           <template v-if="cmd.isShow">
@@ -60,15 +60,28 @@
 </template>
 
 <style  lang="scss" scoped>
-  .menu-auth {
-    width: 100%;
-  }
+.menu-auth {
+  width: 100%;
+}
 .more-action-menu {
   @include space-between;
   justify-content: flex-start;
+  margin-left: 4px;
 
   .more-action-menu-option {
     font-weight: normal;
+  }
+  .dot-menu {
+    width: 20px;
+    height: 20px;
+    &:hover {
+      background: #F0F1F5;
+      border-radius: 2px;
+    }
+
+    :deep(.menu-trigger) {
+      transform: scale(.875);
+    }
   }
 }
 .dropdown-option-button {

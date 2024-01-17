@@ -199,6 +199,7 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		return
 	}
 
+	objIDs := make([]string, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute: attr,
@@ -212,6 +213,17 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		}
 		attrInfo.PropertyGroupName = grpName
 		attrs = append(attrs, attrInfo)
+		objIDs = append(objIDs, attr.ObjectID)
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
 	}
 
 	ctx.RespEntity(attrs)
@@ -270,6 +282,8 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	attrInfos := make([]*metadata.ObjAttDes, 0)
+	unique := make(map[string]struct{}, 0)
+	objIDs := make([]string, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute: attr,
@@ -283,6 +297,21 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		}
 		attrInfo.PropertyGroupName = grpName
 		attrInfos = append(attrInfos, attrInfo)
+
+		if _, ok := unique[attr.ObjectID]; !ok {
+			objIDs = append(objIDs, attr.ObjectID)
+			unique[attr.ObjectID] = struct{}{}
+		}
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
 	}
 
 	ctx.RespEntity(attrInfos)
@@ -550,6 +579,16 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 
 // ListHostModelAttribute list host model's attributes
 func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, []string{common.BKInnerObjIDHost})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	dataWithModelBizID := MapStrWithModelBizID{}
 	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
 		ctx.RespAutoError(err)

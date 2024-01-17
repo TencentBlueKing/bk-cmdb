@@ -98,6 +98,7 @@
 
 <script>
   import { mapGetters } from 'vuex'
+  import hostSearchService from '@/service/host/search'
   import debounce from 'lodash.debounce'
   import { foreignkey } from '@/filters/formatter.js'
   export default {
@@ -172,7 +173,7 @@
     methods: {
       async getModuleHost() {
         try {
-          const result = await this.$store.dispatch('hostSearch/searchHost', {
+          const result = await hostSearchService.getBizHosts({
             params: this.getParams(),
             config: {
               requestId: this.request.table,

@@ -68,7 +68,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server.Service = new(service.Service)
 
 	input := &backbone.BackboneParameter{
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: server.onTopoConfigUpdate,
 		SrvInfo:      svrInfo,

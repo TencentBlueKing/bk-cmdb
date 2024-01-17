@@ -33,7 +33,8 @@ const getters = {
     })
     return models
   },
-  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id)
+  getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id),
+  presetModels: (state, getters) => getters.models.filter(model => model.ispre)
 }
 
 const actions = {

@@ -23,6 +23,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -121,6 +122,18 @@ type FullTextSearchResp struct {
 
 	// Hits search result.
 	Hits []SearchResult `json:"hits"`
+
+	// Attributes model attributes
+	Attrs *AttrResult `json:"attrs"`
+}
+
+// AttrResult is fulltext search attributes results
+type AttrResult struct {
+	// Attributes model attributes
+	Attributes map[string][]metadata.Attribute `json:"attributes"`
+
+	// AttrGroups model attribute groups
+	AttrGroups map[string][]metadata.Group `json:"groups"`
 }
 
 // Page search page settings.
@@ -726,13 +739,19 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextClientNotInitialized))
 		return
 	}
-	// decode input parameter.
+
+	authRes := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.FulltextSearch, Action: meta.Find}}
+	if authResp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
 	request := FullTextSearchReq{}
 	if err := ctx.DecodeInto(&request); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
-	// validate request data.
+
 	if err := request.Validate(); err != nil {
 		blog.Errorf("validate fulltext search input parameters failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()))
@@ -788,15 +807,78 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	response.Aggregations = aggregations
 
 	// metadata search.
-	metadata, err := s.fullTextMetadata(ctx, mainSearchResult.Hits.Hits, request)
+	metadatas, err := s.fullTextMetadata(ctx, mainSearchResult.Hits.Hits, request)
 	if err != nil {
 		blog.Errorf("fulltext metadata search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
-	response.Hits = metadata
+	response.Hits = metadatas
+
+	response.Attrs, err = s.getObjAttrs(ctx.Kit, metadatas)
+	if err != nil {
+		blog.Errorf("get object attributes failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
+		return
+	}
+
 	ctx.RespEntity(response)
 	return
+}
+
+func (s *Service) getObjAttrs(kit *rest.Kit, hits []SearchResult) (*AttrResult, error) {
+	objIDs := make([]string, 0)
+	uniqueMap := make(map[string]struct{})
+	objIDsForGroup := make([]string, 0)
+	uniqueMapForGroup := make(map[string]struct{})
+
+	for _, val := range hits {
+		if _, ok := uniqueMap[val.Key]; !ok {
+			uniqueMap[val.Key] = struct{}{}
+			objIDs = append(objIDs, val.Key)
+		}
+
+		_, ok := uniqueMapForGroup[val.Key]
+		if !ok && val.Kind == metadata.DataKindModel {
+			uniqueMapForGroup[val.Key] = struct{}{}
+			objIDsForGroup = append(objIDsForGroup, val.Key)
+		}
+	}
+
+	// find attributes
+	queryCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs},
+		},
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	resp, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(kit.Ctx, kit.Header, queryCond)
+	if err != nil {
+		return nil, err
+	}
+
+	attrs := make(map[string][]metadata.Attribute)
+	for _, attr := range resp.Info {
+		attrs[attr.ObjectID] = append(attrs[attr.ObjectID], attr)
+	}
+
+	// find attribute groups
+	groups := make(map[string][]metadata.Group)
+	for _, objID := range objIDsForGroup {
+		group, err := s.Logics.GroupOperation().FindGroupByObject(kit, objID, mapstr.MapStr{}, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		groups[objID] = group
+	}
+
+	return &AttrResult{
+		Attributes: attrs,
+		AttrGroups: groups,
+	}, nil
 }
 
 // setHit get highlight words.

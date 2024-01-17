@@ -350,9 +350,14 @@ const (
 	unLockHostPattern                     = "/api/v3/host/lock"
 	queryHostLockPattern                  = "/api/v3/host/lock/search"
 
-	// used in sync framework.
-	// moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern  = "/api/v3/hosts/search"
+	// findHostsWithBizPattern only for ui.
+	findHostsWithBizPattern = "/api/v3/findmany/hosts/search/with_biz"
+
+	// findHostsForResourcePattern only for ui.
+	findHostsForResourcePattern = "/api/v3/findmany/hosts/search/resource"
+
+	// find host for connection relation, unauthenticated, **only for ui**
+	findHostsWithoutBizPattern     = "/api/v3/findmany/hosts/search/noauth"
 	findBizHostsWithoutAppPattern  = "/api/v3/hosts/list_hosts_without_app"
 	findResourcePoolHostsPattern   = "/api/v3/hosts/list_resource_pool_hosts"
 	findHostsDetailsPattern        = "/api/v3/hosts/search/asstdetail"
@@ -360,8 +365,7 @@ const (
 	updateHostPropertyBatchPattern = "/api/v3/hosts/property/batch"
 	cloneHostPropertyBatchPattern  = "/api/v3/hosts/property/clone"
 
-	findHostRelationWithObjInstPattern = "/api/v3/findmany/hosts/relation/with_topo"
-	listHostDetailAndTopologyPattern   = "/api/v3/findmany/hosts/detail_topo"
+	listHostDetailAndTopologyPattern = "/api/v3/findmany/hosts/detail_topo"
 
 	findHostsServiceTemplatesPattern = "/api/v3/findmany/hosts/service_template"
 
@@ -383,15 +387,14 @@ var (
 
 	// NOCC:tosa/linelength(忽略长度)
 	transferHostWithAutoClearServiceInstanceRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/?$")
+
 	// NOCC:tosa/linelength(忽略长度)
 	transferHostWithAutoClearServiceInstancePreviewRegex = regexp.MustCompile("^/api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/[0-9]+/preview/?$")
 
 	countHostByTopoNodeRegexp = regexp.MustCompile(`^/api/v3/host/count_by_topo_node/bk_biz_id/[0-9]+$`)
 
-	findHostsByServiceTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_service_templates/biz/\d+$`)
-	findHostsBySetTemplatesRegex     = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
-	findHostModuleRelationsRegex     = regexp.MustCompile(`^/api/v3/findmany/module_relation/bk_biz_id/[0-9]+/?$`)
-	findHostsByTopoRegex             = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
+	findHostsBySetTemplatesRegex = regexp.MustCompile(`^/api/v3/findmany/hosts/by_set_templates/biz/\d+$`)
+	findHostsByTopoRegex         = regexp.MustCompile(`^/api/v3/findmany/hosts/by_topo/biz/\d+$`)
 
 	// find host by biz set regex, authorize by biz set access permission, **only for ui**
 	findHostsByBizSetPattern = regexp.MustCompile(`^/api/v3/findmany/hosts/biz_set/[0-9]+/?$`)
@@ -413,60 +416,6 @@ func (ps *parseStream) host() *parseStream {
 				},
 			},
 		}
-		return ps
-	}
-
-	if ps.hitRegexp(findHostsByServiceTemplatesRegex, http.MethodPost) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find hosts by service templates, but got invalid business id: %s",
-				ps.RequestCtx.Elements[6])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	if ps.hitRegexp(findHostModuleRelationsRegex, http.MethodPost) {
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find host module relations, but got invalid business id: %s",
-				ps.RequestCtx.Elements[5])
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find host relations with custom object instances
-	if ps.hitPattern(findHostRelationWithObjInstPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.FindMany,
-				},
-			},
-		}
-		blog.Infof("hit auth, url: %s rid: %s", ps.RequestCtx.URI, ps.RequestCtx.Rid)
 		return ps
 	}
 
@@ -498,7 +447,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -518,7 +467,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -538,7 +487,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -684,8 +633,8 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// find hosts with condition operation.
-	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
+	// find hosts for home page with condition operation.
+	if ps.hitPattern(findHostsWithoutBizPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err
@@ -694,6 +643,40 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// find hosts with condition operation.
+	if ps.hitPattern(findHostsWithBizPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	// find hosts with for resource pool only for ui.
+	if ps.hitPattern(findHostsForResourcePattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -768,7 +751,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -789,7 +772,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -828,7 +811,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}

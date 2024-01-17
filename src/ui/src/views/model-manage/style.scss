@@ -207,6 +207,16 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
   width: 100%;
   align-content: flex-start;
 
+  &.is-empty {
+    display: block;
+  }
+
+  .model-auth-mask,
+  .model-auth-mask-inner {
+    display: flex;
+    width: 100%;
+  }
+
   .model-item {
     display: flex;
     height: $modelItemHeight;
@@ -239,8 +249,13 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
         }
       }
 
-      &:hover .model-icon{
-        background-color: #fff;
+      &:hover {
+        .model-icon {
+          background-color: #fff;
+        }
+        .model-info {
+          background-color: #eff5ff;
+        }
       }
     }
 
@@ -266,9 +281,19 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       background-color: #f0f1f5;
     }
 
+    &.model-item-draggable {
+      .model-info {
+        &:hover {
+          .drag-icon {
+            visibility: visible;
+          }
+        }
+      }
+    }
+
     .model-info {
       flex: 0 1 auto;
-      width: calc(100% - $modelItemHeight);
+      width: 100%;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -276,9 +301,6 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
 
       &:hover {
         background-color: #eff5ff;
-        .drag-icon {
-          visibility: visible;
-        }
       }
 
       @at-root .is-dragging &:hover {
@@ -292,6 +314,11 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
       &.no-instance-count {
         border-radius: $modelItemRadius;
         width: 100%;
+      }
+      &.noauth {
+        .model-name {
+          color: $grayColor;
+        }
       }
 
       .drag-icon {
@@ -324,7 +351,7 @@ $modelManagementHeaderHeight: $modelOptionsHeight + $topTipsHeight + $topTipsMar
     }
 
     .model-details {
-      margin-left: 11px;
+      margin: 0 10px;
       overflow: hidden;
     }
 

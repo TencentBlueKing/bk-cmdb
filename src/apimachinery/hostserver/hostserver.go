@@ -71,8 +71,10 @@ type HostServerClientInterface interface {
 		resp *metadata.Response, err error)
 	MoveSetHost2IdleModule(ctx context.Context, h http.Header, dat *metadata.SetHostConfigParams) (
 		resp *metadata.Response, err error)
-	SearchHost(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.SearchHostResult,
-		err error)
+	SearchHostWithNoAuth(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
+		resp *metadata.SearchHostResult, err error)
+	SearchHostWithBiz(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
+		resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
 		SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)

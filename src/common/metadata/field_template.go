@@ -951,3 +951,9 @@ func (option *ListFieldTmplModelStatusOption) Validate() ccErr.RawErrorInfo {
 	}
 	return ccErr.RawErrorInfo{}
 }
+
+// CountFieldTemplateObjResp count field templates related objects response
+type CountFieldTemplateObjResp struct {
+	BaseResp `json:",inline"`
+	Data     []FieldTmplResCount `json:"data"`
+}

@@ -66,11 +66,13 @@
           </div>
         </div>
       </div>
-      <div v-show="!isEditing" class="editable-field-edit-button">
+      <div v-show="!isEditing" :class="['editable-field-edit-button', { disabled }]"
+        v-bk-tooltips="{ disabled: !hasPerm || !disabled, content: disabledTips }">
         <cmdb-auth
           tag="i"
           class="icon-cc-edit-shape"
           :auth="auth"
+          @update-auth="handleUpdateAuth"
           @click="edit">
         </cmdb-auth>
       </div>
@@ -141,6 +143,14 @@
       buttonSize: {
         type: String,
         default: '14px'
+      },
+      disabled: {
+        type: Boolean,
+        default: false
+      },
+      disabledTips: {
+        type: String,
+        default: ''
       }
     },
     setup(props, { emit }) {
@@ -151,6 +161,7 @@
       const valueRef = ref(props.value)
       const validator = new Validator()
       const isConfirming = ref(false)
+      const hasPerm = ref(false)
 
       watch(
         valueRef, (val) => {
@@ -166,6 +177,9 @@
       })
 
       const edit = () => {
+        if (props.disabled) {
+          return
+        }
         isEditing.value = true
         emit('update:editing', true)
       }
@@ -208,6 +222,10 @@
         isError.value = false
       }
 
+      const handleUpdateAuth = (isPass) => {
+        hasPerm.value = isPass
+      }
+
       // 针对 bk-select 的特殊处理，避免点击下拉区域时触发失焦退出编辑
       const clickOutSideMiddleware = (event) => {
         const path = event.composedPath ? event.composedPath() : event.path
@@ -240,11 +258,13 @@
         isConfirming,
         innerValue,
         errorText,
+        hasPerm,
         edit,
         confirmEdit,
         handleInputChange,
         handleClickOutSide,
-        clickOutSideMiddleware
+        clickOutSideMiddleware,
+        handleUpdateAuth
       }
     },
   })
@@ -316,7 +336,7 @@ $restWidth: 10px;
     color: #979BA5;
     cursor: pointer;
 
-    &:hover {
+    &:not(.disabled):hover {
       color: $primaryColor;
     }
   }
