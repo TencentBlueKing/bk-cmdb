@@ -34,8 +34,9 @@
               class="menu-auth"
             >
               <dropdown-option-button
+                slot-scope="{ disabled }"
                 class="more-action-menu-option"
-                :disabled="cmd.disabled"
+                :disabled="disabled"
                 @click="cmd.handler"
                 v-bk-tooltips="$t(cmd.tips)"
               >

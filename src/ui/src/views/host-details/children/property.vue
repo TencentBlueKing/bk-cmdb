@@ -50,6 +50,7 @@
               <cmdb-property-value
                 :ref="`property-value-${property.id}`"
                 :value="host[property.bk_property_id]"
+                :is-show-overflow-tips="true"
                 :property="property">
               </cmdb-property-value>
             </span>

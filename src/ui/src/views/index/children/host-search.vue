@@ -251,7 +251,9 @@
         this.ipEditableBlock.clear()
         FilterForm.show({
           type: 'index',
-          searchFilter: (allCondition) => {
+          icon: 'icon-plus-circle',
+          conditionText: '添加',
+          searchAction: (allCondition) => {
             const { IP, condition } = allCondition
             FilterStore.setIP(IP)
             const query = FilterStore.getQuery(condition)

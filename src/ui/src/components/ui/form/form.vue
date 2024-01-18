@@ -113,6 +113,7 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
 
   export default {
     name: 'cmdb-form',
@@ -175,14 +176,15 @@
       changedValues() {
         const changedValues = {}
         Object.keys(this.values).forEach((propertyId) => {
-          if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
+          if (!isEqual(this.values[propertyId], this.refrenceValues[propertyId])) {
             changedValues[propertyId] = this.values[propertyId]
           }
         })
         return changedValues
       },
       hasChange() {
-        return !!Object.keys(this.changedValues).length
+        return (!!Object.keys(this.changedValues).length)
+          || (Object.keys(this.inst).length !== Object.keys(this.values).length)
       },
       groupedProperties() {
         return this.$groupedProperties.map(properties => properties.filter((property) => {
