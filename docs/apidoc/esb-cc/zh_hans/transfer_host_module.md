@@ -1,6 +1,6 @@
 ### 功能描述
 
-业务内主机转移模块
+业务内主机转移模块(权限：服务实例编辑权限)
 
 ### 请求参数
 
@@ -14,7 +14,7 @@
 | bk_biz_id     |  int     | 是     | 业务ID |
 | bk_host_id    |  array   | 是     | 主机ID |
 | bk_module_id  |  array   | 是     | 模块ID |
-| is_increment  |  bool    | 是     | 覆盖或者追加,会删除原有关系. true是更新，false是覆盖 |
+| is_increment  |  bool    | 否  | 覆盖或者追加,会删除原有关系. true是追加，false是覆盖，不填默认是false |
 
 ### 请求参数示例
 
@@ -44,10 +44,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
 ### 返回结果参数说明

@@ -26,7 +26,7 @@
       this.confirm()
     }
   }">
-    <bk-button class="form-condition-button" :style="{ marginTop: selected.length ? '10px' : 0 }"
+    <bk-button class="form-condition-button" :style="{ marginTop: selected.length ? '5px' : 0 }"
       :icon="icon"
       :text="true"
       :disabled="disabled"
@@ -169,7 +169,7 @@
     display: flex;
     align-items: center;
     .bk-icon {
-      top: 0;
+      line-height: normal;
     }
   }
 }

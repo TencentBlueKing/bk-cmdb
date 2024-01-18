@@ -1,6 +1,6 @@
 ### 功能描述
 
-获取主机基础信息详情
+获取主机基础信息详情(权限：主机池主机查看权限)
 
 ### 请求参数
 
@@ -33,13 +33,14 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "data": [
         {
             "bk_property_id": "bk_host_name",
             "bk_property_name": "host name",
             "bk_property_value": "centos7"
         },
+        ......
         {
             "bk_property_id": "bk_host_id",
             "bk_property_name": "host ID",
@@ -70,3 +71,6 @@
 | bk_property_id    | string     | 属性id |
 | bk_property_name  | string     | 属性名称 |
 | bk_property_value | string     | 属性值 |
+
+**注意**
+- 如果主机的属性字段为表格类型，返回的bk_property_value为null，要查询表格类型字段的值，请使用list_quoted_inst接口，文档链接：https://github.com/TencentBlueKing/bk-cmdb/blob/v3.12.x/docs/apidoc/cc/zh_hans/list_quoted_inst.md

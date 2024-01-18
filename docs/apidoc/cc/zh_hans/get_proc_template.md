@@ -10,7 +10,7 @@
 
 | 字段                 |  类型      | 必选	   |  描述                 |
 |----------------------|------------|--------|-----------------------|  
-| bk_biz_id            | int        |是     | 业务ID        |
+| bk_biz_id            | int        |否     | 业务ID        |
 | process_template_id  | int        |是     | 进程模板ID     |
 
 ### 请求参数示例
@@ -22,7 +22,7 @@
   "bk_username": "xxx",
   "bk_token": "xxx",
   "bk_biz_id": 1,
-  "process_template_id": 49,
+  "process_template_id": 49
 }
 ```
 
@@ -180,7 +180,6 @@
 | 字段|类型|说明|
 |---|---|---|
 |auto_start|bool|是否自动拉起|
-|auto_time_gap|int|拉起间隔|
 |bk_biz_id|int|业务id|
 |bk_func_id|string|功能ID|
 |bk_func_name|string|进程名称|

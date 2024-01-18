@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询业务集拓扑(v3.10.12+)
+查询业务集拓扑(版本：v3.10.12+，权限：业务集访问)
 
 ### 请求参数
 
@@ -34,7 +34,7 @@
 {
   "result":true,
   "code":0,
-  "message":"",
+  "message":"success",
   "permission":null,
   "data":[
     {

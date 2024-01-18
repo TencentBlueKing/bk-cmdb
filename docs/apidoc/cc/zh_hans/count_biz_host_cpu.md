@@ -1,6 +1,6 @@
 ### 功能描述
 
-统计每个业务下主机CPU数量 (成本管理专用接口，v3.8.17+/v3.10.18+)
+统计每个业务下主机CPU数量 (成本管理专用接口，v3.8.17+/v3.10.18+，权限：全局设置权限)
 
 ### 请求参数
 
@@ -43,7 +43,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": [

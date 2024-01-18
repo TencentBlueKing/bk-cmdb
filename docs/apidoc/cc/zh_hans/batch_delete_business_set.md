@@ -1,6 +1,6 @@
 ### 功能描述
 
-删除业务集(v3.10.12+)
+删除业务集(版本：v3.10.12+，权限：业务集删除权限)
 
 ### 请求参数
 
@@ -33,7 +33,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission":null,
     "data": {},
     "request_id": "dsda1122adasadadada2222"

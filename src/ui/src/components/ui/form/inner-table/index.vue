@@ -51,11 +51,16 @@
 <script setup>
   import { computed, getCurrentInstance, ref, watch } from 'vue'
   import { t } from '@/i18n'
+  import RouterQuery from '@/router/query'
   import { clone, getPropertyDefaultValue } from '@/utils/tools'
   import { $success, $error } from '@/magicbox/index.js'
   import IconTextButton from '@/components/ui/button/icon-text-button.vue'
   import DataRow from './data-row.vue'
   import instanceTableService from '@/service/instance/table'
+  import {
+    MENU_BUSINESS
+  } from '@/dictionary/menu-symbol'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
   const { proxy } = getCurrentInstance()
   const props = defineProps({
@@ -111,6 +116,27 @@
     }
   })
   const emit = defineEmits(['input'])
+
+  const route = computed(() => RouterQuery.route)
+
+  const businessId = computed(() => {
+    // 传递了业务id则优先使用，在主机详情的场景中会明确传递
+    if (props.bizId) {
+      return props.bizId
+    }
+
+    // 业务视图下查看
+    if (route.value?.matched?.[0]?.name === MENU_BUSINESS) {
+      return parseInt(route?.value?.params?.bizId, 10)
+    }
+
+    // 资源-业务，查看业务时必传业务id
+    if (props.objId === BUILTIN_MODELS.BUSINESS) {
+      return props.instanceId
+    }
+
+    return undefined
+  })
 
   const defaultRowData = ref([])
   const newRowData = () => {
@@ -169,7 +195,7 @@
 
     isLoading.value = true
     const { info = [] } = await instanceTableService.find({
-      bk_biz_id: props.bizId,
+      bk_biz_id: businessId.value,
       bk_obj_id: props.objId,
       bk_property_id: props.property.bk_property_id,
       filter: {
