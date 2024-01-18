@@ -26,11 +26,11 @@
 
 #### rules
 
-| 名称  | 类型 |必填| 默认值 | 说明 | 描述|
-| ---  | ---  | --- |---  | --- | ---| 
-| field|string|是|无|字段名 |字段名|
-| operator|string|是|无|操作符 |可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between,contains,exists,not_exists; 其中contains为正则匹配，大小写不敏感, exists为过滤某字段存在的条件, not_exists为过滤某字段不存在的条件  |
-| value| - | 否| 无|操作数|不同的operator对应不同的value格式|
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
