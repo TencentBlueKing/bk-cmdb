@@ -8,47 +8,30 @@
 
 #### 接口参数
 
-| 字段                  |  类型      | 必选   |  描述                                                    |
-|-----------------------|------------|--------|----------------------------------------------------------|
-| bk_obj_id             | string     | 是     | 模型ID                                                   |                                              |
-| bk_property_id        | string     | 是     | 模型的属性ID                                             |
-| bk_property_name      | string     | 是     | 模型属性名，用于展示                                     |
-| bk_property_type      | string     | 是     | 定义的属性字段用于存储数据的数据类型,可取值范围（singlechar,longchar,int,enum,date,time,objuser,enummulti,enumquote,timezone,bool,organization）|
-| bk_biz_id             | int        | 是     | 业务id                                                 |
-| creator               | string     | 否     | 数据的创建者                                             |
-| description           | string     | 否     | 数据的描述信息                                           |
-| editable              | bool       | 否     | 表明数据是否可编辑                                       |
-| isonly                | bool       | 否     | 表明唯一性                                               |
-| ispre                 | bool       | 否     | true:预置字段,false:非内置字段                           |
-| isreadonly            | bool       | 否     | true:只读，false:非只读                                  |
-| isrequired            | bool       | 否     | true:必填，false:可选                                    |
-| option                | string     | 否     |用户自定义内容，存储的内容及格式由调用方决定，以数字类型为例（{"min":"1","max":"2"}）|
-| unit                  | string     | 否     | 单位                                                     |
-| placeholder           | string     | 否     | 占位符                                                   |
-| bk_property_group     | string     | 否     | 字段分栏的名字                                           |
-| bk_asst_obj_id        | string     | 否     | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置                                                                  |
-| default           | object | 否   | 给属性添加默认值，default的值根据字段的实际类型进行传递 |
+| 字段                  |  类型      | 必选   | 描述                                                                                                                        |
+|-----------------------|------------|--------|---------------------------------------------------------------------------------------------------------------------------|
+| bk_obj_id             | string     | 是     | 模型ID                                                                                                                      |
+| bk_property_id        | string     | 是     | 模型的属性ID                                                                                                                   |
+| bk_property_name      | string     | 是     | 模型属性名，用于展示                                                                                                                |
+| bk_property_type      | string     | 是     | 定义的属性字段用于存储数据的数据类型,可取值范围（singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织)） |
+| bk_biz_id             | int        | 是     | 业务id                                                                                                                      |
+| creator               | string     | 否     | 数据的创建者                                                                                                                    |
+| description           | string     | 否     | 数据的描述信息                                                                                                                   |
+| editable              | bool       | 否     | 表明数据是否可编辑                                                                                                                 |
+| isonly                | bool       | 否     | 表明唯一性                                                                                                                     |
+| ispre                 | bool       | 否     | true:预置字段,false:非内置字段                                                                                                     |
+| isreadonly            | bool       | 否     | true:只读，false:非只读                                                                                                         |
+| isrequired            | bool       | 否     | true:必填，false:可选                                                                                                          |
+| option                | string     | 否     | 用户自定义内容，存储的内容及格式由调用方决定，以数字类型为例（{"min":"1","max":"2"}）                                                                     |
+| unit                  | string     | 否     | 单位                                                                                                                        |
+| placeholder           | string     | 否     | 占位符                                                                                                                       |
+| bk_property_group     | string     | 否     | 字段分栏的名字                                                                                                                   |
+| bk_asst_obj_id        | string     | 否     | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置                                                                                            |
+| default           | object | 否   | 给属性添加默认值，default的值根据字段的实际类型进行传递                                                                                           |
 
 **注意：**
 - create_biz_custom_field接口用于创建的业务自定义字段，仅在业务内生效，业务自定义字段与其它模型字段的区别是业务自定义字段的bk_biz_id为实际的业务id，其它模型字段的bk_biz_id为0；
 - 调用该接口时，传参中bk_biz_id为实际业务id，bk_obj_id只能是集群（set）、模块（module）和主机（host）
-
-#### bk_property_type
-
-| 标识       | 名字     |
-|------------|----------|
-| singlechar | 短字符   |
-| longchar   | 长字符   |
-| int        | 整形     |
-| enum       | 枚举类型 |
-| date       | 日期     |
-| time       | 时间     |
-| objuser    | 用户     |
-| enummulti | 枚举(多选) |
-| enumquote | 枚举(引用) |
-| timezone | 时区  |
-| bool     | 布尔  |
-| organization | 组织  |
 
 ### 请求参数示例
 
@@ -149,24 +132,8 @@
 | bk_supplier_account | string       | 开发商账号                                                 |
 | bk_property_id      | string       | 模型的属性ID                                               |
 | bk_property_name    | string       | 模型属性名，用于展示                                       |
-| bk_property_type    | string       | 定义的属性字段用于存储数据的数据类型 （singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
+| bk_property_type    | string       | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织))|
 | bk_asst_obj_id      | string       | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置|
 | create_time         | string | 创建时间     |
 | last_time           | string | 更新时间     |
 | id| int | 主键id |
-
-#### bk_property_type
-
-| 标识       | 名字     |
-|------------|----------|
-| singlechar | 短字符   |
-| longchar   | 长字符   |
-| int        | 整形     |
-| enum       | 枚举类型 |
-| date       | 日期     |
-| time       | 时间     |
-| objuser    | 用户     |
-| singleasst | 单关联   |
-| multiasst  | 多关联   |
-| timezone   | 时区     |
-| bool       | 布尔     |

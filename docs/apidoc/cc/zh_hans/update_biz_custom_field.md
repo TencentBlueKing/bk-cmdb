@@ -19,28 +19,11 @@
 | bk_property_group   | string  | 否     | 字段分栏的名字                          |
 | option              | object  | 否     | 用户自定义内容，存储的内容及格式由调用方决定, 以数字内容为例（{"min":1,"max":2}）|
 | bk_property_name    | string  | 否     | 模型属性名，用于展示                    |
-| bk_property_type    | string  | 否     | 定义的属性字段用于存储数据的数据类型（singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
 | unit                | string  | 否     | 单位                                    |
+| bk_property_type    | string       | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织))|
 | placeholder         | string  | 否     | 占位符                                  |
 | bk_asst_obj_id      | string  | 否     | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置 |
 | default      | 随bk_property_type字段类型 | 否     | 默认值                                                                              |
-
-#### bk_property_type
-
-| 标识       | 名字     |
-|------------|----------|
-| singlechar | 短字符   |
-| longchar   | 长字符   |
-| int        | 整形     |
-| enum       | 枚举类型 |
-| date       | 日期     |
-| time       | 时间     |
-| objuser    | 用户     |
-| timezone   | 时区     |
-| bool       | 布尔     |
-| enummulti       | 枚举多选类型 |
-| innertable       | 表格类型   |
-| float       | 浮点类型   |
 
 
 ### 请求参数示例

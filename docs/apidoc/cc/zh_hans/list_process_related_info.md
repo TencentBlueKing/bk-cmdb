@@ -15,7 +15,7 @@
 | bk_biz_id  | int64       | 是  | 业务ID |
 |bk_set_ids|int64 array| 否  |集群ID列表，若为空，则代表任意一集群|
 |bk_module_ids|int64 array| 否  |模块ID列表，若为空，则代表任意一模块|
-|ids|int64 array| 否  |服务实例ID列表，若为空，则代表任意一实例||
+|ids|int64 array| 否  |服务实例ID列表，若为空，则代表任意一实例|
 |bk_process_names|string array| 否  |进程名称列表，若为空，则代表任意一进程。|
 |bk_process_ids|int64 array| 否  |进程ID列表，若为空，则代表任一进程|
 |fields|string array| 否  |进程属性列表，控制返回结果的进程实例信息里有哪些字段，能够加速接口请求和减少网络流量传输<br>为空时返回进程所有字段,bk_process_id,bk_process_name|
