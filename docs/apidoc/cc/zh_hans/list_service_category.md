@@ -20,7 +20,7 @@
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "bk_biz_id": 1,
+  "bk_biz_id": 1
 }
 ```
 
@@ -37,7 +37,7 @@
     "count": 20,
     "info": [
       {
-	"bk_biz_id": 0,
+        "bk_biz_id": 0,
         "id": 16,
         "name": "Apache",
         "bk_root_id": 14,
@@ -46,7 +46,7 @@
         "is_built_in": true
       },
       {
-	"bk_biz_id": 0,
+        "bk_biz_id": 0,
         "id": 19,
         "name": "Ceph",
         "bk_root_id": 18,
@@ -55,7 +55,7 @@
         "is_built_in": true
       },
       {
-	"bk_biz_id": 1,
+        "bk_biz_id": 1,
         "id": 1,
         "name": "Default",
         "bk_root_id": 1,

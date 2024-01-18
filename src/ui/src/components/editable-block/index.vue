@@ -32,8 +32,6 @@
 <script setup>
   import { reactive, ref, onMounted } from 'vue'
   import { LT_REGEXP, ALL_PROBABLY_IP, AREA_IPV6_IP, AREA_IPV4_IP, IPV6_IP, IPV4_IP } from '@/dictionary/regexp'
-  import { $error } from '@/magicbox'
-  import { t } from '@/i18n'
   import { getCursorPosition, setCursorPosition } from '@/utils/util'
 
   const props = defineProps({
@@ -61,6 +59,10 @@
       type: String,
       default: 'search-btn'
     },
+    blurParse: {
+      type: Boolean,
+      default: true
+    }
   })
 
   const emit = defineEmits(['keydown', 'focus', 'blur', 'updateValue'])
@@ -69,7 +71,6 @@
     setInputHtml(searchContent.value)
   })
 
-  const hasIP = ref(false)
   const searchInput = ref(null)
   const searchContent = ref(props.value)
   const pasteData = reactive({
@@ -139,7 +140,7 @@
     setCursorPosition(searchInput.value, cursor)
   }
 
-  const parseIP = (type = 'blur') => {
+  const parseIP = () => {
     initPasteData()
     const propablyIP = searchContent.value.match(ALL_PROBABLY_IP)
     const ipList = new Set()
@@ -149,12 +150,11 @@
         matched.forEach(ip => ipList.add(ip))
       }
     })
-    if (!ipList.size && searchContent.value && type === 'search') {
-      hasIP.value = false
-      $error(t('未解析出主机对象，请修改输入词'))
+
+    // 如果一个IP都没有并且blurParse为false，则内容不解析，保持原状
+    if (!(ipList.size || props.blurParse)) {
       return
     }
-    hasIP.value = true
     const newHtml = Array.from(ipList).join('\n')
     setSearchContent(newHtml)
     setInputHtml(newHtml)
@@ -165,9 +165,7 @@
     pasteData.length = val.length
   }
   const handleBlur = (event) => {
-    const classList = Array.from(event?.relatedTarget?.classList ?? [])
-    const type = classList.includes(props.noBlurClass) ? 'search' : 'blur'
-    parseIP(type)
+    parseIP()
     emit('blur', event)
   }
   const handleInput = () => {
@@ -200,7 +198,7 @@
     const isMac = /macintosh|mac os x/i.test(agent)
     const modifierKey = isMac ? metaKey : ctrlKey
     if (!modifierKey && !shiftKey) {
-      parseIP('search')
+      parseIP()
       emit('search')
       event.preventDefault()
     }
@@ -212,7 +210,6 @@
   defineExpose({
     focus,
     searchContent,
-    hasIP,
     clear: handleClear
   })
 </script>
