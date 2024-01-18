@@ -76,7 +76,7 @@ type HostIdentifier struct {
 	ctx                 context.Context
 	gseTaskServerClient *client.GseTaskServerClient
 	gseApiServerClient  *client.GseApiServerClient
-	gseApiGWClient      gse.ClientI
+	gseApiGWClient      gse.GseClientInterface
 	apiVersion          types.ApiVersion
 	winFileConfig       *FileConf
 	linuxFileConfig     *FileConf
@@ -87,7 +87,7 @@ type HostIdentifier struct {
 
 // NewHostIdentifier new HostIdentifier struct
 func NewHostIdentifier(ctx context.Context, redisCli redis.Client, engine *backbone.Engine, conf *HostIdentifierConf,
-	apiGWClient gse.ClientI, taskClient *client.GseTaskServerClient,
+	apiGWClient gse.GseClientInterface, taskClient *client.GseTaskServerClient,
 	apiClient *client.GseApiServerClient, apiVersion types.ApiVersion) (*HostIdentifier, error) {
 	if apiGWClient == nil && (apiClient == nil || taskClient == nil) {
 		return nil, errors.New("connect to gse client is missing")

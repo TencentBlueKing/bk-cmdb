@@ -37,23 +37,23 @@
   "request_id": "e43da4ef221746868dc4c837d36f3807",
   "data": {
     "bk_set_id": 2,
-    "bk_set_name": "空闲机池",
+    "bk_set_name": "idle pool",
     "module": [
       {
         "bk_module_id": 3,
-        "bk_module_name": "空闲机",
+        "bk_module_name": "idle host",
         "default": 1,
         "host_apply_enabled": false
       },
       {
         "bk_module_id": 4,
-        "bk_module_name": "故障机",
+        "bk_module_name": "fault host",
         "default": 2,
         "host_apply_enabled": false
       },
       {
         "bk_module_id": 5,
-        "bk_module_name": "待回收",
+        "bk_module_name": "recycle host",
         "default": 3,
         "host_apply_enabled": false
       }
@@ -79,6 +79,7 @@
 |-----------|------------|------------|
 |bk_set_id | int64 | 空闲机, 故障机和待回收模块所属的set的实例ID |
 |bk_set_name | string |空闲机, 故障机和待回收模块所属的set的实例名称|
+|module | array  | 空闲机, 故障机和待回收模块信息          |
 
 #### module说明
 | 字段      |  类型      |  描述      |

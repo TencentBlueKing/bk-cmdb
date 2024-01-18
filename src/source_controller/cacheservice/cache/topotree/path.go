@@ -153,7 +153,7 @@ func (t *TopologyTree) SearchNodePath(ctx context.Context, opt *SearchNodePathOp
 func (t *TopologyTree) genModuleParentPaths(ctx context.Context, biz int64, supplierAccount string, revTopo []string,
 	moduleIDs []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	moduleMap, setList, err := t.searchModules(ctx, biz, moduleIDs)
 	if err != nil {
@@ -201,7 +201,7 @@ func (t *TopologyTree) genModuleParentPaths(ctx context.Context, biz int64, supp
 func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, supplierAccount string, revTopo []string,
 	previousList []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	nextNode, err := nextNode("set", revTopo)
 	if err != nil {
@@ -264,7 +264,7 @@ func (t *TopologyTree) genSetParentPaths(ctx context.Context, biz int64, supplie
 func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prevNode, supplierAccount string,
 	revTopo []string, previousList []int64) (names map[int64]string, paths map[int64][]Node, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	bizDetail, err := t.bizDetail(ctx, biz)
 	if err != nil {
@@ -361,7 +361,7 @@ func (t *TopologyTree) genCustomParentPaths(ctx context.Context, biz int64, prev
 func (t *TopologyTree) searchModules(ctx context.Context, biz int64, moduleIDs []int64) (
 	moduleMap map[int64]*module, setList []int64, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	ms, err := t.bizCache.ListModuleDetails(ctx, moduleIDs)
 	if err != nil {
@@ -397,7 +397,7 @@ func (t *TopologyTree) searchModules(ctx context.Context, biz int64, moduleIDs [
 func (t *TopologyTree) searchSets(ctx context.Context, biz int64, setIDs []int64) (
 	setMap map[int64]*set, parentList []int64, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	setDetails, err := t.bizCache.ListSetDetails(ctx, setIDs)
 	if err != nil {
@@ -431,7 +431,7 @@ func (t *TopologyTree) searchSets(ctx context.Context, biz int64, setIDs []int64
 func (t *TopologyTree) searchCustomInstances(ctx context.Context, object, supplierAccount string, instIDs []int64) (
 	instMap map[int64]*custom, parentList []int64, err error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	instances, err := t.bizCache.ListCustomLevelDetail(ctx, object, supplierAccount, instIDs)
 	if err != nil {
@@ -457,7 +457,7 @@ func (t *TopologyTree) searchCustomInstances(ctx context.Context, object, suppli
 func (t *TopologyTree) bizDetail(ctx context.Context, bizID int64) (
 	*biz, error) {
 
-	rid := ctx.Value(common.ContextRequestIDField)
+	rid := ctx.Value(common.BKHTTPCCRequestID)
 
 	business, err := t.bizCache.GetBusiness(ctx, bizID)
 	if err != nil {

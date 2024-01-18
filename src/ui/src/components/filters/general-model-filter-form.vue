@@ -245,7 +245,7 @@
     }
     .item-content-wrapper {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
     }
     .item-operator {
       flex: 110px 0 0;

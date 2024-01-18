@@ -68,6 +68,9 @@
 <style lang="scss" scoped>
     .clipboard-trigger{
         padding: 0 16px;
+        &.is-disabled {
+            overflow: hidden;
+        }
         .icon-angle-down {
             font-size: 20px;
             margin: 0 -4px;

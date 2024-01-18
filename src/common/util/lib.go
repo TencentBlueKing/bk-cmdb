@@ -22,8 +22,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 
+	"github.com/emicklei/go-restful/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 )
@@ -36,6 +36,46 @@ func InStrArr(arr []string, key string) bool {
 		}
 	}
 	return false
+}
+
+// GetLanguage TODO
+func GetLanguage(header http.Header) string {
+	return header.Get(common.BKHTTPLanguage)
+}
+
+// GetUser TODO
+func GetUser(header http.Header) string {
+	return header.Get(common.BKHTTPHeaderUser)
+}
+
+// GetBkToken get bk_token
+func GetBkToken(header http.Header) string {
+	return header.Get(common.HTTPCookieBKToken)
+}
+
+// GetBkTicket get bk_ticket
+func GetBkTicket(header http.Header) string {
+	return header.Get(common.HTTPCookieBKTicket)
+}
+
+// GetOwnerID TODO
+func GetOwnerID(header http.Header) string {
+	return header.Get(common.BKHTTPOwnerID)
+}
+
+// SetOwnerIDAndAccount TODO
+// set supplier id and account in head
+func SetOwnerIDAndAccount(req *restful.Request) {
+	owner := req.Request.Header.Get(common.BKHTTPOwner)
+	if "" != owner {
+		req.Request.Header.Set(common.BKHTTPOwnerID, owner)
+	}
+}
+
+// GetHTTPCCRequestID return config center request id from http header
+func GetHTTPCCRequestID(header http.Header) string {
+	rid := header.Get(common.BKHTTPCCRequestID)
+	return rid
 }
 
 // ExtractRequestIDFromContext TODO
@@ -64,25 +104,66 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 	return ""
 }
 
-// NewContextFromGinContext new context from gin context
+// NewContextFromGinContext TODO
 func NewContextFromGinContext(c *gin.Context) context.Context {
 	header := c.Request.Header
 	ctx := c.Request.Context()
-	ctx = SetContextValueByHTTPHeader(ctx, header)
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, GetHTTPCCRequestID(header))
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, GetUser(header))
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, GetOwnerID(header))
 	return ctx
 }
 
-// NewContextFromHTTPHeader new context from http header
+// NewContextFromHTTPHeader TODO
 func NewContextFromHTTPHeader(header http.Header) context.Context {
-	return SetContextValueByHTTPHeader(context.Background(), header)
+	rid := GetHTTPCCRequestID(header)
+	user := GetUser(header)
+	owner := GetOwnerID(header)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
+	return ctx
 }
 
-// SetContextValueByHTTPHeader set context value by http header
-func SetContextValueByHTTPHeader(ctx context.Context, header http.Header) context.Context {
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, httpheader.GetRid(header))
-	ctx = context.WithValue(ctx, common.ContextRequestUserField, httpheader.GetUser(header))
-	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, httpheader.GetSupplierAccount(header))
-	return ctx
+// NewHeaderFromContext TODO
+func NewHeaderFromContext(ctx context.Context) http.Header {
+	rid := ctx.Value(common.ContextRequestIDField)
+	ridValue, ok := rid.(string)
+	if !ok {
+		ridValue = GenerateRID()
+	}
+
+	user := ctx.Value(common.ContextRequestUserField)
+	userValue, ok := user.(string)
+	if !ok {
+		ridValue = "admin"
+	}
+
+	owner := ctx.Value(common.ContextRequestOwnerField)
+	ownerValue, ok := owner.(string)
+	if !ok {
+		ownerValue = common.BKDefaultOwnerID
+	}
+
+	header := make(http.Header)
+	header.Set(common.BKHTTPCCRequestID, ridValue)
+	header.Set(common.BKHTTPHeaderUser, userValue)
+	header.Set(common.BKHTTPOwnerID, ownerValue)
+
+	header.Add("Content-Type", "application/json")
+
+	return header
+}
+
+// BuildHeader TODO
+func BuildHeader(user string, supplierAccount string) http.Header {
+	header := make(http.Header)
+	header.Add(common.BKHTTPOwnerID, supplierAccount)
+	header.Add(common.BKHTTPHeaderUser, user)
+	header.Add(common.BKHTTPCCRequestID, GenerateRID())
+	header.Add("Content-Type", "application/json")
+	return header
 }
 
 // ExtractRequestUserFromContext TODO
@@ -195,23 +276,39 @@ func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	if globalCCError == nil {
 		return nil
 	}
-	language := httpheader.GetLanguage(header)
+	language := GetLanguage(header)
 	return globalCCError.CreateDefaultCCErrorIf(language)
 }
 
-// SetHTTPReadPreference 在header头中设置mongodb read preference，这个是给调用子流程使用
+// CCHeader TODO
+func CCHeader(header http.Header) http.Header {
+	newHeader := make(http.Header, 0)
+	newHeader.Add(common.BKHTTPCCRequestID, header.Get(common.BKHTTPCCRequestID))
+	newHeader.Add(common.BKHTTPCookieLanugageKey, header.Get(common.BKHTTPCookieLanugageKey))
+	newHeader.Add(common.BKHTTPHeaderUser, header.Get(common.BKHTTPHeaderUser))
+	newHeader.Add(common.BKHTTPLanguage, header.Get(common.BKHTTPLanguage))
+	newHeader.Add(common.BKHTTPOwner, header.Get(common.BKHTTPOwner))
+	newHeader.Add(common.BKHTTPOwnerID, header.Get(common.BKHTTPOwnerID))
+	newHeader.Add(common.BKHTTPRequestAppCode, header.Get(common.BKHTTPRequestAppCode))
+	newHeader.Add(common.BKHTTPRequestRealIP, header.Get(common.BKHTTPRequestRealIP))
+	newHeader.Add(common.BKHTTPReadReference, header.Get(common.BKHTTPReadReference))
+
+	return newHeader
+}
+
+// SetHTTPReadPreference  再header 头中设置mongodb read preference， 这个是给调用子流程使用
 func SetHTTPReadPreference(header http.Header, mode common.ReadPreferenceMode) http.Header {
-	header.Set(common.ReadReferenceKey, mode.String())
+	header.Set(common.BKHTTPReadReference, mode.String())
 	return header
 }
 
-// SetDBReadPreference 在context中设置mongodb read preference，给dal使用
+// SetDBReadPreference  再context 设置设置mongodb read preference，给dal 使用
 func SetDBReadPreference(ctx context.Context, mode common.ReadPreferenceMode) context.Context {
-	ctx = context.WithValue(ctx, common.ReadReferenceKey, mode.String())
+	ctx = context.WithValue(ctx, common.BKHTTPReadReference, mode.String())
 	return ctx
 }
 
-// SetReadPreference 在context和header中设置mongodb read preference，给dal使用
+// SetReadPreference  再context， header 设置设置mongodb read preference，给dal 使用
 func SetReadPreference(ctx context.Context, header http.Header, mode common.ReadPreferenceMode) (context.Context,
 	http.Header) {
 	ctx = SetDBReadPreference(ctx, mode)
@@ -219,9 +316,9 @@ func SetReadPreference(ctx context.Context, header http.Header, mode common.Read
 	return ctx, header
 }
 
-// GetDBReadPreference get mongodb read preference from context
+// GetDBReadPreference TODO
 func GetDBReadPreference(ctx context.Context) common.ReadPreferenceMode {
-	val := ctx.Value(common.ReadReferenceKey)
+	val := ctx.Value(common.BKHTTPReadReference)
 	if val != nil {
 		mode, ok := val.(string)
 		if ok {
@@ -231,9 +328,9 @@ func GetDBReadPreference(ctx context.Context) common.ReadPreferenceMode {
 	return common.NilMode
 }
 
-// GetHTTPReadPreference get mongodb read preference from http header
+// GetHTTPReadPreference TODO
 func GetHTTPReadPreference(header http.Header) common.ReadPreferenceMode {
-	mode := header.Get(common.ReadReferenceKey)
+	mode := header.Get(common.BKHTTPReadReference)
 	if mode == "" {
 		return common.NilMode
 	}

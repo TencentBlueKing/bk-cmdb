@@ -25,10 +25,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/http/header/util"
+	"configcenter/src/common/util"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -123,16 +123,12 @@ type jwtHandler struct {
 // Parse jwt info from api-gateway header to cc header
 func (j *jwtHandler) Parse(header http.Header) (http.Header, error) {
 	if !j.Enabled {
-		// compatible for esb request
-		// TODO remove this when esb is not supported
-		header = util.ConvertLegacyHeader(header)
 		return header, nil
 	}
 
-	jwtToken := httpheader.GetBkJWT(header)
+	jwtToken := header.Get(common.BkHTTPHeaderJWT)
 	if len(jwtToken) == 0 {
 		// compatible for esb request
-		header = util.ConvertLegacyHeader(header)
 		// TODO returns error when esb is not supported
 		return header, nil
 	}
@@ -147,8 +143,12 @@ func (j *jwtHandler) Parse(header http.Header) (http.Header, error) {
 	}
 
 	header.Set("Content-Type", "application/json")
-	httpheader.SetUser(header, token.User.UserName)
-	httpheader.SetAppCode(header, token.App.AppCode)
+	header.Add(common.BKHTTPHeaderUser, token.User.UserName)
+	header.Add(common.BKHTTPRequestAppCode, token.App.AppCode)
+	header.Add(common.BKHTTPCCRequestID, header.Get(common.BkHTTPHeaderRid))
+	header.Add(common.BKHTTPLanguage, header.Get(common.BkHTTPHeaderLanguage))
+	header.Add(common.BKHTTPOwner, header.Get(common.BkHTTPHeaderSupplierAccount))
+	header.Add(common.BKHTTPOwnerID, header.Get(common.BkHTTPHeaderSupplierAccount))
 
 	return header, nil
 }
@@ -166,12 +166,12 @@ func (j *jwtHandler) Sign(header http.Header) (http.Header, error) {
 	info := &claims{
 		App: &app{
 			Version:  1,
-			AppCode:  httpheader.GetAppCode(header),
+			AppCode:  header.Get(common.BKHTTPRequestAppCode),
 			Verified: true,
 		},
 		User: &user{
 			Version:  1,
-			UserName: httpheader.GetUser(header),
+			UserName: util.GetUser(header),
 			Verified: true,
 		},
 	}
@@ -184,7 +184,7 @@ func (j *jwtHandler) Sign(header http.Header) (http.Header, error) {
 		return nil, fmt.Errorf("sign jwt info failed, err: %v", err)
 	}
 
-	httpheader.SetBkJWT(header, tokenStr)
+	header.Set(common.BkHTTPHeaderJWT, tokenStr)
 
 	return header, nil
 }

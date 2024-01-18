@@ -1,6 +1,6 @@
 #### 功能描述
 
-创建服务分类
+创建服务分类(权限：服务分类新建权限)
 
 ### 请求参数
 
@@ -11,7 +11,7 @@
 | 字段                 |  类型      | 必选	   |  描述                 |
 |----------------------|------------|--------|-----------------------|
 | name            | string  | 是   | 服务分类名称 |
-| parent_id         | int  | 否   | 父节点ID |
+| bk_parent_id         | int  | 否   | 父节点ID |
 | bk_biz_id         | int  | 是   | 业务ID |
 
 ### 请求参数示例
@@ -22,7 +22,7 @@
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "parent_id": 0,
+  "bk_parent_id": 0,
   "bk_biz_id": 1,
   "name": "test101"
 }
@@ -41,8 +41,8 @@
     "bk_biz_id": 1,
     "id": 6,
     "name": "test101",
-    "root_id": 5,
-    "parent_id": 5,
+    "bk_root_id": 5,
+    "bk_parent_id": 5,
     "bk_supplier_account": "0",
     "is_built_in": false
   }

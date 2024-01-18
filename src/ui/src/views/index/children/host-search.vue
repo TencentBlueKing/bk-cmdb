@@ -16,6 +16,7 @@
       <editable-block
         v-test-id
         ref="ipEditableBlock"
+        :blur-parse="false"
         :placeholder="$t('首页主机搜索提示语')"
         :focus-tip="$t('首页主机搜索聚焦提示')"
         :blur-tip="$t('首页主机搜索失焦焦提示')"
@@ -24,28 +25,13 @@
         @blur="handleBlur"
         @focus="handleFocus">
       </editable-block>
-      <bk-popover v-bind="popoverProps" ref="popover">
-        <bk-button theme="primary" class="search-btn" v-test-id="'search'"
-          :loading="$loading(request.search)"
-          @click="handleSearch()">
-          <i class="bk-icon icon-search"></i>
-          {{$t('搜索')}}
-        </bk-button>
-        <div class="picking-popover-content" slot="content">
-          <p>{{$t('检测到输入框包含多种格式数据，请选择以哪个字段进行搜索：')}}</p>
-          <div class="buttons">
-            <bk-button theme="primary" size="small" outline v-test-id="'ipSearch'" v-if="searchFlag.ip"
-              @click="handleSearch('ip')">
-              {{$t('IP')}}
-            </bk-button>
-            <bk-button theme="primary" size="small" outline v-test-id="'assetSearch'" v-if="searchFlag.asset"
-              @click="handleSearch('asset')">
-              {{$t('固资编号')}}
-            </bk-button>
-          </div>
-        </div>
-      </bk-popover>
-      <bk-link theme="primary" class="advanced-link" @click="handleClickAdvancedSearch">{{$t('高级筛选')}}</bk-link>
+      <bk-button theme="primary" class="search-btn" v-test-id="'search'"
+        :loading="$loading(request.search)"
+        @click="handleSearch()">
+        <i class="bk-icon icon-search"></i>
+        {{$t('搜索')}}
+      </bk-button>
+      <bk-link theme="primary" class="advanced-link" @click="handleSetFilters">{{$t('高级筛选')}}</bk-link>
     </div>
   </div>
 </template>
@@ -57,6 +43,9 @@
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import { IP_SEARCH_MAX_CLOUD, IP_SEARCH_MAX_COUNT } from '@/setup/validate'
   import EditableBlock from '@/components/editable-block/index.vue'
+  import FilterStore, { setupFilterStore } from '@/components/filters/store'
+  import FilterForm from '@/components/filters/filter-form.js'
+  import { LT_REGEXP } from '@/dictionary/regexp'
 
   export default {
     components: {
@@ -66,7 +55,7 @@
       const defaultSearchContent = () => {
         let content = ''
         try {
-          content = JSON.parse(window.sessionStorage.getItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)) || ''
+          content = (JSON.parse(window.sessionStorage.getItem(HOME_HOST_SEARCH_CONTENT_STORE_KEY)) || '').replace(LT_REGEXP, '&lt')
         } catch (e) {
           console.error(e)
           content = ''
@@ -91,6 +80,7 @@
           ip: false,
           asset: false
         },
+        searchIPs: {},
         request: {
           search: Symbol('search')
         }
@@ -111,8 +101,16 @@
     },
     mounted() {
       this.ipEditableBlock = this.$refs.ipEditableBlock
+      this.initFilterStore()
     },
     methods: {
+      async initFilterStore() {
+        const currentRouteName = this.$route.name
+        if (this.storageRouteName === currentRouteName) return
+        this.storageRouteName = currentRouteName
+        await setupFilterStore()
+        FilterStore.setResourceScope('all')
+      },
       getAuthMaskProps() {
         const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
         return {
@@ -129,6 +127,17 @@
         const rows = this.ipEditableBlock.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
       },
+      setSearch(searchList) {
+        const IPs = FilterUtils.parseIP(searchList)
+        const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList } = IPs
+        this.searchIPs = IPs
+
+        this.searchFlag.ip = IPv4List.length
+          || IPv4WithCloudList.length
+          || IPv6List.length
+          || IPv6WithCloudList.length
+        this.searchFlag.asset = assetList.length > 0
+      },
       handleFocus() {
         this.$emit('focus', true)
         this.setRows()
@@ -136,9 +145,9 @@
       handleBlur() {
         this.$emit('focus', false)
       },
-      async handleSearch(force = '') {
-        const { hasIP, searchContent } = this.ipEditableBlock
-        if (!hasIP || !searchContent.length) {
+      async handleSearch() {
+        const { searchContent } = this.ipEditableBlock
+        if (!searchContent.length) {
           this.ipEditableBlock?.focus()
           return
         }
@@ -154,22 +163,8 @@
           JSON.stringify(this.ipEditableBlock.searchContent)
         )
 
-        const IPs = FilterUtils.parseIP(searchList)
-        const { IPv4List, IPv4WithCloudList, IPv6List, IPv6WithCloudList, assetList, cloudIdSet } = IPs
-
-        this.searchFlag.ip = IPv4List.length
-          || IPv4WithCloudList.length
-          || IPv6List.length
-          || IPv6WithCloudList.length
-        this.searchFlag.asset = assetList.length > 0
-        const isMixSearch = Object.values(this.searchFlag).filter(x => x).length > 1
-
-        // 判断是否存在IP、IPv6、固资编号混合搜索
-        if (!force && isMixSearch) {
-          this.$refs.popover.showHandler()
-          return
-        }
-
+        this.setSearch(searchList)
+        const { assetList, cloudIdSet } = this.searchIPs
         const assetSearch = () => this.handleAssetSearch(assetList)
 
         const ipSearch = () => {
@@ -178,18 +173,9 @@
             return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
           }
 
-          this.handleIPSearch(IPs)
+          this.handleIPSearch(this.searchIPs)
         }
 
-        // 优先使用混合搜索下的选择
-        if (force === 'asset') {
-          return assetSearch()
-        }
-        if (force === 'ip') {
-          return ipSearch()
-        }
-
-        // 非混合搜索
         if (this.searchFlag.asset) {
           return assetSearch()
         }
@@ -236,16 +222,37 @@
           console.error(true)
         }
       },
-      handleClickAdvancedSearch() {
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            adv: 1,
-            scope: 'all'
-          },
-          history: false
+      handleSetFilters() {
+        this.setSearch(this.getSearchList())
+        const { ip, asset } = this.searchFlag
+        const { assetList } = this.searchIPs
+        const propertyId = 'bk_asset_id'
+        let IPText = ''
+        if (ip) {
+          IPText = this.ipEditableBlock.searchContent
+        } else if (asset) {
+          FilterStore.setSelectedField(propertyId)
+        }
+        FilterStore.setIPField('text', IPText)
+        FilterStore.setConditonField(propertyId, assetList)
+        this.ipEditableBlock.clear()
+        FilterForm.show({
+          type: 'index',
+          searchAction: (allCondition) => {
+            const { IP, condition } = allCondition
+            FilterStore.setIP(IP)
+            const query = FilterStore.getQuery(condition)
+            this.$routerActions.open({
+              name: MENU_RESOURCE_HOST,
+              query: {
+                ...query,
+                adv: 1,
+                scope: 'all'
+              }
+            })
+          }
         })
-      }
+      },
     }
   }
 </script>

@@ -10,12 +10,12 @@
 
 #### 接口参数
 
-|字段|类型|必填|描述|
-|---|---|---|---|
-| bk_biz_id  | int64       | Yes      | 业务ID |
-|bk_module_ids|int64 array|No|模块ID列表，最多不能超过20个|
-|service_template_ids|int64 array|No|服务模板ID列表，最多不能超过20个|
-|is_partial|bool|Yes|为true时，使用service_template_ids参数，返回service_template的状态；为false时，使用bk_module_ids参数，返回module的状态|
+|字段|类型| 必填 |描述|
+|---|---|----|---|
+| bk_biz_id  | int64       | 是  | 业务ID |
+|bk_module_ids|int64 array| 否  |模块ID列表，最多不能超过20个|
+|service_template_ids|int64 array| 否  |服务模板ID列表，最多不能超过20个|
+|is_partial|bool| 是  |为true时，使用service_template_ids参数，返回service_template的状态；为false时，使用bk_module_ids参数，返回module的状态|
 
 
 ### 请求参数示例

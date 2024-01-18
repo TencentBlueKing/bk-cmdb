@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -60,8 +59,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 
 // MakeResourcesByPlat TODO
 // be careful: plat is registered as a common instance in iam
-func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action,
-	plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
+func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
 
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, plat := range plats {
@@ -72,7 +70,7 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 				Name:       plat.BKCloudNameField,
 				InstanceID: plat.BKCloudIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			SupplierAccount: util.GetOwnerID(header),
 		}
 
 		resources = append(resources, resource)
@@ -81,13 +79,12 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 }
 
 // AuthorizeByPlat TODO
-func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action,
-	plats ...PlatSimplify) error {
+func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action, plats ...PlatSimplify) error {
 	if !am.Enabled() {
 		return nil
 	}
 
-	rid := httpheader.GetRid(header)
+	rid := util.GetHTTPCCRequestID(header)
 
 	// make auth resources
 	resources, err := am.MakeResourcesByPlat(header, action, plats...)
@@ -100,8 +97,7 @@ func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, 
 }
 
 // AuthorizeByPlatIDs TODO
-func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action,
-	platIDs ...int64) error {
+func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action, platIDs ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}

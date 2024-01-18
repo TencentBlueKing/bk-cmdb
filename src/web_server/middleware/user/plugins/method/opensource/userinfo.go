@@ -22,8 +22,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
@@ -44,12 +44,12 @@ type user struct{}
 
 // LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (*metadata.LoginUserInfo, bool) {
-	rid := httpheader.GetRid(c.Request.Header)
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieSupplierAccount)
-	if "" == cookieOwnerID || err != nil {
-		c.SetCookie(common.HTTPCookieSupplierAccount, common.BKDefaultOwnerID, 0, "/", "", false, false)
+	cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
+	if "" == cookieOwnerID || nil != err {
+		c.SetCookie(common.BKHTTPOwnerID, common.BKDefaultOwnerID, 0, "/", "", false, false)
 		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 	} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
@@ -103,14 +103,12 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo,
-	*errors.RawErrorInfo) {
-	rid := httpheader.GetRid(c.Request.Header)
+func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 	users := make([]*metadata.LoginSystemUserInfo, 0)
 	userInfo, err := cc.String("webServer.session.userInfo")
 	if err != nil {
-		blog.Errorf("User name and password can't be found at webServer.session.userInfo in config file common.yaml, rid:%s",
-			rid)
+		blog.Errorf("User name and password can't be found at webServer.session.userInfo in config file common.yaml, rid:%s", rid)
 		return nil, &errors.RawErrorInfo{
 			ErrCode: common.CCErrWebNoUsernamePasswd,
 		}
@@ -119,8 +117,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	for _, userInfo := range userInfos {
 		userPasswd := strings.Split(userInfo, ":")
 		if len(userPasswd) != 2 {
-			blog.Errorf("The format of user name and password are wrong, please check webServer.session.userInfo in config file common.yaml, rid:%s",
-				rid)
+			blog.Errorf("The format of user name and password are wrong, please check webServer.session.userInfo in config file common.yaml, rid:%s", rid)
 			return nil, &errors.RawErrorInfo{
 				ErrCode: common.CCErrWebUserinfoFormatWrong,
 			}

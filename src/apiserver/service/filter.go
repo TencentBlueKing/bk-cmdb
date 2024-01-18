@@ -24,10 +24,10 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/resource/jwt"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,7 +63,7 @@ const (
 
 // URLFilterChan url filter chan
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	rid := httpheader.GetRid(req.Request.Header)
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 	var kind RequestType
 	var err error
@@ -164,7 +164,7 @@ func (s *service) HostFilterChan(req *restful.Request, resp *restful.Response, c
 func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
 	discovery discovery.Interface, prevRoot, root string) {
 
-	rid := httpheader.GetRid(req.Request.Header)
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 	var err error
 
@@ -226,9 +226,9 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) restful.FilterFunc
 func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() errors.CCErrorIf) (*metadata.BaseResp,
 	bool) {
 
-	rid := httpheader.GetRid(req.Request.Header)
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	path := req.Request.URL.Path
-	language := httpheader.GetLanguage(req.Request.Header)
+	language := util.GetLanguage(req.Request.Header)
 	attribute, err := parser.ParseAttribute(req, s.engine)
 	if err != nil {
 		blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
@@ -268,7 +268,7 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 		s.noPermissionRequestTotal.With(
 			prometheus.Labels{
 				metrics.LabelHandler: path,
-				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
+				metrics.LabelAppCode: req.Request.Header.Get(common.BKHTTPRequestAppCode),
 			},
 		).Inc()
 
@@ -327,7 +327,7 @@ return cnt
 // LimiterFilter limit on a api request according to limiter rules
 func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		rid := httpheader.GetRid(req.Request.Header)
+		rid := util.GetHTTPCCRequestID(req.Request.Header)
 		if s.limiter.LenOfRules() == 0 {
 			fchain.ProcessFilter(req, resp)
 			return

@@ -21,7 +21,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -318,7 +317,7 @@ func (ps *parseStream) getRscPoolHostModuleRelation(hostIDs []int64) (map[int64]
 var resourcePoolBizIDMap = sync.Map{}
 
 func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
-	supplierAccount := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
+	supplierAccount := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
 
 	if bizID, ok := resourcePoolBizIDMap.Load(supplierAccount); ok {
 		return util.GetInt64ByInterface(bizID)
@@ -367,7 +366,7 @@ type hostPool struct {
 var resourcePoolDefaultDirIDMap = sync.Map{}
 
 func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
-	supplierAccount := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
+	supplierAccount := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
 
 	if dirID, ok := resourcePoolDefaultDirIDMap.Load(supplierAccount); ok {
 		return util.GetInt64ByInterface(dirID)
@@ -518,7 +517,6 @@ func (ps *parseStream) generateUpdateInstanceResource(model *metadata.Object, in
 				},
 			}, nil
 		}
-		return nil, errors.New(common.CCErrCommParamsIsInvalid,
-			fmt.Sprintf("instance type %s is invalid", instanceType))
+		return nil, errors.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("instance type %s is invalid", instanceType))
 	}
 }

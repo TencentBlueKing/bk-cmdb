@@ -21,10 +21,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -38,8 +38,8 @@ import (
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 	updateCfg := &upgrader.Config{
 		OwnerID: ownerID,
@@ -242,8 +242,8 @@ func (s *Service) createWatchToken(key event.Key) error {
 
 func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 	updateCfg := &upgrader.Config{
 		OwnerID: ownerID,
@@ -300,8 +300,8 @@ var configHelpInfo = fmt.Sprintf("config_name must be one of the [redis, mongodb
 
 func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
 	input := new(struct {
 		ConfigName string `json:"config_name"`

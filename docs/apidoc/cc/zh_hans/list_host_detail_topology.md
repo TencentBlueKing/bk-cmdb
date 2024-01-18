@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据主机条件信息查询主机详情及其所属的拓扑信息
+根据主机条件信息查询主机详情及其所属的拓扑信息(权限：主机池主机查看权限)
 
 ### 请求参数
 
@@ -26,7 +26,7 @@
 
 #### rules
 
-| 名称  | 类型 |必填| 默认值 | 说明 | Description|
+| 名称  | 类型 |必填| 默认值 | 说明 | 描述|
 | ---  | ---  | --- |---  | --- | ---| 
 | field|string|是|无|字段名 |字段名|
 | operator|string|是|无|操作符 |可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between,contains,exists,not_exists; 其中contains为正则匹配，大小写不敏感, exists为过滤某字段存在的条件, not_exists为过滤某字段不存在的条件  |
@@ -247,34 +247,42 @@
 | topo      | array     | 主机拓扑信息 |
 
 #### data.info.host
-| 名称  | 类型  | 说明 |Description|
-|---|---|---|---| 
-| bk_isp_name| string | 所属运营商 | 0:其它；1:电信；2:联通；3:移动|
-| bk_sn | string | 设备SN | |
-| operator | string | 主要维护人 | |
-| bk_outer_mac | string | 外网MAC | |
-| bk_state_name | string | 所在国家 |CN:中国，详细值，请参考CMDB页面 |
-| bk_province_name | string | 所在省份 |  |
-| import_from | string | 录入方式 | 1:excel;2:agent;3:api |
-| bk_sla | string | SLA级别 | 1:L1;2:L2;3:L3 |
-| bk_service_term | int | 质保年限 | 1-10 |
-| bk_os_type | string | 操作系统类型 | 1:Linux;2:Windows;3:AIX |
-| bk_os_version | string | 操作系统版本 | |
-| bk_os_bit | int | 操作系统位数 | |
-| bk_mem | string | 内存容量| |
-| bk_mac | string | 内网MAC地址 | |
-| bk_host_outerip | string | 外网IP | |
-| bk_host_name | string | 主机名称 |  |
-| bk_host_innerip | string | 内网IP | |
-| bk_host_id | int | 主机ID | |
-| bk_disk | int | 磁盘容量 | |
-| bk_cpu_module | string | CPU型号 | |
-| bk_cpu_mhz | int | CPU频率 | |
-| bk_cpu | int | CPU逻辑核心数 | 1-1000000 |
-| bk_comment | string | 备注 | |
-| bk_cloud_id | int | 云区域 | |
-| bk_bak_operator | string | 备份维护人 | |
-| bk_asset_id | string | 固资编号 | |
+| 字段      | 类型      | 描述      |
+|-----------|-----------|-----------|
+| bk_host_name         | string | 主机名               |    
+| bk_host_innerip      | string | 内网IP              |                                 
+| bk_host_id           | int    | 主机ID              |                                 
+| bk_cloud_id          | int    | 管控区域               |  
+| import_from          | string | 主机导入来源,以api方式导入为3 |
+| bk_asset_id          | string | 固资编号              |
+| bk_cloud_inst_id     | string | 云主机实例ID           |
+| bk_cloud_vendor      | string | 云厂商               |
+| bk_cloud_host_status | string | 云主机状态             |
+| bk_comment           | string | 备注                |
+| bk_cpu               | int    | CPU逻辑核心数          |
+| bk_cpu_architecture  | string | CPU架构             |
+| bk_cpu_module        | string | CPU型号             |
+| bk_disk              | int    | 磁盘容量（GB）          |
+| bk_host_outerip      | string | 主机外网IP            |
+| bk_host_innerip_v6   | string | 主机内网IPv6          |
+| bk_host_outerip_v6   | string | 主机外网IPv6          |
+| bk_isp_name          | string | 所属运营商             |
+| bk_mac               | string | 主机内网MAC地址         |
+| bk_mem               | int    | 主机名内存容量（MB）       |
+| bk_os_bit            | string | 操作系统位数            |
+| bk_os_name           | string | 操作系统名称            |
+| bk_os_type           | string | 操作系统类型            |
+| bk_os_version        | string | 操作系统版本            |
+| bk_outer_mac         | string | 主机外网MAC地址         |
+| bk_province_name     | string | 所在省份              |
+| bk_service_term      | int    | 质保年限              |
+| bk_sla               | string | SLA级别             |
+| bk_sn                | string | 设备SN              |
+| bk_state             | string | 当前状态              |
+| bk_state_name        | string | 所在国家              |
+| operator             | string | 主要维护人             |
+| bk_bak_operator      | string | 备份维护人             |
+**注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**
 
 #### data.info.topo
 | 字段      | 类型      | 描述      |

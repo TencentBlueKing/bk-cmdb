@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -146,12 +146,12 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 			continue
 		}
 		if r.AppCode != "" {
-			if r.AppCode != httpheader.GetAppCode(header) {
+			if r.AppCode != header.Get(common.BKHTTPRequestAppCode) {
 				continue
 			}
 		}
 		if r.User != "" {
-			if r.User != httpheader.GetUser(header) {
+			if r.User != header.Get(common.BKHTTPHeaderUser) {
 				continue
 			}
 		}
@@ -159,7 +159,7 @@ func (l *Limiter) GetMatchedRule(req *restful.Request) *metadata.LimiterRule {
 			hit := false
 			ips := strings.Split(r.IP, ",")
 			for _, ip := range ips {
-				if strings.TrimSpace(ip) == strings.TrimSpace(httpheader.GetReqRealIP(header)) {
+				if strings.TrimSpace(ip) == strings.TrimSpace(header.Get(common.BKHTTPRequestRealIP)) {
 					hit = true
 					break
 				}

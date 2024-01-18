@@ -29,7 +29,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -575,7 +574,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 func (c *DataCollection) setSnapshotBizName() error {
 	tryCnt := 30
-	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
 		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)

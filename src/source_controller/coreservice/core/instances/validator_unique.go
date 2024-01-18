@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -41,8 +40,7 @@ type validUniqueOption struct {
 }
 
 // getValidUniqueOptions get unique option used for validating the instances
-func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr,
-	instanceManager *instanceManager) ([]validUniqueOption, error) {
+func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr, instanceManager *instanceManager) ([]validUniqueOption, error) {
 	uniqueOpts := make([]validUniqueOption, 0)
 
 	for _, unique := range valid.uniqueAttrs {
@@ -58,8 +56,7 @@ func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr,
 				}
 				uniqueKeys = append(uniqueKeys, property.PropertyID)
 			default:
-				blog.Errorf("find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind,
-					kit.Rid)
+				blog.Errorf("find [%s] property [%d] unique kind invalid [%d], rid: %s", valid.objID, key.ID, key.Kind, kit.Rid)
 				return nil, valid.errIf.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
@@ -88,8 +85,7 @@ func (valid *validator) getValidUniqueOptions(kit *rest.Kit, data mapstr.MapStr,
 }
 
 // hasUniqueFields judge if the update data has any unique fields
-func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []validUniqueOption) (has bool,
-	uniqueFields []string) {
+func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []validUniqueOption) (has bool, uniqueFields []string) {
 	for _, opt := range uniqueOpts {
 		if len(opt.UniqueKeys) == 0 {
 			continue
@@ -113,12 +109,10 @@ func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []v
 }
 
 // validUpdateUniqFieldInMulti validate if it update unique field in multiple records
-func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData mapstr.MapStr,
-	instanceManager *instanceManager) error {
+func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData mapstr.MapStr, instanceManager *instanceManager) error {
 	uniqueOpts, err := valid.getValidUniqueOptions(kit, updateData, instanceManager)
 	if err != nil {
-		blog.Errorf("validUpdateUniqFieldInMulti failed, getValidUniqueOptions error %v, updateData: %#v, rid: %s", err,
-			updateData, kit.Rid)
+		blog.Errorf("validUpdateUniqFieldInMulti failed, getValidUniqueOptions error %v, updateData: %#v, rid: %s", err, updateData, kit.Rid)
 		return err
 	}
 
@@ -128,11 +122,10 @@ func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData ma
 	}
 
 	propertyNames := make([]string, 0)
-	lang := httpheader.GetLanguage(kit.Header)
+	lang := util.GetLanguage(kit.Header)
 	language := valid.language.CreateDefaultCCLanguageIf(lang)
 	for _, key := range uniqueFields {
-		propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key),
-			valid.properties[key].PropertyName, key))
+		propertyNames = append(propertyNames, util.FirstNotEmptyString(language.Language(valid.objID+"_property_"+key), valid.properties[key].PropertyName, key))
 	}
 	return valid.errIf.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 }

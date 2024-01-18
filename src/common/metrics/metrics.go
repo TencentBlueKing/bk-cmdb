@@ -22,9 +22,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
-
 	"github.com/emicklei/go-restful/v3"
 	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -168,15 +167,14 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		appCode := httpheader.GetAppCode(r.Header)
-		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, appCode)).
+		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).
 			Observe(float64(time.Since(before) / time.Millisecond))
 
 		s.requestTotal.With(s.label(
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
-			LabelAppCode, appCode,
+			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
 		)).Inc()
 	})
 }
@@ -200,18 +198,9 @@ func (s *Service) label(labelKVs ...string) prometheus.Labels {
 }
 
 func getOrigin(header http.Header) string {
-	if httpheader.IsReqFromWeb(header) {
-		return "webserver"
+	if header.Get(common.BKHTTPOtherRequestID) != "" {
+		return "ESB"
 	}
-
-	if httpheader.GetBkJWT(header) != "" {
-		return "api-gateway"
-	}
-
-	if header.Get(httpheader.BKHTTPHeaderUser) != "" {
-		return "esb"
-	}
-
 	if userString := header.Get("User-Agent"); userString != "" {
 		ua := user_agent.New(userString)
 		browser, _ := ua.Browser()

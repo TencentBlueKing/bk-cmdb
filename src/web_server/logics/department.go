@@ -21,25 +21,24 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
 )
 
 // GetDepartment get department info from paas
-func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData,
-	errors.CCErrorCoder) {
+func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metadata.DepartmentData, errors.CCErrorCoder) {
 	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
 		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentData{}, nil
 	}
 
 	header := c.Request.Header
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
-	rid := httpheader.GetRid(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
+	rid := commonutil.GetHTTPCCRequestID(header)
 
 	result, esbErr := esb.EsbClient().User().GetDepartment(c.Request.Context(), c.Request.Header, c.Request.URL)
 	if esbErr != nil {
@@ -55,16 +54,15 @@ func (lgc *Logics) GetDepartment(c *gin.Context, config *options.Config) (*metad
 }
 
 // GetDepartmentProfile get department profile from paas
-func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData,
-	errors.CCErrorCoder) {
+func (lgc *Logics) GetDepartmentProfile(c *gin.Context, config *options.Config) (*metadata.DepartmentProfileData, errors.CCErrorCoder) {
 	if config.LoginVersion == common.BKOpenSourceLoginPluginVersion ||
 		config.LoginVersion == common.BKSkipLoginPluginVersion {
 		return &metadata.DepartmentProfileData{}, nil
 	}
 
 	header := c.Request.Header
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
-	rid := httpheader.GetRid(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(header))
+	rid := commonutil.GetHTTPCCRequestID(header)
 
 	result, esbErr := esb.EsbClient().User().GetDepartmentProfile(c.Request.Context(), c.Request)
 	if esbErr != nil {
@@ -86,8 +84,8 @@ func (lgc *Logics) GetAllDepartment(c *gin.Context, config *options.Config, orgI
 		return &metadata.DepartmentData{}, nil
 	}
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
-	rid := httpheader.GetRid(c.Request.Header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(commonutil.GetLanguage(c.Request.Header))
+	rid := commonutil.GetHTTPCCRequestID(c.Request.Header)
 
 	orgIDList := lgc.getOrgListStr(orgIDs)
 	departments := &metadata.DepartmentData{}

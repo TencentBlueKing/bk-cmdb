@@ -20,7 +20,6 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -59,8 +58,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 }
 
 // MakeResourcesByResourceDirectory TODO
-func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, action meta.Action,
-	directoryArr ...ModuleSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, action meta.Action, directoryArr ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, directory := range directoryArr {
 		resource := meta.ResourceAttribute{
@@ -70,7 +68,7 @@ func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, acti
 				Name:       directory.BKModuleNameField,
 				InstanceID: directory.BKModuleIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			SupplierAccount: util.GetOwnerID(header),
 		}
 
 		resources = append(resources, resource)
@@ -79,8 +77,7 @@ func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, acti
 }
 
 // AuthorizeByResourceDirectoryID TODO
-func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, header http.Header, action meta.Action,
-	ids ...int64) error {
+func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -97,8 +94,7 @@ func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, heade
 }
 
 // AuthorizeByResourceDirectory TODO
-func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header http.Header, action meta.Action,
-	directoryArr ...ModuleSimplify) error {
+func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header http.Header, action meta.Action, directoryArr ...ModuleSimplify) error {
 	if !am.Enabled() {
 		return nil
 	}

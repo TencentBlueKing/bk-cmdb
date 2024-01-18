@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -82,8 +81,8 @@ func (s *Service) getMinObjIDAndMinDay(baseDay int64, rid string) (primitive.Obj
 func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	rid := util.GetHTTPCCRequestID(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	param := new(deleteAuditLogReq)
 	response := new(deleteAuditLogRsp)
 

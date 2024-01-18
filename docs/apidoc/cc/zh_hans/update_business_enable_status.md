@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据业务id和状态值修改业务启用状态
+根据业务id和状态值修改业务启用状态(权限：业务归档权限)
 
 ### 请求参数
 
@@ -33,7 +33,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
