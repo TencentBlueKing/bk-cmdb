@@ -28,11 +28,12 @@
 #### rules
 过滤规则为三元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| -------- | ------ | ---- | ------ | ------ | ------------------------------------------------------------ |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
+
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
@@ -202,8 +203,8 @@
 
 #### info
 
-| 字段      |  类型      | 必选        |  描述      |
-|-----------|------------|-----------|------------|
+| 字段      |  类型       |  描述       |
+|-----------|------------|-----------|
 | bk_biz_set_id   |  int  | 业务集ID     |
 | create_time   |  string  | 业务集创建时间   |
 | last_time   |  string  | 业务集修改时间   |
@@ -218,28 +219,28 @@
 
 #### bk_scope
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| match_all |  bool  | 是    | 所选业务范围标记|
-| filter |  object  | 否     | 所选业务的范围条件 |
+| 字段      |  类型      |  描述      |
+|-----------|------------|------------|
+| match_all |  bool  |  所选业务范围标记|
+| filter |  object  |  所选业务的范围条件 |
 
 #### filter
 
 该参数为业务属性字段过滤规则的组合，用于根据业务属性字段搜索业务。组合仅支持AND操作，可以嵌套，最多嵌套2层。
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| condition |  string  | 是    | 规则操作符|
-| rules |  array  | 是     | 所选业务的范围条件规则 |
+| 字段      |  类型      |   描述      |
+|-----------|------------|------------|
+| condition |  string  |  规则操作符|
+| rules |  array  |  所选业务的范围条件规则 |
 
 
 #### rules
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| -------- | ------ | ---- | ------ | ------ | ------------------------------------------------------------ |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,in |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 名称     | 类型   | 描述                          |
+| -------- | ------------ |-----------------------------|
+| field    | string | 字段名                         |
+| operator | string | 操作符,可选值 equal,in            |
+| value    | -      | 操作数,不同的operator对应不同的value格式 |
 
 **注意：**
 - 如果本次请求是查询详细信息那么count为0，如果查询的是数量，那么info为空。

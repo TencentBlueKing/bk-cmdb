@@ -29,11 +29,11 @@
 
 该参数为主机属性字段过滤规则的组合，用于根据主机属性字段搜索主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。 过滤规则为四元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| :------- | :----- | :--- | :----- | :----- | :----------------------------------------------------------- |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
@@ -41,11 +41,11 @@
 
 该参数为集群属性字段过滤规则的组合，用于根据集群属性字段搜索集群下的主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。 过滤规则为四元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| :------- | :----- | :--- | :----- | :----- | :----------------------------------------------------------- |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
@@ -53,11 +53,11 @@
 
 该参数为模块属性字段过滤规则的组合，用于根据模块属性字段搜索模块下的主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。 过滤规则为四元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| :------- | :----- | :--- | :----- | :----- | :----------------------------------------------------------- |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
@@ -65,11 +65,11 @@
 
 该参数为主机属性字段过滤规则的组合，用于根据主机属性字段搜索主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。 过滤规则为四元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | 描述                                                  |
-| :------- | :----- | :--- | :----- | :----- | :----------------------------------------------------------- |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 

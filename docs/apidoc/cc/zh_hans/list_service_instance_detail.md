@@ -23,7 +23,7 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
 #### selectors
 | 字段                 |  类型      | 必选	   |  描述                 |
 | -------- | ------ | ---- | ------ |
-| key    | string | 否   | 字段名 |                                                              |
+| key    | string | 否   | 字段名 |
 | operator | string | 否   | operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin` |
 | values    | -      | 否 | 不同的operator对应不同的value格式                            |
 

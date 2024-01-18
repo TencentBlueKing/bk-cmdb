@@ -8,13 +8,13 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
- bk_biz_id| int| 是|业务ID|
-| bk_set_ids|array | 否| 集群ID列表，最多200条|
-| bk_module_ids|array | 否| 模块ID列表，最多500条| 
-| bk_host_ids|array | 否| 主机ID列表，最多500条| 
-| page| object| 是|分页信息|
+| 字段            |  类型      | 必选   |  描述      |
+|---------------|------------|--------|------------|
+|  bk_biz_id    | int| 是|业务ID|
+| bk_set_ids    |array | 否| 集群ID列表，最多200条|
+| bk_module_ids |array | 否| 模块ID列表，最多500条| 
+| bk_host_ids   |array | 否| 主机ID列表，最多500条| 
+| page          | object| 是|分页信息|
 
 #### page 字段说明
 
