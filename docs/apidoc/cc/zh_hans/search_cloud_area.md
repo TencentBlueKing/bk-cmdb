@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询云区域
+查询管控区域(权限：管控区域查看权限)
 
 ### 请求参数
 
@@ -17,8 +17,8 @@
 #### condition
 | 字段                 |  类型      | 必选   |  描述       |
 |----------------------|------------|--------|-------------|
-|bk_cloud_id|int|否|云区域ID|
-|bk_cloud_name|string|否|云区域名称|
+|bk_cloud_id|int|否|管控区域ID|
+|bk_cloud_name|string|否|管控区域名称|
 
 #### page 字段说明
 
@@ -39,7 +39,7 @@
     "bk_token": "xxx",
     "condition": {
         "bk_cloud_id": 12,
-        "bk_cloud_name" "aws",
+        "bk_cloud_name": "aws"
     },
     "page":{
         "start":0,
@@ -91,13 +91,13 @@
 | 名称  | 类型  | 说明 |
 |---|---|---|
 | count| int| 记录条数 |
-| info| array |  查询到的云区域列表信息 |
+| info| array |  查询到的管控区域列表信息 |
 
 #### data.info 字段说明：
 | 名称  | 类型  | 说明 |
 |---|---|---|
-| bk_cloud_id | int | 云区域ID |
-| bk_cloud_name | string  | 云区域名字 | 
+| bk_cloud_id | int | 管控区域ID |
+| bk_cloud_name | string  | 管控区域名字 | 
 | create_time | string | 创建时间 |
 | last_time | string | 最后修改时间 | 
 

@@ -18,7 +18,7 @@
 | bk_set_name  | string     |是     | 主机所在的集群名 |
 | bk_module_name | string  | 是   | 主机所在的模块名 |
 | bk_host_innerip | string  | 是   | 主机内网IP |
-| bk_cloud_id | int  | 否   | 主机所在的云区域，默认值0  |
+| bk_cloud_id | int  | 否   | 主机所在的管控区域，默认值0  |
 | host_info | object  | 否   | 主机详细，主机模型的所有字段和值得对应 |
 | proc_info | object |否| 主机在当前模块下服务实例中进程的值, {"进程名":{"进程属性":值}}, 参考进程模型|
 

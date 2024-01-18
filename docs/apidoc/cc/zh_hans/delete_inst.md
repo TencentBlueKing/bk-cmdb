@@ -1,6 +1,6 @@
 ### 功能描述
 
-指定模型ID和实例ID删除指定模型下的对象实例
+指定模型ID和实例ID删除指定模型下的对象实例(权限：模型实例删除权限)
 
 - 该接口只适用于自定义层级模型和通用模型实例上，不适用于业务、集群、模块、主机等模型实例
 
@@ -33,7 +33,7 @@
     "bk_username": "xxx",
     "bk_token": "xxx",
     "bk_obj_id": "test",
-    "bk_inst_id": 0
+    "bk_inst_id": 44
 }
 ```
 
@@ -45,10 +45,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "success"
+    "data": null
 }
 ```
 #### response

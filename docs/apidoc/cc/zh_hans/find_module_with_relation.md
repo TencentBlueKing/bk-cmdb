@@ -77,9 +77,33 @@
 | request_id    | string | 请求链id    |
 | data    | object | 请求返回的数据                             |
 
-data 字段说明：
+#### data 字段说明：
 
 | 名称     | 类型         | 说明               |
 | -------- | ------------ | ------------------ |
 | count    | int          | 记录条数           |
 | info | object array | 模块实际数据 |
+
+#### data.info 字段说明:
+
+| 字段      |  类型      |  描述      |
+|-----------|------------|------------|
+|bk_module_id | int | 模块id |
+|bk_module_name | string |模块名称|
+|default | int | 表示模块类型 |
+|create_time | string | 创建时间 |
+| bk_set_id     | int       | 集群id |
+| bk_bak_operator | string | 备份维护人 |
+|bk_biz_id|int|业务id|
+|bk_module_type|string|模块类型|
+|bk_parent_id|int|父节点的ID|
+| bk_supplier_account | string | 开发商账号 |
+| last_time           | string | 更新时间     |
+| host_apply_enabled|bool|是否启用主机属性自动应用|
+| operator | string | 主要维护人 |
+|service_category_id|integer|服务分类ID|
+|service_template_id|int|服务模版ID|
+| set_template_id      | int  | 集群模板ID     |
+| bk_created_at      | string |  创建时间        |
+| bk_updated_at      | string |  更新时间        |
+| bk_created_by      | string |  创建人         |

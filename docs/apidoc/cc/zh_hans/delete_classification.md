@@ -1,6 +1,6 @@
 ### 功能描述
 
-通过模型分类ID删除模型分类
+通过模型分类ID删除模型分类(权限：模型分组删除权限)
 
 ### 请求参数
 
@@ -8,15 +8,11 @@
 
 #### 接口参数
 
-| 字段  |  类型       | 必选   |  描述                            |
-|-------|-------------|--------|----------------------------------|
-| delete      | object | 是    |  删除  |
-
-#### delete
 | 字段                |  类型       | 必选   |  描述                            |
 |---------------------|-------------|--------|----------------------------------|
 |id     | int         | 是     | 分类数据记录ID                   |
 
+**注意** 只能删除空模型分类，如果分类下有模型则删除失败
 
 ### 请求参数示例
 
@@ -27,24 +23,34 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "delete":{
-    "id" : 0
-    }
+    "id": 13
 }
 ```
 
 
 ### 返回结果示例
 
+#### 删除成功
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
+}
+```
+
+#### 分类下有模型，删除失败
+```python
+{
+    "result": false,
+    "code": 1101029,
+    "data": null,
+    "message": "There is a model under the category, not allowed to delete",
+    "permission": null,
+    "request_id": "8c6b89e7f0cb4fad836f55d50f81f2c6"
 }
 ```
 #### response
