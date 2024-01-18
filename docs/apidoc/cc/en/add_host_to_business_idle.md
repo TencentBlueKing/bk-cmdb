@@ -1,7 +1,6 @@
-### Function description
+### Function Description
 
-Add hosts to the service idle machine
-- This interface ensures that hosts are either added successfully or fail at the same time(v3.10.25+)
+Add hosts to the business idle hosts. This interface ensures that hosts are either added successfully together or fail together (v3.10.25+, Permission: Host pool host allocation to business permission)
 
 ### Request Parameters
 
@@ -9,20 +8,21 @@ Add hosts to the service idle machine
 
 #### Interface Parameters
 
-| field | type | mandatory | description |
-| -----------|------------|--------|------------|
-| bk_host_list | array | Yes | Host information (array length is limited to 200 at a time) |
-| bk_biz_id | int | yes | business_id |
+| Field        | Type  | Required | Description                                    |
+| ------------ | ----- | -------- | ---------------------------------------------- |
+| bk_host_list | array | Yes      | Host information (array length limited to 200) |
+| bk_biz_id    | int   | Yes      | Business ID                                    |
 
-#### bk_host_list(host-related fields)
+#### bk_host_list (Fields related to hosts)
 
-| field | type | required | description |
-| -----------|------------|--------|------------|
-| bk_host_innerip | string | yes | host_internal_ip |
-| bk_cloud_id | int | Yes | cloud_region_id |
-| bk_addressing | string | Yes | Addressing method, "static", "dynamic" |
-| operator | string | No | Primary maintainer | 
-...
+| Field              | Type   | Required | Description                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------ |
+| bk_host_innerip    | string | No       | Host's internal IPv4, one of bk_host_innerip or bk_host_innerip_v6 is required |
+| bk_host_innerip_v6 | string | No       | Host's internal IPv6, one of bk_host_innerip or bk_host_innerip_v6 is required |
+| bk_cloud_id        | int    | Yes      | Control area ID                                              |
+| bk_addressing      | string | Yes      | Addressing method, "static" or "dynamic"                     |
+| operator           | string | No       | Main maintainer                                              |
+| ...                |        |          |                                                              |
 
 ### Request Parameters Example
 
@@ -50,10 +50,9 @@ Add hosts to the service idle machine
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -68,20 +67,22 @@ Add hosts to the service idle machine
     }
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
 
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | Whether the request was successful or not. true:request successful; false request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| data | object | The data returned by the request.|
-| permission | object | Permission information |
-| request_id | string | Request chain id |
+| Name       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| data       | object | Data returned by the request                                 |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
-| field | type | description |
-| -----------|-----------|--------------|
-| bk_host_ids | array | host_id of the host |
+
+| Field       | Type  | Description                   |
+| ----------- | ----- | ----------------------------- |
+| bk_host_ids | array | Host IDs of the created hosts |

@@ -1,6 +1,6 @@
-### Function description
+### Function Description
 
-add cloud host to biz idle module (cloud host management dedicated interface, version: v3.10.19+, permission: edit business host)
+Add the module for idle hosts in the business related to cloud hosts (Dedicated interface for cloud host management, Version: v3.10.19+, Permission: Business host editing permission)
 
 ### Request Parameters
 
@@ -8,22 +8,54 @@ add cloud host to biz idle module (cloud host management dedicated interface, ve
 
 #### Interface Parameters
 
-| field     | type         | mandatory | description                                                                                                               |
-|-----------|--------------|-----------|---------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int          | yes       | business id                                                                                                               |
-| host_info | array | yes       | to be added cloud host information, array length is limited to 200, these hosts can only succeed or fail at the same time |
+| Field     | Type  | Required | Description                                                  |
+| --------- | ----- | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int   | Yes      | Business ID                                                  |
+| host_info | array | Yes      | Information of newly added cloud hosts, array length can be up to 200, success or failure occurs for the entire batch of hosts |
 
 #### host_info
 
-host information fields, cloud area ID and inner IP fields are required, other fields are attribute fields defined in host model. Only field examples are shown here, please fill in other fields as needed.
+Host information, where bk_cloud_id, bk_host_innerip, cloud vendor, and cloud host instance ID fields are required. Other fields are attributes defined in the host model. Only a subset of fields is shown here, please fill in other fields as needed.
 
-| field           | type   | required | description                                                       |
-|-----------------|--------|----------|-------------------------------------------------------------------|
-| bk_host_innerip | string | yes      | host inner ip in IPv4 format, multiple ips are seperated by comma |
-| bk_cloud_id     | int    | yes      | cloud area id                                                     |
-| bk_host_name    | string | no       | host name, or any other property                                  |
-| operator        | string | no       | host main maintainer, or other attributes                         |
-| bk_comment      | string | no       | comment, or other attributes                                      |
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_cloud_id          | int    | Yes      | Control area ID                                              |
+| bk_host_innerip      | string | Yes      | IPv4 format of host's internal IP, separated by commas for multiple IPs |
+| bk_cloud_vendor      | array  | Yes      | Cloud vendor                                                 |
+| bk_cloud_inst_id     | array  | Yes      | Cloud host instance ID                                       |
+| bk_addressing        | string | No       | Addressing method, static for cloud hosts                    |
+| bk_host_name         | string | No       | Hostname or other attributes                                 |
+| operator             | string | No       | Main maintainer or other attributes                          |
+| bk_comment           | string | No       | Remark or other attributes                                   |
+| import_from          | string | No       | Host import source, 3 for API import                         |
+| bk_asset_id          | string | No       | Fixed asset number                                           |
+| bk_created_at        | string | No       | Creation time                                                |
+| bk_updated_at        | string | No       | Update time                                                  |
+| bk_created_by        | string | No       | Creator                                                      |
+| bk_updated_by        | string | No       | Updater                                                      |
+| bk_cloud_host_status | string | No       | Cloud host status                                            |
+| bk_cpu               | int    | No       | CPU logical cores                                            |
+| bk_cpu_architecture  | string | No       | CPU architecture                                             |
+| bk_cpu_module        | string | No       | CPU model                                                    |
+| bk_disk              | int    | No       | Disk capacity (GB)                                           |
+| bk_host_outerip      | string | No       | Host's external IP                                           |
+| bk_host_innerip_v6   | string | No       | Host's internal IPv6                                         |
+| bk_host_outerip_v6   | string | No       | Host's external IPv6                                         |
+| bk_isp_name          | string | No       | Affiliated ISP                                               |
+| bk_mac               | string | No       | Host's internal MAC address                                  |
+| bk_mem               | int    | No       | Host's RAM capacity (MB)                                     |
+| bk_os_bit            | string | No       | Operating system bit                                         |
+| bk_os_name           | string | No       | Operating system name                                        |
+| bk_os_type           | string | No       | Operating system type                                        |
+| bk_os_version        | string | No       | Operating system version                                     |
+| bk_outer_mac         | string | No       | Host's external MAC address                                  |
+| bk_province_name     | string | No       | Province where the host is located                           |
+| bk_service_term      | int    | No       | Warranty period                                              |
+| bk_sla               | string | No       | SLA level                                                    |
+| bk_sn                | string | No       | Device SN                                                    |
+| bk_state             | string | No       | Current state                                                |
+| bk_state_name        | string | No       | Country where the host is located                            |
+| bk_bak_operator      | string | No       | Backup maintainer                                            |
 
 ### Request Parameters Example
 
@@ -38,6 +70,8 @@ host information fields, cloud area ID and inner IP fields are required, other f
         {
             "bk_cloud_id": 0,
             "bk_host_innerip": "127.0.0.1",
+            "bk_cloud_vendor": "2",
+            "bk_cloud_inst_id": "45515",
             "bk_host_name": "host1",
             "operator": "admin",
             "bk_comment": "comment"
@@ -45,6 +79,8 @@ host information fields, cloud area ID and inner IP fields are required, other f
         {
             "bk_cloud_id": 0,
             "bk_host_innerip": "127.0.0.2",
+            "bk_cloud_vendor": "2",
+            "bk_cloud_inst_id": "45656",
             "bk_host_name": "host2",
             "operator": "admin",
             "bk_comment": "comment"
@@ -53,7 +89,7 @@ host information fields, cloud area ID and inner IP fields are required, other f
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -71,20 +107,21 @@ host information fields, cloud area ID and inner IP fields are required, other f
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| data       | object | The data returned by the request.                                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | Request chain id                                                                          |
+| Name       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| data       | object | Data returned by the request                                 |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
-| field | type      | description                        |
-|-------|-----------|------------------------------------|
-| ids   | array | successfully created host id array |
+
+| Field | Type  | Description                                 |
+| ----- | ----- | ------------------------------------------- |
+| ids   | array | Array of IDs for successfully created hosts |
