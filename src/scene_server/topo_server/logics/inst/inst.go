@@ -25,13 +25,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/log"
 )
 
 // InstOperationInterface inst operation methods
@@ -253,7 +253,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		return nil, err
 	}
 
-	ccLang := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	ccLang := c.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 	result := new(metadata.ImportInstRes)
 
 	for idx, inst := range batchInfo.BatchInfo {
@@ -388,7 +388,7 @@ func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *m
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, []mapstr.MapStr{inst})
 	if err != nil {
-		log.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 

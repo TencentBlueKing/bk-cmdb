@@ -20,8 +20,8 @@ import (
 
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
@@ -52,7 +52,7 @@ func (s *Service) BackgroundTask(options options.Config) error {
 // RunSyncDBIndex TODO
 func (s *Service) RunSyncDBIndex(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
+	rid := httpheader.GetRid(rHeader)
 	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
 
 	if err := logics.RunSyncDBIndex(ctx, s.Engine); err != nil {

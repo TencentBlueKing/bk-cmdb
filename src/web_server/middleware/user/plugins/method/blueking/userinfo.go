@@ -24,10 +24,10 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -64,7 +64,7 @@ type user struct{}
 // LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 
 	bkTokens := getBkTokens(c)
 	if len(bkTokens) == 0 {
@@ -195,7 +195,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 // GetUserList get user list
 func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo,
 	*errors.RawErrorInfo) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	query := c.Request.URL.Query()
 	for key, values := range query {
 		params[key] = strings.Join(values, ";")

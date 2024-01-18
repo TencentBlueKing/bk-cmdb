@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -35,7 +36,7 @@ import (
 
 // SearchBusiness TODO
 func (s *Service) SearchBusiness(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
 	language := webCommon.GetLanguageByHTTPRequest(c)
@@ -65,8 +66,8 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 			}
 		}
 	}
-	ownerID := c.Request.Header.Get(common.BKHTTPOwnerID)
-	biz, err := s.Engine.CoreAPI.ApiServer().SearchBiz(ctx, ownerID, c.Request.Header, query)
+	ownerID := httpheader.GetSupplierAccount(c.Request.Header)
+	biz, err := s.ApiCli.SearchBiz(ctx, ownerID, c.Request.Header, query)
 	if err != nil {
 		blog.Error("search business, but request to api failed, err: %v, rid: %s", err, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
@@ -95,7 +96,7 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 // GetObjectInstanceCount TODO
 func (s *Service) GetObjectInstanceCount(c *gin.Context) {
 	header := c.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
 	cond := &metadata.ObjectCountParams{}
@@ -123,7 +124,7 @@ func (s *Service) GetObjectInstanceCount(c *gin.Context) {
 // BatchExportObject batch export object into yaml
 func (s *Service) BatchExportObject(c *gin.Context) {
 	header := c.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
 
@@ -169,7 +170,7 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 
 	zipw := zip.NewWriter(fzip)
 
-	objRsp, err := s.Engine.CoreAPI.ApiServer().SearchObjectWithTotalInfo(ctx, header, cond)
+	objRsp, err := s.ApiCli.SearchObjectWithTotalInfo(ctx, header, cond)
 	if err != nil {
 		blog.Errorf("search object info to build yaml failed, cond: %v, err: %v, rid: %s", cond, err, rid)
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, err.Error(), nil)
@@ -211,7 +212,7 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 
 // BatchImportObjectAnalysis batch analysis object and asstkind yaml
 func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	webCommon.SetProxyHeader(c)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
@@ -298,7 +299,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 
 // BatchImportObject batch import object
 func (s *Service) BatchImportObject(c *gin.Context) {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	webCommon.SetProxyHeader(c)
 	ctx := util.NewContextFromGinContext(c)
 
@@ -317,7 +318,7 @@ func (s *Service) BatchImportObject(c *gin.Context) {
 	}
 
 	objInfo := metadata.ImportObjects{Objects: cond.Object, Asst: cond.Asst}
-	if _, err := s.Engine.CoreAPI.ApiServer().CreateManyObject(ctx, c.Request.Header, objInfo); err != nil {
+	if _, err := s.ApiCli.CreateManyObject(ctx, c.Request.Header, objInfo); err != nil {
 		blog.Errorf("create many object failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrTopoModuleCreateFailed, err.Error(), nil)
 		_, _ = c.Writer.Write([]byte(msg))

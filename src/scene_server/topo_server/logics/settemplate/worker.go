@@ -8,6 +8,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -28,9 +29,9 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	moduleDiff metadata.SetModuleDiff) error {
 
 	ctx := util.NewContextFromHTTPHeader(header)
-	rid := util.GetHTTPCCRequestID(header)
-	user := util.GetUser(header)
-	supplierAccount := util.GetOwnerID(header)
+	rid := httpheader.GetRid(header)
+	user := httpheader.GetUser(header)
+	supplierAccount := httpheader.GetSupplierAccount(header)
 	defaultCCError := util.GetDefaultCCError(header)
 
 	kit := &rest.Kit{

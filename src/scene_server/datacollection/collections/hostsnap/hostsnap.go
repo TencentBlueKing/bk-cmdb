@@ -31,6 +31,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
@@ -418,7 +420,7 @@ func (h *HostSnap) updateHostWithColletorMsg(header http.Header, rid string, hos
 			Rid:             rid,
 			Header:          header,
 			Ctx:             h.ctx,
-			CCError:         h.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
+			CCError:         h.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
 			User:            common.CCSystemCollectorUserName,
 			SupplierAccount: common.BKDefaultOwnerID,
 		}
@@ -1208,7 +1210,7 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 
 // saveHostsnap save host snapshot in redis
 func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, hostID int64) error {
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 
 	snapshot, err := ParseHostSnap(hostData)
 	if err != nil {
@@ -1226,11 +1228,8 @@ func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, host
 }
 
 func newHeaderWithRid() (http.Header, string) {
-	header := http.Header{}
-	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemCollectorUserName)
 	rid := util.GenerateRID()
-	header.Add(common.BKHTTPCCRequestID, rid)
+	header := headerutil.GenCommonHeader(common.CCSystemCollectorUserName, common.BKDefaultOwnerID, rid)
 	return header, rid
 }
 

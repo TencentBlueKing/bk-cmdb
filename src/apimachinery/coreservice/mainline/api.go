@@ -18,14 +18,14 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // SearchMainlineModelTopo TODO
 func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Header,
 	withDetail bool) (*metadata.TopoModelNode, errors.CCErrorCoder) {
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	ret := new(metadata.SearchTopoModelNodeResult)
 	// resp = new(metadata.TopoModelNode)
 	subPath := "/read/mainline/model"
@@ -55,7 +55,7 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, header http.Head
 // SearchMainlineInstanceTopo TODO
 func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64,
 	withDetail bool) (*metadata.TopoInstanceNode, errors.CCErrorCoder) {
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	input := map[string]bool{}
 	input["with_detail"] = withDetail
 

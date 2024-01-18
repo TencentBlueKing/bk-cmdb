@@ -25,8 +25,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/types"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/cloud_server/app/options"
 	"configcenter/src/scene_server/cloud_server/cloudsync"
 	"configcenter/src/scene_server/cloud_server/logics"
@@ -182,7 +182,7 @@ func (c *CloudServer) getSecretKey() (string, error) {
 		return "", err
 	}
 
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	return secretsClient.GetCloudAccountSecretKey(context.Background(), header)
 }
 

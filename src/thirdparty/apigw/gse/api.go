@@ -22,14 +22,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/thirdparty/apigw"
+	httpheader "configcenter/src/common/http/header"
 )
 
 // ListAgentState list gse agent state
 func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgentStateRequest) (*ListAgentStateResp,
 	error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(ListAgentStateResp)
 	subPath := "/prod/api/v2/cluster/list_agent_state"
 
@@ -37,7 +36,7 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -56,7 +55,6 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp,
 	error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(AsyncPushFileResp)
 	subPath := "/prod/api/v2/task/async_push_file"
 
@@ -64,7 +62,7 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -83,7 +81,6 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *GetTransferFileResultRequest) (
 	*GetTransferFileResultResp, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(GetTransferFileResultResp)
 	subPath := "/prod/api/v2/task/async/get_transfer_file_result"
 
@@ -91,7 +88,7 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 

@@ -19,6 +19,7 @@ import (
 	"os"
 	"runtime"
 
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -33,6 +34,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
+	"configcenter/src/web_server/service/apigw"
 	"configcenter/src/web_server/service/excel"
 
 	"github.com/gin-contrib/sessions"
@@ -47,6 +49,7 @@ type Service struct {
 	*logics.Logics
 	Config  *options.Config
 	Session redis.RedisStore
+	ApiCli  apiserver.ApiServerClientInterface
 }
 
 // WebService TODO
@@ -81,6 +84,34 @@ func (s *Service) WebService() *gin.Engine {
 
 	middleware.Engine = s.Engine
 
+	s.initService(ws)
+
+	// table instance, only for ui, should be removed later
+	s.initModelQuote(ws)
+
+	// field template, only for ui
+	s.initFieldTemplate(ws)
+
+	c := &capability.Capability{
+		Ws:     ws,
+		Engine: s.Engine,
+		ApiCli: s.ApiCli,
+	}
+	// init excel func
+	excel.Init(c)
+
+	// init api gateway http handlers for saas
+	apigw.Init(c)
+
+	// if no route, redirect to 404 page
+	ws.NoRoute(func(c *gin.Context) {
+		c.Redirect(302, "/#/404")
+	})
+
+	return ws
+}
+
+func (s *Service) initService(ws *gin.Engine) {
 	ws.Static("/static", s.Config.Site.HtmlRoot)
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html",
 		s.Config.Site.HtmlRoot+"/"+webCommon.InaccessibleHtml)
@@ -122,26 +153,6 @@ func (s *Service) WebService() *gin.Engine {
 	// common api
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/version", ginservice.Version)
-
-	// table instance, only for ui, should be removed later
-	s.initModelQuote(ws)
-
-	// field template, only for ui
-	s.initFieldTemplate(ws)
-
-	c := &capability.Capability{
-		Ws:     ws,
-		Engine: s.Engine,
-	}
-	// init excel func
-	excel.Init(c)
-
-	// if no route, redirect to 404 page
-	ws.NoRoute(func(c *gin.Context) {
-		c.Redirect(302, "/#/404")
-	})
-
-	return ws
 }
 
 func setGinMode() {

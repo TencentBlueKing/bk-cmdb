@@ -70,9 +70,6 @@ type ApiServerClientInterface interface {
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
 
-	GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (resp *metadata.InstDataInfo,
-		err error)
-
 	SearchNetCollectDevice(ctx context.Context, h http.Header,
 		cond condition.Condition) (resp *metadata.ResponseInstData, err error)
 	SearchNetDeviceProperty(ctx context.Context, h http.Header,
@@ -125,6 +122,13 @@ func NewApiServerClientInterface(c *util.Capability, version string) ApiServerCl
 	base := fmt.Sprintf("/api/%s", version)
 	return &apiServer{
 		client: rest.NewRESTClient(c, base),
+	}
+}
+
+// NewWrappedApiServerClientI new wrapped api server client interface by restful client
+func NewWrappedApiServerClientI(client rest.ClientInterface, wrappers ...rest.RequestWrapper) ApiServerClientInterface {
+	return &apiServer{
+		client: rest.NewClientWrapper(client, wrappers...),
 	}
 }
 

@@ -21,9 +21,9 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 )
 
@@ -104,7 +104,7 @@ func (e *Exporter) Export() error {
 func (e *Exporter) addExtraProp(colProps []core.ColProp) ([]core.ColProp, error) {
 	result := make([]core.ColProp, 0)
 	idColIdx := common.HostAddMethodExcelDefaultIndex
-	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 
 	if e.GetObjID() == common.BKInnerObjIDHost {
 		topoProps, err := e.getTopoProps()
@@ -142,7 +142,7 @@ const (
 )
 
 func (e *Exporter) getTopoProps() ([]core.ColProp, error) {
-	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 	topoMsg := make([]core.TopoBriefMsg, 0)
 
 	topoMsg = append(topoMsg, core.TopoBriefMsg{ObjID: core.TopoObjID, Name: defLang.Language(topoName)})
@@ -259,7 +259,7 @@ func (e *Exporter) enrichInst(insts []mapstr.MapStr, colProps []core.ColProp) ([
 		return nil, nil, err
 	}
 
-	ccLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	ccLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 	insts, err = e.GetClient().GetInstWithOrgName(e.GetKit(), ccLang, insts, colProps)
 	if err != nil {
 		blog.Errorf("get instance with organization name field failed, err: %v, rid: %s", err, e.GetKit().Rid)

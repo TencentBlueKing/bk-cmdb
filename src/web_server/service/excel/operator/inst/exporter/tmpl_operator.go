@@ -21,8 +21,8 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 	"configcenter/src/web_server/service/excel/operator"
 )
@@ -173,7 +173,7 @@ func (t *TmplOp) writeInstHeader(colProps []core.ColProp) error {
 }
 
 func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error) {
-	ccLang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
+	ccLang := t.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(t.GetKit().Header))
 
 	firstColStyle, err := t.styleCreator.getStyle(noEditHeader)
 	if err != nil {
@@ -303,7 +303,7 @@ func (t *TmplOp) writeAsstHeader() error {
 	for idx := range header {
 		header[idx] = make([]excel.Cell, 0)
 	}
-	lang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
+	lang := t.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(t.GetKit().Header))
 
 	// 设置关联关系sheet表头第一列数据
 	firstColStyle, err := t.styleCreator.getStyle(noEditHeader)
@@ -362,7 +362,7 @@ func (t *TmplOp) setAsstValidation() error {
 		asstNameList[idx] = asst.AssociationName
 	}
 
-	lang := t.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(t.GetKit().Header))
+	lang := t.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(t.GetKit().Header))
 	refSheet := lang.Language("excel_association_object_id")
 	if err := t.GetExcel().CreateSheet(refSheet); err != nil {
 		return err
