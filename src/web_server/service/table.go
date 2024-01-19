@@ -69,8 +69,7 @@ func (s *Service) CreateInstanceWithTable(objID string) gin.HandlerFunc {
 
 		var res interface{}
 
-		// start transaction ** NOTICE: web-server should not call core-service, this is only a temporary use **
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		txnErr := s.ApiCli.Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			// get table attributes
 			attrOpt := mapstr.MapStr{common.BKObjIDField: objID}
 			attributes, err := s.ApiCli.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)
@@ -160,8 +159,7 @@ func (s *Service) updateInstanceWithTable(objID string, id int64, data mapstr.Ma
 	return func(c *gin.Context) {
 		kit := rest.NewKitFromHeader(c.Request.Header, s.CCErr)
 
-		// start transaction ** NOTICE: web-server should not call core-service, this is only a temporary use **
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		txnErr := s.ApiCli.Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			// get table attributes
 			attrOpt := mapstr.MapStr{common.BKObjIDField: objID}
 			attributes, err := s.ApiCli.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)

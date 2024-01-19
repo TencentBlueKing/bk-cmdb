@@ -165,7 +165,7 @@ func (s *Service) CountFieldTemplateObj(c *gin.Context) {
 		return
 	}
 
-	result, err := s.CoreAPI.ApiServer().FieldTemplate().CountFieldTemplateObj(kit.Ctx, kit.Header, opt)
+	result, err := s.ApiCli.FieldTemplate().CountFieldTemplateObj(kit.Ctx, kit.Header, opt)
 	if err != nil {
 		blog.Errorf("list field template and object relation failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: err.GetCode(), ErrMsg: err.Error()})

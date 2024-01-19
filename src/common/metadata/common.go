@@ -518,6 +518,12 @@ type CommonCountResult struct {
 	Count uint64 `json:"count"`
 }
 
+// CommonCountResp is common count action response.
+type CommonCountResp struct {
+	BaseResp `json:",inline"`
+	Data     *CommonCountResult `json:"data"`
+}
+
 // CommonCountFilter is a common count action filter struct,
 // such like search instance count or instance associations count.
 // And the conditions must abide by query filter.

@@ -135,7 +135,6 @@ func (s *Service) initService(ws *gin.Engine) {
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
-	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/", s.Index)
 
@@ -179,7 +178,7 @@ func (s *Service) Healthz(c *gin.Context) {
 		meta.Items = append(meta.Items, zkItem)
 
 		apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
-		if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_APISERVER); err != nil {
+		if _, err := s.ApiCli.HealthCheck(); err != nil {
 			apiServer.IsHealthy = false
 			apiServer.Message = err.Error()
 		}

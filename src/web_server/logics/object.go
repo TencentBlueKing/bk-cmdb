@@ -71,36 +71,15 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 				wg.Done()
 				<-pipeline
 			}()
-			if metadata.IsCommon(objID) {
-				params := &metadata.Condition{Condition: map[string]interface{}{common.BKObjIDField: objID}}
-				count, err := lgc.CoreAPI.CoreService().Instance().CountInstances(ctx, header, objID, params)
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				if count == nil {
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
 
-				objCount.InstCount = count.Count
-			} else {
-				tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
-				count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName,
-					[]map[string]interface{}{{}})
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				if len(count) == 0 {
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				objCount.InstCount = uint64(count[0])
+			countRes, ccErr := lgc.ApiCli.CountObjectInstances(ctx, header, objID, new(metadata.CommonCountFilter))
+			if ccErr != nil {
+				blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, ccErr, rid)
+				apiErr = ccErr
+				return
 			}
 
+			objCount.InstCount = countRes.Count
 			existObjResult[idx] = objCount
 
 		}(ctx, header, objID, idx, objCount)
@@ -124,7 +103,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
-	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
+	objects, err := lgc.ApiCli.ReadModel(ctx, header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKObjIDField: map[string]interface{}{
 				common.BKDBIN: objArray,

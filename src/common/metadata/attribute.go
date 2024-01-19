@@ -159,12 +159,6 @@ type ObjAttDes struct {
 	PropertyGroupName string `json:"bk_property_group_name"`
 }
 
-// HostObjAttDes TODO
-type HostObjAttDes struct {
-	ObjAttDes        `json:",inline" bson:",inline"`
-	HostApplyEnabled bool `json:"host_apply_enabled"`
-}
-
 // Validate Attribute
 func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
 	var attrValidatorMap = map[string]func(context.Context, interface{}, string) errors.RawErrorInfo{

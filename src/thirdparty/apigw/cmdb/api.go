@@ -18,14 +18,18 @@
 package cmdb
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/apigwutil"
+
+	"github.com/tidwall/gjson"
 )
 
 // Client returns cmdb api gateway restful client
@@ -64,6 +68,31 @@ func (c *cmdb) Proxy(req *http.Request, rw http.ResponseWriter) {
 		blog.Errorf("proxy cmdb api gateway request failed, err: %v", err)
 		rw.Write([]byte(err.Error()))
 		return
+	}
+
+	// parse api gateway response format to cmdb inner response format
+	if gjson.GetBytes(resp, common.BkAPIErrorCode).Exists() {
+		buf := bytes.NewBuffer([]byte{'{'})
+
+		gjson.ParseBytes(resp).ForEach(func(key, value gjson.Result) bool {
+			keyStr := key.String()
+			switch keyStr {
+			case common.BkAPIErrorCode:
+				keyStr = common.HTTPBKAPIErrorCode
+			case common.BkAPIErrorMessage:
+				keyStr = common.HTTPBKAPIErrorMessage
+			}
+
+			buf.WriteByte('"')
+			buf.WriteString(keyStr)
+			buf.WriteString(`":`)
+			buf.WriteString(value.Raw)
+			buf.WriteByte(',')
+			return true
+		})
+
+		buf.WriteByte('}')
+		resp = buf.Bytes()
 	}
 
 	rw.WriteHeader(result.StatusCode)
