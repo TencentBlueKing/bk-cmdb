@@ -102,6 +102,7 @@ var _ = Describe("host test", func() {
 
 	Describe("add host test", func() {
 		It("add host using api", func() {
+			test.DeleteAllHosts()
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{

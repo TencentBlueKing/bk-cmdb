@@ -233,7 +233,12 @@ func DeleteAllHosts() {
 func DeleteAllObjects() {
 	ctx := context.Background()
 
-	delCond := mapstr.MapStr{"creator": mapstr.MapStr{common.BKDBNE: "cc_system"}}
+	innerObjs := []string{common.BKInnerObjIDBizSet, common.BKInnerObjIDApp, common.BKInnerObjIDSet,
+		common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+		common.BKInnerObjIDProject, common.BKInnerObjIDSwitch, common.BKInnerObjIDRouter, common.BKInnerObjIDBlance,
+		common.BKInnerObjIDFirewall, common.BKInnerObjIDWeblogic, common.BKInnerObjIDTomcat, common.BKInnerObjIDApache}
+
+	delCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBNIN: innerObjs}}
 	objects := make([]metadata.Object, 0)
 	err := GetDB().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKObjIDField, common.BkSupplierAccount).
 		All(ctx, &objects)
