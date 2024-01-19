@@ -8,16 +8,16 @@
 
 #### 接口参数
 
-| 字段   | 类型    | 必选  | 描述           |
-|------|-------|-----|--------------|
-| data | array | 是   | 所要创建pod的详细信息 |
+| 字段   | 类型    | 必选 | 描述           |
+|------|-------|----|--------------|
+| data | array | 是  | 所要创建pod的详细信息 |
 
 #### data[x]
 
-| 字段        | 类型    | 必选  | 描述              |
-|-----------|-------|-----|-----------------|
-| bk_biz_id | int   | 是   | 业务ID            |
-| pods      | array | 是   | 此业务下要创建pod的详细信息 |
+| 字段        | 类型    | 必选 | 描述              |
+|-----------|-------|----|-----------------|
+| bk_biz_id | int   | 是  | 业务ID            |
+| pods      | array | 是  | 此业务下要创建pod的详细信息 |
 
 #### pods[x]
 
@@ -39,55 +39,55 @@
 
 #### spec
 
-| 字段              | 类型     | 必选  | 描述                 |
-|-----------------|--------|-----|--------------------|
-| bk_cluster_id   | int    | 是   | pod所在集群的ID         |
-| bk_namespace_id | int    | 是   | pod所属于namespace的ID |
-| bk_node_id      | int    | 是   | pod所在node的ID       |
-| ref             | object | 是   | pod对应workload的相关信息 |
+| 字段              | 类型     | 必选 | 描述                 |
+|-----------------|--------|----|--------------------|
+| bk_cluster_id   | int    | 是  | pod所在集群的ID         |
+| bk_namespace_id | int    | 是  | pod所属于namespace的ID |
+| bk_node_id      | int    | 是  | pod所在node的ID       |
+| ref             | object | 是  | pod对应workload的相关信息 |
 
 #### ref
 
-| 字段   | 类型  | 必选  | 描述                        |
-|------|-----|-----|---------------------------|
-| kind | int | 是   | pod相关联的workload类别，具体类别见注意 |
-| id   | int | 是   | pod相关联的workload的ID        |
+| 字段   | 类型  | 必选 | 描述                        |
+|------|-----|----|---------------------------|
+| kind | int | 是  | pod相关联的workload类别，具体类别见注意 |
+| id   | int | 是  | pod相关联的workload的ID        |
 
 #### containers[x]
 
-| 字段            | 类型     | 必选  | 描述     |
-|---------------|--------|-----|--------|
-| name          | string | 是   | 容器名称   |
-| container_uid | string | 是   | 容器ID   |
-| image         | string | 否   | 镜像信息   |
-| ports         | array  | 否   | 容器端口   |
-| host_ports    | array  | 否   | 主机端口映射 |
-| args          | array  | 否   | 启动参数   |
-| started       | int    | 否   | 启动时间   |
-| limits        | object | 否   | 资源限制   |
-| requests      | object | 否   | 申请资源大小 |
-| liveness      | object | 否   | 存活探针   |
-| environment   | array  | 否   | 环境变量   |
-| mounts        | array  | 否   | 挂载卷    |
+| 字段            | 类型     | 必选 | 描述     |
+|---------------|--------|----|--------|
+| name          | string | 是  | 容器名称   |
+| container_uid | string | 是  | 容器ID   |
+| image         | string | 否  | 镜像信息   |
+| ports         | array  | 否  | 容器端口   |
+| host_ports    | array  | 否  | 主机端口映射 |
+| args          | array  | 否  | 启动参数   |
+| started       | int    | 否  | 启动时间   |
+| limits        | object | 否  | 资源限制   |
+| requests      | object | 否  | 申请资源大小 |
+| liveness      | object | 否  | 存活探针   |
+| environment   | array  | 否  | 环境变量   |
+| mounts        | array  | 否  | 挂载卷    |
 
 #### ports[x]
 
-| 字段            | 类型     | 必选  | 描述   |
-|---------------|--------|-----|------|
-| name          | string | 是   | 端口名称 |
-| hostPort      | int    | 否   | 主机端口 |
-| containerPort | int    | 否   | 容器端口 |
-| protocol      | string | 否   | 协议名称 |
-| hostIP        | string | 否   | 主机IP |
+| 字段            | 类型     | 必选 | 描述   |
+|---------------|--------|----|------|
+| name          | string | 是  | 端口名称 |
+| hostPort      | int    | 否  | 主机端口 |
+| containerPort | int    | 否  | 容器端口 |
+| protocol      | string | 否  | 协议名称 |
+| hostIP        | string | 否  | 主机IP |
 
 #### liveness
 
-| 字段        | 类型     | 必选  | 描述         |
-|-----------|--------|-----|------------|
-| exec      | object | 是   | 执行动作       |
-| httpGet   | object | 否   | Http Get动作 |
-| tcpSocket | object | 否   | tcp socket |
-| grpc      | object | 否   | grpc 协议    |
+| 字段        | 类型     | 必选 | 描述         |
+|-----------|--------|----|------------|
+| exec      | object | 是  | 执行动作       |
+| httpGet   | object | 否  | Http Get动作 |
+| tcpSocket | object | 否  | tcp socket |
+| grpc      | object | 否  | grpc 协议    |
 
 **注意：**
 
@@ -175,7 +175,7 @@
 
 ### 返回结果参数说明
 
-| 名称         | 类型     | 描述                         |
+| 字段         | 类型     | 描述                         |
 |------------|--------|----------------------------|
 | result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
 | code       | int    | 错误编码。 0表示success，>0表示失败错误  |

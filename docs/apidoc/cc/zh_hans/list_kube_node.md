@@ -8,42 +8,42 @@
 
 #### 接口参数
 
-| 字段        | 类型     | 必选  | 描述                       |
-|-----------|--------|-----|--------------------------|
-| bk_biz_id | int    | 是   | 业务ID                     |
-| filter    | object | 否   | 容器节点查询范围                 |
-| fields    | array  | 否   | 所要查询的容器节点属性，如果不写代表搜索全部数据 |
-| page      | object | 是   | 分页条件                     |
+| 字段        | 类型     | 必选 | 描述                       |
+|-----------|--------|----|--------------------------|
+| bk_biz_id | int    | 是  | 业务ID                     |
+| filter    | object | 否  | 容器节点查询范围                 |
+| fields    | array  | 否  | 所要查询的容器节点属性，如果不写代表搜索全部数据 |
+| page      | object | 是  | 分页条件                     |
 
 #### filter
 
 该参数为容器节点属性字段过滤规则的组合，用于根据容器节点属性字段搜索容器集群。组合支持AND 和 OR 两种方式，允许嵌套，最多嵌套2层。
 
-| 字段        | 类型     | 必选  | 描述        |
-|-----------|--------|-----|-----------|
-| condition | string | 是   | 规则操作符     |
-| rules     | array  | 是   | 过滤节点的范围规则 |
+| 字段        | 类型     | 必选 | 描述        |
+|-----------|--------|----|-----------|
+| condition | string | 是  | 规则操作符     |
+| rules     | array  | 是  | 过滤节点的范围规则 |
 
 #### rules
 
 过滤规则为三元组 `field`, `operator`, `value`
 
-| 字段     | 类型   | 必填 | 描述                                                                                                |
-| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
-| field    | string | 是   | 字段名                                                                                               |
-| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
+| 字段       | 类型     | 必选 | 描述                                                                                                |
+|----------|--------|----|---------------------------------------------------------------------------------------------------|
+| field    | string | 是  | 字段名                                                                                               |
+| operator | string | 是  | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否  | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
 #### page
 
-| 字段           | 类型     | 必选  | 描述                                                        |
-|--------------|--------|-----|-----------------------------------------------------------|
-| start        | int    | 是   | 记录开始位置                                                    |
-| limit        | int    | 是   | 每页限制条数,最大500                                              |
-| enable_count | bool   | 是   | 本次请求是否为获取数量还是详情的标记                                        |
-| sort         | string | 否   | 排序字段，通过在字段前面增加 -，如 sort:&#34;-field&#34; 可以表示按照字段 field降序 |
+| 字段           | 类型     | 必选 | 描述                                                        |
+|--------------|--------|----|-----------------------------------------------------------|
+| start        | int    | 是  | 记录开始位置                                                    |
+| limit        | int    | 是  | 每页限制条数,最大500                                              |
+| enable_count | bool   | 是  | 本次请求是否为获取数量还是详情的标记                                        |
+| sort         | string | 否  | 排序字段，通过在字段前面增加 -，如 sort:&#34;-field&#34; 可以表示按照字段 field降序 |
 
 **注意：**
 
@@ -53,7 +53,7 @@
 
 ### 请求参数示例
 
-### 详细信息请求参数
+#### 详细信息请求参数
 
 ```json
 {
@@ -129,7 +129,7 @@
 
 ### 返回结果示例
 
-### 详细信息接口响应
+#### 详细信息接口响应
 
 ```json
 {
@@ -166,7 +166,7 @@
 }
 ```
 
-### 获取容器节点数量接口响应
+#### 获取容器节点数量接口响应
 
 ```json
 {
@@ -203,19 +203,19 @@
 
 #### info[x]
 
-| 字段                | 类型     | 必选  | 描述                           |
-|-------------------|--------|-----|------------------------------|
-| name              | string | 否   | 节点名称                         |
-| roles             | string | 否   | 节点类型                         |
-| labels            | object | 否   | 标签                           |
-| taints            | object | 否   | 污点                           |
-| unschedulable     | bool   | 否   | 是否关闭可调度，true为不可调度，false代表可调度 |
-| internal_ip       | array  | 否   | 内网IP                         |
-| external_ip       | array  | 否   | 外网IP                         |
-| hostname          | string | 否   | 主机名                          |
-| runtime_component | string | 否   | 运行时组件                        |
-| kube_proxy_mode   | string | 否   | kube-proxy 代理模式              |
-| pod_cidr          | string | 否   | 此节点Pod地址的分配范围                |
+| 字段                | 类型     | 必选 | 描述                           |
+|-------------------|--------|----|------------------------------|
+| name              | string | 否  | 节点名称                         |
+| roles             | string | 否  | 节点类型                         |
+| labels            | object | 否  | 标签                           |
+| taints            | object | 否  | 污点                           |
+| unschedulable     | bool   | 否  | 是否关闭可调度，true为不可调度，false代表可调度 |
+| internal_ip       | array  | 否  | 内网IP                         |
+| external_ip       | array  | 否  | 外网IP                         |
+| hostname          | string | 否  | 主机名                          |
+| runtime_component | string | 否  | 运行时组件                        |
+| kube_proxy_mode   | string | 否  | kube-proxy 代理模式              |
+| pod_cidr          | string | 否  | 此节点Pod地址的分配范围                |
 
 **注意：**
 
