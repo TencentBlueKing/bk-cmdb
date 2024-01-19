@@ -16,13 +16,13 @@
 
 #### instances 字段说明
 
-| 字段|类型|必选	   |说明|
-|---|---|---|---|
-|instances.bk_host_id|int|是|主机ID|服务实例绑定的主机ID|
-|instances.service_instance_name|string|否|服务实例名称，不填则会使用主机IP加进程名称加服务绑定的端口作为名称，如“123.123.123.123_job_java_80”形式|
-|instances.processes|array|是|进程信息|服务实例下新建的进程信息|
-|instances.processes.process_template_id|int|是|进程模板ID|如果模块没有绑定服务模板则填0|
-|instances.processes.process_info|object|是|进程实例信息|如果进程绑定有模板，则仅模板中没有锁定的字段有效|
+| 字段|类型|必选	   | 说明                                                                  |
+|---|---|---|---------------------------------------------------------------------|
+|instances.bk_host_id|int|是| 主机ID,服务实例绑定的主机ID                                                    |
+|instances.service_instance_name|string|否| 服务实例名称，不填则会使用主机IP加进程名称加服务绑定的端口作为名称，如“123.123.123.123_job_java_80”形式 |
+|instances.processes|array|是| 进程信息,服务实例下新建的进程信息                                                   |
+|instances.processes.process_template_id|int|是| 进程模板ID,如果模块没有绑定服务模板则填0                                              |
+|instances.processes.process_info|object|是| 进程实例信息,如果进程绑定有模板，则仅模板中没有锁定的字段有效                                     |
 
 #### processes 字段说明
 | 字段|类型|必选	   |说明|

@@ -85,8 +85,8 @@
 #### from、to
 | 字段       | 类型      | 描述                               |
 |------------|-----------|------------------------------------|
-|bk_classification_id|string|分类ID/
+|bk_classification_id|string|分类ID|
 |  bk_obj_id    |string     | 模型id |
 |  bk_obj_name    |string     | 模型名称 |
 | bk_supplier_account | string | 开发商账号   |
-| position             | json object string | 用于前端展示的坐标   /
+| position             | json object string | 用于前端展示的坐标   |

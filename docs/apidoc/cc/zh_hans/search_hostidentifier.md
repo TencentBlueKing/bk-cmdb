@@ -180,8 +180,8 @@
 
 | 字段                 | 类型   | 描述                                                         |
 | -------------------- | ------ | ------------------------------------------------------------ |
-|enable|bool|端口是否启用||
-|ip|string|绑定的ip||
-|port|string|绑定的端口||
-|protocol|string|使用的协议||
+|enable|bool|端口是否启用|
+|ip|string|绑定的ip|
+|port|string|绑定的端口|
+|protocol|string|使用的协议|
 |template_row_id|int|实例化使用的模板行索引，进程内唯一|
