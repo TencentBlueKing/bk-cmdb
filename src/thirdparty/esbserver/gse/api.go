@@ -338,8 +338,8 @@ func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadat
 		return nil, false, err
 	}
 
-	// 14001 is a special error code for route not exists
-	if resp.Code == 14001 {
+	// special error code for route not exists
+	if resp.Code == 14001 || resp.Code == 1014003 || resp.Code == 1014505 {
 		return nil, false, nil
 	}
 
