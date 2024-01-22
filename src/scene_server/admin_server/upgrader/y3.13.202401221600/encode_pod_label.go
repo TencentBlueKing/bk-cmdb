@@ -15,13 +15,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202312141700
+package y3_13_202401221600
 
 import (
 	"context"
 	"strings"
 
-	"configcenter/pkg/transfer"
+	"configcenter/pkg/conv"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/kube/types"
@@ -33,7 +33,7 @@ func encodePodLabel(ctx context.Context, db dal.RDB) error {
 	start := uint64(0)
 	for {
 		pods := make([]types.Pod, 0)
-		if err := db.Table(types.BKTableNameBasePod).Find(nil).Fields([]string{common.BKFieldID, types.LabelsField}...).
+		if err := db.Table(types.BKTableNameBasePod).Find(nil).Fields(common.BKFieldID, types.LabelsField).
 			Start(start).Limit(common.BKMaxPageSize).Sort(common.BKFieldID).All(ctx, &pods); err != nil {
 			blog.Errorf("list pod failed, start: %d, err: %v", start, err)
 			return err
@@ -52,7 +52,7 @@ func encodePodLabel(ctx context.Context, db dal.RDB) error {
 			newLabels := make(map[string]string)
 			for key, val := range *pod.Labels {
 				if strings.Contains(key, ".") {
-					key = transfer.EncodeDot(key)
+					key = conv.EncodeDot(key)
 					hasDot = true
 				}
 
@@ -71,7 +71,7 @@ func encodePodLabel(ctx context.Context, db dal.RDB) error {
 			}
 		}
 
-		start += uint64(len(pods))
+		start += common.BKMaxPageSize
 	}
 
 	return nil

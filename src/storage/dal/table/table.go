@@ -106,7 +106,7 @@ func (f Fields) IsFieldEditableByField(field string) bool {
 	return f.isEditable[field]
 }
 
-// GetFieldNames returns the corresponding editable of specified field.
+// GetFieldNames returns all field names.
 func (f Fields) GetFieldNames() []string {
 	return f.fieldNames
 }

@@ -15,28 +15,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_12_202312141700
+package conv
 
 import (
-	"context"
-
-	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage/dal"
+	"strings"
 )
 
-func init() {
-	upgrader.RegistUpgrader("y3.12.202312141700", upgrade)
+// EncodeDot encode the dot in the string as the unicode value
+func EncodeDot(input string) string {
+	return strings.ReplaceAll(input, ".", "\\u002e")
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.12.202312141700")
-
-	if err = encodePodLabel(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.12.202312141700 encode pod label failed, err: %v", err)
-		return err
-	}
-
-	blog.Infof("upgrade y3.12.202312141700 success")
-	return nil
+// DecodeDot decode the unicode value of dot in a string to dot
+func DecodeDot(input string) string {
+	return strings.ReplaceAll(input, "\\u002e", ".")
 }

@@ -571,7 +571,7 @@ func (s *service) ListContainerByTopo(ctx *rest.Contexts) {
 	}
 	fields := make([]string, len(req.ContainerFields))
 	copy(fields, req.ContainerFields)
-	fields = append(req.ContainerFields, []string{common.BKFieldID, types.BKPodIDField}...)
+	fields = append(req.ContainerFields, common.BKFieldID, types.BKPodIDField)
 
 	query := &types.GetContainerByPodOption{
 		PodCond:       podCond,

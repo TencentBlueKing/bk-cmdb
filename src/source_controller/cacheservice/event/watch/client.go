@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/pkg/transfer"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -569,16 +568,7 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 			}
 			delete(detailMap, "_id")
 
-			if labels, ok := detailMap[kubetypes.LabelsField]; ok {
-				// 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
-				if labelMap, ok := labels.(map[string]string); ok {
-					newLabels := make(map[string]string)
-					for key, val := range labelMap {
-						newLabels[transfer.DecodeDot(key)] = val
-					}
-					detailMap[kubetypes.LabelsField] = newLabels
-				}
-			}
+			detailMap = event.ConvertLabel(detailMap)
 
 			detailJson, _ := json.Marshal(detailMap)
 			for _, index := range oidIndexMap[objectID.Hex()] {

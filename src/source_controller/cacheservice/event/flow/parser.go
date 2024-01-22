@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"configcenter/pkg/transfer"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
@@ -217,7 +216,7 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 		podDetail := *e.Document.(*map[string]interface{})
 		podDetail["containers"] = append(containers, delContainers...)
 
-		podDetail = transferLabel(podDetail)
+		podDetail = event.ConvertLabel(podDetail)
 
 		byt, err := json.Marshal(podDetail)
 		if err != nil {
@@ -251,7 +250,7 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 			return nil, nil, false, err
 		}
 		podDetail["containers"] = containers
-		podDetail = transferLabel(podDetail)
+		podDetail = event.ConvertLabel(podDetail)
 		byt, err := json.Marshal(podDetail)
 		if err != nil {
 			blog.Errorf("marshal pod with container detail(%+v) failed, err: %v, rid: %s", podDetail, err, rid)
@@ -266,27 +265,6 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 	}
 
 	return parseEventToNodeAndDetail(key, e, id, rid)
-}
-
-// transferLabel 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
-func transferLabel(podDetail map[string]interface{}) map[string]interface{} {
-	labels, ok := podDetail[kubetypes.LabelsField]
-	if !ok {
-		return podDetail
-	}
-
-	labelMap, ok := labels.(map[string]string)
-	if !ok {
-		return podDetail
-	}
-
-	newLabels := make(map[string]string)
-	for key, val := range labelMap {
-		newLabels[transfer.DecodeDot(key)] = val
-	}
-	podDetail[kubetypes.LabelsField] = newLabels
-
-	return podDetail
 }
 
 // getDeletedContainerDetail get deleted pod's containers details

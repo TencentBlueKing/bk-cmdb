@@ -15,19 +15,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package transfer
+package y3_13_202401221600
 
 import (
-	"testing"
+	"context"
 
-	"github.com/stretchr/testify/require"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func TestDot(t *testing.T) {
-	str := "test1.test2.test3.test4"
-	encodedStr := EncodeDot(str)
-	require.Equal(t, encodedStr, "test1\\u002etest2\\u002etest3\\u002etest4")
+func init() {
+	upgrader.RegistUpgrader("y3.13.202401221600", upgrade)
+}
 
-	decodedStr := DecodeDot(encodedStr)
-	require.Equal(t, decodedStr, str)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.13.202401221600")
+
+	if err = encodePodLabel(ctx, db); err != nil {
+		blog.Errorf("upgrade y3.13.202401221600 encode pod label failed, err: %v", err)
+		return err
+	}
+
+	blog.Infof("upgrade y3.13.202401221600 success")
+	return nil
 }

@@ -15,29 +15,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package transfer
+package conv
 
 import (
-	"fmt"
-	"regexp"
-	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-// EncodeDot encode the dot in the string as the unicode value
-func EncodeDot(input string) string {
-	re := regexp.MustCompile(`\.`)
-	encodedStr := re.ReplaceAllStringFunc(input, func(s string) string {
-		return fmt.Sprintf("\\u%04x", rune('.'))
-	})
-	return encodedStr
-}
+func TestDot(t *testing.T) {
+	str := "test1.test2.test3.test4"
+	encodedStr := EncodeDot(str)
+	require.Equal(t, encodedStr, "test1\\u002etest2\\u002etest3\\u002etest4")
 
-// DecodeDot decode the unicode value of dot in a string to dot
-func DecodeDot(input string) string {
-	re := regexp.MustCompile(`\\u([0-9a-fA-F]{4})`)
-	decodedStr := re.ReplaceAllStringFunc(input, func(s string) string {
-		unicodePoint, _ := strconv.ParseInt(s[2:], 16, 32)
-		return string(rune(unicodePoint))
-	})
-	return decodedStr
+	decodedStr := DecodeDot(encodedStr)
+	require.Equal(t, decodedStr, str)
 }
