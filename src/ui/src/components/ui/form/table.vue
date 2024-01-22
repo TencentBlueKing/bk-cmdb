@@ -133,7 +133,7 @@
           name: 'bkTooltips',
           content: property.placeholder,
           placement: 'top',
-          trigger: 'click'
+          trigger: 'mouseenter'
         }
         const style = {
           'text-decoration': 'underline',

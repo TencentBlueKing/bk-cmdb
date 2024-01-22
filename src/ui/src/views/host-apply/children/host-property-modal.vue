@@ -13,6 +13,7 @@
 <template>
   <bk-dialog
     v-model="show"
+    class="host-property-modal"
     :draggable="false"
     :mask-close="false"
     :width="730"
@@ -151,6 +152,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .host-property-modal {
+      :deep(.bk-dialog-header) {
+          padding-bottom: 13px !important;
+      }
+    }
     .empty {
       position: absolute;
       left: 50%;

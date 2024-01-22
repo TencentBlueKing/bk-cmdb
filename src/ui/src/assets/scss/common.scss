@@ -401,3 +401,10 @@ input.cmdb-form-input {
         color: #ff5656;
     }
 }
+
+.property-name-tooltips {
+    color: #979BA5;
+    &:hover {
+        color: #63656E ;
+    }
+}

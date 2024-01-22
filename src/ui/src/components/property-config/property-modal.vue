@@ -12,6 +12,7 @@
 
 <template>
   <bk-dialog
+    class="property-modal"
     v-model="show"
     :draggable="false"
     :mask-close="false"
@@ -166,6 +167,12 @@
 </script>
 
 <style lang="scss" scoped>
+  .property-modal {
+      :deep(.bk-dialog-header) {
+          padding-bottom: 13px !important;
+      }
+  }
+
   .search {
       width: 280px;
       margin-bottom: 10px;

@@ -382,6 +382,10 @@
       &.show {
         display: flex;
       }
+
+      &:hover {
+        opacity: .8;
+      }
     }
 
     &.changing {
