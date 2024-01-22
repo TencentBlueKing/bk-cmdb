@@ -1,31 +1,27 @@
 ### 描述
 
-根据业务ID查询业务下的主机，可附带其他的过滤信息，如集群id,模块id等(权限：业务访问权限)
+查询资源池中的主机(权限：主机池主机查看权限)
 
 ### 输入参数
 
 | 参数名称                 | 参数类型   | 必选 | 描述                                                  |
 |----------------------|--------|----|-----------------------------------------------------|
-| page                 | object | 是  | 查询条件                                                |
-| bk_biz_id            | int    | 是  | 业务id                                                |
-| bk_set_ids           | array  | 否  | 集群ID列表，最多200条 **bk_set_ids和set_cond只能使用其中一个**       |
-| set_cond             | array  | 否  | 集群查询条件 **bk_set_ids和set_cond只能使用其中一个**              |
-| bk_module_ids        | array  | 否  | 模块ID列表，最多500条 **bk_module_ids和module_cond只能使用其中一个** |
-| module_cond          | array  | 否  | 模块查询条件 **bk_module_ids和module_cond只能使用其中一个**        |
+| page                 | dict   | 否  | 查询条件                                                |
 | host_property_filter | object | 否  | 主机属性组合查询条件                                          |
-| fields               | array  | 是  | 主机属性列表，控制返回结果的主机里有哪些字段，能够加速接口请求和减少网络流量传输            |
+| fields               | array  | 否  | 主机属性列表，控制返回结果的主机里有哪些字段，能够加速接口请求和减少网络流量传输，不填默认返回所有字段 |
 
 #### host_property_filter
 
 该参数为主机属性字段过滤规则的组合，用于根据主机属性字段搜索主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。
-过滤规则为四元组 `field`, `operator`, `value`
 
-| 参数名称      | 参数类型   | 必选 | 描述     |
-|-----------|--------|----|--------|
-| condition | string | 否  | 组合查询条件 |
-| rules     | array  | 否  | 规则     |
+| 参数名称      | 参数类型   | 必选 | 描述 |
+|-----------|--------|----|----|
+| condition | string | 否  |    |
+| rules     | array  | 否  | 规则 |
 
 #### rules
+
+过滤规则为四元组 `field`, `operator`, `value`
 
 | 参数名称     | 参数类型   | 必选 | 描述                                                                                                |
 |----------|--------|----|---------------------------------------------------------------------------------------------------|
@@ -34,22 +30,6 @@
 | value    | -      | 否  | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
-
-#### set_cond
-
-| 参数名称     | 参数类型   | 必选 | 描述                |
-|----------|--------|----|-------------------|
-| field    | string | 是  | 取值为集群的字段          |
-| operator | string | 是  | 取值为：$eq $ne       |
-| value    | string | 是  | field配置的集群字段所对应的值 |
-
-#### module_cond
-
-| 参数名称     | 参数类型   | 必选 | 描述                |
-|----------|--------|----|-------------------|
-| field    | string | 是  | 取值为模块的字段          |
-| operator | string | 是  | 取值为：$eq $ne       |
-| value    | string | 是  | field配置的模块字段所对应的值 |
 
 #### page
 
@@ -68,15 +48,6 @@
         "limit": 10,
         "sort": "bk_host_id"
     },
-    "set_cond": [
-        {
-            "field": "bk_set_name",
-            "operator": "$eq",
-            "value": "set1"
-        }
-    ],
-    "bk_biz_id": 3,
-    "bk_module_ids": [54,56],
     "fields": [
         "bk_host_id",
         "bk_cloud_id",
@@ -87,29 +58,22 @@
     "host_property_filter": {
         "condition": "AND",
         "rules": [
-            {
-                "field": "bk_host_innerip",
+        {
+            "field": "bk_host_outerip",
+            "operator": "equal",
+            "value": "127.0.0.1"
+        }, {
+            "condition": "OR",
+            "rules": [{
+                "field": "bk_os_type",
+                "operator": "not_in",
+                "value": ["3"]
+            }, {
+                "field": "bk_sla",
                 "operator": "equal",
-                "value": "127.0.0.1"
-            },
-            {
-                "condition": "OR",
-                "rules": [
-                    {
-                        "field": "bk_os_type",
-                        "operator": "not_in",
-                        "value": [
-                            "3"
-                        ]
-                    },
-                    {
-                        "field": "bk_cloud_id",
-                        "operator": "equal",
-                        "value": 0
-                    }
-                ]
-            }
-        ]
+                "value": "1"
+            }]
+        }]
     }
 }
 ```
@@ -123,21 +87,14 @@
   "message": "success",
   "permission": null,
   "data": {
-    "count": 2,
+    "count": 1,
     "info": [
       {
-        "bk_cloud_id": 0,
-        "bk_host_id": 1,
-        "bk_host_innerip": "192.168.15.18",
+        "bk_cloud_id": "0",
+        "bk_host_id": 17,
+        "bk_host_innerip": "192.168.1.1",
         "bk_mac": "",
-        "bk_os_type": null
-      },
-      {
-        "bk_cloud_id": 0,
-        "bk_host_id": 2,
-        "bk_host_innerip": "192.168.15.4",
-        "bk_mac": "",
-        "bk_os_type": null
+        "bk_os_type": "1"
       }
     ]
   }
@@ -152,7 +109,7 @@
 | code       | int    | 错误编码。 0表示success，>0表示失败错误  |
 | message    | string | 请求失败返回的错误信息                |
 | permission | object | 权限信息                       |
-| data       | object | 请求返回的数据                    |
+| data       | array  | 请求返回的数据                    |
 
 #### data
 
