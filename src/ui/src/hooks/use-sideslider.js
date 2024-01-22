@@ -4,7 +4,7 @@ import { $bkInfo } from '@/magicbox/index.js'
 
 export default function useSideslider(data, options = {}) {
   const isChanged = ref(false)
-  const { watchOnce = true } = options
+  const { watchOnce = true, subTitle = '离开将会导致未保存信息丢失' } = options
 
   if (data) {
     // 放到下次任务循环队列执行，因为枚举多选类型一开始为空值，后面第一次正常赋值这块会执行
@@ -24,7 +24,7 @@ export default function useSideslider(data, options = {}) {
     }
     $bkInfo({
       title: t('确认离开当前页？'),
-      subTitle: t('离开将会导致未保存信息丢失'),
+      subTitle: t(subTitle),
       clsName: 'custom-info-confirm default-info',
       okText: t('离开'),
       cancelText: t('取消'),

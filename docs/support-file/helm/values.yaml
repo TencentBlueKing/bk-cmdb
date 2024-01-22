@@ -1111,6 +1111,10 @@ common:
       keyFile:
       caFile:
       password:
+    # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+    # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+    # 可以配置不进行业务访问鉴权
+    skipViewBizAuth: false
 
   ## bk-cmdb common config esb parameters
   ## @param common.esb.appCode bk-cmdb app code used in esb
@@ -1278,18 +1282,14 @@ common:
     ## 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     ##
     queueSize: 100
-    ## @param common.monitor.pluginPath Monitor plugin path
-    ## 设置需要挂载到pod里的路径地址，以此能够访问到gsecmdlinePath和domainSocketPath指定路径的二进制
+    ## @param common.monitor.bkMonitorReportUrl Monitor report url
+    ## 当使用blueking监控插件时，上报数据的接收端URL
     ##
-    pluginPath:
-    ## @param common.monitor.gsecmdlinePath Monitor plugin gsecmdbline path
-    ## 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    bkMonitorReportUrl:
+    ## @param common.monitor.accessToken Monitor plugin data report access token
+    ## 当使用blueking监控插件时，上报数据所需要的数据通道标识验证码，防止数据误上报至其他管道
     ##
-    gsecmdlinePath:
-    ## @param common.monitor.domainSocketPath Domain socket path for monitor plugin gsecmdbline data report
-    ## 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
-    ##
-    domainSocketPath:
+    accessToken:
     ## @param common.monitor.rateLimiter Monitor plugin data report rate limiter
     ## 用于对数据上报进行频率控制和限流
     ## qps的设置范围为1～50，默认值为10

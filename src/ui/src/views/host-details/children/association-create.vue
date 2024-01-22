@@ -22,7 +22,7 @@
         @on-selected="handleSelectObj">
       </cmdb-selector>
     </div>
-    <div class="association-filter clearfix">
+    <div class="association-filter clearfix" v-show="isShowPropertyFilter">
       <label class="filter-label fl">{{$t('条件筛选')}}</label>
       <div class="filter-group filter-group-property fl">
         <cmdb-association-property-filter
@@ -37,6 +37,7 @@
       <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('搜索')}}</bk-button>
     </div>
     <bk-table class="new-association-table"
+      v-show="isShowPropertyFilter"
       v-bkloading="{ isLoading: $loading('get_relation_inst') }"
       :pagination="table.pagination"
       :data="table.list"
@@ -61,24 +62,18 @@
       </bk-table-column>
       <bk-table-column :label="$t('操作')">
         <template slot-scope="{ row }">
-          <cmdb-auth :auth="getInstanceAuth(row)">
+          <cmdb-auth :auth="getInstanceAuth(row)" :ignore-passed-auth="true">
             <template slot-scope="{ disabled }">
-              <bk-link href="javascript:void(0)" class="option-link"
-                v-if="tempData.includes(row[instanceIdKey])"
+              <bk-link href="javascript:void(0)" :class="['option-link', { disabled }]"
                 theme="primary"
-                :disabled="disabled"
-                @click="updateAssociation(row[instanceIdKey], 'remove')">
-                {{$t('取消关联')}}
-              </bk-link>
-              <bk-link href="javascript:void(0)" class="option-link"
-                theme="primary"
+                :disabled="disabled || $loading(requestIds.delete)"
                 @click="updateAssociation(row[instanceIdKey], 'remove')"
-                v-else-if="isAssociated(row)">
+                v-if="isAssociated(row)">
                 {{$t('取消关联')}}
               </bk-link>
-              <bk-link href="javascript:void(0)" class="option-link" v-else
+              <bk-link href="javascript:void(0)" :class="['option-link', { disabled }]" v-else
                 theme="primary"
-                :disabled="disabled"
+                :disabled="disabled || $loading(requestIds.create)"
                 @click.stop="beforeUpdate($event, row[instanceIdKey], 'new')">
                 {{$t('添加关联')}}
               </bk-link>
@@ -111,6 +106,7 @@
   import instanceService from '@/service/instance/instance'
   import instanceAssociationService from '@/service/instance/association'
   import businessSetService from '@/service/business-set/index.js'
+  import hostSearchService from '@/service/host/search'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
   import Utils from '@/components/filters/utils'
   import { isEmptyPropertyValue, formatValue } from '@/utils/tools'
@@ -167,7 +163,12 @@
         existInstAssociation: [],
         tempData: [],
         hasChange: false,
-        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY]
+        isShowPropertyFilter: true,
+        excludePropertyFilterTypes: [PROPERTY_TYPES.INNER_TABLE, PROPERTY_TYPES.TIME, PROPERTY_TYPES.FOREIGNKEY],
+        requestIds: {
+          create: Symbol('create'),
+          delete: Symbol('delete'),
+        }
       }
     },
     computed: {
@@ -276,7 +277,6 @@
       ]),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
       ...mapActions('objectBiz', ['searchBusiness']),
-      ...mapActions('hostSearch', ['searchHost']),
       getInstanceAuth(row) {
         const auth = [this.HOST_AUTH.U_HOST]
         switch (this.currentAsstObj) {
@@ -330,10 +330,17 @@
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
           }
-        }).then((properties) => {
-          this.properties = properties
-          return properties
         })
+          .then((properties) => {
+            this.properties = properties
+            this.isShowPropertyFilter = true
+            return properties
+          })
+          .catch((err) => {
+            if (err.permission) {
+              this.isShowPropertyFilter = false
+            }
+          })
       },
       close() {
         this.$emit('on-new-relation-close')
@@ -521,6 +528,9 @@
             bk_obj_asst_id: this.currentOption.bk_obj_asst_id,
             bk_inst_id: this.isSource ? this.instId : instId,
             bk_asst_inst_id: this.isSource ? instId : this.instId
+          },
+          config: {
+            requestId: this.requestIds.create
           }
         })
       },
@@ -533,7 +543,10 @@
         })
         return this.deleteInstAssociation({
           id: (instAssociation || {}).id,
-          objId: this.objId
+          objId: this.objId,
+          config: {
+            requestId: this.requestIds.delete
+          }
         })
       },
       beforeUpdate(event, instId, updateType = 'new') {
@@ -612,7 +625,7 @@
           },
           page: this.page
         }
-        return this.searchHost({
+        return hostSearchService.getHosts({
           params: hostParams,
           config
         })
@@ -773,7 +786,7 @@
     .option-link{
         font-size: 12px;
         color: #3c96ff;
-        &.is-associated {
+        &.disabled {
             color: #979BA5;
             cursor: not-allowed;
         }

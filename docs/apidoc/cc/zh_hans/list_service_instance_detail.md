@@ -23,7 +23,7 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
 #### selectors
 | 字段                 |  类型      | 必选	   |  描述                 |
 | -------- | ------ | ---- | ------ |
-| key    | string | 否   | 字段名 |                                                              |
+| key    | string | 否   | 字段名 |
 | operator | string | 否   | operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin` |
 | values    | -      | 否 | 不同的operator对应不同的value格式                            |
 
@@ -159,24 +159,24 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
 
 #### data.info 字段说明
 
-| 字段|类型|说明|Description|
-|---|---|---|---|
-|id|integer|服务实例ID||
-|name|array|服务实例名称||
-|service_template_id|int|服务模板ID||
-|bk_host_id|int|主机ID||
-|bk_host_innerip|string|主机IP||
-|bk_module_id|integer|模块ID||
-|creator|string|创建人||
-|modifier|string|修改人||
-|create_time|string|创建时间||
-|last_time|string|修复时间||
-|bk_supplier_account|string|供应商ID||
-|service_category_id|integer|服务分类ID||
-|process_instances|数组|进程实例信息|包括||
-|bk_biz_id|int|业务ID|业务ID||
-|process_instances.process|object|进程实例详情|进程属性字段||
-|process_instances.relation|object|进程实例的关联信息|比如主机ID，进程模板ID||
+| 字段|类型| 说明                      |
+|---|---|-------------------------|
+|id|integer| 服务实例ID                  |
+|name|array| 服务实例名称                  |
+|service_template_id|int| 服务模板ID                  |
+|bk_host_id|int| 主机ID                    |
+|bk_host_innerip|string| 主机IP                    |
+|bk_module_id|integer| 模块ID                    |
+|creator|string| 创建人                     |
+|modifier|string| 修改人                     |
+|create_time|string| 创建时间                    |
+|last_time|string| 修复时间                    |
+|bk_supplier_account|string| 供应商ID                   |
+|service_category_id|integer| 服务分类ID                  |
+|process_instances|array| 进程实例信息                  |
+|bk_biz_id|int| 业务ID                    |
+|process_instances.process|object| 进程实例详情,进程属性字段           |
+|process_instances.relation|object| 进程实例的关联信息,比如主机ID，进程模板ID |
 
 #### data.info.process_instances[x].process 字段说明
 | 字段|类型|说明|

@@ -46,14 +46,24 @@ end;
 return detail
 `
 
+const getHostWithAgentIDScript = `
+local detail = redis.pcall('get', KEYS[1])
+
+if (detail == false) then
+	return ARGV[1]
+end;
+
+return detail
+`
+
 const hostRelationNotExitError = "host relation not exist"
 const hostDetailNotExitError = "host detail not exist"
 
 func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, error) {
 	keys := hostKey.AgentIDKey(agentID)
 
-	result, err := redis.Client().Eval(context.Background(), getHostWithKeyScript, []string{keys},
-		hostRelationNotExitError, hostDetailNotExitError).Result()
+	result, err := redis.Client().Eval(context.Background(), getHostWithAgentIDScript, []string{keys},
+		hostDetailNotExitError).Result()
 	if err != nil {
 		return nil, fmt.Errorf("run getHostWithIpScript in redis failed, err: %v", err)
 	}

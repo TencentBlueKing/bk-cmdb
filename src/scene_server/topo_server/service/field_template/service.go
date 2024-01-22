@@ -81,6 +81,8 @@ func InitFieldTemplate(utility *rest.RestUtility, c *capability.Capability) {
 		Handler: s.ListFieldTmplByObj})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/by_field_template",
 		Handler: s.ListObjByFieldTmpl})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/field_template/object/count",
+		Handler: s.CountFieldTemplateObj})
 
 	// field template task
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/field_template/object/task",

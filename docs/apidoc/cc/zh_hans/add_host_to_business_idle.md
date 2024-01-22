@@ -1,8 +1,7 @@
 ### 功能描述
 
 新增主机到业务空闲机
-- 此接口保证主机要么同时添加成功，要么同时失败(v3.10.25+)
-
+- 此接口保证主机要么同时添加成功，要么同时失败(v3.10.25+，权限：主机池主机分配到业务权限)
 ### 请求参数
 
 {{ common_args_desc }}
@@ -20,7 +19,7 @@
 |-----------|------------|--------|------------|
 | bk_host_innerip |  string   | 否     | 主机内网ipv4, 与bk_host_innerip_v6两者其中一个必传 |
 | bk_host_innerip_v6 |  string   | 否      | 主机内网ipv6, 与bk_host_innerip两者其中一个必传 |
-| bk_cloud_id     |  int      | 是     | 云区域ID |
+| bk_cloud_id     |  int      | 是     | 管控区域ID |
 | bk_addressing     |  string      | 是     | 寻址方式， "static"、"dynamic" |
 | operator |  string   |  否 |  主要维护人   | 
 ...

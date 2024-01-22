@@ -33,14 +33,20 @@
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
+            v-bk-tooltips.top="{
+              disabled: !property.placeholder,
+              theme: 'light',
+              trigger: 'click',
+              content: property.placeholder
+            }"
             @active-change="handleComponentActiveChange(property, ...arguments)">
           </component>
         </div>
+        <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
-        <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
-          {{$t('添加其他条件')}}
-        </bk-button>
+        <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+          :handler="updateSelected" :type="2"></condition-picker>
       </bk-form-item>
     </bk-form>
     <div class="filter-options"
@@ -59,13 +65,14 @@
   import { mapGetters } from 'vuex'
   import has from 'has'
   import OperatorSelector from './operator-selector.vue'
-  import PropertySelector from './general-model-property-selector.js'
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
-      OperatorSelector
+      OperatorSelector,
+      ConditionPicker
     },
     props: {
       objId: {
@@ -97,6 +104,13 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
+      propertyMap() {
+        const modelPropertyMap = { [this.objId]: this.properties }
+        const ignoreProperties = [] // 预留，需要忽略的属性
+        // eslint-disable-next-line max-len
+        modelPropertyMap[this.objId] = modelPropertyMap[this.objId].filter(property => !ignoreProperties.includes(property.bk_property_id))
+        return modelPropertyMap
+      }
     },
     watch: {
       filterSelected: {
@@ -185,16 +199,6 @@
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
       },
-      handleSelectProperty() {
-        const { objId, properties, propertyGroups, selected: propertySelected } = this
-        PropertySelector.show({
-          objId,
-          properties,
-          propertyGroups,
-          propertySelected,
-          handler: this.updateSelected
-        })
-      },
       updateSelected(selected) {
         // 将触发updateCondition新的条件项会被生成
         this.selected = selected
@@ -241,7 +245,7 @@
     }
     .item-content-wrapper {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
     }
     .item-operator {
       flex: 110px 0 0;

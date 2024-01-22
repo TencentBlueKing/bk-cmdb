@@ -63,6 +63,8 @@
     MODEL_FIELD_SELECTOR: 'modelFieldSelector',
   }
 
+  const query = computed(() => RouterQuery.getAll())
+
   const fieldLocalList = ref([])
   const uniqueLocalList = ref([])
 
@@ -95,8 +97,6 @@
 
   const uniqueDrawerOpen = ref(false)
   const stuff = ref({ type: 'default' })
-
-  const query = computed(() => RouterQuery.getAll())
 
   watchEffect(() => {
     const fieldList = cloneDeep(props.fieldList || [])

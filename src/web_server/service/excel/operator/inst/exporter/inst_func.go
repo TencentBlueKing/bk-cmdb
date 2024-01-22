@@ -266,6 +266,6 @@ func getHandleInstCloudAreaFunc() handleInstFieldFunc {
 		}
 
 		handleFunc := getDefaultHandleFieldFunc()
-		return handleFunc(e, property, cloudMap[common.BKInstNameField])
+		return handleFunc(e, property, spliceCloudArea(cloudMap[common.BKInstNameField], cloudMap[common.BKFieldID]))
 	}
 }

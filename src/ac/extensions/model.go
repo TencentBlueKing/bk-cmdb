@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
@@ -194,4 +196,243 @@ func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header
 	}
 
 	return nil
+}
+
+// HasFindModelInstAuth has find model instance auth
+func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(objIDs) == 0 {
+		return nil, true, nil
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKObjIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+		},
+	}
+	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if len(modelResp.Info) == 0 {
+		return nil, false, fmt.Errorf("get model by objID failed, val: %+v", objIDs)
+	}
+
+	mainlineModels, err := am.getMainlineModel(kit)
+	if err != nil {
+		return nil, false, err
+	}
+
+	authResources := make([]meta.ResourceAttribute, 0)
+	for _, v := range modelResp.Info {
+		instanceType, err := am.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
+		if err != nil {
+			return nil, false, err
+		}
+
+		authResources = append(authResources,
+			meta.ResourceAttribute{Basic: meta.Basic{Type: instanceType, Action: meta.Find}})
+	}
+
+	authResp, authorized := am.Authorize(kit, authResources...)
+	return authResp, authorized, nil
+}
+
+// getSkipFindAttrAuthModel 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
+func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struct{}, error) {
+	models, err := am.getMainlineModel(kit)
+	if err != nil {
+		return nil, err
+	}
+	models[common.BKInnerObjIDProc] = struct{}{}
+	models[common.BKInnerObjIDPlat] = struct{}{}
+	models[common.BKInnerObjIDBizSet] = struct{}{}
+	models[common.BKInnerObjIDProject] = struct{}{}
+	return models, nil
+}
+
+// getSkipFindAttrAuthModelID 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
+func (am *AuthManager) getSkipFindAttrAuthModelID(kit *rest.Kit) (map[int64]struct{}, error) {
+	skipObjIDMap, err := am.getSkipFindAttrAuthModel(kit)
+	if err != nil {
+		return nil, err
+	}
+
+	skipObjIDs := make([]string, 0, len(skipObjIDMap))
+	for objID := range skipObjIDMap {
+		skipObjIDs = append(skipObjIDs, objID)
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: skipObjIDs,
+			},
+		},
+	}
+	objResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	skipIDMap := make(map[int64]struct{})
+	for _, obj := range objResp.Info {
+		skipIDMap[obj.ID] = struct{}{}
+	}
+	return skipIDMap, nil
+}
+
+var objTypeMap = map[string]meta.ResourceType{
+	common.BKInnerObjIDPlat:    meta.CloudAreaInstance,
+	common.BKInnerObjIDHost:    meta.HostInstance,
+	common.BKInnerObjIDModule:  meta.ModelModule,
+	common.BKInnerObjIDSet:     meta.ModelSet,
+	common.BKInnerObjIDApp:     meta.Business,
+	common.BKInnerObjIDProc:    meta.Process,
+	common.BKInnerObjIDBizSet:  meta.BizSet,
+	common.BKInnerObjIDProject: meta.Project,
+}
+
+func (am *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string, id int64) (
+	meta.ResourceType, error) {
+
+	if objType, ok := objTypeMap[objID]; ok {
+		return objType, nil
+	}
+
+	if _, ok := mainlineModel[objID]; ok {
+		return meta.MainlineInstance, nil
+	}
+
+	return iam.GenCMDBDynamicResType(id), nil
+}
+
+func (am *AuthManager) getMainlineModel(kit *rest.Kit) (map[string]struct{}, error) {
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := am.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(asst.Info) <= 0 {
+		return nil, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	mainlineModel := make(map[string]struct{})
+	for _, mainline := range asst.Info {
+		mainlineModel[mainline.AsstObjID] = struct{}{}
+		mainlineModel[mainline.ObjectID] = struct{}{}
+	}
+
+	return mainlineModel, nil
+}
+
+// HasFindModelAuthUseObjID use the objID parameter to determine whether you have permission to find the model
+func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(objIDs) == 0 {
+		return nil, true, nil
+	}
+
+	models, err := am.getSkipFindAttrAuthModel(kit)
+	if err != nil {
+		return nil, false, err
+	}
+	finalObjIDs := make([]string, 0)
+	for _, obj := range objIDs {
+		if _, ok := models[obj]; !ok {
+			finalObjIDs = append(finalObjIDs, obj)
+		}
+	}
+
+	if len(finalObjIDs) == 0 {
+		return nil, true, nil
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: finalObjIDs,
+			},
+		},
+	}
+	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(modelResp.Info) == 0 {
+		return nil, true, nil
+	}
+
+	ids := make([]int64, len(modelResp.Info))
+	for idx, val := range modelResp.Info {
+		ids[idx] = val.ID
+	}
+
+	return am.hasFindModelAuthWithID(kit, ids)
+}
+
+// HasFindModelAuthUseID use the id parameter to determine whether you have permission to find the model
+func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, true, nil
+	}
+
+	models, err := am.getSkipFindAttrAuthModelID(kit)
+	if err != nil {
+		return nil, false, err
+	}
+
+	finalIDs := make([]int64, 0)
+	for _, id := range ids {
+		if _, ok := models[id]; !ok {
+			finalIDs = append(finalIDs, id)
+		}
+	}
+
+	if len(finalIDs) == 0 {
+		return nil, true, nil
+	}
+
+	return am.hasFindModelAuthWithID(kit, finalIDs)
+}
+
+// HasFindModelAuthWithID use the id parameter to determine whether you have permission to find the model
+func (am *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, true, nil
+	}
+
+	authResources := make([]meta.ResourceAttribute, len(ids))
+	for idx, val := range ids {
+		authResources[idx] = meta.ResourceAttribute{Basic: meta.Basic{InstanceID: val, Type: meta.Model,
+			Action: meta.Find}}
+	}
+
+	authResp, authorized := am.Authorize(kit, authResources...)
+	return authResp, authorized, nil
 }

@@ -20,6 +20,7 @@ import {
   MENU_POD_DETAILS,
   MENU_POD_CONTAINER_DETAILS
 } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 export default [
   {
@@ -45,7 +46,10 @@ export default [
           menu: {
             i18n: '主机详情',
             relative: MENU_BUSINESS_HOST_AND_SERVICE
-          }
+          },
+          auth: {
+            view: { type: OPERATION.R_BIZ_RESOURCE }
+          },
         })
       },
       {

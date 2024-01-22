@@ -18,6 +18,7 @@ import {
   MENU_RESOURCE_HOST_DETAILS,
   MENU_RESOURCE_BUSINESS_HOST_DETAILS
 } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 export default [{
   name: MENU_RESOURCE_HOST,
@@ -25,9 +26,13 @@ export default [{
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '主机'
+      i18n: '主机',
+      relative: MENU_RESOURCE_MANAGEMENT
     },
     layout: {},
+    auth: {
+      view: { type: OPERATION.R_RESOURCE_HOST }
+    },
     filterPropertyKey: 'resource_host_filter_properties',
     customInstanceColumn: 'resource_host_table_column_config',
     customContainerInstanceColumn: 'resource_topology_container_table_column_config',
@@ -42,7 +47,10 @@ export default [{
         i18n: '主机详情',
         relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
       },
-      layout: {}
+      layout: {},
+      auth: {
+        view: { type: OPERATION.R_RESOURCE_HOST }
+      }
     })
   }, {
     name: MENU_RESOURCE_BUSINESS_HOST_DETAILS,
@@ -54,7 +62,10 @@ export default [{
         i18n: '主机详情',
         relative: [MENU_RESOURCE_HOST, MENU_RESOURCE_MANAGEMENT]
       },
-      layout: {}
+      layout: {},
+      auth: {
+        view: { type: OPERATION.R_RESOURCE_HOST }
+      }
     })
   }]
 }, {

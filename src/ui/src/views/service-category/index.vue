@@ -76,7 +76,7 @@
                   :text="true"
                   v-show="isMainAuthCompleted"
                   @click="handleShowAddChild(mainCategory['id'])">
-                  <i class="bk-cmdb-icon icon-cc-plus"></i>
+                  <i class="bk-cmdb-icon icon-cc-plus-circle"></i>
                 </bk-button>
               </cmdb-auth>
               <cmdb-auth :auth="{ type: $OPERATION.D_SERVICE_CATEGORY, relation: [bizId] }">
@@ -163,7 +163,10 @@
                   :text="true"
                   v-show="isAuthcompleted"
                   @click="handleShowAddChild(mainCategory['id'])">
-                  <i class="bk-cmdb-icon icon-cc-plus"></i>{{$t('添加')}}
+                  <div class="btn-group">
+                    <i class="bk-cmdb-icon icon-cc-plus"></i>
+                    <span>{{$t('添加')}}</span>
+                  </div>
                 </bk-button>
               </cmdb-auth>
             </div>
@@ -439,7 +442,6 @@
       },
       handleCloseEditMain() {
         this.editMainStatus = null
-        this.isMainAuthCompleted = false
       },
       handleEditChild(id, name) {
         this.editChildStatus = id
@@ -484,6 +486,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .icon-cc-plus::before {
+      font-size: 16px;
+    }
     .category-wrapper {
         padding: 15px 20px 0;
         .category-list {
@@ -716,6 +721,9 @@
                     > span {
                         @include ellipsis;
                         padding-right: 10px;
+                    }
+                    .btn-group {
+                      @include space-between;
                     }
 
                     .child-id {

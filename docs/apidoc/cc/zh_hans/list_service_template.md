@@ -14,6 +14,8 @@
 | service_category_id         | int  | 否   | 服务分类ID |
 | search         | string  | 否   | 按服务模版名查询，默认为空 |
 | is_exact         | bool  | 否   | 是否精确匹配服务模版名，默认为否，和search参数搭配使用，在search参数不为空的情况下有效（v3.9.19） |
+| service_template_ids         | int array | 否   | 服务模板id                                                     |
+| page                 | object  | 是   | 分页参数 |
 
 #### page
 
@@ -33,6 +35,7 @@
     "bk_token": "xxx",
     "bk_biz_id": 1,
     "service_category_id": 1,
+    "service_template_ids":[5,6],
     "search": "test2",
     "is_exact": true,
     "page": {
@@ -87,10 +90,10 @@
 
 #### data 字段说明
 
-| 字段|类型|说明|描述|
-|---|---|---|---|
-|count|int|总数||
-|info|array|返回结果||
+| 字段|类型|描述|
+|---|---|---|
+|count|int|总数|
+|info|array|返回结果|
 
 #### info 字段说明
 

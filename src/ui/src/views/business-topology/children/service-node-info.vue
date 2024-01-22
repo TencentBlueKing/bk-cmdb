@@ -120,6 +120,7 @@
   import NodeExtraInfo from './node-extra-info'
   import FormServiceCategory from './form-service-category'
   import instanceService from '@/service/instance/instance'
+  import hostSearchService from '@/service/host/search'
   import serviceTemplateService from '@/service/service-template'
   import setTemplateService from '@/service/set-template'
   import { MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS, MENU_BUSINESS_SET_TEMPLATE_DETAILS } from '@/dictionary/menu-symbol'
@@ -613,7 +614,7 @@
           operator: '$eq',
           value: selectedNode.data.bk_inst_id
         })
-        const data = await this.$store.dispatch('hostSearch/searchHost', {
+        const data = await hostSearchService.getHosts({
           params: {
             ...conditionParams,
             bk_biz_id: this.business,

@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据可选条件查询模型
+根据可选条件查询模型(权限：模型查看权限)
 
 ### 请求参数
 
@@ -94,4 +94,4 @@
 | bk_obj_icon          | string             | 对象模型的ICON信息，用于前端显示，取值可参考[(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json)|
 | position             | json object string | 用于前端展示的坐标                                                                             |
 | description           | string     | 数据的描述信息                                           |
-| obj_sort_number      | int    | 否     | 对象模型在所属模型分组下的排序序号           |
+| obj_sort_number      | int    |对象模型在所属模型分组下的排序序号           |

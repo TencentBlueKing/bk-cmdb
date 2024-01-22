@@ -55,7 +55,7 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
@@ -94,3 +94,20 @@
 |-----------|-----------|-----------|
 | bk_set_name     | string       | 集群名称 |
 | default             |  int     | 0-普通集群，1-内置模块集合，默认为0 |
+| bk_biz_id | int | 业务id |
+| bk_capacity | int | 设计容量 |
+|bk_parent_id|int|父节点的ID|
+| bk_set_id | int | 集群id |
+| bk_service_status | string   | 服务状态:1/2(1:开放,2:关闭)           |
+|bk_set_desc|string|集群描述|
+| bk_set_env        | string   | 环境类型：1/2/3(1:测试,2:体验,3:正式) |
+| create_time         | string | 创建时间     |
+| last_time           | string | 更新时间     |
+| bk_supplier_account | string | 开发商账号   |
+| description           | string     | 数据的描述信息     |
+| set_template_version|  array |集群模板的当前版本 |
+| set_template_id|  int |集群模板ID |
+| bk_created_at      | string |  创建时间        |
+| bk_updated_at      | string |  更新时间        |
+| bk_created_by      | string |  创建人         |
+**注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**

@@ -17,29 +17,36 @@
     :width="400"
     :show-mask="false"
     :transfer="true"
-    :quick-close="false"
-    @hidden="handleClosed">
+    :before-close="handleSliderBeforeClose"
+    @hidden="handleHidden">
     <div class="filter-form-header" slot="header">
       {{$t('高级筛选')}}
       <template v-if="collectable && collection">
         {{`(${collection.name})`}}
       </template>
-      <i class="bk-icon icon-close" @click="close"></i>
     </div>
     <cmdb-sticky-layout class="filter-layout" slot="content">
       <bk-form class="filter-form" form-type="vertical">
-        <bk-form-item class="filter-ip" label="IP">
-          <bk-input type="textarea"
-            ref="ip"
-            :rows="4"
+        <bk-form-item class="filter-ip filter-item">
+          <label class="item-label">
+            IP
+            <span class="item-label-suffix">({{$t('自动解析IP目标')}})</span>
+          </label>
+          <editable-block
+            ref="ipEditableBlock"
+            class="ip-editable-block"
+            :enter-search="false"
             :placeholder="$t('主机搜索提示语')"
+            v-model="IPCondition.text"
+            @updateValue="(val) => IPCondition.text = val">
+          </editable-block>
+          <input type="hidden"
+            ref="ip"
+            name="ip"
+            data-vv-validate-on="change"
             data-vv-name="ip"
-            data-vv-validate-on="blur"
             v-validate="'ipSearchMaxCloud|ipSearchMaxCount'"
-            v-focus
-            v-model.trim="IPCondition.text"
-            @focus="errors.remove('ip')">
-          </bk-input>
+            v-model="IPCondition.text" />
           <p class="filter-ip-error" v-if="errors.has('ip')">
             {{errors.first('ip')}}
           </p>
@@ -74,16 +81,19 @@
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
+              v-bk-tooltips.top="{
+                disabled: !property.placeholder,
+                theme: 'light',
+                trigger: 'click',
+                content: property.placeholder
+              }"
               @active-change="handleComponentActiveChange(property, ...arguments)">
             </component>
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
-        <bk-form-item>
-          <bk-button class="filter-add-button ml10" type="primary" text @click="handleSelectProperty">
-            {{$t('添加其他条件')}}
-          </bk-button>
-        </bk-form-item>
+        <condition-picker :text="$t('添加')" icon="icon-plus-circle" :selected="selected" :property-map="propertyMap"
+          :type="3"></condition-picker>
       </bk-form>
       <div class="filter-options"
         slot="footer"
@@ -94,7 +104,7 @@
           content: $t('条件无效，Node条件属性与其他条件属性不能同时设置')
         }">
           <bk-button
-            class="option-search mr10"
+            class="option-search mr10 search-btn"
             theme="primary"
             :disabled="errors.any() || searchDisabled"
             @click="handleSearch">
@@ -171,33 +181,41 @@
 
 <script>
   import has from 'has'
-  import PropertySelector from './property-selector'
   import FilterStore from './store'
   import OperatorSelector from './operator-selector'
   import { mapGetters } from 'vuex'
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
+  import ConditionPicker from '@/components/condition-picker'
+  import { setCursorPosition } from '@/utils/util'
+  import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
+  import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
     components: {
-      OperatorSelector
+      OperatorSelector,
+      ConditionPicker,
+      EditableBlock
     },
-    directives: {
-      focus: {
-        inserted: (el) => {
-          const input = el.querySelector('textarea')
-          setTimeout(() => {
-            input.focus()
-          }, 0)
-        }
-      }
+    props: {
+      type: {
+        type: String,
+        default: '' // index - 系统首页高级筛选
+      },
+      searchAction: {
+        type: Function,
+        default: () => {}
+      },
     },
     data() {
       return {
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         IPCondition: Utils.getDefaultIP(),
+        originIPCondition: { ...FilterStore.IP },
         condition: {},
+        originCondition: {},
         selected: [],
         collectionForm: {
           name: '',
@@ -207,6 +225,57 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
+      propertyMap() {
+        let modelPropertyMap = { ...FilterStore.modelPropertyMap }
+        const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
+        modelPropertyMap.host = modelPropertyMap.host
+          .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
+
+        // 暂时不支持node对象map类型的字段
+        modelPropertyMap.node = modelPropertyMap.node
+          ?.filter(property => !['map'].includes(property.bk_property_type))
+
+        const getPropertyMapExcludeBy = (exclude = []) => {
+          const excludes = !Array.isArray(exclude) ? [exclude] : exclude
+          const propertyMap = []
+          for (const [key, value] of Object.entries(modelPropertyMap)) {
+            if (!excludes.includes(key)) {
+              propertyMap[key] = value
+            }
+          }
+          return propertyMap
+        }
+
+        // 资源-主机视图
+        if (!FilterStore.bizId) {
+          // 非已分配
+          if (!FilterStore.isResourceAssigned) {
+            return getPropertyMapExcludeBy('node')
+          }
+          return modelPropertyMap
+        }
+
+        // 当前处于业务节点，使用除业务外全量的字段(包括node)
+        if (FilterStore.isBizNode) {
+          return getPropertyMapExcludeBy('biz')
+        }
+
+        // 容器拓扑
+        if (FilterStore.isContainerTopo) {
+          return {
+            host: modelPropertyMap.host || [],
+            node: modelPropertyMap.node || [],
+          }
+        }
+
+        // 业务拓扑主机，不需要业务和Node模型字段
+        modelPropertyMap = {
+          host: modelPropertyMap.host || [],
+          module: modelPropertyMap.module || [],
+          set: modelPropertyMap.set || []
+        }
+        return modelPropertyMap
+      },
       storageSelected() {
         return FilterStore.selected
       },
@@ -240,13 +309,7 @@
       storageSelected: {
         immediate: true,
         handler() {
-          const newCondition = this.$tools.clone(FilterStore.condition)
-          Object.keys(newCondition).forEach((id) => {
-            if (has(this.condition, id)) {
-              newCondition[id] = this.condition[id]
-            }
-          })
-          this.condition = newCondition
+          this.condition = this.setCondition(this.condition)
           const filterCondition = ['bk_host_innerip_v6', 'bk_host_outerip_v6']
           this.selected = [...this.storageSelected].filter(item => !filterCondition.includes(item.bk_property_id))
         }
@@ -260,7 +323,26 @@
         }
       }
     },
+    created() {
+      setTimeout(() => {
+        this.focusIP()
+      }, 0)
+      this.originCondition = this.setCondition(this.originCondition)
+      const subTitle = this.type === 'index' ? '离开将会导致表单填写的内容丢失' : '离开将会导致未保存信息丢失'
+      const { beforeClose, setChanged } = useSideslider('', { subTitle })
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
+    },
     methods: {
+      setCondition(nowCondition) {
+        const newCondition = this.$tools.clone(FilterStore.condition)
+        Object.keys(nowCondition).forEach((id) => {
+          if (has(nowCondition, id)) {
+            newCondition[id] = nowCondition[id]
+          }
+        })
+        return newCondition
+      },
       getLabelSuffix(property) {
         const model = this.getModelById(property.bk_obj_id)
         return model ? model.bk_obj_name : model.bk_obj_id
@@ -272,7 +354,6 @@
           bk_property_type: propertyType
         } = property
         const normal = `cmdb-search-${propertyType}`
-
         // 业务名在包含与非包含操作符时使用输入联想组件
         if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
           return `cmdb-search-${modelId}`
@@ -360,19 +441,20 @@
         FilterStore.updateSelected([...this.selected])
         FilterStore.updateUserBehavior(this.selected)
       },
-      handleSelectProperty() {
-        PropertySelector.show()
-      },
       handleSearch() {
+        const condition = {
+          condition: this.$tools.clone(this.condition),
+          IP: this.$tools.clone(this.IPCondition)
+        }
+        if (this.type === 'index') {
+          return this.searchAction(condition)
+        }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
           FilterStore.resetPage(true)
           FilterStore.updateSelected(this.selected) // 此处会额外触发一次watch
-          FilterStore.setCondition({
-            condition: this.$tools.clone(this.condition),
-            IP: this.$tools.clone(this.IPCondition)
-          })
+          FilterStore.setCondition(condition)
           this.close()
         }, 300)
       },
@@ -433,11 +515,11 @@
         }
       },
       handleReset() {
-        this.IPCondition.text = ''
+        this.$refs.ipEditableBlock.clear()
         Object.keys(this.condition).forEach((id) => {
           const property = this.selected.find(property => property.id.toString() === id.toString())
           const propertyCondititon = this.condition[id]
-          const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, null)
+          const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, '')
           propertyCondititon.value = defaultValue
         })
         this.errors.clear()
@@ -449,7 +531,18 @@
         this.collectionForm.name = ''
         this.closeCollectionForm.error = ''
       },
-      handleClosed() {
+      handleSliderBeforeClose() {
+        const changedIPCondtion = !isEqual(this.IPCondition, this.originIPCondition)
+        const changedCondition =  !isEqual(this.condition, this.originCondition)
+        if (changedIPCondtion || changedCondition) {
+          this.setChanged(true)
+          return this.beforeClose(() => {
+            this.close()
+          })
+        }
+        this.close()
+      },
+      handleHidden() {
         this.$emit('closed')
       },
       open() {
@@ -459,42 +552,39 @@
         this.isShow = false
       },
       focusIP() {
-        this.$refs?.ip?.$el.querySelector('textarea').focus()
+        const ele = this.$refs.ipEditableBlock
+        ele?.focus()
+        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
+    .ip-editable-block {
+      :deep(.search-input) {
+        min-height: 82px;
+        font-size: 12px;
+        line-height: 24px;
+      }
+
+      :deep(.search-close) {
+        font-size: 14px;
+        &:hover {
+            color: #979ba5;
+        }
+      }
+    }
     .filter-form-sideslider {
-        pointer-events: none;
         /deep/ {
             .bk-sideslider-wrapper {
                 pointer-events: initial;
             }
-            .bk-sideslider-closer {
-                display: none;
-            }
-            .bk-sideslider-title {
-                border-bottom: none;
-            }
         }
     }
     .filter-form-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-left: -30px;
-        .icon-close {
-            font-size: 32px;
-            margin-right: 6px;
-            margin-top: -14px;
-            cursor: pointer;
-            opacity: .75;
-            &:hover {
-                opacity: 1;
-            }
-        }
+        cursor: pointer;
+        @include ellipsis;
     }
     .filter-layout {
         height: 100%;
@@ -517,7 +607,7 @@
     .filter-item {
         padding: 2px 10px 10px;
         margin-top: 5px !important;
-        &:hover {
+        &:not(.filter-ip):hover {
             background: #f5f6fa;
             .item-remove {
                 opacity: 1;
@@ -536,7 +626,7 @@
         }
         .item-content-wrapper {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
         }
         .item-operator {
             flex: 110px 0 0;

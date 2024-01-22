@@ -44,7 +44,9 @@
       @toggle="handleToggle">
       <bk-big-tree
         ref="tree"
+        class="big-tree"
         v-bind="treeProps"
+        :use-default-empty="true"
         @check-change="handleTreeCheckChange">
       </bk-big-tree>
     </bk-select>
@@ -394,6 +396,7 @@
 
   const handleSearch = debounce(async (value) => {
     const keyword = value.trim()
+    tree?.value?.filter?.(keyword)
     try {
       if (keyword.length) {
         const res = await getSearchData({
@@ -431,16 +434,19 @@
 </script>
 
 <style lang="scss" scoped>
-    .cmdb-organization {
-        position: relative;
-        width: 100%;
-        height: 32px;
-        .selector {
-            width: 100%;
-            &.active {
-                position: absolute;
-                z-index: 2;
-            }
-          }
+.cmdb-organization {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  .selector {
+    width: 100%;
+    &.active {
+      position: absolute;
+      z-index: 2;
     }
+  }
+}
+:deep(.bk-big-tree-empty) {
+  position: static;
+}
 </style>

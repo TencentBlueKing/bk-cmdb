@@ -635,6 +635,10 @@ export function isPropertySortable(property) {
   return ![PROPERTY_TYPES.INNER_TABLE].includes(property.bk_property_type)
 }
 
+export function isIconTipProperty(type) {
+  return ['innertable', 'bool'].includes(type)
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -666,5 +670,6 @@ export default {
   getPropertyPlaceholder,
   getPropertyDefaultValue,
   versionSort,
-  isPropertySortable
+  isPropertySortable,
+  isIconTipProperty
 }

@@ -1,6 +1,6 @@
 ### 功能描述
 
-上交主机到业务的空闲机模块
+上交主机到业务的空闲机模块(权限：服务实例编辑权限)
 
 ### 请求参数
 
@@ -38,10 +38,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
 

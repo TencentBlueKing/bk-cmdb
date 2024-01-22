@@ -1,6 +1,6 @@
 ### 功能描述
 
-更新进程模板信息
+更新进程模板信息(权限：服务模板编辑权限)
 
 ### 请求参数
 
@@ -39,7 +39,7 @@ value: 进程的值，不同的字段类型不一样
 |user|object|否|{"value": "","as_default_value": false}, value 类型是字符串|
 |timeout|object|否|{"value": null,"as_default_value": false},  value 类型是数字|
 |description|object|否|{"value": "1","as_default_value": true}}, value 类型是字符串|
-|bk_start_param_regex|object|否|{"value": "","as_default_value": false}, value 类型是字符串||
+|bk_start_param_regex|object|否|{"value": "","as_default_value": false}, value 类型是字符串|
 |bind_info|object|否| {"value":[],,"as_default_value": true }, value详细见process_property.bind_info.value[n]|
 
 
@@ -57,9 +57,9 @@ value: 进程的值，不同的字段类型不一样
 | 字段                 |  类型      | 必选	   |  描述                 |
 |----------------------|------------|--------|-----------------------|
 |enable|object|否| {"value": false,"as_default_value": true}, value 类型是boolean|
-|ip|object|否| {"value": "1","as_default_value": true}, value 类型是字符串||
-|port|object|否| {"value": "100","as_default_value": true}, value 类型是字符串||
-|protocol|object|否| {"value": "1","as_default_value": true},, value 类型是字符串||
+|ip|object|否| {"value": "1","as_default_value": true}, value 类型是字符串|
+|port|object|否| {"value": "100","as_default_value": true}, value 类型是字符串|
+|protocol|object|否| {"value": "1","as_default_value": true},, value 类型是字符串|
 |row_id|int|否| 唯一表示id,新加的行可以设置为空，更新必须保持原值|
 
 

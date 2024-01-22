@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询业务集中的业务(v3.10.12+)
+查询业务集中的业务(版本：v3.10.12+，权限：业务集访问权限)
 
 ### 请求参数
 
@@ -28,11 +28,11 @@
 #### rules
 过滤规则为三元组 `field`, `operator`, `value`
 
-| 名称     | 类型   | 必填 | 默认值 | 说明   | Description                                                  |
-| -------- | ------ | ---- | ------ | ------ | ------------------------------------------------------------ |
-| field    | string | 是   | 无     | 字段名 |                                                              |
-| operator | string | 是   | 无     | 操作符 | 可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 无     | 操作数 | 不同的operator对应不同的value格式                            |
+| 字段     | 类型   | 必填 | 描述                                                                                                |
+| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
+| field    | string | 是   | 字段名                                                                                               |
+| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
@@ -148,12 +148,26 @@
 
 
 #### info
-
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| bk_biz_id     | int       | 业务ID |
-| bk_biz_name      | string     | 业务名称 |
-
+| 字段      | 类型      | 描述         |
+|-----------|-----------|--------------|
+| bk_biz_id | int | 业务id |
+| bk_biz_name       |  string       | 业务名 |
+| bk_biz_maintainer |  string       | 运维人员 |
+| bk_biz_productor  |  string      | 产品人员 |
+| bk_biz_developer  |  string      | 开发人员 |
+| bk_biz_tester     |  string       | 测试人员 |
+| time_zone         |  string       | 时区 |
+| language          |  string      | 语言, "1"代表中文, "2"代表英文 |
+| bk_supplier_account | string       | 开发商账号   |
+| create_time         | string | 创建时间     |
+| last_time           | string | 更新时间     |
+|default | int | 表示业务类型 |
+| operator | string | 主要维护人 |
+|life_cycle|string|业务生命周期|
+| bk_created_at      | string |  创建时间        |
+| bk_updated_at      | string |  更新时间        |
+| bk_created_by      | string |  创建人         |
 
 **注意：**
+- 此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段
 - 如果本次请求是查询详细信息那么count为0，如果查询的是数量，那么info为空。

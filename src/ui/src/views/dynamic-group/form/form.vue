@@ -59,13 +59,9 @@
           <bk-form-item class="">
             <form-property-list ref="propertyList" @remove="handleRemoveProperty"
               :disabled="isPreviewProp"></form-property-list>
-            <bk-button class="form-condition-button" :style="{ marginTop: selectedProperties.length ? '10px' : 0 }"
-              icon="icon-plus-circle"
-              :text="true"
-              :disabled="isPreviewProp"
-              @click="handleShowPropertySelector">
-              {{$t('添加条件')}}
-            </bk-button>
+            <condition-picker :text="$t('添加条件')" icon="icon-plus-circle" :selected="selectedProperties"
+              :property-map="propertyMap"
+              :handler="handlePropertySelected" :disabled="isPreviewProp"></condition-picker>
             <input type="hidden"
               v-validate="'min_value:1'"
               data-vv-name="condition"
@@ -128,12 +124,14 @@
   import PreviewResult from '../preview/preview-result.vue'
   import FilterStore from '../store'
   import { $success } from '@/magicbox'
+  import ConditionPicker from '@/components/condition-picker'
 
   export default {
     components: {
       FormPropertyList,
       FormTarget,
-      PreviewResult
+      PreviewResult,
+      ConditionPicker
     },
     props: {
       id: [String, Number],
@@ -225,11 +223,6 @@
       this.beforeClose = beforeClose
       this.setChanged = setChanged
       this.isPreviewData = this.isPreview
-      if (this.isPreview || this.id) {
-        setTimeout(() => {
-          this.initPreviewParams()
-        }, 300)
-      }
     },
     methods: {
       async getMainLineModels() {
@@ -309,6 +302,9 @@
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
           setTimeout(this.$refs.propertyList?.setDetailsCondition, 0)
+          if (this.isPreview || this.id) {
+            setTimeout(() => this.initPreviewParams(), 0)
+          }
         } catch (error) {
           console.error(error)
         }
@@ -456,10 +452,10 @@
           }
           if (this.id) {
             await this.updateDynamicGroup()
-            $success('保存成功')
+            $success(t('保存成功'))
           } else {
             await this.createDynamicGroup()
-            $success('新建成功')
+            $success(t('新建成功'))
           }
           this.close('submit')
         } catch (error) {

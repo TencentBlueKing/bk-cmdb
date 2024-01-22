@@ -1,6 +1,6 @@
 ### 功能描述
 
-可通过可选参数根据模型id或业务id查询对象模型属性
+可通过可选参数根据模型id或业务id查询对象模型属性(权限：模型查看权限)
 
 ### 请求参数
 
@@ -10,7 +10,7 @@
 
 | 字段                |  类型      | 必选   |  描述                       |
 |---------------------|------------|--------|-----------------------------|
-|bk_obj_id            | string     | 否     | 模型ID                      |
+|bk_obj_id            | string     | 是  | 模型ID                      |
 | bk_biz_id           | int        | 否     | 业务id，设置后查询结果包含业务自定义字段 |
 
 
@@ -127,24 +127,9 @@
 | bk_supplier_account | string       | 开发商账号                                                 |
 | bk_property_id      | string       | 模型的属性ID                                               |
 | bk_property_name    | string       | 模型属性名，用于展示                                       |
-| bk_property_type    | string       | 定义的属性字段用于存储数据的数据类型 （singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
+| bk_property_type    | string       | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织))|
 | bk_asst_obj_id      | string       | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置|
 | bk_biz_id           | int          | 业务自定义字段的业务id                                       |
 | create_time         | string | 创建时间     |
 | last_time           | string | 更新时间     |
 | id                  | int    | 查询对象的id值   |
-#### bk_property_type
-
-| 标识       | 名字     |
-|------------|----------|
-| singlechar | 短字符   |
-| longchar   | 长字符   |
-| int        | 整形     |
-| enum       | 枚举类型 |
-| date       | 日期     |
-| time       | 时间     |
-| objuser    | 用户     |
-| singleasst | 单关联   |
-| multiasst  | 多关联   |
-| timezone   | 时区     |
-| bool       | 布尔     |

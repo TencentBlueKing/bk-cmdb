@@ -356,6 +356,10 @@ authServer:
        caFile:
        # 用于解密根据RFC1423加密的证书密钥的PEM块
        password:
+  # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+  # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+  # 可以配置不进行业务访问鉴权
+  skipViewBizAuth: false
 
 #cloudServer专属配置
 cloudServer:
@@ -396,10 +400,10 @@ monitor:
     dataID: 0
     # 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
     queueSize: 100
-    # 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
-    gsecmdlinePath: 
-    # 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
-    domainSocketPath: 
+    # 当使用blueking监控插件时，上报数据的接收端URL
+    bkMonitorReportUrl:
+    # 当使用blueking监控插件时，上报数据所需要的数据通道标识验证码，防止数据误上报至其他管道
+    accessToken:
     # 用于对数据上报进行频率控制和限流
     # qps的设置范围为1～50，默认值为10
     # burst的设置范围为1～100，默认值为20

@@ -128,7 +128,7 @@
       ...mapGetters(['userName']),
       ...mapGetters('objectBiz', ['bizId']),
       helpDocUrl() {
-        return this.$Site.helpDocUrl || 'http://docs.bk.tencent.com/product_white_paper/cmdb/'
+        return `${this.$Site.helpDocUrl}/markdown/CMDB/UserGuide/Introduce/Overview.md`
       },
       visibleMenu() {
         return menu.filter((menuItem) => {

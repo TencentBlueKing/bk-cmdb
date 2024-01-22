@@ -39,6 +39,11 @@
   import bus from '@/utils/bus.js'
   import { mapGetters } from 'vuex'
   import cmdbHostAssociationListTable from './association-list-table.vue'
+  import {
+    MENU_BUSINESS_HOST_DETAILS
+  } from '@/dictionary/menu-symbol'
+  import associationService from '@/service/association'
+
   export default {
     name: 'cmdb-host-association-list',
     components: {
@@ -104,6 +109,10 @@
           'getSourceAssociation',
           'getTargetAssociation'
         ])
+      },
+      isBusinessEntry() {
+        // 业务主机与主机池主机及主机池业务主机三者是相互独立的
+        return this.$route.name === MENU_BUSINESS_HOST_DETAILS
       },
       dataEmpty() {
         return {
@@ -196,15 +205,24 @@
         return Promise.resolve(info)
       },
       async getInstAssociation() {
+        const getAction = (options) => {
+          if (this.isBusinessEntry) {
+            return associationService.getInstAssociationWithBiz({
+              bizId: this.$route.params.bizId,
+              ...options
+            })
+          }
+          return associationService.getInstAssociation(options)
+        }
         try {
           const sourceCondition = { bk_obj_id: 'host', bk_inst_id: this.id }
           const targetCondition = { bk_asst_obj_id: 'host', bk_asst_inst_id: this.id }
           let [source, target] = await Promise.all([
-            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+            getAction({
               params: { condition: sourceCondition, bk_obj_id: 'host' },
               config: { requestId: 'getSourceAssociation' }
             }),
-            this.$store.dispatch('objectAssociation/searchInstAssociation', {
+            getAction({
               params: { condition: targetCondition, bk_obj_id: 'host' },
               config: { requestId: 'getTargetAssociation' }
             })

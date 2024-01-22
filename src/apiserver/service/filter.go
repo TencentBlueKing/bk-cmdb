@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac/parser"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -149,34 +150,71 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	chain.ProcessFilter(req, resp)
 }
 
-func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response,
-	fchain *restful.FilterChain) {
+// BizFilterChan biz api filter chan
+func (s *service) BizFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.TopoServer(), rootPath+"/biz", "/topo/v3/app")
+}
+
+// HostFilterChan host server api filter chan
+func (s *service) HostFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.HostServer(), rootPath, "/host/v3")
+}
+
+// urlFilterChan url filter chan, modify the request to dispatch it to specific sever
+func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
+	discovery discovery.Interface, prevRoot, root string) {
+
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
+
+	var err error
+
+	defer func() {
+		if err != nil {
+			blog.Errorf("proxy request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+			respErr := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+				Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
+				ErrCode: common.CCErrRewriteRequestUriFailed,
+				Data:    nil,
+			})
+			if respErr != nil {
+				blog.Errorf("proxy request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, respErr, rid)
+				return
+			}
+			return
+		}
+	}()
+
+	servers, err := discovery.GetServers()
+	if err != nil {
+		return
+	}
+
+	// set the request server address through discovery
+	if strings.HasPrefix(servers[0], "https://") {
+		req.Request.URL.Host = servers[0][8:]
+		req.Request.URL.Scheme = "https"
+	} else {
+		req.Request.URL.Host = servers[0][7:]
+		req.Request.URL.Scheme = "http"
+	}
+
+	// set the request server root path instead of previous api serverS root path
+	req.Request.RequestURI = root + strings.TrimPrefix(req.Request.RequestURI, prevRoot)
+	req.Request.URL.Path = root + strings.TrimPrefix(req.Request.URL.Path, prevRoot)
+
+	chain.ProcessFilter(req, resp)
+}
+
+func (s *service) authFilter(errFunc func() errors.CCErrorIf) restful.FilterFunction {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		path := req.Request.URL.Path
-
 		if !auth.EnableAuthorize() {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
-		if path == "/api/v3/auth/verify" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
-		if path == "/api/v3/auth/business_list" {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
-		if path == "/api/v3/auth/skip_url" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
 		rsp, success := s.verifyAuthorizeStatus(req, errFunc)
 		if !success {
-			resp.WriteAsJson(rsp)
+			_ = resp.WriteAsJson(rsp)
 			return
 		}
 
@@ -185,8 +223,9 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 	}
 }
 
-func (s *service) verifyAuthorizeStatus(req *restful.Request,
-	errFunc func() errors.CCErrorIf) (*metadata.BaseResp, bool) {
+func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() errors.CCErrorIf) (*metadata.BaseResp,
+	bool) {
+
 	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	path := req.Request.URL.Path
 	language := util.GetLanguage(req.Request.Header)

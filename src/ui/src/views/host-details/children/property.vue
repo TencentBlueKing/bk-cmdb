@@ -22,7 +22,15 @@
           :key="property.id"
           :id="`property-item-${property.id}`">
           <span class="property-name" v-bk-overflow-tips>
-            {{property.bk_property_name}}
+            <span>{{property.bk_property_name}}</span>
+            <i class="property-name-tooltips icon-cc-tips"
+              v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
+              v-bk-tooltips.top="{
+                theme: 'light',
+                trigger: 'mouseenter',
+                content: property.placeholder
+              }">
+            </i>
           </span>
           <template v-if="!readonly">
             <span :id="`rule-${property.id}`" v-if="hasRelatedRules(property) || !isPropertyEditable(property)">
@@ -91,7 +99,13 @@
                         v-validate="$tools.getValidateRules(property)"
                         v-model.trim="editState.value"
                         @enter="confirm"
-                        :ref="`component-${property.bk_property_id}`">
+                        :ref="`component-${property.bk_property_id}`"
+                        v-bk-tooltips.top="{
+                          disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
+                          theme: 'light',
+                          trigger: 'mouseenter',
+                          content: property.placeholder
+                        }">
                       </component>
                     </div>
                     <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
@@ -128,6 +142,7 @@
               :mode="'update'"
               :obj-id="objId"
               :instance-id="host.bk_host_id"
+              :biz-id="bizId"
               :auth="HOST_AUTH.U_HOST"
               :ref="`component-${property.bk_property_id}`" />
           </template>
@@ -220,8 +235,15 @@
       ...mapGetters('hostDetails', ['groupedProperties', 'properties']),
       host() {
         return this.$tools.getInstFormValues(this.properties, this.info.host, false)
+      },
+      bizId() {
+        return this.isFromResource ? undefined : this.business
       }
     },
+    inject: [
+      'business',
+      'isFromResource'
+    ],
     methods: {
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)

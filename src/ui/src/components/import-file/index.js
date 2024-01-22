@@ -61,7 +61,7 @@ const close = () => {
 const beforeClose = () => {
   const [{ state }] = useFile()
   const [current] = useStep()
-  if (current.value !== 2 || !state.value === 'pending') {
+  if (current.value !== 2 || state.value !== 'pending') {
     return true
   }
   return new Promise((resolve) => {

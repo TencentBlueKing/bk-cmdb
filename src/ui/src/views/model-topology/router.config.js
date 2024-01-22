@@ -12,6 +12,7 @@
 
 import Meta from '@/router/meta'
 import { MENU_MODEL_TOPOLOGY_NEW } from '@/dictionary/menu-symbol'
+import { OPERATION } from '@/dictionary/iam-auth'
 
 export default [{
   name: MENU_MODEL_TOPOLOGY_NEW,
@@ -22,7 +23,10 @@ export default [{
       i18n: '模型关系'
     },
     layout: {
-      breadcrumbs: false
+      breadcrumbs: false,
+    },
+    auth: {
+      view: { type: OPERATION.R_MODEL_TOPOLOGY }
     }
   })
 }]

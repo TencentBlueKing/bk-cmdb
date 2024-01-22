@@ -35,7 +35,7 @@
     computed: {
       localValue: {
         get() {
-          return this.value.toString()
+          return this.value?.toString()
         },
         set(value) {
           const realValue = value && value === 'true'

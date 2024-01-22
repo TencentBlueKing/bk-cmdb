@@ -16,20 +16,27 @@
       <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
     </h4>
     <div class="models-layout">
-      <div class="models-link" v-for="(model) in models"
+      <cmdb-auth-mask
+        v-for="(model) in models"
         :key="model.bk_obj_id"
-        :title="model['bk_obj_name']"
-        @click="redirect(model)">
-        <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
-        <span class="model-name">{{model['bk_obj_name']}}</span>
-        <i class="model-star bk-icon"
-          :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
-          @click.prevent.stop="toggleCustomNavigation(model)">
-        </i>
-        <div class="model-instance-count">
-          <instance-count :obj-id="model.bk_obj_id" />
-        </div>
-      </div>
+        tag="div"
+        v-bind="getAuthMaskProps(model)">
+        <template #default="{ disabled }">
+          <div :class="['models-link', { noauth: disabled }]"
+            :title="model['bk_obj_name']"
+            @click="redirect(model)">
+            <i :class="['model-icon','icon', model['bk_obj_icon'], { 'nonpre-mode': !model['ispre'] }]"></i>
+            <span class="model-name">{{model['bk_obj_name']}}</span>
+            <i class="model-star bk-icon"
+              :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
+              @click.prevent.stop="toggleCustomNavigation(model)">
+            </i>
+            <div class="model-instance-count" v-show="!disabled">
+              <instance-count :obj-id="model.bk_obj_id" />
+            </div>
+          </div>
+        </template>
+      </cmdb-auth-mask>
     </div>
   </div>
 </template>
@@ -43,6 +50,7 @@
   } from '@/dictionary/menu-symbol'
   import InstanceCount from './instance-count.vue'
   import { BUILTIN_MODELS, BUILTIN_MODEL_COLLECTION_KEYS, BUILTIN_MODEL_RESOURCE_MENUS } from '@/dictionary/model-constants.js'
+  import { isViewAuthFreeModel, isViewAuthFreeModelInstance } from '@/service/auth'
 
   export default {
     components: {
@@ -93,6 +101,42 @@
       },
       isBuiltinModel(model) {
         return Object.values(BUILTIN_MODELS).includes(model.bk_obj_id)
+      },
+      getAuthMaskProps(model) {
+        if (model?.bk_obj_id === BUILTIN_MODELS.HOST) {
+          const auth = { type: this.$OPERATION.R_RESOURCE_HOST }
+          return {
+            auth,
+            authorized: this.isViewAuthed(auth)
+          }
+        }
+        if (model?.bk_obj_id === BUILTIN_MODELS.PROJECT) {
+          const auth = { type: this.$OPERATION.R_PROJECT }
+          return {
+            auth,
+            authorized: this.isViewAuthed(auth)
+          }
+        }
+
+        const auths = []
+        if (!isViewAuthFreeModel(model)) {
+          auths.push({ type: this.$OPERATION.R_MODEL, relation: [model.id] })
+        }
+        if (!isViewAuthFreeModelInstance(model)) {
+          auths.push({ type: this.$OPERATION.R_INST, relation: [model.id] })
+        }
+        const authorized = auths.every(auth => this.isViewAuthed(auth))
+
+        if (authorized) {
+          return {
+            ignore: true
+          }
+        }
+
+        return {
+          auth: auths.filter(auth => !this.isViewAuthed(auth)),
+          authorized
+        }
       },
       toggleCustomNavigation(model) {
         if (this.isBuiltinModel(model)) {
@@ -233,6 +277,18 @@
                     display: inline-block;
                 }
             }
+
+            &.noauth {
+              .model-name {
+                color: $grayColor;
+              }
+            }
+        }
+
+        .v-cursor-active {
+          .models-link {
+            background-color: #ecf3ff;
+          }
         }
     }
 </style>

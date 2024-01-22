@@ -247,7 +247,7 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 
 func getHandleCloudAreaPropFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		cloudAreaArr, _, err := t.GetClient().GetCloudArea(t.GetKit())
+		cloudAreaArr, cloudAreaMap, err := t.GetClient().GetCloudArea(t.GetKit())
 		if err != nil {
 			blog.Errorf("get cloud area failed, err: %v, rid: %s", err, t.GetKit().Rid)
 			return nil, err
@@ -259,7 +259,7 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 
 		data := make([][]excel.Cell, len(cloudAreaArr))
 		for idx, cloudArea := range cloudAreaArr {
-			data[idx] = append(data[idx], excel.Cell{Value: cloudArea})
+			data[idx] = append(data[idx], excel.Cell{Value: spliceCloudArea(cloudArea, cloudAreaMap[cloudArea])})
 		}
 		if err := t.GetExcel().StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
 			return nil, err
@@ -285,4 +285,8 @@ func getHandleCloudAreaPropFunc() handleColPropFunc {
 		handleFunc := getDefaultHandleTypeFunc()
 		return handleFunc(t, property)
 	}
+}
+
+func spliceCloudArea(cloudAreaName interface{}, cloudAreaID interface{}) string {
+	return fmt.Sprintf("%v[%v]", cloudAreaName, cloudAreaID)
 }

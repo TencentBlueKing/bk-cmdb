@@ -1,6 +1,6 @@
 ### 功能描述
 
-批量创建服务实例，如果模块绑定了服务模板，则服务实例也会根据模板创建，创建服务实例的进程参数内也必须提供每个进程对应的进程模板ID
+批量创建服务实例，如果模块绑定了服务模板，则服务实例也会根据模板创建，创建服务实例的进程参数内也必须提供每个进程对应的进程模板ID(权限：服务实例新建权限)
 
 ### 请求参数
 
@@ -16,20 +16,19 @@
 
 #### instances 字段说明
 
-| 字段|类型|必选	   |说明|Description|
-|---|---|---|---|---|
-|instances.bk_host_id|int|是|主机ID|服务实例绑定的主机ID|
-|instances.service_instance_name|string|否|服务实例名称|服务实例名称|
-|instances.processes|array|是|进程信息|服务实例下新建的进程信息|
-|instances.processes.process_template_id|int|是|进程模板ID|如果模块没有绑定服务模板则填0|
-|instances.processes.process_info|object|是|进程实例信息|如果进程绑定有模板，则仅模板中没有锁定的字段有效|
+| 字段|类型|必选	   | 说明                                                                  |
+|---|---|---|---------------------------------------------------------------------|
+|instances.bk_host_id|int|是| 主机ID,服务实例绑定的主机ID                                                    |
+|instances.service_instance_name|string|否| 服务实例名称，不填则会使用主机IP加进程名称加服务绑定的端口作为名称，如“123.123.123.123_job_java_80”形式 |
+|instances.processes|array|是| 进程信息,服务实例下新建的进程信息                                                   |
+|instances.processes.process_template_id|int|是| 进程模板ID,如果模块没有绑定服务模板则填0                                              |
+|instances.processes.process_info|object|是| 进程实例信息,如果进程绑定有模板，则仅模板中没有锁定的字段有效                                     |
 
 #### processes 字段说明
 | 字段|类型|必选	   |说明|
 |---|---|---|---|
 |process_template_id|int|是|进程模版id|
 |auto_start|bool|否|是否自动拉起|
-|auto_time_gap|int|否|拉起间隔|
 |bk_biz_id|int|否|业务id|
 |bk_func_id|string|否|功能ID|
 |bk_func_name|string|否|进程名称|
@@ -98,7 +97,6 @@
             "pid_file": "",
             "auto_start": false,
             "timeout": 30,
-            "auto_time_gap": 60,
             "reload_cmd": "",
             "bk_func_name": "java",
             "work_path": "/data/bkee",

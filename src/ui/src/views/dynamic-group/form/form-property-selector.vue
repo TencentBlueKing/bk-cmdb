@@ -18,7 +18,7 @@
         right-icon="icon-search"
         :placeholder="$t('请输入字段名称或唯一标识')"
         clearable
-        v-autofocus>
+        v-autofocus.update>
       </bk-input>
     </div>
     <div class="all-property-selector">
