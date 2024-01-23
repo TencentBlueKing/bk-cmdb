@@ -6198,6 +6198,31 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v3/findmany/field_template/object/count:
+    post:
+      operationId: post_findmany_field_template_object_count
+      description: post_findmany_field_template_object_count
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/field_template/object/count
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
   /api/v3/findmany/field_template/by_object:
     post:
       operationId: post_findmany_field_template_by_object
@@ -6973,10 +6998,10 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
-  /api/v3/find/objectattr/host:
+  /api/v3/check/objectattr/host_apply_enabled:
     post:
-      operationId: post_find_objectattr_host
-      description: post_find_objectattr_host
+      operationId: check_objectattr_host_apply_enabled
+      description: check_objectattr_host_apply_enabled
       tags:
         - ui
       responses:
@@ -6989,7 +7014,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v3/find/objectattr/host
+          path: /api/v3/check/objectattr/host_apply_enabled
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -8025,8 +8050,8 @@ paths:
         descriptionEn:
   /api/v3/usercustom/default/model/{bk_obj_id}:
     post:
-      operationId: post_usercustom_default_model_
-      description: post_usercustom_default_model_
+      operationId: post_usercustom_default_model_sub
+      description: post_usercustom_default_model_sub
       tags:
         - ui
       responses:
@@ -9693,6 +9718,31 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v3/admin/update/system_config/platform_setting:
+    put:
+      operationId: update_platform_setting
+      description: UpdatePlatformSetting
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/admin/update/system_config/platform_setting
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
   /api/v3/updatemany/biz/property:
     put:
       operationId: update_biz_property_batch
@@ -9867,7 +9917,7 @@ paths:
           upstreams: { }
           transformHeaders: { }
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: [ ]
         descriptionEn:
   /api/v3/findmany/kube/container/by_topo:
@@ -9894,6 +9944,131 @@ paths:
           upstreams: { }
           transformHeaders: { }
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: [ ]
+        descriptionEn:
+  /api/v3/count/topoassociationtype:
+    post:
+      operationId: post_count_topoassociationtype
+      description: post_count_topoassociationtype
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/count/topoassociationtype
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/instassociation/biz/{bk_biz_id}:
+    post:
+      operationId: post_find_instassociation_biz
+      description: post_find_instassociation_biz
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/instassociation/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /healthz:
+    post:
+      operationId: health_check
+      description: HealthCheck
+      tags:
+        - apimachinery
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /healthz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/transaction/commit:
+    post:
+      operationId: commit_transaction
+      description: CommitTransaction
+      tags:
+        - apimachinery
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/transaction/commit
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/transaction/abort:
+    post:
+      operationId: abort_transaction
+      description: AbortTransaction
+      tags:
+        - apimachinery
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/update/transaction/abort
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
         descriptionEn:

@@ -34,7 +34,7 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -49,7 +49,7 @@ func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string,
 		SubResourcef(subPath, ownerID, bizID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -66,7 +66,7 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 		SubResourcef(subPath, flag, ownerID, bizID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError
@@ -89,7 +89,7 @@ func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -104,7 +104,7 @@ func (a *apiServer) UpdateBizPropertyBatch(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -119,7 +119,7 @@ func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError

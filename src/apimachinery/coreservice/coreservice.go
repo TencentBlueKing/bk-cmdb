@@ -38,8 +38,8 @@ import (
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
-	"configcenter/src/apimachinery/coreservice/transaction"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/transaction"
 	"configcenter/src/apimachinery/util"
 )
 

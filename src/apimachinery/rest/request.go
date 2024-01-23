@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
@@ -167,6 +168,12 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 // WithTimeout TODO
 func (r *Request) WithTimeout(d time.Duration) *Request {
 	r.timeout = d
+	return r
+}
+
+// WithBaseURL set request base url
+func (r *Request) WithBaseURL(baseURL string) *Request {
+	r.baseURL = baseURL
 	return r
 }
 
@@ -434,6 +441,55 @@ type Result struct {
 	StatusCode int
 	Status     string
 	Header     http.Header
+}
+
+// IntoCmdbResp decode result into cmdb inner response
+func (r *Result) IntoCmdbResp(obj interface{}) error {
+	if r.Err != nil {
+		return r.Err
+	}
+
+	if len(r.Body) != 0 {
+		// parse api gateway response format to cmdb inner response format
+		if gjson.GetBytes(r.Body, common.BkAPIErrorCode).Exists() {
+			buf := bytes.NewBuffer([]byte{'{'})
+
+			gjson.ParseBytes(r.Body).ForEach(func(key, value gjson.Result) bool {
+				keyStr := key.String()
+				switch keyStr {
+				case common.BkAPIErrorCode:
+					keyStr = common.HTTPBKAPIErrorCode
+				case common.BkAPIErrorMessage:
+					keyStr = common.HTTPBKAPIErrorMessage
+				}
+
+				buf.WriteByte('"')
+				buf.WriteString(keyStr)
+				buf.WriteString(`":`)
+				buf.WriteString(value.Raw)
+				buf.WriteByte(',')
+				return true
+			})
+
+			buf.WriteByte('}')
+			r.Body = buf.Bytes()
+		}
+
+		err := json.Unmarshal(r.Body, obj)
+		if err != nil {
+			if r.StatusCode >= 300 {
+				return fmt.Errorf("http request err: %s", string(r.Body))
+			}
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
+			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
+		}
+		return nil
+	}
+
+	if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
+	}
+	return nil
 }
 
 // Into TODO

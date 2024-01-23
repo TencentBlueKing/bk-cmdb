@@ -151,6 +151,8 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	default:
 		service.ApiCli = engine.CoreAPI.ApiServer()
 	}
+	service.Logics.ApiCli = service.ApiCli
+
 	return service, nil
 }
 

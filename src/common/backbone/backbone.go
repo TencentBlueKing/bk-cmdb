@@ -366,6 +366,9 @@ func (e *Engine) onRedisUpdate(previous, current cc.ProcessConfig) {
 
 // Ping TODO
 func (e *Engine) Ping() error {
+	if e.SrvRegdiscv.Disable {
+		return nil
+	}
 	return e.SvcDisc.Ping()
 }
 
