@@ -254,6 +254,27 @@ const (
 
 	// BKDBUnwind used to split values contained in an array field into separate doc
 	BKDBUnwind = "$unwind"
+
+	// BKDBLookup used to perform multi-table association operations
+	BKDBLookup = "$lookup"
+
+	// BKDBFrom collection to join
+	BKDBFrom = "from"
+
+	// BKDBLocalField field from the input documents
+	BKDBLocalField = "localField"
+
+	// BKDBForeignField field from the documents of the "from" collection
+	BKDBForeignField = "foreignField"
+
+	// BKDBAs output array field
+	BKDBAs = "as"
+
+	// BKDBSkip skip data index
+	BKDBSkip = "$skip"
+
+	// BKLimit data quantity limit
+	BKLimit = "$limit"
 )
 
 const (
