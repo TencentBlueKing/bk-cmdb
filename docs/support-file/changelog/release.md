@@ -1,4 +1,4 @@
-## [Version: v3.13.2-feature-job-alpha1] - 2024-01-23
+## [Version: v3.13.2-feature-job-beta1] - 2024-01-23
 **新增功能**
 - 新增「Job支持容器内执行作业」功能相关接口
 
