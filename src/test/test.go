@@ -182,6 +182,9 @@ func GetDB() *local.Mongo {
 func DeleteAllBizs() {
 	ctx := context.Background()
 
+	DeleteAllHosts()
+	DeleteAllObjects()
+
 	biz := make([]metadata.BizInst, 0)
 	bizCond := mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBNIN: []string{"资源池", "蓝鲸"}}}
 	err := GetDB().Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).All(ctx, &biz)
@@ -190,9 +193,6 @@ func DeleteAllBizs() {
 	if len(biz) == 0 {
 		return
 	}
-
-	DeleteAllHosts()
-	DeleteAllObjects()
 
 	bizIDs := make([]int64, len(biz))
 	for i, b := range biz {
