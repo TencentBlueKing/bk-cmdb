@@ -1399,6 +1399,15 @@ common:
         ##
         filePrivilege: 644
 
+  ## apiServer common config parameters
+  apiServer:
+    # api-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥
+      publicKey:
+
   ## gse server config
   ##
   gse:
