@@ -143,6 +143,20 @@ func GetWorkLoadTables() []string {
 	}
 }
 
+// GetWorkLoadObjects get all workload objects
+func GetWorkLoadObjects() []WorkloadType {
+	return []WorkloadType{
+		KubeDeployment,
+		KubeStatefulSet,
+		KubeDaemonSet,
+		KubeGameStatefulSet,
+		KubeGameDeployment,
+		KubeCronJob,
+		KubeJob,
+		KubePodWorkload,
+	}
+}
+
 // IsKubeTopoResource determine whether it is a container object type.
 func IsKubeTopoResource(object string) bool {
 	switch object {
@@ -201,45 +215,28 @@ func IsKubeResourceKind(object string) bool {
 	}
 }
 
-// GetKindByWorkLoadTableNameMap get the corresponding workload type according to the database table name.
-func GetKindByWorkLoadTableNameMap(table string) (map[string]string, error) {
+// GetKindByWorkLoadTableName get the corresponding workload type according to the database table name.
+func GetKindByWorkLoadTableName(table string) (WorkloadType, error) {
 	switch table {
 	case BKTableNameBaseDeployment:
-		return map[string]string{
-			table: string(KubeDeployment),
-		}, nil
+		return KubeDeployment, nil
 	case BKTableNameBaseStatefulSet:
-		return map[string]string{
-			table: string(KubeStatefulSet),
-		}, nil
+		return KubeStatefulSet, nil
 	case BKTableNameBaseDaemonSet:
-		return map[string]string{
-			table: string(KubeDaemonSet),
-		}, nil
+		return KubeDaemonSet, nil
 	case BKTableNameGameStatefulSet:
-		return map[string]string{
-			table: string(KubeGameStatefulSet),
-		}, nil
+		return KubeGameStatefulSet, nil
 	case BKTableNameGameDeployment:
-		return map[string]string{
-			table: string(KubeGameDeployment),
-		}, nil
+		return KubeGameDeployment, nil
 	case BKTableNameBaseCronJob:
-		return map[string]string{
-			table: string(KubeCronJob),
-		}, nil
+		return KubeCronJob, nil
 	case BKTableNameBaseJob:
-		return map[string]string{
-			table: string(KubeJob),
-		}, nil
+		return KubeJob, nil
 	case BKTableNameBasePodWorkload:
-		return map[string]string{
-			table: string(KubePodWorkload),
-		}, nil
+		return KubePodWorkload, nil
 	default:
-		return nil, errors.New("this table name does not exist")
+		return "", errors.New("this table name does not exist")
 	}
-
 }
 
 // KubeAttrsRsp kube resource attribute response
