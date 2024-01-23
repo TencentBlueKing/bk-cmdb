@@ -2,8 +2,8 @@ spec_version: 1
 
 release:
   # 发布版本号
-  version: 3.13.2-feature-job-alpha1
-  title: "3.13.2-feature-job-alpha1"
+  version: 3.13.2-feature-job-beta1
+  title: "3.13.2-feature-job-beta1"
   comment: "job支持容器内执行作业联调"
 
 apigateway:
