@@ -257,6 +257,15 @@ data:
           # 下发主机身份文件权限值
           filePrivilege: {{ .Values.common.eventServer.hostIdentifier.windows.filePrivilege }}
 
+    # apiServer相关配置
+    apiServer:
+      # api-server使用的jwt配置
+      jwt:
+        # 是否开启jwt认证功能
+        enabled: {{ .Values.common.apiServer.jwt.enabled }}
+        # jwt公钥
+        publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
+
     # 直接调用gse服务相关配置
     gse:
       # 调用gse的apiServer服务时相关配置
