@@ -8,43 +8,39 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| page       |  dict    | 是     | 查询条件 |
-| host_property_filter| object| 否| 主机属性组合查询条件 |
-| fields    |  array   | 是     | 主机属性列表，控制返回结果的主机里有哪些字段，请按需求填写|
+| 字段                   | 类型     | 必选 | 描述                            |
+|----------------------|--------|----|-------------------------------|
+| page                 | dict   | 是  | 查询条件                          |
+| host_property_filter | object | 否  | 主机属性组合查询条件                    |
+| fields               | array  | 是  | 主机属性列表，控制返回结果的主机里有哪些字段，请按需求填写 |
 
 #### host_property_filter
+
 该参数为主机属性字段过滤规则的组合，用于根据主机属性字段搜索主机。组合支持AND 和 OR 两种方式，可以嵌套，最多嵌套2层。
 过滤规则为四元组 `field`, `operator`, `value`
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| condition       |  string    | 否     |  组合查询条件|
-| rules      |  array    | 否     | 规则 |
-
+| 字段        | 类型     | 必选 | 描述     |
+|-----------|--------|----|--------|
+| condition | string | 否  | 组合查询条件 |
+| rules     | array  | 否  | 规则     |
 
 #### rules
 
-| 字段     | 类型   | 必填 | 描述                                                                                                |
-| -------- | ------ |  ------ |---------------------------------------------------------------------------------------------------|
-| field    | string | 是   | 字段名                                                                                               |
-| operator | string | 是   | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否   | 操作数,不同的operator对应不同的value格式                                                                       |
+| 字段       | 类型     | 必选 | 描述                                                                                                |
+|----------|--------|----|---------------------------------------------------------------------------------------------------|
+| field    | string | 是  | 字段名                                                                                               |
+| operator | string | 是  | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否  | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
-
-
 #### page
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| start    |  int    | 是     | 记录开始位置 |
-| limit    |  int    | 是     | 每页限制条数,最大值为500 |
-| sort     |  string | 否     | 排序字段 |
-
-
+| 字段    | 类型     | 必选 | 描述             |
+|-------|--------|----|----------------|
+| start | int    | 是  | 记录开始位置         |
+| limit | int    | 是  | 每页限制条数,最大值为500 |
+| sort  | string | 否  | 排序字段           |
 
 ### 请求参数示例
 
@@ -222,37 +218,40 @@
 ```
 
 ### 返回结果参数说明
+
 #### response
 
-| 名称  | 类型  | 描述 |
-|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |
-| code | int | 错误编码。 0表示success，>0表示失败错误 |
-| message | string | 请求失败返回的错误信息 |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data | object | 请求返回的数据 |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data
 
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| count     | int       | 记录条数 |
-| info      | array     | 主机数据和拓扑信息 |
+| 字段    | 类型    | 描述        |
+|-------|-------|-----------|
+| count | int   | 记录条数      |
+| info  | array | 主机数据和拓扑信息 |
 
 #### data.info
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| host      | dict      | 主机实际数据 |
-| topo      | array     | 主机拓扑信息 |
+
+| 字段   | 类型    | 描述     |
+|------|-------|--------|
+| host | dict  | 主机实际数据 |
+| topo | array | 主机拓扑信息 |
 
 #### data.info.host
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
+
+| 字段                   | 类型     | 描述                |
+|----------------------|--------|-------------------|
 | bk_host_name         | string | 主机名               |    
 | bk_host_innerip      | string | 内网IP              |                                 
 | bk_host_id           | int    | 主机ID              |                                 
-| bk_cloud_id          | int    | 管控区域               |  
+| bk_cloud_id          | int    | 管控区域              |  
 | import_from          | string | 主机导入来源,以api方式导入为3 |
 | bk_asset_id          | string | 固资编号              |
 | bk_cloud_inst_id     | string | 云主机实例ID           |
@@ -282,17 +281,18 @@
 | bk_state_name        | string | 所在国家              |
 | operator             | string | 主要维护人             |
 | bk_bak_operator      | string | 备份维护人             |
+
 **注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**
 
 #### data.info.topo
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| inst | object       | 描述该节点实例的详情信息|
-| inst.obj | string       | 该节点的模型类型，如set/module及自定义层级模型类型 |
-| inst.name | string  | 该节点的实例名 |
-| inst.id    | int     | 该节点的实例ID |
-| children | object array       | 描述当前实例节点的子节点详情信息，可能有多个 |
-| children.inst | object       | 该子节点的实例详情信息 |
-| children.children | string  | 描述该节点的子节点详情信息 |
 
+| 字段                | 类型           | 描述                             |
+|-------------------|--------------|--------------------------------|
+| inst              | object       | 描述该节点实例的详情信息                   |
+| inst.obj          | string       | 该节点的模型类型，如set/module及自定义层级模型类型 |
+| inst.name         | string       | 该节点的实例名                        |
+| inst.id           | int          | 该节点的实例ID                       |
+| children          | object array | 描述当前实例节点的子节点详情信息，可能有多个         |
+| children.inst     | object       | 该子节点的实例详情信息                    |
+| children.children | string       | 描述该节点的子节点详情信息                  |
 

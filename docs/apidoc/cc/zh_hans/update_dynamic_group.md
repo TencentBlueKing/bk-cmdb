@@ -8,28 +8,28 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | 是     | 业务ID |
-| id        |  string  | 是     | 主键ID |
-| bk_obj_id |  string  | 否     | 动态分组的目标资源对象类型, 目前可以为host,set.更新规则时需同时提供该字段和info两个字段 |
-| info      |  object  | 否     | 通用查询条件 |
-| name      |  string  | 否     | 动态分组名称 |
+| 字段        | 类型     | 必选 | 描述                                                  |
+|-----------|--------|----|-----------------------------------------------------|
+| bk_biz_id | int    | 是  | 业务ID                                                |
+| id        | string | 是  | 主键ID                                                |
+| bk_obj_id | string | 否  | 动态分组的目标资源对象类型, 目前可以为host,set.更新规则时需同时提供该字段和info两个字段 |
+| info      | object | 否  | 通用查询条件                                              |
+| name      | string | 否  | 动态分组名称                                              |
 
 #### info.condition
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_obj_id |  string   | 是     | 条件对象资源类型, host类型的动态分组支持的info.conditon:set,module,host；set类型的动态分组支持的info.condition:set |
-| condition |  array    | 是     | 查询条件 |
+| 字段        | 类型     | 必选 | 描述                                                                                    |
+|-----------|--------|----|---------------------------------------------------------------------------------------|
+| bk_obj_id | string | 是  | 条件对象资源类型, host类型的动态分组支持的info.conditon:set,module,host；set类型的动态分组支持的info.condition:set |
+| condition | array  | 是  | 查询条件                                                                                  |
 
 #### info.condition.condition
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| field     |  string    | 是     | 对象的字段 |
-| operator  |  string    | 是     | 操作符, op值为eq(相等)/ne(不等)/in(属于)/nin(不属于) |
-| value     |  object    | 是     | 字段对应的值 |
+| 字段       | 类型     | 必选 | 描述                                     |
+|----------|--------|----|----------------------------------------|
+| field    | string | 是  | 对象的字段                                  |
+| operator | string | 是  | 操作符, op值为eq(相等)/ne(不等)/in(属于)/nin(不属于) |
+| value    | object | 是  | 字段对应的值                                 |
 
 ### 请求参数示例
 
@@ -97,11 +97,11 @@
 
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |

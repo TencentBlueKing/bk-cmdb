@@ -8,15 +8,14 @@
 
 {{ common_args_desc }}
 
-
 #### 接口参数
 
-| 字段           | 类型  | 必选  | 描述                                                     |
-| ------------- | ----- | ---- | ------------------------------------------------------- |
-| src_bk_biz_id | int   | 是   | 要转移的主机所属的业务ID                                    |
-| bk_host_id    | array | 是   | 要转移的主机id列表，最大长度为500                            |
-| dst_bk_biz_id | int   | 是   | 主机要转移到的业务ID                                       |
-| bk_module_id  | int   | 是   | 主机要转移到的模块ID，该模块ID必须为下空闲机池set下的模块ID。 |
+| 字段            | 类型    | 必选 | 描述                                  |
+|---------------|-------|----|-------------------------------------|
+| src_bk_biz_id | int   | 是  | 要转移的主机所属的业务ID                       |
+| bk_host_id    | array | 是  | 要转移的主机id列表，最大长度为500                 |
+| dst_bk_biz_id | int   | 是  | 主机要转移到的业务ID                         |
+| bk_module_id  | int   | 是  | 主机要转移到的模块ID，该模块ID必须为下空闲机池set下的模块ID。 |
 
 ### 请求参数示例
 
@@ -49,13 +48,14 @@
 ```
 
 ### 返回结果参数说明
+
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误    |
-| message | string | 请求失败返回的错误信息                    |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                           |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |

@@ -8,20 +8,20 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_biz_id  | int  | 是     | 业务ID |
-| bk_service_template_ids  | int array  | 是     | 集群模板ID列表，最多可填500个 |
-| bk_set_ids  | int array  | 否     | 集群ID列表, 最多可填500个 |
-| fields  |  string array   | 是     | 主机属性列表，控制返回结果的模块信息里有哪些字段 |
-| page       |  object    | 是     | 分页信息 |
+| 字段                      | 类型           | 必选 | 描述                       |
+|-------------------------|--------------|----|--------------------------|
+| bk_biz_id               | int          | 是  | 业务ID                     |
+| bk_service_template_ids | int array    | 是  | 集群模板ID列表，最多可填500个        |
+| bk_set_ids              | int array    | 否  | 集群ID列表, 最多可填500个         |
+| fields                  | string array | 是  | 主机属性列表，控制返回结果的模块信息里有哪些字段 |
+| page                    | object       | 是  | 分页信息                     |
 
 #### page 字段说明
 
-| 字段  | 类型   | 必选 | 描述                  |
-| ----- | ------ | ---- | --------------------- |
-| start | int    | 是   | 记录开始位置          |
-| limit | int    | 是   | 每页限制条数,最大500 |
+| 字段    | 类型  | 必选 | 描述           |
+|-------|-----|----|--------------|
+| start | int | 是  | 记录开始位置       |
+| limit | int | 是  | 每页限制条数,最大500 |
 
 ### 请求参数示例
 
@@ -97,32 +97,33 @@
 ```
 
 ### 返回结果参数说明
+
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data
 
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
-| count     | int       | 记录条数 |
-| info      | array     | 主机实际数据 |
+| 字段    | 类型    | 描述     |
+|-------|-------|--------|
+| count | int   | 记录条数   |
+| info  | array | 主机实际数据 |
 
 #### data.info
 
-| 字段      | 类型      | 描述      |
-|-----------|-----------|-----------|
+| 字段                   | 类型     | 描述                |
+|----------------------|--------|-------------------|
 | bk_host_name         | string | 主机名               |    
 | bk_host_innerip      | string | 内网IP              |                                 
 | bk_host_id           | int    | 主机ID              |                                 
-| bk_cloud_id          | int    | 管控区域               |  
+| bk_cloud_id          | int    | 管控区域              |  
 | import_from          | string | 主机导入来源,以api方式导入为3 |
 | bk_asset_id          | string | 固资编号              |
 | bk_cloud_inst_id     | string | 云主机实例ID           |
@@ -152,5 +153,6 @@
 | bk_state_name        | string | 所在国家              |
 | operator             | string | 主要维护人             |
 | bk_bak_operator      | string | 备份维护人             |
+
 **注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**
 
