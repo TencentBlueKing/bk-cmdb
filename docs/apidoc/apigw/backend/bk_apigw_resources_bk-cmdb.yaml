@@ -10072,3 +10072,28 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v3/count/{bk_obj_id}/instances:
+    post:
+      operationId: count_object_instances_by_filters
+      description: count_object_instances_by_filters
+      tags:
+        - apimachinery
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/count/{bk_obj_id}/instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:

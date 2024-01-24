@@ -116,6 +116,8 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 
 	ws.Route(ws.POST("/update/transaction/commit").Filter(s.TxnFilterChan).To(s.Post))
 	ws.Route(ws.POST("/update/transaction/abort").Filter(s.TxnFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/count/{bk_obj_id}/instances").To(s.CountInstance))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

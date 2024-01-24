@@ -72,14 +72,29 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 				<-pipeline
 			}()
 
-			countRes, ccErr := lgc.ApiCli.CountObjectInstances(ctx, header, objID, new(metadata.CommonCountFilter))
-			if ccErr != nil {
-				blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, ccErr, rid)
-				apiErr = ccErr
-				return
-			}
+			if metadata.IsCommon(objID) {
+				countRes, ccErr := lgc.ApiCli.CountObjectInstances(ctx, header, objID, new(metadata.CommonCountFilter))
+				if ccErr != nil {
+					blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, ccErr, rid)
+					apiErr = ccErr
+					return
+				}
 
-			objCount.InstCount = countRes.Count
+				objCount.InstCount = countRes.Count
+			} else {
+				count, err := lgc.ApiCli.CountObjInstByFilters(ctx, header, objID, []map[string]interface{}{{}})
+				if err != nil {
+					blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+
+				if len(count) == 0 {
+					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+					return
+				}
+				objCount.InstCount = uint64(count[0])
+			}
 			existObjResult[idx] = objCount
 
 		}(ctx, header, objID, idx, objCount)

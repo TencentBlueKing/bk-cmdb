@@ -710,6 +710,32 @@ func (a *apiServer) CountObjectInstances(ctx context.Context, h http.Header, obj
 	return resp.Data, nil
 }
 
+// CountObjInstByFilters counts object instances num by filters.
+func (a *apiServer) CountObjInstByFilters(ctx context.Context, h http.Header, objID string,
+	filters []map[string]interface{}) ([]int64, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.BatchCountResp)
+	subPath := "/count/%s/instances"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(filters).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
 // HealthCheck check if api-server is healthy.
 func (a *apiServer) HealthCheck() (bool, error) {
 	resp := new(metric.HealthResponse)
