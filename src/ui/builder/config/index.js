@@ -46,7 +46,8 @@ const dev = {
     HELP_DOC_URL: JSON.stringify(''),
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
-    COMPONENT_API_URL: JSON.stringify('')
+    COMPONENT_API_URL: JSON.stringify(''),
+    PUBLIC_PATH: JSON.stringify('/')
   }),
 
   // Paths
@@ -143,7 +144,8 @@ module.exports = {
       HELP_DOC_URL: '{{.helpDocUrl}}',
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
       COOKIE_DOMAIN: '{{.cookieDomain}}',
-      COMPONENT_API_URL: '{{.componentApiUrl}}'
+      COMPONENT_API_URL: '{{.componentApiUrl}}',
+      PUBLIC_PATH: '{{.publicPath}}',
     }),
 
     // Template for index.html
@@ -156,7 +158,7 @@ module.exports = {
     assetsRoot: `${path.resolve(config.BUILD_OUTPUT)}/web`,
 
     assetsSubDirectory: '',
-    assetsPublicPath: '/static/',
+    assetsPublicPath: '{{.publicPath}}static/',
 
     /**
          * Source Maps

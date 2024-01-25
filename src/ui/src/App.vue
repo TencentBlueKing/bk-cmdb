@@ -49,7 +49,7 @@
       const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
       return {
         showBrowserTips,
-        loginSuccessUrl: `${window.location.origin}/static/login_success.html`
+        loginSuccessUrl: `${window.location.origin}${window.location.pathname}static/login_success.html`
       }
     },
     computed: {
