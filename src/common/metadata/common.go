@@ -596,3 +596,9 @@ type ImportInstResp struct {
 	BaseResp `json:",inline"`
 	Data     ImportInstRes `json:"data"`
 }
+
+// BatchCountResp batch count response
+type BatchCountResp struct {
+	BaseResp `json:",inline"`
+	Data     []int64 `json:"data"`
+}

@@ -120,6 +120,8 @@ type ApiServerClientInterface interface {
 
 	CountObjectInstances(ctx context.Context, h http.Header, objID string, input *metadata.CommonCountFilter) (
 		*metadata.CommonCountResult, errors.CCErrorCoder)
+	CountObjInstByFilters(ctx context.Context, h http.Header, objID string, filters []map[string]interface{}) (
+		[]int64, errors.CCErrorCoder)
 
 	HealthCheck() (bool, error)
 }
