@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query cloud region
+Query control area (Permission: control area view permission)
 
 ### Request Parameters
 
@@ -8,29 +8,28 @@ Query cloud region
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description       |
-|----------------------|------------|--------|-------------|
-|condition| object| no | Query criteria|
-| page|  object| yes | Paging information|
-
+| Field     | Type   | Required | Description        |
+| --------- | ------ | -------- | ------------------ |
+| condition | object | No       | Query conditions   |
+| page      | object | Yes      | Paging information |
 
 #### condition
-| Field                 | Type      | Required   | Description       |
-|----------------------|------------|--------|-------------|
-|bk_cloud_id| int| no | Cloud area ID |
-|bk_cloud_name| string| no | Cloud area name |
 
-#### Page field Description
+| Field         | Type   | Required | Description       |
+| ------------- | ------ | -------- | ----------------- |
+| bk_cloud_id   | int    | No       | Control area ID   |
+| bk_cloud_name | string | No       | Control area name |
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-|start| int| no | Get data offset position|
-|limit| int| yes | Limit on the number of data pieces in the past, 200 is recommended|
+#### page Field Description
 
+| Field | Type | Required | Description                                      |
+| ----- | ---- | -------- | ------------------------------------------------ |
+| start | int  | No       | Data offset position                             |
+| limit | int  | Yes      | Number of data restrictions, recommended for 200 |
 
-### Request Parameters Example
+### Request Parameter Example
 
-``` python
+```python
 {
 
     "bk_app_code": "esb_test",
@@ -39,7 +38,7 @@ Query cloud region
     "bk_token": "xxx",
     "condition": {
         "bk_cloud_id": 12,
-        "bk_cloud_name" "aws",
+        "bk_cloud_name": "aws"
     },
     "page":{
         "start":0,
@@ -74,32 +73,31 @@ Query cloud region
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Name| Type| Description|
-|---|---|---|
-| count|  int| Number of records|
-| info|  array |List information of queried cloud area|
+| Field  | Type  | Description                             |
+| ----- | ----- | --------------------------------------- |
+| count | int   | Number of records                       |
+| info  | array | Information about the control area list |
 
-#### Data.info Field Description:
-| Name| Type| Description|
-|---|---|---|
-| bk_cloud_id | int |Cloud area ID|
-| bk_cloud_name | string  |Cloud area name|
-| create_time | string |Settling time|
-| last_time | string |Last modified time|
+#### data.info Field Description：
 
-
-
+| Field          | Type   | Description            |
+| ------------- | ------ | ---------------------- |
+| bk_cloud_id   | int    | Control area ID        |
+| bk_cloud_name | string | Control area name      |
+| create_time   | string | Creation time          |
+| last_time     | string | Last modification time |

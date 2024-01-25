@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-create set
+Create a cluster (Permission: Business Topology Creation Permission)
 
 ### Request Parameters
 
@@ -8,22 +8,31 @@ create set
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| bk_biz_id      | int     | Yes     | Business ID |
-| data           | dict    | Yes     | data |
+| Field               | Type   | Required | Description       |
+| ------------------- | ------ | -------- | ----------------- |
+| bk_supplier_account | string | No       | Developer account |
+| bk_biz_id           | int    | Yes      | Business ID       |
+| data                | dict   | Yes      | Cluster data      |
 
 #### data
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_parent_id        |  int     | Yes     | the parent inst identifier |
-| bk_set_name         |  string  | Yes     | set name |
-| default             |  int     | No     | 0-normal set, 1-built-in set, default is 0 |
-| set_template_id     |  int     | No     | set template ID, required when need to create set using set template |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_parent_id      | int    | Yes      | The ID of the parent instance node, the last level instance node of the current instance node, in the topology structure, for sets, it generally refers to the business ID |
+| bk_set_name       | string | Yes      | Cluster name                                                 |
+| default           | int    | No       | 0-ordinary cluster, 1-built-in module collection, default is 0 |
+| set_template_id   | int    | No       | Cluster template ID, required when creating a cluster through a cluster template |
+| bk_capacity       | int    | No       | Design capacity                                              |
+| description       | string | No       | Remark, description of the data                              |
+| bk_set_desc       | string | No       | Cluster description                                          |
+| bk_set_env        | string | No       | Environment type: test(1), experience(2), formal(3, default) |
+| bk_service_status | string | No       | Service status: open(1, default), close(2)                   |
+| bk_created_at     | string | No       | Creation time                                                |
+| bk_updated_at     | string | No       | Update time                                                  |
+| bk_created_by     | string | No       | Creator                                                      |
+| bk_updated_by     | string | No       | Last updater                                                 |
 
-**Note: Other optional fields are defined by the model**
+**Note: The input parameters here only explain the required and system-built parameters. The rest of the parameters to be filled in depend on the user's own defined attribute fields. The parameter values are set according to the configuration of the cluster's attribute fields.**
 
 ### Request Parameters Example
 
@@ -36,75 +45,87 @@ create set
     "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "data": {
-        "bk_parent_id": 1,
-        "bk_set_name": "test-set",
-        "bk_set_desc": "test-set",
+        "bk_parent_id": 3,
+        "bk_set_name": "set_a1",
+        "set_template_id": 0,
+        "default": 0,
         "bk_capacity": 1000,
-        "description": "description",
-        "set_template_id": 1
+        "bk_set_desc": "test-set",
+        "bk_set_env": "1",
+        "bk_service_status": "1",
+        "bk_created_at": "",
+        "bk_updated_at": "",
+        "bk_created_by": "admin",
+        "bk_updated_by": "admin"
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-     "data": {
-        "bk_biz_id": 11,
+    "data": {
+        "bk_biz_id": 3,
         "bk_capacity": 1000,
-        "bk_parent_id": 11,
+        "bk_created_at": "2023-11-14T17:30:43.048+08:00",
+        "bk_created_by": "admin",
+        "bk_parent_id": 3,
         "bk_service_status": "1",
         "bk_set_desc": "test-set",
-        "bk_set_env": "3",
-        "bk_set_id": 4780,
-        "bk_set_name": "test-set",
+        "bk_set_env": "1",
+        "bk_set_id": 10,
+        "bk_set_name": "set_a1",
         "bk_supplier_account": "0",
-        "create_time": "2022-02-22T20:34:01.386+08:00",
+        "bk_updated_at": "2023-11-14T17:30:43.048+08:00",
+        "create_time": "2023-11-14T17:30:43.048+08:00",
         "default": 0,
-        "description": "description",
-        "last_time": "2022-02-22T20:34:01.386+08:00",
-        "set_template_id": 11,
+        "description": "",
+        "last_time": "2023-11-14T17:30:43.048+08:00",
+        "set_template_id": 0,
         "set_template_version": null
-     }
+    }
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | The success or failure of the request. true: the request was successful; false: the request failed.
-| code | int | The error code. 0 means success, >0 means failure error.
-| message | string | The error message returned by the failed request.
-| data | object | The data returned by the request.
-| permission | object | Permission information |
-| request_id | string | Request chain id |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| field | type | description |
-| -----------|-----------|--------------|
-| bk_biz_id | int | business_id |
-| bk_capacity | int | design_capacity |
-|bk_parent_id | int | ID of the parent node |
-| bk_set_id | int | cluster_id |
-| bk_service_status | string | Service status:1/2(1:open,2:closed) |
-|bk_set_desc|string|cluster_description|
-| bk_set_env | string | Environment type:1/2/3(1:test,2:experience,3:official) |
-|bk_set_name|string|cluster_name|
-| create_time | string | creation time |
-| last_time | string | update_time |
-| bk_supplier_account | string | developer_account |
-| default | int | 0-general cluster, 1-built-in module set, default is 0 |
-| description | string | Description information for the data |
-| set_template_version | array | The current version of the cluster template |
-| set_template_id| int | Cluster template ID |
+| Field                 | Type   | Description                                                  |
+| -------------------- | ------ | ------------------------------------------------------------ |
+| bk_biz_id            | int    | Business ID                                                  |
+| bk_capacity          | int    | Design capacity                                              |
+| bk_parent_id         | int    | Parent node ID                                               |
+| bk_set_id            | int    | Cluster ID                                                   |
+| bk_service_status    | string | Service status: 1/2 (1: open, 2: close)                      |
+| bk_set_desc          | string | Cluster description                                          |
+| bk_set_env           | string | Environment type: 1/2/3 (1: test, 2: experience, 3: formal)  |
+| bk_set_name          | string | Cluster name                                                 |
+| create_time          | string | Creation time                                                |
+| last_time            | string | Update time                                                  |
+| bk_supplier_account  | string | Developer account                                            |
+| default              | int    | 0-ordinary cluster, 1-built-in module collection, default is 0 |
+| description          | string | Data description information                                 |
+| set_template_version | array  | Current version of the cluster template                      |
+| set_template_id      | int    | Cluster template ID                                          |
+| bk_created_at        | string | Creation time                                                |
+| bk_updated_at        | string | Update time                                                  |
+| bk_created_by        | string | Creator                                                      |
+| bk_updated_by        | string | Last updater                                                 |

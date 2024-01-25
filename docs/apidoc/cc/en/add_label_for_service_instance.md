@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Tag a service instance based on the service instance id and the tag set 
+Add labels to service instances based on service instance ID and set labels. (Permission: Service instance editing permission)
 
 ### Request Parameters
 
@@ -8,15 +8,16 @@ Tag a service instance based on the service instance id and the tag set
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-|instance_ids| array| yes | Service instance ID, the max length is 100|
-|labels| object| yes | Label added|
-| bk_biz_id  | int     | yes     | Business ID |
+| Field        | Type   | Required | Description                                            |
+| ------------ | ------ | -------- | ------------------------------------------------------ |
+| instance_ids | array  | Yes      | Service instance IDs, supports up to 100 IDs at a time |
+| labels       | object | Yes      | Labels to be added                                     |
+| bk_biz_id    | int    | Yes      | Business ID                                            |
 
-#### Labels Field Description
-- key verification rules:`^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`
-- Value verification rule:`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`
+#### labels Field Description
+
+- key Validation Rule: `^[a-zA-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`
+- value Validation Rule: `^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`
 
 ### Request Parameters Example
 
@@ -35,7 +36,7 @@ Tag a service instance based on the service instance id and the tag set
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -49,17 +50,15 @@ Tag a service instance based on the service instance id and the tag set
 }
 ```
 
-### Return result description
+### Response Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
-
-
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

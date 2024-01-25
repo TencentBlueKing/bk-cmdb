@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-According to the service topology instance node, querying the host relationship information under the instance node
+Query host relationship information based on the business topology instance node (Permission: Business access permission)
 
 ### Request Parameters
 
@@ -8,23 +8,23 @@ According to the service topology instance node, querying the host relationship 
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description                       |
-|---------------------|------------|--------|-----------------------------|
-| page       |   dict    | yes  | Query criteria|
-| fields    |   array   | yes  | Host attribute list, which controls the fields in the host that returns the result. Please fill them in as required. They can be bk_biz_id,bk_host_id,bk_module_id,bk_set_id,bk_supplier_account|
-| bk_obj_id | string |yes| The model ID of the topology node, which can be a user-defined hierarchical model ID, set, module, etc., But can not be a business|
-| bk_inst_ids | array |yes| The instance ID of the topology node, supporting up to 50 instance nodes|
-| bk_biz_id | int |yes| Business ID |
+| Field       | Type   | Required | Description                                                  |
+| ----------- | ------ | -------- | ------------------------------------------------------------ |
+| page        | dict   | Yes      | Query conditions                                             |
+| fields      | array  | Yes      | List of host properties, control which fields of the host information should be returned. Please fill in according to your needs. It can be bk_biz_id, bk_host_id, bk_module_id, bk_set_id, bk_supplier_account |
+| bk_obj_id   | string | Yes      | Model ID of the topology node, it can be a custom hierarchical model ID, set, module, etc., but cannot be a business |
+| bk_inst_ids | array  | Yes      | List of instance IDs of the topology node, supports up to 50 instance nodes |
+| bk_biz_id   | int    | Yes      | Business ID                                                  |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, maximum 500|
-| sort     |   string |no     | Sort field|
+| Field | Type   | Required | Description                                      |
+| ----- | ------ | -------- | ------------------------------------------------ |
+| start | int    | Yes      | Record start position                            |
+| limit | int    | Yes      | Number of records per page, maximum value is 500 |
+| sort  | string | No       | Sorting field                                    |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -46,7 +46,7 @@ According to the service topology instance node, querying the host relationship 
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -67,28 +67,29 @@ According to the service topology instance node, querying the host relationship 
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int       | Number of records|
-| info      |  array     | Host relationship information|
+| Field | Type  | Description                   |
+| ----- | ----- | ----------------------------- |
+| count | int   | Number of records             |
+| info  | array | Host relationship information |
 
-#### info 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| bk_host_id     |  int       | Host id|
-| bk_module_id      |  int     | Module id|
+#### info
 
+| Field        | Type | Description |
+| ------------ | ---- | ----------- |
+| bk_host_id   | int  | Host ID     |
+| bk_module_id | int  | Module ID   |

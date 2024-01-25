@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete model classification by model classification ID
+Delete a model category by model category ID. (Permission: Model category deletion permission)
 
 ### Request Parameters
 
@@ -8,52 +8,59 @@ Delete model classification by model classification ID
 
 #### Interface Parameters
 
-| Field| Type       | Required   | Description                            |
-|-------|-------------|--------|----------------------------------|
-| delete      |  object |yes    | Delete|
+| Field | Type | Required | Description             |
+| ----- | ---- | -------- | ----------------------- |
+| id    | int  | Yes      | Category data record ID |
 
-#### delete
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-|id     |  int         | yes  | Classification data record ID                   |
+**Note** Can only delete an empty model category. Deletion will fail if the category has models.
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
-
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "delete":{
-    "id" : 0
-    }
+    "id": 13
 }
 ```
 
+### Response Example
 
-### Return Result Example
+#### Deletion Successful
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
 ```
-#### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+#### Deletion Failed (Category has models)
+
+```python
+{
+    "result": false,
+    "code": 1101029,
+    "data": null,
+    "message": "There is a model under the category, not allowed to delete",
+    "permission": null,
+    "request_id": "8c6b89e7f0cb4fad836f55d50f81f2c6"
+}
+```
+
+#### Response
+
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

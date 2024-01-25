@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query dynamic group list (V3.9.6)
+Query dynamic group list (Version: v3.9.6, Permission: Business access permission)
 
 ### Request Parameters
 
@@ -8,22 +8,22 @@ Query dynamic group list (V3.9.6)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | yes  | Business ID |
-| condition |  object    | no     | Query condition: the condition field is the attribute field of the user-defined query, which can be create_user, modify_user, name|
-| disable_counter |  bool |no     | Return total number of records; default|
-| page     |   object   | yes  | Paging settings|
+| Field           | Type   | Required | Description                                                  |
+| --------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id       | int    | Yes      | Business ID                                                  |
+| condition       | object | No       | Query conditions, the condition field is the attribute field for custom queries, which can be create_user, modify_user, name |
+| disable_counter | bool   | No       | Whether to not return the total number of records, default is to return |
+| page            | object | Yes      | Paging settings                                              |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start     |   int     | yes  | Record start position|
-| limit     |   int     | yes  | Limit bars per page, Max. 200|
-| sort      |   string  |no     | Retrieve sort, by default by creation time|
+| Field | Type   | Required | Description                                            |
+| ----- | ------ | -------- | ------------------------------------------------------ |
+| start | int    | Yes      | Record start position                                  |
+| limit | int    | Yes      | Number of restrictions per page, maximum is 200        |
+| sort  | string | No       | Retrieval sorting, default is to sort by creation time |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -107,50 +107,51 @@ Query dynamic group list (V3.9.6)
 }
 ```
 
-### Return result parameter
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int |The total number of records that can be matched by the current rule (used for pre-paging by the caller, the actual number of returns from a single request and whether all data are pulled are subject to the number of JSON Array parsing)|
-| info      |  array        | Custom query data|
+| Field | Type  | Description                                                  |
+| ----- | ----- | ------------------------------------------------------------ |
+| count | int   | Total number of records that the current rule can match (used for the caller to pre-pagination, the actual number of returns and whether the data is completely pulled as JSON Array parsing quantity is subject to) |
+| info  | array | Custom query data                                            |
 
 #### data.info
 
-| Field      | Type       | Description      |
-|-----------|------------|-----------|
-| bk_biz_id    |  int     | Business ID |
-| id           |  string  |Dynamic grouping pk ID|
-| name         |  string  |Dynamic group naming|
-| bk_obj_id    |  string  |The target resource object type of dynamic grouping can be host,set at present|
-| info         |  object  |Dynamic grouping information|
-| last_time    |  string  |Update time|
-| modify_user  | string  |Modifier|
-| create_time  | string  |Settling time|
-| create_user  | string  |Creator|
+| Field       | Type   | Description                                                  |
+| ----------- | ------ | ------------------------------------------------------------ |
+| bk_biz_id   | int    | Business ID                                                  |
+| id          | string | Dynamic group primary key ID                                 |
+| name        | string | Dynamic group naming                                         |
+| bk_obj_id   | string | Target resource object type of dynamic group, can be host, set |
+| info        | object | Dynamic group information                                    |
+| last_time   | string | Update time                                                  |
+| modify_user | string | Modifier                                                     |
+| create_time | string | Creation time                                                |
+| create_user | string | Creator                                                      |
 
 #### data.info.info.condition
 
-| Field      | Type     | Description      |
-|-----------|-----------|------------|
-| bk_obj_id |  string   | Object name, which can be set,module,host|
-| condition |  array    | Query criteria|
+| Field     | Type   | Description                           |
+| --------- | ------ | ------------------------------------- |
+| bk_obj_id | string | Object name, can be set, module, host |
+| condition | array  | Query condition                       |
 
 #### data.info.info.condition.condition
 
-| Field      | Type     | Description      |
-|-----------|------------|---------------|
-| field     |   string    | Fields of the object|
-| operator  |  string    | Operator, op values are eq(equal)/ne(unequal)/in(of)/nin(not of)/like(fuzzy match)|
-| value     |   object    | The value for the field|
+| Field    | Type   | Description                                                  |
+| -------- | ------ | ------------------------------------------------------------ |
+| field    | string | Object field                                                 |
+| operator | string | Operator, op value is eq (equal) / ne (not equal) / in (belongs to) / nin (does not belong to) / like (fuzzy match) |
+| value    | object | Value corresponding to the field                             |

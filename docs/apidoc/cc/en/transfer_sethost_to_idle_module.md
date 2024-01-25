@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-According to the service id, the set id and the module id, the host computer under the designated service set module is uploaded to the idle machine module of the service
+Transfer hosts to the business's idle module under the specified business cluster and module (Permission: Service Instance Edit Permission)
 
 ### Request Parameters
 
@@ -8,14 +8,13 @@ According to the service id, the set id and the module id, the host computer und
 
 #### Interface Parameters
 
-| Field          | Type      | Required     | Description    |
-|---------------|------------|----------|----------|
-| bk_biz_id     |  int        | yes    | Business ID |
-| bk_set_id     |  int        | yes    | Set id |
-| bk_module_id  | int        | yes    | Module id   |
+| Field        | Type | Required | Description |
+| ------------ | ---- | -------- | ----------- |
+| bk_biz_id    | int  | Yes      | Business ID |
+| bk_set_id    | int  | Yes      | Cluster ID  |
+| bk_module_id | int  | Yes      | Module ID   |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -32,26 +31,25 @@ According to the service id, the set id and the module id, the host computer und
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "sucess"
+    "data": null
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |

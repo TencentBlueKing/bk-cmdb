@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-create a new container cluster (v3.12.1+, permission: kube cluster editing permissions)
+Create Container Cluster (v3.12.1+, Permission: Create Permission for Container Cluster)
 
 ### Request Parameters
 
@@ -8,24 +8,25 @@ create a new container cluster (v3.12.1+, permission: kube cluster editing permi
 
 #### Interface Parameters
 
-| Field             | Type   | Required | Description                                            |
-|-------------------|--------|----------|--------------------------------------------------------|
-| bk_biz_id         | int    | yes      | business ID                                            |
-| name              | string | yes      | cluster name                                           |
-| scheduling_engine | string | no       | scheduling engine                                      |
-| uid               | string | yes      | cluster own ID                                         |
-| xid               | string | no       | associated cluster ID                                  |
-| version           | string | no       | cluster version                                        |
-| network_type      | string | no       | network type                                           |
-| region            | string | no       | the region where the cluster is located                |
-| vpc               | string | no       | vpc network                                            |
-| network           | array  | no       | cluster network                                        |
-| type              | string | yes      | cluster type. enum: INDEPENDENT_CLUSTER, SHARE_CLUSTER |
-| bk_project_id     | string | no       | project_id                                             |
-| bk_project_name   | string | no       | project name                                           |
-| bk_project_code   | string | no       | project english name                                   |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id         | int    | Yes      | Business ID                                                  |
+| name              | string | Yes      | Cluster name                                                 |
+| scheduling_engine | string | No       | Scheduling engine                                            |
+| uid               | string | Yes      | Cluster's own ID                                             |
+| xid               | string | No       | Associated cluster ID                                        |
+| version           | string | No       | Cluster version                                              |
+| network_type      | string | No       | Network type                                                 |
+| region            | string | No       | Region                                                       |
+| vpc               | string | No       | VPC network                                                  |
+| network           | array  | No       | Cluster network                                              |
+| type              | string | Yes      | Cluster type. Enumeration values: INDEPENDENT_CLUSTER (Independent Cluster), SHARE_CLUSTER (Shared Cluster) |
+| environment       | string | No       | Environment                                                  |
+| bk_project_id     | string | No       | Project ID                                                   |
+| bk_project_name   | string | No       | Project name                                                 |
+| bk_project_code   | string | No       | Project English name                                         |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -46,13 +47,14 @@ create a new container cluster (v3.12.1+, permission: kube cluster editing permi
     "127.0.0.0/21"
   ],
   "type": "INDEPENDENT_CLUSTER",
+  "environment": "xxx",
   "bk_project_id": "21bf9ef9be7c4d38a1d1f2uc0b44a8f2",
   "bk_project_name": "test",
   "bk_project_code": "test"
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -67,19 +69,19 @@ create a new container cluster (v3.12.1+, permission: kube cluster editing permi
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
 
-| Name       | Type   | Description                                                                        |
-|------------|--------|------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request succeeded or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
-| message    | string | Error message returned by request failure                                          |
-| permission | object | Permission information                                                             |
-| data       | object | Data returned by request                                                           |
-| request_id | string | Request chain id                                                                   |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| data       | object | Request return data                                          |
+| request_id | string | Request chain ID                                             |
 
 ### data
 
-| Name | Type | Description             |
-|------|------|-------------------------|
-| id   | int  | created kube cluster ID |
+| Field | Type | Description                  |
+| ---- | ---- | ---------------------------- |
+| id   | int  | Created container cluster ID |

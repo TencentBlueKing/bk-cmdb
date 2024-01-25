@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the service classification list. Query according to the business ID, and the common service classification will also be returned
+Query the list of service categories, based on the business ID, including commonly used service categories.
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ Query the service classification list. Query according to the business ID, and t
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id           |  int    | yes | Business ID |
+| Field     | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| bk_biz_id | int  | Yes      | Business ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -20,11 +20,11 @@ Query the service classification list. Query according to the business ID, and t
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "bk_biz_id": 1,
+  "bk_biz_id": 1
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -37,7 +37,7 @@ Query the service classification list. Query according to the business ID, and t
     "count": 20,
     "info": [
       {
-	"bk_biz_id": 0,
+        "bk_biz_id": 0,
         "id": 16,
         "name": "Apache",
         "bk_root_id": 14,
@@ -46,7 +46,7 @@ Query the service classification list. Query according to the business ID, and t
         "is_built_in": true
       },
       {
-	"bk_biz_id": 0,
+        "bk_biz_id": 0,
         "id": 19,
         "name": "Ceph",
         "bk_root_id": 18,
@@ -55,7 +55,7 @@ Query the service classification list. Query according to the business ID, and t
         "is_built_in": true
       },
       {
-	"bk_biz_id": 1,
+        "bk_biz_id": 1,
         "id": 1,
         "name": "Default",
         "bk_root_id": 1,
@@ -67,33 +67,33 @@ Query the service classification list. Query according to the business ID, and t
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### data Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|count| int| Total|
-|info| array| Return result|
+| Field | Type  | Description              |
+| ----- | ----- | ------------------------ |
+| count | int   | Total number of records  |
+| info  | array | List of returned results |
 
-#### Info Field Description
+#### info Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|id| int| Service class ID|
-|name| string| Service class name|
-|bk_root_id| int| Root service class ID|
-|bk_parent_id| int| Parent service class ID|
-|is_built_in| bool| Built-in|
-|bk_supplier_account | string |Developer account name|
+| Field               | Type   | Description                |
+| ------------------- | ------ | -------------------------- |
+| id                  | int    | Service category ID        |
+| name                | string | Service category name      |
+| bk_root_id          | int    | Root service category ID   |
+| bk_parent_id        | int    | Parent service category ID |
+| is_built_in         | bool   | Whether it is built-in     |
+| bk_supplier_account | string | Supplier account name      |

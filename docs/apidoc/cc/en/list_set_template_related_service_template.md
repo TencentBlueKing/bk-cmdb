@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-According to the service id and the set template id, obtaining a service template list of a set template under the specified service
+Retrieve a list of service templates for a specified business and cluster template ID.
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ According to the service id and the set template id, obtaining a service templat
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description                       |
-|---------------------|------------|--------|-----------------------------|
-| set_template_id     |  int  |yes   | Set template ID |
-| bk_biz_id           |  int        | yes  | Business ID |
+| Field           | Type | Required | Description         |
+| --------------- | ---- | -------- | ------------------- |
+| set_template_id | int  | Yes      | Cluster template ID |
+| bk_biz_id       | int  | Yes      | Business ID         |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -26,7 +26,7 @@ According to the service id and the set template id, obtaining a service templat
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -45,7 +45,8 @@ According to the service id and the set template id, obtaining a service templat
             "modifier": "admin",
             "create_time": "2020-05-15T14:14:57.691Z",
             "last_time": "2020-05-15T14:14:57.691Z",
-            "bk_supplier_account": "0"
+            "bk_supplier_account": "0",
+            "host_apply_enabled": false
         },
         {
             "bk_biz_id": 3,
@@ -56,33 +57,35 @@ According to the service id and the set template id, obtaining a service templat
             "modifier": "admin",
             "create_time": "2020-05-15T14:19:09.813Z",
             "last_time": "2020-05-15T14:19:09.813Z",
-            "bk_supplier_account": "0"
+            "bk_supplier_account": "0",
+            "host_apply_enabled": false
         }
     ]
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | array| Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | array  | Data returned by the request                                 |
 
-Data field Description:
+#### data
 
-| Name| Type| Description|
-|---|---|---|
-| bk_biz_id           |  int    | Business ID |
-| id                  |  int    | Service template ID   |
-| name                |  string  |Service template name|
-| service_category_id | int    | Service class ID   |
-| creator             |  string |Creator       |
-| modifier            |  string |Last modified by|
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string |Developer account number   |
+| Field               | Type   | Description                                                |
+| ------------------- | ------ | ---------------------------------------------------------- |
+| bk_biz_id           | int    | Business ID                                                |
+| id                  | int    | Service template ID                                        |
+| name                | string | Service template name                                      |
+| service_category_id | int    | Service category ID                                        |
+| creator             | string | Creator                                                    |
+| modifier            | string | Last modifier                                              |
+| create_time         | string | Creation time                                              |
+| last_time           | string | Update time                                                |
+| bk_supplier_account | string | Supplier account                                           |
+| host_apply_enabled  | bool   | Whether to enable automatic application of host properties |

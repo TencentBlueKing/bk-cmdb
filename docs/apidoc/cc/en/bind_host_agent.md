@@ -1,25 +1,25 @@
-### Functional description
+### Function Description
 
-Bind agent from host (v3.10.25+).
+Bind Agent to Host (Version: v3.10.25+, Permission: Host AgentID Management Permission)
 
 ### Request Parameters
 
 {{ common_args_desc }}
 
-#### Interface Parameters
+### Request Parameters
 
-| Field | Type         | Required | Description                                                     |
-| ----- | ------------ | -------- | --------------------------------------------------------------- |
-| list  | object array | yes      | list of host IDs and agent IDs to unbind, maximum length is 200 |
+| Field | Type  | Required | Description                                                  |
+| ----- | ----- | -------- | ------------------------------------------------------------ |
+| list  | array | Yes      | List of host IDs and agent IDs to be bound, up to 200 entries |
 
-#### list
+### list
 
-| Field       | Type   | Required | Description             |
-| ----------- | ------ | -------- | ----------------------- |
-| bk_host_id  | int    | yes      | host ID to unbind agent |
-| bk_agent_id | string | yes      | agent ID to unbind host |
+| Field       | Type   | Required | Description                            |
+| ----------- | ------ | -------- | -------------------------------------- |
+| bk_host_id  | int    | Yes      | Host ID to bind the agent to           |
+| bk_agent_id | string | Yes      | Agent ID to bind to the specified host |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -40,7 +40,7 @@ Bind agent from host (v3.10.25+).
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -52,13 +52,14 @@ Bind agent from host (v3.10.25+).
 }
 ```
 
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| data    |  object |Data returned by request                           |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |

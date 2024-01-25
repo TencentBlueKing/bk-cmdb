@@ -1,6 +1,6 @@
-#### Functional description
+### Function Description
 
-Create service classification
+Create Service Category (Permission: Service Category Creation Permission)
 
 ### Request Parameters
 
@@ -8,13 +8,13 @@ Create service classification
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| name            |  string  |yes   | Service class name|
-| parent_id         |  int  |no   | Parent node ID|
-| bk_biz_id         |  int  |yes   | Business ID |
+| Field        | Type   | Required | Description           |
+| ------------ | ------ | -------- | --------------------- |
+| name         | string | Yes      | Service category name |
+| bk_parent_id | int    | No       | Parent node ID        |
+| bk_biz_id    | int    | Yes      | Business ID           |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -22,13 +22,13 @@ Create service classification
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "parent_id": 0,
+  "bk_parent_id": 0,
   "bk_biz_id": 1,
   "name": "test101"
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -41,35 +41,35 @@ Create service classification
     "bk_biz_id": 1,
     "id": 6,
     "name": "test101",
-    "root_id": 5,
-    "parent_id": 5,
+    "bk_root_id": 5,
+    "bk_parent_id": 5,
     "bk_supplier_account": "0",
     "is_built_in": false
   }
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |New service classification information|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Newly created service category information                   |
 
-#### Data field Description
+#### data
 
-| Field| Type| Description|
-|---|---|---|
-|id| integer| Service class ID|
-|root_id| integer| Service classification root node ID|
-|parent_id| integer| Service classification parent node ID|
-|is_built_in| bool| Is it a built-in node (built-in node can not be edited)|
-| bk_biz_id    |  int     | Service ID|
-| name    |  string     | Service class name|
-| bk_supplier_account|  string| Developer account number|
+| Field               | Type    | Description                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| id                  | integer | Service category ID                                          |
+| root_id             | integer | Service category root node ID                                |
+| parent_id           | integer | Service category parent node ID                              |
+| is_built_in         | bool    | Whether it is a built-in node (built-in nodes cannot be edited) |
+| bk_biz_id           | int     | Business ID                                                  |
+| name                | string  | Service category name                                        |
+| bk_supplier_account | string  | Vendor account                                               |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Inquire service related information accord to host ID
+Search for business-related information based on host ID.
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Inquire service related information accord to host ID
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description                       |
-|---------------------|------------|--------|-----------------------------|
-| bk_host_id | array     | yes  | Host ID array, ID number can not exceed 500|
-| bk_biz_id  | int           | no    | Business ID |
+| Field      | Type  | Required | Description                                            |
+| ---------- | ----- | -------- | ------------------------------------------------------ |
+| bk_host_id | array | Yes      | Array of host IDs, the number of IDs cannot exceed 500 |
+| bk_biz_id  | int   | No       | Business ID                                            |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -29,7 +29,7 @@ Inquire service related information accord to host ID
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -71,25 +71,25 @@ Inquire service related information accord to host ID
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-Data field Description:
+Explanation of the data field:
 
-| Name| Type| Description|
-|---|---|---|
-| bk_biz_id|  int| Business ID |
-| bk_host_id|  int |Host ID|
-| bk_module_id|  int| Module ID|
-| bk_set_id|  int |set ID|
-| bk_supplier_account|  string| Developer account|
-
+| Field                | Type   | Description       |
+| ------------------- | ------ | ----------------- |
+| bk_biz_id           | int    | Business ID       |
+| bk_host_id          | int    | Host ID           |
+| bk_module_id        | int    | Module ID         |
+| bk_set_id           | int    | Cluster ID        |
+| bk_supplier_account | string | Developer account |

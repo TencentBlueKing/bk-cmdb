@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
- Query all Association relationships of an instance (including the case that it is the original model of Association relationship and the target model of Association relationship)
+Query all relationships of a certain instance (including its situation as the original model and the target model of the relationship, Permission: Model Instance Query Permission)
 
 ### Request Parameters
 
@@ -8,23 +8,22 @@
 
 #### Interface Parameters
 
-| Field       | Type   | Required| Description                  |
-| ---------- | ------ | ---- | --------------------- |
-| bk_inst_id | int    | yes | Instance id                |
-| bk_obj_id  | string |yes   | Model id                |
-| fields     |  array  |yes   | Fields to be returned        |
-| start      |  int    | no   | Record start position          |
-| limit      |  int    | no   | Page size, maximum 500. |
+| Field      | Type   | Required | Description                      |
+| ---------- | ------ | -------- | -------------------------------- |
+| bk_inst_id | int    | Yes      | Instance ID                      |
+| bk_obj_id  | string | Yes      | Model ID                         |
+| fields     | array  | Yes      | Fields to be returned            |
+| start      | int    | No       | Record start position            |
+| limit      | int    | No       | Page size, maximum value is 500. |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start     |   int     | yes  | Record start position|
-| limit     |   int     | yes  | Limit bars per page, Max. 200|
+| Field | Type | Required | Description                                |
+| ----- | ---- | -------- | ------------------------------------------ |
+| start | int  | Yes      | Record start position                      |
+| limit | int  | Yes      | Number of records per page, maximum is 200 |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -84,26 +83,27 @@
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Name            | Type   | Description                     |
-| :-------------- | :----- | :----------------------- |
-| id              |  int64  |Association id                   |
-| bk_inst_id      |  int64  |Source model instance id             |
-| bk_obj_id       |  string |Association relationship source model id         |
-| bk_asst_inst_id | int64  |Association relation target model id       |
-| bk_asst_obj_id  | string |Target model instance id           |
-| bk_obj_asst_id  | string |Auto-generated model association id|
-| bk_asst_id      |  string |Relationship name                 |
+| Field            | Type   | Description                                   |
+| :-------------- | :----- | :-------------------------------------------- |
+| id              | int64  | Relationship ID                               |
+| bk_inst_id      | int64  | Source model instance ID                      |
+| bk_obj_id       | string | Source model ID                               |
+| bk_asst_inst_id | int64  | Target model instance ID                      |
+| bk_asst_obj_id  | string | Target model ID                               |
+| bk_obj_asst_id  | string | Automatically generated model relationship ID |
+| bk_asst_id      | string | Relationship name                             |

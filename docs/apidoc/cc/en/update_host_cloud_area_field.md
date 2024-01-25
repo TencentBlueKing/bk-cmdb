@@ -70,7 +70,7 @@ Update the host's cloud  area  field based on the host id list and cloud  area i
 
 #### response
 
-| Name    | Type   | Description                                    |
+| Field    | Type   | Description                                    |
 | ------- | ------ | ------------------------------------- |
 | result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
 | code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |

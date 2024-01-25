@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Bulk delete object instances
+Batch delete object instances (Permission: Model instance deletion permission)
 
 ### Request Parameters
 
@@ -8,17 +8,18 @@ Bulk delete object instances
 
 #### Interface Parameters
 
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-| bk_obj_id           |  string      | yes  | Model ID|
-| delete      |  object |yes    | Delete|
+| Field     | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| bk_obj_id | string | Yes      | Model ID    |
+| delete    | object | Yes      | Deletion    |
 
 #### delete
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-| inst_ids |  array   | yes   | Instance ID set     |
 
-### Request Parameters Example
+| Field    | Type  | Required | Description                |
+| -------- | ----- | -------- | -------------------------- |
+| inst_ids | array | Yes      | Collection of instance IDs |
+
+### Request Parameter Example
 
 ```python
 {
@@ -26,34 +27,35 @@ Bulk delete object instances
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_obj_id": "test",
-    "delete":{
-    "inst_ids":[123]
+    "bk_obj_id": "bk_firewall",
+    "delete": {
+        "inst_ids": [
+            46, 47
+        ]
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
 ```
 
-#### response
+#### Response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

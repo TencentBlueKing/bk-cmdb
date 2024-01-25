@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Batch create process templates
+Batch Create Process Templates (Permission: Service Template Editing Permission)
 
 ### Request Parameters
 
@@ -8,47 +8,47 @@ Batch create process templates
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id  | int     | yes  | Business ID |
-| service_template_id            |  int  |no   | Service template ID|
-| processes         |  array  |yes   | Process template information, the max length is 100|
+| Field               | Type  | Required | Description                                               |
+| ------------------- | ----- | -------- | --------------------------------------------------------- |
+| bk_biz_id           | int   | Yes      | Business ID                                               |
+| service_template_id | int   | No       | Service template ID                                       |
+| processes           | array | Yes      | Process template information, with a maximum value of 100 |
 
+#### processes
 
-#### processes 
-as_default_value: Is the value of the process based on the template
+as_default_value: Whether the value of the process is based on the template
 
-| Field| Type| Required| Description|
-|---|---|---|---|
-|auto_start| bool| no | Whether to pull up automatically|
-|auto_time_gap| int| no | Pull up interval|
-|bk_biz_id| int| no | Business ID |
-|bk_func_id| string| no | Function ID|
-|bk_func_name| string| no | Process name|
-|bk_process_id| int| no | Process id|
-|bk_process_name| string| no| Process alias|
-|bk_supplier_account| string| no| Developer account number|
-|face_stop_cmd| string| no| Forced stop command|
-|pid_file| string| no| PID file path|
-|priority| int| no| Startup priority|
-|proc_num| int| no| Number of starts|
-|reload_cmd| string| no| Process reload command|
-|restart_cmd| string| no| Restart command|
-|start_cmd| string| no| Start command|
-|stop_cmd| string| no| Stop command|
-|timeout| int| no| Operation time-out duration|
-|user| string| no| Start user|
-|work_path| string| no| Working path|
-|bind_info| object| no| Binding information|
+| Field               | Type   | Required | Description                    |
+| ------------------- | ------ | -------- | ------------------------------ |
+| auto_start          | bool   | No       | Whether to start automatically |
+| bk_biz_id           | int    | No       | Business ID                    |
+| bk_func_id          | string | No       | Function ID                    |
+| bk_func_name        | string | No       | Process name                   |
+| bk_process_id       | int    | No       | Process ID                     |
+| bk_process_name     | string | No       | Process alias                  |
+| bk_supplier_account | string | No       | Supplier account               |
+| face_stop_cmd       | string | No       | Force stop command             |
+| pid_file            | string | No       | PID file path                  |
+| priority            | int    | No       | Startup priority               |
+| proc_num            | int    | No       | Number of startups             |
+| reload_cmd          | string | No       | Process reload command         |
+| restart_cmd         | string | No       | Restart command                |
+| start_cmd           | string | No       | Startup command                |
+| stop_cmd            | string | No       | Stop command                   |
+| timeout             | int    | No       | Operation timeout duration     |
+| user                | string | No       | Startup user                   |
+| work_path           | string | No       | Working directory              |
+| bind_info           | object | No       | Binding information            |
 
-#### Bind_info Field Description
-| Field| Type| Required| Description|
-|---|---|---|---|
-|enable| bool| no | Is the port enabled|
-|ip| string| no | Bound ip|
-|port| string| no | Bound port|
-|protocol| string| no | Protocol used|
-|row_id| int| no | Template row index used for instantiation, unique in process|
+#### bind_info Field Description
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| enable   | bool   | No       | Whether the port is enabled                                  |
+| ip       | string | No       | Bound IP                                                     |
+| port     | string | No       | Bound port                                                   |
+| protocol | string | No       | Protocol used                                                |
+| row_id   | int    | No       | Template row index used for instantiation, unique within the process |
 
 ### Request Parameters Example
 
@@ -107,10 +107,6 @@ as_default_value: Is the value of the process based on the template
               "value": false,
               "as_default_value": false
           },
-          "auto_time_gap": {
-              "value": null,
-              "as_default_value": false
-          },
           "start_cmd": {
               "value": "",
               "as_default_value": false
@@ -165,7 +161,7 @@ as_default_value: Is the value of the process based on the template
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -174,19 +170,19 @@ as_default_value: Is the value of the process based on the template
   "message": "success",
   "permission": null,
   "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": [[52]]
+  "data": [52]
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | array |Successfully created process template ID|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | array  | IDs of successfully created process templates                |

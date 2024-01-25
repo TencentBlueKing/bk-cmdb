@@ -1,6 +1,6 @@
-### Function description
+### Function Description
 
-delete cloud host from biz idle set (cloud host management dedicated interface, version: v3.10.19+, permission: edit business host)
+Delete cloud hosts from the idle machine cluster of a business (Dedicated interface for cloud host management, Version: v3.10.19+, Permission: Business host editing permission)
 
 ### Request Parameters
 
@@ -8,12 +8,14 @@ delete cloud host from biz idle set (cloud host management dedicated interface, 
 
 #### Interface Parameters
 
-| field       | type      | mandatory | description                                                                                                         |
-|-------------|-----------|-----------|---------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id   | int       | yes       | business id                                                                                                         |
-| bk_host_ids | array | yes       | to be deleted cloud host ids, array length is limited to 200, these hosts can only succeed or fail at the same time |
+| Field       | Type  | Required | Description                                                  |
+| ----------- | ----- | -------- | ------------------------------------------------------------ |
+| bk_biz_id   | int   | Yes      | Business ID                                                  |
+| bk_host_ids | array | Yes      | Array of cloud host IDs to be deleted. The array length is at most 200, and a batch of hosts can only succeed or fail at the same time |
 
-### Request Parameters Example
+**Note: This interface can only delete cloud hosts. Filling in the IDs of other ordinary hosts will result in an error that the host does not exist. The bk_cloud_host_identifier field in the properties of a cloud host is true, while for other ordinary hosts, it is false. Cloud hosts can be added using cloud host-related interfaces such as (add_cloud_host_to_biz Add cloud hosts to the business's idle machine module).**
+
+### Request Parameter Example
 
 ```json
 {
@@ -29,13 +31,14 @@ delete cloud host from biz idle set (cloud host management dedicated interface, 
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "data": null,
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807"
 }
@@ -45,10 +48,10 @@ delete cloud host from biz idle set (cloud host management dedicated interface, 
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | Request chain id                                                                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |

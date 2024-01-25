@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the host and topology information under the service according to the service ID, and attach the filtering information of  set , module and host
+Query host and topology information based on the business ID, with optional filtering for clusters, modules, and hosts (Permission: Business Access Permission).
 
 ### Request Parameters
 
@@ -8,84 +8,80 @@ Query the host and topology information under the service according to the servi
 
 #### Interface Parameters
 
-| Field                   | Type   | Required| Description                                                         |
-| ---------------------- | ------ | ---- | ------------------------------------------------------------ |
-| page                   |  object |yes   | Paging query criteria, returned host data sorted by bk_host_id               |
-| bk_biz_id              |  int    | yes | Business ID                                            |
-| set_property_filter    |  object |no   | Set attribute combination query criteria                                       |
-| module_property_filter | object |no   | Module attribute combination query criteria                                         |
-| host_property_filter   |  object |no   | Host attribute combination query criteria                                         |
-| fields                 |  array  |yes   | Host attribute list, which controls which fields are in the host that returns the result, can speed up interface requests and reduce network traffic transmission|
+| Field                  | Type   | Required | Description                                                  |
+| ---------------------- | ------ | -------- | ------------------------------------------------------------ |
+| page                   | object | Yes      | Pagination query conditions, the returned host data is sorted by bk_host_id. |
+| bk_biz_id              | int    | Yes      | Business ID                                                  |
+| set_property_filter    | object | No       | Cluster attribute combination query conditions               |
+| module_property_filter | object | No       | Module attribute combination query conditions                |
+| host_property_filter   | object | No       | Host attribute combination query conditions                  |
+| fields                 | array  | Yes      | Host attribute list, control which fields are in the returned result to accelerate the interface request and reduce network traffic |
 
 #### set_property_filter
-This parameter is a combination of filtering rules for set attribute fields, and is used to search hosts under the set according to the set attribute fields. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rules are quaternions`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is the combination of cluster attribute field filtering rules, used to search for hosts under the cluster based on cluster attribute fields. The combination supports AND and OR, nested up to 2 layers. The filtering rule is a quadruple `field`, `operator`, `value`.
 
+| Field     | Type   | Required | Description                 |
+| --------- | ------ | -------- | --------------------------- |
+| condition | string | No       | Combination query condition |
+| rules     | array  | No       | Rules                       |
 
 #### rules
-| Name     | Type   | Required| Default value|  Description                                                  |
-| -------- | ------ | ---- | ------ | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|                                                              |
-| operator | string |yes   | None     |  Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value    | -      |no   | None     |  Different values correspond to different value formats                            |
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
+
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### module_property_filter
-This parameter is the combination of module attribute field filtering rules, used to search the host under the module according to the module attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rule is a quadruple`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is the combination of module attribute field filtering rules, used to search for hosts under the module based on module attribute fields. The combination supports AND and OR, nested up to 2 layers. The filtering rule is a quadruple `field`, `operator`, `value`.
 
+| Field     | Type   | Required | Description                 |
+| --------- | ------ | -------- | --------------------------- |
+| condition | string | No       | Combination query condition |
+| rules     | array  | No       | Rules                       |
 
 #### rules
 
-| Name     | Type   | Required| Default value|  Description                                                  |
-| -------- | ------ | ---- | ------ | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|                                         Field name                     |
-| operator | string |yes   | None     |  Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value    | -      |no   | None     |  Different values correspond to different value formats                            |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### host_property_filter
-This parameter is a combination of filtering rules for the host attribute field and is used to search for hosts based on the host attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rule is a quadruple`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is the combination of host attribute field filtering rules, used to search for hosts based on host attribute fields. The combination supports AND and OR, nested up to 2 layers. The filtering rule is a quadruple `field`, `operator`, `value`.
 
+| Field     | Type   | Required | Description                 |
+| --------- | ------ | -------- | --------------------------- |
+| condition | string | No       | Combination query condition |
+| rules     | array  | No       | Rules                       |
 
 #### rules
 
-| Name     | Type   | Required| Default value|  Description                                                  |
-| -------- | ------ | ---- | ------ | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|                                         Field name                     |
-| operator | string |yes   | None     |  Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value    | -      |no   | None     |  Different values correspond to different value formats                            |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### page
 
-| Field| Type| Required| Description                 |
-| ----- | ---- | ---- | -------------------- |
-| start | int  |yes   | Record start position         |
-| limit | int  |yes   | Limit bars per page, Max. 500|
+| Field | Type | Required | Description                         |
+| ----- | ---- | -------- | ----------------------------------- |
+| start | int  | Yes      | Record start position               |
+| limit | int  | Yes      | Records limit per page, maximum 500 |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -194,7 +190,7 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -259,11 +255,11 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
                 "topo": [
                     {
                         "bk_set_id": 10,
-                        "bk_set_name": "空闲机池",
+                        "bk_set_name": "Idle Pool",
                         "module": [
                             {
                                 "bk_module_id": 54,
-                                "bk_module_name": "空闲机"
+                                "bk_module_name": "Idle Host"
                             }
                         ]
                     }
@@ -274,50 +270,84 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
-
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 means success, >0 means failed error           |
+| message    | string | Error message for failed requests                            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field| Type| Description               |
-| ----- | ----- | ------------------ |
-| count | int   | Number of records           |
-| info  | array |Host data and topology information|
+| Field | Type  | Description                        |
+| ----- | ----- | ---------------------------------- |
+| count | int   | Number of records                  |
+| info  | array | Host data and topology information |
 
 #### data.info
-| Field| Type| Description         |
-| ---- | ----- | ------------ |
-| host | dict  |Host actual data|
-| topo | array |Host topology information|
+
+| Field | Type  | Description          |
+| ----- | ----- | -------------------- |
+| host  | dict  | Actual host data     |
+| topo  | array | Topology information |
 
 #### data.info.host
-| Name             | Type   |  Description                     |
-| ---------------- | ------ | -------------------------------  |
-| bk_os_type       |  string |Operating system type| 1:Linux;2:Windows; 3:AIX         |
-| bk_mac           |  string |Intranet MAC address   |                                 |
-| bk_host_innerip  | string |Intranet IP        |                                 |
-| bk_host_id       |  int    | Host ID        |                                 |
-| bk_cloud_id      |  int    | Cloud area    |                                 |
+
+| Field                | Type   | Description                          |
+| -------------------- | ------ | ------------------------------------ |
+| bk_host_name         | string | Host name                            |
+| bk_host_innerip      | string | Internal IP                          |
+| bk_host_id           | int    | Host ID                              |
+| bk_cloud_id          | int    | Control area                         |
+| import_from          | string | Host import source, 3 for API import |
+| bk_asset_id          | string | Fixed asset number                   |
+| bk_cloud_inst_id     | string | Cloud host instance ID               |
+| bk_cloud_vendor      | string | Cloud vendor                         |
+| bk_cloud_host_status | string | Cloud host status                    |
+| bk_comment           | string | Comment                              |
+| bk_cpu               | int    | CPU logical core count               |
+| bk_cpu_architecture  | string | CPU architecture                     |
+| bk_cpu_module        | string | CPU model                            |
+| bk_disk              | int    | Disk capacity (GB)                   |
+| bk_host_outerip      | string | Host external IP                     |
+| bk_host_innerip_v6   | string | Host internal IPv6                   |
+| bk_host_outerip_v6   | string | Host external IPv6                   |
+| bk_isp_name          | string | Operator name                        |
+| bk_mac               | string | Host internal MAC address            |
+| bk_mem               | int    | Host memory capacity (MB)            |
+| bk_os_bit            | string | Operating system bit number          |
+| bk_os_name           | string | Operating system name                |
+| bk_os_type           | string | Operating system type                |
+| bk_os_version        | string | Operating system version             |
+| bk_outer_mac         | string | Host external MAC address            |
+| bk_province_name     | string | Province name                        |
+| bk_service_term      | int    | Warranty period                      |
+| bk_sla               | string | SLA level                            |
+| bk_sn                | string | Device SN                            |
+| bk_state             | string | Current status                       |
+| bk_state_name        | string | Country name                         |
+| operator             | string | Main maintainer                      |
+| bk_bak_operator      | string | Backup maintainer                    |
+
+**Note: The return value here only explains the system's built-in attribute fields. Other return values depend on the user's own defined attribute fields**
 
 #### data.info.topo
-| Field        | Type   | Description                     |
-| ----------- | ------ | ------------------------ |
-| bk_set_id   |  int    | The set ID to which the host belongs      |
-| bk_set_name | string |The name of the set to which the host belongs       |
-| module      |  array  |Module information under set to which host belongs|
+
+| Field       | Type   | Description        |
+| ----------- | ------ | ------------------ |
+| bk_set_id   | int    | Cluster ID         |
+| bk_set_name | string | Cluster name       |
+| module      | array  | Module information |
 
 #### data.info.topo.module
-| Field           | Type   | Description     |
-| -------------- | ------ | -------- |
-| bk_module_id   |  int    | Module ID   |
-| bk_module_name | string |Module name|
+
+| Field          | Type   | Description |
+| -------------- | ------ | ----------- |
+| bk_module_id   | int    | Module ID   |
+| bk_module_name | string | Module name |

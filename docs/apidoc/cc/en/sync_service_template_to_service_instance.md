@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Synchronize the service template information to the corresponding service instance(v3.12.3+, permission: service instance create, edit, and delete permission)
+Synchronize service template information to the corresponding service instances (Version: v3.12.3+, Permission: Create, edit, delete permissions for service instances)
 
 ### Request Parameters
 
@@ -8,13 +8,13 @@ Synchronize the service template information to the corresponding service instan
 
 #### Interface Parameters
 
-| Field               | Type  | Required | Description                              |
-|---------------------|-------|----------|------------------------------------------|
-| bk_biz_id           | int   | yes      | Business ID                              |
-| service_template_id | int   | yes      | Service template ID                      |
-| bk_module_ids       | array | yes      | ID list of the module to be synchronized |
+| Field               | Type  | Required | Description                           |
+| ------------------- | ----- | -------- | ------------------------------------- |
+| bk_biz_id           | int   | Yes      | Business ID                           |
+| service_template_id | int   | Yes      | Service template ID                   |
+| bk_module_ids       | array | Yes      | List of module IDs to be synchronized |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -43,15 +43,15 @@ Synchronize the service template information to the corresponding service instan
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |

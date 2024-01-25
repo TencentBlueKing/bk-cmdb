@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query set template by business id
+Query cluster templates based on business ID.
 
 ### Request Parameters
 
@@ -8,22 +8,21 @@ Query set template by business id
 
 #### Interface Parameters
 
-| Field                | Type   | Required| Description           |
-| ------------------- | ------ | ---- | -------------- |
-| bk_biz_id           |  int    | yes | Business ID |
-| set_template_ids    |  array  |no   | Set template ID array |
-| page                |  object |no   | Paging information       |
+| Field            | Type   | Required | Description                   |
+| ---------------- | ------ | -------- | ----------------------------- |
+| bk_biz_id        | int    | Yes      | Business ID                   |
+| set_template_ids | array  | No       | Array of cluster template IDs |
+| page             | object | No       | Pagination information        |
 
-#### Page field Description
+#### Explanation of the page field
 
-| Field| Type   | Required| Description                  |
-| ----- | ------ | ---- | --------------------- |
-| start | int    | no   | Record start position          |
-| limit | int    | no   | Limit bars per page, Max. 1000|
-| sort  | string |no   | Sort field,'inverted' for reverse order|
+| Field | Type   | Required | Description                                   |
+| ----- | ------ | -------- | --------------------------------------------- |
+| start | int    | No       | Starting position of the record               |
+| limit | int    | No       | Number of records per page, maximum 1000      |
+| sort  | string | No       | Sorting field, '-' indicates descending order |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -42,7 +41,7 @@ Query set template by business id
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -79,35 +78,35 @@ Query set template by business id
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### data
 
-| Field| Type| Description     |
-| ----- | ----- | -------- |
-| count | int   | Total     |
-| info  | array |Return result|
+| Field | Type  | Description      |
+| ----- | ----- | ---------------- |
+| count | int   | Total count      |
+| info  | array | Returned results |
 
-#### Info Field Description
+#### info
 
-| Field                | Type   | Description         |
-| ------------------- | ------ | ------------ |
-| id                  |  int    | Set template ID |
-| name                |  array  |Set template name|
-| bk_biz_id           |  int    | Business ID |
-| creator             |  string |Creator       |
-| modifier            |  string |Last modified by|
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string |Developer account number   |
+| Field               | Type   | Description           |
+| ------------------- | ------ | --------------------- |
+| id                  | int    | Cluster template ID   |
+| name                | array  | Cluster template name |
+| bk_biz_id           | int    | Business ID           |
+| creator             | string | Creator               |
+| modifier            | string | Last modifier         |
+| create_time         | string | Creation time         |
+| last_time           | string | Update time           |
+| bk_supplier_account | string | Supplier account      |

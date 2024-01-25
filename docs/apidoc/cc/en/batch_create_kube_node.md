@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-create a new container node (v3.12.1+, permission: kube Node Creation Permission)
+Create Container Nodes (v3.12.1+, Permission: Container nodes creation permission)
 
 ### Request Parameters
 
@@ -8,34 +8,33 @@ create a new container node (v3.12.1+, permission: kube Node Creation Permission
 
 #### Interface Parameters
 
-| Field     | Type  | Required | Description                                                   |
-|-----------|-------|----------|---------------------------------------------------------------|
-| bk_biz_id | int   | yes      | business ID                                                   |
-| data      | array | yes      | the specific information of the node that needs to be created |
+| Field     | Type  | Required | Description                    |
+| --------- | ----- | -------- | ------------------------------ |
+| bk_biz_id | int   | Yes      | Business ID                    |
+| data      | array | Yes      | Node information to be created |
 
 #### data[x]
 
-| Field             | Type   | Required | Description                                                                          |
-|-------------------|--------|----------|--------------------------------------------------------------------------------------|
-| bk_cluster_id     | int    | yes      | ID of the container cluster in cmdb                                                  |
-| bk_host_id        | int    | yes      | associated host ID                                                                   |
-| uid               | string | yes      | the own ID of the container cluster                                                  |
-| name              | string | yes      | node name                                                                            |
-| roles             | string | no       | node roles                                                                           |
-| labels            | object | no       | label                                                                                |
-| taints            | object | no       | taints                                                                               |
-| unschedulable     | bool   | no       | Whether to turn off schedulable, true means not schedulable, false means schedulable |
-| internal_ip       | array  | no       | internal ip                                                                          |
-| external_ip       | array  | no       | external ip                                                                          |
-| hostname          | string | no       | hostname                                                                             |
-| runtime_component | string | no       | runtime components                                                                   |
-| kube_proxy_mode   | string | no       | kube-proxy proxy mode                                                                |
-| pod_cidr          | string | no       | The allocation range of the Pod address of this node                                 |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_cluster_id     | int    | Yes      | Unique ID of the container cluster in CMDB                   |
+| bk_host_id        | int    | Yes      | Associated host ID                                           |
+| name              | string | Yes      | Node name                                                    |
+| roles             | string | No       | Node type                                                    |
+| labels            | object | No       | Labels                                                       |
+| taints            | object | No       | Taints                                                       |
+| unschedulable     | bool   | No       | Whether to disable scheduling, true means not schedulable, false means schedulable |
+| internal_ip       | array  | No       | Internal IP addresses                                        |
+| external_ip       | array  | No       | External IP addresses                                        |
+| hostname          | string | No       | Hostname                                                     |
+| runtime_component | string | No       | Runtime component                                            |
+| kube_proxy_mode   | string | No       | Kube-proxy proxy mode                                        |
+| pod_cidr          | string | No       | Allocation range of Pod addresses for this node              |
 
 ### Request Parameters Example
 
 ```json
- {
+{
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
@@ -58,7 +57,7 @@ create a new container node (v3.12.1+, permission: kube Node Creation Permission
         "127.0.0.1"
       ],
       "external_ip": [
-        "127.0.0.2"
+        "127.0.0.1"
       ],
       "hostname": "xxx",
       "runtime_component": "runtime_component",
@@ -95,9 +94,9 @@ create a new container node (v3.12.1+, permission: kube Node Creation Permission
 **Note:**
 
 - internal_ip and external_ip cannot be empty at the same time.
-- no more than 100 nodes can be created at one time.
+- The number of nodes created at once should not exceed 100.
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -117,23 +116,21 @@ create a new container node (v3.12.1+, permission: kube Node Creation Permission
 
 **Note:**
 
-- The order of the node ID array in the returned data is consistent with the order of the array data in the parameter.
+- The order of the node ID array returned in the data field corresponds to the order of the array data in the parameters.
 
-### Return Result Parameters Description
+### Response Parameters Description
 
-#### response
-
-| Name       | Type   | Description                                                                        |
-|------------|--------|------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request succeeded or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
-| message    | string | Error message returned by request failure                                          |
-| permission | object | Permission information                                                             |
-| data       | object | Data returned by request                                                           |
-| request_id | string | Request chain id                                                                   |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| data       | object | Data returned by the request                                 |
+| request_id | string | Request chain ID                                             |
 
 ### data
 
-| Name | Type  | Description                   |
-|------|-------|-------------------------------|
-| ids  | array | list of kube node IDs created |
+| Field | Type  | Description                        |
+| ---- | ----- | ---------------------------------- |
+| ids  | array | List of created container node IDs |

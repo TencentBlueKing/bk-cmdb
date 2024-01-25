@@ -1,9 +1,8 @@
-### Functional description
+### Function Description
 
-This interface is used to query the path information from the parent level of a node to the service vertex according to a node instance (including a custom node level instance) in the service topology level. (v3.9.1)
+This interface is used to query the path information from a node instance in the business topology hierarchy to the business vertex based on a certain business topology level (including custom topology level). (v3.9.1)
 
-**Attention.**
-The interface has a cache, and the maximum time for cache updates is 5 minutes.
+**Note** This interface has a cache, and the longest cache update time is 5 minutes.
 
 ### Request Parameters
 
@@ -11,20 +10,19 @@ The interface has a cache, and the maximum time for cache updates is 5 minutes.
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id  | int  |yes     | Business ID |
-| bk_nodes  | array  |yes     | List of service topology instance node information to query. The maximum number of queries is 1000|
+| Field     | Type  | Required | Description                                                  |
+| --------- | ----- | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int   | Yes      | Business ID                                                  |
+| bk_nodes  | array | Yes      | List of business topology instance node information to be queried, with a maximum query quantity of 1000 |
 
+#### Explanation of bk_nodes Fields
 
-#### bk_nodes Field Description
+| Field      | Type   | Required | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id  | string | Yes      | Business topology node model name, such as biz, set, module, and the model name of custom level |
+| bk_inst_id | int    | Yes      | The instance ID of the business topology node                |
 
-| Field| Type   | Required| Description                  |
-| ----- | ------ | ---- | --------------------- |
-| bk_obj_id | string    | yes | Business topology node model name, such as biz,set,module and user-defined hierarchy model name       |
-| bk_inst_id | int    | yes | The instance ID of the service topology node|
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -50,7 +48,7 @@ The interface has a cache, and the maximum time for cache updates is 5 minutes.
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -121,28 +119,31 @@ The interface has a cache, and the maximum time for cache updates is 5 minutes.
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
 
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-| bk_obj_id | string   | Business topology node model name, such as biz,set,module and user-defined hierarchy model name       |
-| bk_inst_id | int   | The instance ID of the service topology node|
-| bk_paths | array| Hierarchy information of the node, i.e. Hierarchy information from the service to the parent node of the node|
+#### Explanation of data
 
-#### bk_paths description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-| bk_obj_id | string   | Node type       |
-| bk_inst_id | int   | Node instance ID|
-| bk_inst_name | string   | Node instance name|
+| Field      | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| bk_obj_id  | string | Business topology node model name, such as biz, set, module, and the model name of custom level |
+| bk_inst_id | int    | The instance ID of the business topology node                |
+| bk_paths   | array  | The hierarchical information of the node, that is, the hierarchical information from the business to the parent node of the node |
+
+#### Explanation of bk_paths
+
+| Field        | Type   | Description        |
+| ------------ | ------ | ------------------ |
+| bk_obj_id    | string | Node type          |
+| bk_inst_id   | int    | Node instance ID   |
+| bk_inst_name | string | Node instance name |

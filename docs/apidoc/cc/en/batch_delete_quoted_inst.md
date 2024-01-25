@@ -1,20 +1,20 @@
-### Function description
+### Function Description
 
-batch delete quoted model instance (version: v3.10.30+, permission: update permission of the source model instance)
+Batch delete instances of referenced models (v3.10.30+, Permission: Edit permission of source model instances)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
-#### Interface parameters
+#### Interface Parameters
 
-| Field          | Type        | Required | Description                                                        |
-|----------------|-------------|----------|--------------------------------------------------------------------|
-| bk_obj_id      | string      | yes      | source model id                                                    |
-| bk_property_id | string      | yes      | source model quoted property id                                    |
-| ids            | int64 array | yes      | id list of quoted instance to be deleted, the maximum limit is 500 |
+| Field          | Type        | Required | Description                                                  |
+| -------------- | ----------- | -------- | ------------------------------------------------------------ |
+| bk_obj_id      | string      | Yes      | Source model ID                                              |
+| bk_property_id | string      | Yes      | ID of the property in the source model that references this model |
+| ids            | int64 array | Yes      | Array of instance IDs to be deleted, with a maximum of 500   |
 
-### Request parameter examples
+### Request Parameter Example
 
 ```json
 {
@@ -31,7 +31,7 @@ batch delete quoted model instance (version: v3.10.30+, permission: update permi
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -39,18 +39,20 @@ batch delete quoted model instance (version: v3.10.30+, permission: update permi
   "code": 0,
   "message": "success",
   "permission": null,
+  "data": null,
   "request_id": "dsda1122adasadadada2222"
 }
 ```
 
-### Return result parameter description
+### Response Parameter Description
 
 #### response
 
-| Name       | Type   | Description                                                                                         |
-|------------|--------|-----------------------------------------------------------------------------------------------------|
-| result     | bool   | The success or failure of the request. true: the request was successful; false: the request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                            |
-| message    | string | The error message returned by the failed request.                                                   |
-| permission | object | Permission information                                                                              |
-| request_id | string | request_chain_id                                                                                    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

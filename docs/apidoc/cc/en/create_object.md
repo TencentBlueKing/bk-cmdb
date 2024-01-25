@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Modeling
+Create Model (Permission: Create Model)
 
 ### Request Parameters
 
@@ -8,16 +8,16 @@ Modeling
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description                                                    |
-|----------------------|------------|--------|----------------------------------------------------------|
-| creator              | string      | no     | Creator of this data                                           |
-| bk_classification_id | string     | yes     | The classification ID of the object model, which can only be named by English letter sequence                 |
-| bk_obj_id            |  string     | yes     | The ID of the object model, which can only be named in English letter sequence                     |
-| bk_obj_name          |  string     | yes     | The name of the object model, for presentation, can be used in any language that humans can read|
-| bk_obj_icon          |  string     | no     | ICON information for the object model for front-end display|
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| creator              | string | No       | Creator of this data                                         |
+| bk_classification_id | string | Yes      | ID of the classification for the object model, can only be named with English letters |
+| bk_obj_id            | string | Yes      | ID of the object model, can only be named with English letters |
+| bk_obj_name          | string | Yes      | Name of the object model, used for display, can be in any language readable by humans |
+| bk_obj_icon          | string | No       | ICON information of the object model, used for frontend display |
+| obj_sort_number      | int    | No       | Sorting order of the object model under the corresponding model group |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -29,15 +29,14 @@ Modeling
     "bk_classification_id": "test",
     "bk_obj_name": "test",
     "bk_obj_icon": "icon-cc-business",
-    "bk_obj_id": "test"
+    "bk_obj_id": "test",
+    "obj_sort_number": 1
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "code": 0,
     "permission": null,
@@ -59,37 +58,37 @@ Modeling
         "bk_obj_icon": "icon-cc-business",
         "modifier": "",
         "id": 2000002118,
-        "ispre": false
+        "ispre": false,
+        "obj_sort_number": 1
     }
 }
-
 ```
 
-### Return Result Parameters Description
-#### response
+### Response Parameters Description
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| data       | object | Request return data                                          |
+| request_id | string | Request chain ID                                             |
 
-#### data
+### data
 
-| Field      | Type      | Description               |
-|-----------|-----------|--------------------|
-| id        |  int       | ID of the new data record|
-| bk_classification_id | int    | Classification ID of the object model   |
-| creator             |  string |Creator       |
-| modifier            |  string |Last modified by|
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string |Developer account number   |
-| bk_obj_id | string |Model type   |
-| bk_obj_name | string |Model name   |
-| bk_obj_icon          |  string             | ICON information for the object model for front-end display|
-| position             |  json object string |Coordinates for front-end presentation   |
-| ispre                |  bool               | Predefined, true or false   |
+| Field                 | Type               | Description                                                  |
+| -------------------- | ------------------ | ------------------------------------------------------------ |
+| id                   | int                | New ID of data record                                        |
+| bk_classification_id | int                | ID of the classification for the object model                |
+| creator              | string             | Creator                                                      |
+| modifier             | string             | Last modifier                                                |
+| create_time          | string             | Creation time                                                |
+| last_time            | string             | Update time                                                  |
+| bk_supplier_account  | string             | Developer account                                            |
+| bk_obj_id            | string             | Model type                                                   |
+| bk_obj_name          | string             | Model name                                                   |
+| bk_obj_icon          | string             | ICON information of the object model, used for frontend display |
+| position             | json object string | Coordinates for frontend display                             |
+| ispre                | bool               | Whether it is predefined, true or false                      |
+| obj_sort_number      | int                | Sorting order of the object model under the corresponding model group |

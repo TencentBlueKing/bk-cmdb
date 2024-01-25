@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Add an association relationship between model instances.
+Create a new association relationship between model instances. (Permission: Model instances editing permission)
 
 ### Request Parameters
 
@@ -8,30 +8,15 @@ Add an association relationship between model instances.
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description          |
-|----------------------|------------|--------|-----------------------------|
-| bk_obj_asst_id           |  string     |  yes   | The unique id of the Association between models|
-| bk_inst_id           |  int64     |  yes  | Source model instance id|
-| bk_asst_inst_id           |  int64     |  yes  | Target model instance id|
-| metadata           | object     | yes | meta data             |
-
-
-metadata params
-
-| Field                 | Type      | Required	   | Description         |
-|---------------------|------------|--------|-----------------------------|
-| label           |  string map     |  yes  | Tag information|
-
-
-label params
-
-| Field                 | Type      | Required	   | Description         |
-|---------------------|------------|--------|-----------------------------|
-| bk_biz_id           |  string      |  yes  | Business id |
+| Field           | Type   | Required | Description                                  |
+| --------------- | ------ | -------- | -------------------------------------------- |
+| bk_obj_asst_id  | string | Yes      | Unique ID of the relationship between models |
+| bk_inst_id      | int64  | Yes      | Source model instance ID                     |
+| bk_asst_inst_id | int64  | Yes      | Target model instance ID                     |
 
 ### Request Parameters Example
 
-``` json
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -39,47 +24,40 @@ label params
     "bk_token": "xxx",
     "bk_obj_asst_id": "bk_switch_belong_bk_host",
     "bk_inst_id": 11,
-    "bk_asst_inst_id": 21,
-    "metadata":{
-        "label":{
-            "bk_biz_id":"1"
-        }
-    }
+    "bk_asst_inst_id": 21
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "data": {
         "id": 1038
     },
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
 }
-
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| data    |  object |Data returned by request                           |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| data       | object | Data returned by the request                                 |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
-#### data
+#### data Field Description
 
-| Field       | Type     | Description         |
-|------------|----------|--------------|
-|id| int64| New instance Association identity id|
-
+| Field | Type  | Description                                             |
+| ----- | ----- | ------------------------------------------------------- |
+| id    | int64 | ID of the newly added instance association relationship |
