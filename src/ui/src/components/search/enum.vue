@@ -16,6 +16,8 @@
     v-model="localValue"
     v-bind="$attrs"
     :multiple="multiple"
+    display-tag
+    selected-style="checkbox"
     @clear="() => $emit('clear')"
     @toggle="handleToggle">
     <bk-option v-for="option in options"

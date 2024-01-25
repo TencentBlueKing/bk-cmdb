@@ -26,7 +26,8 @@ export default [{
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      i18n: '主机'
+      i18n: '主机',
+      relative: MENU_RESOURCE_MANAGEMENT
     },
     layout: {},
     auth: {

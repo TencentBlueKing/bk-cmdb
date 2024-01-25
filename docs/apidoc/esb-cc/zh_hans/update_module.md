@@ -1,6 +1,6 @@
 ### 功能描述
 
-更新模块
+更新模块(权限：业务拓扑编辑权限)
 
 ### 请求参数
 
@@ -21,8 +21,11 @@
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
 | bk_module_name    |  string  | 否     | 模块名 |
+| bk_module_type    | string  | 否  | 模块类型 |
+| operator    | string  | 否  | 主要维护人 |
+| bk_bak_operator    | string  | 否  | 备份维护人 |
 
-**注意：输入的字段为模块定义的属性**
+**注意：此处data参数仅对系统内置可编辑的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段；通过服务模板创建的模块，只能通过服务模板修改**
 
 ### 请求参数示例
 
@@ -37,7 +40,10 @@
     "bk_set_id": 1,
     "bk_module_id": 1,
     "data": {
-        "bk_module_name": "test"
+        "bk_module_name": "test",
+        "bk_module_type": "1",
+        "operator": "admin",
+        "bk_bak_operator": "admin"
     }
 }
 ```
@@ -49,10 +55,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
 ### 返回结果参数说明

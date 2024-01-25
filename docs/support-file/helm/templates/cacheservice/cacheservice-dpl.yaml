@@ -79,20 +79,11 @@ spec:
         - containerPort: {{ .Values.cacheservice.port }}
 
         volumeMounts:
-          {{- if .Values.common.monitor.enabled }}
-          - name: plugin-path
-            mountPath: {{ .Values.common.monitor.pluginPath }}
-          {{- end }}
           {{- if .Values.cacheservice.configDir }}
           - name: configures
             mountPath: {{ .Values.cacheservice.configDir }}
           {{- end }}
       volumes:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          hostPath:
-            path: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         {{- if .Values.cacheservice.configDir }}
         - name: configures
           configMap:

@@ -1,6 +1,6 @@
 ### 功能描述
 
-上交主机至资源池
+上交主机至资源池(权限：主机归还主机池权限)
 
 ### 请求参数
 
@@ -14,6 +14,7 @@
 | bk_biz_id     |  int     | 是     | 业务ID |
 | bk_module_id  |  int     | 否     | 转移到的主机池目录ID，默认转移到主机池的空闲机目录 |
 | bk_host_id    |  array   | 是     | 主机ID |
+**注意：只能上交业务空闲机池下的主机**
 
 ### 请求参数示例
 
@@ -40,10 +41,10 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
 

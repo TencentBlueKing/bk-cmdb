@@ -1,6 +1,6 @@
 ### 功能描述
 
-根据主机id列表和云区域id,更新主机的云区域字段
+根据主机id列表和管控区域id,更新主机的管控区域字段(权限：业务主机编辑权限)
 
 ### 请求参数
 
@@ -8,16 +8,15 @@
 
 #### 接口参数
 
-| 字段                 |  类型      | 必选	   |  描述                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id            | int  | 否   | 业务ID |
-| bk_cloud_id         | int  | 是   | 云区域ID |
-| bk_host_ids         | array  | 是   | 主机IDs, 最多2000个 |
-
+| 字段          | 类型    | 必选 | 描述             |
+|-------------|-------|----|----------------|
+| bk_biz_id   | int   | 否  | 业务ID           |
+| bk_cloud_id | int   | 是  | 管控区域ID         |
+| bk_host_ids | array | 是  | 主机IDs, 最多2000个 |
 
 ### 请求参数示例
 
-```python
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -31,19 +30,19 @@
 
 ### 返回结果示例
 
-```python
+```json
 {
   "result": true,
   "code": 0,
   "message": "success",
   "permission": null,
-  "data": ""
+  "data": null
 }
 ```
 
-### 返回结果实例 - 云区域 + 内网IP 重复
+### 返回结果实例 - 管控区域 + 内网IP 重复
 
-```python
+```json
 {
   "result": false,
   "code": 1199014,
@@ -55,7 +54,8 @@
 ```
 
 ### 返回结果实例 - 一次操作主机数太多
-```python
+
+```json
 {
   "result": false,
   "code": 1199077,
@@ -70,11 +70,11 @@
 
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |

@@ -9,7 +9,6 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 const hex2grb = (hex) => {
   const rgb = []
   hex = hex.substr(1)
@@ -91,7 +90,7 @@ export const swapItem = (arr, fromIndex, toIndex) => {
 export const escapeRegexChar = (str) => {
   // eslint-disable-next-line no-useless-escape
   const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
-  return str.replace(escapeCharRE, '\\$1')
+  return String(str).replace(escapeCharRE, '\\$1')
 }
 
 /**
@@ -126,4 +125,59 @@ export const downloadFile = (content, filename) => {
 
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+/**
+ * 获取当前页面光标位置
+ * @param {Element} element 被聚焦的元素
+ * @returns 光标位置
+ */
+export const getCursorPosition = (element) => {
+  const selection = window.getSelection()
+  let caretOffset = 0
+  // 选中的区域
+  if (selection.rangeCount > 0) {
+    // false表示进行了范围选择
+    const { isCollapsed } = selection
+    const range = selection.getRangeAt(0)
+    // 克隆一个选中区域
+    const preCaretRange = range.cloneRange()
+    // 设置选中区域的节点内容为当前节点
+    preCaretRange.selectNodeContents(element)
+    // 重置选中区域的结束位置
+    preCaretRange.setEnd(range.endContainer, range.endOffset)
+    const { length } = preCaretRange.toString()
+    caretOffset = isCollapsed ? length : length - selection.toString().length
+  }
+  return caretOffset
+}
+
+/**
+ * 设置当前页面光标位置
+ * @param {Element} element 被聚焦的元素
+ * @param {number} cursor 要设置的位置
+ */
+export const setCursorPosition = (element, cursor) => {
+  const selection = window.getSelection()
+  // 创建一个选中区域
+  const range = document.createRange()
+  // 选中节点的内容
+  range.selectNodeContents(element)
+  // 通过计算文本节点的偏移量来设置光标
+  const parentAllNodes = element.childNodes
+  for (let i = 0; i < parentAllNodes.length; i++) {
+    const nowNode = parentAllNodes[i]
+    const nodeLength = nowNode?.length ?? nowNode?.innerText?.length
+    if (cursor <= nodeLength) {
+      range.setStart(nowNode?.firstChild || nowNode, cursor)
+      break
+    }
+    cursor -= nodeLength
+  }
+  // 设置选中区域为一个点
+  range.collapse(true)
+  // 移除所有的选中范围
+  selection.removeAllRanges()
+  // 添加新建的范围
+  selection.addRange(range)
 }

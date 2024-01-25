@@ -65,7 +65,7 @@
     </div>
     <div class="options-right">
       <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
-      <icon-button class="option-filter ml10" icon="icon-cc-funnel"
+      <icon-button :class="['option-filter', 'ml10', { active: hasCondition }]" icon="icon-cc-funnel"
         v-bk-tooltips.top="$t('高级筛选')"
         @click="handleSetFilters">
       </icon-button>
@@ -241,8 +241,8 @@
         const IPWithCloudFields = {
           [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
           [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
-          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv4优先')})`,
-          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4/IPv6(${this.$t('IPv6优先')})`
+          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv4优先')})`,
+          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv6优先')})`
         }
         const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
           id: key,
@@ -334,6 +334,9 @@
           return importInstError.bk_error_msg
         }
         return importInstError.message || ''
+      },
+      hasCondition() {
+        return FilterStore.hasCondition
       }
     },
     watch: {
@@ -565,6 +568,8 @@
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
+            const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
+            const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
             if (property.id === this.IPWithCloudSymbol) {
               return `${cloud}:${ip}`
             }
@@ -572,10 +577,16 @@
               return `${cloud}:[${ipv6}]`
             }
             if (property.id === this.IPv46WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip) ? `[${ipv6}]` : ip}`
+              if (!isEmptyIPv4Value || isEmptyIPv6Value) {
+                return `${cloud}:${ip}`
+              }
+              return `${cloud}:[${ipv6}]`
             }
             if (property.id === this.IPv64WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip_v6) ? ip : `[${ipv6}]`}`
+              if (isEmptyIPv4Value || !isEmptyIPv6Value) {
+                return `${cloud}:[${ipv6}]`
+              }
+              return `${cloud}:${ip}`
             }
           }
           if (property.bk_property_type === 'topology') {
@@ -803,8 +814,11 @@
             margin-left: 10px;
             max-width: 300px;
         }
-        .option-filter:hover {
-            color: $primaryColor;
+        .option-filter {
+            &:hover,
+            .active {
+                color: $primaryColor;
+            }
         }
     }
     .import-prepend {

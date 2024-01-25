@@ -1,6 +1,6 @@
 ### 功能描述
 
- 根据审计ID获取详细信息
+根据审计ID获取详细信息(权限：操作审计查询权限)
 
 ### 请求参数
 
@@ -8,13 +8,13 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| id     |  array    |是      | 审计id数组,一次限制最大传200个                                             |  
+| 字段 | 类型    | 必选 | 描述                 |
+|----|-------|----|--------------------|
+| id | array | 是  | 审计id数组,一次限制最大传200个 |  
 
 ### 请求参数示例
 
-```python
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -165,42 +165,44 @@
 
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data
 
-| 字段      | 类型      | 描述         |
-|-----------|-----------|--------------|
-|    id |      int  |    审计ID  |
-|   audit_type  |     string   |   操作审计类型   |
-|   bk_supplier_account  |    string    | 开发商账号     |
-|   user  |      string  |    操作人  |
-|   resource_type  |    string    |   资源类型   |
-|  action   |    string    |    操作类型  |
-|    operate_from |    string    |   来源平台   |
-|  operation_detail   |     object     |  操作细节    |
-| operation_time    |     string   |    操作时间  |
-|  bk_biz_id   |       int |    业务id  |
-| resource_id    |     int   |    资源id  |
-|   resource_name  |     string   |  资源名称    |
-|   rid  |     string   |  请求链id    |
+| 字段                  | 类型     | 描述     |
+|---------------------|--------|--------|
+| id                  | int    | 审计ID   |
+| audit_type          | string | 操作审计类型 |
+| bk_supplier_account | string | 开发商账号  |
+| user                | string | 操作人    |
+| resource_type       | string | 资源类型   |
+| action              | string | 操作类型   |
+| operate_from        | string | 来源平台   |
+| operation_detail    | object | 操作细节   |
+| operation_time      | string | 操作时间   |
+| bk_biz_id           | int    | 业务id   |
+| resource_id         | int    | 资源id   |
+| resource_name       | string | 资源名称   |
+| rid                 | string | 请求链id  |
 
 #### operation_detail
-| 字段      | 类型      | 描述         |
-|-----------|-----------|--------------|
-|    details |      object  |    详细数据   |
-|    bk_obj_id |      string  |    模型类型   |
+
+| 字段        | 类型     | 描述   |
+|-----------|--------|------|
+| details   | object | 详细数据 |
+| bk_obj_id | string | 模型类型 |
 
 #### details
-| 字段      | 类型      | 描述         |
-|-----------|-----------|--------------|
-|    pre_data |      object  |    之前数据   |
-|   cur_data  |     object   |   现在数据   |
-|   update_fields  |     object   |   更新的字段   |
+
+| 字段            | 类型     | 描述    |
+|---------------|--------|-------|
+| pre_data      | object | 之前数据  |
+| cur_data      | object | 现在数据  |
+| update_fields | object | 更新的字段 |

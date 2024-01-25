@@ -33,6 +33,12 @@
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
+            v-bk-tooltips.top="{
+              disabled: !property.placeholder,
+              theme: 'light',
+              trigger: 'click',
+              content: property.placeholder
+            }"
             @active-change="handleComponentActiveChange(property, ...arguments)">
           </component>
         </div>
@@ -239,7 +245,7 @@
     }
     .item-content-wrapper {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
     }
     .item-operator {
       flex: 110px 0 0;

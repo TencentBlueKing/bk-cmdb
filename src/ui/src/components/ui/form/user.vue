@@ -131,8 +131,7 @@
       pasteValidator(usernames) {
         return Promise.resolve(usernames)
       },
-      handleFastSelect(event) {
-        event.stopPropagation()
+      handleFastSelect() {
         const value = [...this.localValue]
         const exist = value.includes(this.userName)
         if (exist) return

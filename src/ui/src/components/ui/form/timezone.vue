@@ -18,6 +18,8 @@
     :clearable="false"
     :disabled="disabled"
     :multiple="multiple"
+    :display-tag="multiple"
+    :selected-style="getSelectedStyle"
     :placeholder="placeholder"
     ref="selector">
     <bk-option
@@ -60,6 +62,11 @@
         timezoneList,
         selected: this.multiple ? [] : ''
       }
+    },
+    computed: {
+      getSelectedStyle() {
+        return this.multiple ? 'checkbox' : 'check'
+      },
     },
     watch: {
       value(value) {

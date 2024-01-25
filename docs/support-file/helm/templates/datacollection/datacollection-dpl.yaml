@@ -80,20 +80,11 @@ spec:
         ports:
         - containerPort: {{ .Values.datacollection.port }}
         volumeMounts:
-          {{- if .Values.common.monitor.enabled }}
-          - name: plugin-path
-            mountPath: {{ .Values.common.monitor.pluginPath }}
-          {{- end }}
           {{- if .Values.datacollection.configDir }}
           - name: configures
             mountPath: {{ .Values.datacollection.configDir }}
           {{- end }}
       volumes:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          hostPath:
-            path: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         {{- if .Values.datacollection.configDir }}
         - name: configures
           configMap:

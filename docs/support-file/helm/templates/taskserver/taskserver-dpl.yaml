@@ -79,20 +79,11 @@ spec:
         - containerPort: {{ .Values.taskserver.port }}
 
         volumeMounts:
-          {{- if .Values.common.monitor.enabled }}
-          - name: plugin-path
-            mountPath: {{ .Values.common.monitor.pluginPath }}
-          {{- end }}
           {{- if .Values.taskserver.configDir }}
           - name: configures
             mountPath: {{ .Values.taskserver.configDir }}
           {{- end }}
       volumes:
-        {{- if .Values.common.monitor.enabled }}
-        - name: plugin-path
-          hostPath:
-            path: {{ .Values.common.monitor.pluginPath }}
-        {{- end }}
         {{- if .Values.taskserver.configDir }}
         - name: configures
           configMap:

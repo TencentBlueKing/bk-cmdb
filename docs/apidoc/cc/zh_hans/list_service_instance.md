@@ -8,25 +8,25 @@
 
 #### 接口参数
 
-| 字段                 |  类型      | 必选	   |  描述                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id            | int  | 是   | 业务id |
-| bk_module_id         | int  | 否   | 模块ID |
-| selectors            | int  | 否   | label过滤功能，operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin`|
-| page         | object  | No   | 分页参数 |
-| search_key         | string  | No   | 名字过滤参数 |
+| 字段           | 类型        | 必选 | 描述                                                        |
+|--------------|-----------|----|-----------------------------------------------------------|
+| bk_biz_id    | int       | 是  | 业务id                                                      |
+| bk_module_id | int       | 否  | 模块ID                                                      |
+| bk_host_ids  | int array | 否  | 主机id列表，最多支持1000个主机id                                      |
+| selectors    | int       | 否  | label过滤功能，operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin` |
+| page         | object    | 否  | 分页参数                                                      |
+| search_key   | string    | 否  | 名字过滤参数，可填写进程名称包含的字符用于模糊搜索                                 |
 
 #### page
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| start    |  int    | 是     | 记录开始位置 |
-| limit    |  int    | 是     | 每页限制条数,最大500 |
+| 字段    | 类型  | 必选 | 描述           |
+|-------|-----|----|--------------|
+| start | int | 是  | 记录开始位置       |
+| limit | int | 是  | 每页限制条数,最大500 |
 
 ### 请求参数示例
 
-```python
-
+```json
 {
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",
@@ -38,6 +38,7 @@
     "limit": 1
   },
   "bk_module_id": 56,
+  "bk_host_ids":[26,10],
   "search_key": "",
   "selectors": [{
     "key": "key1",
@@ -54,7 +55,7 @@
 
 ### 返回结果示例
 
-```python
+```json
 {
   "result": true,
   "code": 0,
@@ -85,33 +86,33 @@
 
 #### response
 
-| 名称  | 类型  | 描述 |
-|---|---|---|
-| result | bool | 请求成功与否。true:请求成功；false请求失败 |
-| code | int | 错误编码。 0表示success，>0表示失败错误 |
-| message | string | 请求失败返回的错误信息 |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data | object | 请求返回的数据 |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data 字段说明
 
-| 字段|类型|说明|描述|
-|---|---|---|---|
-|count|integer|总数||
-|info|array|返回结果||
+| 字段    | 类型      | 描述   |
+|-------|---------|------|
+| count | integer | 总数   |
+| info  | array   | 返回结果 |
 
 #### info 字段说明
 
-| 字段|类型|说明|
-|---|---|---|
-|id|int|服务实例ID|
-|name|string|服务实例名称|
-|bk_biz_id|int|业务ID|
-|bk_module_id|int|模块ID|
-|bk_host_id|int|主机ID|
-| creator              | string             | 本条数据创建者                                                                                 |
-| modifier             | string             | 本条数据的最后修改人员            |
-| create_time         | string | 创建时间     |
-| last_time           | string | 更新时间     |
-| bk_supplier_account | string       | 开发商账号 |
+| 字段                  | 类型     | 描述          |
+|---------------------|--------|-------------|
+| id                  | int    | 服务实例ID      |
+| name                | string | 服务实例名称      |
+| bk_biz_id           | int    | 业务ID        |
+| bk_module_id        | int    | 模块ID        |
+| bk_host_id          | int    | 主机ID        |
+| creator             | string | 本条数据创建者     |
+| modifier            | string | 本条数据的最后修改人员 |
+| create_time         | string | 创建时间        |
+| last_time           | string | 更新时间        |
+| bk_supplier_account | string | 开发商账号       |
