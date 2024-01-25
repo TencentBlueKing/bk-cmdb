@@ -26,7 +26,7 @@ module.exports = {
   context: appDir,
 
   entry: {
-    app: './src/main.js',
+    app: ['./src/public-path.js', './src/main.js'],
     login: './src/login/index.js'
   },
 

@@ -983,7 +983,7 @@
 
             resolve(svg)
           }
-          image.src = `${window.location.origin}/static/svg/${nodeData.icon.substr(5)}.svg`
+          image.src = `${window.Site.publicPath}static/svg/${nodeData.icon.substr(5)}.svg`
         })
       },
       handleRelationSave(params) {
