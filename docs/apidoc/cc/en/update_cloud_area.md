@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update cloud  area 
+Update control area (Permission: Control area editing permission)
 
 ### Request Parameters
 
@@ -8,49 +8,46 @@ Update cloud  area
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description       |
-|----------------------|------------|--------|-------------|
-| bk_cloud_id  | int      | yes   | Cloud area ID   |
+| Field         | Type   | Required | Description       |
+| ------------- | ------ | -------- | ----------------- |
+| bk_cloud_id   | int    | Yes      | Control area ID   |
+| bk_cloud_name | string | No       | Control area name |
 
+### Request Parameter Example
 
-### Request Parameters Example
-
-``` json
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
     "bk_cloud_id": 5,
-    "bk_cloud_name": "Cloud area 1"
+    "bk_cloud_name": "Control Area 1"
 }
-
 ```
 
 ### Return Result Example
-
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
-
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

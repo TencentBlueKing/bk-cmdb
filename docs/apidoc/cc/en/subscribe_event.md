@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Subscription event
+Subscribe to events
 
 ### Request Parameters
 
@@ -8,17 +8,17 @@ Subscription event
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description                                            |
-|---------------------|------------|--------|--------------------------------------------------|
-| subscription_name   |  string     | yes  | Name of subscription                                       |
-| system_name         |  string     | yes  | The name of the system to which the event is subscribed                             |
-| callback_url        |  string     | yes  | Callback function                                         |
-| confirm_mode        |  string     | yes  | Event sending success verification mode, optional 1 HttpStatus, 2 regular|
-| confirm_pattern     |  string     | yes  | HttpStatus or regular for callback                       |
-| subscription_form   |  string     | yes      | Subscribed events, separated by commas                            |
-| timeout             |  int        | yes | Send event timeout                                 |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| subscription_name | string | Yes      | Name of the subscription                                     |
+| system_name       | string | Yes      | Name of the system for subscribed events                     |
+| callback_url      | string | Yes      | Callback function                                            |
+| confirm_mode      | string | Yes      | Event send success verification mode, optional: 1-httpstatus, 2-regular |
+| confirm_pattern   | string | Yes      | callback's httpstatus or regular expression                  |
+| subscription_form | string | Yes      | Subscribed events, separated by commas                       |
+| timeout           | int    | Yes      | Timeout for sending events                                   |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -39,7 +39,6 @@ Subscription event
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -52,20 +51,21 @@ Subscription event
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field            | Type    | Description             |
-|-----------------|---------|------------------|
-| subscription_id | int     | Subscription ID for the new subscription|
+| Field            | Type | Description                                      |
+| --------------- | ---- | ------------------------------------------------ |
+| subscription_id | int  | Subscription ID for the newly added subscription |

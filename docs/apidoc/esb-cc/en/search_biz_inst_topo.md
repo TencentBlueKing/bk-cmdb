@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-query business instance topology
+Query Business Instance Topology
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ query business instance topology
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account |  string  | No     | supplier account code |
-| bk_biz_id           |  int     | Yes     | the business id |
-| level               |  int     | No     | the topology level, read full topology when set to -1 |
+| Field               | Type   | Required | Description                                                  |
+| ------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_supplier_account | string | No       | Developer account                                            |
+| bk_biz_id           | int    | Yes      | Business ID                                                  |
+| level               | int    | No       | Topology level index, index value starts from 0, default is 2. When set to -1, the complete business instance topology will be read. |
 
 ### Request Parameters Example
 
@@ -27,7 +27,7 @@ query business instance topology
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -42,12 +42,14 @@ query business instance topology
             "bk_inst_name": "blueking",
             "bk_obj_id": "biz",
             "bk_obj_name": "business",
+            "default": 0,
             "child": [
                 {
                     "bk_inst_id": 3,
                     "bk_inst_name": "job",
                     "bk_obj_id": "set",
                     "bk_obj_name": "set",
+                    "default": 0,
                     "child": [
                         {
                             "bk_inst_id": 5,
@@ -64,37 +66,39 @@ query business instance topology
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Field       | Type     | Description         |
-|---|---|---|
-| result | bool | request success or failed. true:success；false: failed |
-| code | int | error code. 0: success, >0: something error |
-| message | string | error info description |
-| data | object | response data |
-| permission    | object | permission Information    |
-| request_id    | string | request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| bk_inst_id    | int       | the inst ID |
-| bk_inst_name  | string    | the name of the instance is used to display |
-| bk_obj_icon   | string    | the object&#39;s icon |
-| bk_obj_id     | string    | Object ID |
-| bk_obj_name   | string    | the name of the object is used to display |
-| child         | array     | Collection of all instances under the current node |
+| Field        | Type   | Description                                                  |
+| ------------ | ------ | ------------------------------------------------------------ |
+| bk_inst_id   | int    | Instance ID                                                  |
+| bk_inst_name | string | Name used for displaying the instance                        |
+| bk_obj_icon  | string | Model icon name                                              |
+| bk_obj_id    | string | Model ID                                                     |
+| bk_obj_name  | string | Name used for displaying the model                           |
+| child        | array  | Collection of all instances under the current node           |
+| default      | int    | 0-ordinary cluster, 1-built-in module collection, default is 0 |
 
 #### child
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| bk_inst_id    | int       | the inst ID |
-| bk_inst_name  | string    | the name of the instance is used to display |
-| bk_obj_icon   | string    | the object&#39;s icon |
-| bk_obj_id     | string    | Object ID |
-| bk_obj_name   | string    | the name of the object is used to display |
-| child         | array     | Collection of all instances under the current node |
+| Field        | Type   | Description                                                  |
+| ------------ | ------ | ------------------------------------------------------------ |
+| bk_inst_id   | int    | Instance ID                                                  |
+| bk_inst_name | string | Name used for displaying the instance                        |
+| bk_obj_icon  | string | Model icon name                                              |
+| bk_obj_id    | string | Model ID                                                     |
+| bk_obj_name  | string | Name used for displaying the model                           |
+| child        | array  | Collection of all instances under the current node           |
+| default      | int    | 0-ordinary cluster, 1-built-in module collection, default is 0 |

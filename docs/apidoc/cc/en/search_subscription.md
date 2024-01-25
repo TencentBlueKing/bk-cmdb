@@ -1,4 +1,4 @@
-### Functional description
+### Function Description
 
 Query event subscription
 
@@ -8,26 +8,26 @@ Query event subscription
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description                       |
-|---------------------|------------|--------|-----------------------------|
-| page                |  object     | no     | Paging parameter                    |
-| condition           |  object     | no     | Query criteria                    |
+| Field     | Type   | Required | Description           |
+| --------- | ------ | -------- | --------------------- |
+| page      | object | No       | Pagination parameters |
+| condition | object | No       | Query conditions      |
 
 #### page
 
-| Field      | Type      | Required   | Description                |
-|-----------|------------|--------|----------------------|
-| start     |   int       | yes  | Record start position         |
-| limit     |   int       | yes  | Limit bars per page, Max. 200|
-| sort      |   string    | no     | Sort field             |
+| Field | Type   | Required | Description                                |
+| ----- | ------ | -------- | ------------------------------------------ |
+| start | int    | Yes      | Record start position                      |
+| limit | int    | Yes      | Number of records per page, maximum is 200 |
+| sort  | string | No       | Sorting field                              |
 
 #### condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| subscription_name  |string      | yes | This is sample data only and needs to be set as a field for the query|
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| subscription_name | string | Yes      | Subscription name (this is just an example data, it should be set to the field to be queried) |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -81,36 +81,39 @@ Query event subscription
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
-| Field   | Type         | Description              |
-|-------|--------------|------------------|
-| count | int          | Number of records          |
-| info  | array |Detailed list of event subscriptions|
+
+| Field  | Type  | Description                         |
+| ----- | ----- | ----------------------------------- |
+| count | int   | Number of records                   |
+| info  | array | Details list of event subscriptions |
 
 #### info
-| Field                 | Type      | Description                                       |
-|----------------------|-----------|--------------------------------------------|
-| subscription_id      |  int       | Subscription ID                                     |
-| subscription_name    |  string    | Subscription name                                     |
-| system_name          |  string    | System name                                   |
-| callback_url         |  string    | Callback address                                   |
-| confirm_mode         |  string    | Callback success confirmation mode, optional: httpstatus，regular|
-| confirm_pattern      |  string    | Callback success flag                               |
-| subscription_form    |  string    | Subscriptions, separated by ","                          |
-| timeout              |  int       | Timeout in seconds                         |
-| operator             |  int       | The person who last updated this piece of data                     |
-| last_time            |  int       | Update time                                   |
-| statistics.total     |  int       | Total push                                   |
-| statistics.failure   |  int       | Number of push failures                                 |
+
+| Field               | Type   | Description                                                  |
+| ------------------ | ------ | ------------------------------------------------------------ |
+| subscription_id    | int    | Subscription ID                                              |
+| subscription_name  | string | Subscription name                                            |
+| system_name        | string | System name                                                  |
+| callback_url       | string | Callback URL                                                 |
+| confirm_mode       | string | Callback success confirmation mode, optional: httpstatus, regular |
+| confirm_pattern    | string | Callback success flag                                        |
+| subscription_form  | string | Subscription form, separated by ","                          |
+| timeout            | int    | Timeout, unit: seconds                                       |
+| operator           | int    | Last updated by                                              |
+| last_time          | int    | Update time                                                  |
+| statistics.total   | int    | Total number of pushes                                       |
+| statistics.failure | int    | Number of failed pushes                                      |

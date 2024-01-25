@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the host details and the topology information it belongs to according to the host condition information
+Query host details and its topology information based on host condition information (Permission: Host pool host view permission)
 
 ### Request Parameters
 
@@ -8,43 +8,38 @@ Query the host details and the topology information it belongs to according to t
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| page       |   dict    | yes  | Query criteria|
-| host_property_filter|  object| no | Host attribute combination query criteria|
-| fields    |   array   | yes  | Host attribute list, which controls the fields in the host that returns the result. Please fill in as required|
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| page                 | dict   | Yes      | Query conditions                                             |
+| host_property_filter | object | No       | Combined query conditions for host properties                |
+| fields               | array  | Yes      | List of host properties, control which fields are in the returned result, fill in according to requirements |
 
 #### host_property_filter
-This parameter is a combination of filtering rules for the host attribute field and is used to search for hosts based on the host attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rules are quaternions`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is a combination of filtering rules for host property fields, used to search for hosts based on host property fields. The combination supports AND and OR, and can be nested up to two levels. Filtering rules are quadruples `field`, `operator`, `value`
 
+| Field     | Type   | Required | Description               |
+| --------- | ------ | -------- | ------------------------- |
+| condition | string | No       | Combined query conditions |
+| rules     | array  | No       | Rules                     |
 
 #### rules
 
-| Name| Type| Required| Default value|  Description|
-| ---  | ---  | --- |---  | ---|
-| field| string| yes | None| Field name| Field name|
-| operator| string| yes | None| Operator| Optional values equal,not_equal,in, not_in, less,less_or_equal,greater,greater_or_equal,between,not_between, contexts, exists,not_exists; Where contexts is regular matching and case insensitive, exists is the condition for filtering the existence of a field, and not_exists is the condition for filtering the non-existence of a field|
-| value| - |no| None| Operand| Different values correspond to different value formats|
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/src/common/QueryBuilder/README.md>
-
-
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, maximum 500|
-| sort     |   string |no     | Sort field|
-
-
+| Field | Type   | Required | Description                                      |
+| ----- | ------ | -------- | ------------------------------------------------ |
+| start | int    | Yes      | Record start position                            |
+| limit | int    | Yes      | Number of records per page, maximum value is 500 |
+| sort  | string | No       | Sorting field                                    |
 
 ### Request Parameters Example
 
@@ -93,7 +88,7 @@ Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/s
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -114,7 +109,7 @@ Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/s
                     {
                         "inst": {
                             "obj": "nation",
-                            "name": "China",
+                            "name": "中国",
                             "id": 30
                         },
                         "children": [
@@ -157,7 +152,7 @@ Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/s
                     {
                         "inst": {
                             "obj": "nation",
-                            "name": "Country",
+                            "name": "国家",
                             "id": 29
                         },
                         "children": [
@@ -200,14 +195,14 @@ Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/s
                     {
                         "inst": {
                             "obj": "set",
-                            "name": "Idle pool",
+                            "name": "空闲机池",
                             "id": 2
                         },
                         "children": [
                             {
                                 "inst": {
                                     "obj": "module",
-                                    "name": "Faulty machine",
+                                    "name": "故障机",
                                     "id": 4
                                 },
                                 "children": null
@@ -221,70 +216,81 @@ Assembly rules can be found at https: <//github.com/Lucent/bk CMDB/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
+
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Success or failure of the request. true: success; false: failure |
+| code       | int    | Error code. 0 represents success, >0 represents failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int       | Number of records|
-| info      |  array     | Host data and topology information|
+| Field | Type  | Description                        |
+| ----- | ----- | ---------------------------------- |
+| count | int   | Number of records                  |
+| info  | array | Host data and topology information |
 
 #### data.info
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| host      |  dict      | Host actual data|
-| topo      |  array     | Host topology information|
+
+| Field | Type  | Description               |
+| ----- | ----- | ------------------------- |
+| host  | dict  | Actual host data          |
+| topo  | array | Host topology information |
 
 #### data.info.host
-| Name| Type| Description|
-|---|---|---|
-| bk_isp_name|  string |Operator| 0: other;1: telecommunications;2: Unicom;3: mobile|
-| bk_sn | string |Equipment SN||
-| operator | string |Main maintainer||
-| bk_outer_mac | string |Extranet MAC||
-| bk_state_name | string |Country| CN: China please refer to CMDB page for detailed values|
-| bk_province_name | string |Province||
-| import_from | string |Entry method| 1:excel;2:agent; 3:api|
-| bk_sla | string |SLA level| 1:L1;2:L2;3: L3|
-| bk_service_term | int |Warranty period|  1-10 |
-| bk_os_type | string |Operating system type| 1:Linux;2:Windows; 3:AIX|
-| bk_os_version | string |Operating system version||
-| bk_os_bit | int |Operating system bits||
-| bk_mem | string |Memory capacity||
-| bk_mac | string |Intranet MAC address||
-| bk_host_outerip | string |Extranet IP||
-| bk_host_name | string |Host name||
-| bk_host_innerip | string |Intranet IP||
-| bk_host_id | int |Host ID||
-| bk_disk | int |Disk capacity||
-| bk_cpu_module | string |CPU model||
-| bk_cpu_mhz | int |CPU frequency||
-| bk_cpu | int |Number of CPU logical cores|  1-1000000 |
-| bk_comment | string |Remarks||
-| bk_cloud_id | int |Cloud area||
-| bk_bak_operator | string |Backup maintainer||
-| bk_asset_id | string |Fixed capital no||
+
+| Field                | Type   | Description                          |
+| -------------------- | ------ | ------------------------------------ |
+| bk_host_name         | string | Host name                            |
+| bk_host_innerip      | string | Internal IP of the host              |
+| bk_host_id           | int    | Host ID                              |
+| bk_cloud_id          | int    | Managed area                         |
+| import_from          | string | Host import source, 3 for API import |
+| bk_asset_id          | string | Fixed asset number                   |
+| bk_cloud_inst_id     | string | Cloud host instance ID               |
+| bk_cloud_vendor      | string | Cloud vendor                         |
+| bk_cloud_host_status | string | Cloud host status                    |
+| bk_comment           | string | Comment                              |
+| bk_cpu               | int    | CPU logical cores                    |
+| bk_cpu_architecture  | string | CPU architecture                     |
+| bk_cpu_module        | string | CPU model                            |
+| bk_disk              | int    | Disk capacity (GB)                   |
+| bk_host_outerip      | string | Host external IP                     |
+| bk_host_innerip_v6   | string | Host internal IPv6                   |
+| bk_host_outerip_v6   | string | Host external IPv6                   |
+| bk_isp_name          | string | ISP name                             |
+| bk_mac               | string | Host internal MAC address            |
+| bk_mem               | int    | Host memory capacity (MB)            |
+| bk_os_bit            | string | Operating system bit number          |
+| bk_os_name           | string | Operating system name                |
+| bk_os_type           | string | Operating system type                |
+| bk_os_version        | string | Operating system version             |
+| bk_outer_mac         | string | Host external MAC address            |
+| bk_province_name     | string | Province where the host is located   |
+| bk_service_term      | int    | Warranty period                      |
+| bk_sla               | string | SLA level                            |
+| bk_sn                | string | Device SN                            |
+| bk_state             | string | Current status                       |
+| bk_state_name        | string | Country where the host is located    |
+| operator             | string | Main maintainer                      |
+| bk_bak_operator      | string | Backup maintainer                    |
+
+**Note: The return value here only explains the system-built property fields, other return values depend on user-defined property fields**
 
 #### data.info.topo
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| inst | object       | Details describing the node instance|
-| inst.obj | string       | Model type of this node, such as set/module and user-defined hierarchical model type|
-| inst.name | string  |The instance name of the node|
-| inst.id    |  int     | The instance ID of this node|
-| children | object array       | Details of child nodes describing the current instance node, possibly multiple|
-| children.inst | object       | Instance detail information of the child node|
-| children.children | string  |Detail information describing the child nodes of the node|
 
-
+| Field             | Type         | Description                                                  |
+| ----------------- | ------------ | ------------------------------------------------------------ |
+| inst              | object       | Details of the node instance                                 |
+| inst.obj          | string       | Model type of the node, such as set/module and custom hierarchical model type |
+| inst.name         | string       | Instance name of the node                                    |
+| inst.id           | int          | Instance ID of the node                                      |
+| children          | object array | Details of child nodes of the current instance, there may be multiple |
+| children.inst     | object       | Details of the instance of the child node                    |
+| children.children | string       | Details of child nodes of the current instance               |

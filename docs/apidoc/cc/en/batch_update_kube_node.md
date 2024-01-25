@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-batch update container node attribute field (v3.12.1+, permission: kube Node Edit Permission)
+Update Container Node Attribute Fields (Version: v3.12.1+, Permission: Edit Container Node Permission)
 
 ### Request Parameters
 
@@ -8,31 +8,30 @@ batch update container node attribute field (v3.12.1+, permission: kube Node Edi
 
 #### Interface Parameters
 
-| Field     | Type   | Required | Description                                   |
-|-----------|--------|----------|-----------------------------------------------|
-| bk_biz_id | int    | yes      | business ID                                   |
-| ids       | array  | yes      | IDs of the node in cmdb                       |
-| data      | object | yes      | Node attribute fields that need to be updated |
+| Field     | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
+| bk_biz_id | int    | Yes      | Business ID                         |
+| ids       | array  | Yes      | List of node IDs to be updated      |
+| data      | object | Yes      | Node attribute fields to be updated |
 
 #### data
 
-| Field             | Type        | Required | Description                                                                        |
-|-------------------|-------------|----------|------------------------------------------------------------------------------------|
-| labels            | json object | no       | label                                                                              |
-| taints            | string      | no       | cluster name                                                                       |
-| unschedulable     | bool        | no       | set whether to schedule                                                            |
-| hostname          | string      | no       | host name                                                                          |
-| runtime_component | string      | no       | runtime components                                                                 |
-| kube_proxy_mode   | string      | no       | Kube-proxy proxy mode                                                              |
-| pod_cidr          | string      | no       | The allocation range of the Pod address of this node, for example: 172.17.0.128/26 |
+| Field             | Type        | Required | Description                                                  |
+| ----------------- | ----------- | -------- | ------------------------------------------------------------ |
+| labels            | json object | No       | Labels                                                       |
+| taints            | string      | No       | Cluster name                                                 |
+| unschedulable     | bool        | No       | Set whether it can be scheduled                              |
+| hostname          | string      | No       | Hostname                                                     |
+| runtime_component | string      | No       | Runtime component                                            |
+| kube_proxy_mode   | string      | No       | Kube-proxy proxy mode                                        |
+| pod_cidr          | string      | No       | Allocation range of Pod addresses on this node, e.g., 172.17.0.128/26 |
 
-**注意：**
+**Note:**
 
-- Among them, labels and taints need to be updated as a whole.
-- data field cannot be empty.
-- The number of clusters to be updated at one time does not exceed 100.
+- labels and taints need to be updated as a whole.
+- The number of clusters to be updated at once should not exceed 100.
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -59,13 +58,12 @@ batch update container node attribute field (v3.12.1+, permission: kube Node Edi
     "pod_cidr": "127.0.0.1/26"
   }
 }
-
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
- {
+{
   "result": true,
   "code": 0,
   "message": "success",
@@ -75,13 +73,13 @@ batch update container node attribute field (v3.12.1+, permission: kube Node Edi
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

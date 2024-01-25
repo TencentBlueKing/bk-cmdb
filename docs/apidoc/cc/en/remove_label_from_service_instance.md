@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Remove the tag from the service instance under the specified service according to the service id, the service instance id, and the tag to be removed
+Remove tags from specified service instances under the specified business based on the business ID, service instance ID, and the tags to be removed. (Permission: Service instance deletion permission)
 
 ### Request Parameters
 
@@ -8,14 +8,13 @@ Remove the tag from the service instance under the specified service according t
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| instance_ids            | array  | Yes   | service inscc/apidocs/en/list_service_instance_detail.mdtances ID array, the max length is 500 |
-| keys            | array  | Yes   | key of lables to be remove |
-| bk_biz_id            |  int  |yes   | Business ID |
+| Field        | Type  | Required | Description                                         |
+| ------------ | ----- | -------- | --------------------------------------------------- |
+| bk_biz_id    | int   | Yes      | Business ID                                         |
+| instance_ids | array | Yes      | List of service instance IDs, with a maximum of 500 |
+| keys         | array | Yes      | List of tag keys to be removed                      |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -29,7 +28,7 @@ Remove the tag from the service instance under the specified service according t
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -42,15 +41,15 @@ Remove the tag from the service instance under the specified service according t
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

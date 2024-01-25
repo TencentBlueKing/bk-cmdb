@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-delete container clusters in batches (v3.12.1+, permission: kube cluster deletion permission)
+Delete container cluster (v3.12.1+, Permission: Container cluster deletion permission)
 
 ### Request Parameters
 
@@ -8,19 +8,17 @@ delete container clusters in batches (v3.12.1+, permission: kube cluster deletio
 
 #### Interface Parameters
 
-| Field     | Type  | Required | Description                                        |
-|-----------|-------|----------|----------------------------------------------------|
-| bk_biz_id | int   | yes      | business id to which the container cluster belongs |
-| ids       | array | yes      | ids of the container cluster in cmdb               |
+| Field     | Type  | Required | Description                                  |
+| --------- | ----- | -------- | -------------------------------------------- |
+| bk_biz_id | int   | Yes      | Business ID of the container cluster         |
+| ids       | array | Yes      | List of IDs of the container cluster in CMDB |
 
 **Note:**
 
-- user needs to ensure that there are no associated resources (such as namespace, pod, node workload, etc.) under the
-  cluster to be deleted, otherwise the deletion will fail.- uid and id cannot be empty at the same time, nor can they be
-  filled in at the same time.
-- the number of clusters to be deleted at one time cannot exceed 10.
+- Users need to ensure that there are no associated resources (such as namespace, pod, node workload, etc.) under the clusters to be deleted, otherwise, deletion will fail.
+- The number of clusters to be deleted in one go should not exceed 10.
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -36,7 +34,7 @@ delete container clusters in batches (v3.12.1+, permission: kube cluster deletio
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -49,15 +47,13 @@ delete container clusters in batches (v3.12.1+, permission: kube cluster deletio
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameter Description
 
-#### response
-
-| Name       | Type   | Description                                                                        |
-|------------|--------|------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request succeeded or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
-| message    | string | Error message returned by request failure                                          |
-| permission | object | Permission information                                                             |
-| data       | object | Data returned by request                                                           |
-| request_id | string | Request chain id                                                                   |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| data       | object | No data returned                                             |
+| request_id | string | Request chain ID                                             |

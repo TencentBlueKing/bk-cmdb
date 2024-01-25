@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update business custom model properties
+Update custom model attributes for a business (Permission: Business custom field editing permission)
 
 ### Request Parameters
 
@@ -8,40 +8,24 @@ Update business custom model properties
 
 #### Interface Parameters
 
-| Field                | Type   | Required   | Description                                   |
-|---------------------|---------|--------|-----------------------------------------|
-| id                  |  int     | yes  | Record ID of the target data                        |
-| bk_biz_id           |  int     | yes  | Business ID                     |
-| description         |  string  |no     | Description information of data                          |
-| isonly              |  bool    | no     | Show uniqueness                              |
-| isreadonly          |  bool    | no     | Indicates whether it is read-only                            |
-| isrequired          |  bool    | no     | Indicates whether it is required                            |
-| bk_property_group   |  string  |no     | Name of the field column                          |
-| option              |  object  |no     | User-defined content, stored content and format determined by the caller, take digital content as an example ({"min": 1,"max":2}）|
-| bk_property_name    |  string  |no     | Model property name, used to show                    |
-| bk_property_type    |  string  |no     | The data type of the defined attribute field used to store the data (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| unit                |  string  |no     | Unit                                    |
-| placeholder         |  string  |no     | Placeholder                                  |
-| bk_asst_obj_id      |  string  |no     | This field must be set if there are other models associated with it, otherwise it is not required|
+| Field             | Type                                                | Required | Description                                                  |
+| ----------------- | --------------------------------------------------- | -------- | ------------------------------------------------------------ |
+| id                | int                                                 | Yes      | Record ID of the target data                                 |
+| bk_biz_id         | int                                                 | Yes      | Business ID                                                  |
+| description       | string                                              | No       | Description of the data                                      |
+| isonly            | bool                                                | No       | Indicates uniqueness                                         |
+| isreadonly        | bool                                                | No       | Indicates if it is read-only                                 |
+| isrequired        | bool                                                | No       | Indicates if it is required                                  |
+| bk_property_group | string                                              | No       | Name of the field column                                     |
+| option            | object                                              | No       | User-defined content, the format and content are determined by the caller, using numeric content as an example (`{"min":1,"max":2}`) |
+| bk_property_name  | string                                              | No       | Model attribute name for display                             |
+| unit              | string                                              | No       | Unit                                                         |
+| bk_property_type  | string                                              | Yes      | Defined property field for storing data types (`singlechar(short string),longchar(long string),int(integer),enum(enum type),date(date),time(time),objuser(user),enummulti(multi-select enum),enumquote(enum reference),timezone(timezone),bool(boolean),organization(organization)`) |
+| placeholder       | string                                              | No       | Placeholder                                                  |
+| bk_asst_obj_id    | string                                              | No       | If there is a relationship with other models, then this field must be set; otherwise, it does not need to be set |
+| default           | Depends on the type specified by `bk_property_type` | No       | Default value                                                |
 
-#### bk_property_type
-
-| Identification       | Name     |
-|------------|----------|
-| singlechar |Short character   |
-| longchar   | Long character   |
-| int        | Reshaping     |
-| enum       | Enumeration type|
-| date       | Date     |
-| time       | Time     |
-| objuser    | User     |
-| singleasst |Simple correlation   |
-| multiasst  |Multiple correlation   |
-| timezone   | Time zone     |
-| bool       | Bull     |
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -50,19 +34,19 @@ Update business custom model properties
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "id":1,
+    "id": 1,
     "bk_biz_id": 2,
-    "description":"test",
-    "placeholder":"test",
-    "unit":"1",
-    "isonly":false,
-    "isreadonly":false,
-    "isrequired":false,
-    "bk_property_group":"default",
-    "option":{"min":1,"max":4},
-    "bk_property_name":"aaa",
-    "bk_property_type":"int",
-    "bk_asst_obj_id":"0"
+    "description": "test",
+    "placeholder": "test",
+    "unit": "1",
+    "isonly": false,
+    "isreadonly": false,
+    "isrequired": false,
+    "bk_property_group": "default",
+    "option": {"min":1,"max":4},
+    "bk_property_name": "aaa",
+    "bk_property_type": "int",
+    "bk_asst_obj_id": "0"
 }
 ```
 
@@ -79,15 +63,15 @@ Update business custom model properties
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

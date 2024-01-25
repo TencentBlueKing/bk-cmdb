@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query general model topology by classification ID of object model
+Query the topology of a common model through the classification ID of the object model (Permission: Model Topology View Edit Permission)
 
 ### Request Parameters
 
@@ -8,12 +8,11 @@ Query general model topology by classification ID of object model
 
 #### Interface Parameters
 
-| Field                  | Type      | Required   | Description                                    |
-|----------------------|------------|--------|------------------------------------------|
-| bk_classification_id |string      | yes   | The classification ID of the object model, which can only be named by English letter sequence|
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_classification_id | string | Yes      | Classification ID of the object model, can only be named with alphabetical sequence |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -28,7 +27,6 @@ Query general model topology by classification ID of object model
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -41,7 +39,7 @@ Query general model topology by classification ID of object model
            "from": {
                "bk_classification_id": "bk_host_manage",
                "bk_obj_id": "host",
-               "bk_obj_name": "Host",
+               "bk_obj_name": "主机",
                "position": "{\"bk_host_manage\":{\"x\":-357,\"y\":-344},\"lhmtest\":{\"x\":163,\"y\":75}}",
                "bk_supplier_account": "0"
            },
@@ -51,7 +49,7 @@ Query general model topology by classification ID of object model
            "to": {
                "bk_classification_id": "bk_network",
                "bk_obj_id": "bk_switch",
-               "bk_obj_name": "Switch",
+               "bk_obj_name": "交换机",
                "position": "{\"bk_network\":{\"x\":-172,\"y\":-160}}",
                "bk_supplier_account": "0"
            }
@@ -60,33 +58,35 @@ Query general model topology by classification ID of object model
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field       | Type      | Description                               |
-|------------|-----------|------------------------------------|
-| arrows     |  string    | Take to (one-way) or to,from (two-way)|
-| label_name | string    | The name of the Association                     |
-| label      |  string    | Indicates by which field From is associated with To     |
-| from       |  string    | The English id of the object model, the initiator of the topological relationship|
-| to         |  string    | The English ID of the object model, the termination party of the topological relationship|
+| Field      | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| arrows     | string | Value can be "to" (unidirectional) or "to,from" (bidirectional) |
+| label_name | string | Name of the relationship                                     |
+| label      | string | Indicates through which field From is related to To          |
+| from       | string | English id of the object model, the initiator of the topological relationship |
+| to         | string | English ID of the object model, the terminator of the topological relationship |
 
 #### from、to
-| Field       | Type      | Description                               |
-|------------|-----------|------------------------------------|
-|bk_classification_id| string| Class ID|
-|  bk_obj_id    | string     | Model id|
-|  bk_obj_name    | string     | Model name|
-| bk_supplier_account | string |Developer account number   |
-| position             |  json object string |Coordinates for front-end presentation   |
+
+| Field                | Type               | Description                            |
+| -------------------- | ------------------ | -------------------------------------- |
+| bk_classification_id | string             | Classification ID                      |
+| bk_obj_id            | string             | Model ID                               |
+| bk_obj_name          | string             | Model name                             |
+| bk_supplier_account  | string             | Vendor account                         |
+| position             | json object string | Coordinates used for front-end display |

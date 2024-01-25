@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Get dynamic grouping details (V3.9.6)
+Get details of a dynamic group (Version: v3.9.6, Permission: Business access permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Get dynamic grouping details (V3.9.6)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | yes  | Business ID |
-| id        |   string  |yes     | Target dynamic grouping pk ID|
+| Field     | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
+| bk_biz_id | int    | Yes      | Business ID                         |
+| id        | string | Yes      | Target dynamic group primary key ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -26,7 +26,7 @@ Get dynamic grouping details (V3.9.6)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -84,43 +84,50 @@ Get dynamic grouping details (V3.9.6)
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### data
+#### Explanation of data Parameters
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| bk_biz_id    |  int     | Business ID |
-| id           |  string  |Dynamic grouping pk ID|
-| bk_obj_id    |  string  |Target resource object type of dynamic grouping, which can be host,set at present|
-| name         |  string  |Dynamic group naming|
-| info         |  object  |Dynamic grouping rule information|
-| last_time    |  string  |Update time|
-| modify_user  | string  |Modifier|
-| create_time  | string  |Settling time|
-| create_user  | string  |Creator|
+| Field       | Type   | Description                                                  |
+| ----------- | ------ | ------------------------------------------------------------ |
+| bk_biz_id   | int    | Business ID                                                  |
+| id          | string | Dynamic group primary key ID                                 |
+| bk_obj_id   | string | Target resource object type of dynamic group, which can be host or set for now |
+| name        | string | Dynamic group naming                                         |
+| info        | object | Dynamic group rule information                               |
+| last_time   | string | Update time                                                  |
+| modify_user | string | Modifier                                                     |
+| create_time | string | Creation time                                                |
+| create_user | string | Creator                                                      |
 
-#### data.info.condition
+#### Explanation of info Parameters
 
-| Field      | Type     | Description      |
-|-----------|-----------|------------|
-| bk_obj_id |  string   | Conditional object resource type, info.conditon supported for dynamic grouping of host type: set,module,host; Info.conditions supported for dynamic grouping of type set: set|
-| condition |  array    | Query criteria|
+| Field     | Type  | Description      |
+| --------- | ----- | ---------------- |
+| condition | array | Query conditions |
 
-#### data.info.condition.condition
+#### Explanation of condition Parameters
 
-| Field      | Type     | Description       |
-|-----------|------------|------------|
-| field     |   string    | Fields of the object|
-| operator  |  string    | Operator with op values eq(equal)/ne(unequal)/in(of)/nin(not of)|
-| value     |   object    | The value corresponding to the field|
+| Field     | Type   | Description                                                  |
+| --------- | ------ | ------------------------------------------------------------ |
+| bk_obj_id | string | Condition object resource type, the dynamic group of the host type supports info.conditon:set,module,host; the dynamic group of the set type supports info.condition:set |
+| condition | array  | Query conditions                                             |
+
+#### Explanation of condition.condition Parameters
+
+| Field    | Type   | Description                                                  |
+| -------- | ------ | ------------------------------------------------------------ |
+| field    | string | Object field                                                 |
+| operator | string | Operator, op value can be eq (equal)/ne (not equal)/in (belongs to)/nin (does not belong to) |
+| value    | object | Value corresponding to the field                             |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query modules under Business by criteria (v3.9.7)
+Query modules under a business based on conditions (v3.9.7)
 
 ### Request Parameters
 
@@ -8,22 +8,22 @@ Query modules under Business by criteria (v3.9.7)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id  | int  |yes     | Business ID |
-| bk_set_ids  |  array  |no     | List of set IDs, up to 200 |
-| bk_service_template_ids  |  array  |no     | Service template ID list|
-| fields  |   array   | yes  | Module attribute list, which controls the fields in the module information that returns the result|
-| page       |   object    | yes  | Paging information|
+| Field                   | Type   | Required | Description                                                  |
+| ----------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id               | int    | Yes      | Business ID                                                  |
+| bk_set_ids              | array  | No       | Cluster ID list, up to 200                                   |
+| bk_service_template_ids | array  | No       | Service template ID list                                     |
+| fields                  | array  | Yes      | Module attribute list, control which fields to return in the module information |
+| page                    | object | Yes      | Pagination information                                       |
 
-#### Page field Description
+#### page Field Explanation
 
-| Field| Type   | Required| Description                  |
-| ----- | ------ | ---- | --------------------- |
-| start | int    | yes | Record start position          |
-| limit | int    | yes | Limit bars per page, Max. 500|
+| Field | Type | Required | Description                                |
+| ----- | ---- | -------- | ------------------------------------------ |
+| start | int  | Yes      | Record start position                      |
+| limit | int  | Yes      | Number of records per page, maximum is 500 |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -42,7 +42,7 @@ Query modules under Business by criteria (v3.9.7)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -66,20 +66,45 @@ Query modules under Business by criteria (v3.9.7)
     }
 }
 ```
-### Return Result Parameters Description
-#### response
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
 
-Data field Description:
+### Response Parameters Description
 
-| Name     | Type         | Description               |
-| -------- | ------------ | ------------------ |
-| count    |  int          | Number of records           |
-| info | object array |Module actual data|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
+
+#### Explanation of data field:
+
+| Field  | Type         | Description            |
+| ----- | ------------ | ---------------------- |
+| count | int          | Number of records      |
+| info  | object array | Actual data of modules |
+
+#### Explanation of data.info field:
+
+| Field               | Type    | Description                                                |
+| ------------------- | ------- | ---------------------------------------------------------- |
+| bk_module_id        | int     | Module ID                                                  |
+| bk_module_name      | string  | Module name                                                |
+| default             | int     | Indicates the module type                                  |
+| create_time         | string  | Creation time                                              |
+| bk_set_id           | int     | Cluster ID                                                 |
+| bk_bak_operator     | string  | Backup maintainer                                          |
+| bk_biz_id           | int     | Business ID                                                |
+| bk_module_type      | string  | Module type                                                |
+| bk_parent_id        | int     | Parent node ID                                             |
+| bk_supplier_account | string  | Developer account                                          |
+| last_time           | string  | Update time                                                |
+| host_apply_enabled  | bool    | Whether to enable automatic application of host properties |
+| operator            | string  | Main maintainer                                            |
+| service_category_id | integer | Service category ID                                        |
+| service_template_id | int     | Service template ID                                        |
+| set_template_id     | int     | Cluster template ID                                        |
+| bk_created_at       | string  | Creation time                                              |
+| bk_updated_at       | string  | Update time                                                |
+| bk_created_by       | string  | Creator                                                    |

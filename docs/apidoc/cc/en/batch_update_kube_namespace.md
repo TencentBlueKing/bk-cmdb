@@ -1,27 +1,27 @@
 ### Function Description
 
-Batch update namespace (version: v3.12.1+, auth: edit container namespace)
+Batch Update Namespace (Version: v3.12.1+, Permission: Edit Namespace Permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
 #### Interface Parameters
 
-| field     | type   | required | description                             |
-|-----------|--------|----------|-----------------------------------------|
-| bk_biz_id | int    | yes      | business id                             |
-| data      | object | yes      | contains the fields to be updated       |
-| ids       | array  | yes      | an array of id unique identifiers in cc |
+| Field     | Type   | Required | Description                   |
+| --------- | ------ | -------- | ----------------------------- |
+| bk_biz_id | int    | Yes      | Business ID                   |
+| data      | object | Yes      | Contains fields to be updated |
+| ids       | array  | Yes      | Unique IDs in cc              |
 
 #### data
 
-| field           | type  | required | description                                  |
-|-----------------|-------|----------|----------------------------------------------|
-| labels          | map   | no       | labels                                       |
-| resource_quotas | array | no       | namespace CPU and memory requests and limits |
+| Field           | Type  | Required | Description                                  |
+| --------------- | ----- | -------- | -------------------------------------------- |
+| labels          | map   | No       | Labels                                       |
+| resource_quotas | array | No       | Namespace CPU and memory requests and limits |
 
-### Example request parameters
+### Request Parameter Example
 
 ```json
 {
@@ -64,10 +64,9 @@ Batch update namespace (version: v3.12.1+, auth: edit container namespace)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -78,15 +77,15 @@ Batch update namespace (version: v3.12.1+, auth: edit container namespace)
 }
 ```
 
-### Return result parameter description
+### Response Parameters Description
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | request_chain_id                                                                          |
-| data       | object | The data returned by the request.                                                         |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

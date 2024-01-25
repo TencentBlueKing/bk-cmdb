@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Obtain the attribute information of the module instances under the specified service in batches according to the service ID and module instance ID list, plus the module attribute list you want to return (v3.8.6)
+Batch obtain the attribute information of specified module instances under a specified business based on the business ID and the list of module instance IDs, along with the desired module attribute list. (v3.8.6)
 
 ### Request Parameters
 
@@ -8,13 +8,13 @@ Obtain the attribute information of the module instances under the specified ser
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id  | int  |yes     | Business ID |
-| bk_ids  |  array  |yes     | Module instance ID list, i.e. bk_module_id list, can be filled in up to 500|
-| fields  |   array   | yes  | Module attribute list, which controls the fields in the module information that returns the result|
+| Field     | Type  | Required | Description                                                  |
+| --------- | ----- | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int   | Yes      | Business ID                                                  |
+| bk_ids    | array | Yes      | List of module instance IDs, i.e., bk_module_id list, up to 500 |
+| fields    | array | Yes      | Module attribute list, control which fields to return in the module information |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -38,7 +38,7 @@ Obtain the attribute information of the module instances under the specified ser
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -62,41 +62,62 @@ Obtain the attribute information of the module instances under the specified ser
         },
         {
             "bk_module_id": 58,
-            "bk_module_name": "recycle",
+            "bk_module_name": "Pending recycle",
             "create_time": "2020-05-12T21:03:37.238+08:00",
             "default": 3
         },
         {
             "bk_module_id": 57,
-            "bk_module_name": "fault",
+            "bk_module_name": "Faulty machine",
             "create_time": "2020-05-12T21:03:37.183+08:00",
             "default": 2
         },
         {
             "bk_module_id": 56,
-            "bk_module_name": "idle",
+            "bk_module_name": "Idle machine",
             "create_time": "2020-05-12T21:03:37.122+08:00",
             "default": 1
         }
     ]
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | array  | Data returned by the request                                 |
 
-#### Data description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-|bk_module_id | int |Module id|
-|bk_module_name | string |Module name|
-|default | int |Indicates the module type|
-|create_time | string |Settling time|
+#### data Explanation
+
+| Field               | Type    | Description                                                |
+| ------------------- | ------- | ---------------------------------------------------------- |
+| bk_module_id        | int     | Module ID                                                  |
+| bk_module_name      | string  | Module name                                                |
+| default             | int     | Indicates the module type                                  |
+| create_time         | string  | Creation time                                              |
+| bk_set_id           | int     | Cluster ID                                                 |
+| bk_bak_operator     | string  | Backup maintenance personnel                               |
+| bk_biz_id           | int     | Business ID                                                |
+| bk_module_type      | string  | Module type                                                |
+| bk_parent_id        | int     | Parent node ID                                             |
+| bk_supplier_account | string  | Developer account                                          |
+| last_time           | string  | Update time                                                |
+| host_apply_enabled  | bool    | Whether to enable automatic application of host properties |
+| operator            | string  | Main maintainer                                            |
+| service_category_id | integer | Service category ID                                        |
+| service_template_id | int     | Service template ID                                        |
+| set_template_id     | int     | Cluster template ID                                        |
+| bk_created_at       | string  | Creation time                                              |
+| bk_updated_at       | string  | Update time                                                |
+| bk_created_by       | string  | Creator                                                    |
+
+
+**Note: The returned value here only explains the built-in property fields. The rest of the returned values depend on the user's own defined property fields.**

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-General model instance relation query (v3.10.1+)
+General Model Instance Relationship Query (Version: v3.10.1+, Permission: Model Instance Query Permission)
 
 ### Request Parameters
 
@@ -8,40 +8,40 @@ General model instance relation query (v3.10.1+)
 
 #### Interface Parameters
 
-|    Field    | Type | Required | Description                                                                                                 |
-|------------|---------|------|-----------------------------------------------------------------------------------------------------------------|
-| bk_biz_id  | int |no| Business ID, which is required for mainline model query                                                                              |
-| bk_obj_id  | string  |yes| Model ID                                                                                                          |
-| conditions | object  |no| Combined query criteria: AND and OR are supported for combination, and can be nested up to 3 layers. Each layer supports 20 OR criteria at most. If this parameter is not specified, it means all matches (i.e., Contexts are null).|
-| fields     |  array   | no | Specify the fields to be returned. Fields that do not exist will be ignored. If not specified, all fields will be returned (returning all fields will affect performance, and it is recommended to return on demand).    |
-| page       |  object  |yes| Paging settings                                                                                                        |
+| Field      | Type   | Required | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id  | int    | No       | Business ID, required for mainline model query               |
+| bk_obj_id  | string | Yes      | Model ID                                                     |
+| conditions | object | No       | Combined query conditions, supports both AND and OR, can be nested, supports up to 3 layers, each OR condition supports up to 20, not specifying this parameter means matching all (i.e., conditions is null) |
+| fields     | array  | No       | Specify the fields to be returned. Fields that are not available will be ignored. If not specified, all fields will be returned (returning all fields will affect performance, it is recommended to return as needed) |
+| page       | object | Yes      | Pagination settings                                          |
 
 #### conditions
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  |yes     | Scope condition rule for selected business|
+| Field     | Type   | Required | Description                                     |
+| --------- | ------ | -------- | ----------------------------------------------- |
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Range condition rules for the selected business |
 
 #### conditions.rules
 
-|   Field   | Type| Required| Description                                                                                                     |
-|----------|--------|------|-----------------------------------------------------------------------------------------------------------|
-| field    |  string |yes| Condition field, optional value id, bk_inst_id, bk_obj_id, bk_Asst_inst_id, bk_Asst_obj_id, bk_obj_Asst_id, bk_Asst_id   |
-| operator | string |yes| Operator, optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between, etc|
-| value    |   -    |no| The expected value of the condition field. Different values correspond to different value formats. The array type value supports up to 500 elements                          |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Condition field, optional values are id, bk_inst_id, bk_obj_id, bk_asst_inst_id, bk_asst_obj_id, bk_obj_asst_id, bk_asst_id |
+| operator | string | Yes      | Operator, optional values are equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between, etc. |
+| value    | -      | No       | Expected value of the condition field, different operators correspond to different value formats, array type values support up to 500 elements |
 
-For details of assembly rules, please refer to https: //github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Detailed assembly rules can be referred to: [bk-cmdb query builder](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### page
 
-|  Field| Type| Required| Description                                                            |
-|-------|--------|------|------------------------------------------------------------------|
-| start | int    | yes | Record start position                                                     |
-| limit | int    | yes | Limit bars per page, Max. 500                                            |
-| sort  | string |no| Retrieve sort, following mongordb semantic format {KEY}:{ORDER}, sorted by creation time by default|
+| Field | Type   | Required | Description                                                  |
+| ----- | ------ | -------- | ------------------------------------------------------------ |
+| start | int    | Yes      | Record start position                                        |
+| limit | int    | Yes      | Number of records per page, default is 500                   |
+| sort  | string | No       | Retrieval sorting, follow the MongoDB semantic format {KEY}:{ORDER}, default sorting is by creation time |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -112,33 +112,31 @@ For details of assembly rules, please refer to https: //github.com/Tencent/bk-cm
 }
 ```
 
-### Return result parameter
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field| Type| Description                                |
-|------|-------|-------------------------------------|
-| info | array |map array format, which returns instance data that meets the condition|
+| Field | Type  | Description                                                  |
+| ----- | ----- | ------------------------------------------------------------ |
+| info  | array | Map array format, returning instance data that meets the conditions |
 
 #### info
 
-| Field| Type| Description                                |
-|------|-------|-------------------------------------|
-| bk_inst_id | int |Source model instance id|
-| bk_asst_inst_id|  int| Target model instance id|
-| bk_asst_obj_id|  string| Association relation target model id|
-| bk_asst_id|  string| Association type id|
-| bk_obj_asst_id|  string| Auto-generated model association id|
-
-
+| Field           | Type   | Description                                  |
+| --------------- | ------ | -------------------------------------------- |
+| bk_inst_id      | int    | Source model instance id                     |
+| bk_asst_inst_id | int    | Target model instance id                     |
+| bk_asst_obj_id  | string | Associated object model id                   |
+| bk_asst_id      | string | Associated type id                           |
+| bk_obj_asst_id  | string | Automatically generated model association id |

@@ -1,6 +1,6 @@
-### Function description
+### Function Description
 
-push the host identity to the machine and return the gse task id of this task，according to this task, id can go to gse to query the push result of the task.(v3.10.18+, for machines in business, business access is required, and for machines in host pool, host pool host editing permission is required)
+Push host identity information to the machines and return the task ID of this GSE task. You can use this GSE task ID to query the results of the push task in GSE. (v3.10.18+, for hosts in a business, business access permission is required, for hosts in a host pool, host pool host editing permission is required)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ push the host identity to the machine and return the gse task id of this task，
 
 #### Interface Parameters
 
-| field | type | required | description |
-| ---- | ---- | ---- | ---------- |
-| bk_host_ids | array | Yes | Array of host ids, the number cannot exceed 200 |
+| Field       | Type  | Required | Description                  |
+| ----------- | ----- | -------- | ---------------------------- |
+| bk_host_ids | array | Yes      | Array of host IDs, up to 200 |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -20,11 +20,11 @@ push the host identity to the machine and return the gse task id of this task，
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_host_ids": [1,2]
+    "bk_host_ids": [1, 2]
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -45,26 +45,29 @@ push the host identity to the machine and return the gse task id of this task，
 }
 ```
 
-### Return Result Parameter Description
+### Response Result Explanation
 
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------------ |
-| result | bool | Whether the request was successful or not. true:request successful; false request failed.
-| code | int | The error code. 0 means success, >0 means failure error.
-| message | string | The error message returned by the failed request.
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | The data returned by the request.
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
-#### data Field Description
-| name | type | description |
-| ------- | ------ | ------------------------------------------ |
-| task_id | string | task_id，this id is the task_id from the gse  |
+#### data
 
-#### host_infos Field Description
-| name    | type   | description                                       |
-| ------- | ------ | ------------------------------------------ |
-|  bk_host_id |  int  |host id |
-|  identification |  string  |the identity of the pushed host in the task |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| task_id    | string | Task ID, this ID is the task_id on the GSE side              |
+| host_infos | array  | Host information pushed in the task, only contains information of successfully pushed hosts |
+
+#### host_infos
+
+| Field           | Type   | Description                            |
+| -------------- | ------ | -------------------------------------- |
+| bk_host_id     | int    | Host ID                                |
+| identification | string | Identification of the host in the task |

@@ -1,19 +1,21 @@
 ### Function Description
 
-Batch delete namespace (version: v3.12.1+, auth: delete container namespace)
+Batch delete namespace (Version: v3.12.1+, Permission: Container namespace deletion permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
-#### Interface parameters
+#### Interface Parameters
 
-| field     | type  | required | description                                                     |
-|-----------|-------|----------|-----------------------------------------------------------------|
-| bk_biz_id | int   | Yes      | business id                                                     |
-| ids       | array | Yes      | the namespace ids array to be deleted, limited to 200 at a time |
+- Common Fields:
 
-### Example request parameters
+| Field     | Type  | Required | Description                                                  |
+| --------- | ----- | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int   | Yes      | Business ID                                                  |
+| ids       | array | Yes      | Unique identifiers of namespaces to be deleted in CC, with a limit of 200 at a time |
+
+### Request Parameter Example
 
 ```json
 {
@@ -28,10 +30,9 @@ Batch delete namespace (version: v3.12.1+, auth: delete container namespace)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -42,15 +43,15 @@ Batch delete namespace (version: v3.12.1+, auth: delete container namespace)
 }
 ```
 
-### Return result parameter description
+### Response Parameter Description
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | request_chain_id                                                                          |
-| data       | object | The data returned by the request.                                                         |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

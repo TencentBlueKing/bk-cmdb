@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the host under the service according to the service ID, and other filtering information can be attached, such as  set  id, module id, etc
+Query hosts under a business based on business ID, with optional additional filtering information such as cluster ID, module ID, etc. (Permission: Business access permission)
 
 ### Request Parameters
 
@@ -8,61 +8,61 @@ Query the host under the service according to the service ID, and other filterin
 
 #### Interface Parameters
 
-| Field                 | Type   | Required| Description                                                         |
-| -------------------- | ------ | ---- | ------------------------------------------------------------ |
-| page                 |  object   | yes | Query criteria                                                     |
-| bk_biz_id            |  int    | yes | Business ID                                            |
-| bk_set_ids           |  array  |no   | List of set IDs, up to 200 **bk_set_ids and set_cond can only use one of them** |
-| set_cond             |  array  |no   | Only one of the set query criteria **bk_set_ids and set_cond can be used**    |
-| bk_module_ids        |  array  |no   | List of module IDs, up to 500 **bk_module_ids and module_cond only one can be used**|
-| module_cond          |  array  |no   | Only one of the module query criteria **bk_module_ids and module_cond can be used**|
-| host_property_filter | object |no   | Host attribute combination query criteria                                         |
-| fields               |  array  |yes   | Host attribute list, which controls which fields are in the host that returns the result, can speed up interface requests and reduce network traffic transmission|
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| page                 | object | Yes      | Query conditions                                             |
+| bk_biz_id            | int    | Yes      | Business ID                                                  |
+| bk_set_ids           | array  | No       | Cluster ID list, up to 200 items **bk_set_ids and set_cond can only use one of them** |
+| set_cond             | array  | No       | Cluster query condition **bk_set_ids and set_cond can only use one of them** |
+| bk_module_ids        | array  | No       | Module ID list, up to 500 items **bk_module_ids and module_cond can only use one of them** |
+| module_cond          | array  | No       | Module query condition **bk_module_ids and module_cond can only use one of them** |
+| host_property_filter | object | No       | Combined query conditions for host properties                |
+| fields               | array  | Yes      | List of host properties, control which fields are returned in the result to speed up the interface request and reduce network traffic transmission |
 
 #### host_property_filter
-This parameter is a combination of host attribute field filtering rules used to search for hosts based on the host attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rule is a quadruple`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is a combination of filtering rules for host property fields, used to search for hosts based on host property fields. The combination supports both AND and OR, and can be nested, with a maximum of 2 levels. The filtering rule is a quadruple `field`, `operator`, `value`
 
+| Field     | Type   | Required | Description              |
+| --------- | ------ | -------- | ------------------------ |
+| condition | string | No       | Combined query condition |
+| rules     | array  | No       | Rules                    |
 
 #### rules
-| Name     | Type   | Required| Default value| Description   |  Description                                                  |
-| -------- | ------ | ---- | ------ | ------ | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|         Field name                                                     |
-| operator | string |yes   | None     | Operator| Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value    | -      |no   | None     | Operand| Different values correspond to different value formats                            |
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
+
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### set_cond
-| Field     | Type   | Required| Description                          |
-| -------- | ------ | ---- | ----------------------------- |
-| field    |  string |yes   | Field whose value is set           |
-| operator | string |yes   | Value is: $eq $ne               |
-| value    |  string |yes   | Field the value corresponding to the set field of the configuration |
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Value is the field of the cluster                            |
+| operator | string | Yes      | Optional values are $eq, $ne                                 |
+| value    | string | Yes      | The value corresponding to the field configured as the cluster field |
 
 #### module_cond
-| Field     | Type   | Required| Description                          |
-| -------- | ------ | ---- | ----------------------------- |
-| field    |  string |yes   | Field whose value is module              |
-| operator | string |yes   | Value is: $eq $ne               |
-| value    |  string |yes   | Field the value corresponding to the module field of the configuration|
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Value is the field of the module                             |
+| operator | string | Yes      | Optional values are $eq, $ne                                 |
+| value    | string | Yes      | The value corresponding to the field configured as the module field |
 
 #### page
 
-| Field| Type   | Required| Description                 |
-| ----- | ------ | ---- | -------------------- |
-| start | int    | yes | Record start position         |
-| limit | int    | yes | Limit bars per page, Max. 500|
-| sort  | string |no   | Sort field             |
+| Field | Type   | Required | Description                 |
+| ----- | ------ | -------- | --------------------------- |
+| start | int    | Yes      | Record start position       |
+| limit | int    | Yes      | Limit per page, maximum 500 |
+| sort  | string | No       | Sorting field               |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -70,7 +70,6 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "0",
     "page": {
         "start": 0,
         "limit": 10,
@@ -122,7 +121,7 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Example
+### Response Result Example
 
 ```json
 {
@@ -153,30 +152,62 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |
 
 #### data
 
-| Field| Type| Description         |
-| ----- | ----- | ------------ |
-| count | int   | Number of records     |
-| info  | array |Host actual data|
+| Field | Type  | Description       |
+| ----- | ----- | ----------------- |
+| count | int   | Number of records |
+| info  | array | Host actual data  |
 
 #### data.info
-| Name             | Type   |  Description                     |
-| ---------------- | ------ |  -------------------------------  |
-| bk_os_type       |  string |Operating system type| 1:Linux;2:Windows; 3:AIX         |
-| bk_mac           |  string |Intranet MAC address   |                                 |
-| bk_host_innerip  | string |Intranet IP        |                                 |
-| bk_host_id       |  int    | Host ID        |                                 |
-| bk_cloud_id      |  int    | Cloud area    |                                 |
+
+| Field                | Type   | Description                               |
+| -------------------- | ------ | ----------------------------------------- |
+| bk_host_name         | string | Host name                                 |
+| bk_host_innerip      | string | Intranet IP                               |
+| bk_host_id           | int    | Host ID                                   |
+| bk_cloud_id          | int    | Control area                              |
+| import_from          | string | Host import source, imported as 3 via API |
+| bk_asset_id          | string | Fixed asset number                        |
+| bk_cloud_inst_id     | string | Cloud host instance ID                    |
+| bk_cloud_vendor      | string | Cloud vendor                              |
+| bk_cloud_host_status | string | Cloud host status                         |
+| bk_comment           | string | Remarks                                   |
+| bk_cpu               | int    | CPU logical cores                         |
+| bk_cpu_architecture  | string | CPU architecture                          |
+| bk_cpu_module        | string | CPU model                                 |
+| bk_disk              | int    | Disk capacity (GB)                        |
+| bk_host_outerip      | string | Host public IP                            |
+| bk_host_innerip_v6   | string | Host intranet IPv6                        |
+| bk_host_outerip_v6   | string | Host public IPv6                          |
+| bk_isp_name          | string | ISP name                                  |
+| bk_mac               | string | Host intranet MAC address                 |
+| bk_mem               | int    | Host memory capacity (MB)                 |
+| bk_os_bit            | string | Operating system bit                      |
+| bk_os_name           | string | Operating system name                     |
+| bk_os_type           | string | Operating system type                     |
+| bk_os_version        | string | Operating system version                  |
+| bk_outer_mac         | string | Host public MAC address                   |
+| bk_province_name     | string | Province where the host is located        |
+| bk_service_term      | int    | Warranty period                           |
+| bk_sla               | string | SLA level                                 |
+| bk_sn                | string | Device SN                                 |
+| bk_state             | string | Current state                             |
+| bk_state_name        | string | Country where the host is located         |
+| operator             | string | Main maintainer                           |
+| bk_bak_operator      | string | Backup maintainer                         |
+
+**Note: The returned values here only explain the system's built-in property fields. Other returned values depend on the user's self-defined property fields.**

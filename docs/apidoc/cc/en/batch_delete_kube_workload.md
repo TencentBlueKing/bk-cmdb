@@ -1,20 +1,20 @@
 ### Function Description
 
-Batch delete workload (version: v3.12.1+, auth: delete container workload)
+Batch delete workloads (Version: v3.12.1+, Permission: Container workload deletion)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
 #### Interface Parameters
 
-| field     | type   | required | description                                                                                                                                                                                                      |
-|-----------|--------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | Yes      | business id                                                                                                                                                                                                      |
-| kind      | string | Yes      | workload type, the current built-in workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (put those that do not pass the workload but directly create Pod) |
-| ids       | array  | Yes      | the workload id array to be deleted, limited to 200 at a time                                                                                                                                                    |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| kind      | string | Yes      | Workload type. Currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (creating pods directly without using workloads) |
+| ids       | array  | Yes      | Array of unique identifiers of workloads in CC, with a limit of 200 at a time |
 
-### Example request parameters
+### Request Parameter Example
 
 ```json
 {
@@ -30,10 +30,9 @@ Batch delete workload (version: v3.12.1+, auth: delete container workload)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -44,15 +43,15 @@ Batch delete workload (version: v3.12.1+, auth: delete container workload)
 }
 ```
 
-### Return result parameter description
+### Response Parameter Description
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | request_chain_id                                                                          |
-| data       | object | The data returned by the request.                                                         |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

@@ -1,22 +1,23 @@
-### Functional description
+### Function Description
 
-transfer hosts from one business to another business. can only transfer hosts between resource sets(v3.10.27+, permissions: host transferred to other business)
+Transfer hosts across businesses. You can only transfer hosts from the source business's idle host pool cluster to the target business's idle host pool cluster (Version: v3.10.27+, Permission: Transfer hosts to another business)
 
 ### Request Parameters
 
-#### General Parameters
+#### Common Parameters
+
 {{ common_args_desc }}
 
 #### Interface Parameters
 
-| Field         | Type  | Required | Description                                       |
-| ------------- | ----- | -------- | ------------------------------------------------- |
-| src_bk_biz_id | int   | Yes      | the source business id these hosts belongs to     |
-| bk_host_id    | array | Yes      | to be transfered hosts id list, max length is 500 |
-| dst_bk_biz_id | int   | Yes      | the target business id                            |
-| bk_module_id  | int   | Yes      | the target module id，must be one of idle set's module |
+| Field         | Type  | Required | Description                                                  |
+| ------------- | ----- | -------- | ------------------------------------------------------------ |
+| src_bk_biz_id | int   | Yes      | The business ID to which the hosts to be transferred belong  |
+| bk_host_id    | array | Yes      | List of host IDs to be transferred, with a maximum length of 500 |
+| dst_bk_biz_id | int   | Yes      | The business ID to which the hosts will be transferred       |
+| bk_module_id  | int   | Yes      | The module ID to which the hosts will be transferred. This module ID must be under the idle host pool set. |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -46,14 +47,15 @@ transfer hosts from one business to another business. can only transfer hosts be
 }
 ```
 
-### Return result parameter description
+### Return Result Parameter Explanation
+
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | The success or failure of the request. true: the request was successful; false: the request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | data returned by the request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |

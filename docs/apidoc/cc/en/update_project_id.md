@@ -1,21 +1,20 @@
-### Function description
+### Function Description
 
-update the project id. This API is a dedicated interface for BCS to migrate project data. Do not use it on other platforms (version: v3.10.23+, permissions: update permissions of the project)
+Update Project ID. This interface is dedicated to BCS for project data migration. Other platforms should not use it (Version: v3.10.23+, Permission: Project Update Permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
+#### Interface Parameters
 
-#### Interface parameters
+| Field         | Type   | Required | Description                                                |
+| ------------- | ------ | -------- | ---------------------------------------------------------- |
+| id            | int    | Yes      | Unique identifier of the project in cc                     |
+| bk_project_id | string | Yes      | The final value that needs to be updated for bk_project_id |
 
-| field         | type   | required | description                                         |
-|---------------|--------|----------|-----------------------------------------------------|
-| id            | int    | yes      | The unique identification of the project's id in cc |
-| bk_project_id | string | yes      | The final value of bk_project_id to be updated      |
+### Request Parameters Example
 
-
-### Request parameter examples
 ```json
 {
     "bk_app_code":"esb_test",
@@ -27,7 +26,7 @@ update the project id. This API is a dedicated interface for BCS to migrate proj
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -40,14 +39,15 @@ update the project id. This API is a dedicated interface for BCS to migrate proj
 }
 ```
 
-### Return result parameter description
+### Response Parameters Description
+
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | The success or failure of the request. true: the request was successful; false: the request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | data returned by the request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

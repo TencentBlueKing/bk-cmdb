@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-General model instance quantity query (v3.10.1+)
+Universal model instance quantity query (v3.10.1+)
 
 ### Request Parameters
 
@@ -8,45 +8,45 @@ General model instance quantity query (v3.10.1+)
 
 #### Interface Parameters
 
-|    Field    |  Type  | Required | Description                                                                                                 |
-|------------|--------|------|-----------------------------------------------------------------------------------------------------------------|
-| bk_obj_id  | string |yes| Model ID                                                                                                          |
-| conditions | object |no| Combined query criteria: AND and OR are supported for combination, and can be nested up to 3 layers. Each layer supports 20 OR criteria at most. If this parameter is not specified, it means all matches (i.e., Contexts are null).|
-| time_condition      |  object     | no     | Query criteria for querying model instances by time|
+| Field          | Type   | Required | Description                                                  |
+| -------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id      | string | Yes      | Model ID                                                     |
+| conditions     | object | No       | Combined query conditions, supporting AND and OR, can be nested, up to 3 layers of nesting, up to 20 OR conditions per layer, not specifying this parameter means matching all (i.e., conditions is null) |
+| time_condition | object | No       | Query conditions for model instances by time                 |
 
 #### conditions
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  |yes     | Scope condition rule for selected business|
+| Field     | Type   | Required | Description                                     |
+| --------- | ------ | -------- | ----------------------------------------------- |
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Range conditions for the selected business rule |
 
 #### conditions.rules
 
-|   Field   | Type| Required| Description                                                                                                     |
-|----------|--------|------|-----------------------------------------------------------------------------------------------------------|
-| field    |  string |yes| Condition field                                                                                                  |
-| operator | string |yes| Operator, optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between, etc|
-| value    |   -    |no| The expected value of the condition field. Different values correspond to different value formats. The array type value supports a maximum of 500 elements                          |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Condition field                                              |
+| operator | string | Yes      | Operator, optional values equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between, etc. |
+| value    | -      | No       | Expected value of the condition field. Different operators correspond to different value formats. The maximum number of elements for an array-type value is 500 |
 
-For details of assembly rules, please refer to https: //github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+For detailed assembly rules, please refer to: [QueryBuilder](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### time_condition
 
-| Field   | Type   | Required| Description              |
-|-------|--------|-----|--------------------|
-| oper  | string |yes| Operator, currently only and is supported|
-| rules | array  |yes| Time query criteria         |
+| Field | Type   | Required | Description                              |
+| ----- | ------ | -------- | ---------------------------------------- |
+| oper  | string | Yes      | Operator. Currently only supports 'and'. |
+| rules | array  | Yes      | Time query conditions                    |
 
 #### time_condition.rules
 
-| Field   | Type   | Required| Description                             |
-|-------|--------|-----|----------------------------------|
-| field | string |yes| The value is the field name of the model                  |
-| start | string |yes| Start time in the format yyyy MM dd hh: mm:ss|
-| end   |  string |yes| End time in the format yyy MM dd hh: mm:ss|
+| Field | Type   | Required | Description                                              |
+| ----- | ------ | -------- | -------------------------------------------------------- |
+| field | string | Yes      | Field name, which should be the field name of the model. |
+| start | string | Yes      | Start time in the format yyyy-MM-dd hh:mm:ss             |
+| end   | string | Yes      | End time in the format yyyy-MM-dd hh:mm:ss               |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -93,13 +93,13 @@ For details of assembly rules, please refer to https: //github.com/Tencent/bk-cm
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
@@ -108,21 +108,21 @@ For details of assembly rules, please refer to https: //github.com/Tencent/bk-cm
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |
 
 #### data
 
-| Field|   Type| Description                       |
-|-------|---------|----------------------------|
-| count | int |Returns the number of instance data that meets the condition|
+| Field | Type | Description                                  |
+| ----- | ---- | -------------------------------------------- |
+| count | int  | Number of instances that meet the conditions |

@@ -1,33 +1,32 @@
-### Function description
+### Function Description
 
-batch delete project (version: v3.10.23+, permission: delete permission for project)
+Delete project (Version: v3.10.23+, Permission: Project deletion permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
-
 #### Interface Parameters
 
-| field | type | required | description                                                         |
-| ----------------------------|------------|----------|---------------------------------------------------------------------|
-| ids | array| yes      | an array of ids uniquely identified in cc, limited to 200 at a time |
+| Field | Type  | Required | Description                                                  |
+| ----- | ----- | -------- | ------------------------------------------------------------ |
+| ids   | array | Yes      | Array of unique identifiers of projects in CC, with a limit of 200 at a time |
 
-### Request parameter examples
+### Request Parameter Example
 
 ```json
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
+    "bk_app_code":"esb_test",
+    "bk_app_secret":"xxx",
+    "bk_username":"xxx",
+    "bk_token":"xxx",
     "ids":[
         1, 2, 3
     ]
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -39,14 +38,16 @@ batch delete project (version: v3.10.23+, permission: delete permission for proj
     "request_id": "87de106ab55549bfbcc46e47ecf5bcc7"
 }
 ```
-### Return result parameter description
+
+### Response Parameter Description
+
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | Whether the request was successful or not. true:request successful; false request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | The data returned by the request.|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

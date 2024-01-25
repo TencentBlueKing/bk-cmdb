@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-The Association between instances of the query model.
+Query the association relationships between models. (Permission: Model view permission)
 
 ### Request Parameters
 
@@ -8,23 +8,25 @@ The Association between instances of the query model.
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description|
-|----------------------|------------|--------|-----------------------------|
-| condition | string map     | yes | Query criteria|
+| Field     | Type       | Required | Description      |
+| --------- | ---------- | -------- | ---------------- |
+| condition | string map | Yes      | Query conditions |
+
+Condition Parameters
+
+| Field          | Type   | Required | Description                                                |
+| -------------- | ------ | -------- | ---------------------------------------------------------- |
+| bk_asst_id     | string | No       | Unique ID of the model's association type                  |
+| bk_obj_id      | string | No       | Source model ID, either this or bk_asst_obj_id is required |
+| bk_asst_obj_id | string | No       | Target model ID, either this or bk_obj_id is required      |
+
+**Note: Without the condition limit of bk_asst_id, if only the condition of bk_obj_id is filled, it will query all association relationships where the model acts as the source model; if only the condition of bk_asst_obj_id is filled, it will query all association relationships where the model acts as the target model**
 
 
-condition params
 
-| Field                 | Type      | Required	   | Description|
-|---------------------|------------|--------|-----------------------------|
-| bk_asst_id           |  string     |  yes  | Association type unique id of the model|
-| bk_obj_id           |  string     |  yes  | Source model id|
-| bk_asst_id           |  string     |  yes  | Target model id|
+### Request Parameter Example
 
-
-### Request Parameters Example
-
-``` json
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -38,7 +40,7 @@ condition params
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -62,32 +64,32 @@ condition params
         }
     ]
 }
-
 ```
 
+### Response Parameters Description
 
-### Return Result Parameters Description
 #### response
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field       | Type     | Description|
-|------------|----------|--------------|
-| id| int64| The identity id of the model Association|
-| bk_obj_asst_id|  string| The unique ID of the model Association.|
-| bk_obj_asst_name|  string| Alias for the Association. |
-| bk_asst_id|  string| Association type id|
-| bk_obj_id|  string| Source model id|
-| bk_asst_obj_id|  string| Target model id|
-| mapping|  string| The mapping relationship of the Association relationship instance between the source model and the target model can be one of the following [1: 1,1:n, n: n]|
-| on_delete|  string| The action to delete an Association is one [of none, delete_src, delete_dest], "none" does nothing, "delete_src" deletes an instance of the source model, and "delete_dest" deletes an instance of the target model.|
-| bk_supplier_account | string |Developer account number   |
-| ispre               |  bool         | True: preset field,false: Non-built-in field                             |
+| Field               | Type   | Description                                                  |
+| ------------------- | ------ | ------------------------------------------------------------ |
+| id                  | int64  | Identity ID of the model association relationship            |
+| bk_obj_asst_id      | string | Unique ID of the model association relationship.             |
+| bk_obj_asst_name    | string | Alias of the association relationship.                       |
+| bk_asst_id          | string | ID of the association type                                   |
+| bk_obj_id           | string | Source model ID                                              |
+| bk_asst_obj_id      | string | Target model ID                                              |
+| mapping             | string | Mapping relationship between the source model and the target model, one of [1:1, 1:n, n:n] |
+| on_delete           | string | Action when deleting the association relationship, one of [none, delete_src, delete_dest]. "none" does nothing, "delete_src" deletes instances of the source model, "delete_dest" deletes instances of the target model. |
+| bk_supplier_account | string | Developer account                                            |
+| ispre               | bool   | true: pre-installed field, false: non-built-in field         |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Modify Subscription
+Modify subscription
 
 ### Request Parameters
 
@@ -8,20 +8,19 @@ Modify Subscription
 
 #### Interface Parameters
 
-| Field                   | Type    | Required   | Description                                            |
-|------------------------|----------|--------|--------------------------------------------------|
-| bk_supplier_account    |  string   | yes  | Developer account number                                       |
-| subscription_id        |  int      | yes  | Subscription ID                                           |
-| subscription_name      |  string   | yes  | The name of the subscription                                       |
-| system_name            |  string   | yes  | The name of the system to which the event is subscribed                             |
-| callback_url           |  string   | yes  | Callback function                                         |
-| confirm_mode           |  string   | yes  | Event sending success verification mode, optional 1 HttpStatus, 2 regular|
-| confirm_pattern        |  string   | yes  | HttpStatus or regular for callback                       |
-| subscription_form      |  string   | yes  | Subscribed events, separated by commas                            |
-| timeout                |  int      | yes      | Send event timeout                                 |
+| Field               | Type   | Required | Description                                                  |
+| ------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_supplier_account | string | Yes      | Developer account                                            |
+| subscription_id     | int    | Yes      | Subscription ID                                              |
+| subscription_name   | string | Yes      | Name of the subscription                                     |
+| system_name         | string | Yes      | Name of the system for subscription events                   |
+| callback_url        | string | Yes      | Callback function                                            |
+| confirm_mode        | string | Yes      | Event sending success verification mode, optional 1-httpstatus,2-regular |
+| confirm_pattern     | string | Yes      | Callback httpstatus or regular expression                    |
+| subscription_form   | string | Yes      | Events for subscription, separated by commas                 |
+| timeout             | int    | Yes      | Timeout for sending events                                   |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -44,7 +43,6 @@ Modify Subscription
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -55,15 +53,15 @@ Modify Subscription
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
