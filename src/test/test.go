@@ -179,6 +179,9 @@ func GetDB() *local.Mongo {
 func DeleteAllBizs() {
 	ctx := context.Background()
 
+	DeleteAllHosts()
+	DeleteAllObjects()
+
 	biz := make([]metadata.BizInst, 0)
 	bizCond := mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBNIN: []string{"资源池", "蓝鲸"}}}
 	err := GetDB().Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).All(ctx, &biz)
@@ -187,9 +190,6 @@ func DeleteAllBizs() {
 	if len(biz) == 0 {
 		return
 	}
-
-	DeleteAllHosts()
-	DeleteAllObjects()
 
 	bizIDs := make([]int64, len(biz))
 	for i, b := range biz {
@@ -230,7 +230,12 @@ func DeleteAllHosts() {
 func DeleteAllObjects() {
 	ctx := context.Background()
 
-	delCond := mapstr.MapStr{"creator": mapstr.MapStr{common.BKDBNE: "cc_system"}}
+	innerObjs := []string{common.BKInnerObjIDBizSet, common.BKInnerObjIDApp, common.BKInnerObjIDSet,
+		common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
+		common.BKInnerObjIDProject, common.BKInnerObjIDSwitch, common.BKInnerObjIDRouter, common.BKInnerObjIDBlance,
+		common.BKInnerObjIDFirewall, common.BKInnerObjIDWeblogic, common.BKInnerObjIDTomcat, common.BKInnerObjIDApache}
+
+	delCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBNIN: innerObjs}}
 	objects := make([]metadata.Object, 0)
 	err := GetDB().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKObjIDField, common.BkSupplierAccount).
 		All(ctx, &objects)
