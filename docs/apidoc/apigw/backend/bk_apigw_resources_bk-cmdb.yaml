@@ -4448,10 +4448,10 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance:
     post:
-      operationId: post_findmany_proc_web_biz_set__service_instance
-      description: post_findmany_proc_web_biz_set__service_instance
+      operationId: post_findmany_proc_biz_set_service_instance
+      description: post_findmany_proc_biz_set_service_instance
       tags:
         - ui
       responses:
@@ -4464,7 +4464,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -4473,10 +4473,10 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host:
+  /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/with_host:
     post:
-      operationId: post_findmany_proc_web_biz_set__service_instance_with_host
-      description: post_findmany_proc_web_biz_set__service_instance_with_host
+      operationId: post_findmany_proc_biz_set_service_instance_with_host
+      description: post_findmany_proc_biz_set_service_instance_with_host
       tags:
         - ui
       responses:
@@ -4489,7 +4489,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v3/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host
+          path: /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/with_host
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -4990,31 +4990,6 @@ paths:
           type: HTTP
           method: get
           path: /api/v3/find/proc/service_template/{id}/detail
-          matchSubpath: false
-          timeout: 0
-          upstreams: {}
-          transformHeaders: {}
-        authConfig:
-          userVerifiedRequired: true
-        disabledStages: []
-        descriptionEn:
-  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates/with_statistics:
-    get:
-      operationId: get_findmany_topo_set_template__bk_biz_id__service_templates_with_statistics
-      description: get_findmany_topo_set_template__bk_biz_id__service_templates_with_statistics
-      tags:
-        - ui
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: get
-          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates/with_statistics
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -7340,56 +7315,6 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/findmany/proc/process_instance/name_ids
-          matchSubpath: false
-          timeout: 0
-          upstreams: {}
-          transformHeaders: {}
-        authConfig:
-          userVerifiedRequired: true
-        disabledStages: []
-        descriptionEn:
-  /api/v3/findmany/proc/web/service_instance:
-    post:
-      operationId: post_findmany_proc_web_service_instance
-      description: post_findmany_proc_web_service_instance
-      tags:
-        - ui
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: post
-          path: /api/v3/findmany/proc/web/service_instance
-          matchSubpath: false
-          timeout: 0
-          upstreams: {}
-          transformHeaders: {}
-        authConfig:
-          userVerifiedRequired: true
-        disabledStages: []
-        descriptionEn:
-  /api/v3/findmany/proc/web/service_instance/with_host:
-    post:
-      operationId: post_findmany_proc_web_service_instance_with_host
-      description: post_findmany_proc_web_service_instance_with_host
-      tags:
-        - ui
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: post
-          path: /api/v3/findmany/proc/web/service_instance/with_host
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -10089,6 +10014,31 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/count/{bk_obj_id}/instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v3/group/related/{kind}/resource/by_ids:
+    post:
+      operationId: group_related_resource_by_ids
+      description: group_related_resource_by_ids
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/group/related/{kind}/resource/by_ids
           matchSubpath: false
           timeout: 0
           upstreams: {}

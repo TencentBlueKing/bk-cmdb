@@ -175,6 +175,21 @@ func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, ch
 	s.urlFilterChan(req, resp, chain, s.discovery.CoreService(), rootPath, "/api/v3")
 }
 
+// WebCoreFilterChan core-service api filter chan for web-server
+func (s *service) WebCoreFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	// right now, only allow calling from web-server
+	if !httpheader.IsReqFromWeb(req.Request.Header) {
+		resp.WriteAsJson(&metadata.BaseResp{
+			Result: false,
+			Code:   common.CCErrCommAuthNotHavePermission,
+			ErrMsg: "not allowed to call this api",
+		})
+		return
+	}
+
+	s.urlFilterChan(req, resp, chain, s.discovery.CoreService(), rootPath, "/api/v3")
+}
+
 // urlFilterChan url filter chan, modify the request to dispatch it to specific sever
 func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
 	discovery discovery.Interface, prevRoot, root string) {

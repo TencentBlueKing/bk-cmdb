@@ -502,6 +502,8 @@ func (s *coreService) initCommon(web *restful.WebService) {
 		Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_count",
 		Handler: s.GetDistinctCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/group/related/{kind}/resource/by_ids",
+		Handler: s.GroupRelResByIDs})
 
 	utility.AddToRestfulWebService(web)
 }

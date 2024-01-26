@@ -92,6 +92,9 @@ func (s *Service) WebService() *gin.Engine {
 	// field template, only for ui
 	s.initFieldTemplate(ws)
 
+	// resource count, only for ui
+	s.initResourceCount(ws)
+
 	c := &capability.Capability{
 		Ws:     ws,
 		Engine: s.Engine,
