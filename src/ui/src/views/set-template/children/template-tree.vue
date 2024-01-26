@@ -87,6 +87,8 @@
   import { MENU_BUSINESS_HOST_AND_SERVICE, MENU_BUSINESS_SERVICE_TEMPLATE } from '@/dictionary/menu-symbol'
   import serviceTemplateSelector from './service-template-selector.vue'
   import serviceTemplateInfo from './service-template-info.vue'
+  import { rollReqByDataKey } from '@/service/utils'
+
   export default {
     components: {
       serviceTemplateSelector,
@@ -176,23 +178,35 @@
     methods: {
       async getSetTemplateServices() {
         try {
-          const data = await this.$store.dispatch('setTemplate/getSetTemplateServicesStatistics', {
+          const data = await this.$store.dispatch('setTemplate/getSetTemplateServices', {
             bizId: this.$store.getters['objectBiz/bizId'],
             setTemplateId: this.templateId,
             config: { requestId: this.request.topo }
           })
-          this.services = data.map(item => item.service_template)
-          this.servicesHost = data.map(item => ({
-            service_id: item.service_template.id,
-            host_count: item.host_count
-          }))
+          this.services = data || []
           this.originalServices = [...this.services]
+
+          if (this.services?.length) {
+            this.getServicesHost()
+          }
         } catch (e) {
           console.error(e)
           this.services = []
           this.originalServices = []
           this.servicesHost = []
         }
+      },
+      async getServicesHost() {
+        const serviceTemplateIds = this.services.map(item => item.id)
+        const hostCounts = await rollReqByDataKey(
+          `${window.API_HOST}count/set_template/${this.templateId}/service_template/hosts`,
+          { ids: serviceTemplateIds },
+          { limit: 100 }
+        )
+        this.servicesHost = this.services.map(serviceTemplate => ({
+          service_id: serviceTemplate.id,
+          host_count: hostCounts.find(item => item.id === serviceTemplate.id)?.count
+        }))
       },
       serviceExistHost(id) {
         const service = this.servicesHost.find(service => service.service_id === id)
