@@ -97,7 +97,7 @@
   import serviceInstanceTable from './service-instance-table.vue'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
-  import { historyLabelProxy, hostServiceInstancesProxy } from '../service-proxy'
+  import { historyLabelProxy, hostServiceInstancesProxy, topoPathProxy } from '../service-proxy'
 
   const defaultSearchSelect = () => ([
     {
@@ -189,7 +189,21 @@
           if (data.count && !data.info.length) {
             this.pagination.current -= 1
             this.getHostSeriveInstances()
+            return
           }
+
+          // 获取所属模块的拓扑路径
+          if (data.info?.length) {
+            const topopath = await topoPathProxy(this.info.biz[0].bk_biz_id, {
+              topo_nodes: data.info.map(item => ({ bk_obj_id: 'module', bk_inst_id: item.bk_module_id }))
+            })
+            // 将拓扑路径加入到服务列表数据中
+            data.info.forEach((item) => {
+              const moduleNode = topopath.nodes.find(node => node.topo_node.bk_inst_id === item.bk_module_id)
+              item.topo_path = moduleNode.topo_path
+            })
+          }
+
           this.checked = []
           this.isCheckAll = false
           this.isExpandAll = false
