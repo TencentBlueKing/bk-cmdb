@@ -15,20 +15,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package notice
 
 import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/thirdparty/apigw/notice"
-	"configcenter/src/web_server/app/options"
+	"context"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"configcenter/src/thirdparty/apigw"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Capability defines webserver server's capability
-type Capability struct {
-	Ws        *gin.Engine
-	Engine    *backbone.Engine
-	Config    *options.Config
-	NoticeCli notice.NoticeClientInterface
+type NoticeClientInterface interface {
+	GetCurAnn(ctx context.Context, h http.Header, params map[string]string) ([]CurAnnData, error)
+	RegApp(ctx context.Context, h http.Header) (*RegAppData, error)
+}
+
+type notice struct {
+	service *apigw.ApiGWSrv
+}
+
+// NewNoticeApiGWClient create notice api gateway client
+func NewNoticeApiGWClient(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (NoticeClientInterface, error) {
+	service, err := apigw.NewApiGW(config, reg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &notice{
+		service: service,
+	}, nil
 }

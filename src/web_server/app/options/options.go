@@ -87,6 +87,7 @@ type Config struct {
 	ConfigMap                 map[string]string
 	AuthCenter                AppInfo
 	DisableOperationStatistic bool
+	EnableNotification        bool
 }
 
 // AppInfo TODO

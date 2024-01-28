@@ -1265,6 +1265,8 @@ common:
       ch: /data/cmdb/cmdb_webserver/changelog_user/ch
       # 英文版版本日志存放路径
       en: /data/cmdb/cmdb_webserver/changelog_user/en
+    #是否启用消息通知
+    enableNotification: false
   ## monitor common config parameters
   ##
   monitor:

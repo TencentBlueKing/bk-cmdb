@@ -43,6 +43,7 @@ func (s *Service) Index(c *gin.Context) {
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
 		"cookieDomain":              s.Config.Site.BkDomain,
 		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
+		"enableNotification":        s.Config.EnableNotification,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
