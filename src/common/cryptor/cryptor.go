@@ -10,14 +10,33 @@
  * limitations under the License.
  */
 
-// Package cryptor TODO
+// Package cryptor defines a package that supports crypto related operations
 package cryptor
+
+import (
+	"errors"
+	"fmt"
+)
 
 // Cryptor 密码器
 type Cryptor interface {
 	// Encrypt 加密方法
-	Encrypt(plainText string) (string, error)
+	Encrypt(plaintext string) (string, error)
 
 	// Decrypt 解密方法
-	Decrypt(cryptedText string) (string, error)
+	Decrypt(ciphertext string) (string, error)
+}
+
+// NewCrypto new crypto by config
+func NewCrypto(conf *Config) (Cryptor, error) {
+	if conf == nil {
+		return nil, errors.New("crypto config is nil")
+	}
+
+	err := conf.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("validate crypto config failed, err: %v", err)
+	}
+
+	return NewBkCrypto(conf)
 }

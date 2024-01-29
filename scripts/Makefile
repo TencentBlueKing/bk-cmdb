@@ -50,6 +50,22 @@ GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "*/vendor/*")
 GOFILES_ALL = $(GOFILES)
 NOW=$(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
+# crypto related environment variables
+DISABLE_CRYPTO?=false
+TONGSUO_PATH?=$(BUILD_DIR)/tongsuo
+IS_STATIC?=false
+ifeq ($(DISABLE_CRYPTO),true)
+	GOBUILD_FLAGS:= -tags=disable_crypto $(GOBUILD_FLAGS)
+else
+	ifeq ($(IS_STATIC),true)
+		CGO_BUILD_FLAGS= CGO_ENABLED=1 CGO_CFLAGS="-I${TONGSUO_PATH}/include -Wno-deprecated-declarations" \
+		CGO_LDFLAGS="-L${TONGSUO_PATH}/lib -lssl -lcrypto -ldl -lpthread -static-libgcc -static-libstdc++"
+	else
+		CGO_BUILD_FLAGS= CGO_ENABLED=1 CGO_CFLAGS="-I${TONGSUO_PATH}/include -Wno-deprecated-declarations" \
+		CGO_LDFLAGS="-L${TONGSUO_PATH}/lib -lssl -lcrypto"
+	endif
+endif
+
 # available
 TARGET_NAME?=
 TARGET_PORT?=9999
@@ -64,5 +80,5 @@ ifeq ($(PREPARE_CFG),true)
 endif
 	@echo -e "\033[34mbuilding the target: $@... \033[0m"
 	@echo 
-	go build $(GOBUILD_FLAGS) -o $(BIN_PATH)/$(TARGET_NAME)/$(TARGET_NAME)
+	$(CGO_BUILD_FLAGS) go build $(GOBUILD_FLAGS) -o $(BIN_PATH)/$(TARGET_NAME)/$(TARGET_NAME)
 	@chmod +x  $(BIN_PATH)/$(TARGET_NAME)/$(TARGET_NAME)

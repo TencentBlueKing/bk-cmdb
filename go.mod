@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/FZambia/sentinel v1.1.0
 	github.com/Shopify/sarama v1.33.0
+	github.com/TencentBlueKing/crypto-golang-sdk v1.0.0
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/apache/thrift v0.12.0
