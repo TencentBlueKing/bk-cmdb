@@ -27,7 +27,6 @@ import (
 type AdminServerClientInterface interface {
 	ClearDatabase(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
-	Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) error
 	RunSyncDBIndex(ctx context.Context, h http.Header) error
 }
 

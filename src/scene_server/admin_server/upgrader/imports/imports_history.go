@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package main
+package imports
 
 import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/v3.0.8"
