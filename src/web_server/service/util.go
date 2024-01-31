@@ -119,12 +119,9 @@ func (s *Service) getUsernameFromEsb(c *gin.Context, userList []string) (map[str
 				<-pipeline
 			}()
 
-			lock.Lock()
 			params := make(map[string]string)
 			params["fields"] = "username,display_name"
 			params["exact_lookups"] = subStr
-			c.Request.Header = c.Request.Header.Clone()
-			lock.Unlock()
 
 			userListEsbSub, errNew := user.GetUserList(c, params)
 			if errNew != nil {

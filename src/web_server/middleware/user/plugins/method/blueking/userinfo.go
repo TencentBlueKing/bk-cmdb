@@ -202,7 +202,9 @@ func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadat
 	}
 
 	// try to use esb user list api
-	result, err := esb.EsbClient().User().ListUsers(c.Request.Context(), c.Request.Header, params)
+	// 因为在上层util.go中是并发调用此方法，而在下层ListUsers中有对Header进行写操作，此处需要复制一份副本传递给下层，防止并发的对同一个Header读写导致panic
+	h := c.Request.Header.Clone()
+	result, err := esb.EsbClient().User().ListUsers(c.Request.Context(), h, params)
 	if err != nil {
 		blog.Errorf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
 		return nil, &errors.RawErrorInfo{
