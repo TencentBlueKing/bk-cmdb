@@ -124,7 +124,7 @@ const actions = {
      * @return {promises} promises 对象
      */
   searchBusiness({ commit, state, dispatch, rootGetters }, { params, config }) {
-    return $http.post(`${window.API_HOST}biz/search/web`, params, config)
+    return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
   },
 
   searchBusinessById({ rootGetters }, { bizId, config }) {

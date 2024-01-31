@@ -37,7 +37,7 @@ const actions = {
     return $http.get(`find/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}`, config)
   },
   getSetTemplateServices({ commit }, { bizId, setTemplateId }, config) {
-    return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates`)
+    return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates`, config)
   },
   getSetInstancesWithStatus({ commit }, { bizId, params, config }) {
     return $http.post(`findmany/topo/set_template_sync_status/bk_biz_id/${bizId}`, params, config)
@@ -47,9 +47,6 @@ const actions = {
   },
   getSyncHistory({ commit }, { bizId, params, config }) {
     return $http.post(`findmany/topo/set_template_sync_history/bk_biz_id/${bizId}`, params, config)
-  },
-  getSetTemplateServicesStatistics({ commit }, { bizId, setTemplateId, config }) {
-    return $http.get(`findmany/topo/set_template/${setTemplateId}/bk_biz_id/${bizId}/service_templates/with_statistics`, config)
   },
   getSetTemplateStatus(context, { bizId, params, config }) {
     return $http.post(`findmany/topo/set_template/bk_biz_id/${bizId}/set_template_status`, params, config)
