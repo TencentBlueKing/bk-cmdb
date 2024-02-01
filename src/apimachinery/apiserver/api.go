@@ -736,6 +736,32 @@ func (a *apiServer) CountObjInstByFilters(ctx context.Context, h http.Header, ob
 	return resp.Data, nil
 }
 
+// GroupRelResByIDs group related resource by ids
+func (a *apiServer) GroupRelResByIDs(ctx context.Context, h http.Header, kind metadata.GroupByResKind,
+	opt *metadata.GroupRelResByIDsOption) (map[int64][]interface{}, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.GroupRelResByIDsResp)
+	subPath := "/group/related/%s/resource/by_ids"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath, kind).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
 // HealthCheck check if api-server is healthy.
 func (a *apiServer) HealthCheck() (bool, error) {
 	resp := new(metric.HealthResponse)

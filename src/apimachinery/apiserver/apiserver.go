@@ -122,6 +122,8 @@ type ApiServerClientInterface interface {
 		*metadata.CommonCountResult, errors.CCErrorCoder)
 	CountObjInstByFilters(ctx context.Context, h http.Header, objID string, filters []map[string]interface{}) (
 		[]int64, errors.CCErrorCoder)
+	GroupRelResByIDs(ctx context.Context, h http.Header, kind metadata.GroupByResKind,
+		opt *metadata.GroupRelResByIDsOption) (map[int64][]interface{}, errors.CCErrorCoder)
 
 	HealthCheck() (bool, error)
 }
