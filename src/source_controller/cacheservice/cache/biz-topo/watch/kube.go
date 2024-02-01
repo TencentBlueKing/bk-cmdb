@@ -32,8 +32,11 @@ import (
 	topolgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/topo"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
+	dbtypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	streamtypes "configcenter/src/storage/stream/types"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type kubeWatcher struct {
@@ -107,7 +110,7 @@ func (w *kubeWatcher) watchTopo(obj string, doBatch func(es []*streamtypes.Event
 			EventHandler: &streamtypes.BatchHandler{
 				DoBatch: doBatch,
 			},
-			BatchSize: 50,
+			BatchSize: 200,
 		}
 
 		if err = w.watcher.loopW.WithBatch(loopOptions); err != nil {
@@ -133,126 +136,206 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 			return false
 		}
 
+		ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 		rid := es[0].ID()
-		bizList := make([]int64, 0)
+
+		upsertCollOidMap := make(map[string][]primitive.ObjectID)
+		delCollOidMap := make(map[string][]string)
+
 		for idx := range es {
 			one := es[idx]
 
-			var bizID int64
-			var node *types.Node
-			var err error
-			var skip bool
 			switch one.OperationType {
-			case streamtypes.Insert:
-				bizID, node, skip, err = w.handleUpsertTopoLevelEvent(obj, one, rid)
 			case streamtypes.Update:
 				if _, exists := one.ChangeDesc.UpdatedFields[kubetypes.KubeNameField]; !exists {
 					// only handle topo node name changed events
 					continue
 				}
-				bizID, node, skip, err = w.handleUpsertTopoLevelEvent(obj, one, rid)
+				fallthrough
+			case streamtypes.Insert:
+				oid, err := primitive.ObjectIDFromHex(one.Oid)
+				if err != nil {
+					blog.Errorf("parse %s event oid %s failed, err: %v, rid: %s", one.Collection, one.Oid, err, rid)
+					continue
+				}
+				upsertCollOidMap[one.Collection] = append(upsertCollOidMap[one.Collection], oid)
 			case streamtypes.Delete:
-				bizID, node, skip, err = w.handleDeleteTopoLevelEvent(obj, one, rid)
+				delCollOidMap[one.Collection] = append(delCollOidMap[one.Collection], one.Oid)
 			default:
 				continue
 			}
 
-			if err != nil {
-				return true
-			}
-
-			if skip {
-				continue
-			}
-
-			blog.Infof("watch kube topology cache, received biz: %d, node: %d/%s, op-time: %s, %s event, rid: %s",
-				bizID, node.ID, node.Name, one.ClusterTime.String(), one.OperationType, rid)
-
-			bizList = append(bizList, bizID)
+			blog.Infof("watch kube topology cache, received coll: %s, oid: %s, op-time: %s, %s event, rid: %s",
+				one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, rid)
 		}
 
-		topolgc.AddRefreshBizTopoTask(types.KubeType, bizList, rid)
+		upsertBizIDMap, err := w.handleUpsertTopoLevelEvent(ctx, obj, upsertCollOidMap, rid)
+		if err != nil {
+			return true
+		}
+
+		delBizIDMap, err := w.handleDeleteTopoLevelEvent(ctx, obj, delCollOidMap, rid)
+		if err != nil {
+			return true
+		}
+
+		bizList := make([]int64, 0)
+		for _, one := range es {
+			collOidKey := genCollOidKey(one.Collection, one.Oid)
+			switch one.OperationType {
+			case streamtypes.Update:
+				if _, exists := one.ChangeDesc.UpdatedFields[kubetypes.KubeNameField]; !exists {
+					continue
+				}
+				fallthrough
+			case streamtypes.Insert:
+				bizID, exists := upsertBizIDMap[collOidKey]
+				if exists {
+					bizList = append(bizList, bizID)
+				}
+			case streamtypes.Delete:
+				bizID, exists := delBizIDMap[collOidKey]
+				if exists {
+					bizList = append(bizList, bizID)
+				}
+			default:
+				continue
+			}
+		}
+
+		topolgc.AddRefreshBizTopoTask(types.KubeType, util.IntArrayUnique(bizList), rid)
 		return false
 	}
 }
 
+func genCollOidKey(coll, oid string) string {
+	return coll + "-" + oid
+}
+
+type mapStrWithOid struct {
+	Oid    primitive.ObjectID     `bson:"_id"`
+	BizID  int64                  `bson:"bk_biz_id"`
+	ID     int64                  `bson:"id"`
+	Name   string                 `bson:"name"`
+	MapStr map[string]interface{} `bson:",inline"`
+}
+
+var kubeFieldsMap = map[string][]string{
+	kubetypes.KubeCluster: {kubetypes.BKBizIDField, kubetypes.BKIDField, kubetypes.KubeNameField},
+	kubetypes.KubeNamespace: {kubetypes.BKBizIDField, kubetypes.BKIDField, kubetypes.KubeNameField,
+		kubetypes.BKClusterIDFiled},
+	kubetypes.KubeWorkload: {kubetypes.BKBizIDField, kubetypes.BKIDField, kubetypes.KubeNameField,
+		kubetypes.BKNamespaceIDField},
+}
+
+// handleUpsertTopoLevelEvent handle upsert event for kube topo level
+func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string,
+	collOidMap map[string][]primitive.ObjectID, rid string) (map[string]int64, error) {
+
+	collOidBizMap := make(map[string]int64)
+	for coll, oids := range collOidMap {
+		// get upsert data from db
+		cond := mapstr.MapStr{
+			"_id": mapstr.MapStr{common.BKDBIN: oids},
+		}
+
+		docs := make([]mapStrWithOid, 0)
+
+		findOpt := dbtypes.NewFindOpts().SetWithObjectID(true)
+		err := mongodb.Client().Table(coll).Find(cond, findOpt).Fields(kubeFieldsMap[obj]...).All(ctx, &docs)
+		if err != nil {
+			blog.Errorf("get %s data by cond: %+v failed, err: %v, rid: %s", coll, cond, err, rid)
+			return nil, err
+		}
+
+		kind, err := getKubeNodeKind(obj, coll)
+		if err != nil {
+			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
+			continue
+		}
+
+		bizNodeMap := make(map[int64][]types.Node)
+		for _, doc := range docs {
+			// parse event to biz id and topo level node
+			bizID, node, err := kubeEventDocParserMap[obj](doc)
+			if err != nil {
+				blog.Errorf("parse %s doc %+v failed, err: %v, rid: %s", coll, doc, err, rid)
+				continue
+			}
+			node.Kind = kind
+			bizNodeMap[bizID] = append(bizNodeMap[bizID], node)
+			collOidBizMap[genCollOidKey(coll, doc.Oid.Hex())] = bizID
+		}
+
+		// delete kube topo level node info in redis
+		for bizID, nodes := range bizNodeMap {
+			// save kube topo level node info to redis
+			err = nodelgc.AddNodeInfoCache(w.cacheKey, bizID, kind, nodes, rid)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return collOidBizMap, nil
+}
+
 type commonDelArchive struct {
+	Oid    string            `bson:"oid"`
 	Detail commonResBaseInfo `bson:"detail"`
 }
 
 type commonResBaseInfo struct {
-	BizID int64  `bson:"bk_biz_id"`
-	ID    int64  `bson:"id"`
-	Name  string `bson:"name"`
-}
-
-// handleUpsertTopoLevelEvent handle upsert event for kube topo level
-func (w *kubeWatcher) handleUpsertTopoLevelEvent(obj string, event *streamtypes.Event, rid string) (int64, *types.Node,
-	bool, error) {
-
-	kind, err := getKubeNodeKind(obj, event.Collection)
-	if err != nil {
-		blog.Errorf("get %s kube node kind by coll failed, err: %v, rid: %s", obj, event.Collection, err, rid)
-		return 0, nil, true, nil
-	}
-
-	// parse event to biz id and topo level node
-	bizID, node, err := kubeEventDocParserMap[obj](event.Document)
-	if err != nil {
-		blog.Errorf("parse kube level %s upsert event %+v failed, err: %v, rid: %s", obj, event, err, rid)
-		return 0, nil, true, nil
-	}
-	node.Kind = kind
-
-	// save kube topo level node info to redis
-	err = nodelgc.AddNodeInfoCache(w.cacheKey, bizID, kind, []types.Node{*node}, rid)
-	if err != nil {
-		return 0, nil, false, err
-	}
-
-	return bizID, node, false, nil
+	BizID int64 `bson:"bk_biz_id"`
+	ID    int64 `bson:"id"`
 }
 
 // handleDeleteTopoLevelEvent handle delete event for kube topo level
-func (w *kubeWatcher) handleDeleteTopoLevelEvent(obj string, event *streamtypes.Event, rid string) (int64, *types.Node,
-	bool, error) {
+func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string, collOidMap map[string][]string,
+	rid string) (map[string]int64, error) {
 
-	// get deleted event detail from del archive table
-	cond := mapstr.MapStr{
-		"oid":  event.Oid,
-		"coll": event.Collection,
-	}
-
-	archive := new(commonDelArchive)
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("detail").One(ctx, archive)
-	if err != nil {
-		blog.Errorf("get del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
-		if mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("can not find %s %s %s del archive, skip, rid: %s", obj, event.Collection, event.Oid, rid)
-			return 0, nil, true, nil
+	collOidBizMap := make(map[string]int64)
+	for coll, oids := range collOidMap {
+		// get del archive data
+		cond := mapstr.MapStr{
+			"oid":  mapstr.MapStr{common.BKDBIN: oids},
+			"coll": coll,
 		}
-		return 0, nil, false, err
+
+		docs := make([]commonDelArchive, 0)
+		err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).All(ctx, &docs)
+		if err != nil {
+			blog.Errorf("get del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
+			return nil, err
+		}
+
+		kind, err := getKubeNodeKind(obj, coll)
+		if err != nil {
+			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
+			continue
+		}
+
+		bizIDMap := make(map[int64][]int64)
+		for _, doc := range docs {
+			bizIDMap[doc.Detail.BizID] = append(bizIDMap[doc.Detail.BizID], doc.Detail.ID)
+			collOidBizMap[genCollOidKey(coll, doc.Oid)] = doc.Detail.BizID
+		}
+
+		// delete kube topo level node info in redis
+		for bizID, ids := range bizIDMap {
+			err = nodelgc.DeleteNodeInfoCache(w.cacheKey, bizID, kind, ids, rid)
+			if err != nil {
+				return nil, err
+			}
+
+			err = nodelgc.DeleteNodeCountCache(w.cacheKey, bizID, kind, ids, rid)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	kind, err := getKubeNodeKind(obj, event.Collection)
-	if err != nil {
-		blog.Errorf("get %s kube node kind by coll failed, err: %v, rid: %s", obj, event.Collection, err, rid)
-		return 0, nil, true, nil
-	}
-
-	// delete kube topo level node info in redis
-	err = nodelgc.DeleteNodeInfoCache(w.cacheKey, archive.Detail.BizID, kind, []int64{archive.Detail.ID}, rid)
-	if err != nil {
-		return 0, nil, false, err
-	}
-
-	err = nodelgc.DeleteNodeCountCache(w.cacheKey, archive.Detail.BizID, kind, []int64{archive.Detail.ID}, rid)
-	if err != nil {
-		return 0, nil, false, err
-	}
-
-	return archive.Detail.BizID, &types.Node{ID: archive.Detail.ID, Name: archive.Detail.Name}, false, nil
+	return collOidBizMap, nil
 }
 
 func getKubeNodeKind(obj string, coll string) (string, error) {
@@ -270,47 +353,39 @@ func getKubeNodeKind(obj string, coll string) (string, error) {
 }
 
 // kubeEventDocParserMap is the mapping of kube level to kube event document parser
-var kubeEventDocParserMap = map[string]func(doc interface{}) (int64, *types.Node, error){
-	kubetypes.KubeCluster: func(doc interface{}) (int64, *types.Node, error) {
-		cluster, ok := doc.(*kubetypes.Cluster)
-		if !ok {
-			return 0, nil, fmt.Errorf("kube cluster event doc type %T is invalid", doc)
+var kubeEventDocParserMap = map[string]func(doc mapStrWithOid) (int64, types.Node, error){
+	kubetypes.KubeCluster: func(doc mapStrWithOid) (int64, types.Node, error) {
+		node := types.Node{
+			ID:   doc.ID,
+			Name: doc.Name,
 		}
-
-		node := &types.Node{
-			ID: cluster.ID,
-		}
-
-		if cluster.Name != nil {
-			node.Name = *cluster.Name
-		}
-		return cluster.BizID, node, nil
+		return doc.BizID, node, nil
 	},
-	kubetypes.KubeNamespace: func(doc interface{}) (int64, *types.Node, error) {
-		ns, ok := doc.(*kubetypes.Namespace)
-		if !ok {
-			return 0, nil, fmt.Errorf("kube cluster event doc type %T is invalid", doc)
+	kubetypes.KubeNamespace: func(doc mapStrWithOid) (int64, types.Node, error) {
+		parentID, err := util.GetInt64ByInterface(doc.MapStr[kubetypes.BKClusterIDFiled])
+		if err != nil {
+			return 0, types.Node{}, fmt.Errorf("parse kube workload parent id failed, err: %v", err)
 		}
 
-		node := &types.Node{
-			ID:       ns.ID,
-			Name:     ns.Name,
-			ParentID: ns.ClusterID,
+		node := types.Node{
+			ID:       doc.ID,
+			Name:     doc.Name,
+			ParentID: parentID,
 		}
-		return ns.BizID, node, nil
+		return doc.BizID, node, nil
 	},
-	kubetypes.KubeWorkload: func(doc interface{}) (int64, *types.Node, error) {
-		wl, ok := doc.(*kubetypes.WorkloadBase)
-		if !ok {
-			return 0, nil, fmt.Errorf("kube cluster event doc type %T is invalid", doc)
+	kubetypes.KubeWorkload: func(doc mapStrWithOid) (int64, types.Node, error) {
+		parentID, err := util.GetInt64ByInterface(doc.MapStr[kubetypes.BKNamespaceIDField])
+		if err != nil {
+			return 0, types.Node{}, fmt.Errorf("parse kube workload parent id failed, err: %v", err)
 		}
 
-		node := &types.Node{
-			ID:       wl.ID,
-			Name:     wl.Name,
-			ParentID: wl.NamespaceID,
+		node := types.Node{
+			ID:       doc.ID,
+			Name:     doc.Name,
+			ParentID: parentID,
 		}
-		return wl.BizID, node, nil
+		return doc.BizID, node, nil
 	},
 }
 
