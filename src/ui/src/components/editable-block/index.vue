@@ -62,6 +62,10 @@
     blurParse: {
       type: Boolean,
       default: true
+    },
+    isExact: {
+      type: Boolean,
+      default: true
     }
   })
 
@@ -133,6 +137,7 @@
   }
   // 处理数据高光
   const setHighlight = () => {
+    if (!props.isExact) return
     const content = searchContent.value
     const cursor = getCursorPosition(searchInput.value)
     pasteData.cursor = cursor
@@ -151,8 +156,8 @@
       }
     })
 
-    // 如果一个IP都没有并且blurParse为false，则内容不解析，保持原状
-    if (!(ipList.size || props.blurParse)) {
+    // 如果一个IP都没有并且blurParse为false || 不是精确搜索，则内容不解析，保持原状
+    if (!(ipList.size || props.blurParse) || !props.isExact) {
       return
     }
     const newHtml = Array.from(ipList).join('\n')

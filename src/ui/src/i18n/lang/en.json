@@ -1423,6 +1423,7 @@
     "收藏条件未完全解析提示": "Some attributes have expired, and the query will ignore some conditions",
     "应用收藏条件失败提示": "Failed to apply the collection condition, recommend to delete and recreate",
     "主机搜索提示语": "Please enter IP or BK-Net ID: IP, multiple IPs can be separated by line breaks",
+    "主机模糊搜索提示语": "Please enter an IP address. Multiple IP addresses can be separated by line breaks",
     "添加其他条件": "Add other conditions",
     "暂不支持不同管控区域的混合搜索": "Hybrid search of different BK-Net is not supported at the moment",
     "资源请求失败提示": "Failed to load resources, please refresh and retry",
@@ -1866,5 +1867,7 @@
     "无模型相关权限": "No model related permissions",
     "请前往权限中心申请相关权限": "Please go to the Permission Center to apply for relevant permissions",
     "我已申请": "Applied",
-    "初始化模型名称，不支持修改": "Initialize model name, modification is not supported"
+    "初始化模型名称，不支持修改": "Initialize model name, modification is not supported",
+    "未在输入的内容中检测到有效IP，请问您希望以哪种方式进行搜索？": "No valid IP was detected in the input, which way would you like to search?",
+    "IP模糊搜索": "IP fuzzy search"
 }
