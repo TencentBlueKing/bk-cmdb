@@ -23,8 +23,8 @@
     "1111022": "Failed to verify file content, %s",
     "1111023": "Failed to verify password, %s",
     "1111024": "Failed to create zip, %s",
-    "1111025":"Notification is not enabled",
-    "1111026":"Failed to get announcement list，%s",
+    "1111025": "Notification is not enabled",
+    "1111026": "Failed to get announcement list，%s",
 
-    "": ""	   
+    "": ""
 }

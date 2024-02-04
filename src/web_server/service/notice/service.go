@@ -66,6 +66,7 @@ func (s *service) GetCurAnn(c *gin.Context) {
 	for key, val := range c.Request.URL.Query() {
 		params[key] = val[0]
 	}
+	// todo 分层版本合入后，将platform参数设置放到GetCurAnn方法中
 	params["platform"] = s.config.Site.AppCode
 
 	rid := util.GetHTTPCCRequestID(c.Request.Header)
