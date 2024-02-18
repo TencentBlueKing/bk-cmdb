@@ -15,12 +15,15 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
 
@@ -72,12 +75,14 @@ func init() {
 	run.SustainSeconds = tConfig.SustainSeconds
 	run.TotalRequest = tConfig.TotalRequest
 
+	err := auth.EnableAuthFlag.Set("false")
+	Expect(err).Should(BeNil())
+
 	RegisterFailHandler(testutil.Fail)
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
 	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
-	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
@@ -151,7 +156,19 @@ func ClearDatabase() {
 	}
 	_ = db.Close()
 
-	err = adminClient.Migrate(context.Background(), "0", "community", GetHeader())
+	redisCfg := redis.Config{
+		Address:  tConfig.RedisCfg.RedisAddress,
+		Password: tConfig.RedisCfg.RedisPasswd,
+		Database: "0",
+	}
+	redisCli, err := redis.NewFromConfig(redisCfg)
+	Expect(err).To(BeNil())
+
+	updateCfg := &upgrader.Config{
+		OwnerID: common.BKDefaultOwnerID,
+		User:    common.CCSystemOperatorUserName,
+	}
+	_, _, err = upgrader.Upgrade(context.Background(), db, redisCli, nil, updateCfg)
 	Expect(err).Should(BeNil())
 	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())

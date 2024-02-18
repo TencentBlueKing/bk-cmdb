@@ -416,3 +416,40 @@ denyall配置为false的情况下，limit和ttl配置才能生效
               }
             ]
      ```
+
+### CMDB数据迁移
+
+- 使用方式
+     ```
+         ./tool_ctl migrate [flag] [command]
+     ```
+- 子命令
+     ```
+          db              migrate cmdb data in database
+          specify-version migrate cmdb data of specify version
+     ```
+- 命令行参数
+     ```
+          --config-path string   migrate tool config file path
+          --enable-auth          The auth center enable status, true for enabled, false for disabled (default true)
+          --commit-id string     the commit id of this tool（仅用于specify-version命令）
+          --version string       version to migrate（仅用于specify-version命令）
+     ```
+- 配置文件示例（参考admin-server的配置文件migrate.yaml）
+     ```
+          # 指定configures的路径，通过这个路径找到其他的配置文件
+          confs:
+            dir: /cmdb/admin_server/configures/
+     ```
+- 示例
+     ```
+         迁移DB数据操作示例:
+             ./tool_ctl migrate db --config-path=migrate.yaml --enable-auth=false 
+         回显样式:
+             {"data":"migrate success","pre_version":"y3.12.202311061800","current_version":"y3.12.202311061800","finished_migrations":[]}
+                
+          迁移指定版本的DB数据操作示例:
+             ./tool_ctl migrate specify-version --config-path=migrate.yaml --enable-auth=false --commit-id=759fa78e118faa92fc488fc90e5fffaa6617bd6d --version=y3.12.202311061800
+          回显样式:  
+             migrate success, version: y3.12.202311061800
+     ```
