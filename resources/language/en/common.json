@@ -14,5 +14,8 @@
     "app_not_exist": "Business does not exist",
     "import_row_int_error_str":"%d row %s",
     "property_group":"Field Group",
+    "property_group_name":"Field Group Name",
+    "property_index":"Field Index",
+    "val_type_integer":"Integer",
     "": ""
 }
