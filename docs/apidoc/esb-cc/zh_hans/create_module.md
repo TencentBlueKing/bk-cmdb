@@ -1,6 +1,6 @@
 ### 功能描述
 
-创建模块
+创建模块(权限：业务拓扑新建权限)
 
 ### 请求参数
 
@@ -17,11 +17,19 @@
 
 #### data
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_parent_id      | int     | 是     | 父实例节点的ID，当前实例节点的上一级实例节点，在拓扑结构中对于module一般指的是set的bk_set_id |
-| bk_module_name    | string  | 是     | 模块名 |
+| 字段      |  类型      | 必选 |  描述      |
+|-----------|------------|----|------------|
+| bk_parent_id      | int     | 是  | 父实例节点的ID，当前实例节点的上一级实例节点，在拓扑结构中对于module一般指的是set的bk_set_id |
+| bk_module_name    | string  | 是  | 模块名 |
+| bk_module_type    | string  | 否  | 模块类型 |
+| operator    | string  | 否  | 主要维护人 |
+| bk_bak_operator    | string  | 否  | 备份维护人 |
+| bk_created_at      | string | 否     | 创建时间                          |
+| bk_updated_at      | string | 否     | 更新时间                          |
+| bk_created_by      | string | 否     | 创建人                           |
+| bk_updated_by      | string | 否     | 更新人                           |
 
+**注意：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段，参数值的设置参考模块的属性字段配置**
 ### 请求参数示例
 
 ```python
@@ -31,11 +39,18 @@
     "bk_username": "xxx",
     "bk_token": "xxx",
     "bk_supplier_account": "123456789",
-    "bk_biz_id": 1,
-    "bk_set_id": 10,
+    "bk_biz_id": 3,
+    "bk_set_id": 4,
     "data": {
-        "bk_parent_id": 10,
-        "bk_module_name": "test"
+        "bk_parent_id": 4,
+        "bk_module_name": "redis-1",
+        "bk_module_type": "2",
+        "operator": "admin",
+        "bk_bak_operator": "admin",
+        "bk_created_at": "",
+        "bk_updated_at": "",
+        "bk_created_by": "admin",
+        "bk_updated_by": "admin"
     }
 }
 ```
@@ -47,27 +62,30 @@
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
-        "bk_bak_operator": null,
-        "bk_biz_id": 1,
-        "bk_module_id": 37825,
-        "bk_module_name": "test",
-        "bk_module_type": "1",
-        "bk_parent_id": 10,
-        "bk_set_id": 10,
+        "bk_bak_operator": "admin",
+        "bk_biz_id": 3,
+        "bk_created_at": "2023-11-14T17:11:21.225+08:00",
+        "bk_created_by": "admin",
+        "bk_module_id": 20,
+        "bk_module_name": "redis-1",
+        "bk_module_type": "2",
+        "bk_parent_id": 4,
+        "bk_set_id": 4,
         "bk_supplier_account": "0",
-        "create_time": "2022-02-22T20:25:19.049+08:00",
+        "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
+        "create_time": "2023-11-14T17:11:21.225+08:00",
         "default": 0,
         "host_apply_enabled": false,
-        "last_time": "2022-02-22T20:25:19.049+08:00",
-        "operator": null,
+        "last_time": "2023-11-14T17:11:21.225+08:00",
+        "operator": "admin",
         "service_category_id": 2,
         "service_template_id": 0,
         "set_template_id": 0
-    }
+    },
 }
 ```
 ### 返回结果参数说明
@@ -102,3 +120,6 @@
 |service_category_id|integer|服务分类ID|
 |service_template_id|int|服务模版ID|
 | set_template_id      | int  | 集群模板ID     |
+| bk_created_at      | string |  创建时间        |
+| bk_updated_at      | string |  更新时间        |
+| bk_created_by      | string |  创建人         |

@@ -53,9 +53,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		SrvInfo:      svrInfo,
 	}
+	if op.DeploymentMethod == common.BluekingDeployment {
+		input.Disable = true
+	}
+
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -147,6 +151,8 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	default:
 		service.ApiCli = engine.CoreAPI.ApiServer()
 	}
+	service.Logics.ApiCli = service.ApiCli
+
 	return service, nil
 }
 
@@ -179,7 +185,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.PaasDomainUrl, _ = cc.String("webServer.site.paasDomainUrl")
 	w.Config.Site.BkDomain, _ = cc.String("webServer.site.bkDomain")
 	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
-	w.Config.Site.BkDesktopUrl, _ = cc.String("webServer.site.bkDesktopUrl")
+	w.Config.Site.BkComponentApiUrl, _ = cc.String("webServer.site.bkComponentApiUrl")
 
 	w.Config.Session.Name, _ = cc.String("webServer.session.name")
 	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")

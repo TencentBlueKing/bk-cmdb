@@ -1,6 +1,6 @@
 ### 描述
 
-根据业务ID查询业务下的主机，可附带其他的过滤信息，如集群id,模块id等
+根据业务ID查询业务下的主机，可附带其他的过滤信息，如集群id,模块id等(权限：业务访问权限)
 
 ### 输入参数
 
@@ -28,10 +28,10 @@
 #### rules
 
 | 参数名称     | 参数类型   | 必选 | 描述                                                                                                |
-|----------|--------|----|---------------------------------------------------------------------------------------------------| 
+|----------|--------|----|---------------------------------------------------------------------------------------------------|
 | field    | string | 是  | 字段名                                                                                               |
-| operator | string | 是  | 操作符，可选值：equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | 否  | 操作数，不同的operator对应不同的value格式                                                                       |
+| operator | string | 是  | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否  | 操作数,不同的operator对应不同的value格式                                                                       |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
 
@@ -63,57 +63,54 @@
 
 ```json
 {
-  "page": {
-    "start": 0,
-    "limit": 10,
-    "sort": "bk_host_id"
-  },
-  "set_cond": [
-    {
-      "field": "bk_set_name",
-      "operator": "$eq",
-      "value": "set1"
-    }
-  ],
-  "bk_biz_id": 3,
-  "bk_module_ids": [
-    54,
-    56
-  ],
-  "fields": [
-    "bk_host_id",
-    "bk_cloud_id",
-    "bk_host_innerip",
-    "bk_os_type",
-    "bk_mac"
-  ],
-  "host_property_filter": {
-    "condition": "AND",
-    "rules": [
-      {
-        "field": "bk_host_innerip",
-        "operator": "equal",
-        "value": "127.0.0.1"
-      },
-      {
-        "condition": "OR",
+    "page": {
+        "start": 0,
+        "limit": 10,
+        "sort": "bk_host_id"
+    },
+    "set_cond": [
+        {
+            "field": "bk_set_name",
+            "operator": "$eq",
+            "value": "set1"
+        }
+    ],
+    "bk_biz_id": 3,
+    "bk_module_ids": [54,56],
+    "fields": [
+        "bk_host_id",
+        "bk_cloud_id",
+        "bk_host_innerip",
+        "bk_os_type",
+        "bk_mac"
+    ],
+    "host_property_filter": {
+        "condition": "AND",
         "rules": [
-          {
-            "field": "bk_os_type",
-            "operator": "not_in",
-            "value": [
-              "3"
-            ]
-          },
-          {
-            "field": "bk_cloud_id",
-            "operator": "equal",
-            "value": 0
-          }
+            {
+                "field": "bk_host_innerip",
+                "operator": "equal",
+                "value": "127.0.0.1"
+            },
+            {
+                "condition": "OR",
+                "rules": [
+                    {
+                        "field": "bk_os_type",
+                        "operator": "not_in",
+                        "value": [
+                            "3"
+                        ]
+                    },
+                    {
+                        "field": "bk_cloud_id",
+                        "operator": "equal",
+                        "value": 0
+                    }
+                ]
+            }
         ]
-      }
-    ]
-  }
+    }
 }
 ```
 
@@ -149,8 +146,6 @@
 
 ### 响应参数说明
 
-#### response
-
 | 参数名称       | 参数类型   | 描述                         |
 |------------|--------|----------------------------|
 | result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
@@ -168,10 +163,40 @@
 
 #### data.info
 
-| 参数名称            | 参数类型   | 描述      |
-|-----------------|--------|---------| 
-| bk_os_type      | string | 操作系统类型  | 
-| bk_mac          | string | 内网MAC地址 | 
-| bk_host_innerip | string | 内网IP    | 
-| bk_host_id      | int    | 主机ID    | 
-| bk_cloud_id     | int    | 云区域     |
+| 参数名称                 | 参数类型   | 描述                |
+|----------------------|--------|-------------------|
+| bk_host_name         | string | 主机名               |
+| bk_host_innerip      | string | 内网IP              |
+| bk_host_id           | int    | 主机ID              |
+| bk_cloud_id          | int    | 管控区域              |
+| import_from          | string | 主机导入来源,以api方式导入为3 |
+| bk_asset_id          | string | 固资编号              |
+| bk_cloud_inst_id     | string | 云主机实例ID           |
+| bk_cloud_vendor      | string | 云厂商               |
+| bk_cloud_host_status | string | 云主机状态             |
+| bk_comment           | string | 备注                |
+| bk_cpu               | int    | CPU逻辑核心数          |
+| bk_cpu_architecture  | string | CPU架构             |
+| bk_cpu_module        | string | CPU型号             |
+| bk_disk              | int    | 磁盘容量（GB）          |
+| bk_host_outerip      | string | 主机外网IP            |
+| bk_host_innerip_v6   | string | 主机内网IPv6          |
+| bk_host_outerip_v6   | string | 主机外网IPv6          |
+| bk_isp_name          | string | 所属运营商             |
+| bk_mac               | string | 主机内网MAC地址         |
+| bk_mem               | int    | 主机名内存容量（MB）       |
+| bk_os_bit            | string | 操作系统位数            |
+| bk_os_name           | string | 操作系统名称            |
+| bk_os_type           | string | 操作系统类型            |
+| bk_os_version        | string | 操作系统版本            |
+| bk_outer_mac         | string | 主机外网MAC地址         |
+| bk_province_name     | string | 所在省份              |
+| bk_service_term      | int    | 质保年限              |
+| bk_sla               | string | SLA级别             |
+| bk_sn                | string | 设备SN              |
+| bk_state             | string | 当前状态              |
+| bk_state_name        | string | 所在国家              |
+| operator             | string | 主要维护人             |
+| bk_bak_operator      | string | 备份维护人             |
+
+**注意：此处的返回值仅对系统内置的属性字段做了说明，其余返回值取决于用户自己定义的属性字段**

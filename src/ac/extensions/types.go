@@ -60,7 +60,7 @@ type InstanceSimplify struct {
 func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ type BusinessSimplify struct {
 func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(business, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -162,7 +162,7 @@ type SetSimplify struct {
 func (is *SetSimplify) Parse(data mapstr.MapStr) (*SetSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -180,7 +180,7 @@ type ModuleSimplify struct {
 func (is *ModuleSimplify) Parse(data mapstr.MapStr) (*ModuleSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -203,7 +203,7 @@ type HostSimplify struct {
 func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -220,7 +220,7 @@ type PlatSimplify struct {
 func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 
@@ -237,7 +237,7 @@ type ProcessSimplify struct {
 // Parse TODO
 func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
 	err := mapstr.SetValueToStructByTags(is, data)
-	if err !=nil  {
+	if err != nil {
 		return nil, err
 	}
 

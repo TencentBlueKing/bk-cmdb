@@ -12,63 +12,65 @@
 
 <template>
   <div class="search-bar" v-click-outside="handleClickOutside">
-    <div class="input-bar">
-      <bk-input class="search-input"
-        ref="searchInput"
-        autocomplete="off"
-        maxlength="1024"
-        clearable
-        :placeholder="$t('请输入关键字，点击或回车搜索')"
-        v-model.trim="keyword"
-        @focus="handleFocus"
-        @keydown="handleKeydown"
-        @input="handleInput"
-        @enter="handleSearch"
-        @clear="handleClear">
-      </bk-input>
-      <bk-button theme="primary" class="search-btn" v-test-id="'search'"
-        @click="handleSearch">
-        <i class="bk-icon icon-search"></i>
-        {{$t('搜索')}}
-      </bk-button>
-      <advanced-setting-popover class="advanced-link" />
-    </div>
-
-    <advanced-setting-result class="advanced-result" />
-
-    <div class="search-popover suggestion" v-show="showSuggestion">
-      <ul class="list suggestion-list">
-        <li v-for="(item, index) in suggestion" :key="index"
-          :title="item.title"
-          :class="['item', { 'selected': selectResultIndex === index }]"
-          @click="item.linkTo(item.source)">
-          <span class="name">{{item.title}}</span>
-          <span class="type">({{item.typeName}})</span>
-          <i class="tag-disabled" v-if="item.type === 'biz' && item.source.bk_data_status === 'disabled'">
-            {{$t('已归档')}}
-          </i>
-        </li>
-      </ul>
-    </div>
-
-    <div class="search-popover history" v-show="showHistory">
-      <div class="history-title clearfix">
-        <span class="fl">{{$t('搜索历史')}}</span>
-        <bk-button :text="true" class="clear-btn fr" @click="handlClearHistory">
-          <i class="bk-icon icon-cc-delete"></i>
-          {{$t('清空')}}
+    <cmdb-auth-mask v-bind="getAuthMaskProps()">
+      <div class="input-bar">
+        <bk-input class="search-input"
+          ref="searchInput"
+          autocomplete="off"
+          maxlength="1024"
+          clearable
+          :placeholder="$t('请输入关键字，点击或回车搜索')"
+          v-model.trim="keyword"
+          @focus="handleFocus"
+          @keydown="handleKeydown"
+          @input="handleInput"
+          @enter="handleSearch"
+          @clear="handleClear">
+        </bk-input>
+        <bk-button theme="primary" class="search-btn" v-test-id="'search'"
+          @click="handleSearch">
+          <i class="bk-icon icon-search"></i>
+          {{$t('搜索')}}
         </bk-button>
+        <advanced-setting-popover class="advanced-link" />
       </div>
-      <ul class="list history-list">
-        <li v-for="(history, index) in historyList"
-          ref="historyItem"
-          :key="index"
-          :class="['item', { 'selected': selectIndex === index }]"
-          @click="handleClickHistory(history)">
-          {{history}}
-        </li>
-      </ul>
-    </div>
+
+      <advanced-setting-result class="advanced-result" />
+
+      <div class="search-popover suggestion" v-show="showSuggestion">
+        <ul class="list suggestion-list">
+          <li v-for="(item, index) in suggestion" :key="index"
+            :title="item.title"
+            :class="['item', { 'selected': selectResultIndex === index }]"
+            @click="item.linkTo(item.source)">
+            <span class="name">{{item.title}}</span>
+            <span class="type">({{item.typeName}})</span>
+            <i class="tag-disabled" v-if="item.type === 'biz' && item.source.bk_data_status === 'disabled'">
+              {{$t('已归档')}}
+            </i>
+          </li>
+        </ul>
+      </div>
+
+      <div class="search-popover history" v-show="showHistory">
+        <div class="history-title clearfix">
+          <span class="fl">{{$t('搜索历史')}}</span>
+          <bk-button :text="true" class="clear-btn fr" @click="handlClearHistory">
+            <i class="bk-icon icon-cc-delete"></i>
+            {{$t('清空')}}
+          </bk-button>
+        </div>
+        <ul class="list history-list">
+          <li v-for="(history, index) in historyList"
+            ref="historyItem"
+            :key="index"
+            :class="['item', { 'selected': selectIndex === index }]"
+            @click="handleClickHistory(history)">
+            {{history}}
+          </li>
+        </ul>
+      </div>
+    </cmdb-auth-mask>
   </div>
 </template>
 
@@ -79,6 +81,7 @@
   import { $bkPopover } from '@/magicbox/index.js'
   import routerActions from '@/router/actions'
   import RouterQuery from '@/router/query'
+  import { OPERATION } from '@/dictionary/iam-auth'
   import useResult from './use-result.js'
   import useSuggestion from './use-suggestion'
   import useHistory from './use-history'
@@ -106,6 +109,15 @@
       let maxLengthPopover = null
 
       const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({ route, keyword })
+
+      const getAuthMaskProps = () => {
+        const auth = { type: OPERATION.R_FULLTEXT_SEARCH }
+        return {
+          auth,
+          tag: 'div',
+          authorized: store.getters['auth/isViewAuthed'](auth)
+        }
+      }
 
       const handleFocus = () => {
         focusWithin.value = true
@@ -203,6 +215,9 @@
         selectIndex,
         showHistory,
         historyList,
+
+        getAuthMaskProps,
+
         handleKeydown,
         handleClickHistory,
 

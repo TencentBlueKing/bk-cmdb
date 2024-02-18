@@ -21,6 +21,7 @@ import (
 	fieldtmpl "configcenter/src/apimachinery/apiserver/field_template"
 	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/transaction"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -35,6 +36,7 @@ type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
 	ModelQuote() modelquote.Interface
 	FieldTemplate() fieldtmpl.Interface
+	Txn() transaction.Interface
 
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response,
 		err error)
@@ -115,6 +117,15 @@ type ApiServerClientInterface interface {
 
 	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
 		err error)
+
+	CountObjectInstances(ctx context.Context, h http.Header, objID string, input *metadata.CommonCountFilter) (
+		*metadata.CommonCountResult, errors.CCErrorCoder)
+	CountObjInstByFilters(ctx context.Context, h http.Header, objID string, filters []map[string]interface{}) (
+		[]int64, errors.CCErrorCoder)
+	GroupRelResByIDs(ctx context.Context, h http.Header, kind metadata.GroupByResKind,
+		opt *metadata.GroupRelResByIDsOption) (map[int64][]interface{}, errors.CCErrorCoder)
+
+	HealthCheck() (bool, error)
 }
 
 // NewApiServerClientInterface TODO
@@ -144,4 +155,9 @@ func (a *apiServer) ModelQuote() modelquote.Interface {
 // FieldTemplate return the field template client
 func (a *apiServer) FieldTemplate() fieldtmpl.Interface {
 	return fieldtmpl.New(a.client)
+}
+
+// Txn returns transaction client
+func (a *apiServer) Txn() transaction.Interface {
+	return transaction.NewTxn(a.client)
 }

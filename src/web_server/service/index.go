@@ -42,7 +42,8 @@ func (s *Service) Index(c *gin.Context) {
 		"helpDocUrl":                s.Config.Site.HelpDocUrl,
 		"disableOperationStatistic": s.Config.DisableOperationStatistic,
 		"cookieDomain":              s.Config.Site.BkDomain,
-		"bkDesktopUrl":              s.Config.Site.BkDesktopUrl,
+		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
+		"publicPath":                getPublicPath(s.Config.Site.DomainUrl),
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
@@ -51,4 +52,27 @@ func (s *Service) Index(c *gin.Context) {
 	}
 
 	c.HTML(200, "index.html", pageConf)
+}
+
+// getPublicPath 获取前端需要的资源目录
+// 如：http://127.0.0.1/test  -> /test/
+func getPublicPath(site string) string {
+	site = strings.TrimPrefix(site, "http://")
+	site = strings.TrimPrefix(site, "https://")
+
+	segments := strings.Split(site, "/")
+	publicPath := strings.Join(segments[1:], "/")
+	if publicPath == "" {
+		return "/"
+	}
+
+	if !strings.HasPrefix(publicPath, "/") {
+		publicPath = "/" + publicPath
+	}
+
+	if !strings.HasSuffix(publicPath, "/") {
+		publicPath = publicPath + "/"
+	}
+
+	return publicPath
 }

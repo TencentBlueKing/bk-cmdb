@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/thirdparty/monitor/config"
@@ -134,12 +135,27 @@ func InitMonitor() error {
 		return errors.New("config monitor.pluginName is not found")
 	}
 
-	dataID, err := cc.Int64("monitor.dataID")
-	if err != nil {
-		blog.Errorf("init monitor failed, err: %v", err)
-		return errors.New("config monitor.dataID is not found")
+	switch config.MonitorCfg.PluginName {
+	case common.BKBluekingMonitorPlugin:
+		dataID, err := cc.Int64("monitor.dataID")
+		if err != nil {
+			blog.Errorf("get monitor.dataID config failed, err: %v", err)
+			return errors.New("config monitor.dataID is not found")
+		}
+		config.MonitorCfg.DataID = dataID
+
+		config.MonitorCfg.BkMonitorReportUrl, err = cc.String("monitor.bkMonitorReportUrl")
+		if err != nil {
+			blog.Errorf("get monitor.bkMonitorReportUrl config failed, err: %v", err)
+			return errors.New("config monitor.bkMonitorReportUrl is not found")
+		}
+
+		config.MonitorCfg.AccessToken, err = cc.String("monitor.accessToken")
+		if err != nil {
+			blog.Errorf("get monitor.accessToken config failed, err: %v", err)
+			return errors.New("config monitor.accessToken is not found")
+		}
 	}
-	config.MonitorCfg.DataID = dataID
 
 	queueSize, err := cc.Int64("monitor.queueSize")
 	if err != nil {
@@ -161,18 +177,6 @@ func InitMonitor() error {
 		return errors.New("config monitor.burst is not found")
 	}
 	config.MonitorCfg.Burst = burst
-
-	config.MonitorCfg.GsecmdlinePath, err = cc.String("monitor.gsecmdlinePath")
-	if err != nil {
-		blog.Errorf("init monitor failed, err: %v", err)
-		return errors.New("config monitor.gsecmdlinePath is not found")
-	}
-
-	config.MonitorCfg.DomainSocketPath, err = cc.String("monitor.domainSocketPath")
-	if err != nil {
-		blog.Errorf("init monitor failed, err: %v", err)
-		return errors.New("config monitor.domainSocketPath is not found")
-	}
 
 	err = config.CheckAndCorrectCfg()
 	if err != nil {

@@ -23,7 +23,9 @@
         <bk-select class="rules-selector" v-model="rules"
           searchable
           :readonly="readonly"
-          :multiple="isUnion">
+          :multiple="isUnion"
+          :display-tag="isUnion"
+          :selected-style="getSelectedStyle">
           <bk-option v-for="property in displayProperties"
             :key="property.id"
             :id="property.id"
@@ -109,6 +111,9 @@
       }
     },
     computed: {
+      getSelectedStyle() {
+        return this.isUnion ? 'checkbox' : 'check'
+      },
       singleRuleProperties() {
         return this.attributeList.filter(property => this.singleRuleTypes.includes(property.bk_property_type))
       },

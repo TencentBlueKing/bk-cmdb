@@ -13,7 +13,7 @@
 import { reactive, toRefs, watch, isRef } from 'vue'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 import propertyService from '@/service/property/property'
-export default function (options = {}) {
+export default function (options = {}, config) {
   const state = reactive({
     properties: [],
     invisibleProperties: [],
@@ -22,7 +22,7 @@ export default function (options = {}) {
   const refresh = async (value) => {
     if (!value.bk_obj_id) return
     state.pending = true
-    state.properties = await propertyService.find(value)
+    state.properties = await propertyService.find(value, config)
     if (value.bk_obj_id === BUILTIN_MODELS.PROJECT) {
       state.invisibleProperties = ['bk_project_icon']
     }

@@ -22,9 +22,11 @@ import (
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
@@ -336,6 +338,21 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 			return err
 		}
 
+		// register business resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.FieldGroupingTemplate),
+				ID:      strconv.FormatInt(res.ID, 10),
+				Name:    opt.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created field template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
+		}
+
 		return nil
 	})
 
@@ -433,6 +450,21 @@ func (s *service) CloneFieldTemplate(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create field template failed, opt: %v, err: %v, rid: %s", createOpt, err, ctx.Kit.Rid)
 			return err
+		}
+
+		// register business resource creator action to iam
+		if auth.EnableAuthorize() {
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.FieldGroupingTemplate),
+				ID:      strconv.FormatInt(res.ID, 10),
+				Name:    opt.Name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created field template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 
 		return nil

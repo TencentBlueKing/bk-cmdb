@@ -1,6 +1,6 @@
 ### 功能描述
 
-查询模型的实例之间的关联关系。
+查询模型之间的关联关系。(权限：模型查看权限)
 
 ### 请求参数
 
@@ -8,23 +8,24 @@
 
 #### 接口参数
 
-| 字段                 |  类型      | 是否必填	   |  描述 |
-|----------------------|------------|--------|-----------------------------|
-| condition | string map     | Yes   | 查询条件 |
-
+| 字段        | 类型         | 必选 | 描述   |
+|-----------|------------|----|------|
+| condition | string map | 是  | 查询条件 |
 
 condition params
 
-| 字段                 |  类型      | 是否必填	   |  描述 |
-|---------------------|------------|--------|-----------------------------|
-| bk_asst_id           | string     | Yes     | 模型的关联类型唯一id|
-| bk_obj_id           | string     | Yes     | 源模型id|
-| bk_asst_id           | string     | Yes     | 目标模型id|
+| 字段             | 类型     | 必选 | 描述                |
+|----------------|--------|----|-------------------|
+| bk_asst_id     | string | 否  | 模型的关联类型唯一id       |
+| bk_obj_id      | string | 否  | 源模型id，与目标模型id必填一个 |
+| bk_asst_obj_id | string | 否  | 目标模型id，与源模型id必填一个 |
 
+**注意：在不加bk_asst_id条件限制的情况下，如果只填写bk_obj_id条件，则查询模型作为关联关系中的源模型的所有关联关系；如果只填写bk_asst_obj_id条件，则查询模型作为关联关系中的目标模型的所有关联关系
+**
 
 ### 请求参数示例
 
-``` json
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -65,29 +66,30 @@ condition params
 
 ```
 
-
 ### 返回结果参数说明
+
 #### response
-| 名称    | 类型   | 说明                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误    |
-| message | string | 请求失败返回的错误信息                     |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                             |
+
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data
 
-| 字段       | 类型     | 描述 |
-|------------|----------|--------------|
-| id|int64|模型关联关系的身份id|
-| bk_obj_asst_id| string|  模型关联关系的唯一id.|
-| bk_obj_asst_name| string| 关联关系的别名. |
-| bk_asst_id| string| 关联类型id|
-| bk_obj_id| string| 源模型id |
-| bk_asst_obj_id| string| 目标模型id|
-| mapping| string|  源模型与目标模型关联关系实例的映身关系，可以是以下中的一种[1:1, 1:n, n:n] |
-| on_delete| string| 删除关联关系时的动作, 取值为以下其中的一种 [none, delete_src, delete_dest], "none" 什么也不做, "delete_src" 删除源模型的实例, "delete_dest" 删除目标模型的实例.|
-| bk_supplier_account | string | 开发商账号   |
-| ispre               | bool         | true:预置字段,false:非内置字段                             |
+| 字段                  | 类型     | 描述                                                                                                                    |
+|---------------------|--------|-----------------------------------------------------------------------------------------------------------------------|
+| id                  | int64  | 模型关联关系的身份id                                                                                                           |
+| bk_obj_asst_id      | string | 模型关联关系的唯一id.                                                                                                          |
+| bk_obj_asst_name    | string | 关联关系的别名.                                                                                                              |
+| bk_asst_id          | string | 关联类型id                                                                                                                |
+| bk_obj_id           | string | 源模型id                                                                                                                 |
+| bk_asst_obj_id      | string | 目标模型id                                                                                                                |
+| mapping             | string | 源模型与目标模型关联关系实例的映身关系，可以是以下中的一种[1:1, 1:n, n:n]                                                                          |
+| on_delete           | string | 删除关联关系时的动作, 取值为以下其中的一种 [none, delete_src, delete_dest], "none" 什么也不做, "delete_src" 删除源模型的实例, "delete_dest" 删除目标模型的实例. |
+| bk_supplier_account | string | 开发商账号                                                                                                                 |
+| ispre               | bool   | true:预置字段,false:非内置字段                                                                                                 |

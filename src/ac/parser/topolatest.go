@@ -177,31 +177,12 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find model unique operation
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find object unique, but got invalid url")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
-				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -231,7 +212,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -305,9 +286,10 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 }
 
 const (
-	findObjectAssociationLatestPattern                    = "/api/v3/find/objectassociation"
-	createObjectAssociationLatestPattern                  = "/api/v3/create/objectassociation"
-	findObjectAssociationWithAssociationKindLatestPattern = "/api/v3/find/topoassociationtype"
+	findObjectAssociationLatestPattern                     = "/api/v3/find/objectassociation"
+	createObjectAssociationLatestPattern                   = "/api/v3/create/objectassociation"
+	findObjectAssociationWithAssociationKindLatestPattern  = "/api/v3/find/topoassociationtype"
+	countObjectAssociationWithAssociationKindLatestPattern = "/api/v3/count/topoassociationtype"
 	// excel 导入主机专用接口
 	findModelAssociationPattern = "/api/v3/find/instassociation/model"
 )
@@ -331,10 +313,14 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{
-			Type:   meta.ModelAssociation,
-			Action: meta.FindMany,
-		}}}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -399,12 +385,28 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{{BusinessID: bizID,
-			Basic: meta.Basic{
-				Type:   meta.ModelAssociation,
-				Action: meta.FindMany,
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
 			},
-		}}
+		}
+		return ps
+	}
+
+	// count object association with a association kind list.
+	if ps.hitPattern(countObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ModelAssociation,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -482,6 +484,8 @@ var (
 
 	searchInstanceAssociationsRegexp = regexp.MustCompile(`^/api/v3/search/instance_associations/object/[^\s/]+/?$`)
 	countInstanceAssociationsRegexp  = regexp.MustCompile(`^/api/v3/count/instance_associations/object/[^\s/]+/?$`)
+
+	findObjectInstanceAssociationWithBizIDRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/biz/([0-9]+)/?$`)
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
@@ -491,40 +495,22 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		objID := val.Value()
-		if objID == nil {
-			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
-				"no bk_obj_id was found in request body")
-			return ps
-		}
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find instance's association with bizID operation.
+	if ps.hitRegexp(findObjectInstanceAssociationWithBizIDRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -533,40 +519,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// search instance associations operation.
 	if ps.hitRegexp(searchInstanceAssociationsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("search object instance associations, got invalid url")
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		if len(objID) == 0 {
-			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -575,40 +531,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// count instance associations operation.
 	if ps.hitRegexp(countInstanceAssociationsRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("count object instance associations, got invalid url")
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		if len(objID) == 0 {
-			ps.err = fmt.Errorf("count instance associations failed, got empty object id")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -617,40 +543,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find instance's association related info operation.
 	if ps.hitPattern(findObjectInstanceAssociationRelatedLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		objID := val.Value()
-		if objID == nil {
-			ps.err = fmt.Errorf("find instance's association related info failed, " +
-				"no condition.bk_obj_id was found in request body")
-			return ps
-		}
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -941,40 +837,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance topology ui operation.
 	if ps.hitRegexp(findObjectInstanceTopologyUILatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 14 {
-			ps.err = errors.New("find object instance topology ui, but got invalid url")
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[6]
-		if len(objID) == 0 {
-			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -983,40 +849,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance's association object instance info operation.
 	if ps.hitRegexp(findInstAssociationObjInstInfoLatestRegexp, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		val, err := ps.RequestCtx.getValueFromBody("condition.bk_obj_id")
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		objID := val.Value()
-		if objID == nil {
-			ps.err = fmt.Errorf("find object instance's association object instance info failed, " +
-				"no condition.bk_obj_id was found in request body")
-			return ps
-		}
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1024,35 +860,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 	}
 
 	if ps.hitRegexp(searchInstAssociationAndInstDetailLatestRegexp, http.MethodPost) {
-
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("search object instance associations, got invalid url")
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		if len(objID) == 0 {
-			ps.err = fmt.Errorf("search instance associations failed, got empty object id")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   instanceType,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1214,27 +1025,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// search instance association
 	if ps.hitRegexp(findObjectInstanceAssociationLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("search instance association, but got invalid url")
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1447,30 +1240,11 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// find object instance sub topology operation
 	if ps.hitRegexp(findObjectInstanceSubTopologyLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("find object instance topology, but got invalid url")
-			return ps
-		}
-
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find object instance topology, but got invalid instance id %s",
-				ps.RequestCtx.Elements[7])
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstanceTopology,
-					Action:     meta.Find,
-					InstanceID: instID,
-				},
-				Layers: []meta.Item{
-					{
-						Type:         meta.Model,
-						InstanceIDEx: ps.RequestCtx.Elements[5],
-					},
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1488,7 +1262,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1497,27 +1271,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// find object's instance list operation
 	if ps.hitRegexp(findObjectInstancesLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find object's instance list, but got invalid url")
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1527,32 +1283,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// search object instances operation.
 	if ps.hitRegexp(searchObjectInstancesRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("search object instances, got invalid url")
-			return ps
-		}
-
-		objID := ps.RequestCtx.Elements[5]
-		if len(objID) == 0 {
-			ps.err = fmt.Errorf("find object instance topology ui failed, got empty object id")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: objID})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		instanceType, err := ps.getInstanceTypeByObject(model.ObjectID, model.ID)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   instanceType,
 					Action: meta.SkipAction,
 				},
 			},
@@ -1842,18 +1575,11 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1882,18 +1608,11 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object in batch operation.
 	if ps.hitPattern(findObjectBatchLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1906,7 +1625,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -2076,18 +1795,11 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 
 	// find object's classification list operation.
 	if ps.hitPattern(findObjectClassificationListLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -2106,7 +1818,7 @@ func (ps *parseStream) objectClassificationLatest() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -2171,34 +1883,12 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 
 	// find object's attribute group operation.
 	if ps.hitRegexp(findObjectAttributeGroupLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find object's attribute group, but got invalid uri")
-			return ps
-		}
-
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				// 业务ID的解释
-				// case  0: 仅查询公共的属性分组
-				// case ~0: 查询业务私有的属性分组 + 公用属性分组
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -2330,8 +2020,6 @@ const (
 	createObjectAttributeLatestPattern  = "/api/v3/create/objectattr"
 	findObjectAttributeLatestPattern    = "/api/v3/find/objectattr"
 	findObjectAttributeForLatestPattern = "/api/v3/find/objectattr/web"
-
-	findHostObjectAttributeLatestPattern = "/api/v3/find/objectattr/host"
 )
 
 var (
@@ -2536,104 +2224,25 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
-		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		modelCond := val.Value()
-		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: modelCond})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		for _, model := range models {
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					// 注意：业务ID是否为0表示两种不同的操作
-					// case 0: 读取模型的公有属性
-					// case ~0: 读取业务私有属性+公有属性
-					BusinessID: bizID,
-					Basic: meta.Basic{
-						Type:   meta.ModelAttribute,
-						Action: meta.FindMany,
-					},
-					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				})
-		}
+		ps.Attribute.Resources = append(ps.Attribute.Resources,
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelAttribute,
+					Action: meta.SkipAction,
+				},
+			})
 		return ps
 	}
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributeForLatestPattern, http.MethodPost) {
-		val, err := ps.RequestCtx.getValueFromBody(common.BKObjIDField)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		modelCond := val.Value()
-		models, err := ps.searchModels(mapstr.MapStr{common.BKObjIDField: modelCond})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		for _, model := range models {
-			ps.Attribute.Resources = append(ps.Attribute.Resources,
-				meta.ResourceAttribute{
-					// 注意：业务ID是否为0表示两种不同的操作
-					// case 0: 读取模型的公有属性
-					// case ~0: 读取业务私有属性+公有属性
-					BusinessID: bizID,
-					Basic: meta.Basic{
-						Type:   meta.ModelAttribute,
-						Action: meta.FindMany,
-					},
-					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
-				})
-		}
-		return ps
-	}
-	if ps.hitPattern(findHostObjectAttributeLatestPattern, http.MethodPost) {
-		model, err := ps.getOneModel(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDHost})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = append(ps.Attribute.Resources,
 			meta.ResourceAttribute{
-				// 注意：业务ID是否为0表示两种不同的操作
-				// case 0: 读取模型的公有属性
-				// case ~0: 读取业务私有属性+公有属性
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
-					Action: meta.FindMany,
+					Action: meta.SkipAction,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 			})
-
-		return ps
 	}
 
 	// create business custom field operation
@@ -2905,24 +2514,11 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// get toponode host and service instance count
 	if ps.hitRegexp(findTopoNodeHostAndServiceInstCountLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find topo node host and service instance count, but got invalid url")
-			return ps
-		}
-
-		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
-				ps.RequestCtx.Elements[5])
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}

@@ -85,6 +85,8 @@
 
 <script>
   import { mapGetters, mapState } from 'vuex'
+  import hostSearchService from '@/service/host/search'
+
   export default {
     components: {
       vnodes: {
@@ -252,7 +254,7 @@
       },
       async getHostInfo(row) {
         try {
-          const { info } = this.$store.dispatch('hostSearch/searchHost', {
+          const { info } = await hostSearchService.getBizHosts({
             params: {
               bk_biz_id: this.bizId,
               condition: ['biz', 'set', 'module'].map(model => ({

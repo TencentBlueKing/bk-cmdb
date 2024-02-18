@@ -81,7 +81,7 @@
       >
         <bk-form-item property="decryptPassword" :label="t('文件包密码')">
           <bk-input
-            v-autofocus
+            v-autofocus.update
             @enter="confirmDecrypt"
             type="password"
             v-model="decryptPassword"

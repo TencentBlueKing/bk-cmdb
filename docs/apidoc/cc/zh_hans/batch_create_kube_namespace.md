@@ -8,41 +8,41 @@
 
 #### 接口参数
 
-| 字段        | 类型    | 必选  | 描述                     |
-|-----------|-------|-----|------------------------|
-| bk_biz_id | int   | 是   | 业务id                   |
-| data      | array | 是   | namespace数组, 一次限制创建200 |
+| 字段        | 类型    | 必选 | 描述                     |
+|-----------|-------|----|------------------------|
+| bk_biz_id | int   | 是  | 业务id                   |
+| data      | array | 是  | namespace数组, 一次限制创建200 |
 
 #### data[x]
 
-| 字段              | 类型     | 必选  | 描述                         |
-|-----------------|--------|-----|----------------------------|
-| bk_cluster_id   | int    | 是   | cmdb里标识cluster的唯一id        |
-| name            | string | 是   | 命名空间名称                     |
-| labels          | map    | 否   | 标签                         |
-| resource_quotas | array  | 否   | 命名空间CPU与内存的requests与limits |
+| 字段              | 类型     | 必选 | 描述                         |
+|-----------------|--------|----|----------------------------|
+| bk_cluster_id   | int    | 是  | cmdb里标识cluster的唯一id        |
+| name            | string | 是  | 命名空间名称                     |
+| labels          | map    | 否  | 标签                         |
+| resource_quotas | array  | 否  | 命名空间CPU与内存的requests与limits |
 
 #### resource_quotas[x]
 
-| 字段             | 类型     | 必选  | 描述                                                                                                                 |
-|----------------|--------|-----|--------------------------------------------------------------------------------------------------------------------|
-| hard           | object | 否   | 每个命名资源所需的硬限制                                                                                                       |
-| scopes         | array  | 否   | 配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity" |
-| scope_selector | object | 否   | 作用域选择器                                                                                                             |
+| 字段             | 类型     | 必选 | 描述                                                                                                                 |
+|----------------|--------|----|--------------------------------------------------------------------------------------------------------------------|
+| hard           | object | 否  | 每个命名资源所需的硬限制                                                                                                       |
+| scopes         | array  | 否  | 配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity" |
+| scope_selector | object | 否  | 作用域选择器                                                                                                             |
 
 #### scope_selector
 
-| 字段                | 类型  | 必选    | 描述    |
-|-------------------|-----|-------|-------|
-| match_expressions | 否   | array | 匹配表达式 |
+| 字段                | 类型 | 必选    | 描述    |
+|-------------------|----|-------|-------|
+| match_expressions | 否  | array | 匹配表达式 |
 
 #### match_expressions[x]
 
-| 字段         | 类型     | 必选  | 描述                                                                                                                 |
-|------------|--------|-----|--------------------------------------------------------------------------------------------------------------------|
-| scope_name | array  | 是   | 配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity" |
-| operator   | string | 是   | 选择器操作符，可选值为："In"、"NotIn"、"Exists"、"DoesNotExist"                                                                   |
-| values     | array  | 否   | 字符串数组，如果操作符为"In"或"NotIn",不能为空，如果为"Exists"或"DoesNotExist"，必须为空                                                      |
+| 字段         | 类型     | 必选 | 描述                                                                                                                 |
+|------------|--------|----|--------------------------------------------------------------------------------------------------------------------|
+| scope_name | array  | 是  | 配额作用域,可选值为："Terminating"、"NotTerminating"、"BestEffort"、"NotBestEffort"、"PriorityClass"、"CrossNamespacePodAffinity" |
+| operator   | string | 是  | 选择器操作符，可选值为："In"、"NotIn"、"Exists"、"DoesNotExist"                                                                   |
+| values     | array  | 否  | 字符串数组，如果操作符为"In"或"NotIn",不能为空，如果为"Exists"或"DoesNotExist"，必须为空                                                      |
 
 ### 请求参数示例
 
@@ -89,7 +89,6 @@
 ### 返回结果示例
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -112,7 +111,7 @@
 
 #### response
 
-| 名称         | 类型     | 描述                         |
+| 字段         | 类型     | 描述                         |
 |------------|--------|----------------------------|
 | result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
 | code       | int    | 错误编码。 0表示success，>0表示失败错误  |

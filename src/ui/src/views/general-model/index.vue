@@ -59,7 +59,7 @@
         </cmdb-auth>
       </div>
       <div class="options-button fr">
-        <icon-button class="option-filter ml5" icon="icon-cc-funnel"
+        <icon-button :class="['option-filter', 'ml5', { active: hasCondition }]" icon="icon-cc-funnel"
           v-bk-tooltips.top="$t('高级筛选')"
           @click="handleSetFilters">
         </icon-button>
@@ -369,6 +369,9 @@
       },
       fastSearchProperties() {
         return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
+      },
+      hasCondition() {
+        return this.filterTagHeight !== 0
       }
     },
     watch: {
@@ -613,6 +616,7 @@
           },
           config: {
             requestId: this.request.properties,
+            globalPermission: false
           }
         })
       },
@@ -620,7 +624,10 @@
         return this.searchGroup({
           objId: this.objId,
           params: {},
-          config: { requestId: this.request.groups }
+          config: {
+            requestId: this.request.groups,
+            globalPermission: false
+          }
         })
       },
       getMainLine() {
@@ -741,7 +748,6 @@
           this.table.list = info
           this.table.pagination.count = count
         } catch (err) {
-          console.error(err)
           if (err.permission) {
             this.table.stuff = {
               type: 'permission',
@@ -1007,6 +1013,12 @@
     .models-layout {
         padding: 15px 20px 0;
     }
+    .option-filter {
+        &:hover,
+        .active {
+            color: $primaryColor;
+        }
+    }
     .options-filter{
         position: relative;
         margin-right: 5px;
@@ -1017,6 +1029,9 @@
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
+            :deep(.bk-select-name) {
+              font-size: 12px;
+            }
         }
         .filter-value{
             flex: 1;

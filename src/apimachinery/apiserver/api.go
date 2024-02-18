@@ -21,6 +21,7 @@ import (
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metric"
 )
 
 // Client TODO
@@ -41,7 +42,7 @@ func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID st
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -57,7 +58,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header,
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -73,7 +74,7 @@ func (a *apiServer) GetObjectData(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -90,7 +91,7 @@ func (a *apiServer) SearchObjectWithTotalInfo(ctx context.Context, h http.Header
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, err
@@ -115,7 +116,7 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, err
@@ -139,7 +140,7 @@ func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objI
 		SubResourcef(subPath, objID, uniqueID).
 		WithHeaders(h).
 		Do().
-		Into(&resp)
+		IntoCmdbResp(&resp)
 	return
 }
 
@@ -155,7 +156,7 @@ func (a *apiServer) CreateObjectAtt(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -170,7 +171,7 @@ func (a *apiServer) UpdateObjectAtt(ctx context.Context, objID string, h http.He
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -186,7 +187,7 @@ func (a *apiServer) DeleteObjectAtt(ctx context.Context, objID string, h http.He
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -203,7 +204,7 @@ func (a *apiServer) GetObjectAttr(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -220,7 +221,7 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -236,7 +237,7 @@ func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, 
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -253,7 +254,7 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -270,7 +271,7 @@ func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -287,7 +288,7 @@ func (a *apiServer) UpdateHost(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -304,7 +305,7 @@ func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -320,7 +321,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -335,7 +336,7 @@ func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID,
 		SubResourcef("/create/instance/object/%s/by_import", objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, err
@@ -359,7 +360,7 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, params ma
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -375,7 +376,7 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -392,7 +393,7 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -410,7 +411,7 @@ func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -428,7 +429,7 @@ func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -446,7 +447,7 @@ func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Head
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -464,7 +465,7 @@ func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Hea
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -482,7 +483,7 @@ func (a *apiServer) ListHostWithoutApp(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(&resp)
+		IntoCmdbResp(&resp)
 
 	return
 }
@@ -500,7 +501,7 @@ func (a *apiServer) ReadModuleAssociation(ctx context.Context, h http.Header, co
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, ccErr.CCHttpError
@@ -526,7 +527,7 @@ func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, ccErr.CCHttpError
@@ -551,7 +552,7 @@ func (a *apiServer) ReadInstance(ctx context.Context, h http.Header, objID strin
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -568,7 +569,7 @@ func (t *apiServer) SearchObjectUnique(ctx context.Context, objID string, h http
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -585,7 +586,7 @@ func (a *apiServer) FindAssociationByObjectAssociationID(ctx context.Context, h 
 		SubResourcef(subPath, objID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -602,7 +603,7 @@ func (asst *apiServer) SearchObjectAssociation(ctx context.Context, h http.Heade
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	return
 }
@@ -623,7 +624,7 @@ func (a *apiServer) CreateManyObject(ctx context.Context, h http.Header, params 
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(&resp)
+		IntoCmdbResp(&resp)
 
 	if err != nil {
 		return nil, err
@@ -649,7 +650,7 @@ func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params m
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, err
@@ -674,11 +675,111 @@ func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, st
 		SubResourcef(subPath, status).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if ccErr := resp.CCError(); ccErr != nil {
 		return nil, ccErr
 	}
 
 	return
+}
+
+// CountObjectInstances counts object instances num with the input conditions.
+func (a *apiServer) CountObjectInstances(ctx context.Context, h http.Header, objID string,
+	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.CommonCountResp)
+	subPath := "/count/instances/object/%s"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// CountObjInstByFilters counts object instances num by filters.
+func (a *apiServer) CountObjInstByFilters(ctx context.Context, h http.Header, objID string,
+	filters []map[string]interface{}) ([]int64, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.BatchCountResp)
+	subPath := "/count/%s/instances"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(filters).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// GroupRelResByIDs group related resource by ids
+func (a *apiServer) GroupRelResByIDs(ctx context.Context, h http.Header, kind metadata.GroupByResKind,
+	opt *metadata.GroupRelResByIDsOption) (map[int64][]interface{}, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.GroupRelResByIDsResp)
+	subPath := "/group/related/%s/resource/by_ids"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath, kind).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// HealthCheck check if api-server is healthy.
+func (a *apiServer) HealthCheck() (bool, error) {
+	resp := new(metric.HealthResponse)
+	err := a.client.Get().
+		WithContext(context.Background()).
+		WithBaseURL("/").
+		SubResourcef("/healthz").
+		Body(nil).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return false, err
+	}
+
+	if !resp.Result {
+		return false, ccErr.New(resp.Code, resp.Message)
+	}
+
+	return true, nil
 }

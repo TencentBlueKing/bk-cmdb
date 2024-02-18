@@ -327,3 +327,30 @@ type FieldTmplResCount struct {
 	TemplateID int64 `json:"bk_template_id"`
 	Count      int   `json:"count"`
 }
+
+// CountByIDsOption count by ids option
+type CountByIDsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate CountByIDsOption
+func (c *CountByIDsOption) Validate() errors.RawErrorInfo {
+	if len(c.IDs) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"ids"}}
+	}
+
+	if len(c.IDs) > common.BKMaxUpdateOrCreatePageSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", common.BKMaxUpdateOrCreatePageSize},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// IDCountInfo id to count info
+type IDCountInfo struct {
+	ID    int64 `json:"id"`
+	Count int   `json:"count"`
+}

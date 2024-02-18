@@ -406,11 +406,16 @@ func (assoc *association) SearchObjectAssocWithAssocKindList(kit *rest.Kit, asst
 		return nil, err
 	}
 
+	assoMap := make(map[string][]metadata.Association)
+	for _, asso := range rsp.Info {
+		assoMap[asso.AsstKindID] = append(assoMap[asso.AsstKindID], asso)
+	}
+
 	asso := make([]metadata.AssociationDetail, 0)
-	for _, association := range rsp.Info {
+	for associationKindID, associations := range assoMap {
 		asso = append(asso, metadata.AssociationDetail{
-			AssociationKindID: association.AsstKindID,
-			Associations:      []metadata.Association{association},
+			AssociationKindID: associationKindID,
+			Associations:      associations,
 		})
 	}
 

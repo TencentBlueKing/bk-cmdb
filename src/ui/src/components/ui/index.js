@@ -45,6 +45,7 @@ import tips from './other/tips.vue'
 import dialog from './dialog/dialog.vue'
 import auth from './auth/auth.vue'
 import authOption from './auth/auth-option.vue'
+import authMask from './auth/auth-mask.vue'
 import tableEmpty from './table-empty/table-empty.vue'
 import dataEmpty from './data-empty/data-empty.vue'
 import list from './form/list.vue'
@@ -96,6 +97,7 @@ const install = (Vue) => {
     serviceCategorySelector,
     auth,
     authOption,
+    authMask,
     tableEmpty,
     dataEmpty,
     list,
@@ -152,6 +154,7 @@ export default {
   serviceCategorySelector,
   auth,
   authOption,
+  authMask,
   tableEmpty,
   dataEmpty,
   list,

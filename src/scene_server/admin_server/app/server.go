@@ -122,7 +122,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateServer, error) {
 	process := new(MigrateServer)
 	process.Config = new(options.Config)
-	if err := cc.SetMigrateFromFile(op.ServConf.ExConfig); err != nil {
+	if err := cc.SetLocalFile(op.ServConf.ExConfig); err != nil {
 		return nil, fmt.Errorf("parse config file error %s", err.Error())
 	}
 
@@ -199,7 +199,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     process.Config.Register.Address,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: process.Config.Register.Address},
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)

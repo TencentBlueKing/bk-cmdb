@@ -1,6 +1,6 @@
 ### 功能描述
 
-上交主机到业务的待回收模块
+上交主机到业务的待回收模块(权限：服务实例编辑权限)
 
 ### 请求参数
 
@@ -8,16 +8,16 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_biz_id     |  int     | 是     | 业务ID |
-|   bk_set_id   |  int     | 和 bk_module_id至少填一个    | 集群ID |
-|     bk_module_id |  int     |  和bk_set_id至少填一个     | 模块ID |
-| bk_host_id    |  array   | 是     | 主机ID |
+| 字段           | 类型    | 必选                  | 描述   |
+|--------------|-------|---------------------|------|
+| bk_biz_id    | int   | 是                   | 业务ID |
+| bk_set_id    | int   | 和 bk_module_id至少填一个 | 集群ID |
+| bk_module_id | int   | 和bk_set_id至少填一个     | 模块ID |
+| bk_host_id   | array | 是                   | 主机ID |
 
 ### 请求参数示例
 
-```python
+```json
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -35,8 +35,7 @@
 
 ### 返回结果示例
 
-```python
-
+```json
 {
     "result": true,
     "code": 0,
@@ -46,15 +45,16 @@
     "data": null
 }
 ```
+
 ### 返回结果参数说明
 
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |

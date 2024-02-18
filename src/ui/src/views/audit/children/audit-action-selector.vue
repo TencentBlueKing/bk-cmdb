@@ -14,6 +14,8 @@
   <bk-select
     v-bind="$attrs"
     v-model="localValue"
+    display-tag
+    selected-style="checkbox"
     multiple>
     <bk-option
       v-for="action in actions"

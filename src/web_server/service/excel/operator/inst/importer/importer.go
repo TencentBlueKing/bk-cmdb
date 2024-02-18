@@ -18,7 +18,6 @@
 package importer
 
 import (
-	"errors"
 	"fmt"
 
 	"configcenter/pkg/excel"
@@ -253,11 +252,11 @@ func (i *Importer) getAsstFromExcel() (*excelAsstInfo, error) {
 	return result, nil
 }
 
-func (i *Importer) preCheck(excelMsg *ExcelMsg) error {
+func (i *Importer) preCheck(excelMsg *ExcelMsg) ([]string, error) {
 	reader, err := i.GetExcel().NewReader(i.GetObjID())
 	if err != nil {
 		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.GetObjID(), err, i.GetKit().Rid)
-		return err
+		return nil, err
 	}
 	var instCount int
 	for reader.Next() {
@@ -274,12 +273,50 @@ func (i *Importer) preCheck(excelMsg *ExcelMsg) error {
 		}
 	}
 
+	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 	if instCount > common.ExcelImportMaxRow {
-		lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
-		return errors.New(lang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow))
+		return []string{lang.Languagef("web_excel_import_too_much", common.ExcelImportMaxRow)}, nil
 	}
 
-	return nil
+	exist, err := i.isAsstExist()
+	if err != nil {
+		blog.Errorf("check if there is associated data failed, err: %v, rid: %s", err, i.GetKit().Rid)
+		return nil, err
+	}
+
+	if !exist && instCount <= 0 {
+		return []string{lang.Language("web_excel_not_data")}, nil
+	}
+
+	return nil, nil
+}
+
+func (i *Importer) isAsstExist() (bool, error) {
+	exist, err := i.GetExcel().IsSheetExist(core.AsstSheet)
+	if err != nil {
+		return false, err
+	}
+
+	if !exist {
+		return false, nil
+	}
+
+	reader, err := i.GetExcel().NewReader(core.AsstSheet)
+	if err != nil {
+		blog.Errorf("create excel reader failed, sheet: %s, err: %v, rid: %s", core.AsstSheet, err, i.GetKit().Rid)
+		return false, err
+	}
+
+	exist = false
+	for reader.Next() {
+		if reader.GetCurIdx() < core.AsstDataRowIdx {
+			continue
+		}
+
+		return true, nil
+	}
+
+	return exist, nil
 }
 
 func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
@@ -288,27 +325,30 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 		blog.Errorf("create excel io reader failed, sheet: %s, err: %v, rid: %s", i.GetObjID(), err, i.GetKit().Rid)
 		return nil, false, err
 	}
-
 	excelMsg, err := i.getExcelMsg(reader)
 	if err != nil {
 		blog.Errorf("get object excel message failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, false, err
 	}
 
-	if err := i.preCheck(excelMsg); err != nil {
+	result := mapstr.New()
+	var errMsg []string
+	errMsg, err = i.preCheck(excelMsg)
+	if err != nil {
 		return nil, false, err
+	}
+	if len(errMsg) != 0 {
+		result["error"] = errMsg
+		return result, true, nil
 	}
 
 	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
-	result := mapstr.New()
 	var successMsg []int64
-	var errMsg []string
 	insts := make(map[int]map[string]interface{})
 
 	hasDoneNext := false
 	for hasDoneNext || reader.Next() {
 		hasDoneNext = false
-
 		// skip excel header
 		if reader.GetCurIdx() < core.InstRowIdx-1 {
 			continue
@@ -321,11 +361,9 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 			errMsg = append(errMsg, lang.Languagef("import_data_fail", idx, err.Error()))
 			continue
 		}
-
 		if inst != nil {
 			insts[idx] = inst
 		}
-
 		if len(insts) < onceImportLimit && reader.Next() {
 			hasDoneNext = true
 			continue
@@ -334,7 +372,6 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 		var errRes []string
 		insts, errRes = i.doSpecialOp(insts)
 		errMsg = append(errMsg, errRes...)
-
 		if len(insts) == 0 {
 			continue
 		}
@@ -344,15 +381,12 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 			blog.Errorf("get import instances parameter failed, err: %v, rid: %s", err, i.GetKit().Rid)
 			return nil, false, err
 		}
-		importParam := &core.ImportedParam{
-			Language: i.GetLang(), ObjID: i.GetObjID(), Instances: insts, Req: req,
-			HandleType: i.param.GetHandleType(),
-		}
+		importParam := &core.ImportedParam{Language: i.GetLang(), ObjID: i.GetObjID(), Instances: insts,
+			Req: req, HandleType: i.param.GetHandleType()}
 		successRes, errRes := i.GetClient().HandleImportedInst(i.GetKit(), importParam)
 		if len(successRes) != 0 {
 			successMsg = append(successMsg, successRes...)
 		}
-
 		errMsg = append(errMsg, errRes...)
 
 		insts = make(map[int]map[string]interface{})
@@ -360,7 +394,6 @@ func (i *Importer) importInst() (mapstr.MapStr, bool, error) {
 
 	result["success"] = successMsg
 	result["error"] = errMsg
-
 	if err := reader.Close(); err != nil {
 		blog.Errorf("close read excel io failed, err: %v, rid: %s", err, i.GetKit().Rid)
 		return nil, false, err
@@ -511,6 +544,11 @@ func (i *Importer) getMergeRowRes() (map[int]int, error) {
 
 		startRowVal := startRow - 1
 		endRowVal := endRow - 1
+
+		// excel表头中的表格字段合并不需要记录占用的行数
+		if startRowVal == core.TableNameRowIdx {
+			continue
+		}
 
 		val, ok := result[startRowVal]
 		if !ok {

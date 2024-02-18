@@ -33,7 +33,7 @@
 * 通用权限管理：灵活的基于用户组的权限管理
 * 操作审计：用户操作行为的审计与回溯
 
-如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
+如果想了解以上功能的详细说明，请参考[功能说明](https://bk.tencent.com/docs/markdown/CMDB/UserGuide/Introduce/Overview.md)
 
 ## Experience
 * [在线体验蓝鲸CMDB](https://cmdb-exp.bktencent.com/start) 🔥 **用户名密码：admin:admin**
@@ -45,7 +45,7 @@
 * [版本升级说明](docs/wiki/db_upgrade.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
-* [使用Helm部署CMDB到K8S环境](docs/support-file/helm/README.md)
+* [使用Helm部署CMDB到K8S环境](docs/support-file/helm/backend/README.md)
 
 ## Roadmap
 * [版本日志](docs/support-file/changelog/release.md)

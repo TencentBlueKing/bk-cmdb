@@ -37,7 +37,7 @@ func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt 
 		SubResourcef("/findmany/field_template/attribute").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError

@@ -316,6 +316,12 @@ const FilterStore = new Vue({
         { createOnly: true, useDefaultData: true }
       )
     },
+    setIP(ip) {
+      this.IP = ip
+    },
+    setIPField(field, val) {
+      this.IP[field] = val
+    },
     setupIPQuery() {
       const query = QS.parse(RouterQuery.get('ip'))
       const { text = '', exact = 'true', inner = 'true', outer = 'true' } = query
@@ -345,8 +351,24 @@ const FilterStore = new Vue({
     },
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
-      this.IP = data.IP || this.IP
+      this.setIP(data.IP || this.IP)
       this.throttleSearch()
+    },
+    setConditonField(propertyId, value, modelId = 'host') {
+      const { id } = this.getProperty(propertyId, modelId)
+      this.setCondition({
+        condition: {
+          ...this.condition,
+          [id]: { operator: '$in', value }
+        }
+      })
+    },
+    setSelectedField(propertyId, modelId = 'host') {
+      const { id } = this.getProperty(propertyId, modelId)
+      const hasSelected = this.selected.some(property => property?.id === id)
+      if (!hasSelected) {
+        this.updateSelected([Utils.findProperty(id, this.properties), ...this.selected])
+      }
     },
     updateCondition(property, operator, value) {
       this.condition[property.id] = {
@@ -418,20 +440,22 @@ const FilterStore = new Vue({
       this.searchHandler(this.condition)
       this.resetPage(false)
     },
-    setQuery() {
+    getQuery(condition) {
       const query = {}
-      Object.keys(this.condition).forEach((id) => {
-        const { operator, value } = this.condition[id]
+      Object.keys(condition).forEach((id) => {
+        const { operator, value } = condition[id]
         if (String(value).length) {
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
         }
       })
-
-      const allQuery = {
+      return {
         filter: QS.stringify(query, { encode: false }),
         ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
         _t: Date.now()
       }
+    },
+    setQuery() {
+      const allQuery = this.getQuery(this.condition)
 
       // 在触发搜索的场景中会设置needResetPage为true，同时需要满足当前业务存在分页的场景
       if (this.needResetPage && RouterQuery.get('page')) {
@@ -504,11 +528,12 @@ const FilterStore = new Vue({
       const flag = []
       this.IP.inner && flag.push('bk_host_innerip')
       this.IP.outer && flag.push('bk_host_outerip')
+      const { ipv4 = [], assetList = [] } = transformedIP.data
       const params = {
         bk_biz_id: this.bizId, // undefined会被忽略
         // assetList存放非法ip，当查询非法ip时，支持模糊查询和精确查询
         ip: {
-          data: [...transformedIP.data.ipv4, ...transformedIP.data.assetList],
+          data: [...ipv4, ...assetList], // 兼容ip模糊搜索
           exact: this.IP.exact ? 1 : 0,
           flag: flag.join('|')
         },

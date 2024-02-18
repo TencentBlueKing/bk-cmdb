@@ -199,6 +199,7 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		return
 	}
 
+	objIDs := make([]string, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute: attr,
@@ -212,6 +213,17 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		}
 		attrInfo.PropertyGroupName = grpName
 		attrs = append(attrs, attrInfo)
+		objIDs = append(objIDs, attr.ObjectID)
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
 	}
 
 	ctx.RespEntity(attrs)
@@ -270,6 +282,8 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		return
 	}
 	attrInfos := make([]*metadata.ObjAttDes, 0)
+	unique := make(map[string]struct{}, 0)
+	objIDs := make([]string, 0)
 	for _, attr := range resp.Info {
 		attrInfo := &metadata.ObjAttDes{
 			Attribute: attr,
@@ -283,6 +297,21 @@ func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 		}
 		attrInfo.PropertyGroupName = grpName
 		attrInfos = append(attrInfos, attrInfo)
+
+		if _, ok := unique[attr.ObjectID]; !ok {
+			objIDs = append(objIDs, attr.ObjectID)
+			unique[attr.ObjectID] = struct{}{}
+		}
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit, objIDs)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
 	}
 
 	ctx.RespEntity(attrInfos)
@@ -546,73 +575,6 @@ func (s *Service) UpdateObjectAttributeIndex(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(nil)
-}
-
-// ListHostModelAttribute list host model's attributes
-func (s *Service) ListHostModelAttribute(ctx *rest.Contexts) {
-	dataWithModelBizID := MapStrWithModelBizID{}
-	if err := ctx.DecodeInto(&dataWithModelBizID); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	data := dataWithModelBizID.Data
-	data[metadata.AttributeFieldIsSystem] = false
-	data[metadata.AttributeFieldIsAPI] = false
-	util.AddModelBizIDCondition(data, dataWithModelBizID.ModelBizID)
-
-	basePage := metadata.BasePage{}
-	if data.Exists(metadata.PageName) {
-		page, err := data.MapStr(metadata.PageName)
-		if err != nil {
-			blog.Errorf("page info convert to mapstr failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		if err := mapstruct.Decode2Struct(page, &basePage); err != nil {
-			blog.Errorf("page info convert to struct failed, page: %v, err: %v, rid: %s", page, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		data.Remove(metadata.PageName)
-	}
-
-	queryCond := &metadata.QueryCondition{
-		Condition: data,
-		Page:      basePage,
-	}
-
-	result, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
-		common.BKInnerObjIDHost, queryCond)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	grpMap, err := s.getPropertyGroupName(ctx.Kit, result.Info, dataWithModelBizID.ModelBizID)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	hostAttributes := make([]metadata.HostObjAttDes, 0)
-	for _, item := range result.Info {
-		hostApplyEnabled := metadata.CheckAllowHostApplyOnField(&item)
-		hostAttribute := metadata.HostObjAttDes{
-			ObjAttDes: metadata.ObjAttDes{
-				Attribute: item,
-			},
-			HostApplyEnabled: hostApplyEnabled,
-		}
-		grpName, ok := grpMap[item.PropertyGroup]
-		if !ok {
-			blog.Errorf("failed to get property group name, attr: %s, property: %s", item, item.PropertyGroup)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
-			return
-		}
-		hostAttribute.ObjAttDes.PropertyGroupName = grpName
-		hostAttributes = append(hostAttributes, hostAttribute)
-	}
-	ctx.RespEntity(hostAttributes)
 }
 
 func (s *Service) getPropertyGroupName(kit *rest.Kit, attrs []metadata.Attribute,

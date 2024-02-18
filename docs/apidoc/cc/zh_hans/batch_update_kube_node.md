@@ -8,23 +8,23 @@
 
 #### 接口参数
 
-| 字段        | 类型     | 必选  | 描述             |
-|-----------|--------|-----|----------------|
-| bk_biz_id | int    | 是   | 所属业务ID         |
-| ids       | array  | 是   | 需要更新的node id列表 |
-| data      | object | 是   | 需要更新的节点属性字段    |
+| 字段        | 类型     | 必选 | 描述             |
+|-----------|--------|----|----------------|
+| bk_biz_id | int    | 是  | 所属业务ID         |
+| ids       | array  | 是  | 需要更新的node id列表 |
+| data      | object | 是  | 需要更新的节点属性字段    |
 
 #### data
 
-| 字段                | 类型          | 必选  | 描述                               |
-|-------------------|-------------|-----|----------------------------------|
-| labels            | json object | 否   | 标签                               |
-| taints            | string      | 否   | cluster 名称                       |
-| unschedulable     | bool        | 否   | 设置是否可调度                          |
-| hostname          | string      | 否   | 主机名                              |
-| runtime_component | string      | 否   | 运行时组件                            |
-| kube_proxy_mode   | string      | 否   | Kube-proxy 代理模式                  |
-| pod_cidr          | string      | 否   | 此节点Pod地址的分配范围，例如：172.17.0.128/26 |
+| 字段                | 类型          | 必选 | 描述                               |
+|-------------------|-------------|----|----------------------------------|
+| labels            | json object | 否  | 标签                               |
+| taints            | string      | 否  | cluster 名称                       |
+| unschedulable     | bool        | 否  | 设置是否可调度                          |
+| hostname          | string      | 否  | 主机名                              |
+| runtime_component | string      | 否  | 运行时组件                            |
+| kube_proxy_mode   | string      | 否  | Kube-proxy 代理模式                  |
+| pod_cidr          | string      | 否  | 此节点Pod地址的分配范围，例如：172.17.0.128/26 |
 
 **注意：**
 
@@ -75,7 +75,7 @@
 
 ### 返回结果参数说明
 
-| 名称         | 类型     | 描述                         |
+| 字段         | 类型     | 描述                         |
 |------------|--------|----------------------------|
 | result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
 | code       | int    | 错误编码。 0表示success，>0表示失败错误  |

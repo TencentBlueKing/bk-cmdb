@@ -92,6 +92,9 @@ func (s *Service) WebService() *gin.Engine {
 	// field template, only for ui
 	s.initFieldTemplate(ws)
 
+	// resource count, only for ui
+	s.initResourceCount(ws)
+
 	c := &capability.Capability{
 		Ws:     ws,
 		Engine: s.Engine,
@@ -135,7 +138,6 @@ func (s *Service) initService(ws *gin.Engine) {
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
-	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/", s.Index)
 
@@ -168,21 +170,23 @@ func setGinMode() {
 func (s *Service) Healthz(c *gin.Context) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
-		zkItem.IsHealthy = false
-		zkItem.Message = err.Error()
-	}
+	if s.Config.DeploymentMethod == common.OpenSourceDeployment {
+		// zk health status
+		zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+		if err := s.Engine.Ping(); err != nil {
+			zkItem.IsHealthy = false
+			zkItem.Message = err.Error()
+		}
 
-	meta.Items = append(meta.Items, zkItem)
+		meta.Items = append(meta.Items, zkItem)
 
-	apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_APISERVER); err != nil {
-		apiServer.IsHealthy = false
-		apiServer.Message = err.Error()
+		apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
+		if _, err := s.ApiCli.HealthCheck(); err != nil {
+			apiServer.IsHealthy = false
+			apiServer.Message = err.Error()
+		}
+		meta.Items = append(meta.Items, apiServer)
 	}
-	meta.Items = append(meta.Items, apiServer)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

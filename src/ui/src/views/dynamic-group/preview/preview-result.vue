@@ -89,6 +89,7 @@
   } from '@/dictionary/menu-symbol'
   import { time } from '@/filters/formatter'
   import FilterStore, { setupFilterStore } from '../store'
+  import hostSearchService from '@/service/host/search'
   import ColumnsConfig from '@/components/columns-config/columns-config.js'
   import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
   import routerActions from '@/router/actions'
@@ -252,7 +253,7 @@
         requestId: request.table,
         cancelPrevious: true
       }
-      const result = await store.dispatch('hostSearch/searchHost', { params, config })
+      const result = await hostSearchService.getBizHosts({ params, config })
       table.data = result.info || []
       table.pagination.count = result.count
     } catch (e) {

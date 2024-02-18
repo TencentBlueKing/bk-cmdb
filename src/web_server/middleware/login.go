@@ -97,8 +97,8 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, language)
 	httpheader.AddSupplierAccount(c.Request.Header, ownerID)
-	c.Request.Header.Add(common.HTTPCookieBKToken, bkToken)
-	c.Request.Header.Add(common.HTTPCookieBKTicket, bkTicket)
+	httpheader.SetUserToken(c.Request.Header, bkToken)
+	httpheader.SetUserTicket(c.Request.Header, bkTicket)
 
 	if config.LoginVersion == common.BKBluekingLoginPluginVersion {
 		resp, err := esb.EsbClient().LoginSrv().GetUser(c.Request.Context(), c.Request.Header)

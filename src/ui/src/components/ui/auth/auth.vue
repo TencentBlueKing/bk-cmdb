@@ -17,6 +17,8 @@
       active: !isAuthorized,
       auth: auth,
       authResults,
+      ignorePassedAuth,
+      relatedPermission,
       onclick
     }"
     @click="handleClick">
@@ -38,6 +40,8 @@
         type: String,
         default: 'span'
       },
+      ignorePassedAuth: Boolean,
+      relatedPermission: Object,
       onclick: Function
     },
     data() {

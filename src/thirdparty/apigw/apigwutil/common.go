@@ -134,7 +134,7 @@ const templateVar = "{api_name}"
 func ReplaceApiName(templateAddr []string, apiName ApiName) []string {
 	address := make([]string, len(templateAddr))
 	for idx, template := range templateAddr {
-		address[idx] = strings.Replace(template, templateVar, string(apiName), 1)
+		address[idx] = strings.TrimSuffix(strings.Replace(template, templateVar, string(apiName), 1), "/")
 	}
 
 	return address

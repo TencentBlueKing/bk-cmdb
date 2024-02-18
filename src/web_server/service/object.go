@@ -24,74 +24,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 
 	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
 )
-
-// SearchBusiness TODO
-func (s *Service) SearchBusiness(c *gin.Context) {
-	rid := httpheader.GetRid(c.Request.Header)
-	ctx := util.NewContextFromGinContext(c)
-	webCommon.SetProxyHeader(c)
-	language := webCommon.GetLanguageByHTTPRequest(c)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
-	query := new(params.SearchParams)
-	err := c.BindJSON(&query)
-	if err != nil {
-		blog.Errorf("search business, but unmarshal body to json failed, err: %v, rid: %s", err, rid)
-		c.JSON(http.StatusBadRequest, metadata.BaseResp{
-			Result:      false,
-			Code:        common.CCErrCommJSONUnmarshalFailed,
-			ErrMsg:      defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(),
-			Permissions: nil,
-		})
-		return
-	}
-
-	// change the string query to regexp, only for frontend usage.
-	for k, v := range query.Condition {
-		field, ok := v.(string)
-		if ok {
-			query.Condition[k] = mapstr.MapStr{
-				common.BKDBLIKE: params.SpecialCharChange(field),
-				// insensitive with the character case.
-				common.BKDBOPTIONS: "i",
-			}
-		}
-	}
-	ownerID := httpheader.GetSupplierAccount(c.Request.Header)
-	biz, err := s.ApiCli.SearchBiz(ctx, ownerID, c.Request.Header, query)
-	if err != nil {
-		blog.Error("search business, but request to api failed, err: %v, rid: %s", err, rid)
-		c.JSON(http.StatusBadRequest, metadata.BaseResp{
-			Result:      false,
-			Code:        common.CCErrCommHTTPDoRequestFailed,
-			ErrMsg:      defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(),
-			Permissions: nil,
-		})
-		return
-	}
-
-	if !biz.Result {
-		if biz.Code == common.CCNoPermission {
-			c.JSON(http.StatusOK, biz)
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, biz)
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, biz)
-	return
-}
 
 // GetObjectInstanceCount TODO
 func (s *Service) GetObjectInstanceCount(c *gin.Context) {
