@@ -92,6 +92,8 @@ data:
         ch: {{ .Values.common.webServer.changelogPath.ch }}
         #英文版版本日志存放路径
         en: {{ .Values.common.webServer.changelogPath.en }}
+      #是否启用消息通知
+      enableNotification: {{ .Values.common.webServer.enableNotification }}
     # operation_server专属配置
     operationServer:
       timer:

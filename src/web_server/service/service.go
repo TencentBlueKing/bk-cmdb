@@ -14,6 +14,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -27,6 +28,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/capability"
@@ -34,6 +37,7 @@ import (
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 	"configcenter/src/web_server/service/excel"
+	"configcenter/src/web_server/service/notice"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -45,8 +49,9 @@ type Service struct {
 	Engine   *backbone.Engine
 	CacheCli redis.Client
 	*logics.Logics
-	Config  *options.Config
-	Session redis.RedisStore
+	Config    *options.Config
+	Session   redis.RedisStore
+	NoticeCli noticeCli.NoticeClientInterface
 }
 
 // WebService TODO
@@ -130,11 +135,16 @@ func (s *Service) WebService() *gin.Engine {
 	s.initFieldTemplate(ws)
 
 	c := &capability.Capability{
-		Ws:     ws,
-		Engine: s.Engine,
+		Ws:        ws,
+		Engine:    s.Engine,
+		Config:    s.Config,
+		NoticeCli: s.NoticeCli,
 	}
 	// init excel func
 	excel.Init(c)
+
+	// init notice func
+	notice.Init(c)
 
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
@@ -196,4 +206,36 @@ func (s *Service) Healthz(c *gin.Context) {
 	}
 	answer.SetCommonResponse()
 	c.JSON(200, answer)
+}
+
+// InitNotice init notice client and register application
+func (s *Service) InitNotice() error {
+	if !s.Config.EnableNotification {
+		return nil
+	}
+
+	config, err := apigwutil.ParseApiGWConfig("apiGW")
+	if err != nil {
+		blog.Errorf("get api gateway config error, err: %v", err)
+		return err
+	}
+	config.Address, err = apigwutil.ReplaceApiName(config.Address, apigwutil.NoticeName)
+	if err != nil {
+		blog.Errorf("replace the template var in api gateway address failed, addr: %v, apiName: %v, err: %v",
+			config.Address, apigwutil.NoticeName, err)
+		return err
+	}
+
+	s.NoticeCli, err = noticeCli.NewNoticeApiGWClient(config, s.Engine.Metric().Registry())
+	if err != nil {
+		blog.Errorf("new gse api gateway client failed, err: %v", err)
+		return err
+	}
+
+	if _, err = s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
+		blog.Errorf("register to the notification center failed, err: %v", err)
+		return err
+	}
+
+	return nil
 }

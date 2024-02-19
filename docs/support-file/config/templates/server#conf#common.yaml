@@ -89,6 +89,8 @@ webServer:
     ch: __BK_HOME__/cmdb/server/changelog_user/ch
     #英文版版本日志存放路径
     en: __BK_HOME__/cmdb/server/changelog_user/en
+  #是否启用消息通知
+  enableNotification: __BK_NOTICE_ENABLED__
 
 # operation_server专属配置
 operationServer:
