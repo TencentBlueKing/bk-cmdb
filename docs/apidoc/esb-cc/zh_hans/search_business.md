@@ -8,13 +8,14 @@
 
 #### 接口参数
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
-| fields         |  array   | 否     | 指定查询的字段，参数为业务的任意属性，如果不填写字段信息，系统会返回业务的所有字段 |
+| 字段      |  类型      | 必选   | 描述                                                                 |
+|-----------|------------|--------|--------------------------------------------------------------------|
+| bk_supplier_account | string     | 否     | 开发商账号                                                              |
+| fields         |  array   | 否     | 指定查询的字段，参数为业务的任意属性，如果不填写字段信息，系统会返回业务的所有字段                          |
 | condition      |  dict    | 否     | 查询条件，参数为业务的任意属性，如果不写代表搜索全部数据，(历史遗留字段，请勿继续使用，请用biz_property_filter) |
-| biz_property_filter| object| 否| 业务属性组合查询条件 |
-| page           |  dict    | 否     | 分页条件 |
+| biz_property_filter| object| 否| 业务属性组合查询条件                                                         |
+| time_condition      | object     | 否     | 按时间查询业务的查询条件                                                       |
+| page           |  dict    | 否     | 分页条件                                                               |
 
 Note: 业务分为两类，未归档的业务和已归档的业务。
 - 若要查询已归档的业务，请在condition中增加条件`bk_data_status:disabled`。
@@ -22,6 +23,13 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
 - `biz_property_filter`与`condition`两个参数只能有一个生效，参数`condition`不建议继续使用。
 - 参数`biz_property_filter` 中涉及到的数组类元素个数不超过500个。参数`biz_property_filter`中涉及到的`rules`数量不超过20个。参数`biz_property_filter`
 的嵌套层级不超过3层。
+
+#### time_condition
+
+| 字段   | 类型   | 必选 |  描述              |
+|-------|--------|-----|--------------------|
+| oper  | string | 是  | 操作符，目前只支持and |
+| rules | array  | 是  | 时间查询条件         |
 
 #### page
 
@@ -68,6 +76,16 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
                         "value":1
                     }
                 ]
+            }
+        ]
+    },
+    "time_condition": {
+        "oper": "and",
+        "rules": [
+            {
+                "field": "create_time",
+                "start": "2021-05-13 01:00:00",
+                "end": "2021-05-14 01:00:00"
             }
         ]
     },

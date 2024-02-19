@@ -737,9 +737,10 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	searchCond.Condition[common.BKDefaultField] = 0
 
 	query := &metadata.QueryCondition{
-		Condition: searchCond.Condition,
-		Fields:    searchCond.Fields,
-		Page:      searchCond.Page,
+		Condition:     searchCond.Condition,
+		TimeCondition: searchCond.TimeCondition,
+		Fields:        searchCond.Fields,
+		Page:          searchCond.Page,
 	}
 
 	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)

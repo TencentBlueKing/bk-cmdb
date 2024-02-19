@@ -92,6 +92,7 @@ type QueryBusinessRequest struct {
 	// The field condition is not
 	// maintained later, it is recommended to use the field biz_property_filter.
 	Condition         mapstr.MapStr             `json:"condition"`
+	TimeCondition     *TimeCondition            `json:"time_condition"`
 	BizPropertyFilter *querybuilder.QueryFilter `json:"biz_property_filter,omitempty"`
 }
 

@@ -8,13 +8,14 @@ search the business
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| fields         |  array   | No     | need to show |
+| Field      |  Type      | Required   | Description                                                                                      |
+|-----------|------------|--------|--------------------------------------------------------------------------------------------------|
+| bk_supplier_account | string     | No     | supplier account code                                                                            |
+| fields         |  array   | No     | need to show                                                                                     |
 | condition      |  dict    | No     | search condition, legach field, please do not use this any more, use biz_property_filter instead |
-| biz_property_filter    |  dict  | No     | business property filter |
-| page           |  dict    | No     | page condition |
+| biz_property_filter    |  dict  | No     | business property filter                                                                         |
+| time_condition      |  object     | no     | Query criteria for querying business by time                                                     |
+| page           |  dict    | No     | page condition                                                                                   |
 
 Note: a business has two status: normal or archived.
 - search a archived business，please add rules `bk_data_status:disabled` to condition field.
@@ -23,6 +24,14 @@ Note: a business has two status: normal or archived.
 - the number of array class elements involved in the parameter `biz_property_filter` shall not exceed 500.
   the number of `rules` involved in the parameter `biz_property_filter` does not exceed 20.
   the nesting level of parameter `biz_property_filter` shall not exceed 3 levels.
+
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |yes| Operator, currently only and is supported|
+| rules | array  |yes| Time query criteria         |
+
 
 #### page
 
@@ -69,6 +78,16 @@ Note: a business has two status: normal or archived.
                         "value":0
                     }
                 ]
+            }
+        ]
+    },
+    "time_condition": {
+        "oper": "and",
+        "rules": [
+            {
+                "field": "create_time",
+                "start": "2021-05-13 01:00:00",
+                "end": "2021-05-14 01:00:00"
             }
         ]
     },
