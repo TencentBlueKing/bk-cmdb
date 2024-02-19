@@ -495,6 +495,10 @@ func (m *instanceManager) changeStringToTime(valData mapstr.MapStr, properties [
 		if field.PropertyType != common.FieldTypeTime {
 			continue
 		}
+		if field.PropertyID == common.BKCreatedAt || field.PropertyID == common.BKUpdatedAt {
+			// ignore the key field
+			continue
+		}
 		val, ok := valData[field.PropertyID]
 		if ok == false || val == nil {
 			continue
