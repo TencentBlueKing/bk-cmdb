@@ -12,6 +12,13 @@
 
 - nodejs >= 4.0.0（编译过程中需要可以连公网下载依赖包）
 
+- [铜锁](https://github.com/Tongsuo-Project/Tongsuo/) 8.3.2 版本
+
+#### 安装编译依赖的铜锁环境
+
+因为 cloud-server 使用了 crypto-golang-sdk ，所以需要安装铜锁环境并设置环境变量进行编译。参考文档：[crypto-golang-sdk](https://github.com/TencentBlueKing/crypto-golang-sdk/blob/master/readme.md)
+Makefile 里内置了安装 8.3.2 版本铜锁环境的步骤，默认安装路径为`${cmdb编译路径}/tongsuo`，可以通过设置`TONGSUO_PATH`环境变量指定该安装路径
+
   注：最好使用nodejs14 LTS版本，如14.13.1、14.18.1、14.21.3
 
 #### 将go mod设置为auto

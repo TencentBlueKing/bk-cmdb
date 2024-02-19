@@ -15,6 +15,8 @@ global:
   ##
   imagePullSecrets: []
   storageClass: ""
+  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+  bkCryptoType: "CLASSIC"
 
 ## @section bk-cmdb image parameters
 ##
@@ -1171,6 +1173,18 @@ common:
       secretsEnv:
     syncTask:
       syncPeriodMinutes: 5
+  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+  crypto:
+    # 是否开启加密
+    enabled: false
+    # 使用SM4算法时所需的配置
+    sm4:
+      # 密钥
+      key:
+    # 使用AES-GCM算法时所需的配置
+    aesGcm:
+      # 密钥
+      key:
   #datacollection专属配置
   datacollection:
     hostSnapshot:

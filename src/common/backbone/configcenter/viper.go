@@ -25,6 +25,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/cryptor"
 	ccerr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
@@ -450,6 +451,39 @@ func Kafka(prefix string) (kafka.Config, error) {
 		User:      parser.getString(prefix + ".user"),
 		Password:  parser.getString(prefix + ".password"),
 	}, nil
+}
+
+// Crypto return crypto configuration information according to the prefix.
+func Crypto(prefix string) (*cryptor.Config, error) {
+	var parser *viperParser
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		parser = getCommonParser()
+		if parser != nil {
+			break
+		}
+		blog.Warn("the configuration of common is not ready yet")
+		time.Sleep(time.Duration(1) * time.Second)
+	}
+
+	if parser == nil {
+		return nil, errors.New("get common parser failed")
+	}
+
+	if !parser.isSet(prefix) {
+		return &cryptor.Config{Enabled: false}, nil
+	}
+
+	conf := new(cryptor.Config)
+	err := parser.unmarshalKey(prefix, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	if conf.Algorithm == "" {
+		conf.Algorithm = cryptor.AesGcm
+	}
+
+	return conf, nil
 }
 
 // String return the string value of the configuration information according to the key.
