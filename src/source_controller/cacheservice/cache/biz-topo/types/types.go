@@ -23,6 +23,11 @@ type GetBizTopoOption struct {
 	BizID int64 `json:"bk_biz_id"`
 }
 
+// RefreshBizTopoOption refresh business topology options
+type RefreshBizTopoOption struct {
+	BizID int64 `json:"bk_biz_id"`
+}
+
 // BizTopo is the business topology
 type BizTopo struct {
 	Biz   *BizInfo `json:"biz"`

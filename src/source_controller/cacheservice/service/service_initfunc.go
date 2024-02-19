@@ -54,6 +54,7 @@ func (s *cacheService) initCache(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/cache/topo/brief/biz/{biz}",
 		Handler: s.SearchBusinessBriefTopology})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/biz/{type}/topo", Handler: s.SearchBizTopo})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/biz/{type}/topo", Handler: s.RefreshBizTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/cache/event", Handler: s.WatchEvent})
 
 	utility.AddToRestfulWebService(web)
