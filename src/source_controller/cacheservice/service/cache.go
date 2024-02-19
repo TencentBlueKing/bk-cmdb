@@ -303,6 +303,28 @@ func (s *cacheService) SearchBizTopo(cts *rest.Contexts) {
 	cts.RespString(res)
 }
 
+// RefreshBizTopo refresh business topology cache info
+func (s *cacheService) RefreshBizTopo(cts *rest.Contexts) {
+	topoType := cts.Request.PathParameter("type")
+	if len(topoType) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "type"))
+		return
+	}
+
+	opt := new(types.RefreshBizTopoOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	err := s.cacheSet.Topo.RefreshBizTopo(cts.Kit, topoType, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(nil)
+}
+
 // WatchEvent TODO
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	var err error

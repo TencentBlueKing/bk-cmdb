@@ -72,3 +72,35 @@ func (t *Topo) GetBizTopo(kit *rest.Kit, typ string, opt *types.GetBizTopoOption
 
 	return topology, nil
 }
+
+// RefreshBizTopo refresh business topology cache info by topology type
+func (t *Topo) RefreshBizTopo(kit *rest.Kit, typ string, opt *types.RefreshBizTopoOption) error {
+	// read from secondary in mongodb cluster.
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
+
+	topoType := types.TopoType(typ)
+	topoKey, exists := key.TopoKeyMap[topoType]
+	if !exists {
+		blog.Errorf("biz topo type %s is invalid, rid: %s", topoType, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "type")
+	}
+
+	if opt == nil || opt.BizID <= 0 {
+		blog.Errorf("refresh biz topo option %+v is invalid, rid: %s", opt, kit.Rid)
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
+	}
+
+	bizTopo, err := topo.GenBizTopo(kit.Ctx, opt.BizID, topoType, false, kit.Rid)
+	if err != nil {
+		blog.Errorf("generate biz: %d %s topology from db failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
+		return err
+	}
+
+	_, err = topoKey.UpdateTopology(kit.Ctx, bizTopo)
+	if err != nil {
+		blog.Errorf("update biz: %d %s topology cache failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
+		return err
+	}
+
+	return nil
+}

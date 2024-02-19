@@ -36,7 +36,7 @@ func init() {
 	TopoKeyMap[types.KubeType] = Key{
 		topoType:  types.KubeType,
 		namespace: fmt.Sprintf("%stopology:%s", common.BKCacheKeyV3Prefix, types.KubeType),
-		ttl:       24 * time.Hour,
+		ttl:       3 * time.Hour,
 		GetRefreshInterval: func() time.Duration {
 			if !configcenter.IsExist(kubeRefreshIntervalConfig) {
 				return defaultKubeRefreshInterval

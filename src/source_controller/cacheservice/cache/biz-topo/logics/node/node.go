@@ -35,7 +35,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const step = 100
+const step = 500
 
 // PagedGetNodes loop getting paged nodes from db
 func PagedGetNodes(ctx context.Context, table string, nodeCond mapstr.MapStr, fields []string, parser NodeParser,
