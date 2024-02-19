@@ -16,6 +16,7 @@
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
+    "@blueking/notice-component-vue2": "^2.0.1-beta.2",
     "@blueking/paas-login": "^0.0.11",
     "@blueking/user-selector": "^1.0.6",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
