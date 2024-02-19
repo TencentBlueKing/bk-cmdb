@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Gets a list of service instances bound to the host based on the host id
+Retrieve the list of service instances bound to a host based on the host ID.
 
 ### Request Parameters
 
@@ -8,20 +8,20 @@ Gets a list of service instances bound to the host based on the host id
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id            |  int  |yes   | Business ID |
-| bk_host_id            |  int  |yes   | Host ID|
-| page       |   object    | no     | Query criteria|
+| Field      | Type   | Required | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id  | int    | Yes      | Business ID                                                  |
+| bk_host_id | int    | Yes      | Host ID to retrieve service instance information bound to the host |
+| page       | object | No       | Query conditions                                             |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes | Record start position|
-| limit    |   int    | yes  | Limit bars per page, Max. 500|
+| Field | Type | Required | Description                             |
+| ----- | ---- | -------- | --------------------------------------- |
+| start | int  | Yes      | Record start position                   |
+| limit | int  | Yes      | Number of records per page, maximum 500 |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -38,7 +38,7 @@ Gets a list of service instances bound to the host based on the host id
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -71,38 +71,39 @@ Gets a list of service instances bound to the host based on the host id
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### data Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|count| int| Total|
-|info| array| Return result|
+| Field | Type  | Description              |
+| ----- | ----- | ------------------------ |
+| count | int   | Total number of records  |
+| info  | array | List of returned results |
 
-#### Info Field Description
+#### info Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|id| int| Service instance ID|
-|name| string| Service instance name|
-|bk_module_id| int| Model id|
-|service_template_id| int| Service template ID|
-| labels           |  map  |Tag information|
-|bk_host_id| int| Host id|
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data            |
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string       | Developer account number|
+| Field               | Type   | Description                |
+| ------------------- | ------ | -------------------------- |
+| id                  | int    | Service instance ID        |
+| name                | string | Service instance name      |
+| bk_biz_id           | int    | Business ID                |
+| bk_module_id        | int    | Module ID                  |
+| bk_host_id          | int    | Host ID                    |
+| creator             | string | Creator of this data       |
+| modifier            | string | Last modifier of this data |
+| create_time         | string | Creation time              |
+| last_time           | string | Update time                |
+| bk_supplier_account | string | Supplier account           |
+| service_template_id | int    | Service template ID        |
+| labels              | map    | Label information          |

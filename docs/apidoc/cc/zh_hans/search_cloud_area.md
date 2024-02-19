@@ -8,29 +8,28 @@
 
 #### 接口参数
 
-| 字段                 |  类型      | 必选   |  描述       |
-|----------------------|------------|--------|-------------|
-|condition|object|否|查询条件|
-| page| object| 是|分页信息|
-
+| 字段        | 类型     | 必选 | 描述   |
+|-----------|--------|----|------|
+| condition | object | 否  | 查询条件 |
+| page      | object | 是  | 分页信息 |
 
 #### condition
-| 字段                 |  类型      | 必选   |  描述       |
-|----------------------|------------|--------|-------------|
-|bk_cloud_id|int|否|管控区域ID|
-|bk_cloud_name|string|否|管控区域名称|
+
+| 字段            | 类型     | 必选 | 描述     |
+|---------------|--------|----|--------|
+| bk_cloud_id   | int    | 否  | 管控区域ID |
+| bk_cloud_name | string | 否  | 管控区域名称 |
 
 #### page 字段说明
 
-| 字段      |  类型      | 必选   |  描述      |
-|-----------|------------|--------|------------|
-|start|int|否|获取数据偏移位置|
-|limit|int|是|过去数据条数限制，建议 为200|
-
+| 字段    | 类型  | 必选 | 描述               |
+|-------|-----|----|------------------|
+| start | int | 否  | 获取数据偏移位置         |
+| limit | int | 是  | 过去数据条数限制，建议 为200 |
 
 ### 请求参数示例
 
-``` python
+```json
 {
 
     "bk_app_code": "esb_test",
@@ -50,7 +49,7 @@
 
 ### 返回结果示例
 
-```python
+```json
 {
   "result": true,
   "code": 0,
@@ -75,31 +74,31 @@
 ```
 
 ### 返回结果参数说明
+
 #### response
 
-| 名称    | 类型   | 描述                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误    |
-| message | string | 请求失败返回的错误信息                     |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                             |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |
 
 #### data
 
-| 名称  | 类型  | 说明 |
-|---|---|---|
-| count| int| 记录条数 |
-| info| array |  查询到的管控区域列表信息 |
+| 字段    | 类型    | 描述           |
+|-------|-------|--------------|
+| count | int   | 记录条数         |
+| info  | array | 查询到的管控区域列表信息 |
 
 #### data.info 字段说明：
-| 名称  | 类型  | 说明 |
-|---|---|---|
-| bk_cloud_id | int | 管控区域ID |
-| bk_cloud_name | string  | 管控区域名字 | 
-| create_time | string | 创建时间 |
-| last_time | string | 最后修改时间 | 
 
-
+| 字段            | 类型     | 描述     |
+|---------------|--------|--------|
+| bk_cloud_id   | int    | 管控区域ID |
+| bk_cloud_name | string | 管控区域名字 | 
+| create_time   | string | 创建时间   |
+| last_time     | string | 最后修改时间 | 
 

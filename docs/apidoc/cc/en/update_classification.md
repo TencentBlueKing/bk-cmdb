@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update model classification
+Update model classification (Permission: Model group editing permission)
 
 ### Request Parameters
 
@@ -8,16 +8,13 @@ Update model classification
 
 #### Interface Parameters
 
-| Field                   | Type    | Required   | Description                                      |
-|------------------------|----------|--------|--------------------------------------------|
-| id                     |  int      | no     | Record ID of the target data as a condition for the update operation       |
-| bk_classification_name | string   | no     | Class name|
-| bk_classification_icon | string   | no     | Icon of model classification, value can be referred to, value can be referred to [(classIcon.json)](resource_define/classIcon.json)|
+| Field                  | Type   | Required | Description                                                  |
+| ---------------------- | ------ | -------- | ------------------------------------------------------------ |
+| id                     | int    | No       | The record ID of the target data, used as a condition for the update operation |
+| bk_classification_name | string | No       | Classification name                                          |
+| bk_classification_icon | string | No       | Model classification icon, the value can refer to [(classIcon.json)](https://chat.openai.com/c/resource_define/classIcon.json) |
 
-
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -34,7 +31,6 @@ Update model classification
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -45,15 +41,15 @@ Update model classification
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-delete container node (v3.12.1+, permission: kube node deletion permission)
+Delete container node (v3.12.1+, Permission: Container node deletion permission)
 
 ### Request Parameters
 
@@ -8,18 +8,17 @@ delete container node (v3.12.1+, permission: kube node deletion permission)
 
 #### Interface Parameters
 
-| Field     | Type  | Required | Description                       |
-|-----------|-------|----------|-----------------------------------|
-| bk_biz_id | int   | yes      | ID of the container node in cmdb  |
-| ids       | array | yes      | IDs of the container node in cmdb |
+| Field     | Type  | Required | Description                            |
+| --------- | ----- | -------- | -------------------------------------- |
+| bk_biz_id | int   | Yes      | Business ID of the container node      |
+| ids       | array | Yes      | List of IDs of the nodes to be deleted |
 
 **Note:**
 
-- user needs to ensure that there are no associated resources (such as pods) under the node, otherwise the deletion will
-  fail.
-- delete no more than 100 Nodes at one time.
+- Users need to ensure that there are no associated resources (such as pods) under the nodes to be deleted, otherwise, deletion will fail.
+- The number of nodes to be deleted in one go should not exceed 100.
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -35,7 +34,7 @@ delete container node (v3.12.1+, permission: kube node deletion permission)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -48,15 +47,13 @@ delete container node (v3.12.1+, permission: kube node deletion permission)
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameter Description
 
-#### response
-
-| Name       | Type   | Description                                                                        |
-|------------|--------|------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request succeeded or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
-| message    | string | Error message returned by request failure                                          |
-| permission | object | Permission information                                                             |
-| data       | object | Data returned by request                                                           |
-| request_id | string | Request chain id                                                                   |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| data       | object | No data returned                                             |
+| request_id | string | Request chain ID                                             |

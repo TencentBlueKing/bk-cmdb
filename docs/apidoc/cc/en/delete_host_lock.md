@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Remove host lock from host ID list (v3.8.6)
+Delete host locks based on a list of host IDs (v3.8.6, Permission: Business host editing permission)
 
 ### Request Parameters
 
@@ -8,12 +8,11 @@ Remove host lock from host ID list (v3.8.6)
 
 #### Interface Parameters
 
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-|id_list|  int array| yes | Host ID list|
+| Field   | Type      | Required | Description      |
+| ------- | --------- | -------- | ---------------- |
+| id_list | int array | Yes      | List of host IDs |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -25,10 +24,9 @@ Remove host lock from host ID list (v3.8.6)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -39,13 +37,13 @@ Remove host lock from host ID list (v3.8.6)
 }
 ```
 
-#### response
+#### Response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

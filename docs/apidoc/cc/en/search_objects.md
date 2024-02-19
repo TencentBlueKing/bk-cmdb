@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query model based on optional criteria
+Query models based on optional conditions (Permission: Model View Permission)
 
 ### Request Parameters
 
@@ -8,15 +8,16 @@ Query model based on optional criteria
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description                                                    |
-|----------------------|------------|--------|----------------------------------------------------------|
-| creator              |  string     | no     | Creator of this data                                           |
-| modifier             |  string     | no     | The last person to modify this piece of data                                   |
-| bk_classification_id | string     | no     | The classification ID of the object model, which can only be named by English letter sequence                 |
-| bk_obj_id            |  string     | no     | The ID of the object model, which can only be named in English letter sequence                     |
-| bk_obj_name          |  string     | no     | The name of the object model, for presentation, can be used in any language that humans can read|
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| creator              | string | No       | Creator of this data                                         |
+| modifier             | string | No       | Last modifier of this data                                   |
+| bk_classification_id | string | No       | Classification ID of the object model, can only be named with alphabetical sequence |
+| bk_obj_id            | string | No       | ID of the object model, can only be named with alphabetical sequence |
+| bk_obj_name          | string | No       | Name of the object model, used for display, can be any language readable by humans |
+| obj_sort_number      | int    | No       | Sorting order of the object model under the corresponding model group |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -27,15 +28,15 @@ Query model based on optional criteria
     "creator": "user",
     "modifier": "user",
     "bk_classification_id": "test",
-    "bk_obj_id": "biz"
-    "bk_obj_name": "aaa"
+    "bk_obj_id": "biz",
+    "bk_obj_name": "aaa",
+    "obj_sort_number": 1
 }
 ```
 
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -57,37 +58,40 @@ Query model based on optional criteria
             "bk_obj_id": "XX",
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
-            "bk_supplier_account": "0"
+            "bk_supplier_account": "0",
+            "obj_sort_number": 1
         }
     ]
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field                 | Type               | Description                                                                                           |
-|----------------------|--------------------|------------------------------------------------------------------------------------------------|
-| id                   |  int                | ID of the data record                                                                                   |
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data                                                                         |
-| bk_classification_id | string             | The classification ID of the object model, which can only be named by English letter sequence                                                       |
-| bk_obj_id            |  string             | The ID of the object model, which can only be named by English letter sequence                                                           |
-| bk_obj_name          |  string             | The name of the object model, used to show                                                                       |
-| bk_supplier_account  | string             | Developer account number                                                                                     |
-| bk_ispaused          |  bool               | Disable, true or false                                                                        |
-| ispre                |  bool               | Predefined, true or false                                                                      |
-| bk_obj_icon          |  string             | ICON information of object model, used for front-end display, and the value can be referred to [(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json)|
-| position             |  json object string |Coordinates for front-end presentation                                                                             |
-| description           |  string     | Description information of data                                           |
+| Field                | Type               | Description                                                  |
+| -------------------- | ------------------ | ------------------------------------------------------------ |
+| id                   | int                | Data record ID                                               |
+| creator              | string             | Creator of this data                                         |
+| modifier             | string             | Last modifier of this data                                   |
+| bk_classification_id | string             | Classification ID of the object model, can only be named with alphabetical sequence |
+| bk_obj_id            | string             | ID of the object model, can only be named with alphabetical sequence |
+| bk_obj_name          | string             | Name of the object model, used for display                   |
+| bk_supplier_account  | string             | Vendor account                                               |
+| bk_ispaused          | bool               | Whether it is paused, true or false                          |
+| ispre                | bool               | Whether it is predefined, true or false                      |
+| bk_obj_icon          | string             | ICON information of the object model, used for front-end display, values can refer to [(modleIcon.json)](https://chat.openai.com/static/esb/api_docs/res/cc/modleIcon.json) |
+| position             | json object string | Coordinates used for front-end display                       |
+| description          | string             | Description of the data                                      |
+| obj_sort_number      | int                | Sorting order of the object model under the corresponding model group |

@@ -1,19 +1,13 @@
-### Functional description
+### Function Description
 
-This interface is used to query the concise relationship information of the upper and lower levels (models) directly associated with an instance of a certain level (model) in the business topology. (v3.10.1+)
+This interface is used to query concise relationship information directly related to the upper and lower levels (models) of an instance in the business topology. (v3.10.1+)
 
+If the business topology levels are from top to bottom: business, department (custom business level), cluster, module. Then:
 
-If the business topology level is business, Department (user-defined business level), set and module from top to bottom. Then:
+1. Upwards, you can query the relationship information of the directly superior **department** of a certain cluster.
+2. Downwards, you can query the module relationship information directly associated with that cluster.
 
-
-1. You can query the relationship information of the direct superior Department to which a set belongs upward;
-
-
-2. The module relationship information directly associated with the set can be queried downward.
-
-
-Conversely, you can not directly query the module relationship contained in a Department of a custom level instance through Department, because Department and module are not directly associated.
-
+Conversely, you cannot directly query the relationship between a custom level instance **department** and the modules it contains, as departments and modules are not directly associated.
 
 ### Request Parameters
 
@@ -21,24 +15,22 @@ Conversely, you can not directly query the module relationship contained in a De
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| src_biz_obj  | string  |yes     | In business hierarchy, the model ID of source hierarchy can be "biz," user-defined hierarchy model ID(bk_obj_id),"set," and "module." |
-| src_ids  | array  |yes     | List of instance IDs represented by src_biz_obj, with a list length in the range of [1200]|
-| dest_biz_obj  | string  |yes     | The business hierarchy model directly (immediately) associated with src_biz_obj.  Where the business ("biz") As an exception, dest_biz_obj can be "biz" for any src_biz_obj. But the two are not allowed to be the same. |
-| page  | object  |yes     | Paging configuration information returned by queried data|
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| src_biz_obj  | string | Yes      | In the business level, the model ID of the source level, which can be "biz", the model ID of the custom level (bk_obj_id), "set", or "module". |
+| src_ids      | array  | Yes      | A list of instance IDs representing src_biz_obj, with a list length ranging from [1, 200]. |
+| dest_biz_obj | string | Yes      | The business level model directly (closely) related to src_biz_obj. For business ("biz"), any src_biz_obj's dest_biz_obj can be "biz". However, they cannot be the same. |
+| page         | object | Yes      | Query the paging configuration information returned by the data |
 
-#### Page field Description
+#### Explanation of the page field
 
-| Field| Type   | Required| Description                  |
-| ----- | ------ | ---- | --------------------- |
-| start | int    | yes | Record start position, starting from 0         |
-| limit | int    | yes | Limit bars per page, Max. 500|
-| sort | string    | Unavailable   | This field is sorted by the identity ID of the associated (dest_biz_obj) by default in the interface. Please do not set this field|
+| Field | Type   | Required       | Description                                                  |
+| ----- | ------ | -------------- | ------------------------------------------------------------ |
+| start | int    | Yes            | Record starting position, starting from 0                    |
+| limit | int    | Yes            | Number of records per page, maximum 500                      |
+| sort  | string | Not applicable | This field is set by default in the interface to sort by the ID of the associated (dest_biz_obj) identity. Do not set this field |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -56,7 +48,7 @@ Conversely, you can not directly query the module relationship contained in a De
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -81,29 +73,28 @@ Conversely, you can not directly query the module relationship contained in a De
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-| bk_biz_id | int   | The business ID to which this instance belongs     |
-| src_id | int   | It is consistent with the ID list entered by the src_ids in the parameter. Represents the instance ID of the input query model|
-| dest_id | int| The instance ID directly associated with the model corresponding to dest_biz_obj in the parameter and the instance corresponding to src_ids|
+#### Explanation of data
+
+| Field     | Type | Description                                                  |
+| --------- | ---- | ------------------------------------------------------------ |
+| bk_biz_id | int  | The business ID to which the instance belongs                |
+| src_id    | int  | Consistent with the ID list of the src_ids input in the parameter, representing the ID of the instance queried by the parameter |
+| dest_id   | int  | Corresponding to the model of dest_biz_obj and the instance directly associated with src_ids |
 
 Note:
 
-1. If it is a downward query (query from the level to the lower level), it is judged that the method of paging and pulling data is that the returned data array list is empty.
-
-
-2. In the case of an upward query (from a low level to a high level), the interface can return all query results at once, provided that the value of page.limit is>= the length of src_ids.
+1. If it is a downward query (from higher level to lower level), the method to judge whether the data fetching is complete is that the data array list returned is empty.
+2. If it is an upward query (from lower level to higher level), this interface can return all query results at once. The condition is that the value of page.limit must be >= the length of src_ids.

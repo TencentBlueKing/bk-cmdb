@@ -8,22 +8,21 @@
 
 #### 接口参数
 
-| 字段                   |  类型    | 必选   |  描述                                            |
-|------------------------|----------|--------|--------------------------------------------------|
-| bk_supplier_account    | string   | 是     | 开发商账号                                       |
-| subscription_id        | int      | 是     | 订阅ID                                           |
-| subscription_name      | string   | 是     | 订阅的名字                                       |
-| system_name            | string   | 是     | 订阅事件的系统的名字                             |
-| callback_url           | string   | 是     | 回调函数                                         |
-| confirm_mode           | string   | 是     | 事件发送成功校验模式,可选 1-httpstatus,2-regular |
-| confirm_pattern        | string   | 是     | callback的httpstatus或正则                       |
-| subscription_form      | string   | 是     | 订阅的事件,以逗号分隔                            |
-| timeout                | int      | 是     | 发送事件超时时间                                 |
-
+| 字段                  | 类型     | 必选 | 描述                                   |
+|---------------------|--------|----|--------------------------------------|
+| bk_supplier_account | string | 是  | 开发商账号                                |
+| subscription_id     | int    | 是  | 订阅ID                                 |
+| subscription_name   | string | 是  | 订阅的名字                                |
+| system_name         | string | 是  | 订阅事件的系统的名字                           |
+| callback_url        | string | 是  | 回调函数                                 |
+| confirm_mode        | string | 是  | 事件发送成功校验模式,可选 1-httpstatus,2-regular |
+| confirm_pattern     | string | 是  | callback的httpstatus或正则               |
+| subscription_form   | string | 是  | 订阅的事件,以逗号分隔                          |
+| timeout             | int    | 是  | 发送事件超时时间                             |
 
 ### 请求参数示例
 
-```python
+```json
 {
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",
@@ -43,8 +42,7 @@
 
 ### 返回结果示例
 
-```python
-
+```json
 {
     "result": true,
     "code": 0,
@@ -59,11 +57,11 @@
 
 #### response
 
-| 名称    | 类型   | 描述                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | 请求成功与否。true:请求成功；false请求失败 |
-| code    | int    | 错误编码。 0表示success，>0表示失败错误   |
-| message | string | 请求失败返回的错误信息                   |
-| permission    | object | 权限信息    |
-| request_id    | string | 请求链id    |
-| data    | object | 请求返回的数据                          |
+| 字段         | 类型     | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| request_id | string | 请求链id                      |
+| data       | object | 请求返回的数据                    |

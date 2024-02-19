@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-create new container pods and containers(v3.12.1+，permission: kube pod creation permission)
+Create Containers, Pods, and Containers (v3.12.1+, Permission: Container pods creation permission)
 
 ### Request Parameters
 
@@ -8,102 +8,102 @@ create new container pods and containers(v3.12.1+，permission: kube pod creatio
 
 #### Interface Parameters
 
-| Field | Type  | Required | Description                      |
-|-------|-------|----------|----------------------------------|
-| data  | array | yes      | Details of the pod to be created |
+| Field | Type  | Required | Description                            |
+| ----- | ----- | -------- | -------------------------------------- |
+| data  | array | Yes      | Detailed information for creating pods |
 
 #### data[x]
 
-| Field     | Type  | Required | Description                                          |
-|-----------|-------|----------|------------------------------------------------------|
-| bk_biz_id | int   | yes      | business ID                                          |
-| pods      | array | yes      | Details of the pod to be created under this business |
+| Field     | Type  | Required | Description                                             |
+| --------- | ----- | -------- | ------------------------------------------------------- |
+| bk_biz_id | int   | Yes      | Business ID                                             |
+| pods      | array | Yes      | Detailed information for creating pods in this business |
 
 #### pods[x]
 
-| Field          | Type         | Required | Description                 |
-|----------------|--------------|----------|-----------------------------|
-| spec           | object       | yes      | pod association information |
-| bk_host_id     | int          | yes      | pod associated host id      |
-| name           | string       | yes      | pod name                    |
-| operator       | string array | yes      | pod operator                |
-| priority       | object       | no       | priority                    |
-| labels         | object       | no       | labels                      |
-| ip             | string       | no       | Container network IP        |
-| ips            | array        | no       | Container network IP array  |
-| volumes        | object       | no       | Volume information          |
-| qos_class      | string       | no       | service quality             |
-| node_selectors | object       | no       | Node label selector         |
-| tolerations    | object       | no       | tolerance                   |
-| containers     | array        | no       | container information       |
+| Field          | Type         | Required | Description                    |
+| -------------- | ------------ | -------- | ------------------------------ |
+| spec           | object       | Yes      | Associated pod information     |
+| bk_host_id     | int          | Yes      | Associated host ID             |
+| name           | string       | Yes      | Pod name                       |
+| operator       | string array | Yes      | Person in charge of the pod    |
+| priority       | object       | No       | Priority                       |
+| labels         | object       | No       | Labels                         |
+| ip             | string       | No       | Container network IP           |
+| ips            | array        | No       | Array of container network IPs |
+| volumes        | object       | No       | Volume information             |
+| qos_class      | string       | No       | Quality of service             |
+| node_selectors | object       | No       | Node label selector            |
+| tolerations    | object       | No       | Tolerations                    |
+| containers     | array        | No       | Container information          |
 
 #### spec
 
-| Field           | Type   | Required | Description                                             |
-|-----------------|--------|----------|---------------------------------------------------------|
-| bk_cluster_id   | int    | yes      | ID of the cluster where the pod is located              |
-| bk_namespace_id | int    | yes      | The ID of the namespace to which the pod belongs        |
-| bk_node_id      | int    | yes      | ID of the node where the pod is located                 |
-| ref             | object | yes      | Information about the workload corresponding to the pod |
+| Field           | Type   | Required | Description                                  |
+| --------------- | ------ | -------- | -------------------------------------------- |
+| bk_cluster_id   | int    | Yes      | ID of the cluster where the pod is located   |
+| bk_namespace_id | int    | Yes      | ID of the namespace to which the pod belongs |
+| bk_node_id      | int    | Yes      | ID of the node where the pod is located      |
+| ref             | object | Yes      | Relevant information about the pod           |
+| bk_pod_id       | int    | No       | ID of the pod (optional)                     |
 
 #### ref
 
-| Field | Type | Required | Description                                                                      |
-|-------|------|----------|----------------------------------------------------------------------------------|
-| kind  | int  | yes      | the workload category associated with the pod. For specific categories, see Note |
-| id    | int  | yes      | the ID of the workload associated with the pod                                   |
+| Field | Type | Required | Description                                                  |
+| ----- | ---- | -------- | ------------------------------------------------------------ |
+| kind  | int  | Yes      | Category of the workload related to the pod, see notes for specific categories |
+| id    | int  | Yes      | ID of the workload related to the pod                        |
 
 #### containers[x]
 
-| Field         | Type   | Required | Description               |
-|---------------|--------|----------|---------------------------|
-| name          | string | yes      | container name            |
-| container_uid | string | yes      | container ID              |
-| image         | string | no       | mirror information        |
-| ports         | array  | no       | container port            |
-| host_ports    | array  | no       | host port mapping         |
-| args          | array  | no       | startup parameters        |
-| started       | int    | no       | start time                |
-| limits        | object | no       | resource constraints      |
-| requests      | object | no       | application resource size |
-| liveness      | object | no       | survival probe            |
-| environment   | array  | no       | environment variable      |
-| mounts        | array  | no       | mount volume              |
+| Field         | Type   | Required | Description             |
+| ------------- | ------ | -------- | ----------------------- |
+| name          | string | Yes      | Container name          |
+| container_uid | string | Yes      | Container ID            |
+| image         | string | No       | Image information       |
+| ports         | array  | No       | Container ports         |
+| host_ports    | array  | No       | Host port mapping       |
+| args          | array  | No       | Startup parameters      |
+| started       | int    | No       | Startup time            |
+| limits        | object | No       | Resource limits         |
+| requests      | object | No       | Requested resource size |
+| liveness      | object | No       | Liveness probe          |
+| environment   | array  | No       | Environment variables   |
+| mounts        | array  | No       | Mounted volumes         |
 
 #### ports[x]
 
 | Field         | Type   | Required | Description    |
-|---------------|--------|----------|----------------|
-| name          | string | yes      | port name      |
-| hostPort      | int    | no       | host port      |
-| containerPort | int    | no       | container port |
-| protocol      | string | no       | protocol name  |
-| hostIP        | string | no       | host IP        |
+| ------------- | ------ | -------- | -------------- |
+| name          | string | Yes      | Port name      |
+| hostPort      | int    | No       | Host port      |
+| containerPort | int    | No       | Container port |
+| protocol      | string | No       | Protocol name  |
+| hostIP        | string | No       | Host IP        |
 
 #### liveness
 
-| Field     | Type   | Required | Description     |
-|-----------|--------|----------|-----------------|
-| exec      | object | yes      | perform action  |
-| httpGet   | object | no       | Http Get action |
-| tcpSocket | object | no       | tcp socket      |
-| grpc      | object | no       | grpc protocol   |
+| Field     | Type   | Required | Description      |
+| --------- | ------ | -------- | ---------------- |
+| exec      | object | Yes      | Execution action |
+| httpGet   | object | No       | Http Get action  |
+| tcpSocket | object | No       | tcp socket       |
+| grpc      | object | No       | grpc protocol    |
 
-**注意：**
+**Note:**
 
-- create no more than 200 pods at one time .
-- specific workload category: deployment、statefulSet、daemonSet、gameStatefulSet、gameDeployment、cronJob、job、pods.
-- this interface will create pods and corresponding containers synchronously.
+- The number of pods created at once should not exceed 200.
+- Specific workload categories: deployment, statefulSet, daemonSet, gameStatefulSet, gameDeployment, cronJob, job, pods.
+- This interface will synchronously create pods and their corresponding containers.
 
 ### Request Parameters Example
 
 ```json
- {
+{
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",
   "bk_username": "xxx",
   "bk_token": "xxx",
-  "bk_biz_id": 2,
   "data": [
     {
       "bk_biz_id": 1,
@@ -152,7 +152,7 @@ create new container pods and containers(v3.12.1+，permission: kube pod creatio
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -170,25 +170,23 @@ create new container pods and containers(v3.12.1+，permission: kube pod creatio
 }
 ```
 
-**注意：**
+**Note:**
 
-- the order of the pod ID array in the returned data is consistent with the order of the array data in the parameter.
+- The order of the pod ID array returned in the data field corresponds to the order of the array data in the parameters.
 
-### Return Result Parameters Description
+### Response Parameters Description
 
-#### response
-
-| Name       | Type   | Description                                                                        |
-|------------|--------|------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request succeeded or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                         |
-| message    | string | Error message returned by request failure                                          |
-| permission | object | Permission information                                                             |
-| data       | object | Data returned by request                                                           |
-| request_id | string | Request chain id                                                                   |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| data       | object | Data returned by the request                                 |
+| request_id | string | Request chain ID                                             |
 
 ### data
 
-| Name | Type  | Description                  |
-|------|-------|------------------------------|
-| ids  | array | list of kube pod IDs created |
+| Field | Type  | Description             |
+| ---- | ----- | ----------------------- |
+| ids  | array | List of created pod IDs |

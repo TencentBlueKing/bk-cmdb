@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete dynamic grouping (V3.9.6)
+Delete a dynamic group (Version: v3.9.6, Permission: Dynamic group deletion permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Delete dynamic grouping (V3.9.6)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | yes  | Business ID |
-| id        |  string     | yes | Dynamic grouping pk ID|
+| Field     | Type   | Required | Description                  |
+| --------- | ------ | -------- | ---------------------------- |
+| bk_biz_id | int    | Yes      | Business ID                  |
+| id        | string | Yes      | Dynamic group primary key ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -26,25 +26,26 @@ Delete dynamic grouping (V3.9.6)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
-#### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+#### Response
+
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

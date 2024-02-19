@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Bulk update object instances
+Batch Update Object Instances (Permission: Model Instance Editing Permission)
 
 ### Request Parameters
 
@@ -8,26 +8,27 @@ Bulk update object instances
 
 #### Interface Parameters
 
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-| bk_obj_id           |  string      | yes  | Model ID                           |
-| update              |  array| yes     | Instance updated fields and values             |
+| Field     | Type   | Required | Description                                   |
+| --------- | ------ | -------- | --------------------------------------------- |
+| bk_obj_id | string | Yes      | Model ID                                      |
+| update    | array  | Yes      | Fields and values to be updated for instances |
 
 #### update
-| Field         | Type   | Required| Description                           |
-|--------------|--------|-------|--------------------------------|
-| datas        |  object |yes    | The value of the field for which the instance is updated           |
-| inst_id      |  int    | yes | Indicates the specific instance that datas uses for the update   |
+
+| Field   | Type   | Required | Description                                            |
+| ------- | ------ | -------- | ------------------------------------------------------ |
+| datas   | object | Yes      | Fields and values to be updated for instances          |
+| inst_id | int    | Yes      | Specific instance for which datas is used for updating |
 
 #### datas
-| Field         | Type   | Required| Description                           |
-|--------------|--------|-------|--------------------------------|
-| bk_inst_name | string |no    | Instance name, or any other custom field|
 
-**Datas is an object of map type, key is a field defined by the model corresponding to the instance, and value is the value of the field**
+| Field        | Type   | Required | Description                                    |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| bk_inst_name | string | No       | Instance name, can also be other custom fields |
 
+**datas is a map-type object, where the key is the field defined in the model for the instance, and the value is the value of the field**
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -35,23 +36,21 @@ Bulk update object instances
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_obj_id":"test",
-    "update":[
+    "bk_obj_id": "test",
+    "update": [
         {
-          "datas":{
-            "bk_inst_name":"batch_update"
-          },
-          "inst_id":46
-         }
-        ]
+            "datas": {
+                "bk_inst_name": "batch_update"
+            },
+            "inst_id": 46
+        }
+    ]
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -64,11 +63,11 @@ Bulk update object instances
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

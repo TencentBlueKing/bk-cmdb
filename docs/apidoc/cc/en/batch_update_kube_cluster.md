@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-batch update container cluster attribute fields (v3.12.1+, permission: kube cluster editing permissions)
+Update Container Cluster Attribute Fields (Version: v3.12.1+, Permission: Edit Permission for Container Cluster)
 
 ### Request Parameters
 
@@ -8,32 +8,32 @@ batch update container cluster attribute fields (v3.12.1+, permission: kube clus
 
 #### Interface Parameters
 
-| Field     | Type   | Required | Description                       |
-|-----------|--------|----------|-----------------------------------|
-| bk_biz_id | int    | yes      | business ID                       |
-| ids       | array  | yes      | unique IDs of the cluster in cmdb |
-| data      | object | yes      | data that needs to be updated     |
+| Field     | Type   | Required | Description                    |
+| --------- | ------ | -------- | ------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                    |
+| ids       | array  | Yes      | Unique IDs of clusters in cmdb |
+| data      | object | Yes      | Data to be updated             |
 
 #### data
 
-| Field           | Type   | Required | Description                             |
-|-----------------|--------|----------|-----------------------------------------|
-| name            | string | no       | cluster name                            |
-| version         | string | no       | cluster version                         |
-| network_type    | string | no       | network type                            |
-| region          | string | no       | the region where the cluster is located |
-| vpc             | string | no       | vpc network                             |
-| network         | array  | no       | cluster network                         |
-| bk_project_id   | string | no       | project_id                              |
-| bk_project_name | string | no       | project name                            |
-| bk_project_code | string | no       | project english name                    |
+| Field           | Type   | Required | Description          |
+| --------------- | ------ | -------- | -------------------- |
+| name            | string | No       | Cluster name         |
+| version         | string | No       | Cluster version      |
+| network_type    | string | No       | Network type         |
+| region          | string | No       | Region               |
+| network         | array  | No       | Cluster network      |
+| environment     | string | No       | Environment          |
+| bk_project_id   | string | No       | Project ID           |
+| bk_project_name | string | No       | Project name         |
+| bk_project_code | string | No       | Project English name |
 
 **Note:**
 
-- the number of clusters to be updated at one time does not exceed 100
-- this api does not support updating cluster type, please use the `update_kube_cluster_type` api to update it.
+- The number of clusters to be updated at once should not exceed 100.
+- This interface does not support updating the cluster type. If you need to update the cluster type, please use the `update_kube_cluster_type` interface.
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -53,6 +53,7 @@ batch update container cluster attribute fields (v3.12.1+, permission: kube clus
     "network": [
       "127.0.0.0/21"
     ],
+    "environment": "xxx",
     "bk_project_id": "21bf9ef9be7c4d38a1d1f2uc0b44a8f2",
     "bk_project_name": "test",
     "bk_project_code": "test"
@@ -60,10 +61,10 @@ batch update container cluster attribute fields (v3.12.1+, permission: kube clus
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
- {
+{
   "result": true,
   "code": 0,
   "message": "success",
@@ -73,15 +74,13 @@ batch update container cluster attribute fields (v3.12.1+, permission: kube clus
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
-#### response
-
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

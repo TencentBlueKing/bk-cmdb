@@ -1,7 +1,8 @@
-### Functional description
-Query the brief information of the service topo tree, which only contains  set , module and host information. (v3.9.13)
+### Function Description
 
-- This interface is intended for use by GSEKit and is hidden in the ESB documentation
+Query the brief information of the business topology tree, including clusters, modules, and hosts. (v3.9.13)
+
+- This interface is exclusively for GSEKit use and is hidden in the ESB document.
 
 ### Request Parameters
 
@@ -9,18 +10,21 @@ Query the brief information of the service topo tree, which only contains  set ,
 
 #### Interface Parameters
 
-|Field| Type| Required| Description|
-|---|---|---|---|
-|bk_biz_id| int64| yes | Business ID |
-|set_fields| string array| yes | Controls which fields are in the set information that returns the result |
-|module_fields| string array| yes | Controls which fields are in the module information that returns the result|
-|host_fields| string array| yes | Controls which fields are in the host information that returns the result|
+| Field         | Type         | Required | Description                                                  |
+| ------------- | ------------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id     | int64        | Yes      | Business ID                                                  |
+| set_fields    | string array | Yes      | Control which fields are included in the cluster information |
+| module_fields | string array | Yes      | Control which fields are included in the module information  |
+| host_fields   | string array | Yes      | Control which fields are included in the host information    |
 
+### Request Parameter Example
 
-### Request Parameters Example
-
-``` json
+```json
 {
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
     "bk_biz_id": 3,
     "set_fields": [
         "bk_set_id",
@@ -44,8 +48,9 @@ Query the brief information of the service topo tree, which only contains  set ,
 }
 ```
 
-### Return Result Example
-``` json
+### Response Example
+
+```json
 {
     "result": true,
     "code": 0,
@@ -58,7 +63,7 @@ Query the brief information of the service topo tree, which only contains  set ,
                 "bk_set_env": "3",
                 "bk_platform": "sq",
                 "bk_system": "android",
-                "bk_chn_name": "测试集群1",
+                "bk_chn_name": "Test Cluster 1",
                 "bk_world_id": "35",
                 "bk_service_status": "1"
             },
@@ -66,36 +71,36 @@ Query the brief information of the service topo tree, which only contains  set ,
                 {
                     "module": {
                         "bk_module_id": 12,
-                        "bk_module_name": "测试模块1"
+                        "bk_module_name": "Test Module 1"
                     },
                     "hosts": [
                         {
                             "bk_host_id": 13,
                             "bk_host_innerip": "127.0.0.1",
-                            "bk_host_name": "测试主机1"
+                            "bk_host_name": "Test Host 1"
                         },
                         {
                             "bk_host_id": 23,
                             "bk_host_innerip": "127.0.0.1",
-                            "bk_host_name": "测试主机2"
+                            "bk_host_name": "Test Host 2"
                         }
                     ]
                 },
                 {
                     "module": {
                         "bk_module_id": 14,
-                        "bk_module_name": "测试模块2"
+                        "bk_module_name": "Test Module 2"
                     },
                     "hosts": [
                         {
                             "bk_host_id": 15,
                             "bk_host_innerip": "127.0.0.1",
-                            "bk_host_name": "测试主机3"
+                            "bk_host_name": "Test Host 3"
                         },
                         {
                             "bk_host_id": 24,
                             "bk_host_innerip": "127.0.0.1",
-                            "bk_host_name": "测试主机4"
+                            "bk_host_name": "Test Host 4"
                         }
                     ]
                 }
@@ -104,3 +109,32 @@ Query the brief information of the service topo tree, which only contains  set ,
     ]
 }
 ```
+
+### Response Result Parameters Description
+
+#### response
+
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
+
+#### data
+
+| Field   | Type   | Description         |
+| ------- | ------ | ------------------- |
+| set     | object | Cluster information |
+| modules | array  | Module list         |
+
+#### data.modules
+
+| Field  | Type   | Description        |
+| ------ | ------ | ------------------ |
+| module | object | Module information |
+| hosts  | array  | Host list          |
+
+**Note: The return value structure is briefly explained here. The specific fields returned for set, module, and host depend on the user-defined attribute fields.**

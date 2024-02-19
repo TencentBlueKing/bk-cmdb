@@ -1,8 +1,8 @@
-### Functional description
+### Function Description
 
-Query model instance according to Association relation instance
+Query model instances based on association relationship instances (Permission: Model Instance Query Permission)
 
-- This interface is only applicable to custom hierarchical model and general model instances, and is not applicable to model instances such as business, set, module, host, etc
+- This interface is only applicable to custom hierarchical models and general model instances, not applicable to business, cluster, module, host, etc.
 
 ### Request Parameters
 
@@ -10,48 +10,48 @@ Query model instance according to Association relation instance
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description                       |
-|---------------------|------------|--------|-----------------------------|
-| bk_obj_id           |  string     | yes  | Model ID                      |
-| page                |  object     | yes  | Paging parameter                    |
-| condition           |  object     | no     | Model instance query criteria with Association relationship                    |
-| time_condition      |  object     | no     | Query criteria for querying model instances by time|
-| fields              |  object     | no     | Specifies the field returned by the query model instance, where key is the model ID and value is the model attribute field to be returned by the query model|
+| Field          | Type   | Required | Description                                                  |
+| -------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id      | string | Yes      | Model ID                                                     |
+| page           | object | Yes      | Pagination parameters                                        |
+| condition      | object | No       | Query conditions for model instances with association relationships |
+| time_condition | object | No       | Query conditions for model instances based on time           |
+| fields         | object | No       | Specify the fields to be returned for the queried model instances, where the key is the model ID, and the value is the model property fields to be returned |
 
 #### page
 
-| Field      | Type      | Required   | Description                |
-|-----------|------------|--------|----------------------|
-| start     |   int       | yes  | Record start position         |
-| limit     |   int       | yes  | Limit bars per page, Max. 200|
-| sort      |   string    | no     | Sort field             |
+| Field | Type   | Required | Description                           |
+| ----- | ------ | -------- | ------------------------------------- |
+| start | int    | Yes      | Record start position                 |
+| limit | int    | Yes      | Each page limit, maximum value is 200 |
+| sort  | string | No       | Sorting field                         |
 
 #### condition
-The user in the example is the model
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| field     | string      | yes   | The value is the field name of the model                                               |
-| operator  |string      | yes   | Value is: $regex $eq $ne                                           |
-| value     | string      | yes   | The value corresponding to the model attribute name of the field configuration                   |
+In the example, user is the model
+
+| Field    | Type   | Required | Description                                              |
+| -------- | ------ | -------- | -------------------------------------------------------- |
+| field    | string | Yes      | The field value is the field name of the model           |
+| operator | string | Yes      | The value is: $regex $eq $ne                             |
+| value    | string | Yes      | The value corresponding to the field configured by field |
 
 #### time_condition
 
-| Field   | Type   | Required| Description              |
-|-------|--------|-----|--------------------|
-| oper  | string |yes| Operator, currently only and is supported|
-| rules | array  |yes| Time query criteria         |
+| Field | Type   | Required | Description                           |
+| ----- | ------ | -------- | ------------------------------------- |
+| oper  | string | Yes      | Operator, currently only supports and |
+| rules | array  | Yes      | Time query conditions                 |
 
 #### rules
 
-| Field   | Type   | Required| Description                             |
-|-------|--------|-----|----------------------------------|
-| field | string |yes| The value is the field name of the model                  |
-| start | string |yes| Start time in the format yyyy MM dd hh: mm:ss|
-| end   |  string |yes| End time in the format yyyy MM dd hh: mm:ss|
+| Field | Type   | Required | Description                                   |
+| ----- | ------ | -------- | --------------------------------------------- |
+| field | string | Yes      | The value is the field name of the model      |
+| start | string | Yes      | Start time, in the format yyyy-MM-dd hh:mm:ss |
+| end   | string | Yes      | End time, in the format yyyy-MM-dd hh:mm:ss   |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -124,21 +124,31 @@ The user in the example is the model
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Field      | Type      | Description         |
-|-----------|-----------|--------------|
-| count     |  int       | Number of records     |
-| info      |  array     | Model instance actual data|
+| Field | Type  | Description                    |
+| ----- | ----- | ------------------------------ |
+| count | int   | Record count                   |
+| info  | array | Actual data of model instances |
+
+#### data.info[n]
+
+| Field        | Type   | Description   |
+| ------------ | ------ | ------------- |
+| bk_asset_id  | string | Asset ID      |
+| bk_inst_id   | int    | Instance ID   |
+| bk_inst_name | string | Instance name |
+| bk_obj_id    | string | Model ID      |

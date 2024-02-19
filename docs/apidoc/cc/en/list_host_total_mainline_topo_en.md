@@ -1,31 +1,29 @@
-### Functional description
+### Functional Description
 
-query host and its corresponding Topo
-
+Query the host and its corresponding topology.
 
 ### Request Parameters
 
 {{ common_args_desc }}
 
-
 #### General Parameters
 
 | Field                     | Type   | Required | Description                                                  |
 | ------------------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_biz_id                 | int    | Yes      | business id                                                  |
-| mainline_property_filters | array  | No       | custom level query filter                                    |
-| set_property_filter       | object | No       | set query filter                                             |
-| module_property_filter    | object | No       | module query filter                                          |
-| host_property_filter      | object | No       | host query filter                                            |
-| fields                    | array  | No       | host property list, which controls which fields are in the host that returns the results |
-| page                      | object | Yes      | paging query condition, returning host data according to bk_ host_ id sorting |
+| bk_biz_id                 | int    | Yes      | Business ID                                                  |
+| mainline_property_filters | array  | No       | Custom level query filter                                    |
+| set_property_filter       | object | No       | Set query filter                                             |
+| module_property_filter    | object | No       | Module query filter                                          |
+| host_property_filter      | object | No       | Host query filter                                            |
+| fields                    | array  | No       | Host property list, which controls which fields are in the host that returns the results |
+| page                      | object | Yes      | Paging query condition, returning host data according to bk_ host_ id sorting |
 
 #### mainline_property_filters
 
 | Field     | Type   | Required | Description                    |
 | --------- | ------ | -------- | ------------------------------ |
 | bk_obj_id | string | Yes      | bk_obj_id of the filter target |
-| filter    | object | Yes      | target object's query filter   |
+| filter    | object | Yes      | Target object's query filter   |
 
 ##### filter
 
@@ -33,19 +31,18 @@ query host and its corresponding Topo
 
 | Field     | Type   | Required | Description                                     |
 | --------- | ------ | -------- | ----------------------------------------------- |
-| condition | string | Yes      | rule operator                                   |
-| rules     | array  | Yes      | scope condition rules for the selected business |
-
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Scope condition rules for the selected business |
 
 #### rules
 
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
-| field    | string | No       | field name                                                   |
-| operator | string | No       | available values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | No       | values's format depend on operator                           |
+| field    | string | No       | Field name                                                   |
+| operator | string | No       | Available values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Values format depends on the operator                        |
 
-Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules are available for reference: [QueryBuilder Rules](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### set_property_filter
 
@@ -53,19 +50,18 @@ Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/bl
 
 | Field     | Type   | Required | Description                                     |
 | --------- | ------ | -------- | ----------------------------------------------- |
-| condition | string | Yes      | rule operator                                   |
-| rules     | array  | Yes      | scope condition rules for the selected business |
-
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Scope condition rules for the selected business |
 
 #### rules
 
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
-| field    | string | No       | field name                                                   |
-| operator | string | No       | available values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | No       | values's format depend on operator                           |
+| field    | string | No       | Field name                                                   |
+| operator | string | No       | Available values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Values format depends on the operator                        |
 
-Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules are available for reference: [QueryBuilder Rules](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### module_property_filter
 
@@ -73,19 +69,18 @@ Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/bl
 
 | Field     | Type   | Required | Description                                     |
 | --------- | ------ | -------- | ----------------------------------------------- |
-| condition | string | Yes      | rule operator                                   |
-| rules     | array  | Yes      | scope condition rules for the selected business |
-
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Scope condition rules for the selected business |
 
 #### rules
 
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
-| field    | string | No       | field name                                                   |
-| operator | string | No       | available values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | No       | values's format depend on operator                           |
+| field    | string | No       | Field name                                                   |
+| operator | string | No       | Available values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Values format depends on the operator                        |
 
-Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules are available for reference: [QueryBuilder Rules](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### host_property_filter
 
@@ -93,19 +88,18 @@ Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/bl
 
 | Field     | Type   | Required | Description                                     |
 | --------- | ------ | -------- | ----------------------------------------------- |
-| condition | string | Yes      | rule operator                                   |
-| rules     | array  | Yes      | scope condition rules for the selected business |
-
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Scope condition rules for the selected business |
 
 #### rules
 
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
-| field    | string | No       | field name                                                   |
-| operator | string | No       | available values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | -      | No       | values's format depend on operator                           |
+| field    | string | No       | Field name                                                   |
+| operator | string | No       | Available values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Values format depends on the operator                        |
 
-Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules are available for reference: [QueryBuilder Rules](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### page
 
@@ -116,8 +110,7 @@ Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/bl
 
 ### Request Parameters Example
 
-```json
-{
+```json{
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
@@ -476,72 +469,81 @@ Assembly rules are available for reference:https://github.com/Tencent/bk-cmdb/bl
 
 response
 
-| Field      | Type   | Description                                   |
-| ---------- | ------ | --------------------------------------------- |
-| result     | bool   | 请求成功与否。true：请求成功；false：请求失败 |
-| code       | int    | 错误编吗。0表示success，>0表示失败错误        |
-| message    | string | 请求失败返回的错误信息                        |
-| permission | object | 权限信息                                      |
-| request_id | string | 请求链id                                      |
-| data       | array  | 请求结果                                      |
+| Field      | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Success or failure of the request. true: success; false: failure |
+| code       | int    | Error code. 0 represents success, >0 represents failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | array  | Request result                                               |
+
 
 #### data
 
-| Field | Type  | Description        |
-| :---- | :---- | :----------------- |
-| count | int   | 记录条数           |
-| info  | array | 主机数据和拓扑信息 |
+| Field  | Type  | Description        |
+| :----- | :---- | :------------------ |
+| count  | int   | Number of records   |
+| info   | array | Host data and topology information |
 
 #### data.info
 
-| Field | Type  | Description  |
-| :---- | :---- | :----------- |
-| host  | dict  | 主机实际数据 |
-| topo  | array | 主机拓扑信息 |
+| Field | Type  | Description       |
+| :---- | :---- | :----------------- |
+| host  | dict  | Actual host data   |
+| topo  | array | Host topology information |
 
 #### data.info.host
 
-| Field            | Type   | Description                 |                                        |
-| :--------------- | :----- | :-------------------------- | :------------------------------------- |
-| bk_isp_name      | string | Internet Service Provider   | 0:other；1:telecom；2:unicom；3:mobile |
-| bk_sn            | string | Device SN                   |                                        |
-| operator         | string | Main maintainer             |                                        |
-| bk_outer_mac     | string | Internet mac                |                                        |
-| bk_state_name    | string | Country                     | CN:China                               |
-| bk_province_name | string | Province                    |                                        |
-| import_from      | string | Entry method                | 1:excel;2:agent;3:api                  |
-| bk_sla           | string | SLA level                   | 1:L1;2:L2;3:L3                         |
-| bk_service_term  | int    | Warranty period             | 1-10                                   |
-| bk_os_type       | string | Operating system type       | 1:Linux;2:Windows;3:AIX                |
-| bk_os_version    | string | Operating system version    |                                        |
-| bk_os_bit        | int    | Operating system bits       |                                        |
-| bk_mem           | string | Memory capacity             |                                        |
-| bk_mac           | string | Intranet MAC address        |                                        |
-| bk_host_outerip  | string | Internet IP                 |                                        |
-| bk_host_name     | string | Host name                   |                                        |
-| bk_host_innerip  | string | Intranet IP                 |                                        |
-| bk_host_id       | int    | Host ID                     |                                        |
-| bk_disk          | int    | Disk capacity               |                                        |
-| bk_cpu_module    | string | CPU model                   |                                        |
-| bk_cpu_mhz       | int    | CPU frequency               |                                        |
-| bk_cpu           | int    | Number of CPU logical cores | 1-1000000                              |
-| bk_comment       | string | remarks                     |                                        |
-| bk_cloud_id      | int    | Cloud region                |                                        |
-| bk_bak_operator  | string | Backup maintainer           |                                        |
-| bk_asset_id      | string | Fixed assets No             |                                        |
+| Field                | Type   | Description          |
+| -------------------- | ------ | -------------------- |
+| bk_host_name         | string | Host name             |
+| bk_host_innerip      | string | Inner IP              |
+| bk_host_id           | int    | Host ID               |
+| bk_cloud_id          | int    | Cloud control area   |
+| import_from          | string | Host import source, 3 for API import |
+| bk_asset_id          | string | Fixed asset number    |
+| bk_cloud_inst_id     | string | Cloud host instance ID |
+| bk_cloud_vendor      | string | Cloud vendor          |
+| bk_cloud_host_status | string | Cloud host status     |
+| bk_comment           | string | Remark                |
+| bk_cpu               | int    | CPU logical cores     |
+| bk_cpu_architecture  | string | CPU architecture      |
+| bk_cpu_module        | string | CPU model             |
+| bk_disk              | int    | Disk capacity (GB)   |
+| bk_host_outerip      | string | Host outer IP         |
+| bk_host_innerip_v6   | string | Host inner IPv6       |
+| bk_host_outerip_v6   | string | Host outer IPv6       |
+| bk_isp_name          | string | ISP name              |
+| bk_mac               | string | Host inner MAC address |
+| bk_mem               | int    | Host memory capacity (MB) |
+| bk_os_bit            | string | Operating system bit  |
+| bk_os_name           | string | Operating system name |
+| bk_os_type           | string | Operating system type |
+| bk_os_version        | string | Operating system version |
+| bk_outer_mac         | string | Host outer MAC address |
+| bk_province_name     | string | Province name         |
+| bk_service_term      | int    | Warranty period       |
+| bk_sla               | string | SLA level             |
+| bk_sn                | string | Device SN             |
+| bk_state             | string | Current state         |
+| bk_state_name        | string | Country               |
+| operator             | string | Main maintainer       |
+| bk_bak_operator      | string | Backup maintainer     |
+
+**Note: The returned values here only provide explanations for the system's built-in attribute fields. Other returned values depend on user-defined attribute fields.**
 
 #### data.info.topo
 
-| Field    | Type   | Description                   |
-| :------- | :----- | :---------------------------- |
-| inst     | object | Topology instance information |
-| children | array  | Subset of topology instances  |
+| Field     | Type   | Description       |
+| :-------- | :----- | :----------------- |
+| inst      | Object | Topology instance information |
+| children  | array  | Subset of topology instances |
 
 #### data.info.topo.inst
 
-| Field | Type   | Description   |
-| :---- | :----- | :------------ |
-| obj   | string | Object ID     |
+| Field | Type   | Description |
+| :---- | :----- | :---------- |
+| obj   | string | Model ID    |
 | name  | string | Instance name |
-| id    | int    | Instance ID   |
-
+| id    | int    | Instance ID  |

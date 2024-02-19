@@ -1,40 +1,36 @@
+### Function Description
 
-
-### Functional description
-
-Query instance Association model instance basic information
+Query basic information of instance-associated model instances
 
 ### Request Parameters
 
 {{ common_args_desc }}
 
-
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| fields         |   array   | no     | Specify the fields to query. The parameter is any attribute of the business. If you do not fill in the field information, the system will return all the fields of the business|
-| condition      |   object    | no     | Query criteria|
-| page           |   object    | no     | Paging condition|
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| fields    | array  | No       | Specify the fields to be queried. The parameter can be any attribute of the business. If the field information is not filled in, the system will return all fields of the business |
+| condition | object | Yes      | Query conditions                                             |
+| page      | object | No       | Pagination conditions                                        |
 
 #### condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_obj_id |  string    | yes  | Instance model ID|
-| bk_inst_id|   int    | yes | Instance ID|
-|association_obj_id| string| yes | The model ID of the associated object, which returns the instance basic data (bk_inst_id,bk_inst_name) associated with the bk_inst_id instance of the Association_obj_id model|
-|is_target_object|  bool |no| Whether bk_obj_id is the target model, the default is false, the source model in the Association relationship, otherwise, it is the target model|
+| Field              | Type   | Required | Description                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id          | string | Yes      | Model ID of the instance                                     |
+| bk_inst_id         | int    | Yes      | Instance ID                                                  |
+| association_obj_id | string | Yes      | Model ID of the associated object. Returns the basic data (bk_inst_id, bk_inst_name) of instances associated with association_obj_id model and bk_inst_id instance |
+| is_target_object   | bool   | No       | Whether bk_obj_id is the target model. Default is false, which means it is the source model in the association relationship; otherwise, it is the target model |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | no      | Record start position, default 0|
-| limit    |   int    | no     | Limit bars per page, default 20, maximum 200|
+| Field | Type | Required | Description                                                  |
+| ----- | ---- | -------- | ------------------------------------------------------------ |
+| start | int  | No       | Record start position, default value is 0                    |
+| limit | int  | No       | Number of records per page, default value is 20, maximum is 200 |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -58,7 +54,6 @@ Query instance Association model instance basic information
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -77,42 +72,43 @@ Query instance Association model instance basic information
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
+
 #### response
 
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |
 
 #### data
 
-| Name| Type| Description|
-|---|---|---|
-| count|  int| Number of records|
-| info|  object array |Model ID of associated object, instance basic data of instance associated model (bk_inst_id,bk_inst_name)|
-| page|  object| Paging information|
+| Field  | Type         | Description                                                  |
+| ----- | ------------ | ------------------------------------------------------------ |
+| count | int          | Number of records                                            |
+| info  | object array | Model ID of the associated object. Basic data of instances associated with the instance model (bk_inst_id, bk_inst_name) |
+| page  | object       | Pagination information                                       |
 
-#### Data.info Field Description:
-| Name| Type| Description|
-|---|---|---|
-| bk_inst_id | int |Instance ID|
-| bk_inst_name | string  |Instance name|
+#### data.info Field Explanation：
 
-##### Data.info.BK_inst_id, data.info.BK_inst_name field descriptions
+| Field         | Type   | Description   |
+| ------------ | ------ | ------------- |
+| bk_inst_id   | int    | Instance ID   |
+| bk_inst_name | string | Instance name |
 
-Values corresponding to bk_inst_id, bk_inst_name for different models
+##### data.info.bk_inst_id, data.info.bk_inst_name Field Explanation
 
-| Model   |  bk_inst_id   |  bk_inst_name |
-|---|---|---|
-|Business|  bk_biz_id | bk_biz_name|
-|Set|  bk_set_id | bk_set_name|
-|Module|  bk_module_id | bk_module_name|
-|Process|  bk_process_id | bk_process_name|
-|Host|  bk_host_id | bk_host_inner_ip|
-|Universal model|  bk_inst_id | bk_inst_name|
+Values corresponding to different model bk_inst_id, bk_inst_name
 
+| Model        | bk_inst_id    | bk_inst_name     |
+| ------------ | ------------- | ---------------- |
+| Business     | bk_biz_id     | bk_biz_name      |
+| Cluster      | bk_set_id     | bk_set_name      |
+| Module       | bk_module_id  | bk_module_name   |
+| Process      | bk_process_id | bk_process_name  |
+| Host         | bk_host_id    | bk_host_inner_ip |
+| Common Model | bk_inst_id    | bk_inst_name     |

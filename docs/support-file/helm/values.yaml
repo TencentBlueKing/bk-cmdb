@@ -15,6 +15,8 @@ global:
   ##
   imagePullSecrets: []
   storageClass: ""
+  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+  bkCryptoType: "CLASSIC"
 
 ## @section bk-cmdb image parameters
 ##
@@ -113,6 +115,48 @@ apiserver:
   ## @param apiserver.replicas Number of apiserver replicas to deploy
   ##
   replicas: 1
+  ## @param apiserver.port bk-cmdb apiserver service HTTP port
+  ##
+  ingress:
+    ## @param apiserver.ingress.enabled Enable ingress record generation for bk-cmdb apiserver
+    ##
+    enabled: true
+    ## @param apiserver.ingress.hostname Default host for the ingress record
+    ##
+    host: cmdb-api.example.com
+    ## @param apiserver.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ##
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    ## @param apiserver.ingress.tls Enable TLS configuration for the host defined at `ingress.host` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Relay on cert-manager to create it by setting the corresponding annotations
+    ##   - Relay on Helm to create self-signed certificates by setting `ingress.tls=true` and `ingress.certManager=false`
+    ##
+    tls:
+  ## bk-cmdb apiserver service parameters
+  ##
+  service:
+    ## @param apiserver.service.type bk-cmdb apiserver service type
+    ##
+    type: "ClusterIP"
+    ## @param apiserver.service.ports Expose bk-cmdb webserver service by apiserver.service.ports[0].nodePort when apiserver.service.type is "NodePort"
+    ##
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    ## apiserver.service.externalPort bk-cmdb apiserver service external port
+    ##
+    externalPort: 80
   ## @param apiserver.port bk-cmdb apiserver service HTTP port
   ##
   port: 80
@@ -1175,6 +1219,18 @@ common:
       secretsEnv:
     syncTask:
       syncPeriodMinutes: 5
+  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+  crypto:
+    # 是否开启加密
+    enabled: false
+    # 使用SM4算法时所需的配置
+    sm4:
+      # 密钥
+      key:
+    # 使用AES-GCM算法时所需的配置
+    aesGcm:
+      # 密钥
+      key:
   #datacollection专属配置
   datacollection:
     hostSnapshot:

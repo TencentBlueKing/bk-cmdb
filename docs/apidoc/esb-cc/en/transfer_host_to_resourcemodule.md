@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-transfer host to resource module
+Return Hosts to the Resource Pool (Permission: Host Return to Host Pool Permission)
 
 ### Request Parameters
 
@@ -8,12 +8,14 @@ transfer host to resource module
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| bk_biz_id     |  int     | Yes     | Business ID |
-| bk_module_id  |  int     | No      | Module ID of the resource pool directory to transfer host to, default to the resource directory |
-| bk_host_id    |  array   | Yes     | Host ID |
+| Field               | Type   | Required | Description                                                  |
+| ------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_supplier_account | string | No       | Developer account                                            |
+| bk_biz_id           | int    | Yes      | Business ID                                                  |
+| bk_module_id        | int    | No       | Directory ID to which the hosts are transferred, default is the directory of idle hosts in the host pool |
+| bk_host_id          | array  | Yes      | Host ID                                                      |
+
+**Note: Only hosts under the business idle host pool can be returned.**
 
 ### Request Parameters Example
 
@@ -33,28 +35,28 @@ transfer host to resource module
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
 
 #### response
 
-| Field       | Type     | Description         |
-|---|---|---|
-| result | bool | request success or failed. true:success；false: failed |
-| code | int | error code. 0: success, >0: something error |
-| message | string | error info description |
-| data | object | response data |
-| permission    | object | permission Information    |
-| request_id    | string | request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |

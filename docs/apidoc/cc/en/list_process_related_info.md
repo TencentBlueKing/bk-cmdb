@@ -1,8 +1,8 @@
-### Functional description
+### Function Description
 
-Click Five-digit query process instance related information (v3.9.13)
+Query process instance information based on five-segment notation (v3.9.13)
 
-- This interface is intended for use by GSEKit and is hidden in the ESB documentation
+- This interface is specifically designed for GSEKit use and is hidden in the ESB documentation.
 
 ### Request Parameters
 
@@ -10,34 +10,36 @@ Click Five-digit query process instance related information (v3.9.13)
 
 #### Interface Parameters
 
-|Field| Type| Required| Description|
-|---|---|---|---|
-| bk_biz_id  | int64       |  yes   | Business ID |
-|bk_set_ids| int64 array| no | The set ID list, if empty, represents any set |
-|bk_module_ids| int64 array| no | Module ID list, if empty, it represents any module|
-|ids| int64 array| no | Service instance ID list. If empty, it represents any instance|
-|bk_process_names| string array| no | List of process names. If empty, it represents any process. This field is mutually exclusive with bk_func_id. Only one of them can be selected `it can not have value at the same time`|
-|bk_func_ids| string array| no | Function ID list of process. If empty, it represents any process. bk_process_name `only one of the two can be selected, and can not have value at the same time|
-|bk_process_ids| int64 array| no | Process ID list, if empty, represents any process|
-|fields| string array| no | Process attribute list, which controls which fields are in the process instance information that returns the result, can speed up interface requests and reduce network traffic transmission<br> If it is null, all fields of the process are returned, and bk_process_id,bk_process_name and bk_func_id are required fields to be returned|
-|page| dict| yes | Paging condition|
+| Field            | Type         | Required | Description                                                  |
+| ---------------- | ------------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id        | int64        | Yes      | Business ID                                                  |
+| bk_set_ids       | int64 array  | No       | Cluster ID list, if empty, it represents any cluster         |
+| bk_module_ids    | int64 array  | No       | Module ID list, if empty, it represents any module           |
+| ids              | int64 array  | No       | Service instance ID list, if empty, it represents any instance |
+| bk_process_names | string array | No       | Process name list, if empty, it represents any process       |
+| bk_process_ids   | int64 array  | No       | Process ID list, if empty, it represents any process         |
+| fields           | string array | No       | Process attribute list, controls which fields of process instance information are returned, speeding up interface requests and reducing network traffic<br>Empty to return all fields of the process, bk_process_id, bk_process_name |
+| page             | dict         | Yes      | Paging conditions                                            |
 
-The conditional relationship for these fields is relationship and (&amp;&amp;), and only process instances that meet the criteria you fill in are queried<br>
-For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_module_ids belongs to bk_set_ids, the query result is empty
+These fields' conditional relationship is AND, only process instances that simultaneously satisfy the filled conditions will be queried. For example: if both bk_set_ids and bk_module_ids are filled, and bk_module_ids do not belong to bk_set_ids, the query result will be empty.
 
 #### page
 
-| Field| Type| Required| Description|
-| ---  | ---  | ---  | --- |
-| start| int| no | Record start position, default is 0|
-| limit| int| yes | Limit bars per page, Max. 500|
-| sort  | string |no   | Sort field,'backward' means reverse order, can only be the field of the process, and sort by bk_process_id by default|
+| Field | Type   | Required | Description                                                  |
+| ----- | ------ | -------- | ------------------------------------------------------------ |
+| start | int    | No       | Record start position, default is 0                          |
+| limit | int    | Yes      | Number of records per page, maximum is 500                   |
+| sort  | string | No       | Sorting field, '-' indicates descending order, can only be a field of the process, default is sorted by bk_process_id |
 
+### Request Parameter Example
 
-### Request Parameters Example
-
-``` json
+```json
 {
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "bk_biz_id": 3,
     "set": {
         "bk_set_ids": [
             11,
@@ -61,7 +63,6 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
             "pr1",
             "alias_pr2"
         ],
-        "bk_func_ids": [],
         "bk_process_ids": [
             45,
             46,
@@ -71,7 +72,6 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
     "fields": [
         "bk_process_id",
         "bk_process_name",
-        "bk_func_id",
         "bk_func_name"
     ],
     "page": {
@@ -82,8 +82,9 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
 }
 ```
 
-### Return Result Example
-``` json
+### Response Example
+
+```json
 {
     "result": true,
     "code": 0,
@@ -104,20 +105,19 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
                 "host": {
                     "bk_host_id": 4,
                     "bk_cloud_id": 0,
-                    "bk_host_innerip": "192.168.15.22"
+                    "bk_host_innerip": "127.0.0.1",
                     "bk_host_innerip_v6":"1::1",
                     "bk_addressing":"dynamic",
                     "bk_agent_id":"xxxxxx"
                 },
                 "service_instance": {
                     "id": 4,
-                    "name": "192.168.15.22_pr1_3333"
+                    "name": "127.0.0.1_pr1_3333"
                 },
                 "process_template": {
                     "id": 48
                 },
                 "process": {
-                    "bk_func_id": "",
                     "bk_func_name": "pr1",
                     "bk_process_id": 45,
                     "bk_process_name": "pr1"
@@ -136,17 +136,16 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
                 "host": {
                     "bk_host_id": 4,
                     "bk_cloud_id": 0,
-                    "bk_host_innerip": "192.168.15.22"
+                    "bk_host_innerip": "127.0.0.1"
                 },
                 "service_instance": {
                     "id": 4,
-                    "name": "192.168.15.22_pr1_3333"
+                    "name": "127.0.0.1_pr1_3333"
                 },
                 "process_template": {
                     "id": 49
                 },
                 "process": {
-                    "bk_func_id": "",
                     "bk_func_name": "pr2",
                     "bk_process_id": 46,
                     "bk_process_name": "alias_pr2"
@@ -157,21 +156,92 @@ For example, if both bk_set_ids and bk_module_ids are filled in, and neither bk_
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
-| Name| Type| Description|
-|---|---|--- |
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
+| Field    | Type   | Description                                                  |
+| ------- | ------ | ------------------------------------------------------------ |
+| result  | bool   | Whether the request is successful. true: successful; false: failed |
+| code    | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message | string | Error message returned in case of failure                    |
 
-- Data field Description
+#### data Field Explanation
 
-| Name| Type| Description|
-|---|---|--- |
-|count| int| Total number of eligible process instances|
-|set| object| Set information to which the process belongs |
-|module| object| Module information to which the process belongs|
-|host| object| Host information to which the process belongs|
-|service_instance| object| Service instance information to which the process belongs|
-|process| object| Details of the process itself|
+| Field             | Type   | Description                                                |
+| ---------------- | ------ | ---------------------------------------------------------- |
+| count            | int    | Total number of process instances that meet the conditions |
+| set              | object | Cluster information of the process                         |
+| module           | object | Module information of the process                          |
+| host             | object | Host information of the process                            |
+| service_instance | object | Service instance information of the process                |
+| process_template | object | Process template information of the process                |
+| process          | object | Detailed information of the process itself                 |
+
+#### data.set Field Explanation
+
+| Field        | Type   | Description      |
+| ----------- | ------ | ---------------- |
+| bk_set_id   | int    | Cluster ID       |
+| bk_set_name | string | Cluster name     |
+| bk_set_env  | string | Environment type |
+
+#### data.module Field Explanation
+
+| Field           | Type   | Description |
+| -------------- | ------ | ----------- |
+| bk_module_id   | int    | Module ID   |
+| bk_module_name | string | Module name |
+
+#### data.host Field Explanation
+
+| Field               | Type   | Description     |
+| ------------------ | ------ | --------------- |
+| bk_host_id         | int    | Host ID         |
+| bk_cloud_id        | int    | Control area ID |
+| bk_host_innerip    | string | Host inner IP   |
+| bk_host_innerip_v6 | int    | Host inner IPv6 |
+| bk_addressing      | string | Addressing mode |
+| bk_agent_id        | string | Agent ID        |
+
+#### data.service_instance Field Explanation
+
+| Field | Type   | Description           |
+| ---- | ------ | --------------------- |
+| id   | int    | Service instance ID   |
+| name | string | Service instance name |
+
+#### data.process_template Field Explanation
+
+| Field | Type | Description         |
+| ---- | ---- | ------------------- |
+| id   | int  | Cluster template ID |
+
+#### data.process Field Explanation
+
+| Field                | Type   | Description                    |
+| -------------------- | ------ | ------------------------------ |
+| auto_start           | bool   | Whether to automatically start |
+| bk_biz_id            | int    | Business ID                    |
+| bk_func_name         | string | Process name                   |
+| bk_process_id        | int    | Process ID                     |
+| bk_process_name      | string | Process alias                  |
+| bk_start_param_regex | string | Process startup parameters     |
+| bk_supplier_account  | string | Developer account              |
+| create_time          | string | Creation time                  |
+| description          | string | Description                    |
+| face_stop_cmd        | string | Forced stop command            |
+| last_time            | string | Update time                    |
+| pid_file             | string | PID file path                  |
+| priority             | int    | Startup priority               |
+| proc_num             | int    | Number of startups             |
+| reload_cmd           | string | Process reload command         |
+| restart_cmd          | string | Restart command                |
+| start_cmd            | string | Start command                  |
+| stop_cmd             | string | Stop command                   |
+| timeout              | int    | Operation timeout duration     |
+| user                 | string | Startup user                   |
+| work_path            | string | Working path                   |
+| bk_created_at        | string | Creation time                  |
+| bk_created_by        | string | Creator                        |
+| bk_updated_at        | string | Update time                    |
+| bk_updated_by        | string | Updater                        |
+| bind_info            | object | Binding information            |

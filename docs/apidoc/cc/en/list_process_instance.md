@@ -1,4 +1,4 @@
-### Functional description
+### Function Description
 
 Query process instance list based on service instance ID
 
@@ -8,13 +8,12 @@ Query process instance list based on service instance ID
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-|bk_biz_id| int| yes | Business ID |
-| service_instance_id | int  |yes   | Service instance ID|
+| Field               | Type | Required | Description         |
+| ------------------- | ---- | -------- | ------------------- |
+| bk_biz_id           | int  | Yes      | Business ID         |
+| service_instance_id | int  | Yes      | Service instance ID |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -27,7 +26,7 @@ Query process instance list based on service instance ID
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -85,69 +84,74 @@ Query process instance list based on service instance ID
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | array |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | array  | Data returned by the request                                 |
 
-#### Data field Description
+#### data Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|property| object| Process attribute information|
-|relation| object| Process and service instance association information|
+| Field    | Type   | Description                                       |
+| -------- | ------ | ------------------------------------------------- |
+| property | object | Process property information                      |
+| relation | object | Relationship between process and service instance |
 
-#### data [x]. Property Field Description
-| Field| Type| Description|
-|---|---|---|
-|auto_start| bool| Automatically pull up|
-|auto_time_gap| int| Pull up interval|
-|bk_biz_id| int| Business ID |
-|bk_func_id| string| Function ID|
-|bk_func_name| string| Process name|
-|bk_process_id| int| Process id|
-|bk_process_name| string| Process alias|
-|bk_start_param_regex| string| Process start parameters|
-|bk_supplier_account| string| Developer account number|
-|create_time| string| Settling time|
-|description| string| Description|
-|face_stop_cmd| string| Forced stop command|
-|last_time| string| Update time|
-|pid_file| string| PID file path|
-|priority| int| Startup priority|
-|proc_num| int| Number of starts|
-|reload_cmd| string| Process reload command|
-|restart_cmd| string| Restart command|
-|start_cmd| string| Start command|
-|stop_cmd| string| Stop order|
-|timeout| int| Operation time-out duration|
-|user| string| Start user|
-|work_path| string| Working path|
-|bind_info| object| Binding information|
+#### data[x].property Field Explanation
 
-#### data [x] .Property.bind .Property.bind info [n] Field Description
-| Field| Type| Description|
-|---|---|---|
-|enable| bool| Is the port enabled|
-|ip| string| Bound ip|
-|port| string| Bound port|
-|protocol| string| Protocol used|
-|template_row_id| int| Template row index used for instantiation, unique in process|
+| Field                | Type   | Description                    |
+| -------------------- | ------ | ------------------------------ |
+| auto_start           | bool   | Whether to start automatically |
+| bk_biz_id            | int    | Business ID                    |
+| bk_func_name         | string | Process name                   |
+| bk_process_id        | int    | Process ID                     |
+| bk_process_name      | string | Process alias                  |
+| bk_start_param_regex | string | Process start parameters       |
+| bk_supplier_account  | string | Supplier account               |
+| create_time          | string | Creation time                  |
+| description          | string | Description                    |
+| face_stop_cmd        | string | Forced stop command            |
+| last_time            | string | Update time                    |
+| pid_file             | string | PID file path                  |
+| priority             | int    | Start priority                 |
+| proc_num             | int    | Number of starts               |
+| reload_cmd           | string | Process reload command         |
+| restart_cmd          | string | Restart command                |
+| start_cmd            | string | Start command                  |
+| stop_cmd             | string | Stop command                   |
+| timeout              | int    | Operation timeout duration     |
+| user                 | string | Start user                     |
+| work_path            | string | Working path                   |
+| bk_created_at        | string | Creation time                  |
+| bk_created_by        | string | Creator                        |
+| bk_updated_at        | string | Update time                    |
+| bk_updated_by        | string | Updater                        |
+| bind_info            | object | Binding information            |
 
-#### data [x]. Recall Field Description
-| Field| Type| Description|
-|---|---|---|
-|bk_biz_id| int| Business ID |
-|bk_process_id| int| Process id|
-|service_instance_id| int| Service instance id|
-|process_template_id| int| Process template id|
-|bk_host_id| int| Host id|
-|bk_supplier_account| string| Developer account number|
+#### data[x].property.bind_info[n] Field Explanation
+
+| Field           | Type   | Description                                   |
+| --------------- | ------ | --------------------------------------------- |
+| enable          | bool   | Whether the port is enabled                   |
+| ip              | string | Bound IP                                      |
+| port            | string | Bound port                                    |
+| protocol        | string | Used protocol                                 |
+| template_row_id | int    | Template row index, unique within the process |
+
+#### data[x].relation Field Explanation
+
+| Field               | Type   | Description         |
+| ------------------- | ------ | ------------------- |
+| bk_biz_id           | int    | Business ID         |
+| bk_process_id       | int    | Process ID          |
+| service_instance_id | int    | Service instance ID |
+| process_template_id | int    | Process template ID |
+| bk_host_id          | int    | Host ID             |
+| bk_supplier_account | string | Supplier account    |
