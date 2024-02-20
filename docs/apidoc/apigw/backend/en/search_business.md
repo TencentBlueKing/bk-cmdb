@@ -10,6 +10,7 @@ Query Business (Permission: Business Query Permission)
 | fields              | array  | No       | Specify the fields to query. If not filled in, the system will return all fields of the business                                                                                          |
 | condition           | dict   | No       | Query conditions, parameters for any property of the business. If not written, it means to search all data. (Legacy field, please do not continue to use, please use biz_property_filter) |
 | biz_property_filter | object | No       | Business attribute combination query conditions                                                                                                                                           |
+| time_condition | object | No | Query criteria for querying business by time |
 | page                | dict   | No       | Paging conditions                                                                                                                                                                         |
 
 Note: Businesses are divided into two types, non-archived businesses and archived businesses.
@@ -37,6 +38,13 @@ Note: Businesses are divided into two types, non-archived businesses and archive
 | field    | string | Yes      | Field       |
 | operator | string | Yes      | Operator    |
 | value    | object | Yes      | Value       |
+
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |Yes| Operator, currently only and is supported|
+| rules | array  |Yes| Time query criteria         |
 
 #### page
 
@@ -75,6 +83,16 @@ Note: Businesses are divided into two types, non-archived businesses and archive
                 ]
             }
         ]
+    },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
     },
     "page": {
         "start": 0,

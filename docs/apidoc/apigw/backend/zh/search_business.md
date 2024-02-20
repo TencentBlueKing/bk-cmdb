@@ -10,6 +10,7 @@
 | fields              | array  | 否  | 指定查询的字段，参数为业务的任意属性，如果不填写字段信息，系统会返回业务的所有字段                          |
 | condition           | dict   | 否  | 查询条件，参数为业务的任意属性，如果不写代表搜索全部数据，(历史遗留字段，请勿继续使用，请用biz_property_filter) |
 | biz_property_filter | object | 否  | 业务属性组合查询条件                                                         |
+| time_condition | object | 否 | 按时间查询业务的查询条件 |
 | page                | dict   | 否  | 分页条件                                                               |
 
 Note: 业务分为两类，未归档的业务和已归档的业务。
@@ -35,6 +36,13 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
 | field    | string | 是  | 字段  |
 | operator | string | 是  | 操作符 |
 | value    | object | 是  | 值   |
+
+#### time_condition
+
+| 字段   | 类型   | 必选 |  描述              |
+|-------|--------|-----|--------------------|
+| oper  | string | 是  | 操作符，目前只支持and |
+| rules | array  | 是  | 时间查询条件         |
 
 #### page
 
@@ -76,6 +84,16 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
             "value": 1
           }
         ]
+      }
+    ]
+  },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
       }
     ]
   },
