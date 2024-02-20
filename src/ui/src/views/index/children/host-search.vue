@@ -34,7 +34,7 @@
       </bk-button>
       <bk-link theme="primary" class="advanced-link" @click="handleSetFilters">{{$t('高级筛选')}}</bk-link>
     </div>
-    <div class="picking-popover-content" ref="popoverContent">
+    <div class="picking-popover-content" ref="popoverContent" v-show="isShowPopover">
       <p>{{$t('未在输入的内容中检测到有效IP，请问您希望以哪种方式进行搜索？')}}</p>
       <div class="buttons">
         <bk-button size="small" outline v-test-id="'assetSearch'"
@@ -78,7 +78,8 @@
       }
       return {
         rows: 1,
-        searchType: 'search',
+        searchButtonType: 'search',
+        isShowPopover: false,
         searchContent: defaultSearchContent(),
         ipEditableBlock: null,
         popoverProps: {
@@ -139,10 +140,8 @@
         return FilterUtils.splitIP(this.ipEditableBlock.searchContent)
       },
       // 有无IP
-      getSearchType() {
-        this.setSearch(this.getSearchList())
-        const { ip } = this.searchFlag
-        return ip
+      hasIP() {
+        return this.searchFlag.ip
       },
       setRows() {
         const rows = this.ipEditableBlock.searchContent.split('\n').length || 1
@@ -164,6 +163,7 @@
         if (this.popoverInstance) {
           this.popoverInstance.destroy()
         }
+        this.isShowPopover = true
         this.popoverInstance = this.$bkPopover(target || this.$el, {
           content: this.$refs.popoverContent,
           theme: 'light',
@@ -209,7 +209,7 @@
           }
         })
       },
-      ipSearch(searchType = 'precision') {
+      ipSearch(isFuzzy = false) {
         const IPs = this.searchIPs
         const { cloudIdSet } = IPs
         const { searchContent } = this.ipEditableBlock
@@ -228,7 +228,6 @@
         })
         IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
 
-        const isFuzzy = searchType === 'fuzzy'
         const IPText = isFuzzy ? searchContent : IPList.join('\n')
         const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPText })
 
@@ -261,6 +260,10 @@
           console.error(true)
         }
       },
+      destroy() {
+        this.popoverInstance.destroy()
+        this.isShowPopover = false
+      },
       handleFocus() {
         this.$emit('focus', true)
         this.setRows()
@@ -269,13 +272,14 @@
         this.$emit('focus', false)
       },
       async handleSearch() {
-        this.searchType = 'search'
+        this.searchButtonType = 'search'
         const { searchContent } = this.ipEditableBlock
         if (!searchContent.length) {
           this.ipEditableBlock?.focus()
           return
         }
         const searchList = this.getSearchList()
+        this.setSearch(searchList)
         if (searchList.length > IP_SEARCH_MAX_COUNT) {
           this.$warn(this.$t('最多支持搜索10000条数据'))
           return
@@ -286,29 +290,30 @@
           HOME_HOST_SEARCH_CONTENT_STORE_KEY,
           JSON.stringify(this.ipEditableBlock.searchContent)
         )
-        const isIPSearch = this.getSearchType()
+        const isIPSearch = this.hasIP()
         if (isIPSearch) {
           return this.ipSearch()
         }
         return this.showPopover(this.$refs?.searchBtn?.$el)
       },
       handleIPFuzzySearch() {
-        this.popoverInstance.destroy()
-        const { searchType } = this
+        this.destroy()
+        const { searchButtonType } = this
         const content = this.ipEditableBlock.searchContent
         FilterStore.setIPField('exact', false)
-        if (searchType === 'search') return this.ipSearch('fuzzy')
+        if (searchButtonType === 'search') return this.ipSearch(true)
         return this.showFilterForm(content, 'fuzzy')
       },
       handleAssetSearch() {
-        this.popoverInstance.destroy()
-        const { searchType } = this
-        if (searchType === 'search') return this.searchToAsset()
+        this.destroy()
+        const { searchButtonType } = this
+        if (searchButtonType === 'search') return this.searchToAsset()
         return this.showFilterForm('', 'asset')
       },
       handleSetFilters(event) {
-        this.searchType = 'setFilters'
-        const isIPSearch = this.getSearchType()
+        this.searchButtonType = 'setFilters'
+        this.setSearch(this.getSearchList())
+        const isIPSearch = this.hasIP()
         const content = this.ipEditableBlock.searchContent
         if (isIPSearch || !content) {
           return this.showFilterForm(content)
@@ -376,19 +381,11 @@
     }
     .picking-popover-content {
       padding: 6px;
-      position: absolute;
-      left: -1000px;
-      top: -1000px;
       width: 220px;
       .buttons {
         margin-top: 12px;
         text-align: right;
         @include space-between;
-      }
-    }
-    .tippy-popper {
-      .picking-popover-content {
-        position: static;
       }
     }
 </style>

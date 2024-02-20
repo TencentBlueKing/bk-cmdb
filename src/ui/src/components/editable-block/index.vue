@@ -130,7 +130,7 @@
 
   const setSearchContent = (val = '') => {
     searchContent.value = val
-    emit('updateValue', val)
+    emit('input', val)
   }
   const setInputHtml = (html = '') => {
     searchInput.value.innerHTML = html

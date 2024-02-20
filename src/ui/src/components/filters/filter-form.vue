@@ -36,9 +36,8 @@
             class="ip-editable-block"
             :enter-search="false"
             :is-exact="IPCondition.exact"
-            :placeholder="getEditBlockPlaceholder"
-            v-model="IPCondition.text"
-            @updateValue="(val) => IPCondition.text = val">
+            :placeholder="editBlockPlaceholder"
+            v-model="IPCondition.text">
           </editable-block>
           <input type="hidden"
             ref="ip"
@@ -225,7 +224,7 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
-      getEditBlockPlaceholder() {
+      editBlockPlaceholder() {
         const { exact } = this.IPCondition
         const placeholder = exact ? '主机搜索提示语' : '主机模糊搜索提示语'
         return this.$t(placeholder)
