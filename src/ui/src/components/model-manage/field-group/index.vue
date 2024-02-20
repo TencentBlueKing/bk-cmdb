@@ -1250,7 +1250,12 @@ $modelHighlightColor: #3c96ff;
 
 .field-options {
   display: flex;
-  margin: 0 0 14px;
+  position: sticky;
+  top: -20px;
+  z-index: 9999;
+  background: #F5F7FA;
+  margin: -20px -20px 0;
+  padding: 20px 20px 14px;
   .bk-button {
     margin-right: 10px;
   }

@@ -104,7 +104,8 @@
                         v-bk-tooltips.top="{
                           disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                           theme: 'light',
-                          trigger: 'mouseenter',
+                          showOnInit: true,
+                          trigger: 'click',
                           content: property.placeholder
                         }">
                       </component>
@@ -466,9 +467,12 @@
                     height: 16px;
                     margin: 8px 0 0 8px;
                     line-height: 1;
+                    &:hover {
+                        color: inherit !important;
+                    }
                 }
                 &:hover {
-                    opacity: .8;
+                    color: #1768EF;
                 }
             }
             .property-copy {
