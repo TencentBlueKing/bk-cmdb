@@ -69,7 +69,7 @@
     }
   })
 
-  const emit = defineEmits(['keydown', 'focus', 'blur', 'updateValue'])
+  const emit = defineEmits(['keydown', 'focus', 'blur', 'input'])
 
   onMounted(() => {
     setInputHtml(searchContent.value)
