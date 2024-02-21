@@ -38,7 +38,7 @@
         </bk-input>
       </bk-form-item>
       <bk-form-item class="form-action-item">
-        <SaveButton @save="save" :loading="globalConfig.updating" :disabled="!isExistedBiz"></SaveButton>
+        <SaveButton @save="save" :loading="globalConfig.updating" :disabled="!isExistedBiz || loading"></SaveButton>
         <bk-popconfirm
           trigger="click"
           :title="$t('确认重置业务通用选项？')"
@@ -74,6 +74,7 @@
       const bizGeneralForm = reactive(cloneDeep(defaultForm))
       const bizGeneralFormRef = ref(null)
       const isExistedBiz = ref(true)
+      const loading = ref(false)
       const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 230))
       const bizNameIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 30 : 10))
       const topoLevelIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 0 : -20))
@@ -100,7 +101,9 @@
             message: t('请输入正确的业务名称'),
             trigger: 'blur',
             validator: async (bizName) => {
+              loading.value = true
               const [err, { info: businesses }] = await to(store.dispatch('objectBiz/getFullAmountBusiness'))
+              loading.value = false
               if (err) {
                 return false
               }
@@ -146,6 +149,7 @@
         bizGeneralFormRef,
         bizGeneralFormRules,
         globalConfig,
+        loading,
         save,
         reset,
         labelWidth,

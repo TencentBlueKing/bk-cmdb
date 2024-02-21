@@ -1766,6 +1766,7 @@
     "在实例中可编辑": "Editable in instance",
     "设置为必填项": "Required",
     "字段已在模板中存在，无法添加": "Field already exists in the template and cannot be added",
+    "与已有字段的唯一标识或名称重复，请修改": "Duplicate with ID or Name of the existing field, please modify",
     "立即绑定": "Bind now",
     "模型信息确认": "Model information confirmation",
     "模型存在冲突，无法提交": "Model conflicts and cannot be submitted",
