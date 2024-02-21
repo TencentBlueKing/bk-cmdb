@@ -269,7 +269,8 @@
         return isSystemLimited || isCloudHost
       },
       setEditState(property) {
-        const value = this.host[property.bk_property_id]
+        // 需从this.info.host读取初始值，如果没有初始值则为undefined才能正确的返回字段默认值
+        const value = this.$tools.getPropertyDefaultValue(property, this.info.host[property.bk_property_id])
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
         this.$nextTick(() => {
