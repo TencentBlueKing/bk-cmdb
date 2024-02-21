@@ -172,7 +172,6 @@ export function getPropertyDefaultValue(property, value) {
   const propertyValue = formatPropertyValue(value, property)
   const defaultValue = getInstFormValues([property])?.[property.bk_property_id]
   // undefined 认为没有传递属性值，与 null 等假值明确区分开
-  console.log(value, 'vfvvv')
   return value === undefined ? defaultValue : propertyValue
 }
 
