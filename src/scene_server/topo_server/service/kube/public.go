@@ -90,21 +90,20 @@ func (s *service) findKubeTopoPathInfo(kit *rest.Kit, option *types.KubeTopoPath
 			}
 		default:
 
-			kind, err := types.GetKindByWorkLoadTableNameMap(tableName)
+			kind, err := types.GetKindByWorkLoadTableName(tableName)
 			if err != nil {
 				return result, err
 			}
-			workloads, cErr := s.ClientSet.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query,
-				types.WorkloadType(kind[tableName]))
+			workloads, cErr := s.ClientSet.CoreService().Kube().ListWorkload(kit.Ctx, kit.Header, query, kind)
 			if cErr != nil {
-				blog.Errorf("find %s failed, cond: %v, err: %v, rid: %s", kind[tableName], query, cErr, kit.Rid)
+				blog.Errorf("find %s failed, cond: %v, err: %v, rid: %s", kind, query, cErr, kit.Rid)
 				return result, cErr
 			}
 			for _, workload := range workloads.Info {
 				result.Info = append(result.Info, types.KubeObjectInfo{
 					ID:   workload.GetWorkloadBase().ID,
 					Name: workload.GetWorkloadBase().Name,
-					Kind: kind[tableName],
+					Kind: string(kind),
 				})
 			}
 		}

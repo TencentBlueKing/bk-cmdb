@@ -20,6 +20,7 @@ package jwt
 
 import (
 	"crypto/rsa"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -70,7 +71,12 @@ func Init(prefix string) error {
 	handler.Enabled = true
 
 	if conf.PublicKey != "" {
-		jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(conf.PublicKey))
+		publicKey, err := base64.StdEncoding.DecodeString(conf.PublicKey)
+		if err != nil {
+			return fmt.Errorf("decode base64 jwt public key %s failed, err: %v", conf.PublicKey, err)
+		}
+
+		jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
 		if err != nil {
 			return fmt.Errorf("parse jwt public key %s failed, err: %v", conf.PublicKey, err)
 		}
@@ -79,7 +85,12 @@ func Init(prefix string) error {
 	}
 
 	if conf.PrivateKey != "" {
-		jwtPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(conf.PrivateKey))
+		privateKey, err := base64.StdEncoding.DecodeString(conf.PrivateKey)
+		if err != nil {
+			return fmt.Errorf("decode base64 jwt private key %s failed, err: %v", conf.PrivateKey, err)
+		}
+
+		jwtPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 		if err != nil {
 			return fmt.Errorf("parse jwt private key %s failed, err: %v", conf.PrivateKey, err)
 		}
@@ -93,9 +104,9 @@ func Init(prefix string) error {
 type config struct {
 	// Enabled is the flag to enable jwt authorization
 	Enabled bool `mapstructure:"enabled"`
-	// PublicKey is the jwt public key
+	// PublicKey is the base64 encoded jwt public key
 	PublicKey string `mapstructure:"publicKey"`
-	// PrivateKey is the jwt private key
+	// PrivateKey is the base64 encoded jwt private key
 	PrivateKey string `mapstructure:"privateKey"`
 }
 

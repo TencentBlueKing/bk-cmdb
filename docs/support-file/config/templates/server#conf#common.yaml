@@ -272,6 +272,15 @@ eventServer:
       # 下发主机身份文件权限值
       filePrivilege: 644
 
+# apiServer相关配置
+apiServer:
+  # api-server使用的jwt配置
+  jwt:
+    # 是否开启jwt认证功能
+    enabled: false
+    # jwt公钥
+    publicKey:
+
 # 直接调用gse服务相关配置
 gse:
   # 调用gse的apiServer服务时相关配置

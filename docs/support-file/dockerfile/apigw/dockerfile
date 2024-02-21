@@ -1,0 +1,5 @@
+FROM hub.bktencent.com/blueking/apigw-manager:3.0.1
+
+COPY apidocs /data/
+
+RUN chmod +x /data/bin/sync-apigateway.sh

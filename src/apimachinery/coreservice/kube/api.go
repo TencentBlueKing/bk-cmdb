@@ -523,6 +523,35 @@ func (k *kube) ListContainer(ctx context.Context, header http.Header, input *met
 	return &result.Data, nil
 }
 
+// ListContainerByPod list container by pod condition
+func (k *kube) ListContainerByPod(ctx context.Context, header http.Header, input *types.GetContainerByPodOption) (
+	*types.GetContainerByPodResp, errors.CCErrorCoder) {
+
+	result := new(struct {
+		metadata.BaseResp
+		Data *types.GetContainerByPodResp `json:"data"`
+	})
+
+	subPath := "/findmany/container/by_pod"
+	err := k.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return result.Data, nil
+}
+
 // ListNsSharedClusterRel search namespace and shared cluster relation.
 func (k *kube) ListNsSharedClusterRel(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 	*types.NsSharedClusterRelData, errors.CCErrorCoder) {
