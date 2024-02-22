@@ -92,6 +92,7 @@ type QueryBusinessRequest struct {
 	// The field condition is not
 	// maintained later, it is recommended to use the field biz_property_filter.
 	Condition         mapstr.MapStr             `json:"condition"`
+	TimeCondition     *TimeCondition            `json:"time_condition"`
 	BizPropertyFilter *querybuilder.QueryFilter `json:"biz_property_filter,omitempty"`
 }
 
@@ -610,9 +611,10 @@ func (p *UpdateProjectOption) Validate() ccErr.RawErrorInfo {
 
 // SearchProjectOption search project option
 type SearchProjectOption struct {
-	Filter *querybuilder.QueryFilter `json:"filter"`
-	Fields []string                  `json:"fields,omitempty"`
-	Page   BasePage                  `json:"page,omitempty"`
+	Filter        *querybuilder.QueryFilter `json:"filter"`
+	TimeCondition *TimeCondition            `json:"time_condition,omitempty"`
+	Fields        []string                  `json:"fields,omitempty"`
+	Page          BasePage                  `json:"page,omitempty"`
 }
 
 // Validate validate SearchProjectOption

@@ -14,6 +14,7 @@ Query projects (Version: v3.10.23+, Permission: View permission for the project)
 | ------ | ------ | -------- | ------------------------------------------------------------ |
 | filter | object | No       | Query conditions                                             |
 | fields | array  | No       | Property list, controls which fields are returned in the result, speeding up interface requests and reducing network traffic transmission |
+| time_condition      |  object     | no     | Query criteria for querying business by time                                                     |
 | page   | object | Yes      | Pagination information                                       |
 
 #### filter Field Explanation
@@ -41,6 +42,13 @@ Basic filtering rules, indicating the rule for filtering a certain field. Any fi
 
 Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |yes| Operator, currently only and is supported|
+| rules | array  |yes| Time query criteria         |
+
 #### page
 
 | Field        | Type   | Required | Description                                                  |
@@ -56,31 +64,41 @@ Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/
 
 ```json
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
-    "filter": {
-        "condition": "AND",
-        "rules": [
-            {
-                "field": "id",
-                "operator": "equal",
-                "value": 1
-            },
-            {
-                "field": "bk_status",
-                "operator": "equal",
-                "value": "enable"
-            }
-        ]
-    },
-    "page": {
-        "start": 0,
-        "limit": 10,
-        "sort": "id",
-        "enable_count": false
-    }
+  "bk_app_code": "esb_test",
+  "bk_app_secret": "xxx",
+  "bk_username": "xxx",
+  "bk_token": "xxx",
+  "filter": {
+    "condition": "AND",
+    "rules": [
+      {
+        "field": "id",
+        "operator": "equal",
+        "value": 1
+      },
+      {
+        "field": "bk_status",
+        "operator": "equal",
+        "value": "enable"
+      }
+    ]
+  },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
+      }
+    ]
+  },
+  "page": {
+    "start": 0,
+    "limit": 10,
+    "sort": "id",
+    "enable_count": false
+  }
 }
 ```
 
@@ -88,28 +106,38 @@ Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/
 
 ```json
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
-    "filter": {
-        "condition": "AND",
-        "rules": [
-            {
-                "field": "id",
-                "operator": "equal",
-                "value": 1
-            },
-            {
-                "field": "bk_status",
-                "operator": "equal",
-                "value": "enable"
-            }
-        ]
-    },
-    "page": {
-        "enable_count":true
-    }
+  "bk_app_code": "esb_test",
+  "bk_app_secret": "xxx",
+  "bk_username": "xxx",
+  "bk_token": "xxx",
+  "filter": {
+    "condition": "AND",
+    "rules": [
+      {
+        "field": "id",
+        "operator": "equal",
+        "value": 1
+      },
+      {
+        "field": "bk_status",
+        "operator": "equal",
+        "value": "enable"
+      }
+    ]
+  },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
+      }
+    ]
+  },
+  "page": {
+    "enable_count":true
+  }
 }
 ```
 
