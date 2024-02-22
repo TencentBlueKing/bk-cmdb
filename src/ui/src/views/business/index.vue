@@ -602,9 +602,25 @@
             sort: this.table.sort
           }
         }
+
         if (!this.filter.value.toString()) {
           return params
         }
+
+        if (this.filterType === 'time') {
+          const condition = {
+            [this.filter.field]: {
+              value: this.filter.value,
+              operator: this.filter.operator
+            }
+          }
+          const { time_condition: timeCondition } = Utils.transformGeneralModelCondition(condition, this.properties)
+          if (timeCondition) {
+            params.time_condition = timeCondition
+          }
+          return params
+        }
+
         if (this.filter.operator === '$range') {
           const [start, end] = this.filter.value
           params.condition[this.filter.field] = {
@@ -626,6 +642,7 @@
         }
 
         params.condition[this.filter.field] = { [this.filter.operator]: this.filter.value }
+
         return params
       },
       async handleEdit(inst) {

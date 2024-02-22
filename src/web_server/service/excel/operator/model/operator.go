@@ -151,12 +151,13 @@ type fieldBriefMsg struct {
 func getSortFields(lang language.DefaultCCLanguageIf) []fieldBriefMsg {
 	textType := lang.Language("val_type_text")
 	boolType := lang.Language("val_type_bool")
+	integerType := lang.Language("val_type_integer")
 
 	var fields = []fieldBriefMsg{
 		{id: metadata.AttributeFieldPropertyID, desc: lang.Language("web_en_name_required"), fType: textType},
 		{id: metadata.AttributeFieldPropertyName, desc: lang.Language("web_bk_alias_name_required"), fType: textType},
 		{id: metadata.AttributeFieldPropertyType, desc: lang.Language("web_bk_data_type_required"), fType: textType},
-		{id: metadata.AttributeFieldPropertyGroup, desc: lang.Language("property_group"), fType: textType},
+		{id: metadata.AttributeFieldPropertyGroupName, desc: lang.Language("property_group_name"), fType: textType},
 		{id: metadata.AttributeFieldOption, desc: lang.Language("property_option"), fType: textType},
 		{id: metadata.AttributeFieldUnit, desc: lang.Language("unit"), fType: textType},
 		{id: metadata.AttributeFieldDescription, desc: lang.Language("desc"), fType: textType},
@@ -166,6 +167,7 @@ func getSortFields(lang language.DefaultCCLanguageIf) []fieldBriefMsg {
 		{id: metadata.AttributeFieldIsReadOnly, desc: lang.Language("property_is_readonly"), fType: boolType},
 		{id: metadata.AttributeFieldIsOnly, desc: lang.Language("property_is_only"), fType: boolType},
 		{id: metadata.AttributeFieldIsMultiple, desc: lang.Language("property_is_multiple"), fType: boolType},
+		{id: metadata.AttributeFieldPropertyIndex, desc: lang.Language("property_index"), fType: integerType},
 		{id: metadata.AttributeFieldDefault, desc: lang.Language("property_default"), fType: textType},
 	}
 
@@ -280,7 +282,6 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 	for _, field := range fields {
 		idTypeMap[field.id] = field.fType
 	}
-	boolType := lang.Language("val_type_bool")
 
 	// get attribute
 	attrs := make(map[int]map[string]interface{})
@@ -301,27 +302,49 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 			if !ok {
 				continue
 			}
-
-			if idTypeMap[id] != boolType {
-				if id == common.BKDefaultField {
-					val = strings.Trim(val, `"`)
-				}
-				attr[id] = val
-				continue
-			}
-
-			boolVal, err := strconv.ParseBool(val)
+			convertVal, err := op.getImportAttrVal(id, idTypeMap[id], val)
 			if err != nil {
-				blog.Errorf("convert string to bool type failed, val: %v, err: %v, rid: %s", val, err, op.GetKit().Rid)
+				blog.Errorf("get attr val failed, val: %v, err: %v, rid: %s", val, err, op.GetKit().Rid)
 				return nil, err
 			}
-			attr[id] = boolVal
+			attr[id] = convertVal
 		}
 
 		attrs[reader.GetCurIdx()+1] = attr
 	}
 
 	return attrs, nil
+}
+
+func (op *Operator) getImportAttrVal(id, idType, val string) (interface{}, error) {
+	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
+	boolType := lang.Language("val_type_bool")
+	integerType := lang.Language("val_type_integer")
+
+	switch idType {
+	case boolType:
+		if val == "" {
+			return false, nil
+		}
+		boolVal, err := strconv.ParseBool(val)
+		if err != nil {
+			blog.Errorf("convert string to bool type failed, val: %v, err: %v, rid: %s", val, err, op.GetKit().Rid)
+			return nil, err
+		}
+		return boolVal, nil
+	case integerType:
+		int64Val, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			blog.Errorf("convert string to int64 type failed, val: %v, err: %v, rid: %s", val, err, op.GetKit().Rid)
+			return nil, err
+		}
+		return int64Val, nil
+	default:
+		if id == common.BKDefaultField {
+			val = strings.Trim(val, `"`)
+		}
+		return val, nil
+	}
 }
 
 // convAttr convert attribute in excel to cmdb attributes
