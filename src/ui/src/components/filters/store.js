@@ -367,7 +367,7 @@ const FilterStore = new Vue({
       const { id } = this.getProperty(propertyId, modelId)
       const hasSelected = this.selected.some(property => property?.id === id)
       if (!hasSelected) {
-        this.updateSelected([Utils.findProperty(id, this.properties), ...this.selected])
+        this.updateSelected([Utils.findProperty(String(id), this.properties), ...this.selected])
       }
     },
     updateCondition(property, operator, value) {

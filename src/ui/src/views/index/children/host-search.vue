@@ -26,12 +26,26 @@
         @focus="handleFocus">
       </editable-block>
       <bk-button theme="primary" class="search-btn" v-test-id="'search'"
+        ref="searchBtn"
         :loading="$loading(request.search)"
-        @click="handleSearch()">
+        @click="handleSearch">
         <i class="bk-icon icon-search"></i>
         {{$t('搜索')}}
       </bk-button>
       <bk-link theme="primary" class="advanced-link" @click="handleSetFilters">{{$t('高级筛选')}}</bk-link>
+    </div>
+    <div class="picking-popover-content" ref="popoverContent" v-show="isShowPopover">
+      <p>{{$t('未在输入的内容中检测到有效IP，请问您希望以哪种方式进行搜索？')}}</p>
+      <div class="buttons">
+        <bk-button size="small" outline v-test-id="'assetSearch'"
+          @click="handleAssetSearch">
+          {{$t('固资编号')}}
+        </bk-button>
+        <bk-button size="small" outline v-test-id="'ipSearch'"
+          @click="handleIPFuzzySearch">
+          {{$t('IP模糊搜索')}}
+        </bk-button>
+      </div>
     </div>
   </div>
 </template>
@@ -64,6 +78,8 @@
       }
       return {
         rows: 1,
+        searchButtonType: 'search',
+        isShowPopover: false,
         searchContent: defaultSearchContent(),
         ipEditableBlock: null,
         popoverProps: {
@@ -123,6 +139,10 @@
         // 使用切割IP的方法分割内容，方法在此处完全适用且能与高级搜索的IP分割保持一致
         return FilterUtils.splitIP(this.ipEditableBlock.searchContent)
       },
+      // 有无IP
+      hasIP() {
+        return this.searchFlag.ip
+      },
       setRows() {
         const rows = this.ipEditableBlock.searchContent.split('\n').length || 1
         this.rows = Math.min(10, rows)
@@ -138,104 +158,40 @@
           || IPv6WithCloudList.length
         this.searchFlag.asset = assetList.length > 0
       },
-      handleFocus() {
-        this.$emit('focus', true)
-        this.setRows()
-      },
-      handleBlur() {
-        this.$emit('focus', false)
-      },
-      async handleSearch() {
-        const { searchContent } = this.ipEditableBlock
-        if (!searchContent.length) {
-          this.ipEditableBlock?.focus()
-          return
+      // 显示气泡框
+      showPopover(target) {
+        if (this.popoverInstance) {
+          this.popoverInstance.destroy()
         }
-        const searchList = this.getSearchList()
-        if (searchList.length > IP_SEARCH_MAX_COUNT) {
-          this.$warn(this.$t('最多支持搜索10000条数据'))
-          return
-        }
-
-        // 保存本次搜索内容
-        window.sessionStorage.setItem(
-          HOME_HOST_SEARCH_CONTENT_STORE_KEY,
-          JSON.stringify(this.ipEditableBlock.searchContent)
-        )
-
-        this.setSearch(searchList)
-        const { assetList, cloudIdSet } = this.searchIPs
-        const assetSearch = () => this.handleAssetSearch(assetList)
-
-        const ipSearch = () => {
-          // 不同管控区域+IP的混合搜索
-          if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
-            return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
-          }
-
-          this.handleIPSearch(this.searchIPs)
-        }
-
-        if (this.searchFlag.asset) {
-          return assetSearch()
-        }
-        if (this.searchFlag.ip) {
-          return ipSearch()
-        }
-      },
-      handleIPSearch(IPs) {
-        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
-        IPs.IPv4WithCloudList.forEach(([cloud, ip, type]) => {
-          let val = `${cloud}:[${ip}]`
-          if (type === 0) {
-            val = val.replace(/\[|\]/g, '')
-          }
-          IPList.push(val)
+        this.isShowPopover = true
+        this.popoverInstance = this.$bkPopover(target || this.$el, {
+          content: this.$refs.popoverContent,
+          theme: 'light',
+          allowHTML: true,
+          placement: 'bottom',
+          trigger: 'manual',
+          interactive: true,
+          arrow: true
         })
-        IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
-
-        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPList.join('\n') })
-
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_HOST,
-          query: {
-            scope: 'all',
-            ip: QS.stringify(ip, { encode: false }),
-          },
-          history: true
-        })
+        this.popoverInstance.show()
       },
-      async handleAssetSearch(list) {
-        try {
-          const filter = {
-            'bk_asset_id.in': list.join(',')
-          }
-          this.$routerActions.redirect({
-            name: MENU_RESOURCE_HOST,
-            query: {
-              scope: 'all',
-              filter: QS.stringify(filter, { encode: false })
-            },
-            history: true
-          })
-        } catch (error) {
-          console.error(true)
-        }
-      },
-      handleSetFilters() {
-        this.setSearch(this.getSearchList())
-        const { ip, asset } = this.searchFlag
+      // 开启高级筛选侧滑栏
+      showFilterForm(IPText = '', type = 'ip') {
         const { assetList } = this.searchIPs
         const propertyId = 'bk_asset_id'
-        let IPText = ''
-        if (ip) {
-          IPText = this.ipEditableBlock.searchContent
-        } else if (asset) {
-          FilterStore.setSelectedField(propertyId)
-        }
+
         FilterStore.setIPField('text', IPText)
-        FilterStore.setConditonField(propertyId, assetList)
+        FilterStore.setConditonField(propertyId, '')
         this.ipEditableBlock.clear()
+
+        if (type === 'asset') {
+          FilterStore.setSelectedField(propertyId)
+          FilterStore.setConditonField(propertyId, assetList)
+        }
+        if (type !== 'fuzzy') {
+          FilterStore.setIPField('exact', true)
+        }
+
         FilterForm.show({
           type: 'index',
           icon: 'icon-plus-circle',
@@ -254,6 +210,117 @@
             })
           }
         })
+      },
+      ipSearch(isFuzzy = false) {
+        const IPs = this.searchIPs
+        const { cloudIdSet } = IPs
+        const { searchContent } = this.ipEditableBlock
+
+        if (cloudIdSet.size > IP_SEARCH_MAX_CLOUD) {
+          return this.$warn(this.$t('最多支持50个不同管控区域的混合搜索'))
+        }
+
+        const IPList = [...IPs.IPv4List, ...IPs.IPv6List]
+        IPs.IPv4WithCloudList.forEach(([cloud, ip, type]) => {
+          let val = `${cloud}:[${ip}]`
+          if (type === 0) {
+            val = val.replace(/\[|\]/g, '')
+          }
+          IPList.push(val)
+        })
+        IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
+
+        const IPText = isFuzzy ? searchContent : IPList.join('\n')
+        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPText })
+
+        this.$routerActions.redirect({
+          name: MENU_RESOURCE_HOST,
+          query: {
+            scope: 'all',
+            ip: QS.stringify(ip, { encode: false }),
+            isFuzzy,
+          },
+          history: true
+        })
+      },
+      // 搜索点击固资编号
+      searchToAsset() {
+        const { assetList: list } = this.searchIPs
+        try {
+          const filter = {
+            'bk_asset_id.in': list.join(',')
+          }
+          this.$routerActions.redirect({
+            name: MENU_RESOURCE_HOST,
+            query: {
+              scope: 'all',
+              filter: QS.stringify(filter, { encode: false })
+            },
+            history: true
+          })
+        } catch (error) {
+          console.error(true)
+        }
+      },
+      destroy() {
+        this.popoverInstance.destroy()
+        this.isShowPopover = false
+      },
+      handleFocus() {
+        this.$emit('focus', true)
+        this.setRows()
+      },
+      handleBlur() {
+        this.$emit('focus', false)
+      },
+      async handleSearch() {
+        this.searchButtonType = 'search'
+        const { searchContent } = this.ipEditableBlock
+        if (!searchContent.length) {
+          this.ipEditableBlock?.focus()
+          return
+        }
+        const searchList = this.getSearchList()
+        this.setSearch(searchList)
+        if (searchList.length > IP_SEARCH_MAX_COUNT) {
+          this.$warn(this.$t('最多支持搜索10000条数据'))
+          return
+        }
+
+        // 保存本次搜索内容
+        window.sessionStorage.setItem(
+          HOME_HOST_SEARCH_CONTENT_STORE_KEY,
+          JSON.stringify(this.ipEditableBlock.searchContent)
+        )
+        const isIPSearch = this.hasIP()
+        if (isIPSearch) {
+          return this.ipSearch()
+        }
+        return this.showPopover(this.$refs?.searchBtn?.$el)
+      },
+      handleIPFuzzySearch() {
+        this.destroy()
+        const { searchButtonType } = this
+        const content = this.ipEditableBlock.searchContent
+        FilterStore.setIPField('exact', false)
+        if (searchButtonType === 'search') return this.ipSearch(true)
+        return this.showFilterForm(content, 'fuzzy')
+      },
+      handleAssetSearch() {
+        this.destroy()
+        const { searchButtonType } = this
+        if (searchButtonType === 'search') return this.searchToAsset()
+        return this.showFilterForm('', 'asset')
+      },
+      handleSetFilters(event) {
+        this.searchButtonType = 'setFilters'
+        this.setSearch(this.getSearchList())
+        const isIPSearch = this.hasIP()
+        const content = this.ipEditableBlock.searchContent
+        if (isIPSearch || !content) {
+          return this.showFilterForm(content)
+        }
+        return this.showPopover(event?.target)
       },
     }
   }
@@ -316,9 +383,11 @@
     }
     .picking-popover-content {
       padding: 6px;
+      width: 220px;
       .buttons {
         margin-top: 12px;
         text-align: right;
+        @include space-between;
       }
     }
 </style>
