@@ -134,11 +134,11 @@
           <diff-brand :count="counts.conflict" :text="$t('校验冲突')" status="conflict"
             :tooltips="$t('当前模板设置的唯一校验规则与模型已存在的规则冲突')">
           </diff-brand>
-          <diff-brand :count="counts.unbound" :text="$t('解除纳管')" status="unbound"
-            :tooltips="$t('模板中删除了该字段，后续不再统一管理该字段')">
-          </diff-brand>
-          <diff-brand :count="counts.unchanged" :text="$t('无变化')" status="unchanged"></diff-brand>
+          <diff-brand :count="counts.unchanged" :text="$t('无配置变化')" status="unchanged"></diff-brand>
         </div>
+        <diff-brand :count="counts.unbound" :text="$t('解除纳管')" status="unbound"
+          :tooltips="$t('模板中删除了该字段，后续不再统一管理该字段')">
+        </diff-brand>
       </div>
     </div>
     <div class="diff-table">
@@ -184,6 +184,7 @@
 
     .diff-summary {
       display: flex;
+      width: 100%;
       .summary-title {
         font-size: 14px;
         font-weight: 700;
@@ -192,6 +193,7 @@
         display: flex;
         align-items: center;
         gap: 24px;
+        flex: 1;
       }
     }
   }

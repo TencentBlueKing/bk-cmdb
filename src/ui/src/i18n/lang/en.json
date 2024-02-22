@@ -1803,7 +1803,7 @@
     "新增校验": "New check",
     "校验冲突": "Check conflict",
     "当前模板设置的唯一校验规则与模型已存在的规则冲突": "The Unique Rule set by the current template conflicts with the existing rules of the model",
-    "无变化": "No change",
+    "无配置变化": "No configuration change",
     "绑定前的唯一校验": "Unique Rule before binding",
     "绑定后的唯一校验": "Unique Rule after binding",
     "未编辑完成的数据将被忽略，原数据不会被更改": "Unedited data will be ignored and the original data will not be changed",

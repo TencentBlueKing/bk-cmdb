@@ -25,14 +25,14 @@
         @click="handleChildClick(service)">
         <i class="node-icon fl">{{moduleName[0]}}</i>
         <span class="child-options fr" v-if="mode !== 'view'">
-          <bk-link class="action-link" @click="handleViewService(service)">{{$t('查看详情')}}</bk-link>
+          <bk-link class="action-link" @click="handleViewService(service)" theme="primary">{{$t('查看详情')}}</bk-link>
           <bk-popover v-if="serviceExistHost(service.id)">
-            <bk-link class="action-link disabled">{{$t('删除')}}</bk-link>
+            <bk-link class="action-link disabled" theme="primary">{{$t('删除')}}</bk-link>
             <i18n path="该模块下有主机不可删除" tag="p" class="service-tips" slot="content">
               <template #link><span @click="handleGoTopoBusiness(service)">{{$t('跳转查看')}}</span></template>
             </i18n>
           </bk-popover>
-          <bk-link v-else class="action-link" @click="handleDeleteService(index)">{{$t('删除')}}</bk-link>
+          <bk-link v-else class="action-link" @click="handleDeleteService(index)" theme="primary">{{$t('删除')}}</bk-link>
         </span>
         <span class="child-name" v-bk-overflow-tips>{{service.name}}</span>
       </li>
@@ -387,8 +387,7 @@
                 font-size: 0;
                 color: $iconColor;
                 .action-link {
-                  margin: 0 4px;
-                  color: #c4c2ce;
+                  margin: 0 6px;
                   ::v-deep .bk-link-text {
                     font-size: 12px;
                   }

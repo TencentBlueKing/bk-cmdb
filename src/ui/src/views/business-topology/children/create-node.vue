@@ -68,6 +68,7 @@
 </template>
 
 <script>
+  import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   export default {
     props: {
       parentNode: {
@@ -91,7 +92,8 @@
         return nodePath.map(node => node.data.bk_inst_name).join('-')
       },
       sortedProperties() {
-        return this.properties.sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
+        return this.properties.filter(property => !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id))
+          .sort((propertyA, propertyB) => propertyA.bk_property_index - propertyB.bk_property_index)
       },
       title() {
         return this.nextModelId === 'set' ? this.$t('新建集群') : this.$t('新建节点')
