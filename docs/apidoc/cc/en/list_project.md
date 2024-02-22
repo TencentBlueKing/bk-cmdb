@@ -12,6 +12,7 @@ query the project (version: v3.10.23+, permissions: view permission of the proje
 |-----------|------------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | filter | object  | no   | query filter                                                                                                                                |
 | fields | array   | no   | attribute list, which controls which fields are in the returned result, which can accelerate interface requests and reduce network traffic. |
+| time_condition      |  object     | no     | Query criteria for querying business by time                                                     |
 | page | object  | yes   | page condition                                                                                                                              |
 
 #### filter
@@ -34,6 +35,13 @@ The filtering rule is triplet`field`,`operator`,`value`
 | value    | -      |no   | None     | Operand| Different values correspond to different value formats                            |
 
 Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |yes| Operator, currently only and is supported|
+| rules | array  |yes| Time query criteria         |
 
 #### page
 
@@ -76,6 +84,16 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
       }
     ]
   },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
+      }
+    ]
+  },
   "page": {
     "start": 0,
     "limit": 10,
@@ -104,6 +122,16 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
         "field": "bk_status",
         "operator": "equal",
         "value": "enable"
+      }
+    ]
+  },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
       }
     ]
   },

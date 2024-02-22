@@ -13,6 +13,7 @@
 | 字段                       |  类型      | 必选   |  描述                                      |
 |----------------------------|------------|--------|--------------------------------------------|
 | filter      | object  | 否   | 查询条件  |
+| time_condition      | object     | 否     | 按时间查询业务的查询条件                                                       |
 | fields     | array  | 否     | 属性列表，控制返回结果里有哪些字段，能够加速接口请求和减少网络流量传输   |
 | page       | object | 是     | 分页信息 |
 
@@ -40,6 +41,13 @@
 | value    | 不同的field和operator对应不同的value格式 | 否   | 操作值                                                                                               |
 
 组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
+
+#### time_condition
+
+| 字段   | 类型   | 必选 |  描述              |
+|-------|--------|-----|--------------------|
+| oper  | string | 是  | 操作符，目前只支持and |
+| rules | array  | 是  | 时间查询条件         |
 
 #### page
 
@@ -74,6 +82,16 @@
             }
         ]
     },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
+    },  
     "page": {
         "start": 0,
         "limit": 10,
@@ -103,6 +121,16 @@
                 "value": "enable"
             }
         ]
+    },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
     },
     "page": {
         "enable_count":true
