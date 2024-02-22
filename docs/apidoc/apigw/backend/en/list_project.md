@@ -8,6 +8,7 @@ Query projects (Version: v3.10.23+, Permission: View permission for the project)
 |--------|--------|----------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | filter | object | No       | Query conditions                                                                                                                          |
 | fields | array  | No       | Property list, controls which fields are returned in the result, speeding up interface requests and reducing network traffic transmission |
+| time_condition | object | No | Query criteria for querying business by time |
 | page   | object | Yes      | Pagination information                                                                                                                    |
 
 #### filter Field Explanation
@@ -37,6 +38,13 @@ filtering rule or composed of multiple atomic filtering rules
 | value    | Different field and operator correspond to different value formats | No       | Operation value                                                                                                                  |
 
 Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |Yes| Operator, currently only and is supported|
+| rules | array  |Yes| Time query criteria         |
 
 #### page
 
@@ -68,6 +76,16 @@ Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/
             }
         ]
     },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
+    },
     "page": {
         "start": 0,
         "limit": 10,
@@ -95,6 +113,16 @@ Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/
                 "value": "enable"
             }
         ]
+    },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
     },
     "page": {
         "enable_count":true
