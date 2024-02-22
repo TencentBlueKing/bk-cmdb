@@ -61,7 +61,7 @@ var (
 	// Note:Among them, ipv4 and ipv6 addresses involve updating in dynamic scenarios, but are not allowed to be updated
 	// in static ip scenarios, and require special processing
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit", "bk_cpu_architecture",
 		common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
 	reqireFields = append(compareFields, common.BKHostIDField, common.BKAddressingField, common.BKHostOuterIPField,
 		common.BKHostOuterIPv6Field)
@@ -561,6 +561,7 @@ type hostDiscoverMsg struct {
 	cpumodule   string
 	hostname    string
 	osbit       string
+	arch        string
 	cpunum      int64
 	disk        uint64
 	mem         uint64
@@ -594,6 +595,7 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	hostMsg.ostype = strings.TrimSpace(val.Get("data.system.os").String())
 	hostMsg.platform = strings.TrimSpace(val.Get("data.system.platform").String())
 	hostMsg.version = val.Get("data.system.platVer").String()
+	hostMsg.arch = strings.TrimSpace(val.Get("data.system.arch").String())
 
 	switch strings.ToLower(hostMsg.ostype) {
 	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
@@ -1063,6 +1065,13 @@ func parseV10Setter(val *gjson.Result, host *hostInfo) (
 		raw.WriteString(",")
 		raw.WriteString("\"bk_os_bit\":")
 		raw.Write([]byte("\"" + hostMsg.osbit + "\""))
+	}
+
+	if hostMsg.arch != "" {
+		setter["bk_cpu_architecture"] = hostMsg.arch
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_architecture\":")
+		raw.Write([]byte("\"" + hostMsg.arch + "\""))
 	}
 
 	raw.WriteByte('}')
