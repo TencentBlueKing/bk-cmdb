@@ -15,6 +15,8 @@ global:
   ##
   imagePullSecrets: []
   storageClass: ""
+  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+  bkCryptoType: "CLASSIC"
 
 ## @section bk-cmdb image parameters
 ##
@@ -113,6 +115,48 @@ apiserver:
   ## @param apiserver.replicas Number of apiserver replicas to deploy
   ##
   replicas: 1
+  ## @param apiserver.port bk-cmdb apiserver service HTTP port
+  ##
+  ingress:
+    ## @param apiserver.ingress.enabled Enable ingress record generation for bk-cmdb apiserver
+    ##
+    enabled: true
+    ## @param apiserver.ingress.hostname Default host for the ingress record
+    ##
+    host: cmdb-api.example.com
+    ## @param apiserver.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ##
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    ## @param apiserver.ingress.tls Enable TLS configuration for the host defined at `ingress.host` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Relay on cert-manager to create it by setting the corresponding annotations
+    ##   - Relay on Helm to create self-signed certificates by setting `ingress.tls=true` and `ingress.certManager=false`
+    ##
+    tls:
+  ## bk-cmdb apiserver service parameters
+  ##
+  service:
+    ## @param apiserver.service.type bk-cmdb apiserver service type
+    ##
+    type: "ClusterIP"
+    ## @param apiserver.service.ports Expose bk-cmdb webserver service by apiserver.service.ports[0].nodePort when apiserver.service.type is "NodePort"
+    ##
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    ## apiserver.service.externalPort bk-cmdb apiserver service external port
+    ##
+    externalPort: 80
   ## @param apiserver.port bk-cmdb apiserver service HTTP port
   ##
   port: 80
@@ -1088,6 +1132,10 @@ bkLoginApiUrl: http://bk-login-web
 ##
 bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
 
+## @param bkApigatewayName apigateway name for cmdb
+##
+bkApigatewayName: "bk-cmdb"
+
 ## @section bk-cmdb common config parameters
 ##
 common:
@@ -1171,6 +1219,18 @@ common:
       secretsEnv:
     syncTask:
       syncPeriodMinutes: 5
+  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+  crypto:
+    # 是否开启加密
+    enabled: false
+    # 使用SM4算法时所需的配置
+    sm4:
+      # 密钥
+      key:
+    # 使用AES-GCM算法时所需的配置
+    aesGcm:
+      # 密钥
+      key:
   #datacollection专属配置
   datacollection:
     hostSnapshot:
@@ -1265,6 +1325,8 @@ common:
       ch: /data/cmdb/cmdb_webserver/changelog_user/ch
       # 英文版版本日志存放路径
       en: /data/cmdb/cmdb_webserver/changelog_user/en
+    #是否启用消息通知
+    enableNotification: false
   ## monitor common config parameters
   ##
   monitor:
@@ -1305,6 +1367,10 @@ common:
     ## 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
     ##
     briefTopologySyncIntervalMinutes: 15
+    ## @param common.cacheService.kubeTopoSyncIntervalMinutes bk-cmdb cacheservice sync kube topo interval
+    ## 业务容器拓扑缓存的定时刷新时间，默认为15分钟，最小为15分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+    ##
+    kubeTopoSyncIntervalMinutes: 15
   ## log platform openTelemetry config
   ##
   openTelemetry:
@@ -1395,6 +1461,15 @@ common:
         ##
         filePrivilege: 644
 
+  ## apiServer common config parameters
+  apiServer:
+    # api-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥
+      publicKey:
+
   ## gse server config
   ##
   gse:
@@ -1472,7 +1547,7 @@ common:
     password:
   ## api gateway config
   ##
-  ## 调用apigw接口相关配置
+  ## apigw配置
   apiGW:
     address: http://bkapi.example.com/api/{api_name}
     appCode: bk_cmdb
@@ -1866,3 +1941,9 @@ gseCert:
   ## certificate package and encoded in base64
   ##
   cmdbKey: ""
+
+apigatewaySync:
+  enabled: false
+  image:
+    repository: blueking/cmdb-apigw-manager
+    tag:

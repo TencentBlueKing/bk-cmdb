@@ -31,7 +31,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/container/by_topo:
@@ -58,6 +58,6 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:

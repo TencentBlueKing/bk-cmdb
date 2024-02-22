@@ -91,7 +91,7 @@
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
-        <condition-picker :text="$t('添加')" icon="icon-plus-circle" :selected="selected" :property-map="propertyMap"
+        <condition-picker :text="$t(conditionText)" :icon="icon" :selected="selected" :property-map="propertyMap"
           :type="3"></condition-picker>
       </bk-form>
       <div class="filter-options"
@@ -206,6 +206,14 @@
         type: Function,
         default: () => {}
       },
+      icon: {
+        type: String,
+        default: ''
+      },
+      conditionText: {
+        type: String,
+        default: '添加其他条件'
+      }
     },
     data() {
       return {

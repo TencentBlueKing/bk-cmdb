@@ -92,7 +92,8 @@
                       v-bk-tooltips.top="{
                         disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                         theme: 'light',
-                        trigger: 'mouseenter',
+                        showOnInit: true,
+                        trigger: 'click',
                         content: property.placeholder
                       }"
                       :ref="`component-${property.bk_property_id}`">
@@ -110,7 +111,7 @@
                 && property !== editState.property">
                 <div class="copy-box">
                   <i
-                    class="property-copy icon-cc-copy"
+                    class="property-copy icon-copy bk-icon"
                     @click="handleCopy(property.bk_property_id)">
                   </i>
                   <transition name="fade">
@@ -430,9 +431,12 @@
                     height: 16px;
                     margin: 8px 0 0 8px;
                     line-height: 1;
+                    &:hover {
+                        color: inherit !important;
+                    }
                 }
                 &:hover {
-                    opacity: .8;
+                  color: #1768EF;
                 }
             }
             .property-copy {
@@ -440,7 +444,7 @@
                 color: #3c96ff;
                 cursor: pointer;
                 display: none;
-                font-size: 12px;
+                font-size: 16px;
             }
             .copy-box {
                 position: relative;

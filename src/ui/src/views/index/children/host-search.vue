@@ -194,6 +194,8 @@
 
         FilterForm.show({
           type: 'index',
+          icon: 'icon-plus-circle',
+          conditionText: '添加',
           searchAction: (allCondition) => {
             const { IP, condition } = allCondition
             FilterStore.setIP(IP)

@@ -32,7 +32,9 @@
           <i class="business-flag bk-icon icon-angle-down" v-show="!unfold"></i>
         </transition>
       </div>
-      <div class="menu-list">
+      <div class="menu-list" v-scroll="{
+        targetClass: 'active'
+      }">
         <template v-for="(menu, index) in currentMenus">
           <router-link
             :key="index"

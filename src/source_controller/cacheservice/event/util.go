@@ -16,9 +16,11 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/pkg/conv"
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	kubetypes "configcenter/src/kube/types"
 )
 
 var resourceKeyMap = map[watch.CursorType]Key{
@@ -78,3 +80,24 @@ const ObjInstTablePrefixRegex = "^" + common.BKObjectInstShardingTablePrefix
 
 // InstAsstTablePrefixRegex TODO
 const InstAsstTablePrefixRegex = "^" + common.BKObjectInstAsstShardingTablePrefix
+
+// ConvertLabel 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
+func ConvertLabel(podDetail map[string]interface{}) map[string]interface{} {
+	labels, ok := podDetail[kubetypes.LabelsField]
+	if !ok {
+		return podDetail
+	}
+
+	labelMap, ok := labels.(map[string]string)
+	if !ok {
+		return podDetail
+	}
+
+	newLabels := make(map[string]string)
+	for key, val := range labelMap {
+		newLabels[conv.DecodeDot(key)] = val
+	}
+	podDetail[kubetypes.LabelsField] = newLabels
+
+	return podDetail
+}

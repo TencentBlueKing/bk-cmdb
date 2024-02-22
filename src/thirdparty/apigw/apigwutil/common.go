@@ -121,6 +121,9 @@ type ApiName string
 const (
 	// GseName gse api gateway name
 	GseName ApiName = "bk-gse"
+
+	// NoticeName notice api gateway name
+	NoticeName ApiName = "bk-notice"
 )
 
 const templateVar = "{api_name}"

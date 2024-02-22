@@ -21,9 +21,11 @@ import (
 	"errors"
 
 	"configcenter/pkg/filter"
+	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
 	ccErr "configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/table"
 )
@@ -450,4 +452,180 @@ func (d *DeletePodsByIDsOption) Validate() ccErr.RawErrorInfo {
 	}
 
 	return ccErr.RawErrorInfo{}
+}
+
+// GetContainerByTopoOption query container by topo request
+type GetContainerByTopoOption struct {
+	BizID           int64              `json:"bk_biz_id"`
+	Nodes           []NodeMsg          `json:"bk_kube_nodes"`
+	PodFilter       *filter.Expression `json:"pod_filter"`
+	ContainerFilter *filter.Expression `json:"container_filter"`
+	PodFields       []string           `json:"pod_fields"`
+	ContainerFields []string           `json:"container_fields"`
+	Page            metadata.BasePage  `json:"page"`
+}
+
+// NodeMsg kube node message
+type NodeMsg struct {
+	Kind string `json:"kind"`
+	ID   int64  `json:"id"`
+}
+
+const arrLimit = 200
+
+// Validate validate GetContainerByTopoOption
+func (p *GetContainerByTopoOption) Validate() ccErr.RawErrorInfo {
+	if p.BizID == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{common.BKAppIDField},
+		}
+	}
+
+	if len(p.Nodes) > arrLimit {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"bk_kube_nodes", arrLimit},
+		}
+	}
+
+	for _, nodeMsg := range p.Nodes {
+		if !IsKubeResourceKind(nodeMsg.Kind) {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{"non-kube objects", nodeMsg.Kind},
+			}
+		}
+	}
+
+	if p.PodFilter != nil {
+		op := filter.NewDefaultExprOpt(PodFields.FieldsType())
+		op.MaxRulesDepth = 4
+		if err := p.PodFilter.Validate(op); err != nil {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{err.Error()},
+			}
+		}
+	}
+
+	if p.ContainerFilter != nil {
+		op := filter.NewDefaultExprOpt(ContainerFields.FieldsType())
+		if err := p.ContainerFilter.Validate(op); err != nil {
+			return ccErr.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsInvalid,
+				Args:    []interface{}{err.Error()},
+			}
+		}
+	}
+
+	if len(p.PodFields) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"pod_fields"},
+		}
+	}
+
+	if len(p.ContainerFields) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"container_fields"},
+		}
+	}
+
+	if err := p.Page.ValidateWithEnableCount(false, containerQueryLimit); err.ErrCode != 0 {
+		return err
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// GetPodCond get pod condition
+func (p *GetContainerByTopoOption) GetPodCond() (map[string]interface{}, error) {
+	rules := make([]filter.RuleFactory, 0)
+	rules = append(rules, filtertools.GenAtomFilter(common.BKAppIDField, filter.Equal, p.BizID))
+
+	if p.PodFilter != nil {
+		rules = append(rules, p.PodFilter)
+	}
+
+	nodeMap := make(map[string][]int64)
+	for _, node := range p.Nodes {
+		nodeMap[node.Kind] = append(nodeMap[node.Kind], node.ID)
+	}
+
+	nodeRules := make([]filter.RuleFactory, 0)
+	for kind, ids := range nodeMap {
+		switch kind {
+		case KubeCluster:
+			nodeRules = append(nodeRules, filtertools.GenAtomFilter(BKClusterIDFiled, filter.In, ids))
+		case KubeNamespace:
+			nodeRules = append(nodeRules, filtertools.GenAtomFilter(BKNamespaceIDField, filter.In, ids))
+		default:
+			kindRule := filtertools.GenAtomFilter(KindField, filter.Equal, kind)
+			idsRule := filtertools.GenAtomFilter(common.BKFieldID, filter.In, ids)
+			andRule, err := filtertools.And(kindRule, idsRule)
+			if err != nil {
+				return nil, err
+			}
+			nodeRules = append(nodeRules, filtertools.GenAtomFilter(RefField, filter.Object, andRule))
+		}
+	}
+
+	if len(nodeRules) != 0 {
+		rule := &filter.Expression{RuleFactory: &filter.CombinedRule{Condition: filter.Or, Rules: nodeRules}}
+		rules = append(rules, rule)
+	}
+
+	andCond, err := filtertools.And(rules...)
+	if err != nil {
+		return nil, err
+	}
+
+	cond, err := andCond.ToMgo()
+	if err != nil {
+		return nil, err
+	}
+
+	return cond, nil
+}
+
+// GetContainerCond get container condition
+func (p *GetContainerByTopoOption) GetContainerCond() (map[string]interface{}, error) {
+	if p.ContainerFilter == nil {
+		return nil, nil
+	}
+
+	return p.ContainerFilter.ToMgo()
+}
+
+// ContainerWithTopo container with topo message
+type ContainerWithTopo struct {
+	Container mapstr.MapStr `json:"container"`
+	Pod       mapstr.MapStr `json:"pod"`
+	Topo      Topo          `json:"topo"`
+}
+
+// Topo container topo message
+type Topo struct {
+	BizID        int64        `json:"bk_biz_id"`
+	ClusterID    int64        `json:"bk_cluster_id"`
+	NamespaceID  int64        `json:"bk_namespace_id"`
+	WorkloadID   int64        `json:"bk_workload_id"`
+	WorkloadType WorkloadType `json:"workload_type"`
+	HostID       int64        `json:"bk_host_id"`
+}
+
+// GetContainerByPodOption get container by pod option
+type GetContainerByPodOption struct {
+	PodCond       map[string]interface{} `json:"pod_cond"`
+	ContainerCond map[string]interface{} `json:"container_cond"`
+	Fields        []string               `json:"fields"`
+	Page          metadata.BasePage      `json:"page"`
+}
+
+// GetContainerByPodResp get container by pod response
+type GetContainerByPodResp struct {
+	Info  []mapstr.MapStr `json:"info"`
+	Count int64           `json:"count"`
 }
