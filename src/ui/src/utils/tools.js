@@ -87,11 +87,13 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
+      const defaultValue = autoSelect ? propertyDefault : ''
       const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-      const  value = has(inst, propertyId) ? formatedTime : propertyDefault
+      const  value = has(inst, propertyId) ? formatedTime : defaultValue
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const defaultValue = autoSelect ? propertyDefault : ''
+      const  value = has(inst, propertyId) ? inst[propertyId] : defaultValue
       values[propertyId] = value || ''
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
@@ -112,7 +114,8 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const defaultValue = autoSelect ? propertyDefault : ''
       values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else if (['organization'].includes(propertyType)) {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const defaultValue = autoSelect ? propertyDefault : ''
+      const  value = has(inst, propertyId) ? inst[propertyId] : defaultValue
       values[propertyId] = value || null
     } else if (['table'].includes(propertyType)) {
       // table类型的字段编辑和展示目前仅在进程绑定信息被使用，如后期有扩展在其它场景form-table组件与此处都需要调整
@@ -124,7 +127,8 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       const defaultValue = property.option.default || []
       values[propertyId] = isNullish(inst[propertyId]) ? defaultValue : inst[propertyId]
     } else {
-      const  value = has(inst, propertyId) ? inst[propertyId] : propertyDefault
+      const defaultValue = autoSelect ? propertyDefault : ''
+      const  value = has(inst, propertyId) ? inst[propertyId] : defaultValue
       values[propertyId] = value || ''
     }
   })
