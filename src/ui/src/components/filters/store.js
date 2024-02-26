@@ -370,6 +370,14 @@ const FilterStore = new Vue({
         this.updateSelected([Utils.findProperty(String(id), this.properties), ...this.selected])
       }
     },
+    setSelectedFieldIndex(propertyId, modelId = 'host', index = 0) {
+      const { id } = this.getProperty(propertyId, modelId)
+      const getIndex = this.selected.findIndex(property => property?.id === id)
+      if (getIndex !== index) {
+        this.selected.splice(getIndex, 1)
+        this.selected.splice(index, 0, Utils.findProperty(String(id), this.properties))
+      }
+    },
     updateCondition(property, operator, value) {
       this.condition[property.id] = {
         operator,
