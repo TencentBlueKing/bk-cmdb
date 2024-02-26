@@ -133,7 +133,7 @@ export function convertValue(value, operator, property) {
 }
 
 export function findProperty(id, properties, key) {
-  const field = isInt(id) ? 'id' : 'bk_property_id'
+  const field = isInt(String(id)) ? 'id' : 'bk_property_id'
 
   // 先按默认的规则找
   let found = properties.find(property => property[field].toString() === id.toString())
