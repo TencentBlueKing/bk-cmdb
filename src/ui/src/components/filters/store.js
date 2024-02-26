@@ -372,9 +372,9 @@ const FilterStore = new Vue({
     },
     setSelectedFieldIndex(propertyId, modelId = 'host', index = 0) {
       const { id } = this.getProperty(propertyId, modelId)
-      const currentlndex = this.selected.findIndex(property => property?.id === id)
-      if (currentlndex !== -1 && currentlndex !== index) {
-        const [item] = this.selected.splice(currentlndex, 1)
+      const currentIndex = this.selected.findIndex(property => property?.id === id)
+      if (currentIndex !== -1 && currentIndex !== index) {
+        const [item] = this.selected.splice(currentIndex, 1)
         this.selected.splice(index, 0, item)
       }
     },
