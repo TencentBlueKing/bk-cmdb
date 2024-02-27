@@ -186,6 +186,7 @@
 
         if (type === 'asset') {
           FilterStore.setSelectedField(propertyId)
+          FilterStore.setSelectedFieldIndex(propertyId)
           FilterStore.setConditonField(propertyId, assetList)
         }
         if (type !== 'fuzzy') {

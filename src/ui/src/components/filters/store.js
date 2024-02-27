@@ -367,7 +367,15 @@ const FilterStore = new Vue({
       const { id } = this.getProperty(propertyId, modelId)
       const hasSelected = this.selected.some(property => property?.id === id)
       if (!hasSelected) {
-        this.updateSelected([Utils.findProperty(String(id), this.properties), ...this.selected])
+        this.updateSelected([Utils.findProperty(id, this.properties), ...this.selected])
+      }
+    },
+    setSelectedFieldIndex(propertyId, modelId = 'host', index = 0) {
+      const { id } = this.getProperty(propertyId, modelId)
+      const currentIndex = this.selected.findIndex(property => property?.id === id)
+      if (currentIndex !== -1 && currentIndex !== index) {
+        const [item] = this.selected.splice(currentIndex, 1)
+        this.selected.splice(index, 0, item)
       }
     },
     updateCondition(property, operator, value) {
