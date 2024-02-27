@@ -201,7 +201,7 @@
             const { IP, condition } = allCondition
             FilterStore.setIP(IP)
             const query = FilterStore.getQuery(condition)
-            this.$routerActions.open({
+            this.$routerActions.redirect({
               name: MENU_RESOURCE_HOST,
               query: {
                 ...query,

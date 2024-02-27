@@ -705,6 +705,7 @@
           })
           this.$routerActions.redirect({ name: MENU_MODEL_MANAGEMENT })
         }
+        this.$success(this.$t('删除成功'))
         this.$http.cancel('post_searchClassificationsObjects')
       },
       handleGoInstance() {
