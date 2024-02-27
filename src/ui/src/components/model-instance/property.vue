@@ -221,7 +221,7 @@
         return !complexTypes.includes(property.bk_property_type)
       },
       setEditState(property) {
-        const value = this.$tools.getPropertyDefaultValue(property, this.inst[property.bk_property_id])
+        const value = this.instState[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
         this.$nextTick(() => {
