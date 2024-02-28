@@ -2,9 +2,9 @@ spec_version: 1
 
 release:
   # 发布版本号
-  version: 3.13.3-alpha2
-  title: "3.13.3-alpha2"
-  comment: "3.13.3-alpha2"
+  version: 3.13.3-beta
+  title: "3.13.3-beta"
+  comment: "3.13.3-beta"
 
 apigateway:
   description: "蓝鲸配置平台"
