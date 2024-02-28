@@ -4,7 +4,7 @@
 	"set_property_group_default": "基础信息",
 	"module_property_group_default": "基础信息",
 	"host_property_group_default": "基础信息",
-	"host_property_group_auto": "自动发现信息（需要安装agent）",
+	"host_property_group_auto": "主机系统配置",
 	"process_property_group_default": "基础信息",
 	"process_property_group_proc_port": "监听信息",
 	"process_property_group_gsekit_baseinfo": "GSEkit 基本信息",
