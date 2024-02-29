@@ -104,7 +104,7 @@
       </div>
       <div slot="main" class="dynamic-group-preview">
         <preview-result class="preview-result"
-          :condition="previewCondition" :mode="bkObjId">
+          :condition="previewCondition" :mode="bkObjId" :property="propertyMap[bkObjId]">
         </preview-result>
       </div>
     </bk-resize-layout>

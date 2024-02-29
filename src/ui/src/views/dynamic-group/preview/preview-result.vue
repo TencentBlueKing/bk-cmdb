@@ -102,10 +102,15 @@
     getSort,
     getPageParams
   } from '@/utils/tools'
+  import { transformGeneralModelCondition } from '@/components/filters/utils.js'
 
   const props = defineProps({
     condition: {
       type: Object,
+      default: () => ({})
+    },
+    property: {
+      type: [Object, Array],
       default: () => ({})
     },
     mode: String
@@ -187,7 +192,7 @@
   const getTableCellPropertyValueRefId = (property => (isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
   const pageCurrentChange = ((current = 1) => {
     if (table.pagination.current === current) {
-      getHostList()
+      getList()
       return
     }
     table.pagination.current = current
@@ -226,12 +231,12 @@
           await handleApplyColumnsConfig(properties)
           // 获取最新的表头，内部会读取到上方保存的配置
           tableHeader.value = FilterStore.getHeader()
-          getHostList()
+          getList()
         },
         reset: async () => {
           await handleApplyColumnsConfig()
           tableHeader.value = FilterStore.getHeader()
-          getHostList()
+          getList()
         }
       }
     })
@@ -239,21 +244,61 @@
   const handleApplyColumnsConfig = ((properties = []) => store.dispatch('userCustom/saveUsercustom', {
     [customInstanceColumnKey.value]: properties.map(property => property.bk_property_id)
   }))
-  const getHostList = (async () => {
+  const getHostList = async (searchParams, page, config) => {
+    const params = {
+      bk_biz_id: bizId.value,
+      ...searchParams,
+      page
+    }
+    return hostSearchService.getBizHosts({ params, config })
+  }
+  const getSetList = async (searchParams, page, config) => {
+    const setCondition = {}
+    const { property } = props
+
+    const allConditions = searchParams.condition.reduce((val, cur) => {
+      val.push(...cur.condition)
+      return val
+    }, [])
+    allConditions.forEach((condition) => {
+      const id = property.find(item => item?.bk_property_id === condition?.field)?.id
+      setCondition[id] = condition
+    })
+    const setParams = transformGeneralModelCondition(setCondition, property)
+
+    return store.dispatch('objectSet/searchSet', {
+      bizId: bizId.value,
+      params: {
+        page,
+        filter: setParams.conditions
+      },
+      config
+    })
+  }
+  const getList = (async () => {
     try {
-      const params = {
-        bk_biz_id: bizId.value,
-        ...FilterStore.getSearchParams(),
-        page: {
-          ...getPageParams(table.pagination),
-          sort: table.sort
-        }
+      const { mode } = props
+      const searchParams = FilterStore.getSearchParams()
+      const page =  {
+        ...getPageParams(table.pagination),
+        sort: table.sort
       }
       const config = {
         requestId: request.table,
         cancelPrevious: true
       }
-      const result = await hostSearchService.getBizHosts({ params, config })
+
+      let result = {}
+      if (mode === 'host') {
+        result = await getHostList(searchParams, page, config)
+      } else {
+        const data = await getSetList(searchParams, page, config)
+        result.count = data.count
+        result.info = data.info.map(item => ({
+          set: [item]
+        }))
+      }
+
       table.data = result.info || []
       table.pagination.count = result.count
     } catch (e) {
@@ -275,7 +320,7 @@
     immediate: true
   })
   watch(() => table.pagination.current, () => {
-    getHostList()
+    getList()
   })
 
   initFilterStore()
