@@ -10,7 +10,46 @@ Query Cluster
 | bk_biz_id           | int    | Yes      | Business ID                                                                                                    |
 | fields              | array  | Yes      | Query fields, all fields are attributes defined in the set, including preset fields and user-defined fields    |
 | condition           | dict   | Yes      | Query condition, all fields are attributes defined in the set, including preset fields and user-defined fields |
+| filter | object | No       |  set condition range                                 |
+| time_condition | object | No       |  set time range                                      |
 | page                | dict   | Yes      | Paging condition                                                                                               |
+
+- Only one of the parameters `filter` and `condition` can be effective, and it is not recommended to continue using the parameter `condition`.
+- The number of array elements involved in the parameter `filter` does not exceed 500. The number of `rules` involved in the parameter `filter` does not exceed 20. The nesting level of the parameter `filter` does not exceed 3.
+
+#### filter
+
+| Field     | Type   | Required | Description                                    |
+| --------- | ------ | -------- | ---------------------------------------------- |
+| condition | string | Yes      | Rule operator                                  |
+| rules     | array  | Yes      | Filtering rules for the scope of business sets |
+
+#### rules
+
+Filter rules are triplets `field`, `operator`, `value`
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
+
+Assembly rules can refer to: [QueryBuilder README](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
+
+#### time_condition
+
+| Field | Type   | Required | Description                           |
+| ----- | ------ | -------- | ------------------------------------- |
+| oper  | string | Yes      | Operator, currently only supports and |
+| rules | array  | Yes      | Time query conditions                 |
+
+#### time_condition.rules
+
+| Field | Type   | Required | Description                               |
+| ----- | ------ | -------- | ----------------------------------------- |
+| field | string | Yes      | Takes the value of the model's field name |
+| start | string | Yes      | Start time, format: yyyy-MM-dd hh:mm:ss   |
+| end   | string | Yes      | End time, format: yyyy-MM-dd hh:mm:ss     |
 
 #### page
 
@@ -28,8 +67,25 @@ Query Cluster
     "fields": [
         "bk_set_name"
     ],
-    "condition": {
-        "bk_set_name": "test"
+    "filter": {
+      "condition": "AND",
+      "rules": [
+        {
+          "field": "bk_set_name",
+          "operator": "equal",
+          "value": "test"
+        }
+      ]
+    },
+    "time_condition": {
+      "oper": "and",
+      "rules": [
+        {
+          "field": "create_time",
+          "start": "2021-05-13 01:00:00",
+          "end": "2021-05-14 01:00:00"
+        }
+      ]
     },
     "page": {
         "start": 0,
