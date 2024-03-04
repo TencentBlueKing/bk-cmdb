@@ -432,7 +432,7 @@
     "新增模型提示": "Can only add in custom group",
     "无自定义分组": "There are no custom groups",
     "停用模型提示": "There are no disabled models",
-    "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, when adding a new type of device that needs to be recorded in CMDB, you can achieve this by creating a corresponding model.",
+    "模型顶部提示": "Models enable managing CMDB's data structure for current resources. When adding a new device, record it in CMDB and create a corresponding model.",
     "业务层级提示": "The business hierarchy displays the current layered settings of the business topology. Depending on the needs of the company, you can modify the attributes of each layer or add more topology layers.",
     "关联关系提示": "\"Association type\" is a category of model associations, such as the relationships between hosts and switches, or routers, which can all be classified as \"Uplink\" type.",
     "添加字段": "Add Field",
