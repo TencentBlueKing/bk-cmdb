@@ -563,7 +563,7 @@
     "快速查询": "Quick search",
     "请输入关键字或选择条件搜索": "Please enter a keyword or select a search criteria",
     "请先在左侧设置分组条件": "Please set the group conditions on the left side first",
-    "导入提示": "Drag a file here or click to upload{breakRow}You can only upload {allowType} files up to {maxSize}",
+    "导入提示": "You can only upload {allowType} files up to {maxSize}",
     "点击上传": "Click to upload",
     "下载模板": "Download template",
     "隐藏属性": "Hidden attribute",

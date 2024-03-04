@@ -726,16 +726,16 @@
         }
       },
       handleUploadDone(res) {
-        const data = res.data[this.activeModel.bk_obj_id]
+        const data = res.data?.[this.activeModel.bk_obj_id]
         if (res.result) {
-          this.uploadResult.success = data.success
+          this.uploadResult.success = data?.success
           this.$success(this.$t('导入成功'))
           this.$refs.field.resetData()
           this.importField.show = false
         } else {
-          this.uploadResult.errors = data.errors
-          this.uploadResult.insert_failed = data.insert_failed
-          this.uploadResult.update_failed = data.update_failed
+          this.uploadResult.errors = data?.errors
+          this.uploadResult.insert_failed = data?.insert_failed
+          this.uploadResult.update_failed = data?.update_failed
         }
       },
       handleSliderHide() {

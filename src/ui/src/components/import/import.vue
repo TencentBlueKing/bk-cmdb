@@ -13,16 +13,19 @@
 <template>
   <div class="import-wrapper">
     <slot name="prepend"></slot>
-    <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
-      <img src="../../assets/images/up_file.png">
-      <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
-      <i18n path="导入提示" tag="p">
-        <template #clickUpload><b>{{$t('点击上传')}}</b></template>
-        <template #breakRow><br></template>
-        <template #allowType>{{allowType.join(',')}}</template>
-        <template #maxSize>{{maxSizeLocal}}</template>
+
+    <div class="file-trigger" v-bkloading="{ isLoading: isLoading }">
+      <input ref="fileInput" type="file" @change.prevent="handleFile" />
+      <i class="trigger-icon bk-icon icon-upload-cloud"></i>
+      <i18n class="trigger-text" path="导入文件拖拽提示">
+        <template #clickUpload><span class="trigger-text-link">{{$t('点击上传')}}</span></template>
       </i18n>
     </div>
+    <i18n path="导入提示" class="size-tips" tag="p">
+      <template #allowType>{{allowType.join(',')}}</template>
+      <template #maxSize>{{maxSizeLocal}}</template>
+    </i18n>
+
     <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': uploaded }]">
       <div class="upload-file-name" :title="fileInfo.name">{{fileInfo.name}}</div>
       <div class="upload-file-size fr">{{fileInfo.size}}</div>
@@ -295,225 +298,199 @@
   }
 </script>
 
-<style media="screen" lang="scss" scoped>
-    .import-wrapper {
-        height: 100%;
-        @include scrollbar-y;
+<style lang="scss" scoped>
+  .import-wrapper {
+    height: 100%;
+    @include scrollbar-y;
+  }
+
+  .file-trigger {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    background: #fafbfd;
+    border: 1px dashed #c4c6cc;
+    border-radius: 3px;
+    margin: 30px 29px 0 33px;
+    &:hover {
+      border-color: $primaryColor;
+      .trigger-icon {
+        color: $primaryColor;
+      }
     }
-    .up-file{
-        .up-file-text{
-            p{
-                font-size:14px;
-                font-weight: bold;
-                line-height:1;
-                color:#bec6de;
-            }
-            .click-text{
-                color: #3c96ff;
-                cursor:pointer;
-                position:relative;
-            }
-        }
+    input[type=file] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      z-index: 2;
+      cursor: pointer;
     }
-    .input-file{
-        left: 0;
-        top: 0;
-        color: #3c96ff;
-        cursor: pointer;
-        position: relative;
-        border: none !important;
-        text-decoration: none;
-        &:hover{
-            background: none !important;
-        }
+    .trigger-icon {
+      font-size: 24px;
+      color: #C4C6CC;
     }
-    .submit-btn{
-        display: inline-block;
-        vertical-align: 2px;
-        border: none;
-        background: #fff;
-        padding: 0;
-        color: #3c96ff;
-        outline: none;
-        &:hover{
-            color:#3c96ff;
-        }
+    .trigger-text {
+      font-size: 12px;
+      color: #63656e;
+      line-height: 16px;
+      &-link {
+        color: $primaryColor;
+      }
+    }
+  }
+
+  .size-tips {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    line-height: 16px;
+    margin: 5px 0 10px 33px;
+  }
+
+  .submit-btn {
+    display: inline-block;
+    vertical-align: 2px;
+    border: none;
+    background: #fff;
+    padding: 0;
+    color: #3c96ff;
+    outline: none;
+    &:hover {
+      color:#3c96ff;
+    }
+  }
+
+  .down-model-content {
+    padding: 10px 30px;
+    font-size: 14px;
+  }
+
+  .upload-file{
+    &-name,
+    &-size,
+    &-status,
+    &-status-icon{
+      float: left;
+      position: relative;
+      height: 100%;
+    }
+  }
+  .upload-file-info {
+    overflow: hidden;
+    line-height: 50px;
+    position: relative;
+    margin: 2px 29px 0 33px;
+    .bk-icon{
+      vertical-align: -1px;
+    }
+    .icon-check-circle-shape{
+      color: #4cd084;
+    }
+    .icon-close-circle-shape{
+      color: red;
+    }
+    &:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0%;
+      height: 100%;
     }
 
-    .upload-file {
-        position: relative;
-        height:182px;
-        margin: 30px 29px 0 33px;
-        padding: 33px 0;
-        text-align: center;
-        overflow: hidden;
-        background-color: #f9f9f9;
-        cursor: pointer;
-        border: 1px solid transparent;
-        -webkit-transition: all .5s ease;
-        transition: all .5s ease;
-        &:hover{
-            background-color: #fff;
-            border-color: #3c96ff;
-            box-shadow: 0 4px 6px rgba(0,0,0,.1);
-            p {
-                color: #6b7baa;
-            }
-        }
-        p {
-            margin: 23px 0 0 0;
-            line-height: 18px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #bec6de;
-            b {
-                color: #3c96ff;
-            }
-        }
+    &.uploading {
+      &:before {
+        background: #e3f5eb;
+        width: 90%;
+        transition: width 20s;
+      }
     }
 
-    .down-model-content {
-        padding: 10px 30px;
-        font-size: 14px;
-    }
-
-    .upload-file{
-        &-name,
-        &-size,
-        &-status,
-        &-status-icon{
-            float: left;
-            position: relative;
-            height: 100%;
-        }
-    }
-    .upload-file-info {
-        overflow: hidden;
-        line-height: 50px;
-        position: relative;
-        margin: 2px 29px 0 33px;
-        .bk-icon{
-            vertical-align: -1px;
-        }
-        .icon-check-circle-shape{
-            color: #4cd084;
-        }
-        .icon-close-circle-shape{
-            color: red;
-        }
-        &:before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 0%;
-            height: 100%;
-        }
-
-        &.uploading {
-            &:before {
-                background: #e3f5eb;
-                width: 90%;
-                transition: width 20s;
-            }
-        }
-
-        &.uploaded {
-            &:before {
-                background: #e3f5eb;
-                width: 100%;
-                transition: width 1s;
-            }
-            background: #e3f5eb;
-        }
-
-        &.fail {
-            background:#f9f9f9;
-            &:before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 0;
-                height: 0;
-                background: #e3f5eb;
-                -webkit-transition: all .5s;
-                transition: all .5s;
-            }
-
-        }
-
-        .upload-file-name {
-            width: calc(100% - 200px);
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            padding: 0 24px;
-        }
-
-        .upload-file-size {
-            /* width: 174px; */
-            padding: 0 24px;
-            span{
-                color: #c7cee3;
-            }
-        }
-
-        .upload-file-meta {
-            width: 8%;
-        }
-
-        .upload-file-status {
-            width: 212px;
-        }
-
-    }
-    .upload-details {
-        margin: 2px 29px 0 33px;
-        font-size: 14px;
-        &-success{
-            padding: 0 21px;
-            line-height: 56px;
-            background-color: #f9f9f9;
-            color: #34d97b;
-        }
-        &-fail{
-            margin: 2px 0 0 0;
-            padding: 13px 0 15px;
-            line-height: 32px;
-            background-color: #f9f9f9;
-            color: #ef4c4c;
-            &-title{
-                padding: 0 21px;
-            }
-            &-list{
-                line-height: 28px;
-                color: #6b7baa;
-                font-size: 12px;
-                white-space: nowrap;
-                overflow: auto;
-                li{
-                    padding: 0 43px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                li:hover{
-                    background-color: #edf5ff;
-                }
-            }
-        }
-    }
-    .fullARea {
-        position: absolute;
-        cursor: pointer;
-        left: 0;
-        top: 0;
+    &.uploaded {
+      &:before {
+        background: #e3f5eb;
         width: 100%;
-        height: 100%;
-        opacity: 0;
-        filter: alpha(opacity=0);
-        cursor: pointer;
-        -webkit-transition: all .5s ease;
-        transition: all .5s ease;
+        transition: width 1s;
+      }
+      background: #e3f5eb;
     }
+
+    &.fail {
+      background:#f9f9f9;
+      &:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 0;
+        height: 0;
+        background: #e3f5eb;
+        -webkit-transition: all .5s;
+        transition: all .5s;
+      }
+    }
+
+    .upload-file-name {
+      width: calc(100% - 200px);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      padding: 0 24px;
+    }
+
+    .upload-file-size {
+      /* width: 174px; */
+      padding: 0 24px;
+      span{
+        color: #c7cee3;
+      }
+    }
+
+    .upload-file-meta {
+      width: 8%;
+    }
+
+    .upload-file-status {
+      width: 212px;
+    }
+  }
+  .upload-details {
+    margin: 2px 29px 0 33px;
+    font-size: 14px;
+    &-success{
+      padding: 0 21px;
+      line-height: 56px;
+      background-color: #f9f9f9;
+      color: #34d97b;
+    }
+    &-fail{
+      margin: 2px 0 0 0;
+      padding: 13px 0 15px;
+      line-height: 32px;
+      background-color: #f9f9f9;
+      color: #ef4c4c;
+      &-title{
+        padding: 0 21px;
+      }
+      &-list{
+        line-height: 28px;
+        color: #6b7baa;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: auto;
+        li {
+          padding: 0 43px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        li:hover {
+          background-color: #edf5ff;
+        }
+      }
+    }
+  }
 </style>
