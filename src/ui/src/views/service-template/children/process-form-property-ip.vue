@@ -13,6 +13,7 @@
 <template>
   <bk-select
     v-model="localValue"
+    :searchable="true"
     v-bind="$attrs"
     :popover-min-width="120"
     :clearable="false">

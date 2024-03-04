@@ -16,6 +16,7 @@
     <div class="selector-item mt10 clearfix">
       <bk-select class="category-selector fl"
         :clearable="false"
+        :searchable="true"
         v-model="parent"
         @change="handleParentChange">
         <bk-option v-for="category in parentList"
@@ -26,6 +27,7 @@
       </bk-select>
       <bk-select class="category-selector fl"
         :clearable="false"
+        :searchable="true"
         v-model="child"
         v-validate="'required'"
         name="secondCategory">

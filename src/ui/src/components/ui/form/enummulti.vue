@@ -14,7 +14,7 @@
   <bk-select class="form-enummulti-selector"
     v-model="selected"
     :clearable="allowClear"
-    :searchable="searchable"
+    :searchable="true"
     :disabled="disabled"
     :multiple="localMultiple"
     :placeholder="placeholder"
@@ -83,9 +83,6 @@
       }
     },
     computed: {
-      searchable() {
-        return this.options.length > 7
-      },
       localMultiple() {
         if (Array.isArray(this.initValue) && this.initValue.length > 1 && !this.multiple) {
           return true
