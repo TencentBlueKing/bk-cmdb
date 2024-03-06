@@ -58,10 +58,16 @@ export const viewRouters = []
 
 const statusRouters = [
   {
+    name: 'no-business',
+    path: '/no-business',
+    components: require('@/views/status/non-exist-business')
+  },
+  {
     name: '404',
     path: '/404',
     components: require('@/views/status/404')
-  }, {
+  },
+  {
     name: 'error',
     path: '/error',
     components: require('@/views/status/error')
