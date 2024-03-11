@@ -80,7 +80,7 @@
           :properties="fastSearchProperties"
           :loading="$loading([request.properties, request.groups])">
         </cmdb-property-selector>
-        <component class="filter-value"
+        <component class="filter-value r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
@@ -1023,8 +1023,8 @@
         position: relative;
         margin-right: 5px;
         display: flex;
-        align-items: center;
-        width: 440px;
+        align-items: flex-start;
+        width: 439px;
         .filter-selector{
             width: 120px;
             border-radius: 2px 0 0 2px;
@@ -1035,6 +1035,7 @@
         }
         .filter-value{
             flex: 1;
+            width: 320px;
             border-radius: 0 2px 2px 0;
             &.singlechar,
             &.longchar {

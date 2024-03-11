@@ -523,6 +523,7 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            position: relative;
             &.bool {
                 width: 42px;
                 height: 24px;

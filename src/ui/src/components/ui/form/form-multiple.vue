@@ -354,6 +354,7 @@
             .property-value {
                 font-size: 0;
                 position: relative;
+                min-height: 32px;
                 /deep/ .control-append-group {
                     .bk-input-text {
                         flex: 1;

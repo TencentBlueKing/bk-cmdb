@@ -74,7 +74,7 @@
               v-model="condition[property.id].operator"
               @change="handleOperatorChange(property, ...arguments)">
             </operator-selector>
-            <component class="item-value"
+            <component class="item-value r0"
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
               :ref="`component-${property.id}`"

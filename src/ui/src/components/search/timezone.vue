@@ -11,21 +11,23 @@
 -->
 
 <template>
-  <bk-select
-    multiple
-    display-tag
-    selected-style="checkbox"
-    searchable
-    v-model="localValue"
-    v-bind="$attrs"
-    @clear="() => $emit('clear')"
-    @toggle="handleToggle">
-    <bk-option v-for="timezone in timezones"
-      :key="timezone"
-      :id="timezone"
-      :name="timezone">
-    </bk-option>
-  </bk-select>
+  <div class="expand">
+    <bk-select
+      multiple
+      display-tag
+      selected-style="checkbox"
+      searchable
+      v-model="localValue"
+      v-bind="$attrs"
+      @clear="() => $emit('clear')"
+      @toggle="handleToggle">
+      <bk-option v-for="timezone in timezones"
+        :key="timezone"
+        :id="timezone"
+        :name="timezone">
+      </bk-option>
+    </bk-select>
+  </div>
 </template>
 
 <script>

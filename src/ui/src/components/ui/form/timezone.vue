@@ -11,24 +11,26 @@
 -->
 
 <template>
-  <bk-select class="form-timezone-selector"
-    searchable
-    v-bind="$attrs"
-    v-model="selected"
-    :clearable="false"
-    :disabled="disabled"
-    :multiple="multiple"
-    :display-tag="multiple"
-    :selected-style="getSelectedStyle"
-    :placeholder="placeholder"
-    ref="selector">
-    <bk-option
-      v-for="(option, index) in timezoneList"
-      :key="index"
-      :id="option.id"
-      :name="option.name">
-    </bk-option>
-  </bk-select>
+  <div class="expand">
+    <bk-select class="form-timezone-selector"
+      searchable
+      v-bind="$attrs"
+      v-model="selected"
+      :clearable="false"
+      :disabled="disabled"
+      :multiple="multiple"
+      :display-tag="multiple"
+      :selected-style="getSelectedStyle"
+      :placeholder="placeholder"
+      ref="selector">
+      <bk-option
+        v-for="(option, index) in timezoneList"
+        :key="index"
+        :id="option.id"
+        :name="option.name">
+      </bk-option>
+    </bk-select>
+  </div>
 </template>
 
 <script>

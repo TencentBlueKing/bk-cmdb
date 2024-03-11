@@ -560,6 +560,7 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            position: relative;
             > [class^=cmdb-form-] {
               width: 100%;
             }

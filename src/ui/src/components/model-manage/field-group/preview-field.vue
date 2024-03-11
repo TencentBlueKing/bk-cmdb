@@ -245,6 +245,7 @@
                 font-size: 0;
                 position: relative;
                 width: 303px;
+                min-height: 32px;
             }
 
             &.full-width {

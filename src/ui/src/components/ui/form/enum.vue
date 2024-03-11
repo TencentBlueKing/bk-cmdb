@@ -11,26 +11,29 @@
 -->
 
 <template>
-  <bk-select class="form-enum-selector"
-    v-model="selected"
-    :clearable="allowClear"
-    :searchable="searchable"
-    :disabled="disabled"
-    :multiple="multiple"
-    :placeholder="placeholder"
-    :font-size="fontSize"
-    :popover-options="{
-      boundary: 'window'
-    }"
-    v-bind="$attrs"
-    ref="selector">
-    <bk-option
-      v-for="option in options"
-      :key="option.id"
-      :id="option.id"
-      :name="option.name">
-    </bk-option>
-  </bk-select>
+  <div class="expand">
+    <bk-select class="form-enum-selector"
+      v-model="selected"
+      :clearable="allowClear"
+      :searchable="searchable"
+      :disabled="disabled"
+      :multiple="multiple"
+      :placeholder="placeholder"
+      :font-size="fontSize"
+      :popover-options="{
+        boundary: 'window'
+      }"
+      v-bind="$attrs"
+      ref="selector">
+      <bk-option
+        v-for="option in options"
+        :key="option.id"
+        :id="option.id"
+        :name="option.name">
+      </bk-option>
+    </bk-select>
+  </div>
+
 </template>
 
 <script>
