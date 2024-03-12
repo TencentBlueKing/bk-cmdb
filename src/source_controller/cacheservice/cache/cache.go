@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/apimachinery/discovery"
 	biztopo "configcenter/src/source_controller/cacheservice/cache/biz-topo"
+	"configcenter/src/source_controller/cacheservice/cache/custom"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
@@ -55,6 +56,11 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 	mainlineClient := mainline.NewMainlineClient()
 	hostClient := host.NewClient()
 
+	customCache, err := custom.New(isMaster, loopW)
+	if err != nil {
+		return nil, fmt.Errorf("new custom resource cache failed, err: %v", err)
+	}
+
 	cache := &ClientSet{
 		Tree:     topotree.NewTopologyTree(mainlineClient),
 		Host:     hostClient,
@@ -62,6 +68,7 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		Topology: bizBriefTopoClient,
 		Topo:     topoTreeClient,
 		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		Custom:   customCache,
 	}
 	return cache, nil
 }
@@ -74,4 +81,5 @@ type ClientSet struct {
 	Host     *host.Client
 	Business *mainline.Client
 	Event    *watch.Client
+	Custom   *custom.Cache
 }

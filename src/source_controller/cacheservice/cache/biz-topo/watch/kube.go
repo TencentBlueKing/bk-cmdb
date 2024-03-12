@@ -165,7 +165,7 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 				continue
 			}
 
-			blog.Infof("watch kube topology cache, received coll: %s, oid: %s, op-time: %s, %s event, rid: %s",
+			blog.V(5).Infof("watch kube topology cache, received coll: %s, oid: %s, op-time: %s, %s event, rid: %s",
 				one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, rid)
 		}
 
@@ -422,8 +422,8 @@ func (w *kubeWatcher) onContainerCountChange(es []*streamtypes.Event) (retry boo
 			continue
 		}
 
-		blog.Infof("watch kube topo container count cache, received biz: %d, oid: %s, op-time: %s, %s event, rid: %s",
-			bizID, event.Oid, event.ClusterTime.String(), event.OperationType, rid)
+		blog.V(5).Infof("watch kube topo container count cache, received biz: %d, oid: %s, op-time: %s, %s event, "+
+			"rid: %s", bizID, event.Oid, event.ClusterTime.String(), event.OperationType, rid)
 
 		bizList = append(bizList, bizID)
 	}
