@@ -584,6 +584,9 @@
 .dynamic-slidebar {
   :deep(.bk-sideslider-content) {
     overflow-x: hidden;
+    .bk-resize-layout-border {
+      border-top: 0;
+    }
   }
 }
 .dynamic-group-info {
