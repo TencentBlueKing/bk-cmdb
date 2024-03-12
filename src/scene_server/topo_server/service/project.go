@@ -118,32 +118,30 @@ func (s *Service) SearchProject(ctx *rest.Contexts) {
 		}
 		cond = filterCond
 	}
-	if opt.Page.EnableCount {
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKTableNameBaseProject, []map[string]interface{}{cond})
-		if err != nil {
-			blog.Errorf("count project failed, err: %v, cond: %v, rid: %s", err, cond, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-		ctx.RespEntityWithCount(counts[0], make([]mapstr.MapStr, 0))
-		return
-	}
 
 	if opt.Page.Sort == "" {
 		opt.Page.Sort = common.BKFieldID
 	}
 
 	query := &metadata.QueryCondition{
-		Condition:      cond,
-		Page:           opt.Page,
-		Fields:         opt.Fields,
-		DisableCounter: true,
+		Condition:     cond,
+		TimeCondition: opt.TimeCondition,
+		Page:          opt.Page,
+		Fields:        opt.Fields,
 	}
+	if !opt.Page.EnableCount {
+		query.DisableCounter = true
+	}
+
 	res, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDProject, query)
 	if err != nil {
 		blog.Errorf("failed to find the project, err: %v, query: %v, rid: %s", err, query, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
+		return
+	}
+
+	if opt.Page.EnableCount {
+		ctx.RespEntityWithCount(int64(res.Count), make([]mapstr.MapStr, 0))
 		return
 	}
 

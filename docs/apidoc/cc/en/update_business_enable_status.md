@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Modify business enabling status according to business id and status value
+Modify the business enable status based on the business ID and status value (Permission: Business archive permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Modify business enabling status according to business id and status value
 
 #### Interface Parameters
 
-| Field                | Type      | Required   | Description      |
-|---------------------|------------|--------|------------|
-| bk_biz_id           |  int        | yes  | Business ID |
-| flag                |  string     | yes | Enabled status, disabled or enable|
+| Field     | Type   | Required | Description                                  |
+| --------- | ------ | -------- | -------------------------------------------- |
+| bk_biz_id | int    | Yes      | Business ID                                  |
+| flag      | string | Yes      | Enable status, either "disabled" or "enable" |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -29,25 +29,25 @@ Modify business enabling status according to business id and status value
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
 ```
-### Return Result Parameters Description
+
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

@@ -211,10 +211,7 @@
           <diff-brand :count="counts.conflict" :text="$t('字段冲突')" status="conflict"
             :tooltips="'#field-template-field-diff-conflict-tooltips'">
           </diff-brand>
-          <diff-brand :count="counts.unbound" :text="$t('解除纳管')" status="unbound"
-            :tooltips="$t('模板中删除了该字段，后续不再统一管理该字段')">
-          </diff-brand>
-          <diff-brand :count="counts.unchanged" :text="$t('无变化')" status="unchanged"></diff-brand>
+          <diff-brand :count="counts.unchanged" :text="$t('无配置变化')" status="unchanged"></diff-brand>
           <span class="tips-content" id="field-template-field-diff-conflict-tooltips">
             <div>{{ $t('字段冲突的情况：') }}</div>
             <ul class="list-item">
@@ -225,7 +222,12 @@
           </span>
         </div>
       </div>
-      <bk-checkbox class="filter-checkbox" v-model="isOnlyShowTemplateRelated">{{ $t('仅显示与模板相关字段') }}</bk-checkbox>
+      <div class="diff-operate">
+        <diff-brand :count="counts.unbound" :text="$t('解除纳管')" status="unbound"
+          :tooltips="$t('模板中删除了该字段，后续不再统一管理该字段')">
+        </diff-brand>
+        <bk-checkbox class="filter-checkbox" v-model="isOnlyShowTemplateRelated">{{ $t('仅显示与模板相关字段') }}</bk-checkbox>
+      </div>
     </div>
 
     <div class="model-group-container">
@@ -280,6 +282,12 @@
         gap: 24px;
       }
     }
+
+    .diff-operate {
+      display: flex;
+      gap: 24px;
+    }
+
     .filter-checkbox {
       :deep(.bk-checkbox-text) {
         font-size: 12px !important;

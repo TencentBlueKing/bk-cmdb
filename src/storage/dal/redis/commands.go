@@ -62,6 +62,7 @@ type Commands interface {
 	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) BoolResult
 	MSetNX(ctx context.Context, values ...interface{}) BoolResult
 	SMembers(ctx context.Context, key string) StringSliceResult
+	SScan(key string, cursor uint64, match string, count int64) ScanResult
 	SRem(ctx context.Context, key string, members ...interface{}) IntResult
 	TTL(ctx context.Context, key string) DurationResult
 	TxPipeline(ctx context.Context) Pipeliner

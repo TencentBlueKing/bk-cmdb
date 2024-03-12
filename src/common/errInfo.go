@@ -771,6 +771,8 @@ const (
 	CCErrWebVerifyYamlFail              = 1111022
 	CCErrWebVerifyYamlPwdFail           = 1111023
 	CCErrWebBuildZipFail                = 1111024
+	CCErrWebDisableNotification         = 1111025
+	CCErrWebGetAnnFail                  = 1111026
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

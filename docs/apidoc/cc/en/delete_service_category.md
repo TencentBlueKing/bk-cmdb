@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete service class based on service class ID
+Delete service categories based on service category IDs (Permission: Service category deletion permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Delete service class based on service class ID
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| id            |  int  |yes   | Service class ID|
-| bk_biz_id                  |  int        | yes  | Business ID |
+| Field     | Type | Required | Description         |
+| --------- | ---- | -------- | ------------------- |
+| id        | int  | Yes      | Service category ID |
+| bk_biz_id | int  | Yes      | Business ID         |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -26,7 +26,7 @@ Delete service class based on service class ID
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -43,11 +43,11 @@ Delete service class based on service class ID
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

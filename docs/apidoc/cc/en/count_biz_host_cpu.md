@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-count host cpu num in biz (special interface for cost managing, v3.8.17+/v3.10.17+)
+Count the number of CPUs for each business's hosts (Special interface for cost management, v3.8.17+/v3.10.18+, Permission: Global Settings Permission)
 
 ### Request Parameters
 
@@ -10,20 +10,19 @@ count host cpu num in biz (special interface for cost managing, v3.8.17+/v3.10.1
 
 | Field     | Type   | Required | Description        |
 | --------- | ------ | -------- | ------------------ |
-| bk_biz_id | int    | no       | Business ID        |
-| page      | object | no       | Paging information |
+| bk_biz_id | int    | No       | Business ID        |
+| page      | object | No       | Paging information |
 
-**Note: only one of bk_biz_id and page parameters must set**
+**Note: The bk_biz_id and page parameters must be provided, and only one of them can be passed.**
 
-#### Page field Description
+#### Page Field Description
 
-| Field | Type | Required | Description           |
-| ----- | ---- | -------- | --------------------- |
-| start | int  | yes      | Record start position |
-| limit | int  | yes      | Page limit, maxium 10 |
+| Field | Type | Required | Description                          |
+| ----- | ---- | -------- | ------------------------------------ |
+| start | int  | Yes      | Record start position                |
+| limit | int  | Yes      | Number of records per page, up to 10 |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -38,13 +37,13 @@ count host cpu num in biz (special interface for cost managing, v3.8.17+/v3.10.1
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": [
@@ -64,24 +63,24 @@ count host cpu num in biz (special interface for cost managing, v3.8.17+/v3.10.1
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
 
 #### response
 
-| Name       | Type   | Description                                                  |
+| Field       | Type   | Description                                                  |
 | ---------- | ------ | ------------------------------------------------------------ |
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message    | string | Error message returned by request failure                    |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
 | permission | object | Permission information                                       |
-| request_id | string | Request chain id                                             |
-| data       | object | Data returned by request                                     |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |
 
 #### data
 
-| Field             | Type | Description                                     |
-| ----------------- | ---- | ----------------------------------------------- |
-| bk_biz_id         | int  | no                                              |
-| host_count        | int  | The number of hosts in the biz                  |
-| cpu_count         | int  | The number of host cpus in the biz              |
-| no_cpu_host_count | int  | The number of hosts with no cpu info in the biz |
+| Field             | Type | Description                                 |
+| ----------------- | ---- | ------------------------------------------- |
+| bk_biz_id         | int  | Business ID                                 |
+| host_count        | int  | Number of hosts                             |
+| cpu_count         | int  | Number of CPUs                              |
+| no_cpu_host_count | int  | Number of hosts without the CPU count field |

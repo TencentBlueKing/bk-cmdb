@@ -1,6 +1,6 @@
-### Functional description
+### Functional Description
 
-Creates a service template with the specified name and service class based on the passed-in service template name and service class ID
+Creates a service template with the specified name and service class based on the provided service template name and service class ID.
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ Creates a service template with the specified name and service class based on th
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| name            |  string  |yes   | Service template name|
-| service_category_id         |  int  |yes   | Service class ID|
-| bk_biz_id            |  int  |yes   | Business ID |
+| Field               | Type   | Required | Description           |
+| ------------------- | ------ | -------- | --------------------- |
+| name                | string | Yes      | Service template name |
+| service_category_id | int    | Yes      | Service class ID      |
+| bk_biz_id           | int    | Yes      | Business ID           |
 
 ### Request Parameters Example
 
@@ -55,25 +55,25 @@ Creates a service template with the specified name and service class based on th
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful or not. True: request succeeded; false: request failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### Data Field Description
 
-| Field| Type| Description|
-|---|---|---|
-|id| int| Service template ID|
-|bk_biz_id| int| Business ID |
-|name| string| Service template name|
-|service_category_id| int| Service template ID|
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data            |
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string       | Developer account number|
+| Field               | Type   | Description                                  |
+| ------------------- | ------ | -------------------------------------------- |
+| id                  | int    | Service template ID                          |
+| bk_biz_id           | int    | Business ID                                  |
+| name                | string | Service template name                        |
+| service_category_id | int    | Service class ID                             |
+| creator             | string | Creator of this data                         |
+| modifier            | string | The last person to modify this piece of data |
+| create_time         | string | Creation time                                |
+| last_time           | string | Last modification time                       |
+| bk_supplier_account | string | Developer account number                     |

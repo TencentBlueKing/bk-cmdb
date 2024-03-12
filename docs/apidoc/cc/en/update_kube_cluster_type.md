@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-update container cluster type (v3.12.1+, permission: kube cluster editing permissions)
+Update Container Cluster Type (v3.12.1+, Permission: Container Cluster Editing Permission)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ update container cluster type (v3.12.1+, permission: kube cluster editing permis
 
 #### Interface Parameters
 
-| Field     | Type   | Required | Description                                            |
-|-----------|--------|----------|--------------------------------------------------------|
-| bk_biz_id | int    | yes      | business ID                                            |
-| id        | int    | yes      | unique ID of the cluster in cmdb                       |
-| type      | string | yes      | cluster type. enum: INDEPENDENT_CLUSTER, SHARE_CLUSTER |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| id        | int    | Yes      | Unique ID list of clusters in CMDB                           |
+| type      | string | Yes      | Cluster type. Enumerated values: INDEPENDENT_CLUSTER (Independent Cluster), SHARE_CLUSTER (Shared Cluster) |
 
 ### Request Parameters Example
 
@@ -28,10 +28,10 @@ update container cluster type (v3.12.1+, permission: kube cluster editing permis
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
- {
+{
   "result": true,
   "code": 0,
   "message": "success",
@@ -41,15 +41,13 @@ update container cluster type (v3.12.1+, permission: kube cluster editing permis
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
-#### response
-
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | No data returned                                             |

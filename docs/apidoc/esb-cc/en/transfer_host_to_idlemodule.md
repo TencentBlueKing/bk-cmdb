@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-transfer host to idle module
+Transfer Hosts to the Idle Module within Business (Permission: Service Instance Edit Permission)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ transfer host to idle module
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| bk_biz_id     |  int     | Yes     | Business ID |
-| bk_host_id    |  array   | Yes     | Host ID |
+| Field               | Type   | Required | Description       |
+| ------------------- | ------ | -------- | ----------------- |
+| bk_supplier_account | string | No       | Developer account |
+| bk_biz_id           | int    | Yes      | Business ID       |
+| bk_host_id          | array  | Yes      | Host ID           |
 
 ### Request Parameters Example
 
@@ -31,28 +31,28 @@ transfer host to idle module
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": {}
+    "data": null
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
 
 #### response
 
-| Field       | Type     | Description         |
-|---|---|---|
-| result | bool | request success or failed. true:success；false: failed |
-| code | int | error code. 0: success, >0: something error |
-| message | string | error info description |
-| data | object | response data |
-| permission    | object | permission Information    |
-| request_id    | string | request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |

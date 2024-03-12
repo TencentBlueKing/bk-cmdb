@@ -25,9 +25,10 @@ import (
 // SearchParams TODO
 // common search struct
 type SearchParams struct {
-	Condition map[string]interface{} `json:"condition"`
-	Page      map[string]interface{} `json:"page,omitempty"`
-	Fields    []string               `json:"fields,omitempty"`
+	Condition     map[string]interface{}  `json:"condition"`
+	TimeCondition *metadata.TimeCondition `json:"time_condition"`
+	Page          map[string]interface{}  `json:"page,omitempty"`
+	Fields        []string                `json:"fields,omitempty"`
 }
 
 // ParseCommonParams parse common params

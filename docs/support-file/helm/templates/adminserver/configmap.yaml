@@ -92,6 +92,8 @@ data:
         ch: {{ .Values.common.webServer.changelogPath.ch }}
         #英文版版本日志存放路径
         en: {{ .Values.common.webServer.changelogPath.en }}
+      #是否启用消息通知
+      enableNotification: {{ .Values.common.webServer.enableNotification }}
     # operation_server专属配置
     operationServer:
       timer:
@@ -146,7 +148,20 @@ data:
       syncTask:
         # 同步周期,最小为5分钟
         syncPeriodMinutes: {{ .Values.common.cloudServer.syncTask.syncPeriodMinutes }}
-
+    # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+    crypto:
+      # 是否开启加密
+      enabled: {{ .Values.common.crypto.enabled }}
+      # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+      algorithm: {{ .Values.global.bkCryptoType }}
+      # 使用SM4算法时所需的配置
+      sm4:
+        # 密钥
+        key: {{ .Values.common.crypto.sm4.key }}
+      # 使用AES-GCM算法时所需的配置
+      aesGcm:
+        # 密钥
+        key: {{ .Values.common.crypto.aesGcm.key }}
     #datacollection专属配置
     datacollection:
       hostsnap:
@@ -197,6 +212,8 @@ data:
     cacheService:
     # 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
       briefTopologySyncIntervalMinutes: {{ .Values.common.cacheService.briefTopologySyncIntervalMinutes }}
+      # 业务容器拓扑缓存的定时刷新时间，默认为15分钟，最小为15分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+      kubeTopoSyncIntervalMinutes: {{ .Values.common.cacheService.kubeTopoSyncIntervalMinutes }}
 
     # openTelemetry跟踪链接入相关配置
     openTelemetry:
@@ -254,6 +271,15 @@ data:
           fileOwner: {{ .Values.common.eventServer.hostIdentifier.windows.fileOwner }}
           # 下发主机身份文件权限值
           filePrivilege: {{ .Values.common.eventServer.hostIdentifier.windows.filePrivilege }}
+
+    # apiServer相关配置
+    apiServer:
+      # api-server使用的jwt配置
+      jwt:
+        # 是否开启jwt认证功能
+        enabled: {{ .Values.common.apiServer.jwt.enabled }}
+        # jwt公钥
+        publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
 
     # 直接调用gse服务相关配置
     gse:

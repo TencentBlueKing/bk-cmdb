@@ -265,6 +265,11 @@ func (c *client) SMembers(ctx context.Context, key string) StringSliceResult {
 	return c.cli.SMembers(key)
 }
 
+// SScan is redis sscan command
+func (c *client) SScan(key string, cursor uint64, match string, count int64) ScanResult {
+	return c.cli.SScan(key, cursor, match, count)
+}
+
 // SRem TODO
 func (c *client) SRem(ctx context.Context, key string, members ...interface{}) IntResult {
 	return c.cli.SRem(key, members...)

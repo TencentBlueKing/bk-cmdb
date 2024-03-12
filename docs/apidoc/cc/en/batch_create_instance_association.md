@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
- Batch create general model instance Association (v3.10.2+)
+Batch create relationships between common model instances (Version: v3.10.2+, Permission: Edit permission for source and target model instances)
 
 ### Request Parameters
 
@@ -8,21 +8,21 @@
 
 #### Interface Parameters
 
-| Parameter           | Type   | Required| Description                     |
-| -------------- | ------ | ---- | ------------------------ |
-| bk_obj_id      |  string |yes   | Source model id                 |
-| bk_asst_obj_id | string |yes   | Target model model id           |
-| bk_obj_asst_id | string |yes   | The unique id of the relationship between models|
-| details        |  array  |yes   | The content of batch creation Association relationship can not exceed 200 relationships        |
+| Parameter      | Type   | Required | Description                                                  |
+| -------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id      | string | Yes      | Source model ID                                              |
+| bk_asst_obj_id | string | Yes      | Target model ID                                              |
+| bk_obj_asst_id | string | Yes      | Unique ID for the relationship between models                |
+| details        | array  | Yes      | Content of creating relationships in batch, up to 200 relationships |
 
 #### details
 
-| Parameter            | Type   | Required| Description           |
-| --------------- | ------ | ---- | -------------- |
-| bk_inst_id      |  int |yes   | Source model instance id   |
-| bk_asst_inst_id | int |yes   | Target model instance id|
+| Parameter       | Type | Required | Description              |
+| --------------- | ---- | -------- | ------------------------ |
+| bk_inst_id      | int  | Yes      | Source model instance ID |
+| bk_asst_inst_id | int  | Yes      | Target model instance ID |
 
-#### Request Parameters Example
+### Request Parameters Example
 
 ```json
 {
@@ -46,13 +46,13 @@
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result":true,
     "code":0,
-    "message":"",
+    "message":"success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data":{
@@ -60,28 +60,28 @@
             "0":73
         },
         "error_msg":{
-             "1":"the association inst is not exist"
+            "1":"关联实例不存在"
         }
     }
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field            | Type| Description                                                     |
-| -------------- | ---- | -------------------------------------------------------- |
-| success_created | map |key is the index of the instance Association in the parameter details array, and value is the id of the successfully created instance Association|
-| error_msg       |  map |key is the index of the instance Association in the parameter details array, and value is the failure information          |
+| Field           | Type | Description                                                  |
+| --------------- | ---- | ------------------------------------------------------------ |
+| success_created | map  | Key is the index in the details array, value is the ID of the successfully created relationship |
+| error_msg       | map  | Key is the index in the details array, value is the failure information |

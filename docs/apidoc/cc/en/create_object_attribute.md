@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Create model properties
+Create Model Property (Permission: Model Edit Permission)
 
 ### Request Parameters
 
@@ -8,44 +8,27 @@ Create model properties
 
 #### Interface Parameters
 
-| Field                  | Type      | Required   | Description                                                    |
-|-----------------------|------------|--------|----------------------------------------------------------|
-| creator               |  string     | no     | Who created the data                                             |
-| description           |  string     | no     | Description information of data                                           |
-| editable              |  bool       | no     | Indicates whether the data is editable                                       |
-| isonly                |  bool       | no     | Show uniqueness                                               |
-| ispre                 |  bool       | no     | True: preset field,false: Non-built-in field                           |
-| isreadonly            |  bool       | no     | True: read-only, false: Not read-only                                  |
-| isrequired            |  bool       | no     | True: required, false: Optional                                    |
-| option                |  string     | no     | User-defined content, stored content and format determined by the caller, taking numeric type as an example ({"min":"1","max":"2"}）|
-| unit                  |  string     | no     | Unit                                                     |
-| placeholder           |  string     | no     | Placeholder                                                   |
-| bk_property_group     |  string     | no     | Name of the field column                                           |
-| bk_obj_id             |  string     | yes     | Model ID                                                   |
-| bk_property_id        |  string     | yes     | The property ID of the model                                             |
-| bk_property_name      |  string     | yes     | Model attribute name, used to show                                     |
-| bk_property_type      |  string     | yes     | The defined attribute field is used to store the data type of the data, and the value range can be (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| ismultiple        |  bool     | no     | Whether multiple choices are allowed, where the field type is singlechar, longchar, int, float, enum, date, time, timezone, bool, and the list, temporarily does not support multiple choices. When creating an attribute, the field type is the above type, and the ismultiple parameter can not be passed. The default is false. If you pass true, you will be prompted that the type does not support multiple choices. enummulti, enumquote , user and organization fields support multiple choices, among which the user field and organization field are true by default |
-| default | object | no | Add a default value to the attribute field. The default value is passed according to the actual type of the field. For example, create an int type field. If you want to set the default value for this field, you can pass default: 5. If it is a short character type, then  default: "aaa". If you do not want to set the default value, you can not pass this field |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| creator           | string | No       | Data creator                                                 |
+| description       | string | No       | Data description                                             |
+| editable          | bool   | No       | Indicates whether the data is editable                       |
+| isonly            | bool   | No       | Indicates uniqueness                                         |
+| ispre             | bool   | No       | true: Preset field, false: Non-built-in field                |
+| isreadonly        | bool   | No       | true: Read-only, false: Non-read-only                        |
+| isrequired        | bool   | No       | true: Required, false: Optional                              |
+| option            | string | No       | User-defined content, the content and format stored are determined by the calling party, as an example of a numeric type ({"min":1,"max":2}) |
+| unit              | string | No       | Unit                                                         |
+| placeholder       | string | No       | Placeholder                                                  |
+| bk_property_group | string | No       | Field column name                                            |
+| bk_obj_id         | string | Yes      | Model ID                                                     |
+| bk_property_id    | string | Yes      | Model property ID                                            |
+| bk_property_name  | string | Yes      | Model property name used for display                         |
+| bk_property_type  | string | Yes      | Defined attribute field used to store data types, with a value range (singlechar(short character), longchar(long character), int(integer), enum(enum type), date(date), time(time), objuser(user), enummulti(enum multiple choice), enumquote(enum reference), timezone(time zone), bool(boolean), organization(organization)) |
+| ismultiple        | bool   | No       | Whether it can be selected multiple times, where the field types are short character, long character, number, float, enum, date, time, time zone, boolean, and the list does not support multiple selections. When creating a property, the field types above do not need to pass the `ismultiple` parameter, and the default is false. If true is passed, it will prompt that this type does not support multiple selections for now. Enum multiple selection, enum reference, user, and organization fields support multiple selections, with user fields and organization fields defaulting to true |
+| default           | object | No       | Add default value to the property field, the value of `default` is passed according to the actual type of the field. For example, when creating an int type field, if you want to set a default value for this field, you can pass `default:5`, if it is a short character type, then `default:"aaa"`, if you do not want to set a default value, do not pass this field |
 
-#### bk_property_type
-
-| Identification       | Name     |
-|------------|----------|
-| singlechar |Short character   |
-| longchar   | Long character   |
-| int        | Reshaping     |
-| enum       | Enumeration type|
-| date       | Date     |
-| time       | Time     |
-| objuser    | User     |
-| timezone   | Time zone     |
-| bool       | Bull     |
-| enummulti | Enumerate multiple |
-| enumquote | Enumeration References |
-| organization | Organization |
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -60,7 +43,7 @@ Create model properties
     "ispre": false,
     "isreadonly": false,
     "isrequired": false,
-    "option": "^[0-9a-zA-Z_]{1,}$", 
+    "option": "^[0-9a-zA-Z_]{1,}$",
     "unit": "1",
     "placeholder": "test",
     "bk_property_group": "default",
@@ -69,12 +52,12 @@ Create model properties
     "bk_property_name": "cc_test",
     "bk_property_type": "singlechar",
     "bk_asst_obj_id": "test",
+    "ismultiple": false,
     "default":"aaaa"
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -107,61 +90,45 @@ Create model properties
 		"create_time": "2020-03-25 17:12:08",
 		"last_time": "2020-03-25 17:12:08",
 		"bk_property_group_name": "default",
+        	"ismultiple": false,
         	"default":"aaaa"
 	}
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |
 
 #### data
 
-| Field                | Type         | Description                                                       |
-|---------------------|--------------|------------------------------------------------------------|
-| creator             |  string       | Who created the data                                               |
-| description         |  string       | Description information of data                                             |
-| editable            |  bool         | Indicates whether the data is editable                                         |
-| isonly              |  bool         | Show uniqueness                                                 |
-| ispre               |  bool         | True: preset field,false: Non-built-in field                             |
-| isreadonly          |  bool         | True: read-only, false: Not read-only                                    |
-| isrequired          |  bool         | True: required, false: Optional                                      |
-| option              |  string       | User-defined content, stored content and format determined by the caller               |
-| unit                |  string       | Unit                                                       |
-| placeholder         |  string       | Placeholder                                                     |
-| bk_property_group   |  string       | Name of the field column                                             |
-| bk_obj_id           |  string       | Model ID                                                     |
-| bk_supplier_account | string       | Developer account number                                                 |
-| bk_property_id      |  string       | The property ID of the model                                               |
-| bk_property_name    |  string       | Model attribute name, used to show                                       |
-| bk_property_type    |  string       | The data type of the defined attribute field used to store the data (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| bk_biz_id           |  int          | Business id of business custom field                                       |
-| bk_property_group_name           |  string          | Name of the field column                                       |
-| ismultiple | bool | Can multiple fields be selected |
-| default | object | attribute default vaule |
-
-#### bk_property_type
-
-| Identification       | Name     |
-|------------|----------|
-| singlechar |Short character   |
-| longchar   | Long character   |
-| int        | Reshaping     |
-| enum       | Enumeration type|
-| date       | Date     |
-| time       | Time     |
-| objuser    | User     |
-| timezone   | Time zone     |
-| bool       | Bull     |
-| enummulti | Enumerate multiple |
-| enumquote | Enumeration References |
-| organization | Organization |
+| Field                  | Type   | Description                                                  |
+| ---------------------- | ------ | ------------------------------------------------------------ |
+| creator                | string | Data creator                                                 |
+| description            | string | Data description                                             |
+| editable               | bool   | Indicates whether the data is editable                       |
+| isonly                 | bool   | Indicates uniqueness                                         |
+| ispre                  | bool   | true: Preset field, false: Non-built-in field                |
+| isreadonly             | bool   | true: Read-only, false: Non-read-only                        |
+| isrequired             | bool   | true: Required, false: Optional                              |
+| option                 | string | User-defined content, the content and format stored are determined by the calling party |
+| unit                   | string | Unit                                                         |
+| placeholder            | string | Placeholder                                                  |
+| bk_property_group      | string | Field column name                                            |
+| bk_obj_id              | string | Model ID                                                     |
+| bk_supplier_account    | string | Vendor account                                               |
+| bk_property_id         | string | Model property ID                                            |
+| bk_property_name       | string | Model property name used for display                         |
+| bk_property_type       | string | Defined attribute field used to store data types             |
+| bk_property_group_name | string | Field column name                                            |
+| ismultiple             | bool   | Whether the field supports multiple selections               |
+| default                | object | Property default value                                       |

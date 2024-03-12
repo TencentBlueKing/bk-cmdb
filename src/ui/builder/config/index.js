@@ -46,7 +46,8 @@ const dev = {
     HELP_DOC_URL: JSON.stringify(''),
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
-    COMPONENT_API_URL: JSON.stringify('')
+    COMPONENT_API_URL: JSON.stringify(''),
+    ENABLE_NOTIFICATION: JSON.stringify(false),
   }),
 
   // Paths
@@ -143,7 +144,8 @@ module.exports = {
       HELP_DOC_URL: '{{.helpDocUrl}}',
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
       COOKIE_DOMAIN: '{{.cookieDomain}}',
-      COMPONENT_API_URL: '{{.componentApiUrl}}'
+      COMPONENT_API_URL: '{{.componentApiUrl}}',
+      ENABLE_NOTIFICATION: '{{.enableNotification}}'
     }),
 
     // Template for index.html

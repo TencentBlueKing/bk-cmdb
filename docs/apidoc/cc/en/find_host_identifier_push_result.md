@@ -1,7 +1,6 @@
-### Function description
+### Function Description
 
-Get the result from the identity of the push host to the machine (you can only get the tasks pushed within 30 minutes).
-(version: v3.10.23+ permission: when the host included in the task is under business, the access permission of the corresponding business is required; when the host is under the host pool, the update permission of the host is required.)
+Get the result of pushing host identity to machines (can only get tasks pushed within 30 minutes) (Version: v3.10.23+, Permission: When the hosts included in the task belong to a business, the corresponding business access permission is required; when the hosts belong to a host pool, host update permission is required)
 
 ### Request Parameters
 
@@ -9,11 +8,11 @@ Get the result from the identity of the push host to the machine (you can only g
 
 #### Interface Parameters
 
-| field | type | required | description |
-| ---- | ---- | ---- | ---------- |
-| task_id | string | yes | task_id |
+| Field   | Type   | Required | Description |
+| ------- | ------ | -------- | ----------- |
+| task_id | string | Yes      | Task ID     |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -25,7 +24,7 @@ Get the result from the identity of the push host to the machine (you can only g
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -51,22 +50,23 @@ Get the result from the identity of the push host to the machine (you can only g
 }
 ```
 
-### Return Result Parameter Description
+### Response Parameters Description
 
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------------ |
-| result | bool | Whether the request was successful or not. true:request successful; false request failed.
-| code | int | The error code. 0 means success, >0 means failure error.
-| message | string | The error message returned by the failed request.
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | The data returned by the request.
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### data Field Description
-| name | type | description |
-| ------- | ------ | ------------------------------------------ |
-| success_list | array | List of host ids that executed successfully |
-| failed_list | array | list of failed host ids |
-| pending_list | array |List of host ids for which gse was invoked to send down the host identity and the result is not yet available |
+#### data Field Explanation
+
+| Field         | Type  | Description                                                  |
+| ------------ | ----- | ------------------------------------------------------------ |
+| success_list | array | List of host IDs that executed successfully                  |
+| failed_list  | array | List of host IDs that failed to execute                      |
+| pending_list | array | List of host IDs for which the host identity was called by GSE, but the result has not been obtained yet |

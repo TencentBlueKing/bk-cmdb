@@ -21,19 +21,27 @@
             <template v-if="isEditable">
               <cmdb-auth tag="div" class="icon-box"
                 v-if="!activeModel.bk_ispaused"
-                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }"
-                @click="isIconListShow = true">
+                :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
                 <i class="icon" :class="activeModel.bk_obj_icon || 'icon-cc-default'"></i>
-                <p class="hover-text is-paused" v-if="activeModel.bk_ispaused">{{$t('已停用')}}</p>
-                <p class="hover-text" v-else>{{$t('点击切换')}}</p>
+                <bk-popover
+                  ref="popover"
+                  :on-hide="handleHide"
+                  :tippy-options="{
+                    placement: 'bottom-start',
+                    sticky: true,
+                    theme: 'light',
+                    trigger: 'click',
+                    zIndex: 9999
+                  }">
+                  <p class="hover-text">{{$t('点击切换')}}</p>
+                  <the-choose-icon
+                    slot="content"
+                    v-model="activeModel.bk_obj_icon"
+                    @close="hideChooseBox"
+                    @input="handleModelIconUpdateConfirm">
+                  </the-choose-icon>
+                </bk-popover>
               </cmdb-auth>
-              <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
-                <the-choose-icon
-                  v-model="activeModel.bk_obj_icon"
-                  @close="hideChooseBox"
-                  @input="handleModelIconUpdateConfirm">
-                </the-choose-icon>
-              </div>
             </template>
             <template v-else>
               <div class="icon-box" :class="{ 'is-builtin': activeModel.ispre }" style="cursor: default;">
@@ -113,6 +121,8 @@
                   <span class="instance-count-text" @click="handleGoInstance">
                     <cmdb-loading :loading="$loading(request.instanceCount)">
                       {{modelInstanceCount || 0}}
+                      <i class="link-icon icon-cc-share">
+                      </i>
                     </cmdb-loading>
                   </span>
                 </div>
@@ -338,7 +348,6 @@
         tab: {
           active: RouterQuery.get('tab', 'field')
         },
-        isIconListShow: false,
         isEditName: false,
         modelInstanceCount: null,
         isEditClassification: false,
@@ -535,11 +544,15 @@
         return this.models.find(model => model.bk_obj_id === this.$route.params.modelId)
       },
       hideChooseBox() {
-        this.isIconListShow = false
+        // eslint-disable-next-line no-underscore-dangle
+        this.$refs.popover?.$refs?.reference?._tippy?.hide()
       },
       handleModelIconUpdateConfirm(value) {
-        this.isIconListShow = false
+        this.hideChooseBox()
         this.saveModel({ modelIcon: value })
+      },
+      handleHide() {
+        this.$refs.popover.$children[0].searchText = ''
       },
       handleModelNameUpdateConfirm({ value, confirm, stop }) {
         this.saveModel({
@@ -692,18 +705,19 @@
           })
           this.$routerActions.redirect({ name: MENU_MODEL_MANAGEMENT })
         }
+        this.$success(this.$t('删除成功'))
         this.$http.cancel('post_searchClassificationsObjects')
       },
       handleGoInstance() {
         const model = this.activeModel
         if (has(BUILTIN_MODEL_RESOURCE_MENUS, model.bk_obj_id)) {
           const query = model.bk_obj_id === 'host' ? { scope: 'all' } : {}
-          this.$routerActions.redirect({
+          this.$routerActions.open({
             name: BUILTIN_MODEL_RESOURCE_MENUS[model.bk_obj_id],
             query
           })
         } else {
-          this.$routerActions.redirect({
+          this.$routerActions.open({
             name: MENU_RESOURCE_INSTANCE,
             params: {
               objId: model.bk_obj_id
@@ -847,33 +861,6 @@
                     }
                 }
             }
-            .choose-icon-box {
-                position: absolute;
-                left: -12px;
-                top: 62px;
-                width: 600px;
-                height: 460px;
-                background: #fff;
-                border: 1px solid #dde4e8;
-                box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.13);
-                z-index: 99;
-                &:before {
-                    position: absolute;
-                    top: -13px;
-                    left: 30px;
-                    content: '';
-                    border: 6px solid transparent;
-                    border-bottom-color: rgba(51, 60, 72, 0.23);
-                }
-                &:after {
-                    position: absolute;
-                    top: -12px;
-                    left: 30px;
-                    content: '';
-                    border: 6px solid transparent;
-                    border-bottom-color: #fff;
-                }
-            }
         }
         .icon-box {
             display: flex;
@@ -894,13 +881,13 @@
             }
 
             &:hover {
-                .hover-text {
+                .bk-tooltip {
                     background: rgba(0, 0, 0, .5);
-                    display: block;
+                    opacity: 1;
                 }
             }
-            .hover-text {
-                display: none;
+            .bk-tooltip {
+                opacity: 0;
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -911,9 +898,9 @@
                 border-radius: 50%;
                 text-align: center;
                 color: #fff;
-                &.is-paused {
-                    background: rgba(0, 0, 0, .5);
-                    display: block !important;
+                width: 100%;
+                :deep(.bk-tooltip-ref) {
+                    width: 100%;
                 }
             }
             .icon {
@@ -993,6 +980,14 @@
               cursor: pointer;
               display: flex;
               align-items: center;
+              .link-icon {
+                opacity: 0;
+              }
+              &:hover {
+                .link-icon {
+                  opacity: 1;
+                }
+              }
             }
          }
          .model-property-item-text {

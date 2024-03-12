@@ -17,11 +17,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 )
 
 // GetDailAddress returns the address for net.Dail
-func GetDailAddress(URL string) (string, error) {
-	uri, err := url.Parse(URL)
+func GetDailAddress(addr string) (string, error) {
+	uri, err := url.Parse(addr)
 	if err != nil {
 		return "", err
 	}
@@ -43,4 +45,22 @@ func PeekRequest(req *http.Request) ([]byte, error) {
 		return byt, nil
 	}
 	return make([]byte, 0), nil
+}
+
+var secretKeyRegex = regexp.MustCompile(`,?"bk_secret_key":".*",?`)
+
+// FormatHttpBody format request body for logging, delete sensitive info
+func FormatHttpBody(uri string, body []byte) string {
+	switch uri {
+	case "findmany/cloud/account", "findmany/cloud/accountconf", "update/cloud/account/%d", "create/cloud/account",
+		"cloud/account/verify", "/api/v3/findmany/cloud/account", "/api/v3/findmany/cloud/accountconf",
+		"/api/v3/update/cloud/account/%d", "/api/v3/create/cloud/account", "/api/v3/cloud/account/verify":
+		body = secretKeyRegex.ReplaceAll(body, []byte{})
+	default:
+		if strings.Contains(uri, "/update/cloud/account/") {
+			body = secretKeyRegex.ReplaceAll(body, []byte{})
+		}
+	}
+
+	return string(body)
 }

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Add model classification
+Add model classification (Permission: Model Group New Permission)
 
 ### Request Parameters
 
@@ -8,15 +8,13 @@ Add model classification
 
 #### Interface Parameters
 
-| Field                       | Type      | Required   | Description                                      |
-|----------------------------|------------|--------|--------------------------------------------|
-| bk_classification_id       |  string     | yes  | Classification ID, English description for internal use of the system           |
-| bk_classification_name     |  string     | yes     | Class name     |
-| bk_classification_icon     |  string     | no     | Icon for model classification|
+| Field                  | Type   | Required | Description                                                  |
+| ---------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_classification_id   | string | Yes      | Classification ID, English description for internal use in the system |
+| bk_classification_name | string | Yes      | Classification name                                          |
+| bk_classification_icon | string | No       | Model classification icon                                    |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -30,10 +28,9 @@ Add model classification
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -51,25 +48,26 @@ Add model classification
     }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Request return data                                          |
 
 #### data
 
-| Field       | Type      | Description                |
-|----------- |-----------|--------------------|
-| id         |  int       | ID of new data record   |
-| bk_classification_id       |  string          | Classification ID, English description for internal use of the system           |
-| bk_classification_name     |  string        | Class name     |
-| bk_classification_icon     |  string         | Icon for model classification|
-| bk_classification_type | string   | Used to classify a classification (for example: Internal code is built-in classification, empty string is user-defined classification)                           |
-| bk_supplier_account|  string| Developer account number|
+| Field                  | Type   | Description                                                  |
+| ---------------------- | ------ | ------------------------------------------------------------ |
+| id                     | int    | ID of the newly added data record                            |
+| bk_classification_id   | string | Classification ID, English description for internal use in the system |
+| bk_classification_name | string | Classification name                                          |
+| bk_classification_icon | string | Model classification icon                                    |
+| bk_classification_type | string | Used to classify classifications (e.g., inner code for built-in classifications, an empty string for custom classifications) |
+| bk_supplier_account    | string | Developer account                                            |

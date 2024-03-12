@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-list kube container (version: v3.12.1+, auth: biz access)
+Query Container list (Version: v3.12.1+, Permission: Business access)
 
 ### Request Parameters
 
@@ -8,61 +8,56 @@ list kube container (version: v3.12.1+, auth: biz access)
 
 #### Interface Parameters
 
-| Field     | Type   | Required | Description                                                                                                                                         |
-|-----------|--------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | yes      | biz id                                                                                                                                              |
-| bk_pod_id | int    | yes      | pod id                                                                                                                                              |
-| filter    | object | no       | container query filter                                                                                                                              |
-| fields    | array  | yes      | container attribute list, controls which fields in the container will be returned, can speed up the request and reduce network traffic transmission |
-| page      | object | yes      | paging info                                                                                                                                         |
+| Field     | Type         | Required | Description                                                  |
+| --------- | ------------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int          | Yes      | Business ID                                                  |
+| bk_pod_id | int          | Yes      | ID of the pod to which the container belongs                 |
+| filter    | object       | No       | Query conditions for the container                           |
+| fields    | string array | Yes      | List of container properties, controls which fields are returned in the container, speeding up interface requests and reducing network traffic |
+| page      | object       | Yes      | Pagination information                                       |
 
-#### filter
+#### filter Field Description
 
-This parameter is the filter rule to search for container based on its attribute fields. This parameter supports the
-following two filter rules types. The combined filter rules can be nested with the maximum nesting level of 2. The
-specific supported filter rule types are as follows:
+Filter rules for container properties, used to search for data based on container properties. This parameter supports two types of filter rule types, where combination filter rules can be nested, and at most 2 levels of nesting. The specific supported filter rule types are as follows:
 
-##### combined filter rule
+##### Combination filter rules
 
-This filter rule type defines filter rules composed of other rules, the combined rules support logic and/or
-relationships
+Filter rules composed of other rules, supporting logical AND/OR relationships between rules
 
-| Field     | Type   | Required | Description                                                                |
-|-----------|--------|----------|----------------------------------------------------------------------------|
-| condition | string | yes      | query criteria, support `AND` and `OR`                                     |
-| rules     | array  | yes      | query rules, can be of `combined filter rule` or `atomic filter rule` type |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| condition | string | Yes      | Combined query condition, supports both `AND` and `OR`       |
+| rules     | array  | Yes      | Query rules, can be of type `Combination filter rules` or `Atomic filter rules` |
 
-##### atomic filter rule
+##### Atomic filter rules
 
-This filter rule type defines basic filter rules, which represent rules for filtering a field. Any filter rule is either
-directly an atomic filter rule, or a combination of multiple atomic filter rules
+Basic filter rules, indicating the rules for filtering a field. Any filter rule is directly an atomic filter rule or is composed of multiple atomic filter rules.
 
-| Field    | Type                                                                 | Required | Description                                                                                                          |
-|----------|----------------------------------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------|
-| field    | string                                                               | yes      | container's field                                                                                                    |
-| operator | string                                                               | yes      | operator, optional values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | different fields and operators correspond to different value formats | yes      | operand                                                                                                              |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Container field                                              |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filter/README.md>
+Assembly rules can be referred to: [Filter README](https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filter/README.md)
 
-#### page
+#### page Field Description
 
-| Field        | Type   | Required | Description                                                                                                                                                                                                        |
-|--------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| start        | int    | yes      | Record start position                                                                                                                                                                                              |
-| limit        | int    | yes      | Limit per page, maximum 500                                                                                                                                                                                        |
-| sort         | string | no       | Sort the field                                                                                                                                                                                                     |
-| enable_count | bool   | yes      | The flag defining Whether to get the the number of query objects. If this flag is true, then the request is to get the quantity. The remaining fields must be initialized, start is 0, and limit is: 0, sort is "" |
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| start        | int    | Yes      | Record start position                                        |
+| limit        | int    | Yes      | Number of records per page, maximum 500                      |
+| sort         | string | No       | Sorting field                                                |
+| enable_count | bool   | Yes      | Flag for whether this request is for obtaining the quantity or details. If this flag is true, other fields must be initialized. start is 0, limit is 0, sort is "" |
 
 **Note:**
 
-- `enable_count`If this flag is true, this request is a get quantity. The remaining fields must be initialized, start is
-  0, and limit is: 0, sort is "."
-- Paging parameters must be set, and the maximum query data at one time does not exceed 500.
+- `enable_count` If this flag is true, it means this request is to obtain the quantity. At this time, other fields must be initialized, start is 0, limit is 0, sort is "".
+- Pagination parameters must be set, and the maximum number of queried data at a time should not exceed 500.
 
-### Request Parameters Example
+### Request Parameter Example
 
-#### Query Detail Request Parameters Example
+#### Detailed Information Request Parameter Example
 
 ```json
 {
@@ -93,7 +88,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
           {
             "field": "image",
             "operator": "equal",
-            "value": "ccr.ccs.tencentyun.com/library/coredns:1.6.2"
+            "value": "xxx"
           }
         ]
       }
@@ -101,7 +96,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
   },
   "fields": [
     "name",
-    "uid"
+    "container_uid"
   ],
   "page": {
     "start": 0,
@@ -112,7 +107,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-#### Query Quantity Request Parameters Example
+#### Quantity Request Parameter Example
 
 ```json
 {
@@ -154,9 +149,9 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-### Return Result Example
+### Response Example
 
-#### Query Detail Return Result Example
+#### Detailed Information Response Example
 
 ```json
 {
@@ -181,7 +176,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-#### Query Quantity Return Result Example
+#### Quantity Response Example
 
 ```json
 {
@@ -191,44 +186,44 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
   "permission": null,
   "request_id": "87de106ab55549bfbcc46e47ecf5bcc7",
   "data": {
-    "count": 10,
+    "count": 100,
     "info": []
   }
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field | Type  | Description                                                     |
-|-------|-------|-----------------------------------------------------------------|
-| count | int   | Number of containers                                            |
-| info  | array | Container list, only returns the fields that is set in `fields` |
+| Field | Type  | Description           |
+| ----- | ----- | --------------------- |
+| count | int   | Number of records     |
+| info  | array | Actual container data |
 
 #### info[x]
 
-| Field         | Type         | Description                                                                                                                                                                                                                                     |
-|---------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| name          | string       | container name                                                                                                                                                                                                                                  |
-| container_uid | string       | container uid                                                                                                                                                                                                                                   |
-| image         | string       | container image                                                                                                                                                                                                                                 |
-| ports         | object array | container port information list, format: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#containerport-v1-core                                                                                                             |
-| args          | string array | start arguments                                                                                                                                                                                                                                 |
-| started       | timestamp    | start time                                                                                                                                                                                                                                      |
-| limits        | object       | resource limits, official documentation: https://kubernetes.io/zh/docs/concepts/policy/resource-quotas/                                                                                                                                         |
-| requests      | object       | resource requests, official documentation: https://kubernetes.io/zh/docs/concepts/policy/resource-quotas/                                                                                                                                       |
-| liveness      | object       | liveness probe, official documentation: https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/ , format: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#probe-v1-core   |
-| environment   | object array | environment variables, official documentation: https://kubernetes.io/zh/docs/tasks/inject-data-application/define-environment-variable-container/ , format: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#envvar-v1-core |
-| mounts        | object array | volume mounts, official documentation: https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-volume-storage/ , format: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core                 |
+| Field         | Type         | Description                                                  |
+| ------------- | ------------ | ------------------------------------------------------------ |
+| name          | string       | Name                                                         |
+| container_uid | string       | Container UID                                                |
+| image         | string       | Image information                                            |
+| ports         | object array | Container ports, format: [ContainerPort](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#containerport-v1-core) |
+| args          | string array | Startup parameters                                           |
+| started       | timestamp    | Startup time                                                 |
+| limits        | object       | Resource limits, official documentation: Resource Quotas     |
+| requests      | object       | Resource request size, official documentation: Resource Quotas |
+| liveness      | object       | Liveness probe, official documentation: [Configure Liveness, Readiness, and Startup Probes](https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) , format: [Probe](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#probe-v1-core) |
+| environment   | object array | Environment variables, official documentation: [Define Environment Variable Container](https://kubernetes.io/zh/docs/tasks/inject-data-application/define-environment-variable-container/) , format: [EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#envvar-v1-core) |
+| mounts        | object array | Volume mounts, official documentation: [Configure Volume Storage](https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-volume-storage/) , format: [VolumeMount](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core) |

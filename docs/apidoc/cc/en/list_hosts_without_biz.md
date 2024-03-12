@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Host query without business information
+Host query without business information (Permission: Host pool host view permission)
 
 ### Request Parameters
 
@@ -8,44 +8,40 @@ Host query without business information
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id | int        | no     | Business ID |
-| page       |   object    | yes  | Query criteria|
-| host_property_filter|  object| no | Host attribute combination query criteria|
-| fields  |  array   | yes  | Host attribute list, which controls which fields are in the host that returns the result, can speed up interface requests and reduce network traffic   |
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id            | int    | No       | Business ID                                                  |
+| page                 | object | Yes      | Query conditions                                             |
+| host_property_filter | object | No       | Host property combination query conditions                   |
+| fields               | array  | No       | List of host properties, controls which fields are returned in the results, speeding up the interface request and reducing network traffic. If not filled, all fields are returned by default |
 
 #### host_property_filter
-This parameter is a combination of filtering rules for the host attribute field and is used to search for hosts based on the host attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
-The filtering rule is a quadruple`field`,`operator`,`value`
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     | Combined query criteria|
-| rules      |   array    | no     | Rule|
+This parameter is a combination of host property field filtering rules, used to search for hosts based on host property fields. The combination supports AND and OR two ways, can be nested, with a maximum nesting of 2 levels. The filtering rule is a quadruple `field`, `operator`, `value`.
 
+| Field     | Type   | Required | Description               |
+| --------- | ------ | -------- | ------------------------- |
+| condition | string | No       | Combined query conditions |
+| rules     | array  | No       | Rules                     |
 
 #### rules
-| Name| Type| Required| Default value|  Description|
-| ---  | ---  | --- |---  | ---|
-| field| string| yes | None| Field name| Field name|
-| operator| string| yes | None| Operator| Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value| - |no| None| Operand| Different values correspond to different value formats|
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-
+Assembly rules can be referred to: [QueryBuilder README](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, Max. 500|
+| Field | Type | Required | Description                             |
+| ----- | ---- | -------- | --------------------------------------- |
+| start | int  | Yes      | Record start position                   |
+| limit | int  | Yes      | Number of records per page, maximum 500 |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -95,7 +91,7 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -133,30 +129,32 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
+
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int       | Number of records|
-| info      |  array     | Host actual data|
+| Field | Type  | Description       |
+| ----- | ----- | ----------------- |
+| count | int   | Number of records |
+| info  | array | Actual host data  |
 
 #### data.info
-| Name| Type| Description|
-| ---------------- | ------ | -------------------------------  |
-| bk_os_type       |  string |Operating system type| 1:Linux;2:Windows; 3:AIX         |
-| bk_mac           |  string |Intranet MAC address   |                                 |
-| bk_host_innerip  | string |Intranet IP        |                                 |
-| bk_host_id       |  int    | Host ID        |                                 |
-| bk_cloud_id      |  int    | Cloud area    |                                 |
+
+| Field           | Type   | Description             |
+| --------------- | ------ | ----------------------- |
+| bk_cloud_id     | int    | Cloud control area      |
+| bk_host_id      | int    | Host ID                 |
+| bk_host_innerip | string | Internal IP of the host |
+| bk_mac          | string | Host MAC address        |
+| bk_os_type      | string | Operating system type   |

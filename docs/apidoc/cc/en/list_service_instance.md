@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the service instance list according to the service id, or add information such as module id to query
+Query service instance list based on business ID, with the option to include module ID and other information in the query.
 
 ### Request Parameters
 
@@ -8,25 +8,25 @@ Query the service instance list according to the service id, or add information 
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id            |  int  |yes   | Business ID |
-| bk_module_id         |  int  |no   | Module ID|
-| selectors            |  int  |no   | Label filtering function, operator optional value: `=`,`!=`,` exists`,`!`,` in`,`notin`|
-| page         |  object  | No   | Paging parameter|
-| search_key         |  string  | No   | Name filter parameter|
+| Field        | Type      | Required | Description                                                  |
+| ------------ | --------- | -------- | ------------------------------------------------------------ |
+| bk_biz_id    | int       | Yes      | Business ID                                                  |
+| bk_module_id | int       | No       | Module ID                                                    |
+| bk_host_ids  | int array | No       | List of host IDs, supports up to 1000 host IDs               |
+| selectors    | int       | No       | Label filtering function, operator options: `=`, `!=`, `exists`, `!`, `in`, `notin` |
+| page         | object    | No       | Pagination parameters                                        |
+| search_key   | string    | No       | Name filtering parameter, can be filled with characters included in the process name for fuzzy search |
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, Max. 500|
+| Field | Type | Required | Description                             |
+| ----- | ---- | -------- | --------------------------------------- |
+| start | int  | Yes      | Record start position                   |
+| limit | int  | Yes      | Number of records per page, maximum 500 |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
-
 {
   "bk_app_code": "esb_test",
   "bk_app_secret": "xxx",
@@ -38,6 +38,7 @@ Query the service instance list according to the service id, or add information 
     "limit": 1
   },
   "bk_module_id": 56,
+  "bk_host_ids":[26,10],
   "search_key": "",
   "selectors": [{
     "key": "key1",
@@ -49,10 +50,9 @@ Query the service instance list according to the service id, or add information 
     "values": ["value1", "value2"]
   }]
 }
-
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -81,37 +81,37 @@ Query the service instance list according to the service id, or add information 
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### data Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|count| integer| Total||
-|info| array| Return result||
+| Field | Type  | Description              |
+| ----- | ----- | ------------------------ |
+| count | int   | Total number of records  |
+| info  | array | List of returned results |
 
-#### Info Field Description
+#### info Field Explanation
 
-| Field| Type| Description|
-|---|---|---|
-|id| int| Service instance ID|
-|name| string| Service instance name|
-|bk_biz_id| int| Business ID |
-|bk_module_id| int| Module ID|
-|bk_host_id| int| Host ID|
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data            |
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string       | Developer account number|
+| Field               | Type   | Description                |
+| ------------------- | ------ | -------------------------- |
+| id                  | int    | Service instance ID        |
+| name                | string | Service instance name      |
+| bk_biz_id           | int    | Business ID                |
+| bk_module_id        | int    | Module ID                  |
+| bk_host_id          | int    | Host ID                    |
+| creator             | string | Creator of this data       |
+| modifier            | string | Last modifier of this data |
+| create_time         | string | Creation time              |
+| last_time           | string | Update time                |
+| bk_supplier_account | string | Supplier account           |

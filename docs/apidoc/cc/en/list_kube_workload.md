@@ -1,70 +1,65 @@
 ### Function Description
 
-Query workload (version: v3.12.1+, auth: biz access)
+Query Workload (Version: v3.12.1+, Permission: Business access)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
-#### Interface parameters
+#### Interface Parameters
 
-- Common fields.
+- Common Fields:
 
-| field     | type   | mandatory | description                                                                                                                                                                                                 |
-|-----------|--------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | yes       | business id                                                                                                                                                                                                 |
-| kind      | string | yes       | workload type, the current built-in workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (put those who do not pass workload but directly create Pod) |
-| filter    | object | no        | query condition                                                                                                                                                                                             |
-| fields    | array  | No        | A list of attributes that control which fields are returned in the result, to speed up interface requests and reduce network traffic transfer                                                               |
-| page      | object | yes       | paging information                                                                                                                                                                                          |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| kind      | string | Yes      | Workload type, currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (created directly without going through workload) |
+| filter    | object | No       | Workload query conditions                                    |
+| fields    | array  | No       | Attribute list, control which fields are present in the returned result to speed up API requests and reduce network traffic |
+| page      | object | Yes      | Pagination information                                       |
 
-#### filter
+#### filter Field Description
 
-This parameter is the filter rule to search for container based on its attribute fields. This parameter supports the
-following two filter rules types. The combined filter rules can be nested with the maximum nesting level of 2. The
-specific supported filter rule types are as follows:
+Filter rules for workload properties, used to search data based on workload properties. This parameter supports two types of filter rule types, and combination filter rules can be nested, with a maximum nesting of 2 levels. The specific supported filter rule types are as follows:
 
-##### combined filter rule
+##### Combination Filter Rule
 
-This filter rule type defines filter rules composed of other rules, the combined rules support logic and/or
-relationships
+A filter rule composed of other rules, supporting logical AND/OR relationships between combined rules.
 
-| Field     | Type   | Required | Description                                                                |
-|-----------|--------|----------|----------------------------------------------------------------------------|
-| condition | string | yes      | query criteria, support `AND` and `OR`                                     |
-| rules     | array  | yes      | query rules, can be of `combined filter rule` or `atomic filter rule` type |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| condition | string | Yes      | Combination query conditions, supports `AND` and `OR`        |
+| rules     | array  | Yes      | Query rules, can be either `Combination Filter Rule` or `Atomic Filter Rule` types |
 
-##### atomic filter rule
+##### Atomic Filter Rule
 
-This filter rule type defines basic filter rules, which represent rules for filtering a field. Any filter rule is either
-directly an atomic filter rule, or a combination of multiple atomic filter rules
+Basic filter rule, represents a rule to filter a specific field. Any filter rule is directly an atomic filter rule or is composed of multiple atomic filter rules.
 
-| Field    | Type                                                                 | Required | Description                                                                                                          |
-|----------|----------------------------------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------|
-| field    | string                                                               | yes      | workload's field                                                                                                     |
-| operator | string                                                               | yes      | operator, optional values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | different fields and operators correspond to different value formats | yes      | operand                                                                                                              |
+| Field     | Type                                                         | Required | Description                                                  |
+| -------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| field    | string                                                       | Yes      | Field of the container                                       |
+| operator | string                                                       | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | Different fields and operators correspond to different value formats | No       | Operand, different operators correspond to different value formats |
 
-Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filter/README.md>
+Assembly rules can be referred to: [Filter README](https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filter/README.md)
 
-#### page
+#### page Field Description
 
-| field        | type   | required | description                                                                                                                                                                                        |
-|--------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| start        | int    | Yes      | Record start position                                                                                                                                                                              |
-| limit        | int    | Yes      | Limit the number of entries per page, up to 500                                                                                                                                                    |
-| sort         | string | No       | Sort field                                                                                                                                                                                         |
-| enable_count | bool   | Yes      | A flag for whether to get the number of query objects. If this flag is true then the request is to get the number, the rest of the fields must be initialized, start is 0, limit is :0, sort is "" |
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| start        | int    | Yes      | Record start position                                        |
+| limit        | int    | Yes      | Number of records per page, maximum 500                      |
+| sort         | string | No       | Sorting field                                                |
+| enable_count | bool   | Yes      | Flag for whether this request is for obtaining the quantity or details. If this flag is true, other fields must be initialized. start is 0, limit is 0, sort is "" |
 
 **Note:**
 
-- `enable_count`If this flag is true, this request is a get quantity. The remaining fields must be initialized, start is
-  0, and limit is: 0, sort is "."
-- Paging parameters must be set, and the maximum query data at one time does not exceed 500.
+- `enable_count` If this flag is true, it means this request is to obtain the quantity. At this time, other fields must be initialized, start is 0, limit is 0, sort is "".
+- Pagination parameters must be set, and the maximum number of queried data at a time should not exceed 500.
 
-### Example request parameters
+### Request Parameter Example
 
-#### Query Detail Request Parameters Example
+#### Detailed Information Request Parameter Example
 
 ```json
 {
@@ -106,7 +101,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-#### Query Quantity Request Parameters Example
+#### Quantity Request Parameter Example
 
 ```json
 {
@@ -145,12 +140,11 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-### Return Result Example
+### Response Example
 
-#### Query Detail Return Result Example
+#### Detailed Information Response Example
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -168,7 +162,7 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
 }
 ```
 
-#### Query Quantity Return Result Example
+#### Quantity Response Example
 
 ```json
 {
@@ -178,84 +172,84 @@ Assembly rules can refer to: <https://github.com/Tencent/bk-cmdb/blob/master/src
   "permission": null,
   "request_id": "87de106ab55549bfbcc46e47ecf5bcc7",
   "data": {
-    "count": 10,
+    "count": 100,
     "info": []
   }
 }
 ```
 
-### Return result parameter description
+### Response Result Explanation
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | request_chain_id                                                                          |
-| data       | object | data returned by the request                                                              |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| field | type  | description                                              |
-|-------|-------|----------------------------------------------------------|
-| count | int   | Number of records                                        |
-| info  | array | The actual data, returning only the fields set in fields |
+| Field | Type  | Description                           |
+| ----- | ----- | ------------------------------------- |
+| count | int   | Number of records                     |
+| info  | array | Actual data, details of the workloads |
 
 #### info[x]
 
-| Field                   | Type   | Description                                                                                                                                               |
-|-------------------------|--------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| name                    | string | workload name                                                                                                                                             |
-| labels                  | map    | label                                                                                                                                                     |
-| selector                | object | workload selector                                                                                                                                         |
-| replicas                | int    | number of workload instances                                                                                                                              |
-| strategy_type           | string | workload update mechanism                                                                                                                                 |
-| min_ready_seconds       | int    | Specifies the minimum time a newly created Pod will be ready without any container crashes, and only after that time will the Pod be considered available |
-| rolling_update_strategy | object | rolling update strategy                                                                                                                                   |
+| Field                   | Type   | Description                                                  |
+| ----------------------- | ------ | ------------------------------------------------------------ |
+| name                    | string | Workload name                                                |
+| labels                  | map    | Labels                                                       |
+| selector                | object | Workload selector                                            |
+| replicas                | int    | Number of workload instances                                 |
+| strategy_type           | string | Workload update mechanism                                    |
+| min_ready_seconds       | int    | Minimum readiness time for newly created Pods in the absence of any container crashes, only Pods that exceed this time are considered available |
+| rolling_update_strategy | object | Rolling update strategy                                      |
 
 #### selector
 
-| field             | type  | description       |
-|-------------------|-------|-------------------|
-| match_labels      | map   | match_by_label    |
-| match_expressions | array | match expressions |
+| Field             | Type  | Description           |
+| ----------------- | ----- | --------------------- |
+| match_labels      | map   | Match based on labels |
+| match_expressions | array | Matching expressions  |
 
 #### match_expressions[x]
 
-| field    | type   | description                                                                                                             |
-|----------|--------|-------------------------------------------------------------------------------------------------------------------------|
-| key      | string | key of tag                                                                                                              |
-| operator | string | operator, optional values: "In", "NotIn", "Exists", "DoesNotExist"                                                      |
-| values   | array  | array of strings, cannot be empty if the operator is "In" or "NotIn", must be empty if it is "Exists" or "DoesNotExist" |
+| Field    | Type   | Description                                                  |
+| -------- | ------ | ------------------------------------------------------------ |
+| key      | string | Key of the label                                             |
+| operator | string | Operator, optional values are "In", "NotIn", "Exists", "DoesNotExist" |
+| values   | array  | String array, if the operator is "In" or "NotIn", it must not be empty. If it is "Exists" or "DoesNotExist", it must be empty |
 
 #### rolling_update_strategy
 
-When strategy_type is RollingUpdate, it is not empty, otherwise it is empty.
+When strategy_type is RollingUpdate, it is not empty; otherwise, it is empty.
 
-| field           | type   | description     |
-|-----------------|--------|-----------------|
-| max_unavailable | object | max_unavailable | object
-| max_surge       | object | max_overflow    |
+| Field           | Type   | Description         |
+| --------------- | ------ | ------------------- |
+| max_unavailable | object | Maximum unavailable |
+| max_surge       | object | Maximum surge       |
 
 #### max_unavailable
 
-| field   | type   | description                                                  |
-|---------|--------|--------------------------------------------------------------|
-| type    | int    | Optional values of 0 (for int types) or 1 (for string types) |
-| int_val | int    | When type is 0 (for int type), the corresponding int value   |
-| str_val | string | when type is 1(string type),the corresponding string value   |
+| Field   | Type   | Description                                                  |
+| ------- | ------ | ------------------------------------------------------------ |
+| type    | int    | Optional values are 0 (represents int type) or 1 (represents string type) |
+| int_val | int    | When type is 0 (represents int type), it corresponds to the int value |
+| str_val | string | When type is 1 (represents string type), it corresponds to the string value |
 
 #### max_surge
 
-| field   | type   | description                                                |
-|---------|--------|------------------------------------------------------------|
-| type    | int    | optional value of 0 (for int type) or 1 (for string type)  |
-| int_val | int    | When type is 0 (for int type), the corresponding int value |
-| str_val | string | when type is 1(string type),the corresponding string value |
+| Field   | Type   | Description                                                  |
+| ------- | ------ | ------------------------------------------------------------ |
+| type    | int    | Optional values are 0 (represents int type) or 1 (represents string type) |
+| int_val | int    | When type is 0 (represents int type), it corresponds to the int value |
+| str_val | string | When type is 1 (represents string type), it corresponds to the string value |
 
 **Note:**
 
-- If this request is to query details, count is 0. If the query is quantity, info is empty.
+- If this request is to query detailed information, count is 0; if it is to query the quantity, info is empty.

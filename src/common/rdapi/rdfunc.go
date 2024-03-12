@@ -89,9 +89,9 @@ func RequestLogFilter() func(req *restful.Request, resp *restful.Response, fchai
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		header := req.Request.Header
 		body, _ := util.PeekRequest(req.Request)
-		blog.Infof("code: %s, user: %s, rip: %s, uri: %s, body: %s, rid: %s",
-			header.Get("Bk-App-Code"), header.Get("Bk_user"), header.Get("X-Real-Ip"),
-			req.Request.RequestURI, body, util.GetHTTPCCRequestID(header))
+		blog.Infof("code: %s, user: %s, rip: %s, uri: %s, body: %s, rid: %s", header.Get("Bk-App-Code"),
+			header.Get("Bk_user"), header.Get("X-Real-Ip"), req.Request.RequestURI,
+			util.FormatHttpBody(req.Request.URL.Path, body), util.GetHTTPCCRequestID(header))
 
 		fchain.ProcessFilter(req, resp)
 		return

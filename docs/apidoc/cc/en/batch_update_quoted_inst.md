@@ -1,29 +1,29 @@
-### Function description
+### Function Description
 
-batch update quoted model instance (version: v3.10.30+, permission: update permission of the source model instance)
+Batch Update Instances of Referenced Models (Version: v3.10.30+, Permission: Edit Permission of Source Model Instances)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
-#### Interface parameters
+#### Interface Parameters
 
-| Field          | Type        | Required | Description                                                        |
-|----------------|-------------|----------|--------------------------------------------------------------------|
-| bk_obj_id      | string      | yes      | source model id                                                    |
-| bk_property_id | string      | yes      | source model quoted property id                                    |
-| ids            | int64 array | yes      | id list of quoted instance to be updated, the maximum limit is 500 |
-| data           | object      | yes      | the quoted instance data to be updated                             |
+| Field          | Type        | Required | Description                                                 |
+| -------------- | ----------- | -------- | ----------------------------------------------------------- |
+| bk_obj_id      | string      | Yes      | Source model ID                                             |
+| bk_property_id | string      | Yes      | Property ID of the source model that references this model  |
+| ids            | int64 array | Yes      | Array of instance IDs to be updated, up to a maximum of 500 |
+| data           | object      | Yes      | Information of instances to be updated                      |
 
 #### data
 
-| Field       | Type   | Required                                         | Description                                                                               |
-|-------------|--------|--------------------------------------------------|-------------------------------------------------------------------------------------------|
-| name        | string | at least one of the fields in "data" is required | name, this is only an example, actual fields is defined by quoted model properties        |
-| operator    | string | at least one of the fields in "data" is required | operator, this is only an example, actual fields is defined by quoted model properties    | 
-| description | string | at least one of the fields in "data" is required | description, this is only an example, actual fields is defined by quoted model properties |
+| Field   | Type   | Required                                     | Description                                                  |
+| ----------- | ------ | -------------------------------------------- | ------------------------------------------------------------ |
+| name        | string | At least one field in data must be filled in | Name, this is just an example, the actual fields depend on the model properties |
+| operator    | string | At least one field in data must be filled in | Operator, this is just an example, the actual fields depend on the model properties |
+| description | string | At least one field in data must be filled in | Description, this is just an example, the actual fields depend on the model properties |
 
-### Request parameter examples
+### Request Parameter Example
 
 ```json
 {
@@ -45,7 +45,7 @@ batch update quoted model instance (version: v3.10.30+, permission: update permi
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -53,18 +53,20 @@ batch update quoted model instance (version: v3.10.30+, permission: update permi
   "code": 0,
   "message": "success",
   "permission": null,
+  "data": null,
   "request_id": "dsda1122adasadadada2222"
 }
 ```
 
-### Return result parameter description
+### Response Parameters Description
 
 #### response
 
-| Name       | Type   | Description                                                                                         |
-|------------|--------|-----------------------------------------------------------------------------------------------------|
-| result     | bool   | The success or failure of the request. true: the request was successful; false: the request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                            |
-| message    | string | The error message returned by the failed request.                                                   |
-| permission | object | Permission information                                                                              |
-| request_id | string | request_chain_id                                                                                    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

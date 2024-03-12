@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update service template information (currently only name field can be updated)
+Update service category (Currently, only the name field can be updated. Permission: Service Category Editing Permission)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ Update service template information (currently only name field can be updated)
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| id            |  int  |yes   | Service template ID|
-| name         |  string  |yes   | Service template name|
-| bk_biz_id     |   int     | yes  | Business ID |
+| Field     | Type   | Required | Description           |
+| --------- | ------ | -------- | --------------------- |
+| id        | int    | Yes      | Service category ID   |
+| name      | string | Yes      | Service category name |
+| bk_biz_id | int    | Yes      | Business ID           |
 
 ### Request Parameters Example
 
@@ -28,36 +28,48 @@ Update service template information (currently only name field can be updated)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
-  "result": true,
-  "code": 0,
-  "message": "success",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": {
-    "bk_biz_id": 1,
-    "id": 3,
-    "name": "222",
-    "root_id": 3,
-    "bk_supplier_account": "0",
-    "is_built_in": false
-  }
+    "result": true,
+    "code": 0,
+    "message": "success",
+    "permission": null,
+    "request_id": "f87f975a8f4a44ddbf6606ec432741a6",
+    "data": {
+        "bk_biz_id": 3,
+        "id": 22,
+        "name": "api",
+        "bk_root_id": 21,
+        "bk_parent_id": 21,
+        "bk_supplier_account": "0",
+        "is_built_in": false
+    }
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Updated service classification information|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Updated service category information                         |
 
+#### data
+
+| Field                | Type   | Description                      |
+| ------------------- | ------ | -------------------------------- |
+| bk_biz_id           | int    | Business ID                      |
+| id                  | int    | Service category ID              |
+| name                | string | Service category name            |
+| bk_root_id          | int    | Root service category ID         |
+| bk_parent_id        | int    | Parent service category ID       |
+| bk_supplier_account | string | Operator account                 |
+| is_built_in         | bool   | Whether it is a built-in service |

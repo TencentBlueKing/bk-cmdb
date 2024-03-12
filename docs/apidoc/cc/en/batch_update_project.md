@@ -1,33 +1,32 @@
-### Function description
+### Function Description
 
-batch update project (version: v3.10.23+, permission: update permission of the project)
+Update Project (Version: v3.10.23+, Permission: Update Project Permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
+#### Interface Parameters
 
-#### Interface parameters
-
-| field | type | required | description |
-| ----------------------------|------------|----------|-------------------------------------------|
-| ids | array| yes      | an array of ids uniquely identified in cc, limited to 200 at a time |
-| data | object| yes      |fields that need to be updated|
+| Field | Type   | Required | Description                                                  |
+| ----- | ------ | -------- | ------------------------------------------------------------ |
+| ids   | array  | Yes      | Unique ID array in cc, a maximum of 200 can be passed at a time |
+| data  | object | Yes      | Fields to be updated                                         |
 
 #### data
 
-| field | type | required | description                                                                                                                           |
-|--------------------|------------|----------|---------------------------------------------------------------------------------------------------------------------------------------|
-| bk_project_name | string | no      | project_name                                                                                                                          |
-| bk_project_code | string | no      | project_code                                                                                                                          |
-| bk_project_desc | string | no       | project_description                                                                                                                   |
-| bk_project_type | enum | no       | project type, optional values: "mobile_game", "pc_game", "web_game", "platform_prod", "support_prod", "other", default value: "other" |
-| bk_project_sec_lvl | enum | no       | confidentiality level, optional values: "public", "private", "classified", default: "public"                                          |
-| bk_project_owner | string | no      | project owner                                                                                                                         |
-| bk_project_team | array | no       | project team                                                                                                                          |
-| bk_project_icon | string | no       | project icon                                                                                                                          |
+| Field              | Type   | Required | Description                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------ |
+| bk_project_name    | string | No       | Project name                                                 |
+| bk_project_desc    | string | No       | Project description                                          |
+| bk_project_type    | enum   | No       | Project type, optional values: "mobile_game" (mobile game), "pc_game" (PC game), "web_game" (web game), "platform_prod" (platform product), "support_prod" (supporting product), "other" (other) |
+| bk_project_sec_lvl | enum   | No       | Confidentiality level, optional values: "public" (public), "private" (private), "classified" (classified) |
+| bk_project_owner   | string | No       | Project owner                                                |
+| bk_project_team    | array  | No       | Belonging team                                               |
+| bk_project_icon    | string | No       | Project icon                                                 |
+| bk_status          | string | No       | Project status, optional values: "enable" (enabled), "disabled" (disabled) |
 
-### Request parameter examples
+### Request Parameter Example
 
 ```json
 {
@@ -51,7 +50,7 @@ batch update project (version: v3.10.23+, permission: update permission of the p
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -64,15 +63,15 @@ batch update project (version: v3.10.23+, permission: update permission of the p
 }
 ```
 
-### Return result parameter description
+### Response Parameters Description
+
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | The success or failure of the request. true: the request was successful; false: the request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | data returned by the request|
-
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

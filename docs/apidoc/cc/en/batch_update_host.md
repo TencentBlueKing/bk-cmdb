@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Bulk update host attributes based on host id and attributes (can not be used to update cloud area field in host attributes)
+Batch Update Host Properties Based on Host ID and Attributes (Cannot be used to update the control area field in host properties, Permission: Business Host Editing Permission)
 
 ### Request Parameters
 
@@ -8,27 +8,27 @@ Bulk update host attributes based on host id and attributes (can not be used to 
 
 #### Interface Parameters
 
-| Field                | Type         | Required   | Description                           |
-|---------------------|--------------|--------|---------------------------------|
-| update              |  array |yes     | Host updated attributes and values, up to 500   |
+| Field  | Type  | Required | Description                                                  |
+| ------ | ----- | -------- | ------------------------------------------------------------ |
+| update | array | Yes      | Properties and values to be updated for hosts, up to 500 items |
 
 #### update
-| Field        | Type    | Required   | Description                                                |
-|-------------|--------|--------|----------------------------------------------------|
-| properties  | object |yes     | The updated properties and values of the host can not be used to update the cloud area field in the host properties |
-| bk_host_id  | int    | yes     | Host ID for update                                     |
+
+| Field      | Type   | Required | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ |
+| properties | object | Yes      | Properties and values to be updated for hosts, cannot be used to update the control area field in host properties |
+| bk_host_id | int    | Yes      | Host ID used for updating                                    |
 
 #### properties
-| Field         | Type   | Required   | Description                                                      |
-|--------------|--------|-------|-----------------------------------------------------------|
-| bk_host_name | string |no    | The host name, which can also be another attribute, can not be used to update the cloud area field in the host properties |
-| operator     |  string |no    | The primary maintainer, which can also be another attribute, can not be used to update the cloud area field in the host properties|
-| bk_comment   |  string |no    | Note, which can be other properties, can not be used to update the cloud area field in host properties  |
-| bk_isp_name  | string |no    | The operator, or other attributes, can not be used to update the cloud area field in the host attribute|
 
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| bk_host_name | string | No       | Host name, can also be other properties, cannot be used to update the control area field in host properties |
+| operator     | string | No       | Main maintainer, can also be other properties, cannot be used to update the control area field in host properties |
+| bk_comment   | string | No       | Remark, can also be other properties, cannot be used to update the control area field in host properties |
+| bk_isp_name  | string | No       | Affiliated ISP, can also be other properties, cannot be used to update the control area field in host properties |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -50,8 +50,7 @@ Bulk update host attributes based on host id and attributes (can not be used to 
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -66,11 +65,11 @@ Bulk update host attributes based on host id and attributes (can not be used to 
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

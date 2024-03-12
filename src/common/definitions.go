@@ -254,6 +254,27 @@ const (
 
 	// BKDBUnwind used to split values contained in an array field into separate doc
 	BKDBUnwind = "$unwind"
+
+	// BKDBLookup used to perform multi-table association operations
+	BKDBLookup = "$lookup"
+
+	// BKDBFrom collection to join
+	BKDBFrom = "from"
+
+	// BKDBLocalField field from the input documents
+	BKDBLocalField = "localField"
+
+	// BKDBForeignField field from the documents of the "from" collection
+	BKDBForeignField = "foreignField"
+
+	// BKDBAs output array field
+	BKDBAs = "as"
+
+	// BKDBSkip skip data index
+	BKDBSkip = "$skip"
+
+	// BKLimit data quantity limit
+	BKLimit = "$limit"
 )
 
 const (
@@ -1285,6 +1306,7 @@ const (
 	HostOSTypeEnumSolaris = "5"
 	HostOSTypeEnumHpUX    = "6"
 	HostOSTypeEnumFreeBSD = "7"
+	HostOSTypeEnumMacOS   = "8"
 )
 
 // HostOSTypeName Host system enum and name association
@@ -1296,6 +1318,7 @@ var HostOSTypeName = map[string]string{
 	HostOSTypeEnumSolaris: "solaris",
 	HostOSTypeEnumHpUX:    "hp-ux",
 	HostOSTypeEnumFreeBSD: "freebsd",
+	HostOSTypeEnumMacOS:   "darwin",
 }
 
 const (

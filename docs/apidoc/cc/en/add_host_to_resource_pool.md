@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Adds a host to the resource pool with the specified id based on the host list information
+Add hosts to the specified resource pool based on the host list information (Permission: Host pool host creation permission)
 
 ### Request Parameters
 
@@ -8,19 +8,54 @@ Adds a host to the resource pool with the specified id based on the host list in
 
 #### Interface Parameters
 
-| Field                  | Type        | Required	 |Description                |
-|----------------------|--------------|--------|---------------------|
-| host_info            |  object array |yes     | Host information              |
-| directory            |  int          | no    | Resource directory ID |
+| Field     | Type         | Required | Description                |
+| --------- | ------------ | -------- | -------------------------- |
+| host_info | object array | Yes      | Host information           |
+| directory | int          | No       | Resource pool directory ID |
 
 #### host_info
-| Field             | Type| Required| Description                    |
-|-----------------|--------|-----|-------------------------|
-| bk_host_innerip | string |yes| Host intranet ip                |
-| bk_cloud_id | int |yes| Cloud area id     |
-| bk_host_name    |  string |no| Host name, or any other property    |
-| operator        |  string | no       | Main maintainer, or other attributes|
-| bk_comment      |  string |no| Comments, or other attributes      |
+
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_host_innerip      | string | Yes      | Host's inner IP                                              |
+| bk_cloud_id          | int    | Yes      | Control area ID                                              |
+| bk_addressing        | string | No       | Addressing method, default is static addressing method "static" |
+| bk_host_name         | string | No       | Host name, can also be other attributes                      |
+| operator             | string | No       | Primary maintainer, can also be other attributes             |
+| bk_comment           | string | No       | Remark, can also be other attributes                         |
+| bk_cloud_vendor      | array  | No       | Cloud vendor                                                 |
+| bk_cloud_inst_id     | array  | No       | Cloud host instance ID                                       |
+| import_from          | string | No       | Host import source, 3 for API import                         |
+| bk_asset_id          | string | No       | Fixed asset number                                           |
+| bk_created_at        | string | No       | Creation time                                                |
+| bk_updated_at        | string | No       | Update time                                                  |
+| bk_created_by        | string | No       | Creator                                                      |
+| bk_updated_by        | string | No       | Updater                                                      |
+| bk_cloud_host_status | string | No       | Cloud host status                                            |
+| bk_cpu               | int    | No       | CPU logical cores                                            |
+| bk_cpu_architecture  | string | No       | CPU architecture                                             |
+| bk_cpu_module        | string | No       | CPU model                                                    |
+| bk_disk              | int    | No       | Disk capacity (GB)                                           |
+| bk_host_outerip      | string | No       | Host outer IP                                                |
+| bk_host_innerip_v6   | string | No       | Host inner IPv6                                              |
+| bk_host_outerip_v6   | string | No       | Host outer IPv6                                              |
+| bk_isp_name          | string | No       | ISP name                                                     |
+| bk_mac               | string | No       | Host inner MAC address                                       |
+| bk_mem               | int    | No       | Host memory capacity (MB)                                    |
+| bk_os_bit            | string | No       | OS bit                                                       |
+| bk_os_name           | string | No       | OS name                                                      |
+| bk_os_type           | string | No       | OS type                                                      |
+| bk_os_version        | string | No       | OS version                                                   |
+| bk_outer_mac         | string | No       | Host outer MAC address                                       |
+| bk_province_name     | string | No       | Province name                                                |
+| bk_service_term      | int    | No       | Warranty period                                              |
+| bk_sla               | string | No       | SLA level                                                    |
+| bk_sn                | string | No       | Device SN                                                    |
+| bk_state             | string | No       | Current state                                                |
+| bk_state_name        | string | No       | Country name                                                 |
+| bk_bak_operator      | string | No       | Backup maintainer                                            |
+
+**Note: The control area ID and inner IP fields are required fields. Other fields are attribute fields defined in the host model. Only partial fields are shown here, please fill in other fields as needed.
 
 ### Request Parameters Example
 
@@ -36,12 +71,12 @@ Adds a host to the resource pool with the specified id based on the host list in
             "bk_host_name": "host1",
             "bk_cloud_id": 0,
             "operator": "admin",
+            "bk_addressing": "dynamic",
             "bk_comment": "comment"
         },
         {
             "bk_host_innerip": "127.0.0.2",
             "bk_host_name": "host2",
-            "bk_cloud_id": 0,
             "operator": "admin",
             "bk_comment": "comment"
         }
@@ -50,11 +85,11 @@ Adds a host to the resource pool with the specified id based on the host list in
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
-  "result": true,
+  "result": false,
   "code": 0,
   "message": "success",
   "data": {
@@ -62,49 +97,50 @@ Adds a host to the resource pool with the specified id based on the host list in
           {
               "index": 0,
               "bk_host_id": 6
-          },
+          }
+      ],
+      "error": [
           {
               "index": 1,
-              "bk_host_id": 7
+              "error_message": "'bk_cloud_id' unassigned"
           }
       ]
   },
   "permission": null,
   "request_id": "e43da4ef221746868dc4c837d36f3807"
 }
-
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| data    |  object |Data returned by request                           |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| data       | object | Data returned by the request                                 |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
-#### Data field Description
+#### data Field Description
 
-| Field     | Type| Description                |
-| ------- | ----- | ------------------ |
-| success | array |Host information array added successfully|
-| error   |  array |Add failed host info array|
+| Field   | Type  | Description                                       |
+| ------- | ----- | ------------------------------------------------- |
+| success | array | Array of successfully added host information      |
+| error   | array | Array of host information that failed to be added |
 
-#### Success Field Description
+#### success Field Description
 
-| Field        | Type| Description             |
-| ---------- | ---- | --------------- |
-| index      |  int  |Add successful host subscripts|
-| bk_host_id | int  |Successfully added host ID   |
+| Field      | Type | Description                          |
+| ---------- | ---- | ------------------------------------ |
+| index      | int  | Index of the successfully added host |
+| bk_host_id | int  | ID of the successfully added host    |
 
-#### Error Field Description
+#### error Field Description
 
-| Field           | Type   | Description             |
-| ------------- | ------ | --------------- |
-| index         |  int    | Add failed host subscript|
-| error_message | string |Failure reason         |
+| Field         | Type   | Description                               |
+| ------------- | ------ | ----------------------------------------- |
+| index         | int    | Index of the host that failed to be added |
+| error_message | string | Failure reason                            |

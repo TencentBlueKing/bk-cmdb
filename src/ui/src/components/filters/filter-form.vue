@@ -30,15 +30,14 @@
         <bk-form-item class="filter-ip filter-item">
           <label class="item-label">
             IP
-            <span class="item-label-suffix">({{$t('自动解析IP目标')}})</span>
           </label>
           <editable-block
             ref="ipEditableBlock"
             class="ip-editable-block"
             :enter-search="false"
-            :placeholder="$t('主机搜索提示语')"
-            v-model="IPCondition.text"
-            @updateValue="(val) => IPCondition.text = val">
+            :is-exact="IPCondition.exact"
+            :placeholder="editBlockPlaceholder"
+            v-model="IPCondition.text">
           </editable-block>
           <input type="hidden"
             ref="ip"
@@ -92,7 +91,7 @@
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
-        <condition-picker :text="$t('添加')" icon="icon-plus-circle" :selected="selected" :property-map="propertyMap"
+        <condition-picker :text="$t(conditionText)" :icon="icon" :selected="selected" :property-map="propertyMap"
           :type="3"></condition-picker>
       </bk-form>
       <div class="filter-options"
@@ -207,6 +206,14 @@
         type: Function,
         default: () => {}
       },
+      icon: {
+        type: String,
+        default: ''
+      },
+      conditionText: {
+        type: String,
+        default: '添加其他条件'
+      }
     },
     data() {
       return {
@@ -225,6 +232,11 @@
     },
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
+      editBlockPlaceholder() {
+        const { exact } = this.IPCondition
+        const placeholder = exact ? '主机搜索提示语' : '主机模糊搜索提示语'
+        return this.$t(placeholder)
+      },
       propertyMap() {
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
         const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']

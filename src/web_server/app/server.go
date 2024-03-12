@@ -107,6 +107,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("init jwt failed, err: %v", err)
 	}
 
+	if err := service.InitNotice(); err != nil {
+		return err
+	}
+
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), false)
 	if err != nil {
 		return err
@@ -168,6 +172,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
+	w.Config.EnableNotification, _ = cc.Bool("webServer.enableNotification")
 }
 
 // Stop the ccapi server

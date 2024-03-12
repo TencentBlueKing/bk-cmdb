@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete model based on model id
+Delete a model based on the model ID (Permission: Model deletion permission)
 
 ### Request Parameters
 
@@ -8,15 +8,13 @@ Delete model based on model id
 
 #### Interface Parameters
 
-| Field| Type       | Required   | Description                 |
-|-------|-------------|--------|-----------------------|
-| id    |  int         | no     | ID of the data record being deleted|
+| Field | Type | Required | Description                         |
+| ----- | ---- | -------- | ----------------------------------- |
+| id    | int  | Yes      | ID of the data record to be deleted |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
-
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -26,28 +24,26 @@ Delete model based on model id
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
 ```
 
-#### response
+#### Response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

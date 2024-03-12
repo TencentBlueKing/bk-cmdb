@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-delete host
+Delete Host (Permission: Host Pool Host Deletion Permission)
 
 ### Request Parameters
 
@@ -8,10 +8,10 @@ delete host
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| bk_host_id     |  string  | Yes     | host id join by &#34;,&#34; |
+| Field               | Type   | Required | Description                              |
+| ------------------- | ------ | -------- | ---------------------------------------- |
+| bk_supplier_account | string | No       | Developer account                        |
+| bk_host_id          | string | Yes      | Host ID, separated by commas if multiple |
 
 ### Request Parameters Example
 
@@ -22,33 +22,32 @@ delete host
     "bk_username": "xxx",
     "bk_token": "xxx",
     "bk_supplier_account": "123456789",
-    "bk_host_id": "1,2,3",
+    "bk_host_id": "1,2,3"
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": null
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Field       | Type     | Description         |
-|---|---|---|
-| result | bool | request success or failed. true:success；false: failed |
-| code | int | error code. 0: success, >0: something error |
-| message | string | error info description |
-| data | object | response data |
-| permission    | object | permission Information    |
-| request_id    | string | request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
