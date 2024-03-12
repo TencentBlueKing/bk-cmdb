@@ -252,9 +252,10 @@ func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceTy
 	if agentID != "" {
 		host, err = h.getHostByAgentID(header, rid, agentID)
 		if err != nil {
-			if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
-				blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
-			}
+			// todo 由于采集器会上报没有绑定agent id的主机信息，给db造成了压力，这里先把加入延迟队列的逻辑去掉
+			//if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
+			//	blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
+			//}
 			blog.Errorf("get host detail with agentID: %v failed, err: %v, rid: %s", agentID, err, rid)
 			return "", errors.New("no host founded")
 		}
@@ -308,6 +309,11 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 	if err != nil {
 		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
 		return false, err
+	}
+
+	if host == "" {
+		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
+		return false, errors.New("get host detail failed")
 	}
 
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
