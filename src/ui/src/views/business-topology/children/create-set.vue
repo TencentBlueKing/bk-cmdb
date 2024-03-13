@@ -44,12 +44,13 @@
       <div class="form-item">
         <label>
           {{$t('集群名称')}}
-          <font color="red">*</font>
+          <span class="red-star">*</span>
         </label>
         <bk-input class="form-textarea"
           type="textarea"
           data-vv-name="setName"
-          v-validate="'required|longchar|businessTopoInstNames|emptySetName|setNameMap|setNameLen'"
+          v-validate="`required|longchar|businessTopoInstNames|emptySetName|setNameMap|setNameLen|splitMaxLength:100
+          ,${$t('超过限制，一次最多支持创建n个', { n: 100 })}`"
           v-model="setName"
           :rows="rows"
           :placeholder="$t('集群多个创建提示')"
@@ -225,6 +226,10 @@
             > span {
                 color: #979BA5;
                 font-size: 12px;
+            }
+            .red-star {
+              color: #f00;
+              font-size: 14px;
             }
         }
         .form-error {

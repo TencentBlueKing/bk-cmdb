@@ -1879,5 +1879,6 @@
     "你没有任何业务的访问权限xxx": "You do not have access rights to any business, please apply or create first",
     "无当前业务权限": "No current business permissions",
     "你没有当前业务的访问权限xxx": "You do not have access rights to the current business. Please apply for business rights.",
-    "申请权限": "Apply for permission"
+    "申请权限": "Apply for permission",
+    "超过限制，一次最多支持创建n个": "Exceeding the limit, a maximum of {n} can be created at one time"
 }
