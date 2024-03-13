@@ -146,7 +146,7 @@ func (j *jwtHandler) Parse(header http.Header) (http.Header, error) {
 		return nil, err
 	}
 
-	header.Set("Content-Type", "application/json")
+	header = util.NewHeader(header)
 	httpheader.SetUser(header, token.User.UserName)
 	httpheader.SetAppCode(header, token.App.AppCode)
 

@@ -74,10 +74,38 @@ func GenDefaultHeader() http.Header {
 	return GenCommonHeader("", "", "")
 }
 
+// NewHeader take out the required header value and create a new header
+func NewHeader(header http.Header) http.Header {
+	newHeader := http.Header{}
+	newHeader.Set("Content-Type", "application/json")
+
+	httpheader.SetUser(newHeader, httpheader.GetUser(header))
+
+	httpheader.SetSupplierAccount(newHeader, httpheader.GetSupplierAccount(header))
+
+	httpheader.SetRid(newHeader, httpheader.GetRid(header))
+
+	httpheader.SetLanguage(newHeader, httpheader.GetLanguage(header))
+
+	httpheader.SetAppCode(newHeader, httpheader.GetAppCode(header))
+
+	httpheader.SetTXId(newHeader, httpheader.GetTXId(header))
+
+	httpheader.SetTXTimeout(newHeader, httpheader.GetTXTimeout(header))
+
+	if httpheader.IsReqFromWeb(header) {
+		httpheader.SetReqFromWeb(newHeader)
+	}
+
+	return newHeader
+}
+
 // ConvertLegacyHeader convert legacy header to new http header, compatible for esb request
 func ConvertLegacyHeader(header http.Header) http.Header {
+	newHeader := NewHeader(header)
+
 	if httpheader.GetUser(header) == "" {
-		httpheader.SetUser(header, header.Get(httpheader.BKHTTPHeaderUser))
+		httpheader.SetUser(newHeader, header.Get(httpheader.BKHTTPHeaderUser))
 	}
 
 	if httpheader.GetSupplierAccount(header) == "" {
@@ -85,21 +113,22 @@ func ConvertLegacyHeader(header http.Header) http.Header {
 		if supplierAccount == "" {
 			supplierAccount = header.Get(httpheader.BKHTTPOwnerID)
 		}
-		httpheader.SetSupplierAccount(header, supplierAccount)
+		httpheader.SetSupplierAccount(newHeader, supplierAccount)
 	}
 
 	if httpheader.GetRid(header) == "" {
-		httpheader.SetRid(header, header.Get(httpheader.BKHTTPCCRequestID))
+		httpheader.SetRid(newHeader, header.Get(httpheader.BKHTTPCCRequestID))
 	}
 
 	if httpheader.GetLanguage(header) == "" {
-		httpheader.SetLanguage(header, header.Get(httpheader.BKHTTPLanguage))
+		httpheader.SetLanguage(newHeader, header.Get(httpheader.BKHTTPLanguage))
 	}
 
 	if httpheader.GetAppCode(header) == "" {
-		httpheader.SetAppCode(header, header.Get(httpheader.BKHTTPRequestAppCode))
+		httpheader.SetAppCode(newHeader, header.Get(httpheader.BKHTTPRequestAppCode))
 	}
-	return header
+
+	return newHeader
 }
 
 // NewHeaderFromContext new cmdb header by context

@@ -17,7 +17,11 @@
 
 package header
 
-import "net/http"
+import (
+	"net/http"
+
+	"configcenter/src/common"
+)
 
 // GetRid get request id from http header
 func GetRid(header http.Header) string {
@@ -67,6 +71,16 @@ func IsReqFromWeb(header http.Header) bool {
 // GetReqRealIP get request real ip from http header
 func GetReqRealIP(header http.Header) string {
 	return header.Get(ReqRealIPHeader)
+}
+
+// GetTXId get transaction id from http header
+func GetTXId(header http.Header) string {
+	return header.Get(common.TransactionIdHeader)
+}
+
+// GetTXTimeout get transaction timeout from http header
+func GetTXTimeout(header http.Header) string {
+	return header.Get(common.TransactionTimeoutHeader)
 }
 
 // SetRid set request id to http header
@@ -123,6 +137,16 @@ func SetReqFromWeb(header http.Header) {
 // SetReqRealIP set request real ip to http header
 func SetReqRealIP(header http.Header, value string) {
 	header.Set(ReqRealIPHeader, value)
+}
+
+// SetTXId set transaction id to http header
+func SetTXId(header http.Header, value string) {
+	header.Set(common.TransactionIdHeader, value)
+}
+
+// SetTXTimeout set transaction timeout to http header
+func SetTXTimeout(header http.Header, value string) {
+	header.Set(common.TransactionTimeoutHeader, value)
 }
 
 // AddRid add request id to http header
