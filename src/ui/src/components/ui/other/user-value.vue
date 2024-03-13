@@ -28,7 +28,7 @@
     },
     props: {
       value: {
-        type: [String, Array],
+        type: String,
         default: ''
       }
     },
@@ -50,9 +50,6 @@
       },
       localValue: {
         get() {
-          if (this.value instanceof Array) {
-            return this.value
-          }
           if (this.value) {
             return this.value.split(',')
           }
