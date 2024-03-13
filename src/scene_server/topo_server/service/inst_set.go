@@ -38,6 +38,12 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(batchBody.Sets) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, common.BKInnerObjIDSet,
+			common.BKMaxUpdateOrCreatePageSize))
+		return
+	}
+
 	batchCreateResult := make([]metadata.OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
@@ -124,7 +130,8 @@ func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 		},
 	}
 
-	rsp, e := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet, cond)
+	rsp, e := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		cond)
 	if e != nil {
 		blog.Errorf("check is built in set failed, option: %s, err: %v, rid: %s", cond, e, kit.Rid)
 		return e
