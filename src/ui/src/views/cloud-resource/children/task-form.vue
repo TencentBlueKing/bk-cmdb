@@ -313,7 +313,7 @@
 
 <style lang="scss" scoped>
     .form-layout {
-        padding: 10px 25px;
+        padding: 10px 24px;
         display: block;
         font-size: 0;
         .form-item:nth-child(2n) {
@@ -377,7 +377,7 @@
     .form-options {
         font-size: 0;
         margin-top: 10px;
-        padding: 0 25px;
+        padding: 0 24px;
         &.is-sticky {
             margin-top: 0;
             padding: 15px 25px;
@@ -386,6 +386,6 @@
         }
     }
     .form-setting-component {
-        margin: 10px 25px 20px;
+        margin: 10px 24px 20px;
     }
 </style>

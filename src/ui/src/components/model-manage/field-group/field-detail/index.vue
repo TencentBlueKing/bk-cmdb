@@ -668,7 +668,7 @@
         .slider-main {
             max-height: calc(100% - 52px);
             @include scrollbar-y;
-            padding: 20px 40px;
+            padding: 20px 24px;
         }
         .slider-content {
             /deep/ textarea[disabled] {
@@ -724,7 +724,7 @@
             margin-left: 10px;
         }
         .btn-group {
-            padding: 8px 40px;
+            padding: 8px 24px;
             &.is-sticky {
                 border-top: 1px solid #dcdee5;
             }
