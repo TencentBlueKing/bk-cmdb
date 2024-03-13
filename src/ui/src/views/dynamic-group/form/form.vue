@@ -599,7 +599,7 @@
   background: #F5F7FA;
 }
 .dynamic-group-form {
-  padding: 18px 16px 0;
+  padding: 18px 24px 0;
   max-height: 100%;
   @include scrollbar-y;
   .form-item {
@@ -637,7 +637,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 10px 16px;
+  padding: 10px 24px;
   border-top: 1px solid $borderColor;
   background: #FAFBFD;
   :deep(.bk-button) {
