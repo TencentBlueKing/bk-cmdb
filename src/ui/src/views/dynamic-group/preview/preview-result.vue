@@ -31,7 +31,7 @@
         {{$t('刷新')}}
       </bk-button>
     </div>
-    <bk-table v-if="hasCondition" class="resultList"
+    <bk-table v-if="hasCondition" class="result-list"
       ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
@@ -381,7 +381,7 @@
       }
     }
   }
-  .resultList {
+  .result-list {
     margin: 12px 15px 0 24px;
     width: calc(100% - 39px);
   }
