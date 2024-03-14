@@ -13,11 +13,13 @@
 package querybuilder
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 )
 
 const timeLayout = "2006-01-02"
@@ -295,36 +297,36 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 			common.BKDBGTE: r.Value,
 		}
 	case OperatorDatetimeLess:
-		_, err := time.Parse(timeLayout, r.Value.(string))
+		value, err := getDatetime(r.Value)
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLT: r.Value.(string),
+			common.BKDBLT: value,
 		}
 	case OperatorDatetimeLessOrEqual:
-		_, err := time.Parse(timeLayout, r.Value.(string))
+		value, err := getDatetime(r.Value)
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBLTE: r.Value.(string),
+			common.BKDBLTE: value,
 		}
 	case OperatorDatetimeGreater:
-		_, err := time.Parse(timeLayout, r.Value.(string))
+		value, err := getDatetime(r.Value)
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBGT: r.Value.(string),
+			common.BKDBGT: value,
 		}
 	case OperatorDatetimeGreaterOrEqual:
-		_, err := time.Parse(timeLayout, r.Value.(string))
+		value, err := getDatetime(r.Value)
 		if err != nil {
 			return nil, "value", err
 		}
 		filter[r.Field] = map[string]interface{}{
-			common.BKDBGTE: r.Value.(string),
+			common.BKDBGTE: value,
 		}
 	case OperatorBeginsWith:
 		filter[r.Field] = map[string]interface{}{
@@ -381,6 +383,24 @@ func (r AtomRule) ToMgo() (mgoFiler map[string]interface{}, key string, err erro
 		return nil, "operator", fmt.Errorf("unsupported operator: %s", r.Operator)
 	}
 	return filter, "", nil
+}
+
+func getDatetime(value interface{}) (interface{}, error) {
+	valString, isStr := value.(string)
+	if !isStr {
+		return nil, errors.New("get date or time failed, value is not string type")
+	}
+	// 时间类型
+	timeType, isTime := util.IsTime(valString)
+	if isTime {
+		return util.Str2Time(valString, timeType), nil
+	}
+	// 日期类型
+	_, err := time.Parse(timeLayout, valString)
+	if err != nil {
+		return nil, err
+	}
+	return valString, nil
 }
 
 // GetField get rule field
