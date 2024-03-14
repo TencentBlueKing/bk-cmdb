@@ -48,17 +48,17 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, err
 	}
 
-	topoTreeClient, err := biztopo.New(isMaster, loopW)
-	if err != nil {
-		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
-	}
-
 	mainlineClient := mainline.NewMainlineClient()
 	hostClient := host.NewClient()
 
 	customCache, err := custom.New(isMaster, loopW)
 	if err != nil {
 		return nil, fmt.Errorf("new custom resource cache failed, err: %v", err)
+	}
+
+	topoTreeClient, err := biztopo.New(isMaster, loopW, customCache.CacheSet())
+	if err != nil {
+		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
 	}
 
 	cache := &ClientSet{

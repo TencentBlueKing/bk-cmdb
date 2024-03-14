@@ -88,7 +88,7 @@ func (c *PodLabelCache) GetKeys(ctx context.Context, bizID int64, rid string) ([
 	// get pod label keys from db and refresh the cache
 	refreshOpt := &RefreshPodLabelOpt{
 		BizID:      bizID,
-		ReturnType: "keys",
+		ReturnType: LabelKeyReturnType,
 	}
 	keys, err := c.RefreshPodLabel(ctx, refreshOpt, rid)
 	if err != nil {
@@ -124,7 +124,7 @@ func (c *PodLabelCache) GetValues(ctx context.Context, bizID int64, key string, 
 	// get pod label values from db and refresh the cache
 	refreshOpt := &RefreshPodLabelOpt{
 		BizID:      bizID,
-		ReturnType: "values",
+		ReturnType: LabelValueReturnType,
 		LabelKey:   key,
 	}
 	values, err := c.RefreshPodLabel(ctx, refreshOpt, rid)
@@ -206,6 +206,12 @@ type RefreshPodLabelOpt struct {
 	LabelKey string
 }
 
+const (
+	EmptyReturnType      = ""
+	LabelKeyReturnType   = "keys"
+	LabelValueReturnType = "values"
+)
+
 // Validate RefreshPodLabelOpt
 func (opt *RefreshPodLabelOpt) Validate() error {
 	if opt == nil {
@@ -217,9 +223,9 @@ func (opt *RefreshPodLabelOpt) Validate() error {
 	}
 
 	switch opt.ReturnType {
-	case "":
-	case "keys":
-	case "values":
+	case EmptyReturnType:
+	case LabelKeyReturnType:
+	case LabelValueReturnType:
 		if opt.LabelKey == "" {
 			return errors.New("label key is not set")
 		}
@@ -262,11 +268,11 @@ func (c *PodLabelCache) RefreshPodLabel(ctx context.Context, opt *RefreshPodLabe
 	// generate return data
 	results := make([]string, 0)
 	switch opt.ReturnType {
-	case "keys":
+	case LabelKeyReturnType:
 		for key := range keyCntMap {
 			results = append(results, key)
 		}
-	case "values":
+	case LabelValueReturnType:
 		valueCntMap, exists := keyValueCntMap[opt.LabelKey]
 		if !exists {
 			break
@@ -372,15 +378,15 @@ func (c *PodLabelCache) loopRefreshCache() {
 
 			rid := util.GenerateRID()
 			blog.Infof("start loop refresh pod label cache task, rid: %s", rid)
-			c.LoopRefreshCache(rid)
+			c.RefreshCache(rid)
 			lastRefreshTime = now.Day()
 			break
 		}
 	}
 }
 
-// LoopRefreshCache loop refresh pod label cache for all bizs
-func (c *PodLabelCache) LoopRefreshCache(rid string) {
+// RefreshCache loop refresh pod label cache for all bizs
+func (c *PodLabelCache) RefreshCache(rid string) {
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 
 	bizIDs, err := c.getAllBizID(ctx)

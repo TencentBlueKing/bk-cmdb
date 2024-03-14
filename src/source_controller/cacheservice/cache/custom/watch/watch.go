@@ -50,32 +50,46 @@ func Init(loopW stream.LoopInterface, cacheSet *cache.CacheSet) error {
 		return err
 	}
 
+	if err := watcher.watchSharedNsRel(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 type watchOptions struct {
-	name      string
+	watchType WatchType
 	watchOpts *types.WatchOptions
 	doBatch   func(es []*types.Event) (retry bool)
 }
 
+// WatchType is the custom resource watch type
+type WatchType string
+
+const (
+	// PodLabelWatchType is the kube pod label watch type
+	PodLabelWatchType WatchType = "pod_label"
+	// SharedNsRelWatchType is the shared namespace relation watch type
+	SharedNsRelWatchType WatchType = "shared_namespace_relation"
+)
+
 // watchCustomResource watch custom resource
 func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	opt.name = fmt.Sprintf("%s:%s", cache.Namespace, opt.name)
+	name := fmt.Sprintf("%s:%s", cache.Namespace, opt.watchType)
 
-	tokenHandler := tokenhandler.NewSingleTokenHandler(opt.name, mongodb.Client())
+	tokenHandler := tokenhandler.NewSingleTokenHandler(name, mongodb.Client())
 
 	exists, err := tokenHandler.IsTokenExists(ctx)
 	if err != nil {
-		blog.Errorf("check if custom resource %s watch token exists failed, err: %v", opt.name, err)
+		blog.Errorf("check if custom resource %s watch token exists failed, err: %v", name, err)
 		return false, err
 	}
 
 	if exists {
 		startAtTime, err := tokenHandler.GetStartWatchTime(ctx)
 		if err != nil {
-			blog.Errorf("get custom resource %s start watch time failed, err: %v", opt.name, err)
+			blog.Errorf("get custom resource %s start watch time failed, err: %v", name, err)
 			return false, err
 		}
 		opt.watchOpts.StartAtTime = startAtTime
@@ -87,7 +101,7 @@ func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 
 	loopOptions := &types.LoopBatchOptions{
 		LoopOptions: types.LoopOptions{
-			Name:         opt.name,
+			Name:         name,
 			WatchOpt:     opt.watchOpts,
 			TokenHandler: tokenHandler,
 			RetryOptions: &types.RetryOptions{
@@ -102,7 +116,7 @@ func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 	}
 
 	if err = w.loopW.WithBatch(loopOptions); err != nil {
-		blog.Errorf("watch custom resource %s failed, err: %v", opt.name, err)
+		blog.Errorf("watch custom resource %s failed, err: %v", name, err)
 		return false, err
 	}
 

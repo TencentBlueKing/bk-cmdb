@@ -45,3 +45,8 @@ func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) 
 	t.cacheSet.LoopRefreshCache()
 	return t, nil
 }
+
+// CacheSet returns custom resource cache set
+func (c *Cache) CacheSet() *cache.CacheSet {
+	return c.cacheSet
+}

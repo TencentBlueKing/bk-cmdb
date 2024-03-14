@@ -34,17 +34,19 @@ import (
 // watchPodLabel watch pod event for label key and value cache
 func (w *Watcher) watchPodLabel() error {
 	labelWatcher := &podLabelWatcher{
-		labelCache: w.cacheSet.Label,
+		labelCache:    w.cacheSet.Label,
+		sharedNsCache: w.cacheSet.SharedNsRel,
 	}
 
 	opt := &watchOptions{
-		name: "pod_label",
+		watchType: PodLabelWatchType,
 		watchOpts: &streamtypes.WatchOptions{
 			Options: streamtypes.Options{
 				Filter:      make(mapstr.MapStr),
 				EventStruct: new(kubetypes.Pod),
 				Collection:  kubetypes.BKTableNameBasePod,
-				Fields:      []string{kubetypes.BKIDField, kubetypes.BKBizIDField, kubetypes.LabelsField},
+				Fields: []string{kubetypes.BKIDField, kubetypes.BKBizIDField, kubetypes.LabelsField,
+					kubetypes.BKNamespaceIDField},
 			},
 		},
 		doBatch: labelWatcher.doBatch,
@@ -58,14 +60,15 @@ func (w *Watcher) watchPodLabel() error {
 	if !tokenExists {
 		rid := util.GenerateRID()
 		blog.Infof("token not exists, start init all pod label cache task, rid: %s", rid)
-		go w.cacheSet.Label.LoopRefreshCache(rid)
+		go w.cacheSet.Label.RefreshCache(rid)
 	}
 
 	return nil
 }
 
 type podLabelWatcher struct {
-	labelCache *cache.PodLabelCache
+	labelCache    *cache.PodLabelCache
+	sharedNsCache *cache.SharedNsRelCache
 }
 
 // doBatch batch handle pod event for label key and value cache
@@ -80,6 +83,7 @@ func (w *podLabelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
 	// group inserted and deleted pod events
 	insertPodMap := make(map[string]*kubetypes.Pod)
 	delOids := make([]string, 0)
+	nsIDs := make([]int64, 0)
 
 	for idx := range es {
 		one := es[idx]
@@ -88,6 +92,7 @@ func (w *podLabelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
 		case streamtypes.Insert:
 			pod := one.Document.(*kubetypes.Pod)
 			insertPodMap[one.Oid] = pod
+			nsIDs = append(nsIDs, pod.NamespaceID)
 		case streamtypes.Delete:
 			_, exists := insertPodMap[one.Oid]
 			if exists {
@@ -109,16 +114,26 @@ func (w *podLabelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
 		return true
 	}
 
+	for _, archive := range delArchives {
+		nsIDs = append(nsIDs, archive.Detail.NamespaceID)
+	}
+
+	nsIDs = util.IntArrayUnique(nsIDs)
+	asstBizInfo, err := w.sharedNsCache.GetAsstBiz(ctx, nsIDs, rid)
+	if err != nil {
+		return false
+	}
+
 	// get biz to pod label key and value count map
 	keyCnt := make(map[int64]map[string]int64)
 	valueCnt := make(map[int64]map[string]map[string]int64)
 
 	for _, pod := range insertPodMap {
-		w.countPodLabel(pod, keyCnt, valueCnt, 1)
+		w.countPodLabel(pod, asstBizInfo, keyCnt, valueCnt, 1)
 	}
 
 	for _, archive := range delArchives {
-		w.countPodLabel(archive.Detail, keyCnt, valueCnt, -1)
+		w.countPodLabel(archive.Detail, asstBizInfo, keyCnt, valueCnt, -1)
 	}
 
 	// update changed pod label key and value cache
@@ -134,27 +149,35 @@ func (w *podLabelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
 }
 
 // countPodLabel count pod label key and value by biz id
-func (w *podLabelWatcher) countPodLabel(pod *kubetypes.Pod, keyCnt map[int64]map[string]int64,
+func (w *podLabelWatcher) countPodLabel(pod *kubetypes.Pod, asstBiz map[int64]int64, keyCnt map[int64]map[string]int64,
 	valueCnt map[int64]map[string]map[string]int64, cnt int64) {
 
 	if pod == nil || pod.Labels == nil || len(*pod.Labels) == 0 {
 		return
 	}
 
-	_, exists := keyCnt[pod.BizID]
-	if !exists {
-		keyCnt[pod.BizID] = make(map[string]int64)
-		valueCnt[pod.BizID] = make(map[string]map[string]int64)
+	bizs := []int64{pod.BizID}
+	asstBizID, exists := asstBiz[pod.NamespaceID]
+	if exists {
+		bizs = append(bizs, asstBizID)
 	}
 
-	for key, value := range *pod.Labels {
-		key = conv.DecodeDot(key)
-		keyCnt[pod.BizID][key] += cnt
-		_, exists = valueCnt[pod.BizID][key]
+	for _, bizID := range bizs {
+		_, exists = keyCnt[bizID]
 		if !exists {
-			valueCnt[pod.BizID][key] = make(map[string]int64)
+			keyCnt[bizID] = make(map[string]int64)
+			valueCnt[bizID] = make(map[string]map[string]int64)
 		}
-		valueCnt[pod.BizID][key][value] += cnt
+
+		for key, value := range *pod.Labels {
+			key = conv.DecodeDot(key)
+			keyCnt[bizID][key] += cnt
+			_, exists = valueCnt[bizID][key]
+			if !exists {
+				valueCnt[bizID][key] = make(map[string]int64)
+			}
+			valueCnt[bizID][key][value] += cnt
+		}
 	}
 }
 
@@ -174,8 +197,8 @@ func (w *podLabelWatcher) getDeletedPodInfo(ctx context.Context, oids []string, 
 		"coll": kubetypes.BKTableNameBasePod,
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("detail.labels", "detail.bk_biz_id").
-		All(ctx, &delArchives)
+	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("detail.labels", "detail.bk_biz_id",
+		"detail.bk_namespace_id").All(ctx, &delArchives)
 	if err != nil {
 		blog.Errorf("get pod del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
 		return nil, err

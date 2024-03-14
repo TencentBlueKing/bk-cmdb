@@ -42,6 +42,8 @@ const (
 	PodLabelKeyType ResType = "pod_label_key"
 	// PodLabelValueType is the kube pod label value type
 	PodLabelValueType ResType = "pod_label_value"
+	// SharedNsAsstBizType is the shared namespace to associated biz type
+	SharedNsAsstBizType ResType = "shared_ns_asst_biz"
 )
 
 const (

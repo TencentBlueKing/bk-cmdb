@@ -51,10 +51,8 @@ func (c *CountCache) GetDataList(ctx context.Context, key string, rid string) ([
 			return nil, err
 		}
 
-		for i, data := range list {
-			if i%2 == 0 {
-				all = append(all, data)
-			}
+		for i := 0; i < len(list)-1; i += 2 {
+			all = append(all, list[i])
 		}
 
 		if nextCursor == uint64(0) {

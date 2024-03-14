@@ -24,17 +24,20 @@ import (
 
 // CacheSet is the set of custom resource caches
 type CacheSet struct {
-	Label *PodLabelCache
+	Label       *PodLabelCache
+	SharedNsRel *SharedNsRelCache
 }
 
 // New CacheSet
 func New(isMaster discovery.ServiceManageInterface) *CacheSet {
 	return &CacheSet{
-		Label: NewPodLabelCache(isMaster),
+		Label:       NewPodLabelCache(isMaster),
+		SharedNsRel: NewSharedNsRelCache(isMaster),
 	}
 }
 
 // LoopRefreshCache loop refresh all caches
 func (c *CacheSet) LoopRefreshCache() {
 	go c.Label.loopRefreshCache()
+	go c.SharedNsRel.loopRefreshCache()
 }
