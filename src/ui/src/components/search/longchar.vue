@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand" v-if="multiple">
+  <div class="g-expand" v-if="multiple">
     <bk-tag-input ref="tagInput"
       allow-create
       allow-auto-match

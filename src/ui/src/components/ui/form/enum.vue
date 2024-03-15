@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand">
+  <div class="g-expand">
     <bk-select class="form-enum-selector"
       v-model="selected"
       :clearable="allowClear"
@@ -24,7 +24,8 @@
         boundary: 'window'
       }"
       v-bind="$attrs"
-      ref="selector">
+      ref="selector"
+      @toggle="handleToggle">
       <bk-option
         v-for="option in options"
         :key="option.id"
@@ -37,8 +38,11 @@
 </template>
 
 <script>
+  import zIndexMixin from './mixins/zIndex'
+
   export default {
     name: 'cmdb-form-enum',
+    mixins: [zIndexMixin],
     props: {
       value: {
         type: [Array, String, Number],

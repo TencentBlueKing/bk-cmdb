@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand">
+  <div class="g-expand">
     <bk-select
       searchable
       v-model="localValue"

@@ -137,7 +137,7 @@
             width: 100%;
             height: 32px;
             min-height: 32px;
-            z-index: 2;
+            z-index: 999;
             @include scrollbar-y;
             &:hover {
               height: auto !important;

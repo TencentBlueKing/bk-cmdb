@@ -239,10 +239,10 @@
         const value = this.instState[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
-        this.$nextTick(() => {
+        setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
-          component[0] && component[0].focus && component[0].focus()
-        })
+          component?.[0]?.focus()
+        }, 100)
       },
       async confirm() {
         const { property, value } = this.editState

@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand" v-if="displayType === 'selector'">
+  <div class="g-expand" v-if="displayType === 'selector'">
     <bk-select
       searchable
       v-model="localValue"

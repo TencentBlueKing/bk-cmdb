@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand">
+  <div class="g-expand">
     <bk-tag-input ref="tagInput"
       v-model="localValue"
       v-bind="$attrs"

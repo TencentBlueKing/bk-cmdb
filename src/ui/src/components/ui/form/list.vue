@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="expand">
+  <div class="g-expand">
     <bk-select class="form-list-selector"
       v-model="selected"
       :clearable="allowClear"
@@ -24,7 +24,8 @@
         boundary: 'window'
       }"
       v-bind="$attrs"
-      ref="selector">
+      ref="selector"
+      @toggle="handleToggle">
       <bk-option v-for="(option, index) in options"
         :key="index"
         :id="option"
@@ -35,8 +36,11 @@
 </template>
 
 <script>
+  import zIndexMixin from './mixins/zIndex'
+
   export default {
     name: 'cmdb-form-list',
+    mixins: [zIndexMixin],
     props: {
       value: {
         type: [Array, String],
