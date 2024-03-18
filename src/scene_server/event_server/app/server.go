@@ -213,14 +213,7 @@ func (es *EventServer) initConfigs() error {
 			blog.Errorf("get gse api gateway config error, err: %v", err)
 			return err
 		}
-		config.Address, err = apigwutil.ReplaceApiName(config.Address, apigwutil.GseName)
-		if err != nil {
-			blog.Errorf("replace the template var in api gateway address failed, addr: %v, apiName: %v, err: %v",
-				config.Address, apigwutil.GseName, err)
-			return err
-		}
-
-		es.config.GseApiGWConfig = config
+		es.config.ApiGWConfig = config
 	}
 
 	return nil
@@ -308,7 +301,7 @@ func (es *EventServer) runSyncData() error {
 		}
 
 	case eventtype.V2:
-		gwClient, err = gse.NewGseApiGWClient(es.config.GseApiGWConfig, es.engine.Metric().Registry())
+		gwClient, err = gse.NewGseApiGWClient(es.config.ApiGWConfig, es.engine.Metric().Registry())
 		if err != nil {
 			blog.Errorf("new gse api gateway client error, err: %v", err)
 			return err
