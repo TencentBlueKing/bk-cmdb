@@ -36,7 +36,7 @@
 </template>
 
 <script>
-  import zIndexMixin from './mixins/zIndex'
+  import zIndexMixin from './mixins/z-index'
 
   export default {
     name: 'cmdb-form-list',

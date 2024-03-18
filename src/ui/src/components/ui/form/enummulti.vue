@@ -42,7 +42,7 @@
 <script>
   import isEqual from 'lodash/isEqual'
   import { isEmptyPropertyValue } from '@/utils/tools'
-  import zIndexMixin from './mixins/zIndex'
+  import zIndexMixin from './mixins/z-index'
 
   export default {
     name: 'cmdb-form-enummulti',
