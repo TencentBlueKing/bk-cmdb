@@ -10,7 +10,45 @@
 | bk_biz_id           | int    | 是  | 业务id                                      |
 | fields              | array  | 是  | 查询字段，所有字段均为set定义的字段，这些字段包括预置字段，也包括用户自定义字段 |
 | condition           | dict   | 是  | 查询条件，所有字段均为Set定义的字段，这些字段包括预置字段，也包括用户自定义字段 |
+| filter| object| 否  | 属性组合查询条件                                                         |
+| time_condition | object | 否  | 按时间查询模型实例的查询条件  |
 | page                | dict   | 是  | 分页条件                                      |
+
+- `filter`与`condition`两个参数只能有一个生效，参数`condition`不建议继续使用。
+- 参数`filter` 中涉及到的数组类元素个数不超过500个。参数`filter`中涉及到的`rules`数量不超过20个。参数`filter`的嵌套层级不超过3层。
+
+#### filter
+| 字段        | 类型     | 必选 | 描述        |
+|-----------|--------|----|-----------|
+| condition | string | 是  | 规则操作符     |
+| rules     | array  | 是  | 过滤集群的范围规则 |
+
+#### rules
+
+过滤规则为三元组 `field`, `operator`, `value`
+
+| 字段       | 类型     | 必选 | 描述                                                                                                |
+|----------|--------|----|---------------------------------------------------------------------------------------------------|
+| field    | string | 是  | 字段名                                                                                               |
+| operator | string | 是  | 操作符,可选值 equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
+| value    | -      | 否  | 操作数,不同的operator对应不同的value格式                                                                       |
+
+组装规则可参考: <https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md>
+
+#### time_condition
+
+| 字段    | 类型     | 必选 | 描述           |
+|-------|--------|----|--------------|
+| oper  | string | 是  | 操作符，目前只支持and |
+| rules | array  | 是  | 时间查询条件       |
+
+#### time_condition.rules
+
+| 字段    | 类型     | 必选 | 描述                          |
+|-------|--------|----|-----------------------------|
+| field | string | 是  | 取值为模型的字段名                   |
+| start | string | 是  | 起始时间，格式为yyyy-MM-dd hh:mm:ss |
+| end   | string | 是  | 结束时间，格式为yyyy-MM-dd hh:mm:ss |  
 
 #### page
 
@@ -28,8 +66,25 @@
   "fields": [
     "bk_set_name"
   ],
-  "condition": {
-    "bk_set_name": "test"
+  "filter": {
+    "condition": "AND",
+    "rules": [
+      {
+        "field": "bk_set_name",
+        "operator": "equal",
+        "value": "test"
+      }
+    ]
+  },
+  "time_condition": {
+    "oper": "and",
+    "rules": [
+      {
+        "field": "create_time",
+        "start": "2021-05-13 01:00:00",
+        "end": "2021-05-14 01:00:00"
+      }
+    ]
   },
   "page": {
     "start": 0,
