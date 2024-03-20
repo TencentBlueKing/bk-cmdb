@@ -15,30 +15,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package watch defines the biz topology cache data watch logics
-package watch
+// Package custom defines the custom resource caching logics
+package custom
 
 import (
+	"fmt"
+
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/watch"
 	"configcenter/src/storage/stream"
 )
 
-// Watcher defines mongodb event watcher for biz topology
-type Watcher struct {
-	loopW    stream.LoopInterface
+// Cache defines the custom resource caching logics
+type Cache struct {
 	cacheSet *cache.CacheSet
 }
 
-// New  biz topology mongodb event watcher
-func New(loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Watcher, error) {
-	watcher := &Watcher{
-		loopW:    loopW,
-		cacheSet: cacheSet,
+// New Cache
+func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) (*Cache, error) {
+	t := &Cache{
+		cacheSet: cache.New(isMaster),
 	}
 
-	if err := watcher.watchKube(); err != nil {
-		return nil, err
+	if err := watch.Init(loopW, t.cacheSet); err != nil {
+		return nil, fmt.Errorf("initialize custom resource watcher failed, err: %v", err)
 	}
 
-	return watcher, nil
+	t.cacheSet.LoopRefreshCache()
+	return t, nil
+}
+
+// CacheSet returns custom resource cache set
+func (c *Cache) CacheSet() *cache.CacheSet {
+	return c.cacheSet
 }

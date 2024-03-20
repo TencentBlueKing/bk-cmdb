@@ -15,30 +15,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package watch defines the biz topology cache data watch logics
-package watch
+// Package cache defines the custom resource redis cache logics
+package cache
 
 import (
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
-	"configcenter/src/storage/stream"
+	"configcenter/src/apimachinery/discovery"
 )
 
-// Watcher defines mongodb event watcher for biz topology
-type Watcher struct {
-	loopW    stream.LoopInterface
-	cacheSet *cache.CacheSet
+// CacheSet is the set of custom resource caches
+type CacheSet struct {
+	Label       *PodLabelCache
+	SharedNsRel *SharedNsRelCache
 }
 
-// New  biz topology mongodb event watcher
-func New(loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Watcher, error) {
-	watcher := &Watcher{
-		loopW:    loopW,
-		cacheSet: cacheSet,
+// New CacheSet
+func New(isMaster discovery.ServiceManageInterface) *CacheSet {
+	return &CacheSet{
+		Label:       NewPodLabelCache(isMaster),
+		SharedNsRel: NewSharedNsRelCache(isMaster),
 	}
+}
 
-	if err := watcher.watchKube(); err != nil {
-		return nil, err
-	}
-
-	return watcher, nil
+// LoopRefreshCache loop refresh all caches
+func (c *CacheSet) LoopRefreshCache() {
+	go c.Label.loopRefreshCache()
+	go c.SharedNsRel.loopRefreshCache()
 }

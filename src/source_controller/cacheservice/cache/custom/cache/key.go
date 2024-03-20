@@ -15,30 +15,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package watch defines the biz topology cache data watch logics
-package watch
+package cache
 
 import (
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
-	"configcenter/src/storage/stream"
+	"fmt"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 )
 
-// Watcher defines mongodb event watcher for biz topology
-type Watcher struct {
-	loopW    stream.LoopInterface
-	cacheSet *cache.CacheSet
+// Namespace is the custom resource cache key namespace
+const Namespace = common.BKCacheKeyV3Prefix + "custom_res"
+
+// Key is the custom resource cache key
+type Key struct {
+	// resType is the custom resource type
+	resType types.ResType
+	// ttl is the ttl of the custom resource cache
+	ttl time.Duration
 }
 
-// New  biz topology mongodb event watcher
-func New(loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Watcher, error) {
-	watcher := &Watcher{
-		loopW:    loopW,
-		cacheSet: cacheSet,
-	}
+// Type returns the cache key's type
+func (k Key) Type() types.ResType {
+	return k.resType
+}
 
-	if err := watcher.watchKube(); err != nil {
-		return nil, err
-	}
+// TTL the cache key's ttl
+func (k Key) TTL() time.Duration {
+	return k.ttl
+}
 
-	return watcher, nil
+// Key is the redis key to store the custom resource cache data
+func (k Key) Key(key string) string {
+	return fmt.Sprintf("%s:%s:%s", Namespace, k.resType, key)
 }

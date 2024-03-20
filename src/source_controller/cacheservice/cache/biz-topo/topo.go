@@ -32,6 +32,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	topolgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/topo"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/watch"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream"
 )
@@ -43,12 +44,14 @@ type Topo struct {
 }
 
 // New Topo
-func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) (*Topo, error) {
+func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Topo,
+	error) {
+
 	t := &Topo{
 		isMaster: isMaster,
 	}
 
-	watcher, err := watch.New(loopW)
+	watcher, err := watch.New(loopW, cacheSet)
 	if err != nil {
 		return nil, fmt.Errorf("new watcher failed, err: %v", err)
 	}
