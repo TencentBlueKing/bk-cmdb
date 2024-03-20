@@ -515,8 +515,12 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 
 		attr, ok := propertyMap[keyValArr[0]]
 		if !ok {
+			allProperties := make([]string, len(primaryArr))
+			for i, prim := range primaryArr {
+				allProperties[i] = strings.Split(prim, common.ExcelAsstPrimaryKeyJoinChar)[0]
+			}
 			return nil, fmt.Errorf(ia.lang.Languagef("import_asst_obj_primary_property_str_not_found",
-				objID, keyValArr[0]))
+				objID, strings.Join(allProperties, "+")))
 		}
 
 		realVal, err := convStrToCCType(keyValArr[1], attr)
