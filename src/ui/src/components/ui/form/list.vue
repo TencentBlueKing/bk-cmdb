@@ -11,30 +11,36 @@
 -->
 
 <template>
-  <bk-select class="form-list-selector"
-    v-model="selected"
-    :clearable="allowClear"
-    :searchable="searchable"
-    :disabled="disabled"
-    :multiple="multiple"
-    :placeholder="placeholder"
-    :font-size="fontSize"
-    :popover-options="{
-      boundary: 'window'
-    }"
-    v-bind="$attrs"
-    ref="selector">
-    <bk-option v-for="(option, index) in options"
-      :key="index"
-      :id="option"
-      :name="option">
-    </bk-option>
-  </bk-select>
+  <div class="g-expand">
+    <bk-select class="form-list-selector"
+      v-model="selected"
+      :clearable="allowClear"
+      :searchable="searchable"
+      :disabled="disabled"
+      :multiple="multiple"
+      :placeholder="placeholder"
+      :font-size="fontSize"
+      :popover-options="{
+        boundary: 'window'
+      }"
+      v-bind="$attrs"
+      ref="selector"
+      @toggle="handleToggle">
+      <bk-option v-for="(option, index) in options"
+        :key="index"
+        :id="option"
+        :name="option">
+      </bk-option>
+    </bk-select>
+  </div>
 </template>
 
 <script>
+  import zIndexMixin from './mixins/z-index'
+
   export default {
     name: 'cmdb-form-list',
+    mixins: [zIndexMixin],
     props: {
       value: {
         type: [Array, String],

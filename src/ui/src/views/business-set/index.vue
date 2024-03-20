@@ -36,7 +36,7 @@
           :properties="fastSearchProperties"
           @change="handleFilterFieldChange">
         </cmdb-property-selector>
-        <component class="filter-value fl"
+        <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
@@ -534,6 +534,7 @@
     .options-filter {
         position: relative;
         margin-right: 10px;
+        width: 439px;
         .filter-selector {
             width: 120px;
             border-radius: 2px 0 0 2px;

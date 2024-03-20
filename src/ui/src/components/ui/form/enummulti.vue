@@ -11,34 +11,42 @@
 -->
 
 <template>
-  <bk-select class="form-enummulti-selector"
-    v-model="selected"
-    :clearable="allowClear"
-    :searchable="searchable"
-    :disabled="disabled"
-    :multiple="localMultiple"
-    :placeholder="placeholder"
-    :font-size="fontSize"
-    :popover-options="{
-      boundary: 'window'
-    }"
-    v-bind="$attrs"
-    ref="selector">
-    <bk-option
-      v-for="(option, index) in options"
-      :key="index"
-      :id="option.id"
-      :name="option.name">
-    </bk-option>
-  </bk-select>
+  <div class="g-expand">
+    <bk-select class="form-enummulti-selector"
+      v-model="selected"
+      :clearable="allowClear"
+      :searchable="searchable"
+      :disabled="disabled"
+      display-tag
+      selected-style="checkbox"
+      :multiple="localMultiple"
+      :placeholder="placeholder"
+      :font-size="fontSize"
+      :popover-options="{
+        boundary: 'window'
+      }"
+      v-bind="$attrs"
+      ref="selector"
+      @toggle="handleToggle">
+      <bk-option
+        v-for="(option, index) in options"
+        :key="index"
+        :id="option.id"
+        :name="option.name">
+      </bk-option>
+    </bk-select>
+  </div>
+
 </template>
 
 <script>
   import isEqual from 'lodash/isEqual'
   import { isEmptyPropertyValue } from '@/utils/tools'
+  import zIndexMixin from './mixins/z-index'
 
   export default {
     name: 'cmdb-form-enummulti',
+    mixins: [zIndexMixin],
     props: {
       value: {
         type: [Array, String],

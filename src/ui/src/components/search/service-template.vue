@@ -11,23 +11,24 @@
 -->
 
 <template>
-  <bk-select
-    v-if="displayType === 'selector'"
-    multiple
-    searchable
-    display-tag
-    selected-style="checkbox"
-    v-bind="$attrs"
-    v-model="localValue"
-    @clear="() => $emit('clear')"
-    @toggle="handleToggle">
-    <bk-option
-      v-for="template in list"
-      :key="template.id"
-      :id="template.id"
-      :name="template.name">
-    </bk-option>
-  </bk-select>
+  <div class="g-expand" v-if="displayType === 'selector'">
+    <bk-select
+      multiple
+      searchable
+      display-tag
+      selected-style="checkbox"
+      v-bind="$attrs"
+      v-model="localValue"
+      @clear="() => $emit('clear')"
+      @toggle="handleToggle">
+      <bk-option
+        v-for="template in list"
+        :key="template.id"
+        :id="template.id"
+        :name="template.name">
+      </bk-option>
+    </bk-select>
+  </div>
   <span v-else>
     <slot name="info-prepend"></slot>
     {{info}}

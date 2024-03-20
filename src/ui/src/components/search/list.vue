@@ -11,21 +11,23 @@
 -->
 
 <template>
-  <bk-select
-    multiple
-    display-tag
-    selected-style="checkbox"
-    searchable
-    v-model="localValue"
-    v-bind="$attrs"
-    @clear="() => $emit('clear')"
-    @toggle="handleToggle">
-    <bk-option v-for="(option, index) in options"
-      :key="index"
-      :id="option"
-      :name="option">
-    </bk-option>
-  </bk-select>
+  <div class="g-expand">
+    <bk-select
+      multiple
+      display-tag
+      selected-style="checkbox"
+      searchable
+      v-model="localValue"
+      v-bind="$attrs"
+      @clear="() => $emit('clear')"
+      @toggle="handleToggle">
+      <bk-option v-for="(option, index) in options"
+        :key="index"
+        :id="option"
+        :name="option">
+      </bk-option>
+    </bk-select>
+  </div>
 </template>
 
 <script>
