@@ -418,7 +418,7 @@
 
 <style lang="scss" scoped>
     .create-layout {
-        padding: 10px 27px;
+        padding: 10px 24px;
         .create-form-item + .create-form-item {
             margin-top: 13px;
             font-size: 0;

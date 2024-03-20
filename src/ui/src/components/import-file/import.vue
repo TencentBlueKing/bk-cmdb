@@ -51,7 +51,7 @@
 
 <style lang="scss" scoped>
   .import {
-    padding: 20px 28px;
+    padding: 20px 24px;
     .import-steps {
       width: 350px;
       margin: 0 auto;

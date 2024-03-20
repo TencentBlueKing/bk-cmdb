@@ -296,7 +296,7 @@
 
 <style lang="scss" scoped>
   .custom-group {
-    padding-left: 32px;
+    padding-left: 24px;
     margin: 8px 0 16px 0;
 
     .group-title {

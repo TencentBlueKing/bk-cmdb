@@ -343,7 +343,7 @@
     .upload-file {
         position: relative;
         height:182px;
-        margin: 30px 29px 0 33px;
+        margin: 30px 24px 0;
         padding: 33px 0;
         text-align: center;
         overflow: hidden;
