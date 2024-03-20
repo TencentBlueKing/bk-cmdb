@@ -12,11 +12,12 @@
 
 import Axios from 'axios'
 import md5 from 'md5'
-import CachedPromise from './_cached-promise'
-import RequestQueue from './_request-queue'
+import has from 'has'
 import { $error } from '@/magicbox'
 import i18n, { language } from '@/i18n'
-import has from 'has'
+import { showLoginModal } from '@/utils/login-modal'
+import CachedPromise from './_cached-promise'
+import RequestQueue from './_request-queue'
 import customHeaders from './custom-header'
 
 // axios实例
@@ -176,12 +177,7 @@ function handleReject(error, config) {
     const { status, data } = error.response
     const nextError = { message: error.message, status }
     if (status === 401) {
-      if (window.loginModal) {
-        window.loginModal.show()
-      } else {
-        // 接口401需要拿html中定义的Site
-        window.Site.login && (window.location.href = window.Site.login)
-      }
+      showLoginModal()
     } else if (data && data.bk_error_msg) {
       nextError.message = data.bk_error_msg
     } else if (status === 403) {

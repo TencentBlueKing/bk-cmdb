@@ -26,18 +26,12 @@
     <the-header></the-header>
     <router-view class="views-layout" :name="topView" ref="topView"></router-view>
     <the-permission-modal ref="permissionModal"></the-permission-modal>
-    <the-login-modal ref="loginModal"
-      v-if="loginUrl"
-      :login-url="loginUrl"
-      :success-url="loginSuccessUrl">
-    </the-login-modal>
   </div>
 </template>
 
 <script>
   import theHeader from '@/components/layout/header'
   import thePermissionModal from '@/components/modal/permission'
-  import theLoginModal from '@blueking/paas-login'
   import theNotice from '@/components/notice'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { MENU_INDEX } from '@/dictionary/menu-symbol'
@@ -47,14 +41,12 @@
     components: {
       theNotice,
       theHeader,
-      thePermissionModal,
-      theLoginModal
+      thePermissionModal
     },
     data() {
       const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
       return {
         showBrowserTips,
-        loginSuccessUrl: `${window.location.origin}/static/login_success.html`,
         showNotice: false,
         noticeHeight: 0
       }
@@ -72,17 +64,6 @@
         const [topRoute] = this.$route.matched
         return (topRoute && topRoute.meta.view) || 'default'
       },
-      loginUrl() {
-        if (process.env.NODE_ENV === 'development') {
-          return ''
-        }
-        const siteLoginUrl = this.$Site.login || ''
-        const [loginBaseUrl] = siteLoginUrl.split('?')
-        if (loginBaseUrl) {
-          return `${loginBaseUrl}plain/`
-        }
-        return ''
-      },
       enableNotice() {
         if (window.Site.enableNotification === false) {
           return false
@@ -93,7 +74,6 @@
     mounted() {
       addResizeListener(this.$el, this.calculateAppHeight)
       window.permissionModal = this.$refs.permissionModal
-      window.loginModal = this.$refs.loginModal
 
       // 在body标签添加语言标识属性，用于插入到body下的内容进行国际化处理
       document.body.setAttribute('lang', this.$i18n.locale)
