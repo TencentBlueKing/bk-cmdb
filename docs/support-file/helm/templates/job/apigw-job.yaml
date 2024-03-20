@@ -29,6 +29,12 @@ spec:
           value: {{ .Values.common.apiGW.appSecret }}
         - name: BK_API_URL_TMPL
           value: {{ .Values.common.apiGW.address }}
+        - name: BK_CMDB_HOST
+          value: {{ .Values.apigatewaySync.host }}
+        - name: BK_CMDB_MAINTAINER
+          value: {{ .Values.apigatewaySync.maintainer }}
+        - name: BK_CMDB_STAGE_NAME
+          value: {{ .Values.apigatewaySync.stageName }}
         resources:
           limits:
             cpu: 200m

@@ -1953,3 +1953,6 @@ apigatewaySync:
   image:
     repository: blueking/cmdb-apigw-manager
     tag:
+  host: "http://bk-cmdb-api"
+  maintainer: "admin"
+  stageName: "prod"

@@ -29,11 +29,11 @@ apigateway:
   allow_delete_sensitive_params: false
   # 网关维护人员，仅维护人员有管理网关的权限
   maintainers:
-    - "admin"
+    - {{ environ.BK_CMDB_MAINTAINER }}
 
 # 定义环境信息，用于命令 `sync_apigw_stage`
 stage:
-  name: "prod"
+  name: {{ environ.BK_CMDB_STAGE_NAME }}
   description: "正式环境"
   # 环境的英文名，蓝鲸官方网关需提供，以支持国际化
   description_en: "Production Environment"
@@ -48,7 +48,7 @@ stage:
       loadbalance: "roundrobin"
       hosts:
         # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
-        - host: "http://bk-cmdb-api"
+        - host: {{ environ.BK_CMDB_HOST }}
           weight: 100
     # Header转换；如未使用，可去除此配置
     transform_headers:
