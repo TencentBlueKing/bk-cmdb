@@ -11,15 +11,18 @@
 -->
 
 <template>
-  <bk-tag-input ref="tagInput"
-    v-model="localValue"
-    v-bind="$attrs"
-    :trigger="trigger"
-    :list="list"
-    @removeAll="() => $emit('clear')"
-    @click.native="handleToggle(true)"
-    @blur="handleToggle(false, ...arguments)">
-  </bk-tag-input>
+  <div class="g-expand">
+    <bk-tag-input ref="tagInput"
+      v-model="localValue"
+      v-bind="$attrs"
+      :collapse-tags="true"
+      :trigger="trigger"
+      :list="list"
+      @removeAll="() => $emit('clear')"
+      @click.native="handleToggle(true)"
+      @blur="handleToggle(false, ...arguments)">
+    </bk-tag-input>
+  </div>
 </template>
 
 <script>

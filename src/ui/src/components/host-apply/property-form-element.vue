@@ -63,6 +63,9 @@
 
 <style lang="scss" scoped>
     .property-form-element {
+        position: relative;
+        min-height: 32px;
+
         .form-error {
             margin-top: 2px;
             font-size: 12px;

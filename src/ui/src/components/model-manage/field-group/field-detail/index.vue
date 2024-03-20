@@ -710,6 +710,9 @@
               display: flex;
               align-items: center;
               gap: 12px;
+              min-height: 32px;
+              position: relative;
+
               .checkbox {
                 flex: none;
               }
