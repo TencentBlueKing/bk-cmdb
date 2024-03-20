@@ -15,7 +15,7 @@
     <bk-select class="form-enum-selector"
       v-model="selected"
       :clearable="allowClear"
-      :searchable="searchable"
+      :searchable="true"
       :disabled="disabled"
       :multiple="multiple"
       :placeholder="placeholder"
@@ -34,7 +34,6 @@
       </bk-option>
     </bk-select>
   </div>
-
 </template>
 
 <script>
@@ -80,9 +79,6 @@
       }
     },
     computed: {
-      searchable() {
-        return this.options.length > 7
-      },
       selected: {
         get() {
           if (this.isEmpty(this.value)) {

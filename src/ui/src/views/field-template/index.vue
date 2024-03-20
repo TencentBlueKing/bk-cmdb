@@ -433,12 +433,17 @@
     <div class="toolbar">
       <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
         <template #default="{ disabled }">
-          <bk-button
-            theme="primary"
-            :disabled="disabled"
-            @click="handleCreate">
-            {{$t('新建')}}
-          </bk-button>
+          <span v-bk-tooltips.top="{
+            content: $t('创建字段组合模板上限提示'),
+            disabled: !disabled && table.pagination.count <= 10000
+          }">
+            <bk-button
+              theme="primary"
+              :disabled="disabled"
+              @click="handleCreate">
+              {{$t('新建')}}
+            </bk-button>
+          </span>
         </template>
       </cmdb-auth>
       <search-select

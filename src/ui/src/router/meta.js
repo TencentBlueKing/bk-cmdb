@@ -40,5 +40,8 @@ export default class Meta {
     }, data.layout)
 
     this.view = 'default'
+
+    // 自定义扩展数据
+    this.extra = {}
   }
 }

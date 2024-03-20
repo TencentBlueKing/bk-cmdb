@@ -15,7 +15,7 @@
     <bk-select class="form-list-selector"
       v-model="selected"
       :clearable="allowClear"
-      :searchable="searchable"
+      :searchable="true"
       :disabled="disabled"
       :multiple="multiple"
       :placeholder="placeholder"
@@ -78,11 +78,6 @@
     data() {
       return {
         selected: this.multiple ? [] : ''
-      }
-    },
-    computed: {
-      searchable() {
-        return this.options.length > 7
       }
     },
     watch: {
