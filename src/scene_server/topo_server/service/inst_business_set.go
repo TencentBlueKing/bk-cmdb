@@ -18,8 +18,10 @@ import (
 	"reflect"
 	"strconv"
 
+	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -179,6 +181,33 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 		if err != nil {
 			blog.Errorf("create business set failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
+		}
+
+		// register business set resource creator action to iam
+		if auth.EnableAuthorize() {
+			id, err := bizSet.Int64(common.BKBizSetIDField)
+			if err != nil {
+				blog.Errorf("get biz set id failed, err: %v, biz set: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
+				return err
+			}
+
+			name, err := bizSet.String(common.BKBizSetNameField)
+			if err != nil {
+				blog.Errorf("get biz set name failed, err: %v, biz set: %#v, rid: %s", err, bizSet, ctx.Kit.Rid)
+				return err
+			}
+
+			iamInstance := metadata.IamInstanceWithCreator{
+				Type:    string(iam.BizSet),
+				ID:      strconv.FormatInt(id, 10),
+				Name:    name,
+				Creator: ctx.Kit.User,
+			}
+			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			if err != nil {
+				blog.Errorf("register created biz set to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				return err
+			}
 		}
 		return nil
 	})

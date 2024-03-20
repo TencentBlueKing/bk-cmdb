@@ -314,7 +314,7 @@
     background: #fafbfd;
     border: 1px dashed #c4c6cc;
     border-radius: 3px;
-    margin: 30px 29px 0 33px;
+    margin: 30px 24px 0;
     &:hover {
       border-color: $primaryColor;
       .trigger-icon {
@@ -369,7 +369,7 @@
     font-size: 14px;
   }
 
-  .upload-file{
+  .upload-file {
     &-name,
     &-size,
     &-status,
@@ -409,7 +409,6 @@
         transition: width 20s;
       }
     }
-
     &.uploaded {
       &:before {
         background: #e3f5eb;

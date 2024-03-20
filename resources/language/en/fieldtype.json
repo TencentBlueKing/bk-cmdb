@@ -13,6 +13,9 @@
 	"field_type_bool": "boolean",
 	"field_type_bool_true": "Yes",
 	"field_type_bool_false": "No",
+	"field_type_organization":"organization",
+	"field_type_list":"list",
+	"field_type_innertable":"table",
 
 	"field_name": "Field name(Please do not edit)",
 	"field_type": "Field type(Please do not edit)",

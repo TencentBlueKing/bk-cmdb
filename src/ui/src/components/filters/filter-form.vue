@@ -603,7 +603,7 @@
         @include scrollbar-y;
     }
     .filter-form {
-        padding: 0 10px;
+        padding: 0 14px;
     }
     .filter-ip {
         padding: 0 10px 10px;
@@ -671,7 +671,7 @@
     .filter-options {
         display: flex;
         align-items: center;
-        padding: 10px 20px;
+        padding: 10px 24px;
         &.is-sticky {
             border-top: 1px solid $borderColor;
             background-color: #fff;

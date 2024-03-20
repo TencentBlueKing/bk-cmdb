@@ -623,6 +623,9 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	case common.HostOSTypeName[common.HostOSTypeEnumFreeBSD]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumFreeBSD
+	case common.HostOSTypeName[common.HostOSTypeEnumMacOS]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumMacOS
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}
@@ -785,6 +788,9 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	case common.HostOSTypeName[common.HostOSTypeEnumFreeBSD]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumFreeBSD
+	case common.HostOSTypeName[common.HostOSTypeEnumMacOS]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumMacOS
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}

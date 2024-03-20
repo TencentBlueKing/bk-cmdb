@@ -1,94 +1,31 @@
-# spec_version 配置文件版本号，必填，固定值 1
-spec_version: 1
+#!/bin/bash
 
-# 定义发布内容，用于命令 `create_version_and_release_apigw`
-release:
-  # 发布版本号；
-  # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 1.0.0
-  # 版本标题
-  title: "1.0.0"
-  # 版本描述
-  comment: "1.0.0"
+# 加载 apigw-manager 原始镜像中的通用函数
+source /apigw-manager/bin/functions.sh
 
-# 定义网关基本信息，用于命令 `sync_apigw_config`
-apigateway:
-  description: "蓝鲸配置平台"
-  # 网关的英文描述，蓝鲸官方网关需提供英文描述，以支持国际化
-  description_en: "BlueKing Configuration Management DataBase"
-  # 是否公开；公开，则用户可查看资源文档、申请资源权限；不公开，则网关对用户隐藏
-  is_public: true
-  # 标记网关为官方网关，网关名需以 `bk-` 开头，可选；非官方网关，可去除此配置
-  api_type: 1
-  # 应用请求网关时，是否允许从请求参数 (querystring, body) 中获取蓝鲸认证信息，默认值为 true；
-  # 如果为 false，则只能从请求头 X-Bkapi-Authorization 获取蓝鲸认证信息；
-  # 新接入的网关，可以设置为 false，已接入的网关，待推动所有调用者将认证信息放到请求头后，可设置为 false
-  allow_auth_from_params: false
-  # 网关请求后端时，是否删除请求参数 (querystring, body) 中的蓝鲸认证敏感信息，比如 bk_token，为 true 表示允许删除；
-  # 待请求网关的所有调用者，将认证参数放到请求头 X-Bkapi-Authorization 时，可将此值设置为 false
-  allow_delete_sensitive_params: false
-  # 网关维护人员，仅维护人员有管理网关的权限
-  maintainers:
-    - "admin"
+# 待同步网关名，需修改为实际网关名；
+# - 如在下面指令的参数中，指定了参数 --gateway-name=${gateway_name}，则使用该参数指定的网关名
+# - 如在下面指令的参数中，未指定参数 --gateway-name，则使用 Django settings BK_APIGW_NAME
+gateway_name="bk-cmdb"
 
-# 定义环境信息，用于命令 `sync_apigw_stage`
-stage:
-  name: "prod"
-  description: "正式环境"
-  # 环境的英文名，蓝鲸官方网关需提供，以支持国际化
-  description_en: "Production Environment"
-  # 环境变量；如未使用，可去除此配置
-  # vars:
-  #   key: "value"
-  # 代理配置
-  proxy_http:
-    timeout: 30
-    # 负载均衡类型 + Hosts
-    upstreams:
-      loadbalance: "roundrobin"
-      hosts:
-        # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
-        - host: "http://bk-cmdb-api"
-          weight: 100
-    # Header转换；如未使用，可去除此配置
-    transform_headers:
-      # 设置Headers
-      set:
-        X-Bkapi-Supplier-Account: "0"
+# 待同步网关、资源定义文件
+definition_file="/data/definition.yaml"
+resources_file="/data/resources.yaml"
 
-# 主动授权，网关主动给应用，添加访问网关所有资源的权限；
-# 用于命令 `grant_apigw_permissions`
-grant_permissions:
-  - bk_app_code: "{{ settings.BK_APP_CODE }}"
-    # 授权维度，可选值：gateway，按网关授权，包括网关下所有资源，以及未来新创建的资源
-    grant_dimension: "gateway"
-  - bk_app_code: "bk_job"
-    grant_dimension: "resource"
-    resource_names:
-      - list_kube_container_by_topo
-      - get_biz_kube_cache_topo
+title "begin to db migrate"
+call_command_or_warning migrate apigw
 
-# 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
-# 用于命令 `apply_apigw_permissions`
-# apply_permissions:
-#   - gateway_name: "{{ settings.BK_APIGW_NAME }}"
-#     # 权限维度，可选值：gateway，按网关授权，包括网关下所有资源，以及未来新创建的资源
-#     grant_dimension: "gateway"
+title "syncing apigateway"
+call_definition_command_or_exit sync_apigw_config "${definition_file}" --gateway-name=${gateway_name}
+call_definition_command_or_exit sync_apigw_stage "${definition_file}" --gateway-name=${gateway_name}
+call_definition_command_or_exit sync_apigw_resources "${resources_file}" --gateway-name=${gateway_name} --delete
+call_definition_command_or_exit sync_resource_docs_by_archive "${definition_file}" --gateway-name=${gateway_name} --safe-mode
+call_definition_command_or_exit grant_apigw_permissions "${definition_file}" --gateway-name=${gateway_name}
 
-# 为网关添加关联应用，关联应用可以通过网关 bk-apigateway 的接口操作网关数据；每个网关最多可有 10 个关联应用；
-# 用于命令 `add_related_apps`
-related_apps:
-  - "{{ settings.BK_APP_CODE }}"
+title "fetch apigateway public key"
+apigw-manager.sh fetch_apigw_public_key --gateway-name=${gateway_name} --print > "/tmp/apigateway.pub"
 
-# 定义资源文档路径，用于命令 `sync_resource_docs_by_archive`；
-# 资源文档的目录格式样例如下，en 为英文文档，zh 为中文文档，创建归档文件可使用指令 `tar czvf xxx.tgz en zh`：
-# ./
-# - en
-#   - get_user.md
-# - zh
-#   - get_user.md
-resource_docs:
-  # 资源文档的归档文件，可为 tar.gz，zip 格式文件
-  # archivefile: "{{ settings.BK_APIGW_RESOURCE_DOCS_ARCHIVE_FILE }}"
-  # 资源文档目录，basedir 与 archivefile 二者至少一个有效，若同时存在，则 archivefile 优先
-  basedir: "/data/apidocs/"
+title "releasing"
+call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name}
+
+title "done"

@@ -650,7 +650,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                 extend_flag = ''
                 if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver',
                          'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver',
-                         'cmdb_authserver','cmdb_adminserver']:
+                         'cmdb_authserver','cmdb_adminserver','cmdb_cacheservice']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 if d in ['cmdb_cloudserver']:
                      extend_flag += ' --enable_cryptor=%s ' % enable_cryptor
