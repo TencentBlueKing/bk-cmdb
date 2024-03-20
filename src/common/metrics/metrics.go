@@ -24,6 +24,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+
 	"github.com/emicklei/go-restful/v3"
 	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,6 +58,7 @@ const (
 	LabelProcessName = "process_name"
 	LabelAppCode     = "app_code"
 	LabelHost        = "host"
+	LabelUser        = "user"
 )
 
 // labels
@@ -91,12 +94,18 @@ func NewService(conf Config) *Service {
 
 	srv := Service{conf: conf, registry: register}
 
+	requestTotalLabels := []string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode}
+	// add user label for webserver
+	if conf.ProcessName == types.CC_MODULE_WEBSERVER {
+		requestTotalLabels = append(requestTotalLabels, LabelUser)
+	}
+
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: Namespace + "_http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode},
+		requestTotalLabels,
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -170,12 +179,19 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).
 			Observe(float64(time.Since(before) / time.Millisecond))
 
-		s.requestTotal.With(s.label(
+		requestTotalLabels := []string{
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
 			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-		)).Inc()
+		}
+
+		// add user label for webserver
+		if s.conf.ProcessName == types.CC_MODULE_WEBSERVER {
+			requestTotalLabels = append(requestTotalLabels, LabelUser, r.Header.Get(common.BKHTTPHeaderUser))
+		}
+
+		s.requestTotal.With(s.label(requestTotalLabels...)).Inc()
 	})
 }
 
