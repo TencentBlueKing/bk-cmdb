@@ -88,7 +88,7 @@
             .bk-form-textarea {
                 min-height: auto !important;
                 padding: 5px 10px 8px;
-                @include scrollbar-y;
+                @include scrollbar-y(6px);
                 &.textarea-maxlength {
                     margin-bottom: 0 !important;
                 }

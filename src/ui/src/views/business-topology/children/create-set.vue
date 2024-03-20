@@ -241,7 +241,7 @@
             /deep/ textarea {
                 min-height: auto !important;
                 line-height: 22px;
-                @include scrollbar-y;
+                @include scrollbar-y(6px);
             }
         }
     }
