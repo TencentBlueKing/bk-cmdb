@@ -182,7 +182,7 @@
         @include scrollbar-y;
     }
     .form-groups {
-        padding: 0 20px 20px;
+        padding: 0 24px 20px;
     }
     .property-group {
         padding: 7px 0 10px 0;

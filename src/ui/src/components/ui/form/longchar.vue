@@ -147,7 +147,7 @@
                 min-height: 28px;
                 max-height: 400px;
                 padding: 5px 10px;
-                @include scrollbar-y;
+                @include scrollbar-y(6px);
                 &.textarea-maxlength {
                     margin-bottom: 0 !important;
                 }

@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"time"
 
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
+	customtypes "configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/source_controller/cacheservice/cache/topotree"
 	"configcenter/src/source_controller/cacheservice/event"
 )
@@ -295,6 +297,14 @@ func (s *cacheService) SearchBizTopo(cts *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: opt.BizID}}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
 	res, err := s.cacheSet.Topo.GetBizTopo(cts.Kit, topoType, opt)
 	if err != nil {
 		cts.RespAutoError(err)
@@ -317,7 +327,87 @@ func (s *cacheService) RefreshBizTopo(cts *rest.Contexts) {
 		return
 	}
 
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: opt.BizID}}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
 	err := s.cacheSet.Topo.RefreshBizTopo(cts.Kit, topoType, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(nil)
+}
+
+// ListPodLabelKey list pod label key cache info
+func (s *cacheService) ListPodLabelKey(cts *rest.Contexts) {
+	opt := new(customtypes.ListPodLabelKeyOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	res, err := s.cacheSet.Custom.ListPodLabelKey(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(res)
+}
+
+// ListPodLabelValue list pod label value cache info
+func (s *cacheService) ListPodLabelValue(cts *rest.Contexts) {
+	opt := new(customtypes.ListPodLabelValueOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	res, err := s.cacheSet.Custom.ListPodLabelValue(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(res)
+}
+
+// RefreshPodLabel refresh pod label key and value cache info
+func (s *cacheService) RefreshPodLabel(cts *rest.Contexts) {
+	opt := new(customtypes.RefreshPodLabelOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	err := s.cacheSet.Custom.RefreshPodLabel(cts.Kit, opt)
 	if err != nil {
 		cts.RespAutoError(err)
 		return

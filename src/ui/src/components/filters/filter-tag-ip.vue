@@ -113,7 +113,7 @@
   .tippy-content {
     max-height: 300px;
     padding: 0 8px;
-    @include scrollbar-y;
+    @include scrollbar-y(6px);
   }
 }
 </style>

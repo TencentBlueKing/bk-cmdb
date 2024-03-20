@@ -101,7 +101,7 @@
 <style lang="scss" scoped>
   .export {
     height: 100%;
-    padding: 20px 28px 0;
+    padding: 20px 24px 0;
     @include scrollbar-y;
     .export-steps {
       width: 350px;

@@ -698,3 +698,64 @@ func (p *UpdateProjectIDOption) Validate() ccErr.RawErrorInfo {
 
 	return ccErr.RawErrorInfo{}
 }
+
+// QueryReq query request
+type QueryReq struct {
+	QueryCondition `json:",inline"`
+	Filter         *querybuilder.QueryFilter `json:"filter"`
+}
+
+// Validate validate query request
+func (q *QueryReq) Validate() ccErr.RawErrorInfo {
+	if q.Condition != nil && q.Filter != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"condition and filter cannot be set at the same time"},
+		}
+	}
+
+	if q.Filter == nil {
+		return ccErr.RawErrorInfo{}
+	}
+
+	option := &querybuilder.RuleOption{
+		NeedSameSliceElementType: true,
+		MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+		MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+	}
+
+	if key, err := q.Filter.Validate(option); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{fmt.Sprintf("property.%s", key)},
+		}
+	}
+
+	if q.Filter.GetDeep() > querybuilder.MaxDeep {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep)},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// GetCond get condition
+func (q *QueryReq) GetCond() (*QueryCondition, ccErr.RawErrorInfo) {
+	if q.Filter == nil {
+		return &q.QueryCondition, ccErr.RawErrorInfo{}
+	}
+
+	var err error
+	var key string
+	q.Condition, key, err = q.Filter.ToMgo()
+	if err != nil {
+		return nil, ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{err.Error() + fmt.Sprintf(", filter.%s", key)},
+		}
+	}
+
+	return &q.QueryCondition, ccErr.RawErrorInfo{}
+}

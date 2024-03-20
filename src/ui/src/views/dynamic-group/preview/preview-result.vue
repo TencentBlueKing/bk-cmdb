@@ -31,7 +31,7 @@
         {{$t('刷新')}}
       </bk-button>
     </div>
-    <bk-table v-if="hasCondition" class="host-table" v-test-id.businessHostAndService="'hostList'"
+    <bk-table v-if="hasCondition" class="result-list"
       ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
@@ -53,7 +53,7 @@
           <cmdb-property-value
             :ref="getTableCellPropertyValueRefId(column)"
             :theme="column.bk_property_id === 'bk_host_id' ? 'primary' : 'default'"
-            :value="row | hostValueFilter(column.bk_obj_id, column.bk_property_id)"
+            :value="getValue(row, column.bk_obj_id, column.bk_property_id)"
             :show-unit="false"
             :property="column"
             :multiple="column.bk_obj_id !== 'host'"
@@ -102,11 +102,17 @@
     getSort,
     getPageParams
   } from '@/utils/tools'
+  import { transformGeneralModelCondition } from '@/components/filters/utils.js'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
   const props = defineProps({
     condition: {
       type: Object,
       default: () => ({})
+    },
+    properties: {
+      type: Array,
+      default: () => ([])
     },
     mode: String
   })
@@ -165,7 +171,7 @@
   const renderHeader = ((property) => {
     const content = [getHeaderPropertyName(property)]
     const modelId = property.bk_obj_id
-    if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
+    if (modelId !== BUILTIN_MODELS.HOST && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById(modelId)
       const suffix = h('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
       content.push(suffix)
@@ -175,7 +181,7 @@
   const getColumnMinWidth = ((property) => {
     let name = getHeaderPropertyName(property)
     const modelId = property.bk_obj_id
-    if (modelId !== 'host' && modelId !== CONTAINER_OBJECTS.NODE) {
+    if (modelId !== BUILTIN_MODELS.HOST && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById(modelId)
       name = `${name}(${model.bk_obj_name})`
     }
@@ -187,7 +193,7 @@
   const getTableCellPropertyValueRefId = (property => (isUseComplexValueType(property) ? `table-cell-property-value-${property.bk_property_id}` : null))
   const pageCurrentChange = ((current = 1) => {
     if (table.pagination.current === current) {
-      getHostList()
+      getList()
       return
     }
     table.pagination.current = current
@@ -199,7 +205,7 @@
   })
   const handleSortChange = (sort => table.sort = getSort(sort))
   const handleValueClick = ((row, column) => {
-    if (column.bk_obj_id !== 'host' || column.bk_property_id !== 'bk_host_id') {
+    if (column.bk_obj_id !== BUILTIN_MODELS.HOST || column.bk_property_id !== 'bk_host_id') {
       return
     }
     routerActions.open({
@@ -226,12 +232,12 @@
           await handleApplyColumnsConfig(properties)
           // 获取最新的表头，内部会读取到上方保存的配置
           tableHeader.value = FilterStore.getHeader()
-          getHostList()
+          getList()
         },
         reset: async () => {
           await handleApplyColumnsConfig()
           tableHeader.value = FilterStore.getHeader()
-          getHostList()
+          getList()
         }
       }
     })
@@ -239,21 +245,63 @@
   const handleApplyColumnsConfig = ((properties = []) => store.dispatch('userCustom/saveUsercustom', {
     [customInstanceColumnKey.value]: properties.map(property => property.bk_property_id)
   }))
-  const getHostList = (async () => {
+  const getHostList = async (searchParams, page, config) => {
+    const params = {
+      bk_biz_id: bizId.value,
+      ...searchParams,
+      page
+    }
+    return hostSearchService.getBizHosts({ params, config })
+  }
+  const getValue = (row, modelId, propertyId) => {
+    const { mode } = props
+    if (mode === BUILTIN_MODELS.HOST) {
+      return hostValueFilter(row, modelId, propertyId)
+    }
+    return  row?.[propertyId]
+  }
+  const getSetList = async (searchParams, page, config) => {
+    const setCondition = {}
+    const { properties } = props
+    const allConditions = searchParams.condition.reduce((val, cur) => {
+      val.push(...cur.condition)
+      return val
+    }, [])
+    allConditions.forEach((condition) => {
+      const id = properties.find(item => item?.bk_property_id === condition?.field)?.id
+      setCondition[id] = condition
+    })
+    const setParams = transformGeneralModelCondition(setCondition, properties)
+
+    return store.dispatch('objectSet/searchSet', {
+      bizId: bizId.value,
+      params: {
+        page,
+        filter: setParams.conditions
+      },
+      config
+    })
+  }
+  const getList = (async () => {
     try {
-      const params = {
-        bk_biz_id: bizId.value,
-        ...FilterStore.getSearchParams(),
-        page: {
-          ...getPageParams(table.pagination),
-          sort: table.sort
-        }
+      const { mode } = props
+      const searchParams = FilterStore.getSearchParams()
+      const page =  {
+        ...getPageParams(table.pagination),
+        sort: table.sort
       }
       const config = {
         requestId: request.table,
         cancelPrevious: true
       }
-      const result = await hostSearchService.getBizHosts({ params, config })
+
+      let result = {}
+      if (mode === BUILTIN_MODELS.HOST) {
+        result = await getHostList(searchParams, page, config)
+      } else {
+        result = await getSetList(searchParams, page, config)
+      }
+
       table.data = result.info || []
       table.pagination.count = result.count
     } catch (e) {
@@ -275,7 +323,7 @@
     immediate: true
   })
   watch(() => table.pagination.current, () => {
-    getHostList()
+    getList()
   })
 
   initFilterStore()
@@ -333,7 +381,7 @@
       }
     }
   }
-  .host-table {
+  .result-list {
     margin: 12px 15px 0 24px;
     width: calc(100% - 39px);
   }

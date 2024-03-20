@@ -38,6 +38,12 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 		return
 	}
 
+	if len(batchBody.Sets) > common.BKMaxUpdateOrCreatePageSize {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, common.BKInnerObjIDSet,
+			common.BKMaxUpdateOrCreatePageSize))
+		return
+	}
+
 	batchCreateResult := make([]metadata.OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
@@ -124,7 +130,8 @@ func (s *Service) checkIsBuiltInSet(kit *rest.Kit, setIDs ...int64) error {
 		},
 	}
 
-	rsp, e := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet, cond)
+	rsp, e := s.Engine.CoreAPI.CoreService().Instance().CountInstances(kit.Ctx, kit.Header, common.BKInnerObjIDSet,
+		cond)
 	if e != nil {
 		blog.Errorf("check is built in set failed, option: %s, err: %v, rid: %s", cond, e, kit.Rid)
 		return e
@@ -279,20 +286,33 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 		return
 	}
 
-	queryCond := new(metadata.QueryCondition)
-	if err = ctx.DecodeInto(queryCond); err != nil {
-		blog.Errorf("search set failed, decode parameter condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+	req := new(metadata.QueryReq)
+	if err = ctx.DecodeInto(req); err != nil {
+		blog.Errorf("search set failed, decode request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	if queryCond.Condition == nil {
-		queryCond.Condition = mapstr.New()
+	if rawErr := req.Validate(); rawErr.ErrCode != 0 {
+		blog.Errorf("validate request failed, req: %+v, err: %v, rid: %s", req, rawErr, ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
 	}
 
-	queryCond.Condition[common.BKAppIDField] = bizID
+	cond, rawErr := req.GetCond()
+	if rawErr.ErrCode != 0 {
+		blog.Errorf("get request condition failed, req: %+v, err: %v, rid: %s", req, rawErr, ctx.Kit.Rid)
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
 
-	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDSet, queryCond)
+	if cond.Condition == nil {
+		cond.Condition = mapstr.New()
+	}
+
+	cond.Condition[common.BKAppIDField] = bizID
+
+	instItems, err := s.Logics.InstOperation().FindInst(ctx.Kit, common.BKInnerObjIDSet, cond)
 	if err != nil {
 		blog.Errorf("failed to find inst, err: %v, rid: %s", ctx.Request.PathParameter("obj_id"), err,
 			ctx.Kit.Rid)

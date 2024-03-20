@@ -45,6 +45,8 @@ const (
 	fieldTemplateSyncMaxNum = 5
 	fieldTemplateNameMaxLen = 128
 	fieldTemplateDesMaxLen  = 2000
+	// FieldTmplNumLimit limit on the number of field template
+	FieldTmplNumLimit = 10000
 )
 
 // Validate validate FieldTemplate
