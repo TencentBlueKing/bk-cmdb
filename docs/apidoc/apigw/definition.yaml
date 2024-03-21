@@ -73,6 +73,8 @@ grant_permissions:
       - list_kube_node
       - list_kube_pod
       - list_kube_container
+      - list_cached_kube_pod_label_key
+      - list_cached_kube_pod_label_value
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
