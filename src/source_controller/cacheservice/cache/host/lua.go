@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -77,6 +78,10 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 		blog.V(5).Infof("run getHostWithIpScript in redis, but not find key: %s, rid: %s", keys, rid)
 	case hostDetailNotExitError:
 		blog.V(5).Infof("not find host detail in redis key pattern: %s, rid: %s", hostKey.HostDetailKey(-1), rid)
+		// todo 由于采集器会上报没有绑定agent id的主机信息，给db造成了压力，这里如果缓存中没有，先设置一个空字符串
+		if err := setEmptyStrVal(keys, rid); err != nil {
+			return nil, err
+		}
 		// host detail not exist
 	default:
 		// we have find the data, return directly.
@@ -99,6 +104,15 @@ func (c *Client) getHostDetailWithAgentID(rid string, agentID string) (*string, 
 	c.tryRefreshHostDetail(rid, host)
 	detailStr := string(detail)
 	return &detailStr, nil
+}
+
+func setEmptyStrVal(key string, rid string) error {
+	if err := redis.Client().Set(context.Background(), key, "", time.Hour).Err(); err != nil {
+		blog.Errorf("set redis failed, set key: %s to redis err: %v, rid: %s", key, err, rid)
+		return err
+	}
+
+	return nil
 }
 
 func (c *Client) getHostDetailWithIP(rid string, innerIP string, cloudID int64) (*string, error) {
