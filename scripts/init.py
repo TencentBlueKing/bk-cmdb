@@ -519,7 +519,8 @@ tls:
 
 # 调用apigw接口相关配置
 apiGW:
-  address:
+  bkGseApiGatewayUrl:
+  bkNoticeApiGatewayUrl:
   appCode:
   appSecret:
   username:

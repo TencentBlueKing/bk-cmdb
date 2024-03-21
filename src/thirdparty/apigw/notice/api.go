@@ -29,7 +29,7 @@ import (
 func (n *notice) GetCurAnn(ctx context.Context, h http.Header, params map[string]string) ([]CurAnnData, error) {
 	h.Set(apigw.AuthKey, n.service.Auth)
 	resp := new(GetCurAnnResp)
-	subPath := "/prod/apigw/v1/announcement/get_current_announcements"
+	subPath := "/apigw/v1/announcement/get_current_announcements"
 
 	err := n.service.Client.Get().
 		WithContext(ctx).
@@ -54,7 +54,7 @@ func (n *notice) GetCurAnn(ctx context.Context, h http.Header, params map[string
 func (n *notice) RegApp(ctx context.Context, h http.Header) (*RegAppData, error) {
 	h.Set(apigw.AuthKey, n.service.Auth)
 	resp := new(RegAppResp)
-	subPath := "/prod/apigw/v1/register"
+	subPath := "/apigw/v1/register"
 
 	err := n.service.Client.Post().
 		WithContext(ctx).

@@ -68,6 +68,6 @@ type Config struct {
 	// ApiConf gse apiServer connection config
 	ApiConf *client.GseConnConfig
 
-	// GseApiGWConfig gse api gateway config
-	GseApiGWConfig *apigwutil.ApiGWConfig
+	// ApiGWConfig api gateway config
+	ApiGWConfig *apigwutil.ApiGWConfig
 }

@@ -21,6 +21,8 @@ import (
 	"context"
 	"net/http"
 
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 
@@ -38,6 +40,13 @@ type notice struct {
 
 // NewNoticeApiGWClient create notice api gateway client
 func NewNoticeApiGWClient(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (NoticeClientInterface, error) {
+	var err error
+	config.Address, err = cc.StringSlice("apiGW.bkNoticeApiGatewayUrl")
+	if err != nil {
+		blog.Errorf("get notice api gateway address config error, err: %v", err)
+		return nil, err
+	}
+
 	service, err := apigw.NewApiGW(config, reg)
 	if err != nil {
 		return nil, err

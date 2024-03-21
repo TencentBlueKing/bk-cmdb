@@ -219,12 +219,6 @@ func (s *Service) InitNotice() error {
 		blog.Errorf("get api gateway config error, err: %v", err)
 		return err
 	}
-	config.Address, err = apigwutil.ReplaceApiName(config.Address, apigwutil.NoticeName)
-	if err != nil {
-		blog.Errorf("replace the template var in api gateway address failed, addr: %v, apiName: %v, err: %v",
-			config.Address, apigwutil.NoticeName, err)
-		return err
-	}
 
 	s.NoticeCli, err = noticeCli.NewNoticeApiGWClient(config, s.Engine.Metric().Registry())
 	if err != nil {

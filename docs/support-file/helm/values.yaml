@@ -1136,6 +1136,12 @@ bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
 ##
 bkApigatewayName: "bk-cmdb"
 
+# 蓝鲸 GSE API Gateway url
+bkGseApiGatewayUrl: "http://bkapi.example.com"
+
+# 蓝鲸 Notice API Gateway url
+bkNoticeApiGatewayUrl: "http://bkapi.example.com"
+
 ## @section bk-cmdb common config parameters
 ##
 common:
@@ -1947,3 +1953,6 @@ apigatewaySync:
   image:
     repository: blueking/cmdb-apigw-manager
     tag:
+  host: "http://bk-cmdb-api"
+  maintainer: "admin"
+  stageName: "prod"
