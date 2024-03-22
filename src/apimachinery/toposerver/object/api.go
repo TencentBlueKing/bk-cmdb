@@ -28,7 +28,8 @@ type ObjectInterface interface {
 	SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (
 		resp *metadata.Response, err error)
 	SelectInst(ctx context.Context, bizID int64, h http.Header) (resp *metadata.Response, err error)
-	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)
+	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (
+		resp *metadata.CreateObjAttDesResp, err error)
 	SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
 		err error)
 	UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (

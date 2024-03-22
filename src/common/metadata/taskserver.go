@@ -267,6 +267,12 @@ type ListFieldTmplTaskStatusResult struct {
 	Status string `json:"status"`
 }
 
+// ListFieldTmplTaskStatusResultResp list task status of the template ID and object response
+type ListFieldTmplTaskStatusResultResp struct {
+	BaseResp
+	Data []ListFieldTmplTaskStatusResult `json:"data"`
+}
+
 // ListFieldTmplTaskSyncResultResp list field template task sync result response
 type ListFieldTmplTaskSyncResultResp struct {
 	BaseResp

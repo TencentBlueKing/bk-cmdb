@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/toposerver/association"
+	"configcenter/src/apimachinery/toposerver/fieldtemplate"
 	"configcenter/src/apimachinery/toposerver/inst"
 	"configcenter/src/apimachinery/toposerver/kube"
 	"configcenter/src/apimachinery/toposerver/object"
@@ -34,6 +35,7 @@ type TopoServerClientInterface interface {
 	SetTemplate() settemplate.SetTemplateInterface
 	ResourceDirectory() resourcedir.ResourceDirectoryInterface
 	Kube() kube.KubeOperationInterface
+	FieldTemplate() fieldtemplate.FieldTemplateInterface
 }
 
 // NewTopoServerClient TODO
@@ -76,4 +78,9 @@ func (t *topoServer) SetTemplate() settemplate.SetTemplateInterface {
 // ResourceDirectory TODO
 func (t *topoServer) ResourceDirectory() resourcedir.ResourceDirectoryInterface {
 	return resourcedir.NewResourceDirectoryInterface(t.restCli)
+}
+
+// FieldTemplate TODO
+func (t *topoServer) FieldTemplate() fieldtemplate.FieldTemplateInterface {
+	return fieldtemplate.NewFieldTemplateInterface(t.restCli)
 }
