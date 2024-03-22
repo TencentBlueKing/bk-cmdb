@@ -39,6 +39,12 @@ type FieldTemplate struct {
 	LastTime    *Time  `json:"last_time" bson:"last_time"`
 }
 
+// FieldTemplateResp find field template response
+type FieldTemplateResp struct {
+	BaseResp `json:",inline"`
+	Data     FieldTemplate `json:"data"`
+}
+
 const (
 	// fieldTemplateSyncMaxNum compare the difference status between the
 	// template and the model The maximum number of models processed at one time
@@ -672,6 +678,12 @@ type CompareFieldTmplAttrsRes struct {
 	Unchanged []Attribute                  `json:"unchanged"`
 }
 
+// CompareFieldTmplAttrsResResp compare field template attributes with object result response
+type CompareFieldTmplAttrsResResp struct {
+	BaseResp `json:",inline"`
+	Data     CompareFieldTmplAttrsRes `json:"data"`
+}
+
 // CompareOneFieldTmplAttrRes compare one field template attribute with object result
 type CompareOneFieldTmplAttrRes struct {
 	// Index field template's original index in input attribute array
@@ -728,6 +740,12 @@ type CompareFieldTmplUniquesRes struct {
 	Update    []CompareOneFieldTmplUniqueRes `json:"update"`
 	Conflict  []CompareOneFieldTmplUniqueRes `json:"conflict"`
 	Unchanged []ObjectUnique                 `json:"unchanged"`
+}
+
+// CompareFieldTmplUniquesResResp compare field template uniques with object result response
+type CompareFieldTmplUniquesResResp struct {
+	BaseResp `json:",inline"`
+	Data     CompareFieldTmplUniquesRes `json:"data"`
 }
 
 // CompareOneFieldTmplUniqueRes compare one field template unique with object result
@@ -913,6 +931,12 @@ func (option *ListFieldTmpltSyncStatusOption) Validate() ccErr.RawErrorInfo {
 type ListFieldTmpltSyncStatusResult struct {
 	ObjectID int64 `json:"object_id"`
 	NeedSync bool  `json:"need_sync"`
+}
+
+// ListFieldTmpltSyncStatusResultResp list field template sync status result response
+type ListFieldTmpltSyncStatusResultResp struct {
+	BaseResp `json:",inline"`
+	Data     []ListFieldTmpltSyncStatusResult `json:"data"`
 }
 
 // ListFieldTmplModelStatusOption list field template model status option
