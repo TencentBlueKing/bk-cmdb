@@ -51,11 +51,12 @@
                       :placeholder="$tools.getPropertyPlaceholder(property)"
                       :auto-select="false"
                       :multiple="property.ismultiple"
+                      :readonly="readonly"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="values[property['bk_property_id']]['value']">
                     </component>
-                    <span class="property-lock-state"
+                    <span :class="['property-lock-state', { disabled: readonly }]"
                       v-if="allowLock(property)"
                       v-bk-tooltips="{
                         placement: 'top',
@@ -78,7 +79,7 @@
       </template>
     </div>
     <div class="form-options" slot="footer" slot-scope="{ sticky }"
-      v-if="showOptions"
+      v-if="showOptions && !readonly"
       :class="{ sticky: sticky }">
       <slot name="form-options">
         <cmdb-auth :auth="auth">
@@ -127,7 +128,7 @@
       type: {
         default: 'create',
         validator(val) {
-          return ['create', 'update'].includes(val)
+          return ['create', 'update', 'info'].includes(val)
         }
       },
       isCreatedService: {
@@ -172,6 +173,9 @@
       groupedProperties() {
         return this.$groupedProperties.map(properties => properties
           .filter(property => !BUILTIN_UNEDITABLE_FIELDS.includes(property.bk_property_id)))
+      },
+      readonly() {
+        return this.type === 'info'
       }
     },
     watch: {
@@ -205,6 +209,9 @@
         return !this.mustLocked.includes(property.bk_property_id)
       },
       toggleLockState(property) {
+        if (this.readonly) {
+          return
+        }
         this.values[property.bk_property_id].as_default_value = !this.isLocked(property)
       },
       getComponentType(property) {
@@ -451,6 +458,9 @@
         &.is-lock {
             .property-lock-state {
                @include property-lock-state-visible;
+               &.disabled {
+                color: #dcdee5;
+               }
             }
             .form-component /deep/ {
                 .bk-form-input,
