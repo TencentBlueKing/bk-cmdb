@@ -92,6 +92,38 @@
                 					}
                 				]
                 			}
+                    ],
+                    "variable_condition":[
+                      {
+                        "bk_obj_id":"set",
+                        "condition":[
+                          {
+                            "field":"bk_parent_id",
+                            "operator":"$ne",
+                            "value":1
+                          }
+                        ]
+                      },
+                      {
+                        "bk_obj_id":"module",
+                        "condition":[
+                          {
+                            "field":"bk_parent_id",
+                            "operator":"$ne",
+                            "value":1
+                          }
+                        ]
+                      },
+                      {
+                        "bk_obj_id":"host",
+                        "condition":[
+                          {
+                            "field":"bk_host_outerip",
+                            "operator":"$eq",
+                            "value":"127.0.0.1"
+                          }
+                        ]
+                      }
                     ]
                 },
                 "name": "test",
@@ -141,6 +173,12 @@
 | create_time | string | 创建时间                        |
 | create_user | string | 创建者                         |
 
+#### data.info.info
+| 字段        | 类型     | 描述                  |
+|-----------|--------|----|---------------------|
+| condition | object | 动态分组锁定条件 |
+| variable_condition | object| 动态分组可变条件 |
+
 #### data.info.info.condition
 
 | 字段        | 类型     | 描述                     |
@@ -150,8 +188,23 @@
 
 #### data.info.info.condition.condition
 
-| 字段       | 类型     | 描述                                                |
-|----------|--------|---------------------------------------------------|
-| field    | string | 对象的字段                                             |
-| operator | string | 操作符, op值为eq(相等)/ne(不等)/in(属于)/nin(不属于)/like(模糊匹配) |
-| value    | object | 字段对应的值                                            |
+| 字段       | 类型     | 描述                                                     |
+|----------|--------|--------------------------------------------------------|
+| field    | string | 对象的字段                                                  |
+| operator | string | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于)/$like(模糊匹配) |
+| value    | object | 字段对应的值                                                 |
+
+#### data.info.info.variable_condition
+
+| 字段        | 类型     | 描述                                                                                    |
+|-----------|-------|---------------------------------------------------------------------------------------|
+| bk_obj_id | string  | 条件对象资源类型, host类型的动态分组支持的info.conditon:set,module,host；set类型的动态分组支持的info.condition:set |
+| condition | array   | 查询条件                                                                                  |
+
+#### data.info.info.variable_condition.condition
+
+| 字段       | 类型  | 描述                                     |
+|----------|------|----------------------------------------|
+| field    | string |对象的字段                                  |
+| operator | string |  操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$like(模糊匹配) |
+| value    | object | 字段对应的值                                 |
