@@ -230,7 +230,7 @@ func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadat
 }
 
 func (m *user) setTLSConf(tlsConf *apiutil.TLSClientConfig, httpCli *httpclient.HttpClient, rid string) error {
-	if tlsConf != nil && len(tlsConf.CAFile) != 0 && len(tlsConf.CertFile) != 0 && len(tlsConf.KeyFile) != 0 {
+	if tlsConf != nil && !tlsConf.InsecureSkipVerify {
 		if err := httpCli.SetTLSVerify(tlsConf); err != nil {
 			return err
 		}

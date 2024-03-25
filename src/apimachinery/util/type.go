@@ -119,21 +119,17 @@ type ExtraClientConfig struct {
 
 // GetClientTLSConfig get client tls config
 func GetClientTLSConfig(prefix string) (*tls.Config, error) {
-	tlsConf := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-
 	config, err := NewTLSClientConfigFromConfig(prefix)
 	if err != nil {
 		return nil, err
 	}
+	tlsConf := &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}
 
 	if len(config.CAFile) != 0 && len(config.CertFile) != 0 && len(config.KeyFile) != 0 {
 		tlsConf, err = ssl.ClientTLSConfVerity(config.CAFile, config.CertFile, config.KeyFile, config.Password)
 		if err != nil {
 			return nil, err
 		}
-		tlsConf.InsecureSkipVerify = config.InsecureSkipVerify
 	}
 
 	return tlsConf, nil

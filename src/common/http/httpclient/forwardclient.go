@@ -83,10 +83,10 @@ func ReqHttp(req *restful.Request, url, method string, body []byte) (string, err
 // ProxyHttp TODO
 // porxy http
 func ProxyHttp(c *gin.Context, addr string) {
-	tlsConf, err := util.GetClientTLSConfig("webServer.tls")
+	tlsConf, err := util.GetClientTLSConfig("tls")
 	if err != nil {
 		c.Writer.Write([]byte(err.Error()))
-		blog.Errorf("get webServer.tls config error, err: %v", err)
+		blog.Errorf("get tls config error, err: %v", err)
 		return
 	}
 

@@ -68,9 +68,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	config, err := util.NewTLSClientConfigFromConfig("apiServer.tls")
+	config, err := util.NewTLSClientConfigFromConfig("tls")
 	if err != nil {
-		blog.Errorf("get apiServer.tls config error, err: %v", err)
+		blog.Errorf("get tls config error, err: %v", err)
 		return err
 	}
 
