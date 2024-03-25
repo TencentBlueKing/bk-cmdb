@@ -14,7 +14,8 @@
   <cmdb-form-table class="cmdb-form-process-table"
     v-bind="$attrs"
     v-model="localValue"
-    :options="options">
+    :options="options"
+    :mode="mode">
     <template v-for="column in options" #[column.bk_property_id]="rowProps">
       <div class="process-table-content"
         :key="`row-${rowProps.index}-${column.bk_property_id}`"
@@ -32,9 +33,11 @@
           :placeholder="getPlaceholder(column)"
           :value="localValue[rowProps.index][column.bk_property_id]"
           :auto-select="false"
+          :readonly="readonly"
+          :disabled="column.bk_property_type === 'bool' && readonly"
           @input="handleColumnValueChange(rowProps, ...arguments)">
         </component>
-        <span class="property-lock-state"
+        <span :class="['property-lock-state', { disabled: readonly }]"
           v-bk-tooltips="{
             placement: 'top',
             interactive: false,
@@ -68,7 +71,8 @@
       options: {
         type: Array,
         required: true
-      }
+      },
+      readonly: Boolean
     },
     inject: {
       type: { default: '' } // from ./process-form
@@ -126,6 +130,9 @@
       },
       IPV6Keys() {
         return Object.keys(PROCESS_BIND_IPV6_MAP)
+      },
+      mode() {
+        return this.readonly ? 'info' : 'update'
       }
     },
     methods: {
@@ -133,6 +140,9 @@
         return this.lockStates[index][column.property]
       },
       setLockState(rowProps) {
+        if (this.readonly) {
+          return
+        }
         const { column, index } = rowProps
         const lockState = { ...(this.lockStates[index] || {}) }
         lockState[column.property] = !this.isLocked(rowProps)
@@ -262,6 +272,9 @@
             &.is-lock {
                 .property-lock-state {
                     @include property-lock-state-visible;
+                    &.disabled {
+                      color: #dcdee5;
+                    }
                 }
                 .content-value /deep/ {
                     .bk-form-input,

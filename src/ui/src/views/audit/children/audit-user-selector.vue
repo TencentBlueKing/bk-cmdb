@@ -11,18 +11,19 @@
 -->
 
 <template>
-  <cmdb-form-objuser
+  <cmdb-search-objuser
     v-model="userValue"
-    :exclude="false"
     :multiple="true"
     :placeholder="$t('请输入xx', { name: $t('账号') })">
-    <bk-select class="user-option" slot="prepend"
-      :clearable="false"
-      v-model="selectValue">
-      <bk-option id="in" :name="$t('包含')"></bk-option>
-      <bk-option id="not_in" :name="$t('不包含')"></bk-option>
-    </bk-select>
-  </cmdb-form-objuser>
+    <template #prepend>
+      <bk-select class="user-option"
+        :clearable="false"
+        v-model="selectValue">
+        <bk-option id="in" :name="$t('包含')"></bk-option>
+        <bk-option id="not_in" :name="$t('不包含')"></bk-option>
+      </bk-select>
+    </template>
+  </cmdb-search-objuser>
 </template>
 
 <script>

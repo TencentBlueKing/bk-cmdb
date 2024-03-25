@@ -433,3 +433,13 @@ input.cmdb-form-input {
             right: 0;
         }
 }
+
+.g-cell-link-content {
+    color: $primaryColor;
+    cursor: pointer;
+    @include ellipsis;
+
+    &.disabled {
+        color: #a3c5fd;
+    }
+}

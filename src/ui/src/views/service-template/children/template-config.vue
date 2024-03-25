@@ -429,6 +429,14 @@
         state.processSlider.form.dataIndex = index
       }
 
+      const handleViewProcess = (template, index) => {
+        state.processSlider.show = true
+        state.processSlider.title = template.bk_func_name.value
+        state.processSlider.form.type = 'info'
+        state.processSlider.form.inst = template
+        state.processSlider.form.dataIndex = index
+      }
+
       const handleDeleteProcess = (template) => {
         $bkInfo({
           title: t('确认删除模板进程'),
@@ -520,7 +528,8 @@
         handleDeleteProcess,
         handleProcessSliderBeforeClose,
         handleSaveName,
-        handleGoToEdit
+        handleGoToEdit,
+        handleViewProcess
       }
     }
   })
@@ -707,6 +716,7 @@
               :show-operation="true"
               @on-edit="handleUpdateProcess"
               @on-delete="handleDeleteProcess"
+              @on-view="handleViewProcess"
               :list="processList">
             </process-table>
           </div>

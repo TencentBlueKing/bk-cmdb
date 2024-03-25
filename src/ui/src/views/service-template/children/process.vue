@@ -20,9 +20,13 @@
         :prop="column.id"
         :label="column.name"
         :show-overflow-tooltip="column.id !== 'bind_info'">
-        <template slot-scope="{ row }">
+        <template slot-scope="{ row, $index }">
+          <div v-if="column.id === 'bk_func_name'"
+            class="g-cell-link-content" @click.stop="handleView(row._original_, $index)">
+            {{ row[column.id] }}
+          </div>
           <cmdb-property-value
-            v-if="column.id !== 'bind_info'"
+            v-else-if="column.id !== 'bind_info'"
             :show-on="'cell'"
             :value="row[column.id]"
             :property="column.property">
@@ -126,6 +130,9 @@
       },
       handleDelete(process, index) {
         this.$emit('on-delete', process, index)
+      },
+      handleView(process, index) {
+        this.$emit('on-view', process, index)
       }
     }
   }

@@ -185,6 +185,16 @@
               }
           }
         }
+        :deep(.user-selector-selected:has(.non-existent)) {
+
+          background: #FFDEDE;
+          .user-selector-selected-value {
+            color: #EB3333;
+          }
+          .user-selector-selected-clear {
+            color: #F15656
+          }
+        }
     }
     .fast-select {
         position: absolute;
