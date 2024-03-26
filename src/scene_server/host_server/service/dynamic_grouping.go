@@ -363,6 +363,7 @@ func (s *Service) GetDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	changeTimeToMatchLocalZone(result.Data.Info.Condition)
+	changeTimeToMatchLocalZone(result.Data.Info.VariableCondition)
 	ctx.RespEntity(result.Data)
 }
 
@@ -434,6 +435,7 @@ func (s *Service) SearchDynamicGroup(ctx *rest.Contexts) {
 	}
 	for _, dynamicGroup := range result.Data.Info {
 		changeTimeToMatchLocalZone(dynamicGroup.Info.Condition)
+		changeTimeToMatchLocalZone(dynamicGroup.Info.VariableCondition)
 	}
 	ctx.RespEntity(result.Data)
 }
@@ -443,27 +445,26 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	req := ctx.Request
 
 	// target dynamic group ID.
-	targetID := req.PathParameter("id")
-	bizID := req.PathParameter("bk_biz_id")
+	targetID := req.PathParameter(common.BKFieldID)
+	bizID := req.PathParameter(common.BKAppIDField)
 	bizIDInt64, err := strconv.ParseInt(bizID, 10, 64)
 	if err != nil {
 		blog.Errorf("execute dynamic group failed, invalid bizID from path, err: %v, bizID: %s, rid: %s",
 			err, bizID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, common.BKAppIDField))
 		return
 	}
 
-	input := new(meta.QueryCondition)
+	input := new(meta.ExecuteOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		blog.Errorf("execute dynamic group failed, decode request body err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
-	searchPage := input.Page
 
-	result, searchConditions, err := s.executesGroupParamCheck(ctx.Kit, input, bizIDInt64, targetID)
+	result, searchConditions, err := s.checkAndBuildParam(ctx.Kit, input, bizIDInt64, targetID)
 	if err != nil {
-		blog.Errorf("update request param check failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("check and build request param failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -471,6 +472,7 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	// target dynamic group.
 	targetDynamicGroup := result.Data
 	// execute dynamic group with target object type.
+	searchPage := input.Page
 	switch targetDynamicGroup.ObjID {
 	case common.BKInnerObjIDHost:
 		// build host search conditions.
@@ -518,8 +520,8 @@ func (s *Service) ExecuteDynamicGroup(ctx *rest.Contexts) {
 	}
 }
 
-// executesGroupParamCheck 执行动态分组接口请求参数检查
-func (s *Service) executesGroupParamCheck(kit *rest.Kit, input *meta.QueryCondition, bizID int64, targetID string) (
+// checkAndBuildParam 执行动态分组接口请求参数检查和返回查询参数
+func (s *Service) checkAndBuildParam(kit *rest.Kit, input *meta.ExecuteOption, bizID int64, targetID string) (
 	*meta.GetDynamicGroupResult, []meta.SearchCondition, error) {
 
 	if len(input.Fields) == 0 {
@@ -539,46 +541,135 @@ func (s *Service) executesGroupParamCheck(kit *rest.Kit, input *meta.QueryCondit
 	}
 
 	// query target dynamic group.
-	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(kit.Ctx, strconv.FormatInt(bizID, 10),
-		targetID, kit.Header)
+	result, err := s.CoreAPI.CoreService().Host().GetDynamicGroup(kit.Ctx, strconv.FormatInt(bizID, 10), targetID,
+		kit.Header)
 	if err != nil {
-		blog.Errorf("execute dynamic group failed, err: %v, bizID: %d, ID: %s, rid: %s",
-			err, bizID, targetID, kit.Rid)
-		return &meta.GetDynamicGroupResult{}, nil, err
+		blog.Errorf("execute dynamic group failed, err: %v, bizID: %d, ID: %s, rid: %s", err, bizID, targetID, kit.Rid)
+		return nil, nil, err
 	}
 	if !result.Result {
 		blog.Errorf("execute dynamic group failed, errcode: %d, errmsg: %s, bizID: %d, ID: %s, rid: %s",
 			result.Code, result.ErrMsg, bizID, targetID, kit.Rid)
-		return &meta.GetDynamicGroupResult{}, nil, result.CCError()
+		return nil, nil, result.CCError()
 	}
 	if len(result.Data.Name) == 0 {
 		blog.Errorf("execute dynamic group failed, err: group not found, bizID: %d, ID: %s, rid: %s",
 			bizID, targetID, kit.Rid)
-		return &meta.GetDynamicGroupResult{}, nil, kit.CCError.Error(common.CCErrCommNotFound)
+		return nil, nil, kit.CCError.Error(common.CCErrCommNotFound)
 	}
 
-	// target dynamic group.
-	targetDynamicGroup := result.Data
-	// build search conditions.
-	searchConditions := make([]meta.SearchCondition, 0)
+	validateFunc := func(objectID string) ([]meta.Attribute, error) {
+		return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).SearchObjectAttributes(kit, bizID, objectID)
+	}
+	if _, err = meta.ValidDynamicGroupCond(input.VariableCondition, result.Data.ObjID, validateFunc,
+		map[string]map[string]struct{}{}); err != nil {
+		blog.Errorf("dynamic group info condition is invalid, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
+		return nil, nil, err
+	}
 
-	// parse all dynamic group conditions to search condition.
-	for _, cond := range targetDynamicGroup.Info.Condition {
-		searchCondition := meta.SearchCondition{ObjectID: cond.ObjID, Condition: []meta.ConditionItem{}}
-		// build condition items.
+	info := result.Data.Info
+	info.VariableCondition, err = buildFinalCond(kit, input.VariableCondition, info.VariableCondition)
+	if err != nil {
+		blog.Errorf("build final variable condition failed, info: %+v, input: %+v, err: %v, rid: %s", input, err,
+			kit.Rid)
+		return nil, nil, err
+	}
+
+	conditionMap := make(map[string]*meta.SearchCondition)
+	conditionMap = parseCond(conditionMap, info.Condition)
+	conditionMap = parseCond(conditionMap, info.VariableCondition)
+
+	searchConditions := make([]meta.SearchCondition, 0)
+	for _, condition := range conditionMap {
+		searchConditions = append(searchConditions, *condition)
+	}
+
+	return result, searchConditions, nil
+}
+
+func buildFinalCond(kit *rest.Kit, reqCondArr []meta.DynamicGroupInfoCondition,
+	originCondArr []meta.DynamicGroupInfoCondition) ([]meta.DynamicGroupInfoCondition, error) {
+
+	if len(reqCondArr) == 0 {
+		return originCondArr, nil
+	}
+
+	if len(reqCondArr) != 0 && len(originCondArr) == 0 {
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "variable_condition")
+	}
+
+	reqCondMap := make(map[string]meta.DynamicGroupInfoCondition)
+	for _, cond := range reqCondArr {
+		reqCondMap[cond.ObjID] = cond
+	}
+
+	for idx, cond := range originCondArr {
+		reqCond, ok := reqCondMap[cond.ObjID]
+		if !ok {
+			continue
+		}
+
+		updateCondMap := make(map[string]meta.DynamicGroupCondition)
+		for _, fieldCond := range reqCond.Condition {
+			updateCondMap[fieldCond.Field] = fieldCond
+		}
+
+		updateTimeRuleMap := make(map[string]meta.TimeConditionItem)
+		if reqCond.TimeCondition != nil {
+			for _, rule := range reqCond.TimeCondition.Rules {
+				updateTimeRuleMap[rule.Field] = rule
+			}
+		}
+
+		for subIdx, subCond := range cond.Condition {
+			updateCond, exist := updateCondMap[subCond.Field]
+			if !exist {
+				continue
+			}
+
+			originCondArr[idx].Condition[subIdx] = updateCond
+		}
+
+		if cond.TimeCondition == nil {
+			continue
+		}
+
+		for subIdx, rule := range cond.TimeCondition.Rules {
+			updateTimeRule, exist := updateTimeRuleMap[rule.Field]
+			if !exist {
+				continue
+			}
+
+			originCondArr[idx].TimeCondition.Rules[subIdx] = updateTimeRule
+		}
+	}
+
+	return originCondArr, nil
+}
+
+func parseCond(conditionMap map[string]*meta.SearchCondition,
+	conditions []meta.DynamicGroupInfoCondition) map[string]*meta.SearchCondition {
+
+	for _, cond := range conditions {
+		if conditionMap[cond.ObjID] == nil {
+			conditionMap[cond.ObjID] = &meta.SearchCondition{ObjectID: cond.ObjID}
+		}
+
 		for _, item := range cond.Condition {
 			condItem := meta.ConditionItem{Field: item.Field, Operator: item.Operator, Value: item.Value}
-			if err := item.VerifyRegexValidity(); err != nil {
-				blog.Errorf("verify regex validity failed, err: %v, input: %+v, bizID: %d, rid: %s", err,
-					targetDynamicGroup, bizID, kit.Rid)
-				return &meta.GetDynamicGroupResult{}, nil, err
-			}
-			searchCondition.Condition = append(searchCondition.Condition, condItem)
+			conditionMap[cond.ObjID].Condition = append(conditionMap[cond.ObjID].Condition, condItem)
 		}
-		searchCondition.TimeCondition = cond.TimeCondition
-		searchConditions = append(searchConditions, searchCondition)
+
+		if conditionMap[cond.ObjID].TimeCondition == nil {
+			conditionMap[cond.ObjID].TimeCondition = cond.TimeCondition
+			continue
+		}
+
+		conditionMap[cond.ObjID].TimeCondition.Rules = append(conditionMap[cond.ObjID].TimeCondition.Rules,
+			cond.TimeCondition.Rules...)
 	}
-	return result, searchConditions, nil
+
+	return conditionMap
 }
 
 // changeTimeToMatchLocalZone TODO
