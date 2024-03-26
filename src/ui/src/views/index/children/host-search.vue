@@ -181,7 +181,7 @@
         const propertyId = 'bk_asset_id'
 
         FilterStore.setIPField('text', IPText)
-        FilterStore.setConditonField(propertyId, '')
+        FilterStore.setConditonField(propertyId, [])
         this.ipEditableBlock.clear()
 
         if (type === 'asset') {

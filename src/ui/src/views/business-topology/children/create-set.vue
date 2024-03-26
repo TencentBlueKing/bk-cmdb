@@ -54,7 +54,8 @@
           v-model="setName"
           :rows="rows"
           :placeholder="$t('集群多个创建提示')"
-          @keydown="handleKeydown">
+          @keydown="handleKeydown"
+          @paste="handlePaste">
         </bk-input>
         <span class="form-error" v-if="errors.has('setName')">{{errors.first('setName')}}</span>
       </div>
@@ -118,17 +119,20 @@
     },
     methods: {
       setRows() {
-        const rows = this.setName.split('\n').length
-        this.rows = Math.min(3, Math.max(rows, 1))
+        setTimeout(() => {
+          const rows = this.setName.split('\n').length
+          this.rows = Math.min(3, Math.max(rows, 1))
+        })
       },
       handleKeydown(value, keyEvent) {
         if (['Enter', 'NumpadEnter'].includes(keyEvent.code)) {
           this.rows = Math.min(this.rows + 1, 3)
         } else if (keyEvent.code === 'Backspace') {
-          this.$nextTick(() => {
-            this.setRows()
-          })
+          this.setRows()
         }
+      },
+      handlePaste() {
+        this.setRows()
       },
       async getSetTemplates() {
         if (has(this.setTemplateMap, this.business)) {
