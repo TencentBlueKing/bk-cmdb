@@ -11,8 +11,8 @@
 -->
 
 <template>
-  <div class="options-layout clearfix">
-    <div class="options options-left fl">
+  <div class="options-layout">
+    <div class="options options-left">
       <cmdb-auth
         v-show="!isContainerHost"
         class="option mr10"
@@ -42,11 +42,9 @@
         @show="isTransferMenuOpen = true"
         @hide="isTransferMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'transfer'"
-          :disabled="!hasSelection" class="flex-btn">
-          <div class="btn-content">
-            <span>{{$t('转移至')}}</span>
-            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
-          </div>
+          :disabled="!hasSelection">
+          <span>{{$t('转移至')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isTransferMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'transfer'">
           <cmdb-auth tag="li" class="bk-dropdown-item" v-test-id="'transferIdle'"
@@ -89,11 +87,9 @@
         @show="isAddToOpen = true"
         @hide="isAddToOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'addTo'"
-          :disabled="!hasSelection" class="flex-btn">
-          <div class="btn-content">
-            <span>{{$t('追加至')}}</span>
-            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
-          </div>
+          :disabled="!hasSelection">
+          <span>{{$t('追加至')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isAddToOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'addToBiz'"
@@ -115,11 +111,9 @@
         @show="isRemoveMenuOpen = true"
         @hide="isRemoveMenuOpen = false">
         <bk-button slot="dropdown-trigger" v-test-id="'remove'"
-          :disabled="!hasSelection" class="flex-btn">
-          <div class="btn-content">
-            <span>{{$t('移出')}}</span>
-            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
-          </div>
+          :disabled="!hasSelection">
+          <span>{{$t('移出')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isRemoveMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content">
           <cmdb-auth tag="li" class="bk-dropdown-item with-auth" v-test-id="'remove'"
@@ -143,11 +137,9 @@
         font-size="medium"
         @show="isMoreMenuOpen = true"
         @hide="isMoreMenuOpen = false">
-        <bk-button slot="dropdown-trigger" v-test-id="'more'" class="flex-btn">
-          <div class="btn-content">
-            <span>{{$t('更多')}}</span>
-            <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
-          </div>
+        <bk-button slot="dropdown-trigger" v-test-id="'more'">
+          <span>{{$t('更多')}}</span>
+          <i :class="['dropdown-icon bk-icon icon-angle-down',{ 'open': isMoreMenuOpen }]"></i>
         </bk-button>
         <ul class="bk-dropdown-list" slot="dropdown-content" v-test-id="'more'">
           <li :class="['bk-dropdown-item', { disabled: !hasSelection }]" @click="handleExport($event)"
@@ -229,6 +221,7 @@
   import { update as updateHost } from '@/service/host/import'
   import RouterQuery from '@/router/query'
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
+  import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
 
   export default {
     components: {
@@ -257,11 +250,7 @@
           title: '',
           component: null,
           componentProps: {}
-        },
-        IPWithCloudSymbol: Symbol('IPWithCloud'),
-        IPv6WithCloudSymbol: Symbol('IPv6WithCloud'),
-        IPv46WithCloudSymbol: Symbol('IPv46WithCloud'),
-        IPv64WithCloudSymbol: Symbol('IPv64WithCloud')
+        }
       }
     },
     computed: {
@@ -319,13 +308,7 @@
           && this.selectedNode.data.default !== 1
       },
       clipboardList() {
-        const IPWithCloudFields = {
-          [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
-          [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
-          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv4优先')})`,
-          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv6优先')})`
-        }
-        const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
+        const IPWithClouds = Object.keys(IPWithCloudFields).map(key => FilterUtils.defineProperty({
           id: key,
           bk_obj_id: 'host',
           bk_property_id: key,
@@ -333,7 +316,7 @@
           bk_property_type: 'singlechar'
         }))
         const clipboardList = this.$parent.tableHeader.slice()
-        clipboardList.splice(1, 0, ...IPWithClouds)
+        clipboardList.splice(3, 0, ...IPWithClouds)
         return clipboardList
       },
       tableHeaderPropertyIdList() {
@@ -490,31 +473,26 @@
             return value
           }
 
-          const IPWithCloudKeys = [
-            this.IPWithCloudSymbol,
-            this.IPv6WithCloudSymbol,
-            this.IPv46WithCloudSymbol,
-            this.IPv64WithCloudSymbol
-          ]
+          const IPWithCloudKeys = Object.keys(IPWithCloudFields)
           if (IPWithCloudKeys.includes(property.id)) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
             const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
             const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
-            if (property.id === this.IPWithCloudSymbol) {
+            if (property.id === IPWithCloudSymbol) {
               return `${cloud}:${ip}`
             }
-            if (property.id === this.IPv6WithCloudSymbol) {
+            if (property.id === IPv6WithCloudSymbol) {
               return `${cloud}:[${ipv6}]`
             }
-            if (property.id === this.IPv46WithCloudSymbol) {
+            if (property.id === IPv46WithCloudSymbol) {
               if (!isEmptyIPv4Value || isEmptyIPv6Value) {
                 return `${cloud}:${ip}`
               }
               return `${cloud}:[${ipv6}]`
             }
-            if (property.id === this.IPv64WithCloudSymbol) {
+            if (property.id === IPv64WithCloudSymbol) {
               if (isEmptyIPv4Value || !isEmptyIPv6Value) {
                 return `${cloud}:[${ipv6}]`
               }
@@ -578,25 +556,18 @@
 </script>
 
 <style lang="scss" scoped>
-    .flex-btn{
-      &.is-disabled {
-        overflow: hidden;
-      }
-      :deep(.btn-content) {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-    }
     .options-layout {
+        display: flex;
+        justify-content: space-between;
         margin-top: 12px;
     }
     .options {
         display: flex;
         align-items: center;
+
         &.options-right {
-            overflow: hidden;
-            justify-content: flex-end;
+          flex: 1;
+          justify-content: end;
         }
         .option {
             display: inline-block;
@@ -616,12 +587,6 @@
             }
         }
         .dropdown-icon {
-            margin: 0 -4px;
-            display: inline-block;
-            vertical-align: middle;
-            height: auto;
-            top: 0px;
-            font-size: 20px;
             &.open {
                 transform: rotate(180deg);
             }
