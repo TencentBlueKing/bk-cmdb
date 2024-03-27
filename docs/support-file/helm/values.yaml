@@ -1956,3 +1956,7 @@ apigatewaySync:
   host: "http://bk-cmdb-api"
   maintainer: "admin"
   stageName: "prod"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  jobAppCode: "bk_job"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  nodeManAppCode: "bk_nodeman"
