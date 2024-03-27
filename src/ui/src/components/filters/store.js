@@ -355,7 +355,12 @@ const FilterStore = new Vue({
       this.throttleSearch()
     },
     setConditonField(propertyId, value, modelId = 'host') {
-      const { id } = this.getProperty(propertyId, modelId)
+      const property = this.getProperty(propertyId, modelId)
+      const { id } = property
+      if (typeof value === 'undefined') {
+        value = Utils.getDefaultData(property).value
+      }
+
       this.setCondition({
         condition: {
           ...this.condition,
