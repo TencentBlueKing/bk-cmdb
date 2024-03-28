@@ -14,3 +14,6 @@ src/web*/cmdb_*
 .vscode
 
 .pre-commit-config.yaml
+
+
+pre-*-bkcodeai

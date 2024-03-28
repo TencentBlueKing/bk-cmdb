@@ -95,7 +95,9 @@ const dev = {
 
   useMock: false,
 
-  grabAPI: !!argv.grabapi
+  grabAPI: !!argv.grabapi,
+
+  checkToken: ''
 }
 
 const customDevConfigPath = path.resolve(__dirname, `index.dev.${argv.env || 'ee'}.js`)

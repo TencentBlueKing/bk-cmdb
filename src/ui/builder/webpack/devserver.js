@@ -13,6 +13,7 @@
 const path = require('path')
 const MockJS = require('mockjs')
 const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser');
 const { pathToRegexp } = require('path-to-regexp')
 
 const mock = require('../../mock/index')
@@ -25,6 +26,25 @@ module.exports = config => ({
     if (!devServer) {
       throw new Error('webpack-dev-server is not defined')
     }
+
+    devServer.app.use(cookieParser())
+
+    middlewares.unshift({
+      name: 'check-token',
+      path: '/',
+      middleware: (req, res, next) => {
+        if (req.path === '/') {
+          // 访问的是根路由
+          if (config.dev.checkToken && !req.cookies[config.dev.checkToken]) {
+            res.redirect(302, JSON.parse(config.dev.config.API_LOGIN))
+          } else {
+            next()
+          }
+        } else {
+          next()
+        }
+      }
+    })
 
     if (config.dev.useMock) {
       // parse application/x-www-form-urlencoded
