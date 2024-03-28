@@ -8,13 +8,29 @@ Query and retrieve data based on the specified dynamic grouping rule (Version: v
 
 #### Interface Parameters
 
-| Field           | Type   | Required | Description                                                  |
-| --------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_biz_id       | int    | Yes      | Business ID                                                  |
-| id              | string | Yes      | Dynamic grouping primary key ID                              |
+| Field           | Type   | Required | Description                                                                                                                                                                                                                        |
+| --------------- | ------ |----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id       | int    | Yes      | Business ID                                                                                                                                                                                                                        |
+| id              | string | Yes      | Dynamic grouping primary key ID                                                                                                                                                                                                    |
+| variable_condition | object | No       | dynamic group variable condition, if it is not filled in, it is executed according to the default value of variable condition.                     |
 | fields          | array  | Yes      | Host attribute list, controls which fields are returned in the host, accelerates interface requests and reduces network traffic transmission. If the target resource does not have the specified fields, the field will be ignored |
-| disable_counter | bool   | No       | Whether to return the total number of records, default is to return |
-| page            | object | Yes      | Pagination settings                                          |
+| disable_counter | bool   | No       | Whether to return the total number of records, default is to return                                                                                                                                                                |
+| page            | object | Yes      | Pagination settings                                                                                                                                                                                                                |
+
+#### variable_condition
+
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id | string | Yes      | Condition object resource type, host type dynamic group supports info.condition: set, module, host; set type dynamic group supports info.condition: set |
+| condition | array  | Yes      | Query conditions                                             |
+
+#### variable_condition.condition
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Object field                                                 |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| value    | object | Yes      | Value of the field                                           |
 
 #### page
 
@@ -35,6 +51,38 @@ Query and retrieve data based on the specified dynamic grouping rule (Version: v
     "bk_biz_id": 1,
     "disable_counter": true,
     "id": "XXXXXXXX",
+    "variable_condition":[
+      {
+        "bk_obj_id":"set",
+        "condition":[
+          {
+            "field":"bk_parent_id",
+            "operator":"$ne",
+            "value":1
+          }
+        ]
+      },
+      {
+        "bk_obj_id":"module",
+        "condition":[
+          {
+            "field":"bk_parent_id",
+            "operator":"$ne",
+            "value":1
+          }
+        ]
+      },
+      {
+        "bk_obj_id":"host",
+        "condition":[
+          {
+            "field":"bk_host_outerip",
+            "operator":"$eq",
+            "value":"127.0.0.1"
+          }
+        ]
+      }
+    ],
     "fields": [
         "bk_host_id",
         "bk_cloud_id",

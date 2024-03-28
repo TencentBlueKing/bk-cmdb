@@ -15,6 +15,12 @@ Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Per
 | info      | object | Yes      | Common query conditions                                      |
 | name      | string | Yes      | Dynamic group name                                           |
 
+#### info
+| Field     | Type   | Required | Description                                                                        |
+|-----------|--------|----------|------------------------------------------------------------------------------------|
+| condition | object | No       | dynamic group locking condition, which is at least one from the variable condition |
+| variable_condition | object | No | dynamic group variable condition, which is at least one from the locking condition  |
+
 #### info.condition
 
 | Field     | Type   | Required | Description                                                  |
@@ -27,8 +33,24 @@ Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Per
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
 | field    | string | Yes      | Object field                                                 |
-| operator | string | Yes      | Operator, op value can be eq (equal) / ne (not equal) / in (belongs to) / nin (does not belong to) |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
 | value    | object | Yes      | Value of the field                                           |
+
+#### info.variable_condition
+
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id | string | Yes      | Condition object resource type, host type dynamic group supports info.condition: set, module, host; set type dynamic group supports info.condition: set |
+| condition | array  | Yes      | Query conditions                                             |
+
+#### info.variable_condition.condition
+
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Object field                                                 |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| value    | object | Yes      | Value of the field                                           |
+
 
 ### Request Parameter Example
 
@@ -73,7 +95,39 @@ Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Per
     				}
     			]
     		}
-    	]
+    	],
+        "variable_condition":[
+          {
+            "bk_obj_id":"set",
+            "condition":[
+              {
+                "field":"bk_parent_id",
+                "operator":"$ne",
+                "value":1
+              }
+            ]
+          },
+          {
+            "bk_obj_id":"module",
+            "condition":[
+              {
+                "field":"bk_parent_id",
+                "operator":"$ne",
+                "value":1
+              }
+            ]
+          },
+          {
+            "bk_obj_id":"host",
+            "condition":[
+              {
+                "field":"bk_host_outerip",
+                "operator":"$eq",
+                "value":"127.0.0.1"
+              }
+            ]
+          }
+        ]
     }
 }
 ```

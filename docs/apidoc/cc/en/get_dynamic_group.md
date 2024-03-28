@@ -72,7 +72,39 @@ Get details of a dynamic group (Version: v3.9.6, Permission: Business access per
     					}
     				]
     			}
-    		]
+    		],
+            "variable_condition":[
+              {
+                "bk_obj_id":"set",
+                "condition":[
+                  {
+                    "field":"bk_parent_id",
+                    "operator":"$ne",
+                    "value":1
+                  }
+                ]
+              },
+              {
+                "bk_obj_id":"module",
+                "condition":[
+                  {
+                    "field":"bk_parent_id",
+                    "operator":"$ne",
+                    "value":1
+                  }
+                ]
+              },
+              {
+                "bk_obj_id":"host",
+                "condition":[
+                  {
+                    "field":"bk_host_outerip",
+                    "operator":"$eq",
+                    "value":"127.0.0.1"
+                  }
+                ]
+              }
+            ]
     	},
        "create_user": "admin",
        "create_time": "2018-03-27T16:22:43.271+08:00",
@@ -97,7 +129,7 @@ Get details of a dynamic group (Version: v3.9.6, Permission: Business access per
 | request_id | string | Request chain ID                                             |
 | data       | object | Data returned by the request                                 |
 
-#### Explanation of data Parameters
+#### data
 
 | Field       | Type   | Description                                                  |
 | ----------- | ------ | ------------------------------------------------------------ |
@@ -111,23 +143,38 @@ Get details of a dynamic group (Version: v3.9.6, Permission: Business access per
 | create_time | string | Creation time                                                |
 | create_user | string | Creator                                                      |
 
-#### Explanation of info Parameters
+#### data.info
+| Field     | Type   | Description                    |
+|-----------|-------|-------------------------|
+| condition | object   | dynamic group locking condition |
+| variable_condition | object | dynamic group variable condition  |
 
-| Field     | Type  | Description      |
-| --------- | ----- | ---------------- |
-| condition | array | Query conditions |
-
-#### Explanation of condition Parameters
+#### data.info.condition
 
 | Field     | Type   | Description                                                  |
 | --------- | ------ | ------------------------------------------------------------ |
 | bk_obj_id | string | Condition object resource type, the dynamic group of the host type supports info.conditon:set,module,host; the dynamic group of the set type supports info.condition:set |
 | condition | array  | Query conditions                                             |
 
-#### Explanation of condition.condition Parameters
+#### data.info.condition.condition
 
-| Field    | Type   | Description                                                  |
-| -------- | ------ | ------------------------------------------------------------ |
-| field    | string | Object field                                                 |
-| operator | string | Operator, op value can be eq (equal)/ne (not equal)/in (belongs to)/nin (does not belong to) |
-| value    | object | Value corresponding to the field                             |
+| Field    | Type   | Description                                                                                      |
+| -------- | ------ |--------------------------------------------------------------------------------------------------|
+| field    | string | Object field                                                                                     |
+| operator | string | Operator, op value can be $eq (equal)/$ne (not equal)/$in (belongs to)/$nin (does not belong to)/ $like (fuzzy match) |
+| value    | object | Value corresponding to the field                                                                 |
+
+#### data.info.variable_condition
+
+| Field     | Type   | Description                           |
+| --------- | ------ | ------------------------------------- |
+| bk_obj_id | string | Object name, can be set, module, host |
+| condition | array  | Query condition                       |
+
+#### data.info.variable_condition.condition
+
+| Field    | Type   | Description                                                                                                              |
+| -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
+| field    | string | Object field                                                                                                             |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| value    | object | Value corresponding to the field                                                                                         |
