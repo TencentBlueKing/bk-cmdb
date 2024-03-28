@@ -1956,3 +1956,5 @@ apigatewaySync:
   host: "http://bk-cmdb-api"
   maintainer: "admin"
   stageName: "prod"
+  jobAppCode: "bk_job"
+  nodeManAppCode: "bk_nodeman"
