@@ -364,7 +364,7 @@ func (s *cacheService) ListPodLabelKey(cts *rest.Contexts) {
 		cts.RespAutoError(err)
 		return
 	}
-	cts.RespEntity(res)
+	cts.RespEntity(&customtypes.ListPodLabelKeyRes{Keys: res})
 }
 
 // ListPodLabelValue list pod label value cache info
@@ -388,7 +388,7 @@ func (s *cacheService) ListPodLabelValue(cts *rest.Contexts) {
 		cts.RespAutoError(err)
 		return
 	}
-	cts.RespEntity(res)
+	cts.RespEntity(&customtypes.ListPodLabelValueRes{Values: res})
 }
 
 // RefreshPodLabel refresh pod label key and value cache info

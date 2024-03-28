@@ -23,10 +23,20 @@ type ListPodLabelKeyOption struct {
 	BizID int64 `json:"bk_biz_id"`
 }
 
+// ListPodLabelKeyRes list pod label key result
+type ListPodLabelKeyRes struct {
+	Keys []string `json:"keys"`
+}
+
 // ListPodLabelValueOption list pod label value options
 type ListPodLabelValueOption struct {
 	BizID int64  `json:"bk_biz_id"`
 	Key   string `json:"key"`
+}
+
+// ListPodLabelValueRes list pod label value result
+type ListPodLabelValueRes struct {
+	Values []string `json:"values"`
 }
 
 // RefreshPodLabelOption refresh pod label key and value options
