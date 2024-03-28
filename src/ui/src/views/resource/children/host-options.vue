@@ -11,8 +11,8 @@
 -->
 
 <template>
-  <div class="options-layout clearfix">
-    <div class="options-left fl">
+  <div class="options-layout">
+    <div class="options-left">
       <template v-if="scope === 1">
         <cmdb-auth class="mr10"
           :auth="[
@@ -167,6 +167,8 @@
   import hostImportService from '@/service/host/import'
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import isEqual from 'lodash/isEqual'
+  import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
   export default {
@@ -196,10 +198,6 @@
           requestId: Symbol('assignHosts')
         },
         assignOptions: [],
-        IPWithCloudSymbol: Symbol('IPWithCloud'),
-        IPv6WithCloudSymbol: Symbol('IPv6WithCloud'),
-        IPv46WithCloudSymbol: Symbol('IPv46WithCloud'),
-        IPv64WithCloudSymbol: Symbol('IPv64WithCloud'),
         authRequestId: AuthRequestId,
         assignOptionAuthedMap: {
           biz: {},
@@ -238,13 +236,7 @@
         })
       },
       clipboardList() {
-        const IPWithCloudFields = {
-          [this.IPWithCloudSymbol]: `${this.$t('管控区域')}ID:IPv4`,
-          [this.IPv6WithCloudSymbol]: `${this.$t('管控区域')}ID:IPv6`,
-          [this.IPv46WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv4优先')})`,
-          [this.IPv64WithCloudSymbol]: `${this.$t('管控区域')}ID:IP(${this.$t('IPv6优先')})`
-        }
-        const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
+        const IPWithClouds = Object.keys(IPWithCloudFields).map(key => FilterUtils.defineProperty({
           id: key,
           bk_obj_id: 'host',
           bk_property_id: key,
@@ -252,7 +244,7 @@
           bk_property_type: 'singlechar'
         }))
         const clipboardList = this.$parent.tableHeader.slice()
-        clipboardList.splice(1, 0, ...IPWithClouds)
+        clipboardList.splice(3, 0, ...IPWithClouds)
         return clipboardList
       },
       properties() {
@@ -558,31 +550,26 @@
             return value
           }
 
-          const IPWithCloudKeys = [
-            this.IPWithCloudSymbol,
-            this.IPv6WithCloudSymbol,
-            this.IPv46WithCloudSymbol,
-            this.IPv64WithCloudSymbol
-          ]
+          const IPWithCloudKeys = Object.keys(IPWithCloudFields)
           if (IPWithCloudKeys.includes(property.id)) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
             const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
             const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
-            if (property.id === this.IPWithCloudSymbol) {
+            if (property.id === IPWithCloudSymbol) {
               return `${cloud}:${ip}`
             }
-            if (property.id === this.IPv6WithCloudSymbol) {
+            if (property.id === IPv6WithCloudSymbol) {
               return `${cloud}:[${ipv6}]`
             }
-            if (property.id === this.IPv46WithCloudSymbol) {
+            if (property.id === IPv46WithCloudSymbol) {
               if (!isEmptyIPv4Value || isEmptyIPv6Value) {
                 return `${cloud}:${ip}`
               }
               return `${cloud}:[${ipv6}]`
             }
-            if (property.id === this.IPv64WithCloudSymbol) {
+            if (property.id === IPv64WithCloudSymbol) {
               if (isEmptyIPv4Value || !isEmptyIPv6Value) {
                 return `${cloud}:[${ipv6}]`
               }
@@ -799,16 +786,24 @@
 </script>
 
 <style lang="scss" scoped>
+    .options-layout {
+        display: flex;
+        justify-content: space-between;
+    }
     .options-left {
-        font-size: 0;
+        display: flex;
         .assign-selector {
             min-width: 80px;
+            :deep(.icon-angle-down) {
+              color: #63656e;
+              right: 10px;
+            }
         }
     }
     .options-right {
         display: flex;
-        justify-content: flex-end;
-        overflow: hidden;
+        flex: 1;
+        justify-content: end;
         .option-fast-search {
             flex: 1;
             margin-left: 10px;

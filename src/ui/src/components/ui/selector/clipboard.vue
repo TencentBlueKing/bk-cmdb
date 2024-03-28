@@ -11,25 +11,28 @@
 -->
 
 <template>
-  <bk-dropdown-menu trigger="click" :position-fixed="true" :disabled="disabled" font-size="medium">
-    <bk-button class="clipboard-trigger" theme="default" slot="dropdown-trigger" v-test-id="'copy'"
-      :disabled="disabled">
-      {{$t('复制')}}
-      <i class="bk-icon icon-angle-down"></i>
-    </bk-button>
-    <ul class="clipboard-list" slot="dropdown-content" v-test-id="'copy'">
-      <li v-for="(item, index) in availableList"
-        class="clipboard-item"
-        :key="index"
-        @click="handleClick(item)">
-        {{item[labelKey]}}
-      </li>
-    </ul>
-  </bk-dropdown-menu>
+  <bk-cascade
+    v-model="selected"
+    :list="cascadeList"
+    :scroll-width="190"
+    :disabled="disabled"
+    trigger="hover"
+    clearable
+    ext-popover-cls="clipboard-cascade-popover"
+    @change="handleChange">
+    <template #trigger="{ isShow }">
+      <bk-button :disabled="disabled" theme="default">
+        {{$t('复制')}}
+        <i :class="['bk-icon', 'icon-angle-down', { 'open': isShow }]"></i>
+      </bk-button>
+    </template>
+  </bk-cascade>
 </template>
 
 <script>
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+
   export default {
     name: 'cmdb-clipboard-selector',
     props: {
@@ -52,49 +55,64 @@
         default: 'name'
       }
     },
+    data() {
+      return {
+        selected: []
+      }
+    },
     computed: {
-      availableList() {
-        return this.list.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
+      cascadeList() {
+        const list = this.list
+          .filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
+          .map((item) => {
+            const id = item[this.idKey]
+            const name = item[this.labelKey]
+            return {
+              id,
+              name,
+              property: item
+            }
+          })
+
+        const IPWithCloudKeys = Object.keys(IPWithCloudFields)
+        const index = list.findIndex(item => IPWithCloudKeys.includes(item.id))
+        if (index !== -1) {
+          // 将IPWithCloudFields中的字段提取出来，再以子选项的形式插入
+          const cloudChildren = list.splice(index, IPWithCloudKeys.length)
+          list.splice(index, 0, {
+            id: -1,
+            name: `${this.$t('管控区域')}ID:IP`,
+            children: cloudChildren
+          })
+        }
+
+        return list
       }
     },
     methods: {
-      handleClick(item) {
-        this.$emit('on-copy', item)
+      handleChange(newValue, oldValue, selectList) {
+        const selected = selectList.at(-1)
+        this.$emit('on-copy', selected.property)
+        this.selected = []
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
-    .clipboard-trigger{
-        padding: 0 16px;
-        &.is-disabled {
-            overflow: hidden;
-        }
-        .icon-angle-down {
-            font-size: 20px;
-            margin: 0 -4px;
-        }
-    }
-    .clipboard-list{
-        width: 100%;
-        font-size: 14px;
-        line-height: 32px;
-        // 漏出半个 item，引导用户下拉
-        max-height: calc(256px + (32px / 2));
-        @include scrollbar-y;
-        &::-webkit-scrollbar{
-            width: 3px;
-            height: 3px;
-        }
-        .clipboard-item{
-            padding: 0 15px;
-            cursor: pointer;
-            @include ellipsis;
-            &:hover{
-                background-color: #ebf4ff;
-                color: #3c96ff;
-            }
-        }
-    }
+.icon-angle-down {
+  transform-origin: center;
+  transition: all .2s ease;
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+</style>
+<style lang="scss">
+.clipboard-cascade-popover {
+  .bk-cascade-options .bk-option-content .bk-option-name {
+    display: block;
+    font-size: 14px;
+  }
+}
 </style>
