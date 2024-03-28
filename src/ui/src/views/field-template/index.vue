@@ -435,7 +435,7 @@
         <template #default="{ disabled }">
           <span v-bk-tooltips.top="{
             content: $t('创建字段组合模板上限提示'),
-            disabled: !disabled && table.pagination.count <= 10000
+            disabled: !disabled && table.pagination.count < 10000
           }">
             <bk-button
               theme="primary"
