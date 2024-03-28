@@ -354,12 +354,15 @@ const FilterStore = new Vue({
       this.setIP(data.IP || this.IP)
       this.throttleSearch()
     },
-    setConditonField(propertyId, value, modelId = 'host') {
-      const { id } = this.getProperty(propertyId, modelId)
+    setConditonField(propertyId, defaultData, modelId = 'host') {
+      const property = this.getProperty(propertyId, modelId)
+      const { id } = property
+      const defaultValueOperator = Utils.getDefaultData(property)
+
       this.setCondition({
         condition: {
           ...this.condition,
-          [id]: { operator: '$in', value }
+          [id]: Object.assign(defaultValueOperator, defaultData)
         }
       })
     },

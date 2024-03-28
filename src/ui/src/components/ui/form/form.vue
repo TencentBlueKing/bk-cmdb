@@ -162,6 +162,10 @@
       submitting: {
         type: Boolean,
         default: false
+      },
+      slotAppendIsChange: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -185,6 +189,7 @@
       hasChange() {
         return (!!Object.keys(this.changedValues).length)
           || (Object.keys(this.inst).length !== Object.keys(this.values).length)
+          || this.slotAppendIsChange
       },
       groupedProperties() {
         return this.$groupedProperties.map(properties => properties.filter((property) => {

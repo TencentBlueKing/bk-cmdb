@@ -24,7 +24,8 @@
     @blur="handleBlur"
     @enter="handleEnter"
     @change="handleChange"
-    @on-change="handleChange">
+    @on-change="handleChange"
+    @focus="handleFocus">
   </bk-input>
 </template>
 
@@ -105,8 +106,17 @@
         this.$emit('enter', value)
       },
       handleBlur(value) {
-        this.$refs.autoSize.$el.querySelector('.bk-textarea-wrapper').style.height = `${this.minHeight}px`
+        const { autoSize } = this.$refs
+        const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
+        parent.style.height = `${this.minHeight}px`
+        parent.style.zIndex = ''
         this.$emit('blur', value)
+      },
+      handleFocus() {
+        const { autoSize } = this.$refs
+        const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
+        // eslint-disable-next-line no-underscore-dangle
+        parent.style.zIndex = window.__bk_zIndex_manager.nextZIndex()
       },
       focus() {
         const { autoSize } = this.$refs
@@ -141,6 +151,7 @@
             @include scrollbar-y;
             &:hover {
               height: auto !important;
+              z-index: 9999 !important;
             }
 
             .bk-form-textarea {

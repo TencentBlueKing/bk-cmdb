@@ -26,6 +26,7 @@
         :type="isEdit ? 'update' : 'create'"
         :save-auth="saveAuth"
         :submitting="submitting"
+        :slot-append-is-change="scopeChanged"
         @on-submit="handleSave"
         @on-cancel="handleSliderBeforeClose">
         <template #append>
@@ -112,6 +113,7 @@
       const isEmptyRuleValue = value => value === null || value === undefined || !value.toString().length
 
       const submitting = ref(false)
+      const scopeChanged = ref(false)
       const isEdit = computed(() => Boolean(formData.value.bk_biz_set_id))
       const title = computed(() => (isEdit.value ? t('编辑') : `${t('创建')} ${model.value.bk_obj_name}`))
 
@@ -157,7 +159,6 @@
       let saveData = defaultSaveData()
 
       let scopeCopy = null
-      let scopeChanged = false
 
       const handleSave = async (values, changedValues, originalValues, type) => {
         try {
@@ -171,7 +172,7 @@
               bk_biz_set_ids: [formData.value.bk_biz_set_id],
               data: {
                 ...saveData,
-                bk_scope: scopeChanged ? saveData.bk_scope : undefined,
+                bk_scope: scopeChanged.value ? saveData.bk_scope : undefined,
                 bk_biz_set_attr: { ...changedValues }
               }
             })
@@ -236,8 +237,7 @@
         if (!scopeCopy) {
           scopeCopy = cloneDeep(saveData.bk_scope)
         }
-
-        scopeChanged = !isEqual(scopeCopy, saveData.bk_scope)
+        scopeChanged.value = !isEqual(scopeCopy, saveData.bk_scope)
       }
 
       const resetData = () => {
@@ -245,7 +245,7 @@
         saveData = defaultSaveData()
 
         scopeCopy = null
-        scopeChanged = false
+        scopeChanged.value = false
       }
 
       const handleSliderBeforeClose = () => {
@@ -288,7 +288,8 @@
         previewProps,
         handlePreview,
         formRef,
-        businessSetFormRef
+        businessSetFormRef,
+        scopeChanged
       }
     }
   })
