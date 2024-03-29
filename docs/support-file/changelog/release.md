@@ -1,4 +1,4 @@
-## [Version: v3.13.5-beta1] - 2024-03-29
+## [Version: v3.13.5] - 2024-03-29
 **新增功能**
 - 添加按业务维度的pod label的key和value的缓存
 
