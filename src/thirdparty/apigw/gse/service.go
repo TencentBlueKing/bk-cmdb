@@ -21,6 +21,8 @@ import (
 	"context"
 	"net/http"
 
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 
@@ -40,6 +42,13 @@ type gse struct {
 
 // NewGseApiGWClient create gse api gateway client
 func NewGseApiGWClient(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (GseClientInterface, error) {
+	var err error
+	config.Address, err = cc.StringSlice("apiGW.bkGseApiGatewayUrl")
+	if err != nil {
+		blog.Errorf("get gse api gateway address config error, err: %v", err)
+		return nil, err
+	}
+
 	service, err := apigw.NewApiGW(config, reg)
 	if err != nil {
 		return nil, err

@@ -67,7 +67,7 @@
     "host_property_bk_mem": "内存容量(MB)",
     "host_property_bk_disk": "磁盘容量(GB)",
     "host_property_bk_mac": "内网MAC地址",
-    "host_property_bk_outer_mac": "外网MAC",
+    "host_property_bk_outer_mac": "外网MAC地址",
     "host_property_create_time": "录入时间",
     "host_property_import_from": "录入方式",
     "host_property_bk_state_name": "所在国家",

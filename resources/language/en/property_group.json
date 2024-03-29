@@ -4,7 +4,7 @@
 	"set_property_group_default": "default",
 	"module_property_group_default": "default",
 	"host_property_group_default": "default",
-	"host_property_group_auto": "auto discover (from agent)",
+	"host_property_group_auto": "Host System Configuration",
 	"process_property_group_default": "default",
 	"process_property_group_proc_port": "listener info",
 	"process_property_group_gsekit_baseinfo": "GSEkit base info",

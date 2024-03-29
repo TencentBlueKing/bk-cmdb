@@ -277,7 +277,7 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        padding: 0 20px 20px;
+        padding: 0 24px 20px;
         font-size: 14px;
         .property-item {
             min-width: 48%;
@@ -321,7 +321,7 @@
     }
     .btns {
         background: #ffffff;
-        padding: 10px 20px;
+        padding: 10px 24px;
         font-size: 0;
         .delete-btn:hover {
             color: #ffffff;

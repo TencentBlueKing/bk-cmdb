@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	defaultKubeRefreshInterval = 15 * time.Minute
+	defaultKubeRefreshInterval = 1 * time.Hour
 	kubeRefreshIntervalConfig  = "cacheService.kubeTopoSyncIntervalMinutes"
 )
 

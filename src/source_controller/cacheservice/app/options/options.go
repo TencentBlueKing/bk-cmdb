@@ -14,6 +14,8 @@
 package options
 
 import (
+	"configcenter/src/ac/iam"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -31,6 +33,7 @@ type Config struct {
 	Mongo      mongo.Config
 	WatchMongo mongo.Config
 	Redis      redis.Config
+	Auth       iam.AuthConfig
 }
 
 // NewServerOption create a ServerOption object
@@ -48,4 +51,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
+	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }

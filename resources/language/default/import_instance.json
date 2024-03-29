@@ -9,7 +9,7 @@
     "import_asst_obj_property_str_primary_type_error": "[%s]关联对象唯一键[%s]数据类型错误",
     "import_asstid_not_found": "关联关系[%s] 不存在",
     "import_instance_not_found": "[%s] 模型 [%s] 不存在",
-    "import_asst_obj_primary_property_str_not_found": "[%s]属性[%s]不存在",
+    "import_asst_obj_primary_property_str_not_found": "[%s]唯一校验中不存在“规则：[%s]”",
     "excel_association_attribute": "关联属性(请勿编辑)",
     "excel_field_description": "填写说明(请勿编辑)",
     "excel_association_object_id": "关联标识",

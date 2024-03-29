@@ -14,11 +14,13 @@
   <span class="search-input-wrapper" v-if="multiple">
     <bk-input :min="min" :max="max"
       class="search-input" type="number" v-model="start" :precision="precision"
+      :initial-control-value="0"
       :allow-number-paste="allowPaste" v-on="listeners">
     </bk-input>
     <span class="search-input-grep">-</span>
     <bk-input :min="min" :max="max"
       class="search-input" type="number" v-model="end" :precision="precision"
+      :initial-control-value="0"
       :allow-number-paste="allowPaste" v-on="listeners"></bk-input>
   </span>
   <bk-input v-else
@@ -29,6 +31,7 @@
     v-model="localValue"
     :precision="precision"
     :allow-number-paste="allowPaste"
+    :initial-control-value="0"
     v-on="listeners">
   </bk-input>
 </template>

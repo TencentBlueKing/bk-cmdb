@@ -376,6 +376,33 @@ const (
 	// BKOSNameField the os name field
 	BKOSNameField = "bk_os_name"
 
+	// BKOSVersionField the host os version field
+	BKOSVersionField = "bk_os_version"
+
+	// BKOSBitField the host os bit field
+	BKOSBitField = "bk_os_bit"
+
+	// BKCpuField the host cpu field
+	BKCpuField = "bk_cpu"
+
+	// BKCpuModuleField the host cpu module field
+	BKCpuModuleField = "bk_cpu_module"
+
+	// BKMemField the host memory field
+	BKMemField = "bk_mem"
+
+	// BKDiskField the host disk field
+	BKDiskField = "bk_disk"
+
+	// BKMac the host inner mac field
+	BKMac = "bk_mac"
+
+	// BKOuterMac the host outer mac field
+	BKOuterMac = "bk_outer_mac"
+
+	// BKCpuArch the host cpu architecture field
+	BKCpuArch = "bk_cpu_architecture"
+
 	// BKHttpGet the http get
 	BKHttpGet = "GET"
 

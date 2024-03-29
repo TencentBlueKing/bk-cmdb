@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/common/util"
+
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -87,6 +88,11 @@ func validateDatetimeStringType(value interface{}) error {
 	if err := validateStringType(value); err != nil {
 		return err
 	}
+	// 时间类型
+	if _, isTime := util.IsTime(value.(string)); isTime {
+		return nil
+	}
+	// 日期类型
 	if _, err := time.Parse(timeLayout, value.(string)); err != nil {
 		return err
 	}

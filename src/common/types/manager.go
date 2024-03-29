@@ -12,6 +12,8 @@
 
 package types
 
+import "configcenter/src/common/auth"
+
 var (
 	// needDiscoveryServiceName 服务依赖的第三方服务名字的配置
 	needDiscoveryServiceName = make(map[string]struct{}, 0)
@@ -36,6 +38,10 @@ func GetDiscoveryService() map[string]struct{} {
 	// compatible 如果没配置,发现所有的服务
 	if len(needDiscoveryServiceName) == 0 {
 		DiscoveryAllService()
+	}
+	// 如果没有开启鉴权，则不需要发现auth节点
+	if !auth.EnableAuthorize() {
+		delete(needDiscoveryServiceName, CC_MODULE_AUTH)
 	}
 	return needDiscoveryServiceName
 }

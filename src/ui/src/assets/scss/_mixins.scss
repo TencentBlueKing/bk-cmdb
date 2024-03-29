@@ -22,7 +22,7 @@
     align-items: center;
 }
 
-@mixin scrollbar ($width: 6px, $bgColor: rgba(165, 165, 165, .1)) {
+@mixin scrollbar ($width: 8px, $bgColor: transparent) {
     overflow: auto;
     &::-webkit-scrollbar {
         width: $width;
@@ -32,17 +32,24 @@
             min-height: 24px;
             border-radius: 20px;
             background-color: #dcdee5;
+
+            &:hover {
+                background: #979BA5;
+            }
+        }
+        &:hover {
+            background: #F0F1F5;
         }
     }
 }
 
-@mixin scrollbar-x ($width: 6px) {
+@mixin scrollbar-x ($width: 8px) {
     @include scrollbar;
     overflow-x: auto;
     overflow-y: hidden;
 }
 
-@mixin scrollbar-y ($width: 6px, $bgColor: rgba(165, 165, 165, .1)) {
+@mixin scrollbar-y ($width: 8px, $bgColor: transparent) {
     @include scrollbar($width, $bgColor);
     overflow-x: hidden;
     overflow-y: auto;

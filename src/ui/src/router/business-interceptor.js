@@ -100,7 +100,18 @@ export const before = async function (to, from, next) {
   // 缓存无ID，URL无ID，则认为是首次进入业务导航，取一个默认业务id进入到二级路由
   if (!id) {
     // 优先取有权限业务的第一个写入URL中，否则取系统的第一个业务
-    const firstBusiness = authorizedList?.length ? authorizedList?.[0] : allBusinessList?.[0]
+    const firstAuthedBiz = authorizedList?.[0]
+
+    // 无任何有权限的业务
+    if (!firstAuthedBiz) {
+      next({
+        path: '/no-business',
+        replace: true
+      })
+      return false
+    }
+
+    const firstBusiness = firstAuthedBiz ?? allBusinessList?.[0]
     toTopRoute.meta.view = 'default'
     const defaultId = firstBusiness.bk_biz_id
     window.localStorage.setItem('selectedBusiness', defaultId)
@@ -147,6 +158,8 @@ export const before = async function (to, from, next) {
     // 优先使用二级路由（内页）展示无权限，并且需要取最后一个路由因dynamic-router-view组件中的view值为最后一个路由
     const targetRoute = to.matched?.[2] ?? to.matched?.[1] ?? to.matched?.[0]
     targetRoute.meta.view = 'permission'
+    targetRoute.meta.extra.isNotFound = !business
+    targetRoute.meta.extra.isUnauthed = business && !isAuthorized
   }
 
   // 总是放行，因为无论如何都需要进入到二级路由，前提是之前的逻辑已经保证了路由的正确性

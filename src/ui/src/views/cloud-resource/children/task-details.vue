@@ -123,7 +123,7 @@
         /deep/ {
             .bk-tab-header {
                 padding: 0;
-                margin: 0 30px;
+                margin: 0 24px;
             }
             .bk-tab-section {
                 height: 0;

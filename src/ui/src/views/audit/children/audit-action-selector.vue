@@ -12,6 +12,7 @@
 
 <template>
   <bk-select
+    :searchable="true"
     v-bind="$attrs"
     v-model="localValue"
     display-tag
