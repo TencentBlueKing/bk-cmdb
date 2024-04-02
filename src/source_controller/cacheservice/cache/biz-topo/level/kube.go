@@ -29,6 +29,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	nlgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/node"
 	topotypes "configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
+	"configcenter/src/source_controller/cacheservice/cache/tools"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 )
@@ -135,7 +136,7 @@ func newKubeNsLevel() *kubeNsLevel {
 func (l *kubeNsLevel) GetNodesByDB(ctx context.Context, bizID int64, _ []mapstr.MapStr, rid string) ([]topotypes.Node,
 	error) {
 
-	cond, err := genKubeSharedNsCond(ctx, bizID, types.BKIDField, rid)
+	cond, err := tools.GenKubeSharedNsCond(ctx, bizID, types.BKIDField, rid)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +221,7 @@ func (l *kubeWlLevel) GetNodesByDB(ctx context.Context, bizID int64, conds []map
 	[]topotypes.Node, error) {
 
 	if len(conds) == 0 {
-		cond, err := genKubeSharedNsCond(ctx, bizID, types.BKNamespaceIDField, rid)
+		cond, err := tools.GenKubeSharedNsCond(ctx, bizID, types.BKNamespaceIDField, rid)
 		if err != nil {
 			return nil, err
 		}
@@ -434,28 +435,4 @@ func (l *kubeWlLevel) fillWlNodesCountFromCache(ctx context.Context, bizID int64
 	}
 
 	return nil
-}
-
-func genKubeSharedNsCond(ctx context.Context, bizID int64, nsIDField string, rid string) (mapstr.MapStr, error) {
-	sharedCond := mapstr.MapStr{types.BKAsstBizIDField: bizID}
-
-	relations := make([]types.NsSharedClusterRel, 0)
-	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(sharedCond).
-		Fields(types.BKNamespaceIDField).All(ctx, &relations)
-	if err != nil {
-		blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, sharedCond, rid)
-		return nil, err
-	}
-
-	sharedNsIDs := make([]int64, 0)
-	for _, relation := range relations {
-		sharedNsIDs = append(sharedNsIDs, relation.NamespaceID)
-	}
-
-	return mapstr.MapStr{
-		common.BKDBOR: []mapstr.MapStr{
-			{types.BKBizIDField: bizID},
-			{nsIDField: mapstr.MapStr{common.BKDBIN: sharedNsIDs}},
-		},
-	}, nil
 }

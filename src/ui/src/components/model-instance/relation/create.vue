@@ -735,7 +735,7 @@
 
 <style lang="scss" scoped>
     .new-association{
-        padding: 10px 20px;
+        padding: 10px 24px;
         background-color: #fff;
         font-size: 14px;
         position: relative;

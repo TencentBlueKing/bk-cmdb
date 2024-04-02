@@ -254,7 +254,7 @@
         border-right: 1px solid #e7e9ef;
         .wrapper-header{
             height: 78px;
-            padding: 20px;
+            padding: 20px 24px;
             line-height: 36px;
             .header-label{
                 display: inline-block;
@@ -287,7 +287,7 @@
             position: relative;
             height: 42px;
             line-height: 42px;
-            padding: 0 0 0 27px;
+            padding: 0 0 0 24px;
             cursor: pointer;
             &.disabled {
                 cursor: not-allowed;
@@ -334,7 +334,7 @@
         left: 0;
         width: 100%;
         height: 62px;
-        padding: 13px 20px;
+        padding: 13px 24px;
         background-color: #f9f9f9;
         .config-button{
             min-width: 110px;

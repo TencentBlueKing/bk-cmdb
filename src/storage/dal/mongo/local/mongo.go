@@ -664,6 +664,8 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case kubetypes.BKTableNameBaseCustom:
 	case kubetypes.BKTableNameBasePod:
 	case kubetypes.BKTableNameBaseContainer:
+	case kubetypes.BKTableNameNsSharedClusterRel:
+
 		// NOTE: should not use the table name for archive, the object instance and association
 		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
 		// error message in order to find the wrong table name used in logics level.

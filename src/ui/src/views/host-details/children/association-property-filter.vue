@@ -184,6 +184,8 @@
     }
     .property-value{
         width: 245px;
+        position: relative;
+
         .search-form-el {
           width: 100%;
         }

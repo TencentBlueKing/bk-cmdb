@@ -27,7 +27,7 @@
             v-model="condition[property.id].operator"
             @change="handleOperatorChange(property, ...arguments)">
           </operator-selector>
-          <component class="item-value"
+          <component class="item-value r0"
             :is="getComponentType(property)"
             :placeholder="getPlaceholder(property)"
             :ref="`component-${property.id}`"
@@ -45,7 +45,7 @@
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
-        <condition-picker :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
+        <condition-picker class="filter-add" :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
           :handler="updateSelected" :type="2"></condition-picker>
       </bk-form-item>
     </bk-form>
@@ -225,7 +225,7 @@
   }
 
   .filter-form {
-    padding: 0 10px;
+    padding: 0 14px;
   }
   .filter-item {
     padding: 2px 10px 10px;
@@ -276,10 +276,13 @@
     }
   }
 
+  .filter-add {
+    padding-left: 10px;
+  }
   .filter-options {
     display: flex;
     align-items: center;
-    padding: 10px 20px;
+    padding: 10px 24px;
     &.is-sticky {
       border-top: 1px solid $borderColor;
       background-color: #fff;

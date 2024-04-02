@@ -22,6 +22,7 @@
           <label class="unique-flag-label">{{$t('唯一校验标识')}}：</label>
           <bk-select class="unique-selector"
             v-model="objectUniqueId"
+            :searchable="true"
             :clearable="false">
             <bk-option v-for="uniqueCheck in modelUniqueChecks"
               :key="uniqueCheck.id"
@@ -51,6 +52,7 @@
             <bk-select class="unique-selector"
               :value="selectedRelations[row.bk_obj_id]"
               :clearable="false"
+              :searchable="true"
               :disabled="isUniqueCheckDisabled(row)"
               @change="handleUniqueCheckChange(row, ...arguments)">
               <bk-option v-for="uniqueCheck in row.relation_unique_checks"

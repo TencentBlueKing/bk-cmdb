@@ -213,7 +213,7 @@
     .path-tooltip-content {
         width: 300px;
         max-height: 500px;
-        @include scrollbar-y;
+        @include scrollbar-y(6px);
         .path-tooltip-item {
             display: flex;
             align-items: center;

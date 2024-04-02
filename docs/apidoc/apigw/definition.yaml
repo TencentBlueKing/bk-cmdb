@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.13.4
+  version: 3.13.5
   # 版本标题
-  title: "3.13.4"
+  title: "3.13.5"
   # 版本描述
-  comment: "3.13.4"
+  comment: "3.13.5"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
@@ -29,11 +29,11 @@ apigateway:
   allow_delete_sensitive_params: false
   # 网关维护人员，仅维护人员有管理网关的权限
   maintainers:
-    - "admin"
+    - {{ environ.BK_CMDB_MAINTAINER }}
 
 # 定义环境信息，用于命令 `sync_apigw_stage`
 stage:
-  name: "prod"
+  name: {{ environ.BK_CMDB_STAGE_NAME }}
   description: "正式环境"
   # 环境的英文名，蓝鲸官方网关需提供，以支持国际化
   description_en: "Production Environment"
@@ -48,7 +48,7 @@ stage:
       loadbalance: "roundrobin"
       hosts:
         # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
-        - host: "http://bk-cmdb-api"
+        - host: {{ environ.BK_CMDB_HOST }}
           weight: 100
     # Header转换；如未使用，可去除此配置
     transform_headers:
@@ -67,6 +67,14 @@ grant_permissions:
     resource_names:
       - list_kube_container_by_topo
       - get_biz_kube_cache_topo
+      - list_kube_cluster
+      - list_kube_namespace
+      - list_kube_workload
+      - list_kube_node
+      - list_kube_pod
+      - list_kube_container
+      - list_cached_kube_pod_label_key
+      - list_cached_kube_pod_label_value
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`

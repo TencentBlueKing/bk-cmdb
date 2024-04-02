@@ -19,6 +19,7 @@
     v-model.number="localValue"
     :max="max"
     :min="min"
+    :initial-control-value="0"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">

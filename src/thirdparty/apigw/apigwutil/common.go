@@ -19,7 +19,6 @@ package apigwutil
 
 import (
 	"errors"
-	"strings"
 	"sync"
 
 	"configcenter/src/apimachinery/util"
@@ -76,12 +75,6 @@ func (s *ApiGWDiscovery) GetServersChan() chan []string {
 
 // ParseApiGWConfig parse api gateway config
 func ParseApiGWConfig(path string) (*ApiGWConfig, error) {
-	address, err := cc.StringSlice(path + ".address")
-	if err != nil {
-		blog.Errorf("get api gateway address config error, err: %v", err)
-		return nil, err
-	}
-
 	appCode, err := cc.String(path + ".appCode")
 	if err != nil {
 		blog.Errorf("get api gateway appCode config error, err: %v", err)
@@ -107,36 +100,10 @@ func ParseApiGWConfig(path string) (*ApiGWConfig, error) {
 	}
 
 	apiGWConfig := &ApiGWConfig{
-		Address:   address,
 		AppCode:   appCode,
 		AppSecret: appSecret,
 		Username:  username,
 		TLSConfig: &tlsConfig,
 	}
 	return apiGWConfig, nil
-}
-
-type ApiName string
-
-const (
-	// GseName gse api gateway name
-	GseName ApiName = "bk-gse"
-
-	// NoticeName notice api gateway name
-	NoticeName ApiName = "bk-notice"
-)
-
-const templateVar = "{api_name}"
-
-// ReplaceApiName replace the template api_name in api gateway address
-// 举例：根据配置文件拿到的apigw地址为 http://bkapi.example.com/api/{api_name}，此时如果是要调用A项目的api gateway网关，
-// 可以将模版地址中的{api_name}进行替换，得到http://bkapi.example.com/api/A；以此实现根据同一个网关模版变量，
-// 通过调整网关名称，能够调用不同的api gateway网关。
-func ReplaceApiName(templateAddr []string, apiName ApiName) ([]string, error) {
-	address := make([]string, len(templateAddr))
-	for idx, template := range templateAddr {
-		address[idx] = strings.Replace(template, templateVar, string(apiName), 1)
-	}
-
-	return address, nil
 }
