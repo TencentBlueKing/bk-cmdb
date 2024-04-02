@@ -1,3 +1,8 @@
+## [Version: v3.13.5-feature-dependence-alpha1] - 2024-04-02
+**功能优化**
+- 升级go版本到1.20并调整go mod依赖
+- 前端依赖包升级
+
 ## [Version: v3.13.5] - 2024-03-29
 **新增功能**
 - 添加按业务维度的pod label的key和value的缓存
