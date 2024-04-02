@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update process template information
+Update Process Template Information (Permission: Service Template Editing Permission)
 
 ### Request Parameters
 
@@ -8,65 +8,54 @@ Update process template information
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| process_template_id            |  int  |yes   | Process template ID|
-| process_property         |  object  |yes   | Process template field information to update|
+| Field               | Type   | Required | Description                                                  |
+| ------------------- | ------ | -------- | ------------------------------------------------------------ |
+| process_template_id | int    | Yes      | Process template ID                                          |
+| process_property    | object | Yes      | Information of fields in the process template that need to be updated |
 
-#### The fields where process_property can appear
-
-Note:
-
-as_default_value: Is the value of the process based on the template
-Value: the value of the process. Different field types are different
-
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-|proc_num|  object| no |{"value": null, "as_default_value": False}, value type is numeric|
-|stop_cmd| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|restart_cmd| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|face_stop_cmd| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|bk_func_name| object| no |{"value": "a7","as_default_value": True}}, value type is string|
-|work_path| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|priority| object| no |{"value": null,"as_default_value": False}, value type is numeric|
-|reload_cmd| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|bk_process_name| object| no |{"value": "a7","as_default_value": True}}, value type is string|
-|pid_file| object| no |{"value": "","as_default_value": False}, value type is a string|
-|auto_start| object| no |{"value": null,"as_default_value": Null}}, value type is boolean|
-|auto_time_gap| object| no |{"value": null,"as_default_value": False}, value type is numeric|
-|start_cmd| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|bk_func_id| object| no |{"value": "","as_default_value": False} the value type is a string|
-|user| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|timeout| object| no |{"value": null,"as_default_value": False}, value type is numeric|
-|description| object| no |{"value": "1","as_default_value": True}}, value type is string|
-|bk_start_param_regex| object| no |{"value": "","as_default_value": False}, the value type is a string|
-|bind_info| object| no |{"value":[],,"as_default_value": True }, see access_property.bind_info.value n for details of value[]|
-
-
-#### Process_property.bind_info.value [n] fields that can appear
+#### Fields that can appear in process_property
 
 Note:
 
-When modifying bind_info, you must first obtain the bind_info content of the original process, then modify it on the existing bind_info of the process, and transfer the modified content to the modification structure.
+as_default_value: Whether the value of the process is based on the template value: The value of the process, different field types have different types
+
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| proc_num             | object | No       | {"value": null, "as_default_value": false}, value type is number |
+| stop_cmd             | object | No       | {"value": "","as_default_value": false}, value type is string |
+| restart_cmd          | object | No       | {"value": "","as_default_value": false}, value type is string |
+| face_stop_cmd        | object | No       | {"value": "","as_default_value": false}, value type is string |
+| bk_func_name         | object | No       | {"value": "a7","as_default_value": true}}, value type is string |
+| work_path            | object | No       | {"value": "","as_default_value": false}, value type is string |
+| priority             | object | No       | {"value": null,"as_default_value": false}, value type is number |
+| reload_cmd           | object | No       | {"value": "","as_default_value": false}, value type is string |
+| bk_process_name      | object | No       | {"value": "a7","as_default_value": true}}, value type is string |
+| pid_file             | object | No       | {"value": "","as_default_value": false}, value type is string |
+| auto_start           | object | No       | {"value": null,"as_default_value": null}}, value type is boolean |
+| auto_time_gap        | object | No       | {"value": null,"as_default_value": false}, value type is number |
+| start_cmd            | object | No       | {"value": "","as_default_value": false}, value type is string |
+| bk_func_id           | object | No       | {"value": "","as_default_value": false} value type is string |
+| user                 | object | No       | {"value": "","as_default_value": false}, value type is string |
+| timeout              | object | No       | {"value": null,"as_default_value": false}, value type is number |
+| description          | object | No       | {"value": "1","as_default_value": true}}, value type is string |
+| bk_start_param_regex | object | No       | {"value": "","as_default_value": false}, value type is string |
+| bind_info            | object | No       | {"value":[],"as_default_value": true }, value detailed information see process_property.bind_info.value[n] |
+
+#### Fields that can appear in process_property.bind_info.value[n]
 
 Note:
 
-as_default_value: Is the value of the process based on the template
-Value: value of process. Different field types are different
+When modifying bind_info, you must first obtain the content of the original process's bind_info, then modify the existing bind_info of the process, and pass the modified content to the modification structure.
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-|enable| object| no |{"value": false,"as_default_value": True}, value type is boolean|
-|ip| object| no |{"value": "1","as_default_value": True}, the value type is a string|
-|port| object| no |{"value": "100","as_default_value": True}, the value type is a string|
-|protocol| object| no |{"value": "1","as_default_value": True},, value type is a string|
-|row_id| int| no | Unique representation id, new row can be set to empty, update must keep the original value|
+as_default_value: Whether the value of the process is based on the template value: The value of the process, different field types have different types
 
-
-
-
-
-
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| enable   | object | No       | {"value": false,"as_default_value": true}, value type is boolean |
+| ip       | object | No       | {"value": "1","as_default_value": true}, value type is string |
+| port     | object | No       | {"value": "100","as_default_value": true}, value type is string |
+| protocol | object | No       | {"value": "1","as_default_value": true}, value type is string |
+| row_id   | int    | No       | Unique identifier id, new rows can be set to null, and must maintain the original value for updates |
 
 ### Request Parameters Example
 
@@ -179,7 +168,7 @@ Value: value of process. Different field types are different
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -300,30 +289,30 @@ Value: value of process. Different field types are different
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Updated process template information|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Updated process template information                         |
 
-#### Data field Description
+#### Explanation of the data field
 
-| Name| Type| Description|
-|---|---|---|
-| id | int |Data id|
-| bk_process_name | string |Process alias|
-| bk_biz_id |  int| Business ID |
-| service_template_id | int |Service template id|
-| property |object  |Attribute|
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data            |
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string       | Developer account number|
+| Field                | Type   | Description                |
+| ------------------- | ------ | -------------------------- |
+| id                  | int    | Data ID                    |
+| bk_process_name     | string | Process alias              |
+| bk_biz_id           | int    | Business ID                |
+| service_template_id | int    | Service template ID        |
+| property            | object | Properties                 |
+| creator             | string | Creator of this data       |
+| modifier            | string | Last modifier of this data |
+| create_time         | string | Creation time              |
+| last_time           | string | Update time                |
+| bk_supplier_account | string | Supplier account           |

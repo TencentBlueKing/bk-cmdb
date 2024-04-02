@@ -146,6 +146,7 @@
     // 重置 .cmdb-form-item display
     display: block;
     position: relative;
+    min-height: 32px;
 
     .form-element-item {
       &.cmdb-search-input {

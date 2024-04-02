@@ -54,7 +54,8 @@ module.exports = {
       os: require.resolve('os-browserify/browser'),
       stream: require.resolve('stream-browserify'),
       zlib: require.resolve('browserify-zlib'), // for unzip
-      util: require.resolve('util/') // for unzip
+      util: require.resolve('util/'), // for unzip
+      'process/browser': require.resolve('process/browser')
     }
   },
 

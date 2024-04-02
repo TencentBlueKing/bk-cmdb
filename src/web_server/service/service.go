@@ -14,6 +14,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -25,9 +26,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
+	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/capability"
@@ -36,6 +39,7 @@ import (
 	"configcenter/src/web_server/middleware"
 	"configcenter/src/web_server/service/apigw"
 	"configcenter/src/web_server/service/excel"
+	"configcenter/src/web_server/service/notice"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -47,9 +51,10 @@ type Service struct {
 	Engine   *backbone.Engine
 	CacheCli redis.Client
 	*logics.Logics
-	Config  *options.Config
-	Session redis.RedisStore
-	ApiCli  apiserver.ApiServerClientInterface
+	Config    *options.Config
+	Session   redis.RedisStore
+	NoticeCli noticeCli.ClientI
+	ApiCli    apiserver.ApiServerClientInterface
 }
 
 // WebService TODO
@@ -96,15 +101,19 @@ func (s *Service) WebService() *gin.Engine {
 	s.initResourceCount(ws)
 
 	c := &capability.Capability{
-		Ws:     ws,
-		Engine: s.Engine,
-		ApiCli: s.ApiCli,
+		Ws:        ws,
+		Engine:    s.Engine,
+		ApiCli:    s.ApiCli,
+		NoticeCli: s.NoticeCli,
 	}
 	// init excel func
 	excel.Init(c)
 
 	// init api gateway http handlers for saas
 	apigw.Init(c)
+
+	// init notice func
+	notice.Init(c)
 
 	// if no route, redirect to 404 page
 	ws.NoRoute(func(c *gin.Context) {
@@ -211,4 +220,27 @@ func (s *Service) Healthz(c *gin.Context) {
 	}
 	answer.SetCommonResponse()
 	c.JSON(200, answer)
+}
+
+// InitNotice init notice client and register application
+func (s *Service) InitNotice() error {
+	if !s.Config.EnableNotification {
+		return nil
+	}
+
+	if apigwcli.Client() == nil {
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry())
+		if err != nil {
+			blog.Errorf("init apigw clientset failed, err: %v", err)
+			return err
+		}
+
+		s.NoticeCli = apigwcli.Client().Notice()
+		if _, err = s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
+			blog.Errorf("register to the notification center failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }

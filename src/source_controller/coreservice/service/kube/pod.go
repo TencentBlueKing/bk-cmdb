@@ -19,8 +19,11 @@ package kube
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
+	"configcenter/pkg/conv"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -155,6 +158,19 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec types.SysSpec, now, id int64) (
 	types.Pod, error) {
 
+	// 由于目前使用版本的mongodb不支持key中包含的.的查询，在存入db的时候，将.以编码的方式存入
+	if pod.Labels != nil {
+		newLabels := make(map[string]string)
+		for key, val := range *pod.Labels {
+			if strings.Contains(key, ".") {
+				key = conv.EncodeDot(key)
+			}
+
+			newLabels[key] = val
+		}
+		pod.Labels = &newLabels
+	}
+
 	podInfo := types.Pod{
 		ID:            id,
 		SysSpec:       sysSpec,
@@ -228,6 +244,19 @@ func (s *service) ListPod(ctx *rest.Contexts) {
 		return
 	}
 
+	for idx := range pods {
+		if pods[idx].Labels == nil {
+			continue
+		}
+
+		// 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
+		newLabels := make(map[string]string)
+		for key, val := range *pods[idx].Labels {
+			newLabels[conv.DecodeDot(key)] = val
+		}
+		pods[idx].Labels = &newLabels
+	}
+
 	result := &types.PodDataResp{Info: pods}
 	ctx.RespEntity(result)
 }
@@ -293,4 +322,75 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 
 	result := &types.ContainerDataResp{Info: containers}
 	ctx.RespEntity(result)
+}
+
+// ListContainerByPod list container by pod condition
+func (s *service) ListContainerByPod(ctx *rest.Contexts) {
+	input := new(types.GetContainerByPodOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	fieldPrefix := "container"
+	fieldMap := make(map[string]string)
+	for _, name := range types.ContainerFields.GetFieldNames() {
+		fieldMap[name] = fmt.Sprintf("$%s.%s", fieldPrefix, name)
+	}
+	filter := make([]map[string]interface{}, 0)
+	if len(input.PodCond) > 0 {
+		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.PodCond})
+	}
+	subFilter := []map[string]interface{}{
+		{
+			common.BKDBLookup: map[string]string{
+				common.BKDBFrom:         types.BKTableNameBaseContainer,
+				common.BKDBLocalField:   common.BKFieldID,
+				common.BKDBForeignField: types.BKPodIDField,
+				common.BKDBAs:           fieldPrefix,
+			},
+		},
+		{common.BKDBUnwind: fmt.Sprintf("$%s", fieldPrefix)},
+		{common.BKDBProject: fieldMap},
+	}
+	filter = append(filter, subFilter...)
+	if input.ContainerCond != nil {
+		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.ContainerCond})
+	}
+
+	if input.Page.EnableCount {
+		total := "total"
+		result := map[string]int64{}
+		filter = append(filter, map[string]interface{}{common.BKDBCount: total})
+		err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateOne(ctx.Kit.Ctx, filter, &result)
+		if err != nil && !mongodb.Client().IsNotFoundError(err) {
+			blog.Errorf("get container count failed, cond: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		ctx.RespEntity(types.GetContainerByPodResp{Count: result[total]})
+		return
+	}
+
+	containerFieldMap := make(map[string]int64)
+	for _, field := range input.Fields {
+		containerFieldMap[field] = 1
+	}
+	if len(containerFieldMap) != 0 {
+		filter = append(filter, map[string]interface{}{common.BKDBProject: containerFieldMap})
+	}
+	filter = append(filter, []map[string]interface{}{{common.BKDBSkip: input.Page.Start},
+		{common.BKLimit: input.Page.Limit}, {common.BKDBSort: map[string]int64{input.Page.Sort: 1}}}...)
+
+	containers := make([]mapstr.MapStr, 0)
+	err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateAll(ctx.Kit.Ctx, filter, &containers)
+	if err != nil {
+		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(types.GetContainerByPodResp{Info: containers})
+	return
 }

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Create dynamic grouping (V3.9.6)
+Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Permission)
 
 ### Request Parameters
 
@@ -8,29 +8,29 @@ Create dynamic grouping (V3.9.6)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | yes     | Business ID |
-| bk_obj_id |  string  |yes     | The target resource object type of dynamic grouping can be host,set at present|
-| info      |   object  |yes     | General query criteria|
-| name      |   string  |yes     | Dynamic group name|
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| bk_obj_id | string | Yes      | Target resource object type of the dynamic group, currently can be host, set |
+| info      | object | Yes      | Common query conditions                                      |
+| name      | string | Yes      | Dynamic group name                                           |
 
 #### info.condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_obj_id |  string   | yes     | Conditional object resource type, info.conditon supported for dynamic grouping of host type: set,module,host; Info.conditions supported for dynamic grouping of type set: set|
-| condition |  array    | yes     | Query criteria|
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id | string | Yes      | Condition object resource type, host type dynamic group supports info.condition: set, module, host; set type dynamic group supports info.condition: set |
+| condition | array  | Yes      | Query conditions                                             |
 
 #### info.condition.condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| field     |   string    | yes     | Fields of the object|
-| operator  |  string    | yes     | Operator with op values eq(equal)/ne(unequal)/in(of)/nin(not of)|
-| value     |   object    | yes  | The value for the field|
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Object field                                                 |
+| operator | string | Yes      | Operator, op value can be eq (equal) / ne (not equal) / in (belongs to) / nin (does not belong to) |
+| value    | object | Yes      | Value of the field                                           |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -78,13 +78,13 @@ Create dynamic grouping (V3.9.6)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
@@ -93,20 +93,21 @@ Create dynamic grouping (V3.9.6)
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Request return data                                          |
 
 #### data
 
-| Field    | Type| Description      |
-|--------|-------|-----------|
-| id     |  string |Returns a new dynamic grouping primary key ID after successful creation|
+| Field | Type   | Description                                                  |
+| ----- | ------ | ------------------------------------------------------------ |
+| id    | string | Newly created dynamic group primary key ID returned after successful creation |

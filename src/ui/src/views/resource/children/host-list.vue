@@ -170,7 +170,8 @@
           page = 1,
           sort = 'bk_host_id',
           limit = this.table.pagination.limit,
-          directory = null
+          directory = null,
+          isFuzzy = false,
         }) => {
           if (this.$route.name !== MENU_RESOURCE_HOST) {
             return false
@@ -183,6 +184,9 @@
           this.scope = isNaN(scope) ? 'all' : parseInt(scope, 10)
 
           FilterStore.setResourceScope(scope)
+          if (isFuzzy) {
+            FilterStore.setIPField('exact', false)
+          }
 
           this.getHostList()
         }, { throttle: 100 })

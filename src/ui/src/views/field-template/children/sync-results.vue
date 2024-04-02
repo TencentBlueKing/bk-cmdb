@@ -93,6 +93,7 @@
         } else {
           status.value = 'abnormal'
         }
+        summary.value = ''
       }
     } catch (err) {
       status.value = 'apierror'

@@ -1,20 +1,19 @@
-### Functional description
+### Function Description
 
- Deletes an Association between instances based on the ID of the instance Association relationship. (Effective Version: 3.5.40)
+Delete the association between instances based on the ID of the instance relationship (Version: v3.5.40, Permission: Model instance deletion permission)
 
 ### Request Parameters
 
 {{ common_args_desc }}
 
-
 #### Interface Parameters
 
-| Field| Type     | Required| Description             |
-| :--- | :------- | :--- | :--------------- |
-| id   |  int |yes   | ID of the instance Association (note: Identity ID of non-model instance), up to 500|
-| bk_obj_id | string |yes| The model unique name of the relationship source model|
+| Field     | Type   | Required | Description                                                  |
+| :-------- | :----- | :------- | :----------------------------------------------------------- |
+| id        | int    | Yes      | ID of the instance relationship (Note: not the identity ID of the model instance), up to 500 |
+| bk_obj_id | string | Yes      | The unique name of the source model of the relationship      |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -27,7 +26,7 @@
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -36,17 +35,17 @@
     "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": null
+    "data": 2
 }
 ```
 
 ### Return Result Parameters Description
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | int    | Number of deleted associations                               |

@@ -113,6 +113,7 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
+  import isEqual from 'lodash/isEqual'
 
   export default {
     name: 'cmdb-form',
@@ -161,6 +162,10 @@
       submitting: {
         type: Boolean,
         default: false
+      },
+      slotAppendIsChange: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -175,14 +180,16 @@
       changedValues() {
         const changedValues = {}
         Object.keys(this.values).forEach((propertyId) => {
-          if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
+          if (!isEqual(this.values[propertyId], this.refrenceValues[propertyId])) {
             changedValues[propertyId] = this.values[propertyId]
           }
         })
         return changedValues
       },
       hasChange() {
-        return !!Object.keys(this.changedValues).length
+        return (!!Object.keys(this.changedValues).length)
+          || (Object.keys(this.inst).length !== Object.keys(this.values).length)
+          || this.slotAppendIsChange
       },
       groupedProperties() {
         return this.$groupedProperties.map(properties => properties.filter((property) => {
@@ -295,7 +302,7 @@
         @include scrollbar-y;
     }
     .form-groups {
-        padding: 0 0 0 32px;
+        padding: 0 24px;
     }
     .property-group {
         padding: 7px 0 10px 0;
@@ -313,12 +320,12 @@
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
+        gap: 0 54px;
         .property-item {
-            width: 50%;
+            width: calc(50% - 27px);
             margin: 12px 0 0;
-            padding: 0 54px 0 0;
             font-size: 12px;
-            flex: 0 0 50%;
+            flex: 0 0 calc(50% - 27px);
             max-width: 50%;
             // flex: 0 1 auto;
             .property-name {
@@ -358,6 +365,7 @@
                 font-size: 0;
                 position: relative;
                 display: flex;
+                min-height: 32px;
                 /deep/ .control-append-group {
                     .bk-input-text {
                         flex: 1;
@@ -379,7 +387,7 @@
     }
     .form-options {
         width: 100%;
-        padding: 10px 32px;
+        padding: 10px 24px;
         font-size: 0;
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;

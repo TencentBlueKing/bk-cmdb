@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Batch delete service instances based on service instance ID list
+Batch delete service instances based on service instance IDs (Permission: Service instance deletion permission)
 
 ### Request Parameters
 
@@ -8,14 +8,12 @@ Batch delete service instances based on service instance ID list
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| service_instance_ids | array  |yes   | Service instance ID list|
-| bk_biz_id                  |  int        | yes  | Business ID |
-| service_instance_ids | array  | Yes   | Service Instance IDs, the max length is 500 |
+| Field                | Type  | Required | Description                                    |
+| -------------------- | ----- | -------- | ---------------------------------------------- |
+| service_instance_ids | array | Yes      | Service instance ID list, maximum value is 500 |
+| bk_biz_id            | int   | Yes      | Business ID                                    |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -28,7 +26,7 @@ Batch delete service instances based on service instance ID list
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -45,11 +43,11 @@ Batch delete service instances based on service instance ID list
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

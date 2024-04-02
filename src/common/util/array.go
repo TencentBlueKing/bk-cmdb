@@ -55,12 +55,14 @@ func ArrayUnique(a interface{}) (ret []interface{}) {
 
 // StrArrayUnique get unique string array
 func StrArrayUnique(a []string) (ret []string) {
+	unique := make(map[string]struct{})
 	ret = make([]string, 0)
-	length := len(a)
-	for i := 0; i < length; i++ {
-		if !Contains(ret, a[i]) {
-			ret = append(ret, a[i])
+	for _, val := range a {
+		if _, exists := unique[val]; exists {
+			continue
 		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -68,14 +70,13 @@ func StrArrayUnique(a []string) (ret []string) {
 // IntArrayUnique get unique int array
 func IntArrayUnique(a []int64) (ret []int64) {
 	unique := make(map[int64]struct{})
+	ret = make([]int64, 0)
 	for _, val := range a {
+		if _, exists := unique[val]; exists {
+			continue
+		}
 		unique[val] = struct{}{}
-	}
-	ret = make([]int64, len(unique))
-	idx := 0
-	for k := range unique {
-		ret[idx] = k
-		idx += 1
+		ret = append(ret, val)
 	}
 
 	return ret

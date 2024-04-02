@@ -327,6 +327,7 @@ type YamlObject struct {
 	ObjectName       string                `json:"bk_obj_name" yaml:"bk_obj_name"`
 	ObjIcon          string                `json:"bk_obj_icon" yaml:"bk_obj_icon"`
 	IsPre            bool                  `json:"ispre" yaml:"ispre"`
+	ObjSortNumber    int64                 `json:"obj_sort_number" yaml:"obj_sort_number"`
 	ClsID            string                `json:"bk_classification_id" yaml:"bk_classification_id"`
 	ClsName          string                `json:"bk_classification_name" yaml:"bk_classification_name"`
 	ObjectAsst       []AsstWithAsstObjInfo `json:"object_asst" yaml:"object_asst"`

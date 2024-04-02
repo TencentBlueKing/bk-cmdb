@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Model instance relation Qty query (v3.10.1+)
+Model instance relationship count query (v3.10.1+)
 
 ### Request Parameters
 
@@ -8,30 +8,30 @@ Model instance relation Qty query (v3.10.1+)
 
 #### Interface Parameters
 
-|    Field    | Type | Required | Description                                                                                                 |
-|------------|---------|------|-----------------------------------------------------------------------------------------------------------------|
-| bk_biz_id  | int |no| Business ID, which needs to be provided when querying mainline model                                                                              |
-| bk_obj_id  | string  |yes| Model ID                                                                                                          |
-| conditions | object  |no| Combined query criteria: AND and OR are supported for combination, and can be nested up to 3 layers. Each layer supports 20 OR criteria at most. If this parameter is not specified, it means all matches (i.e., Contexts are null).|
+| Field      | Type   | Required | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id  | int    | No       | Business ID, required for querying the mainline model        |
+| bk_obj_id  | string | Yes      | Model ID                                                     |
+| conditions | object | No       | Combined query conditions, supporting AND and OR, can be nested, up to 3 layers of nesting, up to 20 OR conditions per layer, not specifying this parameter means matching all (i.e., conditions is null) |
 
 #### conditions
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  |yes     | Scope condition rule for selected business|
+| Field     | Type   | Required | Description                                     |
+| --------- | ------ | -------- | ----------------------------------------------- |
+| condition | string | Yes      | Rule operator                                   |
+| rules     | array  | Yes      | Range conditions for the selected business rule |
 
 #### conditions.rules
 
-|   Field   | Type| Required| Description                                                                                                     |
-|----------|--------|------|-----------------------------------------------------------------------------------------------------------|
-| field    |  string | yes      | Condition field, optional value id, bk_inst_id, bk_obj_id, bk_Asst_inst_id, bk_Asst_obj_id, bk_obj_Asst_id, bk_Asst_id   |
-| operator | string |yes| Operator, optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between, etc|
-| value    |   -    |no| The expected value of the condition field. Different values correspond to different value formats. The array type value supports up to 500 elements                          |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Condition field, optional values id, bk_inst_id, bk_obj_id, bk_asst_inst_id, bk_asst_obj_id, bk_obj_asst_id, bk_asst_id |
+| operator | string | Yes      | Operator, optional values equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between, etc. |
+| value    | -      | No       | Expected value of the condition field, different operators correspond to different value formats, and the maximum number of elements for an array-type value is 500 |
 
-For details of assembly rules, please refer to: https: //github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+For detailed assembly rules, please refer to: [QueryBuilder](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -68,13 +68,13 @@ For details of assembly rules, please refer to: https: //github.com/Tencent/bk-c
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
@@ -83,21 +83,21 @@ For details of assembly rules, please refer to: https: //github.com/Tencent/bk-c
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |
 
 #### data
 
-| Field|   Type| Description                       |
-|-------|---------|----------------------------|
-| count | int |Returns the number of instance data that meets the condition|
+| Field | Type | Description                                  |
+| ----- | ---- | -------------------------------------------- |
+| count | int  | Number of instances that meet the conditions |

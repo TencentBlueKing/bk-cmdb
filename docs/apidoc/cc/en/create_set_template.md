@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Create a set template with the specified name under the specified service id, and the set template created to contain the service template by the specified service template id
+Create a cluster template with the specified name under the specified business ID. The created cluster template includes service templates based on the specified service template IDs. (Permission: Cluster template creation permission)
 
 ### Request Parameters
 
@@ -8,14 +8,13 @@ Create a set template with the specified name under the specified service id, an
 
 #### Interface Parameters
 
-| Field                 | Type   | Required| Description           |
-| -------------------- | ------ | ---- | -------------- |
-| bk_biz_id            |  int    | yes   | Business ID |
-| name                 |  string |yes   | Set template name |
-| service_template_ids | array  |yes   | Service template ID list|
+| Field                | Type   | Required | Description              |
+| -------------------- | ------ | -------- | ------------------------ |
+| bk_biz_id            | int    | Yes      | Business ID              |
+| name                 | string | Yes      | Cluster template name    |
+| service_template_ids | array  | Yes      | Service template ID list |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -30,7 +29,7 @@ Create a set template with the specified name under the specified service id, an
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -56,24 +55,24 @@ Create a set template with the specified name under the specified service id, an
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
+#### data Field Explanation
 
-| Field                | Type   | Description         |
-| ------------------- | ------ | ------------ |
-| id                  |  int    | Set template ID |
-| name                |  array  |Set template name|
-| bk_biz_id           |  int    | Business ID |
-| creator             |  string |Creator       |
-| modifier            |  string |Last modified by|
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string |Developer account number   |
+| Field               | Type   | Description           |
+| ------------------- | ------ | --------------------- |
+| id                  | int    | Cluster template ID   |
+| name                | array  | Cluster template name |
+| bk_biz_id           | int    | Business ID           |
+| creator             | string | Creator               |
+| modifier            | string | Last modifier         |
+| create_time         | string | Creation time         |
+| last_time           | string | Update time           |
+| bk_supplier_account | string | Supplier account      |

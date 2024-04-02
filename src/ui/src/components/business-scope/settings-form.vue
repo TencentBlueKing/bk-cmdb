@@ -221,7 +221,8 @@
       }
       .condition-value {
         flex: none;
-        width: calc(100% - 158px);
+        width: calc(100% - 186px);
+        left: 166px;
         &.organization {
           font-size: 14px;
         }

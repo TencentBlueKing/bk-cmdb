@@ -745,6 +745,7 @@ func (i *Importer) checkAddedHost(hosts map[int]map[string]interface{}) (map[int
 
 		// in dynamic scenarios, there is no need to do duplication check of ip address.
 		if addressType == common.BKAddressingDynamic {
+			legalHost[index] = host
 			continue
 		}
 

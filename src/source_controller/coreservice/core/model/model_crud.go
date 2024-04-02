@@ -306,6 +306,11 @@ func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condi
 
 func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
+	if err := m.updateSortNumWhenDelete(kit, cond.ToMapStr()); err != nil {
+		blog.Errorf("failed to update object sort number when delete object, err: %v, cond: %v, rid: %s",
+			err, cond, kit.Rid)
+		return 0, err
+	}
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if err != nil {
 		blog.Errorf("it is failed to execute a deletion operation on the table, err: %v, table: %s, rid: %s",
@@ -314,6 +319,30 @@ func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint6
 	}
 
 	return cnt, nil
+}
+
+// updateSortNumWhenDelete 删除某个模型前，需要将模型分组下排在这个模型后面的前移
+func (m *modelManager) updateSortNumWhenDelete(kit *rest.Kit, delCond map[string]interface{}) error {
+	models := make([]metadata.Object, 0)
+	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKClassificationIDField,
+		common.ObjSortNumberField).All(kit.Ctx, &models)
+	if err != nil {
+		blog.Errorf("find models failed, err: %v, filter: %v, rid: %s", err, delCond, kit.Rid)
+		return err
+	}
+
+	if len(models) <= 0 {
+		return nil
+	}
+	for _, model := range models {
+		// 分组中序号大于参数序号的减一
+		sortNumCond := mapstr.MapStr{common.BKDBGT: model.ObjSortNumber}
+		if err := m.updateOtherObjSort(kit, model.ObjCls, sortNumCond, int64(-1)); err != nil {
+			blog.Errorf("update object sort number failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 // cascadeDelete 删除模型的字段，分组，唯一校验。模型等。
@@ -338,6 +367,12 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, delCondMap); err != nil {
 		blog.Errorf("delete model unique error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
+	if err := m.updateSortNumWhenDelete(kit, delCondMap); err != nil {
+		blog.Errorf("failed to update object sort number when delete object, err: %v, cond: %v, rid: %s", err,
+			delCondMap, kit.Rid)
+		return 0, err
 	}
 
 	// delete model

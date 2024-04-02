@@ -34,7 +34,7 @@ import (
 	"configcenter/src/thirdparty/secrets"
 )
 
-// Run TODO
+// Run cloud server
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -81,17 +81,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	blog.Infof("enable auth center: %v", auth.EnableAuthorize())
 
-	var accountCryptor cryptor.Cryptor
-	blog.Infof("enable cryptor: %v", op.EnableCryptor)
-	if op.EnableCryptor == true {
-		secretKey, err := process.getSecretKey()
-		if err != nil {
-			blog.Errorf("getSecretKey failed, err: %s", err.Error())
-			return err
-		}
-		accountCryptor = cryptor.NewAesEncrpytor(secretKey)
+	accountCryptor, err := getCrypto(op, process)
+	if err != nil {
+		return err
 	}
-
 	process.Service.SetEncryptor(accountCryptor)
 
 	authorizer := iam.NewAuthorizer(engine.CoreAPI)
@@ -124,6 +117,37 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	return nil
+}
+
+func getCrypto(op *options.ServerOption, process *CloudServer) (cryptor.Cryptor, error) {
+	cryptoConfig, err := cc.Crypto("crypto")
+	if err != nil {
+		blog.Errorf("get crypto conf failed, err: %v", err)
+		return nil, err
+	}
+
+	var accountCryptor cryptor.Cryptor
+
+	if cryptoConfig != nil && cryptoConfig.Enabled {
+		accountCryptor, err = cryptor.NewCrypto(cryptoConfig)
+		if err != nil {
+			blog.Errorf("new crypto failed, err: %v", err)
+			return nil, err
+		}
+		return accountCryptor, nil
+	}
+
+	blog.Infof("enable cryptor: %v", op.EnableCryptor)
+	if op.EnableCryptor {
+		secretKey, err := process.getSecretKey()
+		if err != nil {
+			blog.Errorf("getSecretKey failed, err: %v", err)
+			return nil, err
+		}
+		accountCryptor = cryptor.NewAesEncrpytor(secretKey)
+	}
+
+	return accountCryptor, nil
 }
 
 // CloudServer TODO

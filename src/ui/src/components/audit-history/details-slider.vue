@@ -152,6 +152,6 @@
 <style lang="scss" scoped>
     .details-content {
         height: calc(100vh - 60px);
-        padding: 20px;
+        padding: 20px 24px;
     }
 </style>

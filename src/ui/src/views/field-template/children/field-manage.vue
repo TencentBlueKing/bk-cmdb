@@ -244,7 +244,7 @@
 
   const handleFieldSave = async (id, fieldData) => {
     if (isFieldExist(fieldData, [...fieldLocalList.value, ...removedFieldList.value], id)) {
-      $error(t('字段已在模板中存在，无法添加'))
+      $error(t('与已有字段的唯一标识或名称重复，请修改'))
       return
     }
 

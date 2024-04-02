@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Bulk delete set by set id under the specified business id
+Batch delete set by set ID under a specified business ID (Permission: Business topology deletion permission)
 
 ### Request Parameters
 
@@ -8,18 +8,18 @@ Bulk delete set by set id under the specified business id
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id | int        | yes  | Business ID |
-| delete      |  object |yes    | Delete|
+| Field     | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| bk_biz_id | int    | Yes      | Business ID |
+| delete    | object | Yes      | Deletion    |
 
 #### delete
-| Field                | Type       | Required   | Description                            |
-|---------------------|-------------|--------|----------------------------------|
-| inst_ids | int array   | yes   | set ID collection |
 
+| Field    | Type      | Required | Description                        |
+| -------- | --------- | -------- | ---------------------------------- |
+| inst_ids | int array | Yes      | Array of Cluster IDs to be deleted |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -27,21 +27,20 @@ Bulk delete set by set id under the specified business id
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id":0,
+    "bk_biz_id": 0,
     "delete": {
-    "inst_ids": [123]
+        "inst_ids": [123]
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
@@ -50,11 +49,11 @@ Bulk delete set by set id under the specified business id
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

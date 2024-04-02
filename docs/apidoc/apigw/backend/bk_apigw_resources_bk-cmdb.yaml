@@ -9843,7 +9843,7 @@ paths:
           transformHeaders: { }
         authConfig:
           userVerifiedRequired: false
-        disabledStages: [ ]
+        disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/container/by_topo:
     post:
@@ -10044,6 +10044,58 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/cache/findmany/kube/pod/label/key:
+    post:
+      operationId: list_cached_kube_pod_label_key
+      description: 获取缓存的Pod的标签键列表
+      tags:
+        - job
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/cache/findmany/kube/pod/label/key
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/cache/findmany/kube/pod/label/value:
+    post:
+      operationId: list_cached_kube_pod_label_value
+      description: 获取缓存的Pod的标签键对应的值列表
+      tags:
+        - job
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/cache/findmany/kube/pod/label/value
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:

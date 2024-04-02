@@ -37,8 +37,13 @@ type gse struct {
 }
 
 // NewClient create gse api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) ClientI {
-	return &gse{
-		service: apigwutil.NewApiGW(options, apigwutil.GseName),
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkGseApiGatewayUrl")
+	if err != nil {
+		return nil, err
 	}
+
+	return &gse{
+		service: service,
+	}, nil
 }

@@ -147,7 +147,7 @@
                 border: 1px solid #c3cdd7;
                 resize: none;
                 font-size: 14px;
-                @include scrollbar-y;
+                @include scrollbar-y(6px);
                 &:disabled {
                     color: #c4c6cc;
                     background-color: #fafbfd!important;

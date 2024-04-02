@@ -401,3 +401,35 @@ input.cmdb-form-input {
         color: #ff5656;
     }
 }
+
+.property-name-tooltips {
+    color: #979BA5;
+    &:hover {
+        color: #63656E ;
+    }
+}
+
+// 悬浮样式
+.g-expand{
+    position: absolute !important;
+    width: 100%;
+    z-index: 2;
+    // 组件升级成2.5.9以上后，此处样式 可删除
+    .bk-tag-input {
+        height: 32px;
+        &.active {
+            height: auto;
+        }
+    }
+
+    .bk-select, .bk-tag-input {
+        width: 100%;
+        &.is-focus, &.active {
+            max-height: 400px;
+        }
+    }
+
+    &.r0{
+            right: 0;
+        }
+}

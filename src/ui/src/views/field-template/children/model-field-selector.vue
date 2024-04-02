@@ -109,7 +109,7 @@
           v-model="selectedModelId">
         </model-selector>
       </grid-item>
-      <grid-item>
+      <grid-item v-if="selectedModelId">
         <div class="select-toolbar">
           <div class="select-stat">
             {{$t('请选择导入的字段：')}}
@@ -123,7 +123,6 @@
           </div>
         </div>
         <div :class="['field-list', { empty: !fieldList.length }]"
-          v-if="selectedModelId"
           v-bkloading="{ isLoading: pending }">
           <field-card
             v-for="(field, index) in fieldList"
@@ -150,11 +149,6 @@
             </div>
           </div>
         </div>
-        <div class="unselected-model" v-if="!selectedModelId">
-          <div class="tips">
-            <bk-icon type="info" />{{$t('请选择xx', { name: $t('模型') })}}
-          </div>
-        </div>
       </grid-item>
     </grid-layout>
     <template slot="footer" slot-scope="{ sticky }">
@@ -178,7 +172,7 @@
     .main-content {
       max-height: calc(100% - 52px);
       @include scrollbar-y;
-      padding: 20px 40px;
+      padding: 20px 24px;
     }
 
     .model-selector {

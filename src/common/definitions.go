@@ -254,6 +254,27 @@ const (
 
 	// BKDBUnwind used to split values contained in an array field into separate doc
 	BKDBUnwind = "$unwind"
+
+	// BKDBLookup used to perform multi-table association operations
+	BKDBLookup = "$lookup"
+
+	// BKDBFrom collection to join
+	BKDBFrom = "from"
+
+	// BKDBLocalField field from the input documents
+	BKDBLocalField = "localField"
+
+	// BKDBForeignField field from the documents of the "from" collection
+	BKDBForeignField = "foreignField"
+
+	// BKDBAs output array field
+	BKDBAs = "as"
+
+	// BKDBSkip skip data index
+	BKDBSkip = "$skip"
+
+	// BKLimit data quantity limit
+	BKLimit = "$limit"
 )
 
 const (
@@ -354,6 +375,33 @@ const (
 
 	// BKOSNameField the os name field
 	BKOSNameField = "bk_os_name"
+
+	// BKOSVersionField the host os version field
+	BKOSVersionField = "bk_os_version"
+
+	// BKOSBitField the host os bit field
+	BKOSBitField = "bk_os_bit"
+
+	// BKCpuField the host cpu field
+	BKCpuField = "bk_cpu"
+
+	// BKCpuModuleField the host cpu module field
+	BKCpuModuleField = "bk_cpu_module"
+
+	// BKMemField the host memory field
+	BKMemField = "bk_mem"
+
+	// BKDiskField the host disk field
+	BKDiskField = "bk_disk"
+
+	// BKMac the host inner mac field
+	BKMac = "bk_mac"
+
+	// BKOuterMac the host outer mac field
+	BKOuterMac = "bk_outer_mac"
+
+	// BKCpuArch the host cpu architecture field
+	BKCpuArch = "bk_cpu_architecture"
 
 	// BKHttpGet the http get
 	BKHttpGet = "GET"
@@ -1233,6 +1281,7 @@ const (
 	HostOSTypeEnumSolaris = "5"
 	HostOSTypeEnumHpUX    = "6"
 	HostOSTypeEnumFreeBSD = "7"
+	HostOSTypeEnumMacOS   = "8"
 )
 
 // HostOSTypeName Host system enum and name association
@@ -1244,6 +1293,7 @@ var HostOSTypeName = map[string]string{
 	HostOSTypeEnumSolaris: "solaris",
 	HostOSTypeEnumHpUX:    "hp-ux",
 	HostOSTypeEnumFreeBSD: "freebsd",
+	HostOSTypeEnumMacOS:   "darwin",
 }
 
 const (

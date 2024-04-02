@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
- Get details based on audit ID
+Get detailed information based on the audit ID (Permission: Operation audit query permission)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| id     |   array    | yes   | Audit id array, limited to 200 at a time                                             |
+| Field | Type  | Required | Description                         |
+| ----- | ----- | -------- | ----------------------------------- |
+| id    | array | Yes      | Audit ID array, up to 200 at a time |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -22,10 +22,9 @@
     "bk_token": "xxx",
     "id":[95,118]
 }
-
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -161,46 +160,48 @@
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field      | Type      | Description         |
-|-----------|-----------|--------------|
-|    id |      int  | Audit ID  |
-|   audit_type  |     string   |   Operational audit type   |
-|   bk_supplier_account  |    string    | Developer account number     |
-|   user  |      string  |    Operator|
-|   resource_type  |    string    |   Resource type   |
-|  action   |    string    |    Operation type|
-|    operate_from |    string    |   Source platform   |
-|  operation_detail   |     object     | Operational details    |
-| operation_time    |     string   |    Operating time|
-|  bk_biz_id   |       int | Business ID |
-| resource_id    |     int   |    Resource id|
-|   resource_name  |     string   | Resource Name    |
-|   rid  |     string   | Request chain id    |
+| Field               | Type   | Description          |
+| ------------------- | ------ | -------------------- |
+| id                  | int    | Audit ID             |
+| audit_type          | string | Operation audit type |
+| bk_supplier_account | string | Developer account    |
+| user                | string | Operator             |
+| resource_type       | string | Resource type        |
+| action              | string | Operation type       |
+| operate_from        | string | Source platform      |
+| operation_detail    | object | Operation details    |
+| operation_time      | string | Operation time       |
+| bk_biz_id           | int    | Business id          |
+| resource_id         | int    | Resource id          |
+| resource_name       | string | Resource name        |
+| rid                 | string | Request chain ID     |
 
 #### operation_detail
-| Field      | Type      | Description         |
-|-----------|-----------|--------------|
-|    details |      object  | Detail data   |
-|    bk_obj_id |      string  | Model type   |
+
+| Field     | Type   | Description   |
+| --------- | ------ | ------------- |
+| details   | object | Detailed data |
+| bk_obj_id | string | Model type    |
 
 #### details
-| Field      | Type      | Description         |
-|-----------|-----------|--------------|
-|    pre_data |      object  | Prior data   |
-|   cur_data  |     object   |   Current data   |
-|   update_fields  |     object   |   Updated field   |
+
+| Field         | Type   | Description    |
+| ------------- | ------ | -------------- |
+| pre_data      | object | Previous data  |
+| cur_data      | object | Current data   |
+| update_fields | object | Updated fields |

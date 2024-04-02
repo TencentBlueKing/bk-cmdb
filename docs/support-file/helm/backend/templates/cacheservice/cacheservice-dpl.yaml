@@ -43,6 +43,8 @@ spec:
         {{- end }}
         - --v={{ .Values.cacheservice.command.logLevel }}
         - --logtostderr={{ .Values.cacheservice.command.logToStdErr }}
+        - "--enable-auth"
+        - {{ .Values.iam.auth.enabled | quote }}
         livenessProbe:
           httpGet:
             path: /healthz

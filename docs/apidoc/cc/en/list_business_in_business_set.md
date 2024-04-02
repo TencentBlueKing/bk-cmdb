@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query business in business set (v3.10.12+)
+Query business in the centralized business (Version: v3.10.12+, Permission: Business set access permission)
 
 ### Request Parameters
 
@@ -8,45 +8,46 @@ Query business in business set (v3.10.12+)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_id | int    | yes  | Business set ID|
-| filter      |   object  |no     | Business attribute combination query criteria|
-| fields      |   array   | no     | Specify the fields to query. The parameter is any attribute of the business. If you do not fill in the field information, the system will return all the fields of the business|
-| page        |   object  |yes     | Paging condition|
+| Field         | Type   | Required | Description                                                  |
+| ------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_set_id | int    | Yes      | Business set ID                                              |
+| filter        | object | No       | Business attribute combination query conditions              |
+| fields        | array  | No       | Specify the fields to query, parameters can be any business attribute. If no field information is provided, the system will return all fields of the business |
+| page          | object | Yes      | Pagination conditions                                        |
 
 #### filter
 
-Query criteria. The combination supports AND and OR. Can be nested, up to 2 layers.
+Query conditions. Supports combination of AND and OR. Can be nested, with a maximum nesting level of 2.
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  |yes     | Scope rule for filtering business|
-
+| Field     | Type   | Required | Description                               |
+| --------- | ------ | -------- | ----------------------------------------- |
+| condition | string | Yes      | Rule operator                             |
+| rules     | array  | Yes      | Filtering rules for the scope of business |
 
 #### rules
-The filtering rule is triplet`field`,`operator`,`value`
 
-| Name     | Type   | Required| Default value|  Description                                                  |
-| -------- | ------ | ---- | ------ | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|                                                              |
-| operator | string |yes   | None     | Operator| Optional value equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value    | -      |no   | None     | Operand| Different values correspond to different value formats                            |
+Filter rules are triplets `field`, `operator`, `value`
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
+
+Assembly rules can refer to: [QueryBuilder README](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, Max. 500|
-| enable_count |  bool  |yes| Whether to get the flag of the number of query objects|
-| sort     |   string |no     | Sort the field. By adding sort in front of the field, for example, sort&#34;: sort field&#34; can indicate descending order by field field|
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| start        | int    | Yes      | Record start position                                        |
+| limit        | int    | Yes      | Number of records per page, maximum 500                      |
+| enable_count | bool   | Yes      | Flag to get the count of query objects                       |
+| sort         | string | No       | Sorting field, by adding a "-", e.g., sort: ""-field"", it represents sorting in descending order by the field |
 
 **Note:**
-- `enable_count`If this flag is true, then the request is to get the quantity. The remaining fields must be initialized,start is 0, and limit is: 0, sort is "."
+
+- If `enable_count` is set to true, it indicates that this request is to obtain the count. In this case, other fields must have initial values, start is 0, limit is 0, sort is "".
 
 ### Request Parameters Example
 
@@ -87,10 +88,9 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Details return result example
+### Detailed Information Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -109,10 +109,10 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Example of return result of query business quantity
+### Query Business Count Response Example
 
-```python
-{
+```
+pythonCopy code{
     "result":true,
     "code":0,
     "message":"",
@@ -127,33 +127,48 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| data    |  object |Data returned by request                           |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Success or failure of the request. true: success; false: failure |
+| code       | int    | Error code. 0 represents success, >0 represents failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| data       | object | Data returned by the request                                 |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int       | Number of records|
-| info      |  array     | Actual business data|
-
+| Field | Type  | Description          |
+| ----- | ----- | -------------------- |
+| count | int   | Number of records    |
+| info  | array | Actual business data |
 
 #### info
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| bk_biz_id     |  int       | Business ID |
-| bk_biz_name      |  string     | Business name|
-
+| Field               | Type   | Description                                |
+| ------------------- | ------ | ------------------------------------------ |
+| bk_biz_id           | int    | Business ID                                |
+| bk_biz_name         | string | Business name                              |
+| bk_biz_maintainer   | string | Operations personnel                       |
+| bk_biz_productor    | string | Product personnel                          |
+| bk_biz_developer    | string | Development personnel                      |
+| bk_biz_tester       | string | Testing personnel                          |
+| time_zone           | string | Time zone                                  |
+| language            | string | Language, "1" for Chinese, "2" for English |
+| bk_supplier_account | string | Supplier account                           |
+| create_time         | string | Creation time                              |
+| last_time           | string | Update time                                |
+| default             | int    | Indicates business type                    |
+| operator            | string | Main maintainer                            |
+| life_cycle          | string | Business lifecycle                         |
+| bk_created_at       | string | Creation time                              |
+| bk_updated_at       | string | Update time                                |
+| bk_created_by       | string | Creator                                    |
 
 **Note:**
-- If this request is to query details, count is 0. If the query is quantity, info is empty.
+
+- The returned values here only explain the system's built-in attribute fields, other returned values depend on user-defined attribute fields.

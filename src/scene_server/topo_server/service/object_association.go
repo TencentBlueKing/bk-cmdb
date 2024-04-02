@@ -74,25 +74,26 @@ func (s *Service) SearchObjectAssociation(ctx *rest.Contexts) {
 			return
 		}
 
-		needAuth := true
-		condFields := []string{common.BKObjIDField, common.BKAsstObjIDField}
-		for _, field := range condFields {
-			if val, exist := cond.Get(field); exist {
-				authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit,
-					[]string{util.GetStrByInterface(val)})
-				if err != nil {
-					ctx.RespAutoError(err)
-					return
+		needAuth := s.AuthManager.Enabled()
+		if needAuth {
+			condFields := []string{common.BKObjIDField, common.BKAsstObjIDField}
+			for _, field := range condFields {
+				if val, exist := cond.Get(field); exist {
+					authResp, authorized, err := s.AuthManager.HasFindModelAuthUseObjID(ctx.Kit,
+						[]string{util.GetStrByInterface(val)})
+					if err != nil {
+						ctx.RespAutoError(err)
+						return
+					}
+					if !authorized {
+						ctx.RespNoAuth(authResp)
+						return
+					}
+					needAuth = false
+					break
 				}
-				if !authorized {
-					ctx.RespNoAuth(authResp)
-					return
-				}
-				needAuth = false
-				break
 			}
 		}
-
 		s.searchObjAssociationWithCond(ctx, cond, needAuth)
 		return
 	}

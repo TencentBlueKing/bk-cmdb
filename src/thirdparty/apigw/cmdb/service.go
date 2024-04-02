@@ -36,8 +36,13 @@ type cmdb struct {
 }
 
 // NewClient create cmdb api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) ClientI {
-	return &cmdb{
-		service: apigwutil.NewApiGW(options, apigwutil.CmdbName),
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkCmdbApiGatewayUrl")
+	if err != nil {
+		return nil, err
 	}
+
+	return &cmdb{
+		service: service,
+	}, nil
 }

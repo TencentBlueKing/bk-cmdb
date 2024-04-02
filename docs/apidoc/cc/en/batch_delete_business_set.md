@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete business set (v3.10.12+)
+Delete business set (Version: v3.10.12+, Permission: business set deletion permission)
 
 ### Request Parameters
 
@@ -8,45 +8,47 @@ Delete business set (v3.10.12+)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_ids      |  array     | yes     | Business set ID list|
+| Field          | Type  | Required | Description              |
+| -------------- | ----- | -------- | ------------------------ |
+| bk_biz_set_ids | array | Yes      | List of business set IDs |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
-    "bk_app_code":"esb_test",
-    "bk_app_secret":"xxx",
-    "bk_username":"xxx",
-    "bk_token":"xxx",
-    "bk_biz_set_ids":[
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
+    "bk_username": "xxx",
+    "bk_token": "xxx",
+    "bk_biz_set_ids": [
         10,
         12
     ]
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
     "result": true,
     "code": 0,
-    "message": "",
-    "permission":null,
+    "message": "success",
+    "permission": null,
     "data": {},
     "request_id": "dsda1122adasadadada2222"
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameter Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| data | object |Data returned by request|
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| data       | object | Data returned in the request                                 |
+| request_id | string | Request chain ID                                             |

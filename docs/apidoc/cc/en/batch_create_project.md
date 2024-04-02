@@ -1,40 +1,39 @@
-### Function description
+### Function Description
 
-batch create project (version: v3.10.23+, permission: creation permission of the project)
+Create a new project (Version: v3.10.23+, Permission: Project creation permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
+#### Interface Parameters
 
-#### Interface parameters
-
-| field | type | required | description |
-| ----------------------------|------------|----------|--------------------------------------------|
-| data | array| yes      | array, limited to 200 at a time|
+| Field | Type  | Required | Description                          |
+| ----- | ----- | -------- | ------------------------------------ |
+| data  | array | Yes      | Array, limit to create 200 at a time |
 
 #### data
 
-| field | type | required | description                                                                                                                           |
-|--------------------|------------|----------|---------------------------------------------------------------------------------------------------------------------------------------|
-| bk_project_id | string | no       | project_id, if pass this parameter, it needs to be a 32-bit uuid without underscore; if not, it will be automatically generated       |
-| bk_project_name | string | yes      | project_name                                                                                                                          |
-| bk_project_code | string | yes      | project english name                                                                                                                  |
-| bk_project_desc | string | no       | project_description                                                                                                                   |
-| bk_project_type | enum | no       | project type, optional values: "mobile_game", "pc_game", "web_game", "platform_prod", "support_prod", "other", default value: "other" |
-| bk_project_sec_lvl | enum | no       | confidentiality level, optional values: "public", "private", "classified", default: "public"                                          |
-| bk_project_owner | string | yes      | project owner                                                                                                                         |
-| bk_project_team | array | no       | project team                                                                                                                          |
-| bk_project_icon | string | no       | project icon                                                                                                                          |
+| Field              | Type   | Required | Description                                                  |
+| ------------------ | ------ | -------- | ------------------------------------------------------------ |
+| bk_project_id      | string | No       | Project ID, if this parameter is passed, it needs to be a 32-character uuid without hyphens; if not passed, the system will generate it automatically |
+| bk_project_name    | string | Yes      | Project name                                                 |
+| bk_project_code    | string | Yes      | Project code                                                 |
+| bk_project_desc    | string | No       | Project description                                          |
+| bk_project_type    | enum   | No       | Project type, optional values: "mobile_game" (mobile game), "pc_game" (PC game), "web_game" (web game), "platform_prod" (platform product), "support_prod" (support product), "other" (other), default value: "other" |
+| bk_project_sec_lvl | enum   | No       | Confidentiality level, optional values: "public" (public), "private" (private), "classified" (confidential), default value: "public" |
+| bk_project_owner   | string | Yes      | Project owner                                                |
+| bk_project_team    | array  | No       | Team it belongs to                                           |
+| bk_project_icon    | string | No       | Project icon                                                 |
 
-### Request parameter examples
+### Request Parameters Example
 
 ```json
 {
-    "bk_app_code": "esb_test",
-    "bk_app_secret": "xxx",
-    "bk_username": "xxx",
-    "bk_token": "xxx",
+    "bk_app_code":"esb_test",
+    "bk_app_secret":"xxx",
+    "bk_username":"xxx",
+    "bk_token":"xxx",
     "data": [
         {
             "bk_project_id": "21bf9ef9be7c4d38a1d1f2uc0b44a8f2",
@@ -51,13 +50,13 @@ batch create project (version: v3.10.23+, permission: creation permission of the
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
     "result":true,
     "code":0,
-    "message": "success",
+    "message":"success",
     "permission":null,
     "data": {
         "ids": [1]
@@ -65,23 +64,26 @@ batch create project (version: v3.10.23+, permission: creation permission of the
     "request_id": "dsda1122adasadadada2222"
 }
 ```
-**Note:**
-- The order of the array of ids in the returned data remains the same as the order of the array data in the parameters.
 
-### Return result parameter description
+**Note:**
+
+- The order of the IDs array in the returned data is consistent with the order of the array data in the parameters.
+
+### Response Parameters Description
+
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | The success or failure of the request. true: the request was successful; false: the request failed.|
-| code | int | The error code. 0 means success, >0 means failure error.|
-| message | string | The error message returned by the failed request.|
-| permission | object | Permission information |
-| request_id | string | request_chain_id |
-| data | object | data returned by the request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned for the request                                |
 
 #### data
 
-| field | type | description                       |
-| ----------- |----------|-----------------------------------|
-| ids | array  | array of unique identifiers in cc |
+| Field | Type  | Description                   |
+| ----- | ----- | ----------------------------- |
+| ids   | array | Unique identifier array in cc |

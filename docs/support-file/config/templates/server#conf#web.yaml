@@ -84,6 +84,8 @@ webServer:
     publicKey:
     # jwt私钥
     privateKey:
+  #是否启用消息通知
+  enableNotification: __BK_NOTICE_ENABLED__
 
 # cmdb服务tls配置
 tls:
@@ -100,7 +102,9 @@ tls:
 
 # 调用apigw接口相关配置
 apiGW:
-  address: __BK_API_URL_TMPL__
+  bkGseApiGatewayUrl: __BK_API_GATEWAY_GSE_URL__
+  bkNoticeApiGatewayUrl: __BK_API_GATEWAY_BK_NOTICE_URL__
+  bkCmdbApiGatewayUrl: __BK_API_GATEWAY_CMDB_URL__
   appCode: __BK_CMDB_APP_CODE__
   appSecret: __BK_CMDB_APP_SECRET__
   username: admin

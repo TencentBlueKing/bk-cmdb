@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the service template ID corresponding to the host. This interface is dedicated to node management and may be adjusted at any time. Do not use other services (v3.10.11+)
+Query the service template ID corresponding to the host. This interface is dedicated to node management and may be adjusted at any time. Please do not use it for other services (Version: v3.10.11+, Permission: Host pool host view permission)
 
 ### Request Parameters
 
@@ -8,9 +8,9 @@ Query the service template ID corresponding to the host. This interface is dedic
 
 #### Interface Parameters
 
-| Parameter       | Type| Required| Description                |
-| ---------- | ----- | ---- | ------------------- |
-| bk_host_id | array |yes   | Host IDs, up to 200|
+| Field  | Type  | Required | Description              |
+| ---------- | ----- | -------- | ------------------------ |
+| bk_host_id | array | Yes      | Host ID, up to 200 hosts |
 
 #### Request Parameters Example
 
@@ -27,7 +27,7 @@ Query the service template ID corresponding to the host. This interface is dedic
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -54,22 +54,22 @@ Query the service template ID corresponding to the host. This interface is dedic
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Field                | Type| Description       |
-| ------------------- | ----- | ---------- |
-| result     |  bool   | Whether the request was successful or not. True: request succeeded;false: Request failed|
-| code       |  int    | Wrong. 0 indicates success,>0 indicates failure error        |
-| message    |  string |Error message returned by request failure                        |
-| permission | object |Permission information                                      |
-| request_id | string |Request chain id                                      |
-| data       |  array  |Request result                                      |
+| Field      | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Success or failure of the request. true: success; false: failure |
+| code       | int    | Error code. 0 represents success, >0 represents failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | array  | Request result                                               |
 
 #### data
 
-| Field                | Type| Description       |
-| ------------------- | ----- | ---------- |
-| bk_host_id          |  int   | Host id     |
-| service_template_id | array |Service template id|
+| Field               | Type  | Description         |
+| ------------------- | ----- | ------------------- |
+| bk_host_id          | int   | Host ID             |
+| service_template_id | array | Service template ID |

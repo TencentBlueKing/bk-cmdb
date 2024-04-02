@@ -274,7 +274,7 @@
   }
   .form-property-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     .item-operator {
       flex: 110px 0 0;
       margin-right: 10px;
@@ -284,7 +284,8 @@
       margin: 0 10px 0 0;
       width: calc(100% - 150px);
       display: flex;
-      align-items: center;
+      align-items: self-start;
+      position: relative;
 
       .form-element {
         width: 100%;

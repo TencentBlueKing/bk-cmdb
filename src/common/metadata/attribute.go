@@ -46,6 +46,8 @@ const (
 	AttributeFieldPropertyName = "bk_property_name"
 	// AttributeFieldPropertyGroup TODO
 	AttributeFieldPropertyGroup = "bk_property_group"
+	// AttributeFieldPropertyGroupName 模型属性字段分组名称
+	AttributeFieldPropertyGroupName = "bk_property_group_name"
 	// AttributeFieldPropertyIndex TODO
 	AttributeFieldPropertyIndex = "bk_property_index"
 	// AttributeFieldUnit TODO

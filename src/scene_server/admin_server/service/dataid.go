@@ -135,6 +135,7 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 	}
 	queryParams := &metadata.GseConfigQueryRouteParams{
 		Condition: metadata.GseConfigRouteCondition{
+			PlatName:  metadata.GseConfigPlatBkmonitor,
 			ChannelID: oldDataID,
 		},
 		Operation: commonOperation,

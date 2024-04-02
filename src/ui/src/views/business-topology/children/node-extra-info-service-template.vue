@@ -28,7 +28,7 @@
         <span class="text">{{template.category || '--'}}</span>
       </div>
     </div>
-    <div class="info-item fl">
+    <div class="info-item fl" v-if="!isBizSet">
       <span class="name fl">{{$t('主机属性自动应用')}}</span>
       <div class="fl">
         <div class="template-value" @click="linkToAutoApply">
@@ -90,7 +90,7 @@
         this.getServiceInfo()
 
         // 使用了服务模板需要查看模块所属的服务模板是否开启了主机自动应用
-        if (this.instance.service_template_id) {
+        if (this.instance.service_template_id && !this.isBizSet) {
           this.getModuleApplyStatusByTemplate()
         }
       },
@@ -155,17 +155,19 @@
           if (!data) {
             return this.$error(this.$t('跳转失败，服务模板已经被删除'))
           }
+
+          this.$routerActions.redirect({
+            name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
+            params: {
+              templateId: this.instance.service_template_id,
+              bizId: data?.template?.bk_biz_id,
+            },
+            history: true
+          })
         } catch (error) {
           console.error(error)
           this.$error(error.message)
         }
-        this.$routerActions.redirect({
-          name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
-          params: {
-            templateId: this.instance.service_template_id
-          },
-          history: true
-        })
       },
       linkToAutoApply() {
         this.$routerActions.redirect({

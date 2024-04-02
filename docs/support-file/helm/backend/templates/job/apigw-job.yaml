@@ -1,0 +1,47 @@
+{{- if .Values.apigatewaySync.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-cmdb.fullname" . }}-apigw-{{ .Release.Revision }}
+  labels:
+    app: {{ template "bk-cmdb.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      containers:
+      - command:
+        - bash
+        args:
+        - bin/sync-apigateway.sh
+        image: {{ .Values.image.registry }}/{{ .Values.apigatewaySync.image.repository }}:v{{ default .Chart.AppVersion .Values.apigatewaySync.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: cmdb-sync-apigateway
+        env:
+        - name: BK_APIGW_NAME
+          value: {{ .Values.bkApigatewayName }}
+        - name: BK_APP_CODE
+          value: {{ .Values.common.apiGW.appCode }}
+        - name: BK_APP_SECRET
+          value: {{ .Values.common.apiGW.appSecret }}
+        - name: BK_API_URL_TMPL
+          value: {{ .Values.common.apiGW.address }}
+        - name: BK_CMDB_HOST
+          value: {{ .Values.apigatewaySync.host }}
+        - name: BK_CMDB_MAINTAINER
+          value: {{ .Values.apigatewaySync.maintainer }}
+        - name: BK_CMDB_STAGE_NAME
+          value: {{ .Values.apigatewaySync.stageName }}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1024Mi
+          requests:
+            memory: 512Mi
+            cpu: 200m
+      restartPolicy: OnFailure
+  backoffLimit: 20
+{{- end }}

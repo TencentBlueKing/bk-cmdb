@@ -107,8 +107,9 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 }
 
 // CreateManyModelInstance create model instances
-func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit, objID string,
-	inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
+func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit,
+	objID string, inputParam metadata.CreateManyModelInstance) (
+	*metadata.CreateManyDataResult, error) {
 
 	dataResult := new(metadata.CreateManyDataResult)
 	if len(inputParam.Datas) == 0 {

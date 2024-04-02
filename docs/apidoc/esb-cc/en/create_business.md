@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-New business
+Create a new business (Permission: Business Creation Permission)
 
 ### Request Parameters
 
@@ -8,24 +8,30 @@ New business
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| data           | dict    | Yes     | Data |
+| Field               | Type   | Required | Description       |
+| ------------------- | ------ | -------- | ----------------- |
+| bk_supplier_account | string | No       | Developer account |
+| data                | dict   | Yes      | Business data     |
 
 #### data
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_biz_name       |  string  | Yes     | Business Name |
-| bk_biz_maintainer |  string  | Yes     | the maintainers |
-| bk_biz_productor  |  string  | Yes     | the productor |
-| bk_biz_developer  |  string  | Yes     | the developer |
-| bk_biz_tester     |  string  | Yes     | the tester |
-| time_zone         |  string  | Yes     | time zone |
-| language          |  string  | Yes     | language: "1" represent Chinese, "2" represent English |
+| Field             | Type   | Required | Description                                             |
+| ----------------- | ------ | -------- | ------------------------------------------------------- |
+| bk_biz_name       | string | Yes      | Business name                                           |
+| bk_biz_maintainer | string | Yes      | Operation and maintenance personnel                     |
+| bk_biz_productor  | string | No       | Product personnel                                       |
+| bk_biz_developer  | string | No       | Development personnel                                   |
+| bk_biz_tester     | string | No       | Test personnel                                          |
+| operator          | string | No       | Operator                                                |
+| bk_created_at     | string | No       | Creation time                                           |
+| bk_updated_at     | string | No       | Update time                                             |
+| bk_created_by     | string | No       | Creator                                                 |
+| bk_updated_by     | string | No       | Last updater                                            |
+| life_cycle        | string | No       | Lifecycle: Testing (1), Live (2, default), Shutdown (3) |
+| time_zone         | string | No       | Time zone                                               |
+| language          | string | No       | Language, "1" for Chinese, "2" for English              |
 
-**Note: The input parameters here only describe the required parameters and the built-in parameters of the system. The other parameters that need to be filled in depend on the attribute fields defined by the user.**
+**Note: The input parameters here only explain the required and system-built parameters. The rest of the parameters to be filled in depend on the user's own defined attribute fields.**
 
 ### Request Parameters Example
 
@@ -37,73 +43,85 @@ New business
     "bk_token": "xxx",
     "bk_supplier_account": "123456789",
     "data": {
-        "bk_biz_name": "cc_app_test",
+        "bk_biz_name": "main-a1",
         "bk_biz_maintainer": "admin",
         "bk_biz_productor": "admin",
         "bk_biz_developer": "admin",
         "bk_biz_tester": "admin",
         "time_zone": "Asia/Shanghai",
-        "language": "1"
+        "bk_created_at": "",
+        "bk_updated_at": "",
+        "bk_created_by": "admin",
+        "bk_updated_by": "admin",
+        "language": "1",
+        "operator": "admin",
+        "life_cycle": "2"
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": {
         "bk_biz_developer": "admin",
-        "bk_biz_id": 8852,
+        "bk_biz_id": 5,
         "bk_biz_maintainer": "admin",
-        "bk_biz_name": "cc_app_test",
+        "bk_biz_name": "main-a1",
         "bk_biz_productor": "admin",
         "bk_biz_tester": "admin",
+        "bk_created_at": "2023-11-14T16:51:02.168+08:00",
+        "bk_created_by": "admin",
         "bk_supplier_account": "0",
-        "create_time": "2022-02-22T20:10:14.295+08:00",
+        "bk_updated_at": "2023-11-14T16:51:02.168+08:00",
+        "create_time": "2023-11-14T16:51:02.168+08:00",
         "default": 0,
         "language": "1",
-        "last_time": "2022-02-22T20:10:14.295+08:00",
+        "last_time": "2023-11-14T16:51:02.168+08:00",
         "life_cycle": "2",
-        "operator": null,
+        "operator": "admin",
         "time_zone": "Asia/Shanghai"
     }
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
 
 #### response
 
-| name | type | description |
-| ------- | ------ | ------------------------------------- |
-| result | bool | Whether the request was successful or not. true:request successful; false request failed.
-| code | int | The error code. 0 means success, >0 means failure error.
-| message | string | The error message returned by the failed request.
-| data | object | The data returned by the request.
-| permission | object | Permission information |
-| request_id | string | Request chain id |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| field | type | description |
-| -----------|-----------|--------------|
-| bk_biz_id | int | business id |
-| bk_biz_name | string | business name |
-| bk_biz_maintainer | string | Operations and maintenance personnel |
-| bk_biz_productor | string | Product Personnel |
-| bk_biz_developer | string | Developer |
-| bk_biz_tester | string | Testers |
-| time_zone | string | time zone |
-| language | string | language, "1" for Chinese, "2" for English |
-| bk_supplier_account | string | Developer account |
-| create_time | string | Create time |
-| last_time | string | update_time |
-|default | int | Indicates business type |
-| operator | string | Primary maintainer |
-|life_cycle |string | business_cycle |
+| Field                | Type   | Description                                |
+| ------------------- | ------ | ------------------------------------------ |
+| bk_biz_id           | int    | Business ID                                |
+| bk_biz_name         | string | Business name                              |
+| bk_biz_maintainer   | string | Operation and maintenance personnel        |
+| bk_biz_productor    | string | Product personnel                          |
+| bk_biz_developer    | string | Development personnel                      |
+| bk_biz_tester       | string | Test personnel                             |
+| time_zone           | string | Time zone                                  |
+| language            | string | Language, "1" for Chinese, "2" for English |
+| bk_supplier_account | string | Developer account                          |
+| create_time         | string | Creation time                              |
+| last_time           | string | Update time                                |
+| default             | int    | Business type                              |
+| operator            | string | Main maintainer                            |
+| life_cycle          | string | Business lifecycle                         |
+| bk_created_at       | string | Creation time                              |
+| bk_updated_at       | string | Update time                                |
+| bk_created_by       | string | Creator                                    |

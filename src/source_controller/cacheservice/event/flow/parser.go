@@ -216,6 +216,8 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 		podDetail := *e.Document.(*map[string]interface{})
 		podDetail["containers"] = append(containers, delContainers...)
 
+		podDetail = event.ConvertLabel(podDetail)
+
 		byt, err := json.Marshal(podDetail)
 		if err != nil {
 			blog.Errorf("marshal pod with container detail(%+v) failed, err: %v, rid: %s", podDetail, err, rid)
@@ -242,14 +244,13 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 		if err != nil {
 			return nil, nil, retry, err
 		}
-
 		podDetail := make(map[string]interface{})
 		if err = json.Unmarshal(doc, &podDetail); err != nil {
 			blog.Errorf("unmarshal pod detail(%s) failed, err: %v, rid: %s", string(doc), err, rid)
 			return nil, nil, false, err
 		}
 		podDetail["containers"] = containers
-
+		podDetail = event.ConvertLabel(podDetail)
 		byt, err := json.Marshal(podDetail)
 		if err != nil {
 			blog.Errorf("marshal pod with container detail(%+v) failed, err: %v, rid: %s", podDetail, err, rid)

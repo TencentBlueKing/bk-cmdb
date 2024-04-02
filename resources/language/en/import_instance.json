@@ -9,7 +9,7 @@
     "import_asst_obj_property_str_primary_type_error": "[%s] association primary Key [%s] data transform type  error",
     "import_asstid_not_found": "association [%s]  does not exists",
     "import_instance_not_found": "[%s] model [%s]  does not exists",
-    "import_asst_obj_primary_property_str_not_found": "[%s] property [%s] does not exists",
+    "import_asst_obj_primary_property_str_not_found": "[%s] object unique rule does not contain 'rule: [%s]'",
     "excel_association_attribute": "association_attribute(Please do not edit)",
     "excel_field_description": "field_description(Please do not edit)",
     "excel_association_object_id": "association ID",

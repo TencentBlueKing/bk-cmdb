@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete service template based on service template ID
+Delete service template based on service template ID (Permission: Service template deletion permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Delete service template based on service template ID
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| service_template_id | int  |yes   | Service template ID|
-| bk_biz_id                  |  int        | yes  | Business ID |
+| Field               | Type | Required | Description         |
+| ------------------- | ---- | -------- | ------------------- |
+| service_template_id | int  | Yes      | Service template ID |
+| bk_biz_id           | int  | Yes      | Business ID         |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -26,16 +26,16 @@ Delete service template based on service template ID
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
-  "result": false,
-  "code": 1199056,
-  "message": "delete service template failed",
-  "permission": null,
-  "request_id": "e43da4ef221746868dc4c837d36f3807",
-  "data": null
+    "result": true,
+    "code": 0,
+    "data": null,
+    "message": "success",
+    "permission": null,
+    "request_id": "b78feeebd55b4265b463200ab966f506"
 }
 ```
 
@@ -43,11 +43,11 @@ Delete service template based on service template ID
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

@@ -500,17 +500,25 @@
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
             const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
+            const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
+            const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
             if (property.id === this.IPWithCloudSymbol) {
               return `${cloud}:${ip}`
             }
             if (property.id === this.IPv6WithCloudSymbol) {
-              return `${cloud}:${ipv6}`
+              return `${cloud}:[${ipv6}]`
             }
             if (property.id === this.IPv46WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip) ? ipv6 : ip}`
+              if (!isEmptyIPv4Value || isEmptyIPv6Value) {
+                return `${cloud}:${ip}`
+              }
+              return `${cloud}:[${ipv6}]`
             }
             if (property.id === this.IPv64WithCloudSymbol) {
-              return `${cloud}:${isEmptyPropertyValue(modelData.bk_host_innerip_v6) ? ip : ipv6}`
+              if (isEmptyIPv4Value || !isEmptyIPv6Value) {
+                return `${cloud}:[${ipv6}]`
+              }
+              return `${cloud}:${ip}`
             }
           }
 

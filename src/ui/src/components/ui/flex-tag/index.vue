@@ -382,6 +382,10 @@
       &.show {
         display: flex;
       }
+
+      &:hover {
+        opacity: .8;
+      }
     }
 
     &.changing {
@@ -404,7 +408,7 @@
       flex-direction: column;
       gap: 6px;
       max-height: var(--popoverMaxHeight);
-      @include scrollbar-y;
+      @include scrollbar-y(6px);
 
       &.is-link {
         .flex-tag-tips-item {

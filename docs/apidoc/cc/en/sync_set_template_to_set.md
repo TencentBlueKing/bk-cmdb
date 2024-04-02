@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Synchronize that set template unde the specified service to the set according to the service id, the clust template id and the set id list to be synchronized
+Synchronize cluster templates to clusters based on business ID, cluster template ID, and a list of clusters to be synchronized (Permission: Cluster editing permission)
 
 ### Request Parameters
 
@@ -8,14 +8,13 @@ Synchronize that set template unde the specified service to the set according to
 
 #### Interface Parameters
 
-| Field                  | Type   | Required| Description           |
-| -------------------- | ------ | ---- | ------------- |
-| bk_biz_id            |  int    | yes      | Business ID |
-| set_template_id      |  int    | yes | Set template ID   |
-| bk_set_ids           |  array  |yes   | List of set IDs to be synchronized |
+| Field           | Type  | Required | Description                         |
+| --------------- | ----- | -------- | ----------------------------------- |
+| bk_biz_id       | int   | Yes      | Business ID                         |
+| set_template_id | int   | Yes      | Cluster template ID                 |
+| bk_set_ids      | array | Yes      | List of clusters to be synchronized |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -43,15 +42,15 @@ Synchronize that set template unde the specified service to the set according to
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Request returned data                                        |

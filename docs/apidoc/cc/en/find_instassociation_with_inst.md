@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query the model instance Association, and optionally return the details of the source model instance and the target model instance (v3.10.11+)
+Query the instance association relationship of the model, and optionally return details of the source model instance and target model instance. (Version: v3.10.11+, Permission: Model instance query permission)
 
 ### Request Parameters
 
@@ -8,52 +8,53 @@ Query the model instance Association, and optionally return the details of the s
 
 #### Interface Parameters
 
-| Parameter      | Type| Required| Description     |
-| --------- | ---- | ---- | -------- |
-| condition | map  |yes   | Query parameter|
-| page      |  map  |yes   | Paging condition|
+| Field | Type   | Required | Description                    |
+| --------- | ------ | -------- | ------------------------------ |
+| bk_obj_id | string | Yes      | Unique identifier of the model |
+| condition | map    | Yes      | Query parameters               |
+| page      | map    | Yes      | Pagination conditions          |
 
 **condition**
 
-| Parameter        | Type| Required| Description                                      |
-| :---------- | ----- | ---- | ----------------------------------------- |
-| asst_filter | map   | yes | Filter for querying Association relationship                      |
-| asst_fields | array |no   | Content to be returned for Association relationship. All are returned without filling in      |
-| src_fields  | array |no   | The attributes to be returned by the source model. All are returned without filling in        |
-| dst_fields  | array |no   | Attributes to be returned by the target model. All are returned without filling in      |
-| src_detail  | bool  |no   | The default value is false, and the instance details of the source model are not returned   |
-| dst_detail  | bool  |no   | The default value is false, and the instance details of the target model are not returned|
+| Field   | Type  | Required | Description                                                  |
+| ----------- | ----- | -------- | ------------------------------------------------------------ |
+| asst_filter | map   | Yes      | Filter for querying association relationships                |
+| asst_fields | array | No       | Content to be returned for association relationships, returns all if not specified |
+| src_fields  | array | No       | Properties to be returned for the source model, returns all if not specified |
+| dst_fields  | array | No       | Properties to be returned for the target model, returns all if not specified |
+| src_detail  | bool  | No       | Defaults to false, does not return details of the source model instance |
+| dst_detail  | bool  | No       | Defaults to false, does not return details of the target model instance |
 
 **asst_filter**
 
-This parameter is a combination of filtering rules for Association attribute fields, and is used to search Association according to Association attribute. The combination supports AND and OR, and can be nested, with a maximum of 2 layers. The filtering rules are quaternions`field`,`operator`,`value`
+This parameter is a combination of filter rules for association relationship attribute fields, used to search association relationships based on association relationship attributes. The combination supports both AND and OR, and can be nested, with a maximum nesting depth of 2. The filter rule is a quadruple `field`, `operator`, `value`.
 
-| Parameter      | Type   | Required| Description                          |
-| --------- | ------ | ---- | ----------------------------- |
-| condition | string |yes   | Combination of query criteria, AND or OR|
-| rule      |  array  |yes   | Collection containing all query criteria        |
+| Field | Type   | Required | Description                                       |
+| --------- | ------ | -------- | ------------------------------------------------- |
+| condition | string | Yes      | Combination method of query conditions, AND or OR |
+| rules     | array  | Yes      | Collection containing all query conditions        |
 
-**rule**
+**rules**
 
-| Parameter     | Type   | Required| Description                                                         |
-| -------- | ------ | ---- | ------------------------------------------------------------ |
-| field    |  string |yes   | Fields in query criteria, for example: bk_obj_id，bk_asst_obj_id，bk_inst_id|
-| operator | string |yes   | Query method in query criteria, equal, in, nin, etc.                       |
-| value    |  string |yes   | Value corresponding to query criteria                                             |
+| Field | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| field     | string | Yes      | Field in the query condition, such as bk_obj_id, bk_asst_obj_id, bk_inst_id |
+| operator  | string | Yes      | Query method in the query condition, such as equal, in, nin, etc. |
+| value     | string | Yes      | Value corresponding to the query condition                   |
 
-For assembly rules, refer to: https: //github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Assembly rules can refer to: [bk-cmdb Query Builder](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 **page**
 
-| Parameter| Type   | Required| Description                 |
-| ----- | ------ | ---- | -------------------- |
-| start | int    | no   | Record start position         |
-| limit | int    | yes | Limit bars per page, Max. 200|
-| sort  | string |no   | Sort field             |
+| Field | Type   | Required | Description                        |
+| --------- | ------ | -------- | ---------------------------------- |
+| start     | int    | No       | Record start position              |
+| limit     | int    | Yes      | Record limit per page, maximum 200 |
+| sort      | string | No       | Sorting field                      |
 
-**Paging object is associated**
+**Pagination object is for association relationships**
 
-#### Request Parameters Example
+#### Request Parameter Example
 
 ```json
 {
@@ -61,6 +62,7 @@ For assembly rules, refer to: https: //github.com/Tencent/bk-cmdb/blob/master/sr
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
+    "bk_obj_id":"bk_switch",
     "condition": {
         "asst_filter": {
             "condition": "AND",
@@ -100,7 +102,7 @@ For assembly rules, refer to: https: //github.com/Tencent/bk-cmdb/blob/master/sr
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -160,49 +162,48 @@ For assembly rules, refer to: https: //github.com/Tencent/bk-cmdb/blob/master/sr
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Field                | Type| Description       |
-| ------------------- | ----- | ---------- |
-| result     |  bool   | Whether the request was successful or not. True: request succeeded;false: Request failed|
-| code       |  int    | Wrong. 0 indicates success,>0 indicates failure error        |
-| message    |  string |Error message returned by request failure                        |
-| permission | object |Permission information                                      |
-| request_id | string |Request chain id                                      |
-| data       |  object |Request result                                      |
+| Field      | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field        | Type| Description                                     |
-| ----------- | ----- | ---------------------------------------- |
-| association | array |The queried Association relationship details are sorted by the paging sorting parameter|
-| src         |  array |Details of the source model instance                         |
-| dst         |  array |Details of the target model instance                       |
+| Field       | Type  | Description                                                  |
+| ----------- | ----- | ------------------------------------------------------------ |
+| association | array | Details of the queried association relationships, sorted according to the pagination sorting parameters |
+| src         | array | Details of the source model instance                         |
+| dst         | array | Details of the target model instance                         |
 
 ##### association
 
-| Name            | Type   | Description                     |
-| --------------- | ------ | ------------------------ |
-| id              |  int64  |Association id                   |
-| bk_inst_id      |  int64  |Source model instance id             |
-| bk_obj_id       |  string |Association relationship source model id         |
-| bk_asst_inst_id | int64  |Association relation target model id       |
-| bk_asst_obj_id  | string |Target model instance id           |
-| bk_obj_asst_id  | string |Auto-generated model association id|
-| bk_asst_id      |  string |Relationship name                 |
+| Field            | Type   | Description                                               |
+| --------------- | ------ | --------------------------------------------------------- |
+| id              | int64  | Association ID                                            |
+| bk_inst_id      | int64  | Source model instance ID                                  |
+| bk_obj_id       | string | Source model ID of the association relationship           |
+| bk_asst_inst_id | int64  | Target model instance ID                                  |
+| bk_asst_obj_id  | string | Target model ID of the association relationship           |
+| bk_obj_asst_id  | string | Automatically generated model association relationship ID |
+| bk_asst_id      | string | Relationship name                                         |
 
 ##### src
 
-| Name         | Type   | Description   |
-| ------------ | ------ | ------ |
-| bk_inst_name | string |Instance name|
-| bk_inst_id   |  int    | Instance id|
+| Field         | Type   | Description   |
+| ------------ | ------ | ------------- |
+| bk_inst_name | string | Instance name |
+| bk_inst_id   | int    | Instance ID   |
 
 ##### dst
 
-| Name             | Type   | Description       |
-| ---------------- | ------ | ---------- |
-| bk_host_inner_ip | string |Host intranet ip|
-
+| Field             | Type   | Description   |
+| ---------------- | ------ | ------------- |
+| bk_host_inner_ip | string | Host inner IP |

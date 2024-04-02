@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Query business set topology (v3.10.12+)
+Query business set topology (Version: v3.10.12+, Permission: Business set access)
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ Query business set topology (v3.10.12+)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_id    |  int    | yes | Business set ID|
-| bk_parent_obj_id | string |yes| The parent object ID of the query model is required|
-| bk_parent_id     |  int    | yes | The parent ID of the query model is required|
+| Field            | Type   | Required | Description                                |
+| ---------------- | ------ | -------- | ------------------------------------------ |
+| bk_biz_set_id    | int    | Yes      | Business set ID                            |
+| bk_parent_obj_id | string | Yes      | ID of the parent object to query the model |
+| bk_parent_id     | int    | Yes      | ID of the parent to query the model        |
 
 ### Request Parameters Example
 
@@ -28,13 +28,13 @@ Query business set topology (v3.10.12+)
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
   "result":true,
   "code":0,
-  "message":"",
+  "message":"success",
   "permission":null,
   "data":[
     {
@@ -54,25 +54,24 @@ Query business set topology (v3.10.12+)
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| data    |  array |Data returned by request                           |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Success or failure of the request. true: success; false: failure |
+| code       | int    | Error code. 0 represents success, >0 represents failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| data       | array  | Data returned by the request                                 |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| Name    | Type   | Description              |
-| ------- | ------ | --------------- |
-| bk_obj_id  | string   | Model object ID|
-| bk_inst_id    |  int    | Model instance ID   |
-| bk_inst_name | string |Model instance name   |
-| default    |  int |Model instance classification    |
-
-
+| Field         | Type   | Description                   |
+| ------------ | ------ | ----------------------------- |
+| bk_obj_id    | string | Model object ID               |
+| bk_inst_id   | int    | Model instance ID             |
+| bk_inst_name | string | Model instance name           |
+| default      | int    | Model instance classification |

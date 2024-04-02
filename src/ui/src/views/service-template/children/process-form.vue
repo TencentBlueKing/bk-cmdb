@@ -362,7 +362,7 @@
         margin: 10px 20px 0;
     }
     .form-groups {
-        padding: 0 20px;
+        padding: 0 24px;
     }
     .property-group {
         padding: 20px 0 10px 0;
@@ -492,7 +492,7 @@
     }
     .form-options {
         width: 100%;
-        padding: 10px 32px;
+        padding: 10px 24px;
         font-size: 0;
         background-color: #fff;
         &.sticky {

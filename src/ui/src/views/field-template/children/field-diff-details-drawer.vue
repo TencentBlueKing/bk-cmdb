@@ -101,7 +101,7 @@
       update: t('字段配置更新'),
       conflict: isTemplateBindConflict.value ? t('字段冲突，该字段已经被其他模板绑定，请删除该模型或修改模板') : '',
       unbound: t('不再纳管该字段'),
-      unchanged: t('无变化')
+      unchanged: t('无配置变化')
     }
     let title = titles[props.diffType]
 
@@ -406,7 +406,7 @@
 <style lang="scss" scoped>
 .diff-details {
   height: 100%;
-  padding: 20px 40px;
+  padding: 20px 24px;
   @include scrollbar-y;
 
   &.new {
