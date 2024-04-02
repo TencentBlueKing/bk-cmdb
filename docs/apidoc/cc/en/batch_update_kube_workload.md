@@ -1,72 +1,74 @@
 ### Function Description
 
-Batch update workload (version: v3.12.1+, auth: edit container workload)
+Batch Update Workloads (Version: v3.12.1+, Permission: Edit Container Workload Permission)
 
-### Request parameters
+### Request Parameters
 
 {{ common_args_desc }}
 
 #### Interface Parameters
 
-| field     | type   | required | description                                                                                                                                                                                                  |
-|-----------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | yes      | business id                                                                                                                                                                                                  |
-| kind      | string | yes      | workload type, the current built-in workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (put those that do not pass workload but directly create Pod) |
-| data      | object | yes      | contains the fields to be updated                                                                                                                                                                            |
-| ids       | array  | yes      | an array of id unique identifiers in cc                                                                                                                                                                      |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| kind      | string | Yes      | Workload type, currently supported workload types include deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (directly create Pods without going through workload) |
+| data      | object | Yes      | Fields to be updated                                         |
+| ids       | array  | Yes      | Unique ID array in cc                                        |
 
 #### data
 
-| field                   | type   | required | description                                                                                                                                                    |
-|-------------------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| labels                  | map    | no       | labels                                                                                                                                                         |
-| selector                | object | no       | workload selector                                                                                                                                              |
-| replicas                | int    | no       | number of workload instances                                                                                                                                   |
-| strategy_type           | string | no       | workload update mechanism                                                                                                                                      |
-| min_ready_seconds       | int    | No       | Specifies the minimum time that a newly created Pod will be ready without any container crashes, and only after that time will the Pod be considered available |
-| rolling_update_strategy | object | No       | Rolling update strategy                                                                                                                                        |
+| Field                   | Type   | Required | Description                                                  |
+| ----------------------- | ------ | -------- | ------------------------------------------------------------ |
+| labels                  | map    | No       | Labels                                                       |
+| selector                | object | No       | Workload selector                                            |
+| replicas                | int    | No       | Number of workload instances                                 |
+| strategy_type           | string | No       | Workload update mechanism                                    |
+| min_ready_seconds       | int    | No       | Specifies the minimum readiness time for newly created Pods, only Pods that exceed this time are considered available |
+| rolling_update_strategy | object | No       | Rolling update strategy                                      |
 
 #### selector
 
-| field             | type  | required | description       |
-|-------------------|-------|----------|-------------------|
-| match_labels      | map   | no       | match by label    |
-| match_expressions | array | no       | match_expressions |
+| Field             | Type  | Required | Description           |
+| ----------------- | ----- | -------- | --------------------- |
+| match_labels      | map   | No       | Match based on labels |
+| match_expressions | array | No       | Match expressions     |
 
 #### match_expressions[x]
 
-| field    | type   | required   | description                                                                                                             |
-|----------|--------|------------|-------------------------------------------------------------------------------------------------------------------------|
-| key      | string | is the key | of the tag                                                                                                              |
-| operator | string | is the     | operator, with optional values: "In", "NotIn", "Exists", "DoesNotExist"                                                 |
-| values   | array  | no         | Array of strings, cannot be empty if the operator is "In" or "NotIn", must be empty if it is "Exists" or "DoesNotExist" |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| key      | string | Yes      | Label key                                                    |
+| operator | string | Yes      | Operator, optional values: "In", "NotIn", "Exists", "DoesNotExist" |
+| values   | array  | No       | String array, must be provided if the operator is "In" or "NotIn", must be empty if the operator is "Exists" or "DoesNotExist" |
 
 #### rolling_update_strategy
 
-When strategy_type is RollingUpdate, it is not empty, otherwise it is empty.
+Only applicable when strategy_type is RollingUpdate, otherwise it is empty
 
-| field           | type   | mandatory | description     |
-|-----------------|--------|-----------|-----------------|
-| max_unavailable | object | no        | max_unavailable |
-| max_surge       | object | no        | max_overflow    |
+| Field           | Type   | Required | Description         |
+| --------------- | ------ | -------- | ------------------- |
+| max_unavailable | object | No       | Maximum unavailable |
+| max_surge       | object | No       | Maximum surge       |
 
 #### max_unavailable
 
-| field   | type   | mandatory | description                                                                       |
-|---------|--------|-----------|-----------------------------------------------------------------------------------|
-| type    | int    | Yes       | Optional value of 0 (for int type) or 1 (for string type)                         |
-| int_val | int    | No        | When type is 0 (for int type), it cannot be null, and the corresponding int value |
-| str_val | string | no        | when type is 1(for string type),cannot be null,corresponding string value         |
+| Field   | Type   | Required | Description                                                  |
+| ------- | ------ | -------- | ------------------------------------------------------------ |
+| type    | int    | Yes      | Optional values are 0 (representing int type) or 1 (representing string type) |
+| int_val | int    | No       | Must be provided if type is 0 (representing int type), corresponding int value |
+| str_val | string | No       | Must be provided if type is 1 (representing string type), corresponding string value |
 
 #### max_surge
 
-| field   | type   | mandatory | description                                                                              |
-|---------|--------|-----------|------------------------------------------------------------------------------------------|
-| type    | int    | yes       | optional value of 0 (for int type) or 1 (for string type)                                |
-| int_val | int    | No        | When type is 0 (for int type), it cannot be null, and the corresponding int value        |
-| str_val | string | no        | When type is 1 (for string type), it cannot be empty, and the corresponding string value |
+| Field   | Type   | Required | Description                                                  |
+| ------- | ------ | -------- | ------------------------------------------------------------ |
+| type    | int    | Yes      | Optional values are 0 (representing int type) or 1 (representing string type) |
+| int_val | int    | No       | Must be provided if type is 0 (representing int type), corresponding int value |
+| str_val | string | No       | Must be provided if type is 1 (representing string type), corresponding string value |
 
-### Example request parameters
+Note: Use either the unique identifier of k8s or cc to pass in the association information. These two methods can only be used separately and cannot be mixed.
+
+### Request Parameter Example
 
 ```json
 {
@@ -118,10 +120,9 @@ When strategy_type is RollingUpdate, it is not empty, otherwise it is empty.
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
-
 {
   "result": true,
   "code": 0,
@@ -132,15 +133,15 @@ When strategy_type is RollingUpdate, it is not empty, otherwise it is empty.
 }
 ```
 
-### Return result parameter description
+### Response Parameters Description
 
 #### response
 
-| name       | type   | description                                                                               |
-|------------|--------|-------------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. true:request successful; false request failed. |
-| code       | int    | The error code. 0 means success, >0 means failure error.                                  |
-| message    | string | The error message returned by the failed request.                                         |
-| permission | object | Permission information                                                                    |
-| request_id | string | request_chain_id                                                                          |
-| data       | object | The data returned by the request.                                                         |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Clone host properties
+Clone Host Properties (Permission: Business Host Editing Permission)
 
 ### Request Parameters
 
@@ -8,19 +8,18 @@ Clone host properties
 
 #### Interface Parameters
 
-| Field        | Type   | Required   | Description                       |
-|-------------|---------|--------|-----------------------------|
-| bk_org_ip   |  string  |yes     | Source host intranet ip   |
-| bk_dst_ip   |  string  |yes     | Target host intranet ip|
-| bk_org_id   |  int  |yes     | Source host ID    |
-| bk_dst_id   |  int  |yes     | Destination host ID|
-| bk_biz_id   |  int     | yes     | Business ID           |
-| bk_cloud_id | int     | no     | Cloud area ID               |
+| Field       | Type   | Required | Description               |
+| ----------- | ------ | -------- | ------------------------- |
+| bk_org_ip   | string | Yes      | Source host's internal IP |
+| bk_dst_ip   | string | Yes      | Target host's internal IP |
+| bk_org_id   | int    | Yes      | Source host ID            |
+| bk_dst_id   | int    | Yes      | Target host ID            |
+| bk_biz_id   | int    | Yes      | Business ID               |
+| bk_cloud_id | int    | No       | Control area ID           |
 
+Note: Cloning using the internal IP of the host and cloning using the identity ID of the host, these two methods can only be used separately and cannot be mixed.
 
-Note: cloning by using host intranet IP and cloning by using host identity ID can only be used in one of the two methods, and can not be mixed.
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -28,13 +27,14 @@ Note: cloning by using host intranet IP and cloning by using host identity ID ca
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id":2,
-    "bk_org_ip":"127.0.0.1",
-    "bk_dst_ip":"127.0.0.2",
-    "bk_cloud_id":0
+    "bk_biz_id": 2,
+    "bk_org_ip": "127.0.0.1",
+    "bk_dst_ip": "127.0.0.2",
+    "bk_cloud_id": 0
 }
 ```
-Or
+
+or
 
 ```json
 {
@@ -42,21 +42,20 @@ Or
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_biz_id":2,
+    "bk_biz_id": 2,
     "bk_org_id": 10,
     "bk_dst_id": 11,
-    "bk_cloud_id":0
+    "bk_cloud_id": 0
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": null
@@ -65,11 +64,11 @@ Or
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

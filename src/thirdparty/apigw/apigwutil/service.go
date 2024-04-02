@@ -20,6 +20,8 @@ package apigwutil
 import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 )
 
 // ApiGWOptions is the api gateway client options
@@ -37,10 +39,16 @@ type ApiGWSrv struct {
 }
 
 // NewApiGW new api gateway service
-func NewApiGW(options *ApiGWOptions, apiName ApiName) *ApiGWSrv {
+func NewApiGW(options *ApiGWOptions, addressPath string) (*ApiGWSrv, error) {
+	address, err := cc.StringSlice(addressPath)
+	if err != nil {
+		blog.Errorf("parse %s api gateway address failed, err: %v", addressPath, err)
+		return nil, err
+	}
+
 	capability := options.Capability
 	capability.Discover = &ApiGWDiscovery{
-		Servers: ReplaceApiName(options.Config.Address, apiName),
+		Servers: address,
 	}
 
 	apigw := &ApiGWSrv{
@@ -49,5 +57,5 @@ func NewApiGW(options *ApiGWOptions, apiName ApiName) *ApiGWSrv {
 		Auth:   options.Auth,
 	}
 
-	return apigw
+	return apigw, nil
 }

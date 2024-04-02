@@ -284,7 +284,7 @@
         @include scrollbar;
     }
     .form-groups {
-        padding: 0 0 0 32px;
+        padding: 0 24px;
     }
     .property-group {
         padding: 7px 0 10px 0;
@@ -302,11 +302,11 @@
         padding: 4px 0;
         display: flex;
         flex-wrap: wrap;
+        gap: 0 54px;
         .property-item {
             margin: 12px 0 0;
-            padding: 0 54px 0 0;
             font-size: 12px;
-            flex: 0 0 50%;
+            flex: 0 0 calc(50% - 27px);
             max-width: 50%;
             .property-name {
                 display: flex;
@@ -354,6 +354,7 @@
             .property-value {
                 font-size: 0;
                 position: relative;
+                min-height: 32px;
                 /deep/ .control-append-group {
                     .bk-input-text {
                         flex: 1;
@@ -369,7 +370,7 @@
         }
     }
     .form-options {
-        padding: 10px 32px;
+        padding: 10px 24px;
         background-color: #fff;
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;

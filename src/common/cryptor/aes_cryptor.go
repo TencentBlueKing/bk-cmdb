@@ -20,6 +20,7 @@ import (
 	"fmt"
 )
 
+// Deprecated: 用于兼容老版本的加密模式，相关的老版本的类型和配置等暂不下掉，如果没有使用新版本配置的话则使用这个加密模式
 // aesCrpytor AES密码器
 type aesCrpytor struct {
 	// 加解密使用的密钥

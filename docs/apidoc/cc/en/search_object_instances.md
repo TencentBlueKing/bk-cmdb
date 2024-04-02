@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-General model instance query (v3.10.1+)
+General model instance query (Version: v3.10.1+, Permission: Model instance query permission)
 
 ### Request Parameters
 
@@ -8,64 +8,63 @@ General model instance query (v3.10.1+)
 
 #### Interface Parameters
 
-|    Field    |  Type  | Required | Description                                                                                                 |
-|------------|--------|------|-----------------------------------------------------------------------------------------------------------------|
-| bk_obj_id  | string |yes| Model ID                                                                                                          |
-| conditions | object |no| Combined query criteria. Combination supports AND and OR, and can be nested up to 3 levels. Each level supports up to 20 OR criteria. If this parameter is not specified, it means all matches (i.e. Contexts are null).|
-| time_condition      |  object     | no     | Query criteria for querying model instances by time|
-| fields     |  array  |no| Specify the fields to be returned. Fields that do not exist will be ignored. If not specified, all fields will be returned (returning all fields will affect performance, and it is recommended to return on demand).    |
-| page       |  object |yes| Paging settings                                                                                                        |
+| Field          | Type   | Required | Description                                                  |
+| -------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id      | string | Yes      | Model ID                                                     |
+| conditions     | object | No       | Combined query conditions, supports AND and OR, can be nested, up to 3 levels of nesting, each OR condition supports up to 20 conditions, not specifying this parameter means matching all (i.e., conditions is null) |
+| time_condition | object | No       | Query conditions for model instances based on time           |
+| fields         | array  | No       | Specify the fields to be returned. Fields that are not available will be ignored. If not specified, all fields will be returned (returning all fields will impact performance, it is recommended to return as needed) |
+| page           | object | Yes      | Pagination settings                                          |
 
 #### conditions
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  | yes      | Scope condition rule for selected business|
+| Field     | Type   | Required | Description                                      |
+| --------- | ------ | -------- | ------------------------------------------------ |
+| condition | string | Yes      | Rule operator                                    |
+| rules     | array  | Yes      | Range conditions for the selected business scope |
 
 #### conditions.rules
 
-|   Field   | Type| Required| Description                                                                                                     |
-|----------|--------|------|-----------------------------------------------------------------------------------------------------------|
-| field    |  string |yes| Condition field                                                                                                  |
-| operator | string |yes| Operator, optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between, etc|
-| value    |   -    |no| The expected value of the condition field. Different values correspond to different value formats. The array type value supports up to 500 elements                          |
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Condition field                                              |
+| operator | string | Yes      | Operator, optional values: equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between, etc. |
+| value    | -      | No       | Expected value of the condition field. Different operators correspond to different value formats. The maximum number of elements for array type values is 500 |
 
-For details of assembly rules, please refer to: https: //github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+Detailed assembly rules can be found here: [querybuilder](https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md)
 
 #### time_condition
 
-| Field   | Type   | Required| Description              |
-|-------|--------|-----|--------------------|
-| oper  | string |yes| Operator, currently only and is supported|
-| rules | array  |yes| Time query criteria         |
+| Field | Type   | Required | Description                             |
+| ----- | ------ | -------- | --------------------------------------- |
+| oper  | string | Yes      | Operator, currently only supports 'and' |
+| rules | array  | Yes      | Time query conditions                   |
 
 #### time_condition.rules
 
-| Field   | Type   | Required| Description                             |
-|-------|--------|-----|----------------------------------|
-| field | string |yes| The value is the field name of the model                  |
-| start | string |yes| Start time in the format yyyy MM dd hh: mm:ss|
-| end   |  string |yes| End time in the format yyy MM dd hh: mm:ss|
+| Field | Type   | Required | Description                             |
+| ----- | ------ | -------- | --------------------------------------- |
+| field | string | Yes      | Value is the field name of the model    |
+| start | string | Yes      | Start time, format: yyyy-MM-dd hh:mm:ss |
+| end   | string | Yes      | End time, format: yyyy-MM-dd hh:mm:ss   |
 
 #### page
 
-|  Field| Type| Required| Description                                                            |
-|-------|--------|------|------------------------------------------------------------------|
-| start | int    | yes | Record start position                                                     |
-| limit | int    | yes | Limit bars per page, Max. 500                                            |
-| sort  | string |no| Retrieve sort, following mongordb semantic format {KEY}:{ORDER}, sorted by creation time by default|
+| Field | Type   | Required | Description                                                  |
+| ----- | ------ | -------- | ------------------------------------------------------------ |
+| start | int    | Yes      | Record start position                                        |
+| limit | int    | Yes      | Page limit, maximum 500                                      |
+| sort  | string | No       | Retrieval sorting, follow the MongoDB semantic format {KEY}:{ORDER}, default sorting by creation time |
 
 ### Request Parameters Example
 
-```json
-{
-    "bk_app_code":"code",
-    "bk_app_secret":"secret",
+```json{
+    "bk_app_code": "code",
+    "bk_app_secret": "secret",
     "bk_username": "xxx",
-    "bk_token":"xxxx",
-    "bk_obj_id":"bk_switch",
-    "conditions":{
+    "bk_token": "xxxx",
+    "bk_obj_id": "bk_switch",
+    "conditions": {
         "condition": "AND",
         "rules": [
             {
@@ -100,18 +99,18 @@ For details of assembly rules, please refer to: https: //github.com/Tencent/bk-c
                 }
             ]
     },
-    "fields":[
+    "fields": [
         "bk_inst_id",
         "bk_inst_name"
     ],
-    "page":{
-        "start":0,
-        "limit":500
+    "page": {
+        "start": 0,
+        "limit": 500
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -131,27 +130,28 @@ For details of assembly rules, please refer to: https: //github.com/Tencent/bk-c
 }
 ```
 
-### Return result parameter
+### Response Parameters Description
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned for a failed request                  |
+| data       | object | Data returned by the request                                 |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| Field| Type| Description                                |
-|------|-------|-------------------------------------|
-| info | array |map array format, which returns instance data that meets the condition|
+| Field | Type  | Description                                                  |
+| ----- | ----- | ------------------------------------------------------------ |
+| info  | array | Map array format, returning instance data that meets the conditions |
 
 #### info
-| Field| Type| Description                                |
-|------|-------|-------------------------------------|
-| bk_inst_id | int |Instance id|
-| bk_inst_name | string |Instance name|
+
+| Field        | Type   | Description   |
+| ------------ | ------ | ------------- |
+| bk_inst_id   | int    | Instance ID   |
+| bk_inst_name | string | Instance name |

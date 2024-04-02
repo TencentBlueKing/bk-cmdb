@@ -20,6 +20,7 @@
     :min="min"
     v-model.number="localValue"
     v-bind="$attrs"
+    :initial-control-value="0"
     @blur="handleInput"
     @enter="handleEnter"
     @change="handleChange">

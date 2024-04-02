@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Batch update process information
+Batch Update Process Information (Permission: Service Instance Editing Permission)
 
 ### Request Parameters
 
@@ -8,35 +8,36 @@ Batch update process information
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| processes            | array  | Yes   | process info, the max length is 100 |
-| bk_biz_id            |  int  |yes   | Business ID |
+| Field     | Type  | Required | Description                              |
+| --------- | ----- | -------- | ---------------------------------------- |
+| processes | array | Yes      | Process information, maximum 100 entries |
+| bk_biz_id | int   | Yes      | Business ID                              |
 
-#### Processes Field Description
-| Field| Type| Description|
-|---|---|---|
-|process_template_id| int| Process template id|
-|auto_start| bool| Whether to pull up automatically|
-|auto_time_gap| int| Pull up interval|
-|bk_biz_id| int| Business ID |
-|bk_func_id| string| Function ID|
-|bk_func_name| string| Process name|
-|bk_process_id| int| Process id|
-|bk_process_name| string| Process alias|
-|bk_supplier_account| string| Developer account number|
-|face_stop_cmd| string| Forced stop command|
-|pid_file| string| PID file path|
-|priority| int| Startup priority|
-|proc_num| int| Number of starts|
-|reload_cmd| string| Process reload command|
-|restart_cmd| string| Restart command|
-|start_cmd| string| Start command|
-|stop_cmd| string| Stop order|
-|timeout| int| Operation time-out duration|
-|user| string| Start user|
-|work_path| string| Working path|
-|process_info| object| Process information|
+#### Explanation of the processes field
+
+| Field               | Type   | Required | Description                    |
+| ------------------- | ------ | -------- | ------------------------------ |
+| process_template_id | int    | No       | Process template ID            |
+| auto_start          | bool   | No       | Whether to start automatically |
+| auto_time_gap       | int    | No       | Time gap for automatic start   |
+| bk_biz_id           | int    | No       | Business ID                    |
+| bk_func_id          | string | No       | Function ID                    |
+| bk_func_name        | string | No       | Process name                   |
+| bk_process_id       | int    | No       | Process ID                     |
+| bk_process_name     | string | No       | Process alias                  |
+| bk_supplier_account | string | No       | Supplier account               |
+| face_stop_cmd       | string | No       | Forced stop command            |
+| pid_file            | string | No       | PID file path                  |
+| priority            | int    | No       | Startup priority               |
+| proc_num            | int    | No       | Number of processes to start   |
+| reload_cmd          | string | No       | Process reload command         |
+| restart_cmd         | string | No       | Restart command                |
+| start_cmd           | string | No       | Start command                  |
+| stop_cmd            | string | No       | Stop command                   |
+| timeout             | int    | No       | Operation timeout duration     |
+| user                | string | No       | Startup user                   |
+| work_path           | string | No       | Working directory              |
+| process_info        | object | No       | Process information            |
 
 ### Request Parameters Example
 
@@ -83,7 +84,7 @@ Batch update process information
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -96,16 +97,15 @@ Batch update process information
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
-
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

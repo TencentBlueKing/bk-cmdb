@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Unsubscribe event
+Unsubscribe from an event
 
 ### Request Parameters
 
@@ -8,11 +8,11 @@ Unsubscribe event
 
 #### Interface Parameters
 
-| Field               | Type      | Required   | Description      |
-|--------------------|------------|--------|------------|
-|subscription_id     |  int        | yes  | Subscription ID     |
+| Field           | Type | Required | Description     |
+| --------------- | ---- | -------- | --------------- |
+| subscription_id | int  | Yes      | Subscription ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -20,33 +20,32 @@ Unsubscribe event
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "subscription_id":1
+    "subscription_id": 1
 }
 ```
 
 ### Return Result Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
     "message": "",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data":"success"
+    "data": "success"
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

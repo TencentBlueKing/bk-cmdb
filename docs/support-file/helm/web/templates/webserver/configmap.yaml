@@ -76,6 +76,8 @@ data:
         publicKey: {{ .Values.web.webServer.jwt.publicKey }}
         # jwt私钥
         privateKey:  {{ .Values.web.webServer.jwt.privateKey }}
+      #是否启用消息通知
+      enableNotification: {{ .Values.web.webServer.enableNotification }}
 
     # cmdb服务tls配置
     tls:
@@ -92,7 +94,9 @@ data:
 
     # 调用apigw接口相关配置
     apiGW:
-      address: {{ .Values.web.apiGW.address }}
+      bkGseApiGatewayUrl: {{ .Values.bkGseApiGatewayUrl }}
+      bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
+      bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
       appCode: {{ .Values.web.apiGW.appCode }}
       appSecret: {{ .Values.web.apiGW.appSecret }}
       username: {{ .Values.web.apiGW.username }}

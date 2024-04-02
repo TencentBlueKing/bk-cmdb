@@ -1,6 +1,6 @@
-Functional description
+### Function Description
 
-Example Query the synchronization status of a service template(v3.12.3+, permission: biz access)
+Query the synchronization status of service templates (Version: v3.12.3+, Permission: Business Access).
 
 ### Request Parameters
 
@@ -8,13 +8,13 @@ Example Query the synchronization status of a service template(v3.12.3+, permiss
 
 #### Interface Parameters
 
-| Field               | Type  | Required | Description                                                       |
-|---------------------|-------|----------|-------------------------------------------------------------------|
-| bk_biz_id           | int   | yes      | Business ID                                                       |
-| service_template_id | int   | yes      | Service template ID                                               |
-| bk_module_ids       | array | yes      | List of module ids whose synchronization status you want to query |
+| Field               | Type  | Required | Description                                        |
+| ------------------- | ----- | -------- | -------------------------------------------------- |
+| bk_biz_id           | int   | Yes      | Business ID                                        |
+| service_template_id | int   | Yes      | Service template ID                                |
+| bk_module_ids       | array | Yes      | List of module IDs to query synchronization status |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -32,7 +32,7 @@ Example Query the synchronization status of a service template(v3.12.3+, permiss
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -67,33 +67,32 @@ Example Query the synchronization status of a service template(v3.12.3+, permiss
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | array  | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | array  | Data returned by the request                                 |
 
 #### data
 
-| Name        | Type   | Description                                      |
-|-------------|--------|--------------------------------------------------|
-| bk_inst_id  | int    | Instance id, where is the module ID              |
-| status      | string | Synchronous status                               |
-| creator     | string | The creator of a synchronization task            |
-| create_time | string | The create time of the synchronization task      |
-| last_time   | string | The last update time of the synchronization task |
+| Field       | Type   | Description                                  |
+| ----------- | ------ | -------------------------------------------- |
+| bk_inst_id  | int    | Instance ID, in this case, the module ID     |
+| status      | string | Synchronization status                       |
+| creator     | string | Creator of the synchronization task          |
+| create_time | string | Creation time of the synchronization task    |
+| last_time   | string | Last update time of the synchronization task |
 
-**Synchronization status declaration**： An instance has six states: need_sync, new, waiting, executing, finished, and
-failure，among：
+**Explanation of Synchronization Status**: There are 6 statuses for instances, including need_sync, new, waiting, executing, finished, and failure. Among them:
 
-- **need_sync** Indicates to be synchronized
-- **new/waiting/executing** Indicates synchronization
-- **finished** Indicates synchronization complete
-- **failure** Indicates synchronization failure
+- **need_sync**: Awaiting synchronization
+- **new/waiting/executing**: Synchronization in progress
+- **finished**: Synchronization completed
+- **failure**: Synchronization failed

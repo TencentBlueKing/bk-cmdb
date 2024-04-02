@@ -44,6 +44,7 @@ func (s *Service) Index(c *gin.Context) {
 		"cookieDomain":              s.Config.Site.BkDomain,
 		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
 		"publicPath":                getPublicPath(s.Config.Site.DomainUrl),
+		"enableNotification":        s.Config.EnableNotification,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {

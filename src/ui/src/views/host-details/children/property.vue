@@ -50,6 +50,7 @@
               <cmdb-property-value
                 :ref="`property-value-${property.id}`"
                 :value="host[property.bk_property_id]"
+                :is-show-overflow-tips="true"
                 :property="property">
               </cmdb-property-value>
             </span>
@@ -103,7 +104,8 @@
                         v-bk-tooltips.top="{
                           disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                           theme: 'light',
-                          trigger: 'mouseenter',
+                          showOnInit: true,
+                          trigger: 'click',
                           content: property.placeholder
                         }">
                       </component>
@@ -294,10 +296,10 @@
         const value = this.host[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
-        this.$nextTick(() => {
+        setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
-          component[0] && component[0].focus && component[0].focus()
-        })
+          component?.[0]?.focus()
+        }, 100)
       },
       async confirm() {
         const { property, value } = this.editState
@@ -465,9 +467,12 @@
                     height: 16px;
                     margin: 8px 0 0 8px;
                     line-height: 1;
+                    &:hover {
+                        color: inherit !important;
+                    }
                 }
                 &:hover {
-                    opacity: .8;
+                    color: #1768EF;
                 }
             }
             .property-copy {
@@ -555,6 +560,7 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            position: relative;
             > [class^=cmdb-form-] {
               width: 100%;
             }

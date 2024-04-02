@@ -42,6 +42,34 @@ const getBase64Image = (image, color) => {
   return canvas.toDataURL(`image/${getFileExtension(image.src)}`)
 }
 
+const HIDDEN_STYLE = `
+  height:0 !important;
+  visibility:hidden !important;
+  
+  position:absolute !important;
+  z-index:-1000 !important;
+  top:0 !important;
+  right:0 !important;
+`
+
+const CONTEXT_STYLE = [
+  'letter-spacing',
+  'line-height',
+  'padding-top',
+  'padding-bottom',
+  'font-family',
+  'font-weight',
+  'font-size',
+  'text-rendering',
+  'text-transform',
+  'width',
+  'text-indent',
+  'padding-left',
+  'padding-right',
+  'border-width',
+  'box-sizing',
+]
+
 export function svgToImageUrl(image, options) {
   const base64Image = getBase64Image(image, options.iconColor)
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
@@ -180,4 +208,53 @@ export const setCursorPosition = (element, cursor) => {
   selection.removeAllRanges()
   // 添加新建的范围
   selection.addRange(range)
+}
+function calculateNodeStyling(targetElement) {
+  const style = window.getComputedStyle(targetElement)
+  const boxSizing = style.getPropertyValue('box-sizing')
+  const paddingSize = Number.parseFloat(style.getPropertyValue('padding-bottom'))
+    + Number.parseFloat(style.getPropertyValue('padding-top'))
+  const borderSize = Number.parseFloat(style.getPropertyValue('border-bottom-width'))
+    + Number.parseFloat(style.getPropertyValue('border-top-width'))
+  const contextStyle = CONTEXT_STYLE.map(name => `${name}:${style.getPropertyValue(name)}`).join(';')
+
+  return { contextStyle, paddingSize, borderSize, boxSizing }
+}
+/**
+ * textarea框悬浮计算当前高度
+ */
+export function calcTextareaHeight(targetElement, rows = 1) {
+  if (!targetElement) return
+  let hiddenTextarea = document.createElement('textarea')
+  document.body.appendChild(hiddenTextarea)
+  const { paddingSize, borderSize, boxSizing, contextStyle } = calculateNodeStyling(targetElement)
+
+  hiddenTextarea.setAttribute('style', `${contextStyle};${HIDDEN_STYLE}`)
+  hiddenTextarea.value = targetElement.value || ''
+
+  let height = hiddenTextarea.scrollHeight
+  const result = {}
+
+  if (boxSizing === 'border-box') {
+    height = height + borderSize
+  } else if (boxSizing === 'content-box') {
+    height = height - paddingSize
+  }
+
+  hiddenTextarea.value = ''
+  const singleRowHeight = hiddenTextarea.scrollHeight - paddingSize
+
+  if (Number.isInteger(rows)) {
+    let minHeight = singleRowHeight * rows
+    if (boxSizing === 'border-box') {
+      minHeight = minHeight + paddingSize + borderSize
+    }
+    height = Math.max(minHeight, height)
+    result.minHeight = minHeight
+  }
+
+  hiddenTextarea.parentNode?.removeChild(hiddenTextarea)
+  hiddenTextarea = undefined
+  result.height = height
+  return result
 }

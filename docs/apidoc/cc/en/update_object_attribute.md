@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update object model properties
+Update Object Model Property (Permission: Model Editing Permission)
 
 ### Request Parameters
 
@@ -8,38 +8,21 @@ Update object model properties
 
 #### Interface Parameters
 
-| Field                | Type   | Required   | Description                                   |
-|---------------------|---------|--------|-----------------------------------------|
-| id                  |  int     | yes  | Record ID of the target data                        |
-| description         |  string  |no     | Description information of data                          |
-| isonly              |  bool    | no     | Show uniqueness                              |
-| isreadonly          |  bool    | no     | Indicates whether it is read-only                            |
-| isrequired          |  bool    | no     | Indicates whether it is required                            |
-| bk_property_group   |  string  |no     | Name of the field column                          |
-| option              |  string  |no     | User-defined content, stored content and format determined by the caller, take digital content as an example ({"min":"1","max":"2"}）|
-| bk_property_name    |  string  |no     | Model property name, used to show                    |
-| bk_property_type    |  string  |no     | The data type of the defined attribute field used to store the data (singlechar,longchar,int,enum,date,time,objUser,singleasst,multiasst,timezone,bool)|
-| unit                |  string  |no     | Unit                                    |
-| placeholder         |  string  |no     | Placeholder                                  |
-| ismultiple |  bool  |no     | Whether multiple choices are allowed, where the field type is singlechar, longchar, int, float, enum, date, time, timezone, bool, and the list, temporarily does not support multiple choices. When creating an attribute, the field type is the above type, and the ismultiple parameter can not be passed. The default is false. If you pass true, you will be prompted that the type does not support multiple choices. enummulti, enumquote , user and organization fields support multiple choices, among which the user field and organization field are true by default |
-| default | object |no | Add a default value to the attribute. When updating, the default value is passed according to the actual type of the field. If you want to set the default value of the empty field, you need to pass default: null |
-
-#### bk_property_type
-
-| Identification       | Name     |
-|------------|----------|
-| singlechar |Short character   |
-| longchar   | Long character   |
-| int        | Reshaping     |
-| enum       | Enumeration type|
-| date       | Date     |
-| time       | Time     |
-| objuser    | User     |
-| enummulti |Enumerate multiple   |
-| enumquote |Enumeration References   |
-| timezone   | Time zone     |
-| bool       | Bull     |
-| organization | Organization |
+| Field             | Type   | Required | Description                                                  |
+| ----------------- | ------ | -------- | ------------------------------------------------------------ |
+| id                | int    | Yes      | Record ID of the target data                                 |
+| description       | string | No       | Description information of the data                          |
+| isonly            | bool   | No       | Indicates uniqueness                                         |
+| isreadonly        | bool   | No       | Indicates whether it is read-only                            |
+| isrequired        | bool   | No       | Indicates whether it is required                             |
+| bk_property_group | string | No       | Name of the field column                                     |
+| option            | string | No       | User-defined content, the content and format stored are determined by the caller. For example, using numeric content ({"min":"1","max":"2"}) |
+| bk_property_name  | string | No       | Model property name, used for display                        |
+| unit              | string | No       | Unit                                                         |
+| bk_property_type  | string | Yes      | Defined property field for storing data type (singlechar (short character), longchar (long character), int (integer), enum (enumeration type), date (date), time (time), objuser (user), enummulti (enumeration multiple), enumquote (enumeration reference), timezone (time zone), bool (boolean), organization (organization)) |
+| placeholder       | string | No       | Placeholder                                                  |
+| ismultiple        | bool   | No       | Whether it can be selected multiple times. For field types such as short character, long character, number, floating point, enumeration, date, time, time zone, boolean, multiple selection is not supported temporarily. When updating the property, if the field type is one of the above types, ismultiple cannot be updated to true. If updated to true, it will prompt that this type does not support multiple selection temporarily. Enumeration multiple selection, enumeration reference, user, organization fields support multiple selection. |
+| default           | object | No       | Add a default value to the attribute. When updating, the value of default is passed according to the actual type of the field. If you want to clear the default value of the field, you need to pass default: null |
 
 ### Request Parameters Example
 
@@ -67,7 +50,7 @@ Update Default Value Scenario
 }
 ```
 
-Do not update default value scenarios
+Do Not Update Default Value Scenario
 
 ```python
 {
@@ -90,7 +73,7 @@ Do not update default value scenarios
 }
 ```
 
-Empty default value scenario
+Clear Default Value Scenario
 
 ```python
 {
@@ -114,30 +97,28 @@ Empty default value scenario
 }
 ```
 
-
-
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
-    "data": "success"
+    "data": null
 }
 ```
-### Return Result Parameters Description
+
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |No data return|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | No data returned                                             |

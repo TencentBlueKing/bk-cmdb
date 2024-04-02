@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Create a cloud area based on the cloud area name
+Create a control area based on the control area name (Permission: Control Area Creation Permission)
 
 ### Request Parameters
 
@@ -8,13 +8,13 @@ Create a cloud area based on the cloud area name
 
 #### Interface Parameters
 
-| Field                 | Type      | Required   | Description       |
-|----------------------|------------|--------|-------------|
-| bk_cloud_name  | string     | yes     | Cloud area name |
+| Field         | Type   | Required | Description       |
+| ------------- | ------ | -------- | ----------------- |
+| bk_cloud_name | string | Yes      | Control area name |
 
-### Request Parameters Example
+### Request Parameter Example
 
-``` python
+```python
 {
     
     "bk_app_code": "esb_test",
@@ -23,10 +23,9 @@ Create a cloud area based on the cloud area name
     "bk_token": "xxx",
     "bk_cloud_name": "test1"
 }
-
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -44,30 +43,28 @@ Create a cloud area based on the cloud area name
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Request return data                                          |
 
 #### data
 
-| Field          | Type     | Description     |
-|---------------|----------|----------|
-| created      |  object   | Create successfully, return message|
-
+| Field   | Type   | Description                              |
+| ------- | ------ | ---------------------------------------- |
+| created | object | Created successfully, return information |
 
 #### data.created
 
-| Name    | Type   | Description       |
-|---------|--------|------------|
-| origin_index|  int |The result order of the corresponding request|
-| id|  int |Cloud zone id, bk_Cloud_id|
-
-
+| Field         | Type | Description                                       |
+| ------------ | ---- | ------------------------------------------------- |
+| origin_index | int  | Corresponding to the order of the request results |
+| id           | int  | Control area id, bk_cloud_id                      |

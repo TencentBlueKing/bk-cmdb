@@ -194,7 +194,7 @@
 <style lang="scss" scoped>
     .details-layout {
         height: 100%;
-        padding: 0 0 0 32px;
+        padding: 0 24px;
         @include scrollbar-y;
     }
     .property-group {

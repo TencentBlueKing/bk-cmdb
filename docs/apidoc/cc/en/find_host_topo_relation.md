@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Get host-to-topology relationship
+Get the relationship between hosts and topology (Permission: Business access permission)
 
 ### Request Parameters
 
@@ -8,22 +8,22 @@ Get host-to-topology relationship
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id|  int| yes |  Business ID |
-| bk_set_ids| array |no| List of set IDs, up to 200|
-| bk_module_ids| array |no| Module ID list, up to 500|
-| bk_host_ids| array |no| Host ID list, up to 500|
-| page|  object| yes | Paging information|
+| Field         | Type   | Required | Description                    |
+| ------------- | ------ | -------- | ------------------------------ |
+| bk_biz_id     | int    | Yes      | Business ID                    |
+| bk_set_ids    | array  | No       | List of cluster IDs, up to 200 |
+| bk_module_ids | array  | No       | List of module IDs, up to 500  |
+| bk_host_ids   | array  | No       | List of host IDs, up to 500    |
+| page          | object | Yes      | Page information               |
 
-#### Page field Description
+#### page Field Description
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-|start| int| no | Get data offset position|
-|limit| int| yes | Limit on the number of data pieces in the past, 200 is recommended|
+| Field | Type | Required | Description                                          |
+| ----- | ---- | -------- | ---------------------------------------------------- |
+| start | int  | No       | Data offset position                                 |
+| limit | int  | Yes      | Number of records per page, recommended value is 200 |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -42,10 +42,9 @@ Get host-to-topology relationship
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -78,39 +77,40 @@ Get host-to-topology relationship
 }
 ```
 
+### Response Parameters Description
 
-
-### Return Result Parameters Description
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description:
+#### data Field Explanation:
 
-| Name| Type| Description|
-|---|---|---|
-| count|  int| Number of records|
-| data|  object array |Data details list of host and set, module and set under service|
-| page|  object| Page|
+| Field  | Type         | Description                                                  |
+| ----- | ------------ | ------------------------------------------------------------ |
+| count | int          | Number of records                                            |
+| data  | object array | Details list of data for hosts and clusters, modules, clusters under the business |
+| page  | object       | Page                                                         |
 
-#### Data.data field Description:
-| Name| Type| Description|
-|---|---|---|
-| bk_biz_id | int |Service ID|
-| bk_set_id | int |Set ID|
-| bk_module_id | int |Module ID|
-| bk_host_id | int |Host ID|
-| bk_supplier_account | string |Developer account number|
+#### data.data Field Explanation:
 
-#### Data.page field Description:
-| Name| Type| Description|
-|---|---|---|
-|start| int| Data offset position|
-|limit| int| Limit on number of past data pieces|
+| Field                | Type   | Description      |
+| ------------------- | ------ | ---------------- |
+| bk_biz_id           | int    | Business ID      |
+| bk_set_id           | int    | Cluster ID       |
+| bk_module_id        | int    | Module ID        |
+| bk_host_id          | int    | Host ID          |
+| bk_supplier_account | string | Supplier account |
+
+#### data.page Field Explanation:
+
+| Field  | Type | Description                |
+| ----- | ---- | -------------------------- |
+| start | int  | Data offset position       |
+| limit | int  | Number of records per page |

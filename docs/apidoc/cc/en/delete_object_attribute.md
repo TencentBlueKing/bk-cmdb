@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete the object model attribute. You can delete the business user-defined field
+Delete object model attribute, which can include deleting business custom fields (Permission: Model editing permission)
 
 ### Request Parameters
 
@@ -8,15 +8,13 @@ Delete the object model attribute. You can delete the business user-defined fiel
 
 #### Interface Parameters
 
-| Field| Type       | Required   | Description                         |
-|-------|-------------|--------|-------------------------------|
-| id    |  int         | no     | The unique identification ID of the deleted data record|
+| Field | Type | Required | Description                                           |
+| ----- | ---- | -------- | ----------------------------------------------------- |
+| id    | int  | Yes      | Unique identifier ID of the data record to be deleted |
 
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
-
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -26,28 +24,26 @@ Delete the object model attribute. You can delete the business user-defined fiel
 }
 ```
 
-
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
+    "message": "success",
     "permission": null,
     "request_id": "e43da4ef221746868dc4c837d36f3807",
     "data": "success"
 }
 ```
 
-#### response
+#### Response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                           |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

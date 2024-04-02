@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <ul class="icon-set">
+  <ul class="icon-set" v-if="curIconList[0]">
     <li class="icon"
       ref="iconItem"
       :class="{ 'active': icon.value === value }"
@@ -22,6 +22,12 @@
       <span class="checked-status"></span>
     </li>
   </ul>
+  <cmdb-data-empty
+    v-else
+    slot="empty"
+    :stuff="dataEmpty"
+    @clear="handleClearFilter">
+  </cmdb-data-empty>
 </template>
 
 <script>
@@ -41,6 +47,14 @@
         default: ''
       }
     },
+    data() {
+      return {
+        dataEmpty: {
+          type: 'search'
+        }
+
+      }
+    },
     computed: {
       ...mapGetters([
         'language'
@@ -54,6 +68,9 @@
       }
     },
     methods: {
+      handleClearFilter() {
+        this.$emit('clear')
+      },
       handleChooseIcon(value) {
         this.$emit('input', value)
       }
@@ -62,6 +79,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .data-empty {
+      width: 560px;
+    }
     .icon-set {
         width: 560px;
         display: flex;

@@ -164,6 +164,15 @@ bkLoginApiUrl: http://bk-login-web
 ##
 bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
 
+# 蓝鲸 GSE API Gateway url
+bkGseApiGatewayUrl: "http://bkapi.example.com"
+
+# 蓝鲸 Notice API Gateway url
+bkNoticeApiGatewayUrl: "http://bkapi.example.com"
+
+# CMDB API Gateway url
+bkCmdbApiGatewayUrl: "http://bkapi.example.com"
+
 ## @section bk-cmdb common config parameters
 ##
 web:
@@ -252,6 +261,8 @@ web:
       publicKey:
       # jwt私钥
       privateKey:
+    #是否启用消息通知
+    enableNotification: false
 
   ## monitor common config parameters
   ##
@@ -343,7 +354,6 @@ web:
   ##
   ## 调用apigw接口相关配置
   apiGW:
-    address: http://bkapi.example.com/api/{api_name}
     appCode: bk_cmdb
     appSecret:
     username: admin

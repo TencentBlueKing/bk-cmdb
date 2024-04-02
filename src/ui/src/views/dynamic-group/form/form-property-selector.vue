@@ -237,7 +237,7 @@
   margin-right: -14px;
   margin-left: -14px;
   padding: 0 14px;
-  @include scrollbar-y(6px, transparent);
+  @include scrollbar-y;
 }
 .property-selector-group {
   margin-top: 15px;

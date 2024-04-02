@@ -16,12 +16,15 @@ import (
 	"strconv"
 	"time"
 
+	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
+	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
+	customtypes "configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/source_controller/cacheservice/cache/topotree"
 	"configcenter/src/source_controller/cacheservice/event"
 )
@@ -69,7 +72,8 @@ func (s *cacheService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 
 	host, err := s.cacheSet.Host.GetHostWithID(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"search host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespString(&host)
@@ -88,7 +92,8 @@ func (s *cacheService) ListHostWithHostIDInCache(ctx *rest.Contexts) {
 
 	host, err := s.cacheSet.Host.ListHostWithHostIDs(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"list host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespStringArray(host)
@@ -104,7 +109,8 @@ func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 
 	cnt, host, err := s.cacheSet.Host.ListHostsWithPage(ctx.Kit.Ctx, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list host with id in cache, but get host failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"list host with id in cache, but get host failed, err: %v", err)
 		return
 	}
 	ctx.RespCountInfoString(cnt, host)
@@ -169,7 +175,8 @@ func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 	}
 	biz, err := s.cacheSet.Business.GetBusiness(ctx.Kit.Ctx, bizID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz with id in cache, but get biz failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
+			"search biz with id in cache, but get biz failed, err: %v", err)
 		return
 	}
 	ctx.RespString(&biz)
@@ -219,7 +226,8 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 
 	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.SupplierAccount, instID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v",
+			err)
 		return
 	}
 	ctx.RespString(&inst)
@@ -275,6 +283,138 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 	ctx.RespString(topo)
 }
 
+// SearchBizTopo search business topology cache info
+func (s *cacheService) SearchBizTopo(cts *rest.Contexts) {
+	topoType := cts.Request.PathParameter("type")
+	if len(topoType) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "type"))
+		return
+	}
+
+	opt := new(types.GetBizTopoOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: opt.BizID}}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	res, err := s.cacheSet.Topo.GetBizTopo(cts.Kit, topoType, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespString(res)
+}
+
+// RefreshBizTopo refresh business topology cache info
+func (s *cacheService) RefreshBizTopo(cts *rest.Contexts) {
+	topoType := cts.Request.PathParameter("type")
+	if len(topoType) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "type"))
+		return
+	}
+
+	opt := new(types.RefreshBizTopoOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.Business, Action: acmeta.ViewBusinessResource,
+		InstanceID: opt.BizID}}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	err := s.cacheSet.Topo.RefreshBizTopo(cts.Kit, topoType, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(nil)
+}
+
+// ListPodLabelKey list pod label key cache info
+func (s *cacheService) ListPodLabelKey(cts *rest.Contexts) {
+	opt := new(customtypes.ListPodLabelKeyOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	res, err := s.cacheSet.Custom.ListPodLabelKey(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(&customtypes.ListPodLabelKeyRes{Keys: res})
+}
+
+// ListPodLabelValue list pod label value cache info
+func (s *cacheService) ListPodLabelValue(cts *rest.Contexts) {
+	opt := new(customtypes.ListPodLabelValueOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	res, err := s.cacheSet.Custom.ListPodLabelValue(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(&customtypes.ListPodLabelValueRes{Values: res})
+}
+
+// RefreshPodLabel refresh pod label key and value cache info
+func (s *cacheService) RefreshPodLabel(cts *rest.Contexts) {
+	opt := new(customtypes.RefreshPodLabelOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+
+	// authorize
+	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.KubePod, Action: acmeta.Find},
+		BusinessID: opt.BizID}
+	if resp, authorized := s.authManager.Authorize(cts.Kit, authRes); !authorized {
+		cts.RespNoAuth(resp)
+		return
+	}
+
+	err := s.cacheSet.Custom.RefreshPodLabel(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(nil)
+}
+
 // WatchEvent TODO
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	var err error
@@ -312,7 +452,8 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 	if len(options.Cursor) != 0 {
 		events, err := s.cacheSet.Event.WatchWithCursor(ctx.Kit, key, options)
 		if err != nil {
-			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err, ctx.Kit.Rid)
+			blog.Errorf("watch event with cursor failed, cursor: %s, err: %v, rid: %s", options.Cursor, err,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}

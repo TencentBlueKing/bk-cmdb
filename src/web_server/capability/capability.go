@@ -20,13 +20,17 @@ package capability
 import (
 	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
+	"configcenter/src/thirdparty/apigw/notice"
+	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Capability defines webserver server's capability
 type Capability struct {
-	Ws     *gin.Engine
-	Engine *backbone.Engine
-	ApiCli apiserver.ApiServerClientInterface
+	Ws        *gin.Engine
+	Engine    *backbone.Engine
+	Config    *options.Config
+	NoticeCli notice.ClientI
+	ApiCli    apiserver.ApiServerClientInterface
 }

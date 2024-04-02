@@ -18,7 +18,7 @@
       <bk-popover placement="bottom">
         <p class="setting-title setting-title-ref">{{$t('网页 Title 设置：')}}</p>
         <template #content>
-          <img style="width: 270px;" src="../../../assets/images/doc-title-tooltip.webp">
+          <img style="width: 270px;" src="../../../assets/images/doc-title-tooltip.png">
         </template>
       </bk-popover>
     </div>

@@ -1,22 +1,20 @@
-### Functional description
+### Function Description
 
-The service idle machine, that fault machine and the module to be recycle are obtained accord to the service ID
+Get business idle hosts, faulty hosts, and modules to be recycled based on the business ID.
 
 ### Request Parameters
 
 {{ common_args_desc }}
 
-
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id | int        | yes  | Business ID |
+| Field     | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| bk_biz_id | int  | Yes      | Business ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
-
 {
     "bk_app_code": "esb_test",
     "bk_app_secret": "xxx",
@@ -26,7 +24,7 @@ The service idle machine, that fault machine and the module to be recycle are ob
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -37,23 +35,23 @@ The service idle machine, that fault machine and the module to be recycle are ob
   "request_id": "e43da4ef221746868dc4c837d36f3807",
   "data": {
     "bk_set_id": 2,
-    "bk_set_name": "Idle machine",
+    "bk_set_name": "idle pool",
     "module": [
       {
         "bk_module_id": 3,
-        "bk_module_name": "Idle machine",
+        "bk_module_name": "idle host",
         "default": 1,
         "host_apply_enabled": false
       },
       {
         "bk_module_id": 4,
-        "bk_module_name": "Faulty machine",
+        "bk_module_name": "fault host",
         "default": 2,
         "host_apply_enabled": false
       },
       {
         "bk_module_id": 5,
-        "bk_module_name": "To be recycled",
+        "bk_module_name": "recycle host",
         "default": 3,
         "host_apply_enabled": false
       }
@@ -62,28 +60,32 @@ The service idle machine, that fault machine and the module to be recycle are ob
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
+
 #### response
-| Name    | Type   | Description                                       |
-| ------- | ------ | ------------------------------------------ |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                     |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                             |
 
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-|bk_set_id | int64 |The instance ID of the set to which the idle machine, the failed machine, and the module to be recycled belong|
-|bk_set_name | string |The instance name of the set to which the idle machine, the failed machine, and the module to be recycled belong|
+#### Explanation of data Parameters
 
-#### Module description
-| Field      | Type      | Description      |
-|-----------|------------|------------|
-|bk_module_id | int |The instance ID of the idle machine, failed machine, or module to be recycled|
-|bk_module_name | string |The instance name of the idle machine, failed machine, or module to be recycled|
-|default | int |Indicates the module type|
-| host_apply_enabled| bool| Enable automatic application of host properties|
+| Field       | Type   | Description                                                  |
+| ----------- | ------ | ------------------------------------------------------------ |
+| bk_set_id   | int64  | Instance ID of the set to which idle hosts, faulty hosts, and modules to be recycled belong |
+| bk_set_name | string | Instance name of the set to which idle hosts, faulty hosts, and modules to be recycled belong |
+| module      | array  | Information about idle hosts, faulty hosts, and modules to be recycled |
+
+#### Explanation of module Parameters
+
+| Field              | Type   | Description                                                  |
+| ------------------ | ------ | ------------------------------------------------------------ |
+| bk_module_id       | int    | Instance ID of idle hosts, faulty hosts, or modules to be recycled |
+| bk_module_name     | string | Instance name of idle hosts, faulty hosts, or modules to be recycled |
+| default            | int    | Indicates the module type                                    |
+| host_apply_enabled | bool   | Whether to enable automatic application of host properties   |

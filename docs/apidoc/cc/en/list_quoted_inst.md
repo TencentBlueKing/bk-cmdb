@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-list quoted model instances by condition (version: v3.10.30+, permission: when there is a business id, it is the business access permission of the business, otherwise, it is the view permission of the source model instance.)
+Query the list of instances referencing the model (Version: v3.10.30+, Permission: When passing the business id, it means querying the list of instances referencing the model from the perspective of the business. When the model is a business, check the business view permission; otherwise, check the access permission of the corresponding model instances.)
 
 ### Request Parameters
 
@@ -8,56 +8,52 @@ list quoted model instances by condition (version: v3.10.30+, permission: when t
 
 #### Interface Parameters
 
-| Field          | Type   | Required | Description                                                                                                                                                |
-|----------------|--------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id        | string       | no       | business                                                                                                                                                   |
-| bk_obj_id      | string | yes      | source model id                                                                                                                                            |
-| bk_property_id | string | yes      | source model quoted property id                                                                                                                            |
-| filter         | object | no       | query filter of the quoted instance                                                                                                                        |
-| fields         | array  | no       | quoted instance property list, which controls which fields are in the returned result, which can accelerate interface requests and reduce network traffic. |
-| page           | object | yes      | page condition                                                                                                                                             |
+| Field          | Type         | Required | Description                                                  |
+| -------------- | ------------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id      | string       | No       | Business id                                                  |
+| bk_obj_id      | string       | Yes      | Source model ID                                              |
+| bk_property_id | string       | Yes      | ID of the property in the source model that references this model |
+| filter         | object       | No       | Query conditions for instances referencing this model        |
+| fields         | string array | No       | List of properties of instances referencing this model, controls which fields are returned in the result, speeding up interface requests and reducing network traffic transmission |
+| page           | object       | Yes      | Pagination information                                       |
 
-#### filter
+#### Explanation of the filter Field
 
-This parameter is the filter rule to search for container based on its attribute fields. This parameter supports the
-following two filter rules types. The combined filter rules can be nested with the maximum nesting level of 2. The
-specific supported filter rule types are as follows:
+Filtering rules for attributes of the model being referenced, used to search data based on attribute fields. This parameter supports the following two types of filtering rules, and combination filtering rules can be nested, with a maximum of two levels. The specific supported filtering rule types are as follows:
 
-##### combined filter rule
+##### Combination Filtering Rules
 
-This filter rule type defines filter rules composed of other rules, the combined rules support logic and/or
-relationships
+Filtering rules composed of other rules, supporting logical AND/OR relationships between combined rules
 
-| Field     | Type   | Required | Description                                                                |
-|-----------|--------|----------|----------------------------------------------------------------------------|
-| condition | string | yes      | query criteria, support `AND` and `OR`                                     |
-| rules     | array  | yes      | query rules, can be of `combined filter rule` or `atomic filter rule` type |
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| condition | string | Yes      | Combined query condition, supports both `AND` and `OR`       |
+| rules     | array  | Yes      | Query rules, can be of type `Combination Filtering Rules` or `Atomic Filtering Rules` |
 
-##### atomic filter rule
+##### Atomic Filtering Rules
 
-This filter rule type defines basic filter rules, which represent rules for filtering a field. Any filter rule is either
-directly an atomic filter rule, or a combination of multiple atomic filter rules
+Basic filtering rules, indicating the rule for filtering a certain field. Any filtering rule is directly an atomic filtering rule or composed of multiple atomic filtering rules
 
-| Field    | Type                                                                 | Required | Description                                                                                                          |
-|----------|----------------------------------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------|
-| field    | string                                                               | yes      | container's field                                                                                                    |
-| operator | string                                                               | yes      | operator, optional values: equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between |
-| value    | different fields and operators correspond to different value formats | yes      | operand                                                                                                              |
+| Field     | Type                                                         | Required | Description                                                  |
+| -------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| field    | string                                                       | Yes      | Property field of the model being referenced                 |
+| operator | string                                                       | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | Different field and operator correspond to different value formats | No       | Operation value                                              |
 
-Assembly rules can refer to: <https://github.com/TencentBlueKing/bk-cmdb/blob/v3.10.x/pkg/filter/README.md>
+Assembly rules can refer to: https://github.com/TencentBlueKing/bk-cmdb/blob/v3.10.x/pkg/filter/README.md
 
-#### page
+#### Explanation of the page Field
 
-| Field        | Type   | Required | Description                                                                                                                                                                                                        |
-|--------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| start        | int    | yes      | Record start position                                                                                                                                                                                              |
-| limit        | int    | yes      | Limit per page, maximum 500                                                                                                                                                                                        |
-| sort         | string | no       | Sort the field                                                                                                                                                                                                     |
-| enable_count | bool   | yes      | The flag defining Whether to get the the number of query objects. If this flag is true, then the request is to get the quantity. The remaining fields must be initialized, start is 0, and limit is: 0, sort is "" |
+| Field        | Type   | Required | Description                                                  |
+| ------------ | ------ | -------- | ------------------------------------------------------------ |
+| start        | int    | Yes      | Record start position                                        |
+| limit        | int    | Yes      | Number of records per page, maximum is 500                   |
+| sort         | string | No       | Sorting field                                                |
+| enable_count | bool   | Yes      | Flag to indicate whether to obtain the number of query objects. If this flag is true, it means that this request is to obtain the count. In this case, other fields must be initialized, start is 0, limit is 0, sort is "" |
 
-### Request Parameters Example
+### Request Parameter Example
 
-#### Query Detail Request Parameters Example
+#### Example of Detailed Information Request Parameters
 
 ```json
 {
@@ -107,7 +103,7 @@ Assembly rules can refer to: <https://github.com/TencentBlueKing/bk-cmdb/blob/v3
 }
 ```
 
-#### Query Quantity Request Parameters Example
+#### Example of Count Request Parameters
 
 ```json
 {
@@ -128,9 +124,9 @@ Assembly rules can refer to: <https://github.com/TencentBlueKing/bk-cmdb/blob/v3
 }
 ```
 
-### Return Result Example
+### Response Example
 
-#### Query Detail Return Result Example
+#### Example of Detailed Information Response
 
 ```json
 {
@@ -155,7 +151,7 @@ Assembly rules can refer to: <https://github.com/TencentBlueKing/bk-cmdb/blob/v3
 }
 ```
 
-#### Query Quantity Return Result Example
+#### Example of Count Response
 
 ```json
 {
@@ -171,29 +167,29 @@ Assembly rules can refer to: <https://github.com/TencentBlueKing/bk-cmdb/blob/v3
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
 
 #### response
 
-| Name       | Type   | Description                                                                             |
-|------------|--------|-----------------------------------------------------------------------------------------|
-| result     | bool   | Whether the request was successful or not. True: request succeeded;false request failed |
-| code       | int    | Wrong code. 0 indicates success,>0 indicates failure error                              |
-| message    | string | Error message returned by request failure                                               |
-| permission | object | Permission information                                                                  |
-| request_id | string | Request chain id                                                                        |
-| data       | object | Data returned by request                                                                |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |
 
 #### data
 
-| Field | Type  | Description                                                     |
-|-------|-------|-----------------------------------------------------------------|
-| count | int   | Number of containers                                            |
-| info  | array | Container list, only returns the fields that is set in `fields` |
+| Field | Type  | Description                                               |
+| ----- | ----- | --------------------------------------------------------- |
+| count | int   | Number of records                                         |
+| info  | array | Actual data, only the fields set in `fields` are returned |
 
 #### info
 
-| Field       | Type   | Description                                                                               |
-|-------------|--------|-------------------------------------------------------------------------------------------|
-| name        | string | name, this is only an example, actual fields is defined by quoted model properties        |
-| description | string | description, this is only an example, actual fields is defined by quoted model properties |
+| Field       | Type   | Description                                                  |
+| ----------- | ------ | ------------------------------------------------------------ |
+| name        | string | Name, this is just an example, the actual fields depend on the model properties |
+| description | string | Description, this is just an example, the actual fields depend on the model properties |

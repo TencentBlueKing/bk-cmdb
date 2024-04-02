@@ -63,7 +63,7 @@ var (
 	// Note:Among them, ipv4 and ipv6 addresses involve updating in dynamic scenarios, but are not allowed to be updated
 	// in static ip scenarios, and require special processing
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit",
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit", "bk_cpu_architecture",
 		common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
 	reqireFields = append(compareFields, common.BKHostIDField, common.BKAddressingField, common.BKHostOuterIPField,
 		common.BKHostOuterIPv6Field)
@@ -254,9 +254,10 @@ func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceTy
 	if agentID != "" {
 		host, err = h.getHostByAgentID(header, rid, agentID)
 		if err != nil {
-			if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
-				blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
-			}
+			// todo 由于采集器会上报没有绑定agent id的主机信息，给db造成了压力，这里先把加入延迟队列的逻辑去掉
+			//if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
+			//	blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
+			//}
 			blog.Errorf("get host detail with agentID: %v failed, err: %v, rid: %s", agentID, err, rid)
 			return "", errors.New("no host founded")
 		}
@@ -310,6 +311,11 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 	if err != nil {
 		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
 		return false, err
+	}
+
+	if host == "" {
+		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
+		return false, errors.New("get host detail failed")
 	}
 
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
@@ -563,6 +569,7 @@ type hostDiscoverMsg struct {
 	cpumodule   string
 	hostname    string
 	osbit       string
+	arch        string
 	cpunum      int64
 	disk        uint64
 	mem         uint64
@@ -596,6 +603,7 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	hostMsg.ostype = strings.TrimSpace(val.Get("data.system.os").String())
 	hostMsg.platform = strings.TrimSpace(val.Get("data.system.platform").String())
 	hostMsg.version = val.Get("data.system.platVer").String()
+	hostMsg.arch = strings.TrimSpace(val.Get("data.system.arch").String())
 
 	switch strings.ToLower(hostMsg.ostype) {
 	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
@@ -623,6 +631,9 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	case common.HostOSTypeName[common.HostOSTypeEnumFreeBSD]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumFreeBSD
+	case common.HostOSTypeName[common.HostOSTypeEnumMacOS]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumMacOS
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}
@@ -785,6 +796,9 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	case common.HostOSTypeName[common.HostOSTypeEnumFreeBSD]:
 		hostMsg.osname = hostMsg.platform
 		hostMsg.ostype = common.HostOSTypeEnumFreeBSD
+	case common.HostOSTypeName[common.HostOSTypeEnumMacOS]:
+		hostMsg.osname = hostMsg.platform
+		hostMsg.ostype = common.HostOSTypeEnumMacOS
 	default:
 		hostMsg.osname = fmt.Sprintf("%s", hostMsg.platform)
 	}
@@ -1065,6 +1079,13 @@ func parseV10Setter(val *gjson.Result, host *hostInfo) (
 		raw.WriteString(",")
 		raw.WriteString("\"bk_os_bit\":")
 		raw.Write([]byte("\"" + hostMsg.osbit + "\""))
+	}
+
+	if hostMsg.arch != "" {
+		setter["bk_cpu_architecture"] = hostMsg.arch
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_architecture\":")
+		raw.Write([]byte("\"" + hostMsg.arch + "\""))
 	}
 
 	raw.WriteByte('}')

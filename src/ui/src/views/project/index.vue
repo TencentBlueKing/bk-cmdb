@@ -34,7 +34,7 @@
           v-model="filter.field"
           :properties="fastSearchProperties">
         </cmdb-property-selector>
-        <component class="filter-value fl"
+        <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
           :class="filterType"
@@ -420,9 +420,19 @@
             operator: this.filter.operator
           }
         }
-        const { conditions } = { ... Utils.transformGeneralModelCondition(condition, this.properties) }
-        const params = { ...this.getSearchParams(type), filter: { ...conditions } }
-        if (this.filter.value.length === 0)  delete params.filter
+        const {
+          conditions,
+          time_condition: timeCondition
+        } = Utils.transformGeneralModelCondition(condition, this.properties)
+
+        const params = this.getSearchParams(type)
+        if (conditions) {
+          params.filter = conditions
+        }
+        if (timeCondition) {
+          params.time_condition = timeCondition
+        }
+
         return projectService.find({
           params,
           config: Object.assign({ requestId: this.requestId.searchProject }, config)
@@ -687,6 +697,8 @@
   .options-filter {
     position: relative;
     margin-right: 10px;
+    width: 439px;
+
     .filter-selector {
       width: 120px;
       border-radius: 2px 0 0 2px;

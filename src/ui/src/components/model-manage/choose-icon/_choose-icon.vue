@@ -20,7 +20,7 @@
     </bk-input>
     <bk-tab :active.sync="activeTab" type="unborder-card" class="icon-tab">
       <bk-tab-panel name="system" :label="$t('系统图标')">
-        <icon-set v-model="curIcon" :icon-list="iconList" :filter-icon="searchText"></icon-set>
+        <icon-set v-model="curIcon" :icon-list="iconList" :filter-icon="searchText" @clear="handleClear"></icon-set>
       </bk-tab-panel>
     </bk-tab>
     <div class="footer">
@@ -58,6 +58,9 @@
       },
       handleCancel() {
         this.$emit('close')
+      },
+      handleClear() {
+        this.searchText = ''
       }
     }
   }
@@ -68,6 +71,7 @@
         position: relative;
         height: 460px;
         overflow: hidden;
+        margin: -7px -14px;
         .system-icon-search {
             position: absolute;
             top: 12px;

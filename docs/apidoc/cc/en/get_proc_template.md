@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Obtain process template information, and specify process template ID in url parameter
+Get process template information by specifying the process template ID in the URL.
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Obtain process template information, and specify process template ID in url para
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| bk_biz_id            |  int        | yes  | Business ID |
-| process_template_id  | int        | yes  | Process template ID     |
+| Field               | Type | Required | Description         |
+| ------------------- | ---- | -------- | ------------------- |
+| bk_biz_id           | int  | No       | Business ID         |
+| process_template_id | int  | Yes      | Process template ID |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -22,11 +22,11 @@ Obtain process template information, and specify process template ID in url para
   "bk_username": "xxx",
   "bk_token": "xxx",
   "bk_biz_id": 1,
-  "process_template_id": 49,
+  "process_template_id": 49
 }
 ```
 
-### Return Result Example
+### Response Result Example
 
 ```json
 {
@@ -145,70 +145,70 @@ Obtain process template information, and specify process template ID in url para
     "bk_supplier_account": "0"
   }
 }
-
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates a failure error |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |
 
-#### Data field Description
-| Name| Type| Description|
-|---|---|---|
-| id |int  |Process template id|
-| bk_process_name |string  |Process alias|
-| bk_biz_id |  int| Business ID |
-|  service_template_id|   int| Service template id|
-| property | object |Process properties|
-| creator              |  string             | Creator of this data                                                                                 |
-| modifier             |  string             | The last person to modify this piece of data            |
-| create_time         |  string |Settling time     |
-| last_time           |  string |Update time     |
-| bk_supplier_account | string       | Developer account number|
+#### data Field Description
 
-#### Property Field Description
+| Field                | Type   | Description                |
+| ------------------- | ------ | -------------------------- |
+| id                  | int    | Process template ID        |
+| bk_process_name     | string | Process alias              |
+| bk_biz_id           | int    | Business ID                |
+| service_template_id | int    | Service template ID        |
+| property            | object | Process properties         |
+| creator             | string | Creator of this data       |
+| modifier            | string | Last modifier of this data |
+| create_time         | string | Creation time              |
+| last_time           | string | Last update time           |
+| bk_supplier_account | string | Supplier account           |
 
-| Field| Type| Description|
-|---|---|---|
-|auto_start| bool| Whether to pull up automatically|
-|auto_time_gap| int| Pull up interval|
-|bk_biz_id| int| Business ID |
-|bk_func_id| string| Function ID|
-|bk_func_name| string| Process name|
-|bk_process_id| int| Process id|
-|bk_process_name| string| Process alias|
-|bk_start_param_regex| string| Process start parameters|
-|bk_supplier_account| string| Developer account number|
-|create_time| string| Settling time|
-|description| string| Description|
-|face_stop_cmd| string| Forced stop command|
-|last_time| string| Update time|
-|pid_file| string| PID file path|
-|priority| int| Startup priority|
-|proc_num| int| Number of starts|
-|reload_cmd| string| Process reload command|
-|restart_cmd| string| Restart command|
-|start_cmd| string| Start command|
-|stop_cmd| string| Stop order|
-|timeout| int| Operation time-out duration|
-|user| string| Start user|
-|work_path| string| Working path|
-|bind_info| object| Binding information|
+#### property Field Description
 
-#### Bind_info Field Description
-| Field| Type| Description|
-|---|---|---|
-|enable| bool| Is the port enabled|
-|ip| string| Bound ip|
-|port| string| Bound port|
-|protocol| string| Protocol used|
-|row_id| int| Template row index used for instantiation, unique in process|
+| Field                | Type   | Description                  |
+| -------------------- | ------ | ---------------------------- |
+| auto_start           | bool   | Auto start flag              |
+| bk_biz_id            | int    | Business ID                  |
+| bk_func_id           | string | Function ID                  |
+| bk_func_name         | string | Process name                 |
+| bk_process_id        | int    | Process ID                   |
+| bk_process_name      | string | Process alias                |
+| bk_start_param_regex | string | Process start parameters     |
+| bk_supplier_account  | string | Supplier account             |
+| create_time          | string | Creation time                |
+| description          | string | Description                  |
+| face_stop_cmd        | string | Force stop command           |
+| last_time            | string | Last update time             |
+| pid_file             | string | PID file path                |
+| priority             | int    | Start priority               |
+| proc_num             | int    | Number of instances to start |
+| reload_cmd           | string | Process reload command       |
+| restart_cmd          | string | Restart command              |
+| start_cmd            | string | Start command                |
+| stop_cmd             | string | Stop command                 |
+| timeout              | int    | Operation timeout            |
+| user                 | string | Start user                   |
+| work_path            | string | Working directory            |
+| bind_info            | object | Binding information          |
+
+#### bind_info Field Description
+
+| Field    | Type   | Description                                                  |
+| -------- | ------ | ------------------------------------------------------------ |
+| enable   | bool   | Whether the port is enabled                                  |
+| ip       | string | Bound IP                                                     |
+| port     | string | Bound port                                                   |
+| protocol | string | Used protocol                                                |
+| row_id   | int    | Template row index used for instantiation, unique within the process |

@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update business set information (v3.10.12+)
+Update Business Set Information (Version: v3.10.12+, Permission: Business Set Editing Permission)
 
 ### Request Parameters
 
@@ -8,58 +8,57 @@ Update business set information (v3.10.12+)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_ids | array  |yes| Business set ID list|
-| data           |  object |Yes.| Business set data|
+| Field          | Type   | Required | Description              |
+| -------------- | ------ | -------- | ------------------------ |
+| bk_biz_set_ids | array  | Yes      | List of business set IDs |
+| data           | object | Yes      | Business set data        |
 
 #### data
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_attr |  object  |no     | Business set model attribute |
-| bk_scope  |  object  |no     | Selected business scope|
+| Field           | Type   | Required | Description               |
+| --------------- | ------ | -------- | ------------------------- |
+| bk_biz_set_attr | object | No       | Business set model fields |
+| bk_scope        | object | No       | Selected business scope   |
 
 #### bk_biz_set_attr
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_set_name   |   string  |yes     | Business set name|
-| bk_biz_maintainer |  string  |no     | Operation and maintenance personnel|
-| bk_biz_set_desc   |   string  |no     | Business set description|
+| Field             | Type   | Required | Description              |
+| ----------------- | ------ | -------- | ------------------------ |
+| bk_biz_set_name   | string | Yes      | Business set name        |
+| bk_biz_maintainer | string | No       | Operations personnel     |
+| bk_biz_set_desc   | string | No       | Business set description |
 
 #### bk_scope
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| match_all |  bool  |yes     | Selected business scope tag|
-| filter    |   object| no     | Scope criteria for the selected business|
+| Field     | Type   | Required | Description                        |
+| --------- | ------ | -------- | ---------------------------------- |
+| match_all | bool   | Yes      | Selected business scope flag       |
+| filter    | object | No       | Selected business scope conditions |
 
 #### filter
 
-This parameter is a combination of filtering rules for business attribute fields, and is used to search for hosts according to host attribute fields. The combination only supports AND operation and can be nested, with a maximum of 2 layers.
+This parameter is a combination of filtering rules for business property fields, used to search for hosts based on host property fields. Combinations support only AND operations and can be nested, with a maximum of 2 layers.
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition |  string  |yes    | Rule operator|
-| rules |  array  |yes     | Scope condition rule for selected business|
-
+| Field     | Type   | Required | Description                   |
+| --------- | ------ | -------- | ----------------------------- |
+| condition | string | Yes      | Rule operator                 |
+| rules     | array  | Yes      | Selected business scope rules |
 
 #### rules
 
-| Name     | Type   | Required| Default value  |  Description                                                  |
-| -------- | ------ | ---- | ------  | ------------------------------------------------------------ |
-| field    |  string |yes   | None     | Field name|                                                              |
-| operator | string |yes   | None     | Operator| Optional value equal,in|
-| value    | -      |no   | None     | Operand| Different values correspond to different value formats                            |
-
+| Field     | Type   | Required | Default | Description | Description                                               |
+| -------- | ------ | -------- | ------- | ----------- | --------------------------------------------------------- |
+| field    | string | Yes      | None    | Field name  |                                                           |
+| operator | string | Yes      | None    | Operator    | Optional values equal, in                                 |
+| value    | -      | No       | None    | Operand     | Different operators correspond to different value formats |
 
 **Note:**
-- The input parameters here only describe the required and built-in parameters, and the rest of the parameters to be filled in depend on the attribute fields defined by the user
-- The and fields are not allowed to change for batch scenarios (number of IDs in bk_biz_set_ids is greater than 1`bk_biz_set_name``bk_scope`
+
+- The input parameters here only describe the required and system-built parameters. The rest of the parameters to be filled in depend on the attribute fields defined by the user.
+- For batch scenarios (where the number of IDs in bk_biz_set_ids is greater than 1), changes to the `bk_biz_set_name` and `bk_scope` fields are not allowed.
 - The maximum number of batch updates is 200.
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -93,28 +92,28 @@ This parameter is a combination of filtering rules for business attribute fields
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
-    "message": "",
-    "permission":null,
+    "message": "success",
+    "permission": null,
     "data": {},
     "request_id": "dsda1122adasadadada2222"
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameter Description
+
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request was successful or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error    |
-| message | string |Error message returned by request failure                    |
-| permission    |  object |Permission information    |
-| data    |  object |Data returned by request                           |
-| request_id    |  string |Request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Indicates whether the request was successful. true: success; false: failure |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
+| message    | string | Error message returned in case of request failure            |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned in the request                                 |

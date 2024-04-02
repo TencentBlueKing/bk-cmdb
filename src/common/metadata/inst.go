@@ -71,7 +71,7 @@ type BizBasicInfo struct {
 type BizSetInst struct {
 	BizSetID         int64       `json:"bk_biz_set_id" bson:"bk_biz_set_id"`
 	BizSetName       string      `json:"bk_biz_set_name" bson:"bk_biz_set_name"`
-	Description      string      `json:"description" bson:"description"`
+	Description      string      `json:"bk_biz_set_desc" bson:"bk_biz_set_desc"`
 	BizSetMaintainer string      `json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`
 	CreateTime       Time        `json:"create_time" bson:"create_time"`
 	LastTime         Time        `json:"last_time" bson:"last_time"`

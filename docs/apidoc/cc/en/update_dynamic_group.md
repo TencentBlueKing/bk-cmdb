@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Update dynamic grouping (V3.9.6)
+Update dynamic group (Version: v3.9.6, Permission: Dynamic group editing permission)
 
 ### Request Parameters
 
@@ -8,30 +8,30 @@ Update dynamic grouping (V3.9.6)
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_biz_id |  int     | yes  | Business ID |
-| id        |   string  |yes     | Primary key ID|
-| bk_obj_id |  string  |no     | The target resource object type of dynamic grouping can be host, set at present. When updating rules, both this field and info field shall be provided.|
-| info      |   object  |no     | General query criteria|
-| name      |   string  |no     | Dynamic group name|
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_biz_id | int    | Yes      | Business ID                                                  |
+| id        | string | Yes      | Primary key ID                                               |
+| bk_obj_id | string | No       | Target resource object type of dynamic group, can be host, set. When updating rules, both this field and the info field must be provided |
+| info      | object | No       | General query conditions                                     |
+| name      | string | No       | Dynamic group name                                           |
 
 #### info.condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| bk_obj_id |  string   | yes  | Conditional object resource type, info.conditon supported for dynamic grouping of host type: set,module,host; Info.conditions supported for dynamic grouping of type set: set|
-| condition |  array    | yes  | Query criteria|
+| Field     | Type   | Required | Description                                                  |
+| --------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_obj_id | string | Yes      | Type of condition object resource, host type dynamic group supports info.conditon:set,module,host; set type dynamic group supports info.condition:set |
+| condition | array  | Yes      | Query condition                                              |
 
 #### info.condition.condition
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| field     |   string    | yes  | The fields of the object|
-| operator  |  string    | yes  | Operator with op values eq(equal)/ne(unequal)/in(of)/nin(not of)|
-| value     |   object    | yes  | The value corresponding to the field|
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Object field                                                 |
+| operator | string | Yes      | Operator, op value can be eq (equal) / ne (not equal) / in (belongs to) / nin (does not belong to) |
+| value    | object | Yes      | Field corresponding value                                    |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -93,15 +93,15 @@ Update dynamic grouping (V3.9.6)
 }
 ```
 
-### Return Result Parameters Description
+### Return Result Parameter Explanation
 
 #### response
 
-| Name    | Type   | Description                                    |
-| ------- | ------ | ------------------------------------- |
-| result  | bool   | Whether the request succeeded or not. True: request succeeded;false request failed|
-| code    |  int    | Wrong code. 0 indicates success,>0 indicates failure error   |
-| message | string |Error message returned by request failure                   |
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data    |  object |Data returned by request                          |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | object | Data returned by the request                                 |

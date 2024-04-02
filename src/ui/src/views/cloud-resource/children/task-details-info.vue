@@ -171,7 +171,7 @@
 
 <style lang="scss" scoped>
     .info-form {
-        margin: 0 30px;
+        margin: 0 24px;
         padding: 10px 0;
     }
     .form-item {
@@ -199,7 +199,7 @@
         line-height: 30px;
     }
     .info-table {
-        margin: 0 30px;
+        margin: 0 24px;
         /deep/ {
             .bk-table-row.is-destroyed {
                 color: #C4C6CC;
@@ -224,7 +224,7 @@
     .info-options {
         font-size: 0;
         margin-top: 20px;
-        padding: 0 30px;
+        padding: 0 24px;
         &.is-sticky {
             margin-top: 0;
             padding: 15px 30px;

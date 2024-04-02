@@ -23,6 +23,7 @@ import (
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/cmdb"
 	"configcenter/src/thirdparty/apigw/gse"
+	"configcenter/src/thirdparty/apigw/notice"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -31,13 +32,13 @@ import (
 type ClientSet interface {
 	Gse() gse.ClientI
 	Cmdb() cmdb.ClientI
+	Notice() notice.ClientI
 }
 
 type clientSet struct {
-	gse  gse.ClientI
-	cmdb cmdb.ClientI
-
-	options *apigwutil.ApiGWOptions
+	gse    gse.ClientI
+	cmdb   cmdb.ClientI
+	notice notice.ClientI
 }
 
 // NewClientSet new api gateway client set
@@ -68,21 +69,39 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (
 		return nil, err
 	}
 
-	return &clientSet{options: options}, nil
+	gseCli, err := gse.NewClient(options)
+	if err != nil {
+		return nil, err
+	}
+
+	cmdbCli, err := cmdb.NewClient(options)
+	if err != nil {
+		return nil, err
+	}
+
+	noticeCli, err := notice.NewClient(options)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clientSet{
+		gse:    gseCli,
+		cmdb:   cmdbCli,
+		notice: noticeCli,
+	}, nil
 }
 
 // Gse returns gse client
 func (c *clientSet) Gse() gse.ClientI {
-	if c.gse == nil {
-		c.gse = gse.NewClient(c.options)
-	}
 	return c.gse
 }
 
 // Cmdb returns cmdb client
 func (c *clientSet) Cmdb() cmdb.ClientI {
-	if c.cmdb == nil {
-		c.cmdb = cmdb.NewClient(c.options)
-	}
 	return c.cmdb
+}
+
+// Notice returns bk-notice client
+func (c *clientSet) Notice() notice.ClientI {
+	return c.notice
 }

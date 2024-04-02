@@ -1,51 +1,49 @@
-### Functional description
+### Function Description
 
-Query hosts in resource pool
+Query hosts in the resource pool (Permission: View permission for hosts in the host pool)
 
 ### Request Parameters
+
 {{ common_args_desc }}
 
 #### Interface Parameters
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| page       |   dict    | no     | Query criteria|
-| host_property_filter|  object| no | Host attribute combination query criteria|
-| fields  |  array   | yes  | Host attribute list, which controls which fields are in the host that returns the result, can speed up interface requests and reduce network traffic transmission   |
+| Field                | Type   | Required | Description                                                  |
+| -------------------- | ------ | -------- | ------------------------------------------------------------ |
+| page                 | dict   | No       | Query conditions                                             |
+| host_property_filter | object | No       | Combination query conditions for host properties             |
+| fields               | array  | No       | List of host properties, controls which fields are returned in the result, speeding up interface requests and reducing network traffic transmission. If not filled in, all fields are returned by default. |
 
 #### host_property_filter
 
-This parameter is a combination of filtering rules for the host attribute field and is used to search for hosts based on the host attribute field. The combination supports AND and OR, and can be nested, with a maximum of 2 layers.
+This parameter is a combination of filtering rules for host property fields, used to search hosts based on host property fields. The combination supports both AND and OR, can be nested, and has a maximum nesting of 2 levels.
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| condition       |   string    | no     ||
-| rules      |   array    | no     | Rule|
+| Field     | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| condition | string | No       |             |
+| rules     | array  | No       | Rules       |
 
 #### rules
-The filtering rule is a quadruple`field`,`operator`,`value`
 
-| Name| Type| Required| Default value| Description|  Description|
-| ---  | ---  | --- |---  | --- | ---|
-| field| string| yes | None| Field name| Field name|
-| operator| string| yes | None| Operator| Optional values equal,not_equal,in,not_in,less,less_or_equal,greater,greater_or_equal,between,not_between|
-| value|  string |no| None| Operand| Different values correspond to different value formats|
+Filtering rules are quadruples `field`, `operator`, `value`
 
-Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
+| Field    | Type   | Required | Description                                                  |
+| -------- | ------ | -------- | ------------------------------------------------------------ |
+| field    | string | Yes      | Field name                                                   |
+| operator | string | Yes      | Operator, optional values are equal, not_equal, in, not_in, less, less_or_equal, greater, greater_or_equal, between, not_between |
+| value    | -      | No       | Operand, different operators correspond to different value formats |
 
-
+Assembly rules can refer to: https://github.com/Tencent/bk-cmdb/blob/master/src/common/querybuilder/README.md
 
 #### page
 
-| Field      | Type      | Required   | Description      |
-|-----------|------------|--------|------------|
-| start    |   int    | yes  | Record start position|
-| limit    |   int    | yes  | Limit bars per page, Max. 500|
-| sort     |   string |no     | Sort field|
+| Field | Type   | Required | Description                                |
+| ----- | ------ | -------- | ------------------------------------------ |
+| start | int    | Yes      | Record start position                      |
+| limit | int    | Yes      | Number of records per page, maximum is 500 |
+| sort  | string | No       | Sorting field                              |
 
-
-
-### Request Parameters Example
+### Request Parameter Example
 
 ```json
 {
@@ -88,7 +86,7 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```json
 {
@@ -112,30 +110,62 @@ Assembly rules can be found at: https://github.com/Tencent/bk-cmdb/blob/master/s
 }
 ```
 
-### Return Result Parameters Description
+### Response Result Explanation
+
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request succeeded or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | array |Data returned by request|
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failed error   |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain id                                             |
+| data       | array  | Data returned by the request                                 |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     |  int       | Number of records|
-| info      |  array     | Host actual data|
+| Field | Type  | Description                |
+| ----- | ----- | -------------------------- |
+| count | int   | Number of records          |
+| info  | array | Actual data, list of hosts |
 
 #### data.info
-| Name             | Type   |  Description                     |
-| ---------------- | ------ | -------------------------------  |
-| bk_os_type       |  string |Operating system type| 1:Linux;2:Windows; 3:AIX         |
-| bk_mac           |  string |Intranet MAC address   |                                 |
-| bk_host_innerip  | string |Intranet IP        |                                 |
-| bk_host_id       |  int    | Host ID        |                                 |
-| bk_cloud_id      |  int    | Cloud area    ||
+
+| Field                | Type   | Description                          |
+| -------------------- | ------ | ------------------------------------ |
+| bk_host_name         | string | Host name                            |
+| bk_host_innerip      | string | Private IP address                   |
+| bk_host_id           | int    | Host ID                              |
+| bk_cloud_id          | int    | Control area                         |
+| import_from          | string | Host import source, 3 for API import |
+| bk_asset_id          | string | Fixed asset number                   |
+| bk_cloud_inst_id     | string | Cloud host instance ID               |
+| bk_cloud_vendor      | string | Cloud vendor                         |
+| bk_cloud_host_status | string | Cloud host status                    |
+| bk_comment           | string | Comment                              |
+| bk_cpu               | int    | Number of CPU logical cores          |
+| bk_cpu_architecture  | string | CPU architecture                     |
+| bk_cpu_module        | string | CPU model                            |
+| bk_disk              | int    | Disk capacity (GB)                   |
+| bk_host_outerip      | string | Host public IP address               |
+| bk_host_innerip_v6   | string | Host private IPv6 address            |
+| bk_host_outerip_v6   | string | Host public IPv6 address             |
+| bk_isp_name          | string | ISP name                             |
+| bk_mac               | string | Host private MAC address             |
+| bk_mem               | int    | Host memory capacity (MB)            |
+| bk_os_bit            | string | Operating system bit number          |
+| bk_os_name           | string | Operating system name                |
+| bk_os_type           | string | Operating system type                |
+| bk_os_version        | string | Operating system version             |
+| bk_outer_mac         | string | Host public MAC address              |
+| bk_province_name     | string | Province                             |
+| bk_service_term      | int    | Warranty period (years)              |
+| bk_sla               | string | SLA level                            |
+| bk_sn                | string | Device SN                            |
+| bk_state             | string | Current state                        |
+| bk_state_name        | string | Country                              |
+| operator             | string | Primary maintainer                   |
+| bk_bak_operator      | string | Backup maintainer                    |
+
+**Note: The returned values here only explain the system-built attribute fields, and the rest of the returned values depend on the user-defined attribute fields.**

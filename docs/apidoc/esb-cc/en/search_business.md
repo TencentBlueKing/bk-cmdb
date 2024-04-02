@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-search the business
+Query Business (Permission: Business Query Permission)
 
 ### Request Parameters
 
@@ -8,82 +8,109 @@ search the business
 
 #### Interface Parameters
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| bk_supplier_account | string     | No     | supplier account code |
-| fields         |  array   | No     | need to show |
-| condition      |  dict    | No     | search condition, legach field, please do not use this any more, use biz_property_filter instead |
-| biz_property_filter    |  dict  | No     | business property filter |
-| page           |  dict    | No     | page condition |
+| Field               | Type   | Required | Description                                                  |
+| ------------------- | ------ | -------- | ------------------------------------------------------------ |
+| bk_supplier_account | string | No       | Developer account                                            |
+| fields              | array  | No       | Specify the fields to query. If not filled in, the system will return all fields of the business |
+| condition           | dict   | No       | Query conditions, parameters for any property of the business. If not written, it means to search all data. (Legacy field, please do not continue to use, please use biz_property_filter) |
+| biz_property_filter | object | No       | Business attribute combination query conditions              |
+| time_condition      |  object     | no     | Query criteria for querying business by time                                                     |
+| page                | dict   | No       | Paging conditions                                            |
 
-Note: a business has two status: normal or archived.
-- search a archived business，please add rules `bk_data_status:disabled` to condition field.
-- search a normal business，please do not add filed `bk_data_status` in condition , or add rule `bk_data_status: {"$ne":disabled"}` to condition.
-- only one of `biz_property_filter` and `condition` parameters can take effect, and `condition` is not recommended to continue to use it.
-- the number of array class elements involved in the parameter `biz_property_filter` shall not exceed 500.
-  the number of `rules` involved in the parameter `biz_property_filter` does not exceed 20.
-  the nesting level of parameter `biz_property_filter` shall not exceed 3 levels.
+Note: Businesses are divided into two types, non-archived businesses and archived businesses.
+
+- To query archived businesses, add the condition `bk_data_status:disabled` in the condition.
+- To query non-archived businesses, do not include the field "bk_data_status" or add the condition `bk_data_status: {"$ne": "disabled"}` in the condition.
+- Only one of the parameters `biz_property_filter` and `condition` can be effective, and it is not recommended to continue using the parameter `condition`.
+- The number of array elements involved in the parameter `biz_property_filter` does not exceed 500. The number of `rules` involved in the parameter `biz_property_filter` does not exceed 20. The nesting level of the parameter `biz_property_filter` does not exceed 3.
+
+#### biz_property_filter
+
+| Field     | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
+| condition | string | Yes      | Aggregation condition               |
+| rules     | array  | Yes      | Rules for the aggregation condition |
+
+#### rules
+
+| Field    | Type   | Required | Description |
+| -------- | ------ | -------- | ----------- |
+| field    | string | Yes      | Field       |
+| operator | string | Yes      | Operator    |
+| value    | object | Yes      | Value       |
+
+#### time_condition
+
+| Field   | Type   | Required| Description              |
+|-------|--------|-----|--------------------|
+| oper  | string |yes| Operator, currently only and is supported|
+| rules | array  |yes| Time query criteria         |
+
 
 #### page
 
-| Field      |  Type      | Required   |  Description      |
-|-----------|------------|--------|------------|
-| start    |  int    | Yes     | start record |
-| limit    |  int    | Yes     | page limit, max is 200 |
-| sort     |  string | No     | the field for sort |
+| Field | Type   | Required | Description                                                  |
+| ----- | ------ | -------- | ------------------------------------------------------------ |
+| start | int    | Yes      | Record start position                                        |
+| limit | int    | Yes      | Limit per page, maximum 200                                  |
+| sort  | string | No       | Sorting field. Adding "-" in front of the field, such as sort: "-field", represents sorting by field in descending order |
 
 ### Request Parameters Example
 
 ```python
 {
-    "bk_app_code":"esb_test",
-    "bk_app_secret":"xxx",
+    "bk_app_code": "esb_test",
+    "bk_app_secret": "xxx",
     "bk_username": "xxx",
-    "bk_token":"xxx",
-    "bk_supplier_account":"123456789",
-    "fields":[
-        "bk_biz_id",
-        "bk_biz_name"
-    ],
-    "biz_property_filter":{
-        "condition":"AND",
-        "rules":[
+    "bk_token": "xxx",
+    "bk_supplier_account": "123456789",
+    "fields": ["bk_biz_id", "bk_biz_name"],
+    "biz_property_filter": {
+        "condition": "AND",
+        "rules": [
             {
-                "field":"bk_biz_maintainer",
-                "operator":"equal",
-                "value":"admin"
+                "field": "bk_biz_maintainer",
+                "operator": "equal",
+                "value": "admin"
             },
             {
-                "condition":"OR",
-                "rules":[
+                "condition": "OR",
+                "rules": [
                     {
-                        "field":"bk_biz_name",
-                        "operator":"in",
-                        "value":[
-                            "test"
-                        ]
+                        "field": "bk_biz_name",
+                        "operator": "in",
+                        "value": ["test"]
                     },
                     {
-                        "field":"bk_biz_id",
-                        "operator":"equal",
-                        "value":0
+                        "field": "bk_biz_id",
+                        "operator": "equal",
+                        "value": 1
                     }
                 ]
             }
         ]
     },
+    "time_condition": {
+        "oper": "and",
+        "rules": [
+            {
+                "field": "create_time",
+                "start": "2021-05-13 01:00:00",
+                "end": "2021-05-14 01:00:00"
+            }
+        ]
+    },
     "page":{
-        "start":0,
-        "limit":10,
-        "sort":""
+        "start": 0,
+        "limit": 10,
+        "sort": ""
     }
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
-
 {
     "result": true,
     "code": 0,
@@ -103,30 +130,46 @@ Note: a business has two status: normal or archived.
 }
 ```
 
-### Return Result Parameters Description
+### Response Parameters Description
 
 #### response
 
-| Field       | Type     | Description         |
-|---|---|---|
-| result | bool | request success or failed. true:success；false: failed |
-| code | int | error code. 0: success, >0: something error |
-| message | string | error info description |
-| data | object | response data |
-| permission    | object | permission Information    |
-| request_id    | string | request chain id    |
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request was successful. true: successful; false: failed |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure        |
+| message    | string | Error message returned in case of request failure            |
+| data       | object | Request returned data                                        |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
 
 #### data
 
-| Field      | Type      | Description      |
-|-----------|-----------|-----------|
-| count     | int       | the num of record |
-| info      | array     | business info |
+| Field | Type  | Description                 |
+| ----- | ----- | --------------------------- |
+| count | int   | Number of records           |
+| info  | array | Actual data of the business |
 
 #### info
 
-| Field | Type | Description |
-|-----------|-----------|-----------|
-| bk_biz_id | int | business id |
-| bk_biz_name | string | business name |
-|default | int | indicates the type of business |
+| Field               | Type   | Description                                |
+| ------------------- | ------ | ------------------------------------------ |
+| bk_biz_id           | int    | Business ID                                |
+| bk_biz_name         | string | Business name                              |
+| bk_biz_maintainer   | string | Operation and maintenance personnel        |
+| bk_biz_productor    | string | Product personnel                          |
+| bk_biz_developer    | string | Developer                                  |
+| bk_biz_tester       | string | Tester                                     |
+| time_zone           | string | Time zone                                  |
+| language            | string | Language, "1" for Chinese, "2" for English |
+| bk_supplier_account | string | Developer account                          |
+| create_time         | string | Creation time                              |
+| last_time           | string | Update time                                |
+| default             | int    | Business type                              |
+| operator            | string | Main maintainer                            |
+| life_cycle          | string | Business life cycle                        |
+| bk_created_at       | string | Creation time                              |
+| bk_updated_at       | string | Update time                                |
+| bk_created_by       | string | Creator                                    |
+
+**Note: The return value here only describes the system's built-in property fields. The rest of the return value depends on the user-defined property fields.**

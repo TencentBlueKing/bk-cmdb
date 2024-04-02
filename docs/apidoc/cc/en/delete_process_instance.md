@@ -1,6 +1,6 @@
-### Functional description
+### Function Description
 
-Delete a process instance from the process instance ID list
+Delete process instances based on a list of process instance IDs (Permission: Service instance editing permission)
 
 ### Request Parameters
 
@@ -8,12 +8,12 @@ Delete a process instance from the process instance ID list
 
 #### Interface Parameters
 
-| Field                 | Type      | Required	   | Description                 |
-|----------------------|------------|--------|-----------------------|
-| process_instance_ids | int  | Yes   | process instance ids, the max length is 500 |
-| bk_biz_id                  |  int        | yes  | Business ID |
+| Field                | Type | Required | Description                                               |
+| -------------------- | ---- | -------- | --------------------------------------------------------- |
+| process_instance_ids | int  | Yes      | List of process instance IDs, with a maximum value of 500 |
+| bk_biz_id            | int  | Yes      | Business ID                                               |
 
-### Request Parameters Example
+### Request Parameter Example
 
 ```python
 {
@@ -26,7 +26,7 @@ Delete a process instance from the process instance ID list
 }
 ```
 
-### Return Result Example
+### Response Example
 
 ```python
 {
@@ -43,12 +43,11 @@ Delete a process instance from the process instance ID list
 
 #### response
 
-| Name| Type| Description|
-|---|---|---|
-| result | bool |Whether the request was successful or not. True: request succeeded;false request failed|
-| code | int |Wrong code. 0 indicates success,>0 indicates failure error|
-| message | string |Error message returned by request failure|
-| permission    |  object |Permission information    |
-| request_id    |  string |Request chain id    |
-| data | object |Data returned by request|
-
+| Field       | Type   | Description                                                  |
+| ---------- | ------ | ------------------------------------------------------------ |
+| result     | bool   | Whether the request is successful. true: successful; false: failed |
+| code       | int    | Error code. 0 represents success, >0 represents a failure error |
+| message    | string | Error message returned in case of failure                    |
+| permission | object | Permission information                                       |
+| request_id | string | Request chain ID                                             |
+| data       | object | Data returned by the request                                 |

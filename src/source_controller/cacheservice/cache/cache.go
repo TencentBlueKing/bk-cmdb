@@ -17,6 +17,8 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/discovery"
+	biztopo "configcenter/src/source_controller/cacheservice/cache/biz-topo"
+	"configcenter/src/source_controller/cacheservice/cache/custom"
 	"configcenter/src/source_controller/cacheservice/cache/host"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
@@ -29,7 +31,7 @@ import (
 	"configcenter/src/storage/stream"
 )
 
-// NewCache TODO
+// NewCache new cache service
 func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
 	watchDB dal.DB) (*ClientSet, error) {
 
@@ -41,7 +43,7 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, fmt.Errorf("new host cache failed, err: %v", err)
 	}
 
-	topo, err := topology.NewTopology(isMaster, loopW)
+	bizBriefTopoClient, err := topology.NewTopology(isMaster, loopW)
 	if err != nil {
 		return nil, err
 	}
@@ -49,21 +51,35 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 	mainlineClient := mainline.NewMainlineClient()
 	hostClient := host.NewClient()
 
+	customCache, err := custom.New(isMaster, loopW)
+	if err != nil {
+		return nil, fmt.Errorf("new custom resource cache failed, err: %v", err)
+	}
+
+	topoTreeClient, err := biztopo.New(isMaster, loopW, customCache.CacheSet())
+	if err != nil {
+		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
+	}
+
 	cache := &ClientSet{
 		Tree:     topotree.NewTopologyTree(mainlineClient),
 		Host:     hostClient,
 		Business: mainlineClient,
-		Topology: topo,
+		Topology: bizBriefTopoClient,
+		Topo:     topoTreeClient,
 		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		Custom:   customCache,
 	}
 	return cache, nil
 }
 
-// ClientSet TODO
+// ClientSet is the cache client set
 type ClientSet struct {
 	Tree     *topotree.TopologyTree
 	Topology *topology.Topology
+	Topo     *biztopo.Topo
 	Host     *host.Client
 	Business *mainline.Client
 	Event    *watch.Client
+	Custom   *custom.Cache
 }

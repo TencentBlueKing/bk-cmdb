@@ -46,12 +46,12 @@ func (d *Client) GetObjAssociation(kit *rest.Kit, objID string) ([]*metadata.Ass
 	// 确定关联标识的列表，定义excel选项下拉栏。此处需要查cc_ObjAsst表。
 	resp, err := d.ApiClient.SearchObjectAssociation(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("get object association list failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if err := resp.CCError(); err != nil {
-		blog.ErrorJSON("get object association list failed, err: %v, rid: %s", resp.ErrMsg, kit.Rid)
+		blog.Errorf("get object association list failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 

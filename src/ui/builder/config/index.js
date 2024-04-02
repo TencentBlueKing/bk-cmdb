@@ -47,7 +47,8 @@ const dev = {
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
     COMPONENT_API_URL: JSON.stringify(''),
-    PUBLIC_PATH: JSON.stringify('/')
+    PUBLIC_PATH: JSON.stringify('/'),
+    ENABLE_NOTIFICATION: JSON.stringify(false),
   }),
 
   // Paths
@@ -146,6 +147,7 @@ module.exports = {
       COOKIE_DOMAIN: '{{.cookieDomain}}',
       COMPONENT_API_URL: '{{.componentApiUrl}}',
       PUBLIC_PATH: '{{.publicPath}}',
+      ENABLE_NOTIFICATION: '{{.enableNotification}}'
     }),
 
     // Template for index.html

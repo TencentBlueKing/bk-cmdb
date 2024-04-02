@@ -14,12 +14,15 @@
   <div id="app" v-bkloading="{ isLoading: globalLoading }" :bk-language="$i18n.locale"
     :class="{
       'no-breadcrumb': hideBreadcrumbs,
-      'main-full-screen': mainFullScreen
-    }">
+      'main-full-screen': mainFullScreen,
+      'has-notice': showNotice
+    }"
+    :style="{ '--notice-height': `${noticeHeight}px` }">
     <div class="browser-tips" v-if="showBrowserTips">
       <span class="tips-text">{{$t('您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果')}}</span>
       <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
     </div>
+    <the-notice @show-change="noticeShowChange" @size-change="noticeSizeChange" v-if="enableNotice"></the-notice>
     <the-header></the-header>
     <router-view class="views-layout" :name="topView" ref="topView"></router-view>
     <the-permission-modal ref="permissionModal"></the-permission-modal>
@@ -35,12 +38,14 @@
   import theHeader from '@/components/layout/header'
   import thePermissionModal from '@/components/modal/permission'
   import theLoginModal from '@blueking/paas-login'
+  import theNotice from '@/components/notice'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import { MENU_INDEX } from '@/dictionary/menu-symbol'
   import { mapGetters } from 'vuex'
   export default {
     name: 'app',
     components: {
+      theNotice,
       theHeader,
       thePermissionModal,
       theLoginModal
@@ -49,7 +54,9 @@
       const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
       return {
         showBrowserTips,
-        loginSuccessUrl: `${window.location.origin}${window.location.pathname}static/login_success.html`
+        loginSuccessUrl: `${window.location.origin}${window.location.pathname}static/login_success.html`,
+        showNotice: false,
+        noticeHeight: 0
       }
     },
     computed: {
@@ -75,6 +82,12 @@
           return `${loginBaseUrl}plain/`
         }
         return ''
+      },
+      enableNotice() {
+        if (window.Site.enableNotification === false) {
+          return false
+        }
+        return true
       }
     },
     mounted() {
@@ -91,53 +104,63 @@
     methods: {
       calculateAppHeight() {
         this.$store.commit('setAppHeight', this.$el.offsetHeight)
+      },
+      noticeShowChange(isShow) {
+        if (!isShow) {
+          this.noticeHeight = 0
+        }
+        this.showNotice = isShow
+      },
+      noticeSizeChange(size) {
+        const [, height] = size
+        this.noticeHeight = height
       }
     }
   }
 </script>
 <style lang="scss" scoped>
-    #app{
-        height: 100%;
+#app {
+  height: 100%;
+}
+.browser-tips {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  color: #ff5656;
+  background-color: #f8f6db;
+  z-index: 99999;
+  .tips-text{
+    margin: 0 20px 0 0 ;
+  }
+  .tips-icon{
+    cursor: pointer;
+  }
+}
+.views-layout {
+  height: calc(100% - 58px - var(--notice-height, 0px));
+}
+// 主内容区全屏
+.main-full-screen {
+  /deep/ {
+    .header-layout,
+    .nav-layout,
+    .breadcrumbs-layout {
+      display: none;
     }
-    .browser-tips{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 40px;
-        line-height: 40px;
-        text-align: center;
-        color: #ff5656;
-        background-color: #f8f6db;
-        z-index: 99999;
-        .tips-text{
-            margin: 0 20px 0 0 ;
-        }
-        .tips-icon{
-            cursor: pointer;
-        }
+  }
+  .views-layout {
+    height: 100%;
+  }
+}
+.no-breadcrumb {
+  /deep/ {
+    .main-layout {
+      height: 100%;
     }
-    .views-layout{
-        height: calc(100% - 58px);
-    }
-    // 主内容区全屏
-    .main-full-screen {
-        /deep/ {
-            .header-layout,
-            .nav-layout,
-            .breadcrumbs-layout {
-                display: none;
-            }
-        }
-        .views-layout {
-            height: 100%;
-        }
-    }
-    .no-breadcrumb {
-        /deep/ {
-            .main-layout {
-               height: 100%;
-            }
-        }
-    }
+  }
+}
 </style>

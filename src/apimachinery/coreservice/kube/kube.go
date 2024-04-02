@@ -80,6 +80,10 @@ type KubeClientInterface interface {
 	ListContainer(ctx context.Context, header http.Header, input *metadata.QueryCondition) (*types.ContainerDataResp,
 		errors.CCErrorCoder)
 
+	// ListContainerByPod list container by pod condition
+	ListContainerByPod(ctx context.Context, header http.Header, input *types.GetContainerByPodOption) (
+		*types.GetContainerByPodResp, errors.CCErrorCoder)
+
 	ListNsSharedClusterRel(ctx context.Context, header http.Header, input *metadata.QueryCondition) (
 		*types.NsSharedClusterRelData, errors.CCErrorCoder)
 }

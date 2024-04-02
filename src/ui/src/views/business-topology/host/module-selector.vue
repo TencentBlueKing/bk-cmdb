@@ -49,6 +49,11 @@
               <i v-else :class="['node-icon fl', { 'is-template': isTemplate(data) }]">{{data.bk_obj_name[0]}}</i>
               <span class="node-name" :title="node.name">{{node.name}}</span>
             </template>
+            <cmdb-table-empty
+              slot="empty"
+              :stuff="dataEmpty"
+              @clear="handleClearFilter">
+            </cmdb-table-empty>
           </bk-big-tree>
         </div>
       </cmdb-resize-layout>
@@ -126,6 +131,12 @@
           1: 'icon-cc-host-free-pool',
           2: 'icon-cc-host-breakdown',
           default: 'icon-cc-host-free-pool'
+        },
+        dataEmpty: {
+          type: 'search',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
         }
       }
     },
@@ -283,6 +294,9 @@
         }
         this.$emit('confirm', this.checked)
       },
+      handleClearFilter() {
+        this.filter = ''
+      },
       isTemplate(data) {
         return data.service_template_id || data.set_template_id
       },
@@ -297,6 +311,9 @@
 </script>
 
 <style lang="scss" scoped>
+    :deep(.bk-big-tree-empty) {
+        position: static;
+    }
     .module-selector-layout {
         height: var(--height, 600px);
         min-height: 300px;

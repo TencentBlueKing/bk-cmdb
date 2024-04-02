@@ -92,6 +92,7 @@ type Config struct {
 	AuthCenter                AppInfo
 	DisableOperationStatistic bool
 	DeploymentMethod          common.DeploymentMethod
+	EnableNotification        bool
 }
 
 // AppInfo TODO
