@@ -26,7 +26,8 @@
       :popover-width="400"
       :scroll-height="400"
       :popover-options="{
-        sticky: true
+        sticky: true,
+        flipOnUpdate: true
       }"
       :searchable="true"
       :multiple="localMultiple"

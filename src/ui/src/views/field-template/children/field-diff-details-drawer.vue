@@ -406,7 +406,7 @@
 <style lang="scss" scoped>
 .diff-details {
   height: 100%;
-  padding: 20px 40px;
+  padding: 20px 24px;
   @include scrollbar-y;
 
   &.new {

@@ -14,10 +14,14 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
+	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/common"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -60,10 +64,12 @@ type cacheService struct {
 	cfg         options.Config
 	core        core.Core
 	cacheSet    *cache.ClientSet
+	authManager *extensions.AuthManager
 }
 
 // SetConfig TODO
-func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
+func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
+	lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
@@ -77,6 +83,16 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		s.langFactory[common.Chinese] = lang.CreateDefaultCCLanguageIf(string(common.Chinese))
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
+
+	iamCli := new(iam.IAM)
+	if auth.EnableAuthorize() {
+		var rawErr error
+		iamCli, rawErr = iam.NewIAM(cfg.Auth, engine.Metric().Registry())
+		if rawErr != nil {
+			return fmt.Errorf("new iam client failed: %v", rawErr)
+		}
+	}
+	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	loopW, loopErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
 	if loopErr != nil {

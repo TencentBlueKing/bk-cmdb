@@ -549,7 +549,7 @@
       height: 100%;
       padding: 0 24px 18px 24px;
       background: #fff;
-      @include scrollbar-y(6px, white);
+      @include scrollbar-y;
 
       &.empty {
         display: flex;

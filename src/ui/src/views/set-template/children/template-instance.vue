@@ -27,6 +27,7 @@
         <div class="fr">
           <bk-select class="filter-item mr10"
             :clearable="false"
+            :searchable="true"
             v-model="statusFilter"
             @selected="handleFilter(1, true)">
             <bk-option v-for="option in filterList"

@@ -204,6 +204,24 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				},
 				SubResourceTypes: nil,
 			},
+			{
+				ResourceID: BizSet,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditBizSet,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteBizSet,
+						IsRequired: false,
+					},
+					{
+						ID:         ViewBizSet,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
 		},
 	}
 }

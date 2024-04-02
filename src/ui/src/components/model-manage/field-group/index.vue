@@ -98,7 +98,7 @@
                   text: $t('编辑分组'),
                   auth: authResources,
                   onUpdateAuth: handleReceiveAuth,
-                  disabled: !isEditable(group.info),
+                  disabled: !isEditable(group.info) || group.info['bk_isdefault'],
                   handler: () => handleEditGroup(group)
                 },
                 {
