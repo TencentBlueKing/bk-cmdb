@@ -15,7 +15,7 @@ import md5 from 'md5'
 import has from 'has'
 import { $error } from '@/magicbox'
 import i18n, { language } from '@/i18n'
-import { showLoginModal } from '@/utils/login-modal'
+import { showLoginModal } from '@blueking/login-modal'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 import customHeaders from './custom-header'
@@ -177,7 +177,18 @@ function handleReject(error, config) {
     const { status, data } = error.response
     const nextError = { message: error.message, status }
     if (status === 401) {
-      showLoginModal()
+      const successUrl = `${window.location.origin}/static/login_success.html`
+
+      const siteLoginUrl = window.Site.login || ''
+      if (!siteLoginUrl) {
+        console.error('Login URL not configured!')
+        return
+      }
+
+      const [loginBaseUrl] = siteLoginUrl.split('?')
+      const loginUrl = `${loginBaseUrl}plain?c_url=${encodeURIComponent(successUrl)}`
+
+      showLoginModal({ loginUrl })
     } else if (data && data.bk_error_msg) {
       nextError.message = data.bk_error_msg
     } else if (status === 403) {

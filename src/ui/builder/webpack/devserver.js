@@ -27,26 +27,9 @@ module.exports = config => ({
       throw new Error('webpack-dev-server is not defined')
     }
 
-    devServer.app.use(cookieParser())
-
-    middlewares.unshift({
-      name: 'check-token',
-      path: '/',
-      middleware: (req, res, next) => {
-        if (req.path === '/') {
-          // 访问的是根路由
-          if (config.dev.checkToken && !req.cookies[config.dev.checkToken]) {
-            res.redirect(302, JSON.parse(config.dev.config.API_LOGIN))
-          } else {
-            next()
-          }
-        } else {
-          next()
-        }
-      }
-    })
-
     if (config.dev.useMock) {
+      devServer.app.use(cookieParser())
+
       // parse application/x-www-form-urlencoded
       devServer.app.use(bodyParser.urlencoded({ extended: true }))
 

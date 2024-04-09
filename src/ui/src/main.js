@@ -47,14 +47,29 @@ Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 Vue.prototype.$routerActions = routerActions
 
-window.CMDB_APP = new Vue({
-  el: '#app',
-  router,
-  store,
-  i18n,
-  components: { App },
-  template: '<App/>'
+api.get(`${window.API_HOST}is_login`).then(() => {
+  window.CMDB_APP = new Vue({
+    el: '#app',
+    router,
+    store,
+    i18n,
+    components: { App },
+    template: '<App/>'
+  })
 })
+  .catch(() => {
+    if (!window.Site.login) {
+      console.error('The login URL is not configured!')
+      return
+    }
+    try {
+      const loginURL = new URL(window.Site.login)
+      loginURL.searchParams.set('c_url', location.href)
+      location.href = loginURL.href
+    } catch (_) {
+      console.error('The login URL invalid!')
+    }
+  })
 
 if (process.env.COMMIT_ID) {
   window.CMDB_COMMIT_ID = process.env.COMMIT_ID
