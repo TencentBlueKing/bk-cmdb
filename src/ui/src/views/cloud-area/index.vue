@@ -151,7 +151,8 @@
         filter: '',
         list: [],
         pagination: this.$tools.getDefaultPaginationConfig(),
-        sort: 'bk_cloud_id',
+        // 默认排序，内置倒序+ID升序
+        sort: '-default, bk_cloud_id',
         request: {
           search: Symbol('search'),
           count: []
@@ -228,7 +229,7 @@
         return row.bk_cloud_id === UNASSIGNED_CLOUD_ID
       },
       handleSortChange(sort) {
-        this.sort = this.$tools.getSort(sort, { prop: 'bk_cloud_id' })
+        this.sort = this.$tools.getSort(sort, { prop: '-default, bk_cloud_id' })
         this.getData()
       },
       handlePageChange(page) {
