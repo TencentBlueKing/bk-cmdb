@@ -43,18 +43,20 @@
         >{{$t('全选')}}</bk-checkbox>
         <div class="group-property-list">
           <bk-checkbox
-            :class="['group-property-item', { 'is-checked': isChecked(property) }]"
+            :class="['group-property-item',
+                     { 'is-checked': isChecked(property),
+                       'is-checked-diabled': isDisabled(model, property) }]"
             v-for="property in matchedPropertyMap[model.bk_obj_id]"
             v-show="isShowProperty(property)"
             :key="property.id"
             :title="property.bk_property_name"
             :checked="isChecked(property)"
-            :disabled="disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)"
+            :disabled="isDisabled(model, property)"
             @change="handleChange(property, ...arguments)">
             <div style="width: calc(100% - 30px);"
               v-bk-tooltips.top-start="{
-                disabled: !disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id),
-                content: $t('该字段不支持配置')
+                disabled: !isDisabled(model, property),
+                content: getDisabledTip(property)
               }">
               <div class="group-property-name" v-bk-overflow-tips>{{property.bk_property_name}}</div>
             </div>
@@ -74,6 +76,9 @@
   import { computed, ref, watch, reactive } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
+  import { EXCHANGE_ENUMERATION } from '@/dictionary/dynamic-group'
+
+  const emit = defineEmits(['change'])
 
   const props = defineProps({
     height: {
@@ -95,6 +100,10 @@
     propertyMap: {
       type: [Object, Array],
       default: () => ({})
+    },
+    conditionType: {
+      type: String,
+      default: 'condition' // condition: 锁定条件 varCondition：可变条件
     },
   })
   const checkboxRef = ref('')
@@ -148,7 +157,20 @@
 
   const isChecked = property => localSelected.value.some(target => target.id === property.id)
 
+  const isDisabled = (model, property) => props.disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)
+
+  const getDisabledTip = (property) => {
+    const type = property?.conditionType ?? props.conditionType
+    if (type !== props.conditionType) {
+      return t('条件已被添加', {
+        condition: EXCHANGE_ENUMERATION[type]
+      })
+    }
+    return t('该字段不支持配置')
+  }
+
   const updateLocalSelected = (property, checked) => {
+    property.conditionType = props.conditionType
     const index = localSelected.value.findIndex(target => target.id === property.id)
     // 如果checked为true 并且 index === -1 则push
     if (checked && index === -1) {
@@ -163,6 +185,7 @@
   const handleChange = (property, checked) => {
     updateLocalSelected(property, checked)
     allCheckState(property)
+    emit('change')
   }
 
   const handleChangeAllCheck = (bkObjId, checked) => {
@@ -174,6 +197,7 @@
         updateLocalSelected(target, checked)
       }
     })
+    emit('change')
   }
 
   // 判断相应的全选/半选状态
@@ -184,7 +208,9 @@
     const matchedPropertyMapIdSet = new Set()
     matchedPropertyMap.value[bkObjId]?.forEach(property => matchedPropertyMapIdSet.add(property?.id))
     const currentCheckedCount = localSelected.value.filter(target => target.bk_obj_id === bkObjId
-      && matchedPropertyMapIdSet.has(target.id))?.length || 0
+      && matchedPropertyMapIdSet.has(target.id)
+      && (target?.conditionType ?? 'condition') === props.conditionType)
+      ?.length || 0
     // 默认是一个都没选的状态
     let isIndeterminate = false // 半选
     let isChecked = false
@@ -319,6 +345,14 @@
         }
         .icon-cc-selected {
           opacity: 1;
+        }
+      }
+
+      &.is-checked-diabled {
+        background: #f9fafd;
+        :deep(.bk-checkbox-text),
+        .icon-cc-selected {
+          color: #dcdee5;
         }
       }
 

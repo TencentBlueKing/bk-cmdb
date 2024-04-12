@@ -37,11 +37,13 @@
       slot="content"
       v-if="isShow"
       ref="addConditionComp"
+      :condition-type="conditionType"
       :selected="selected"
       :disabled-property-map="disabledProperties"
       :models="models"
       :property-map="propertyMap"
-      :height="height">
+      :height="height"
+      @change="handleChange">
     </property-selector>
   </bk-popover>
 </template>
@@ -70,6 +72,10 @@
       type: {
         type: Number,
         default: 1 // 1动态分组添加条件  2.资源实例高级筛选添加条件 3. 主机高级筛选添加条件
+      },
+      conditionType: {
+        type: String,
+        default: 'condition' // condition: 锁定条件 varCondition：可变条件
       },
       selected: {
         type: Array,
@@ -129,13 +135,18 @@
         }))
       },
       disabledProperties() {
-        if (this.type === 1) return this.dynamicGroupForm?.disabledPropertyMap
-        const disabledPropertyMap = {}
-        this.groups.forEach((group) => {
-          disabledPropertyMap[group.id] = group.children
-            .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
-            .map(item => item.bk_property_id)
-        })
+        let disabledPropertyMap = {}
+        if (this.type === 1) {
+          disabledPropertyMap = this.$tools.clone(this.dynamicGroupForm?.disabledPropertyMap)
+          this.selected.filter(property => property.conditionType !== this.conditionType)
+            .forEach(condition => disabledPropertyMap[condition.bk_obj_id].push(condition.bk_property_id))
+        } else {
+          this.groups.forEach((group) => {
+            disabledPropertyMap[group.id] = group.children
+              .filter(item => item.bk_property_type === PROPERTY_TYPES.INNER_TABLE)
+              .map(item => item.bk_property_id)
+          })
+        }
         return disabledPropertyMap
       }
     },
@@ -156,9 +167,15 @@
       confirm() {
         const selected = this.$refs?.addConditionComp?.localSelected ?? this.selected
         this.isShow = false
+        if (this.type === 1) return
         if (this.type !== 3) return this.handler([...selected])
         FilterStore.updateSelected(selected)
         FilterStore.updateUserBehavior(selected)
+      },
+      handleChange() {
+        if (this.type !== 1) return
+        const selected = this.$refs?.addConditionComp?.localSelected ?? this.selected
+        setTimeout(() => this.handler([...selected]))
       },
     }
   }

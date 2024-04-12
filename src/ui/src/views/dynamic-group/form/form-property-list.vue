@@ -47,6 +47,11 @@
             </component>
           </div>
           <i class="item-remove bk-icon icon-close" v-if="!disabled" @click="handleRemove(property)"></i>
+          <i class="item-toggle bk-icon icon-sort" v-if="!disabled" @click="handleToggle(property)" v-bk-tooltips.top="{
+            content: $t('切换为', {
+              condition: conditionName
+            })
+          }"></i>
         </div>
         <p class="form-error" v-if="errors.has(property.bk_property_id)">{{errors.first(property.bk_property_id)}}</p>
       </bk-form-item>
@@ -58,6 +63,7 @@
   import FormOperatorSelector from '@/components/filters/operator-selector.vue'
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
+  import { ADDED_ENUMERATION } from '@/dictionary/dynamic-group'
 
   export default {
     components: {
@@ -67,7 +73,11 @@
     props: {
       disabled: {
         type: Boolean,
-        value: false
+        default: false
+      },
+      conditionType: {
+        type: String,
+        default: 'condition' // condition: 锁定条件 varCondition：可变条件
       }
     },
     data() {
@@ -82,11 +92,15 @@
       }
     },
     computed: {
+      conditionName() {
+        return this.$t(ADDED_ENUMERATION[this.conditionType])
+      },
       bizId() {
         return this.dynamicGroupForm.bizId
       },
       properties() {
         return this.dynamicGroupForm.selectedProperties
+          .filter(property => property.conditionType === this.conditionType)
       },
       availableModels() {
         return this.dynamicGroupForm.availableModels
@@ -108,6 +122,15 @@
         handler() {
           this.updateCondition()
         }
+      },
+      condition: {
+        handler(condition) {
+          const { length } = Object.keys(condition)
+          if (length) {
+            Object.assign(this.dynamicGroupForm.storageCondition, condition)
+          }
+        },
+        deep: true
       }
     },
     methods: {
@@ -145,21 +168,24 @@
         }
       },
       setDetailsCondition() {
+        const { conditionType } = this
         Object.values(this.condition).forEach((condition) => {
           const modelId = condition.property.bk_obj_id
           const propertyId = condition.property.bk_property_id
           // eslint-disable-next-line max-len
-          const detailsCondition = this.details.info.condition.find(detailsCondition => detailsCondition.bk_obj_id === modelId)
-          const detailsFieldData = detailsCondition.condition.find(data => data.field === propertyId)
+          const detailsCondition = this.details.info[conditionType].find(detailsCondition => detailsCondition.bk_obj_id === modelId)
+          const detailsFieldData = detailsCondition.condition.find(data => data.field === propertyId
+            && data.conditionType === conditionType)
           condition.operator = detailsFieldData.operator
           condition.value = detailsFieldData.value
         })
       },
       updateCondition() {
         const newConditon = {}
+        const { storageCondition } = this.dynamicGroupForm
         this.properties.forEach((property) => {
-          if (has(this.condition, property.id)) {
-            newConditon[property.id] = this.condition[property.id]
+          if (has(storageCondition, property.id)) {
+            newConditon[property.id] = storageCondition[property.id]
           } else {
             newConditon[property.id] = {
               property,
@@ -185,6 +211,10 @@
       handleRemove(property) {
         if (this.disabled) return
         this.$emit('remove', property)
+      },
+      handleToggle(property) {
+        if (this.disabled) return
+        this.$emit('toggle', property, this.conditionType)
       },
       getComponentType(property) {
         const {
@@ -263,7 +293,7 @@
     &:hover {
       background: #F0F1F5;
 
-      .item-remove {
+      .item-remove, .item-toggle {
         visibility: visible;
       }
     }
@@ -298,6 +328,18 @@
       position: absolute;
       right: 0;
       top: -32px;
+      &:hover {
+        color: #EA3636;
+      }
+    }
+    .item-toggle {
+      font-size: 14px;
+      visibility: hidden;
+      cursor: pointer;
+      position: absolute;
+      right: 20px;
+      top: -29px;
+      transform: rotate(90deg);
       &:hover {
         color: #EA3636;
       }

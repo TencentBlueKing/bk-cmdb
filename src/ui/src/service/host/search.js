@@ -12,6 +12,7 @@
 
 import http from '@/api'
 import { transformHostSearchParams, localSort } from '@/utils/tools'
+import { rollReqUseCount } from '../utils.js'
 
 const getSearchUrl = (type) => {
   // 不同接口的权限不同
@@ -23,9 +24,14 @@ const getSearchUrl = (type) => {
   return urls[type]
 }
 
-const getMany = async (type, { params, config }) => {
+const getMany = async (type, { params, config }, isGetAll = false) => {
   const url = getSearchUrl(type)
-  const data = http.post(url, transformHostSearchParams(params), config)
+  let data
+  if (isGetAll) {
+    data = rollReqUseCount(url, transformHostSearchParams(params), {}, config)
+  } else {
+    data = http.post(url, transformHostSearchParams(params), config)
+  }
 
   if (data?.info) {
     data.info.forEach((host) => {
@@ -37,9 +43,9 @@ const getMany = async (type, { params, config }) => {
   return data
 }
 
-const getBizHosts = ({ params, config }) => {
+const getBizHosts = ({ params, config }, isGetAll = false) => {
   try {
-    return getMany('biz', { params, config })
+    return getMany('biz', { params, config }, isGetAll)
   } catch (error) {
     Promise.reject(error)
   }
