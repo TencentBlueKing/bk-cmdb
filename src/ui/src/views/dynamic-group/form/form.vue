@@ -474,7 +474,38 @@
         }, this, event?.target)
       },
       handlePropertySelected(selected) {
-        this.selectedProperties = selected
+        const { length } = selected
+        if (!length) this.selectedProperties = []
+
+        const addSelect = []
+        const deleteSelect = []
+        const selectedSet = new Set()
+
+        selected.forEach(property => selectedSet.add(`${property.bk_property_id}-${property.bk_obj_id}`))
+        this.selectedProperties.forEach((property) => {
+          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+          const key = `${propertyId}-${modelId}`
+          if (selectedSet.has(key)) {
+            selectedSet.delete(key)
+          } else {
+            deleteSelect.push(property)
+          }
+        })
+        selected.forEach((property) => {
+          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+          const key = `${propertyId}-${modelId}`
+          if (selectedSet.has(key)) {
+            addSelect.push(property)
+          }
+        })
+
+        deleteSelect.forEach(property => this.handleRemoveProperty(property))
+        let start = 0
+        const limit = 10
+        while (start < addSelect.length) {
+          setTimeout(() =>  this.selectedProperties.push(...addSelect.splice(0, limit)))
+          start += limit
+        }
         this.setFooterCls()
       },
       handleRemoveProperty(property) {
