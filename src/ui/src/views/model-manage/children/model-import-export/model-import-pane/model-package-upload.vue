@@ -97,6 +97,7 @@
   import { defineComponent, ref, reactive, computed } from 'vue'
   import unzip from 'unzip-js'
   import { t } from '@/i18n'
+  import { $error } from '@/magicbox'
   import { batchImportFileAnalysis } from '@/service/model/import-export.js'
   import { autofocus } from '@/directives/autofocus'
 
@@ -256,6 +257,12 @@
 
       const handleFileChange = (e) => {
         const [file] = e.target.files
+
+        if (!file.name.endsWith('.zip')) {
+          fileInputRef.value.value = null
+          $error(t('文件格式非法', { allowType: '.zip' }))
+          return false
+        }
 
         preProcessFile(file)
       }

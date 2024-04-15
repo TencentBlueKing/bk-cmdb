@@ -568,7 +568,7 @@
     "上传失败列表": "Upload failed list",
     "更新失败列表": "Update failure list",
     "新增失败列表": "Added failure list",
-    "文件大小溢出": "File size cannot exceed {maxSize}kb",
+    "文件大小溢出": "File size cannot exceed {maxSize}",
     "文件格式非法": "The file format is illegal and only {allowType} files can be uploaded!",
     "部分成功": "Partially successful",
     "成功": "Successful",
