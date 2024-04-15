@@ -15,6 +15,12 @@
 | info      | object | 是  | 通用查询条件                      |
 | name      | string | 是  | 动态分组名称                      |
 
+#### info
+| 字段        | 类型     | 必选 | 描述                   |
+|-----------|--------|----|----------------------|
+| condition | object | 否  | 动态分组锁定条件, 和可变条件至少传一个 |
+| variable_condition | object | 否  | 动态分组可变条件, 和锁定条件至少传一个 |
+
 #### info.condition
 
 | 字段        | 类型     | 必选 | 描述                                                                                    |
@@ -27,7 +33,22 @@
 | 字段       | 类型     | 必选 | 描述                                     |
 |----------|--------|----|----------------------------------------|
 | field    | string | 是  | 对象的字段                                  |
-| operator | string | 是  | 操作符, op值为eq(相等)/ne(不等)/in(属于)/nin(不属于) |
+| operator | string | 是  | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$like(模糊匹配) |
+| value    | object | 是  | 字段对应的值                                 |
+
+#### info.variable_condition
+
+| 字段        | 类型     | 必选 | 描述                                                                                    |
+|-----------|--------|----|---------------------------------------------------------------------------------------|
+| bk_obj_id | string | 是  | 条件对象资源类型, host类型的动态分组支持的info.conditon:set,module,host；set类型的动态分组支持的info.condition:set |
+| condition | array  | 是  | 查询条件                                                                                  |
+
+#### info.variable_condition.condition
+
+| 字段       | 类型     | 必选 | 描述                                     |
+|----------|--------|----|----------------------------------------|
+| field    | string | 是  | 对象的字段                                  |
+| operator | string | 是  | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$like(模糊匹配) |
 | value    | object | 是  | 字段对应的值                                 |
 
 ### 请求参数示例
@@ -73,7 +94,39 @@
     				}
     			]
     		}
-    	]
+    	],
+        "variable_condition":[
+          {
+            "bk_obj_id":"set",
+            "condition":[
+              {
+                "field":"bk_parent_id",
+                "operator":"$ne",
+                "value":1
+              }
+            ]
+          },
+          {
+            "bk_obj_id":"module",
+            "condition":[
+              {
+                "field":"bk_parent_id",
+                "operator":"$ne",
+                "value":1
+              }
+            ]
+          },
+          {
+            "bk_obj_id":"host",
+            "condition":[
+              {
+                "field":"bk_host_outerip",
+                "operator":"$eq",
+                "value":"127.0.0.1"
+              }
+            ]
+          }
+        ]
     }
 }
 ```
