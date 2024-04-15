@@ -109,13 +109,14 @@
     getHeaderPropertyMinWidth,
     isUseComplexValueType,
     getSort,
-    getPageParams
+    getPageParams,
+    getPropertyCopyValue,
+    isEmptyPropertyValue
   } from '@/utils/tools'
   import { transformGeneralModelCondition } from '@/components/filters/utils.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import FilterUtils from '@/components/filters/utils'
   import { $bkPopover, $error, $success } from '@/magicbox/index.js'
-  import { getPropertyCopyValue, isEmptyPropertyValue } from '@/utils/tools.js'
   import { rollReqUseCount } from '@/service/utils.js'
 
   const { proxy } = getCurrentInstance()
