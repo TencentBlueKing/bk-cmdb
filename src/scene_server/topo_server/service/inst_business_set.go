@@ -1066,10 +1066,14 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 // permissions when they perceive that they do not have permission. This function is not authenticated and cannot
 // be used in other scenarios.
 func (s *Service) ListAllBusinessSetSimplify(ctx *rest.Contexts) {
-
 	// get the full business set id and name.
 	page := metadata.BasePage{
 		Limit: common.BKNoLimit,
+	}
+
+	sortParam := ctx.Request.QueryParameter("sort")
+	if len(sortParam) > 0 {
+		page.Sort = sortParam
 	}
 
 	query := &metadata.QueryCondition{
