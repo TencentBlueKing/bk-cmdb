@@ -217,7 +217,9 @@
       initHostIdIndex() {
         this.rows.forEach((row, index) => {
           const hostId = row?.host?.bk_host_id
-          hostIdIndex[hostId] = index
+          if (hostId) {
+            hostIdIndex[hostId] = index
+          }
         })
       },
       initRows() {
