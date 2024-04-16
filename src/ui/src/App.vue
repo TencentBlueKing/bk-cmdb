@@ -90,6 +90,11 @@
         return true
       }
     },
+    watch: {
+      noticeHeight(height) {
+        this.$store.commit('setNoticeHeight', height)
+      }
+    },
     mounted() {
       addResizeListener(this.$el, this.calculateAppHeight)
       window.permissionModal = this.$refs.permissionModal
