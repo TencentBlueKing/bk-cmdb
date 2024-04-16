@@ -123,7 +123,7 @@
     methods: {
       async getData() {
         const [{ info: bizList = [] }, { info: bizsetList = [] }] = await Promise.all([
-          this.$http.get('biz/simplify', {
+          this.$http.get('biz/simplify?sort=bk_biz_id', {
             requestId: this.requestIds.biz,
             fromCache: false
           }),
@@ -195,7 +195,11 @@
 
           if (!isACollected && !isBCollected) {
             // 有权限排前面
-            if (a.authorized > b.authorized) {
+            if (a.authorized > b.authorized && !a.isBizSet && !b.isBizSet) {
+              return -1
+            }
+
+            if (a.authorized > b.authorized && a.isBizSet && b.isBizSet) {
               return -1
             }
 
