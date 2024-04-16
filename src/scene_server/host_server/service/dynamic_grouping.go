@@ -561,8 +561,7 @@ func (s *Service) checkAndBuildParam(kit *rest.Kit, input *meta.ExecuteOption, b
 	validateFunc := func(objectID string) ([]meta.Attribute, error) {
 		return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).SearchObjectAttributes(kit, bizID, objectID)
 	}
-	if _, err = meta.ValidDynamicGroupCond(input.VariableCondition, result.Data.ObjID, validateFunc,
-		map[string]map[string]struct{}{}); err != nil {
+	if err = meta.ValidDynamicGroupCond(input.VariableCondition, result.Data.ObjID, validateFunc); err != nil {
 		blog.Errorf("dynamic group info condition is invalid, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, nil, err
 	}
@@ -575,20 +574,15 @@ func (s *Service) checkAndBuildParam(kit *rest.Kit, input *meta.ExecuteOption, b
 		return nil, nil, err
 	}
 
-	conditionMap := make(map[string]*meta.SearchCondition)
-	conditionMap = parseCond(conditionMap, info.Condition)
-	conditionMap = parseCond(conditionMap, info.VariableCondition)
+	cond := make([]meta.DynamicGroupInfoCondition, 0)
+	cond = append(cond, info.Condition...)
+	cond = append(cond, info.VariableCondition...)
 
-	searchConditions := make([]meta.SearchCondition, 0)
-	for _, condition := range conditionMap {
-		searchConditions = append(searchConditions, *condition)
-	}
-
-	return result, searchConditions, nil
+	return result, parseCond(cond), nil
 }
 
-func buildFinalCond(kit *rest.Kit, reqCondArr []meta.DynamicGroupInfoCondition,
-	originCondArr []meta.DynamicGroupInfoCondition) ([]meta.DynamicGroupInfoCondition, error) {
+func buildFinalCond(kit *rest.Kit, reqCondArr, originCondArr []meta.DynamicGroupInfoCondition) (
+	[]meta.DynamicGroupInfoCondition, error) {
 
 	if len(reqCondArr) == 0 {
 		return originCondArr, nil
@@ -647,8 +641,8 @@ func buildFinalCond(kit *rest.Kit, reqCondArr []meta.DynamicGroupInfoCondition,
 	return originCondArr, nil
 }
 
-func parseCond(conditionMap map[string]*meta.SearchCondition,
-	conditions []meta.DynamicGroupInfoCondition) map[string]*meta.SearchCondition {
+func parseCond(conditions []meta.DynamicGroupInfoCondition) []meta.SearchCondition {
+	conditionMap := make(map[string]*meta.SearchCondition)
 
 	for _, cond := range conditions {
 		if conditionMap[cond.ObjID] == nil {
@@ -669,7 +663,12 @@ func parseCond(conditionMap map[string]*meta.SearchCondition,
 			cond.TimeCondition.Rules...)
 	}
 
-	return conditionMap
+	result := make([]meta.SearchCondition, 0)
+	for _, condition := range conditionMap {
+		result = append(result, *condition)
+	}
+
+	return result
 }
 
 // changeTimeToMatchLocalZone TODO

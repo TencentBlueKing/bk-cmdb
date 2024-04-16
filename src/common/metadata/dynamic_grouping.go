@@ -267,16 +267,11 @@ type DynamicGroupInfo struct {
 
 // Validate validates dynamic group info format, it's OK if conditions empty in this level.
 func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) error {
-	var err error
-	fields := make(map[string]map[string]struct{})
+	cond := make([]DynamicGroupInfoCondition, 0)
+	cond = append(cond, c.Condition...)
+	cond = append(cond, c.VariableCondition...)
 
-	fields, err = ValidDynamicGroupCond(c.Condition, objectID, validatefunc, fields)
-	if err != nil {
-		return err
-	}
-
-	_, err = ValidDynamicGroupCond(c.VariableCondition, objectID, validatefunc, fields)
-	if err != nil {
+	if err := ValidDynamicGroupCond(cond, objectID, validatefunc); err != nil {
 		return err
 	}
 
@@ -284,14 +279,13 @@ func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) 
 }
 
 // ValidDynamicGroupCond validate dynamic group info condition
-func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID string, validatefunc Validatefunc,
-	fields map[string]map[string]struct{}) (map[string]map[string]struct{}, error) {
-
+func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID string, validatefunc Validatefunc) error {
 	types, isSupport := DynamicGroupConditionTypes[objectID]
 	if !isSupport {
-		return nil, fmt.Errorf("not support dynamic group type, %s", objectID)
+		return fmt.Errorf("not support dynamic group type, %s", objectID)
 	}
 
+	fields := make(map[string]map[string]struct{})
 	for _, cond := range condition {
 		if _, exist := fields[cond.ObjID]; !exist {
 			fields[cond.ObjID] = map[string]struct{}{}
@@ -300,22 +294,22 @@ func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID strin
 		for _, item := range cond.Condition {
 			if err := item.VerifyRegexValidity(); err != nil {
 				blog.Errorf("verify regex validity failed, err: %v, input: %v, objectID: %s", err, item, objectID)
-				return nil, err
+				return err
 			}
 
 			if _, exist := fields[cond.ObjID][item.Field]; exist {
-				return nil, errors.New("cannot set the same field")
+				return errors.New("cannot set the same field")
 			}
 
 			fields[cond.ObjID][item.Field] = struct{}{}
 		}
 
 		if _, isSupport = types[cond.ObjID]; !isSupport {
-			return nil, fmt.Errorf("not support condition type[%s] for %s dynamic group", cond.ObjID, objectID)
+			return fmt.Errorf("not support condition type[%s] for %s dynamic group", cond.ObjID, objectID)
 		}
 
 		if err := cond.Validate(validatefunc); err != nil {
-			return nil, err
+			return err
 		}
 
 		if cond.TimeCondition == nil {
@@ -324,14 +318,14 @@ func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID strin
 
 		for _, rule := range cond.TimeCondition.Rules {
 			if _, exist := fields[cond.ObjID][rule.Field]; exist {
-				return nil, errors.New("cannot set the same field")
+				return errors.New("cannot set the same field")
 			}
 
 			fields[cond.ObjID][rule.Field] = struct{}{}
 		}
 	}
 
-	return fields, nil
+	return nil
 }
 
 // DynamicGroup is dynamic grouping of conditions for host/set data searching.
