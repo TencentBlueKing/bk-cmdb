@@ -63,7 +63,8 @@
   import FormOperatorSelector from '@/components/filters/operator-selector.vue'
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
-  import { ADDED_ENUMERATION } from '@/dictionary/dynamic-group'
+  import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
+  const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
     components: {
@@ -77,7 +78,7 @@
       },
       conditionType: {
         type: String,
-        default: 'condition' // condition: 锁定条件 varCondition：可变条件
+        default: IMMUTABLE // condition: 锁定条件 varCondition：可变条件
       }
     },
     data() {
@@ -93,7 +94,11 @@
     },
     computed: {
       conditionName() {
-        return this.$t(ADDED_ENUMERATION[this.conditionType])
+        const exchangeType = {
+          [VARIABLE]: IMMUTABLE,
+          [IMMUTABLE]: VARIABLE
+        }
+        return this.$t(DYNAMIC_GROUP_COND_NAMES[exchangeType[this.conditionType]])
       },
       bizId() {
         return this.dynamicGroupForm.bizId

@@ -148,8 +148,9 @@
   import FilterStore from '../store'
   import { $success } from '@/magicbox'
   import ConditionPicker from '@/components/condition-picker'
-  import { EXCHANGE_ENUMERATION_KEY } from '@/dictionary/dynamic-group'
+  import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
 
+  const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
     components: {
       FormPropertyList,
@@ -205,12 +206,12 @@
             id: 1,
             name: '可变条件',
             tip: '动态分组可变条件',
-            type: 'varCondition'
+            type: VARIABLE
           }, {
             id: 2,
             name: '锁定条件',
             tip: '动态分组锁定条件',
-            type: 'condition'
+            type: IMMUTABLE
           }
         ]
       }
@@ -356,10 +357,10 @@
           condition: [],
           varCondition: []
         }
-
         Object.keys(info).forEach((type) => {
           info[type]?.forEach((data) => {
-            const conditionType = type === 'condition' ? 'condition' : 'varCondition'
+            const conditionType = type === IMMUTABLE
+              ? IMMUTABLE : VARIABLE
             const realCondition = (data.condition || []).reduce((accumulator, current) => {
               current.conditionType = conditionType
               if (['$gte', '$lte'].includes(current.operator)) {
@@ -458,6 +459,15 @@
           }
         })
       },
+      setProperty(property, conditionType) {
+        const { bk_obj_id: modelId, bk_property_id: propertyId } = property
+        const exchangeType = {
+          [VARIABLE]: IMMUTABLE,
+          [IMMUTABLE]: VARIABLE
+        }
+        property.conditionType = exchangeType[conditionType]
+        this.getConditionProperty(modelId, propertyId).conditionType = exchangeType[conditionType]
+      },
       handleCollapseChange() {
         setTimeout(this.setFooterCls, 300)
       },
@@ -517,7 +527,7 @@
       },
       handleToggleProperty(property, conditionType) {
         this.handleRemoveProperty(property)
-        property.conditionType = EXCHANGE_ENUMERATION_KEY[conditionType]
+        this.setProperty(property, conditionType)
         this.selectedProperties.push(property)
       },
       async handlePreview() {
@@ -612,7 +622,8 @@
         }
         const propertyCondition = this.getCondition()
         Object.values(propertyCondition).forEach(({ property, operator, value }) => {
-          const type = property?.conditionType === 'condition' ? 'condition' : 'variable_condition'
+          const type = property?.conditionType === IMMUTABLE
+            ? IMMUTABLE : VARIABLE
           if (property.bk_property_type === 'time') { // 时间类型特殊处理
             const timeCondition = timeConditionMap[type][property.bk_obj_id] || { oper: 'and', rules: [] }
             const [start, end] = value

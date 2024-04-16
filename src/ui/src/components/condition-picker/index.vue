@@ -53,6 +53,7 @@
   import FilterStore from '@/components/filters/store'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import PropertySelector from '@/components/condition-picker/property-selector.vue'
+  import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
 
   export default {
     components: {
@@ -75,7 +76,7 @@
       },
       conditionType: {
         type: String,
-        default: 'condition' // condition: 锁定条件 varCondition：可变条件
+        default: DYNAMIC_GROUP_COND_TYPES.IMMUTABLE // condition: 锁定条件 varCondition：可变条件
       },
       selected: {
         type: Array,

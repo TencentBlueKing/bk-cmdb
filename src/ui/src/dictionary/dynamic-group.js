@@ -10,21 +10,12 @@
  * limitations under the License.
  */
 
-export const VARIABLE_CONDITION = '可变条件'
+export const DYNAMIC_GROUP_COND_TYPES = Object.freeze({
+  VARIABLE: 'varCondition',
+  IMMUTABLE: 'condition',
+})
 
-export const LOCKING_CONDITION = '锁定条件'
-
-export const EXCHANGE_ENUMERATION = {
-  varCondition: VARIABLE_CONDITION,
-  condition: LOCKING_CONDITION
-}
-
-export const ADDED_ENUMERATION = {
-  varCondition: LOCKING_CONDITION,
-  condition: VARIABLE_CONDITION
-}
-
-export const EXCHANGE_ENUMERATION_KEY = {
-  varCondition: 'condition',
-  condition: 'varCondition'
-}
+export const DYNAMIC_GROUP_COND_NAMES = Object.freeze({
+  [DYNAMIC_GROUP_COND_TYPES.VARIABLE]: '可变条件',
+  [DYNAMIC_GROUP_COND_TYPES.IMMUTABLE]: '锁定条件',
+})

@@ -76,7 +76,7 @@
   import { computed, ref, watch, reactive } from 'vue'
   import { t } from '@/i18n'
   import debounce from 'lodash.debounce'
-  import { EXCHANGE_ENUMERATION } from '@/dictionary/dynamic-group'
+  import { DYNAMIC_GROUP_COND_NAMES, DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
 
   const emit = defineEmits(['change'])
 
@@ -103,7 +103,7 @@
     },
     conditionType: {
       type: String,
-      default: 'condition' // condition: 锁定条件 varCondition：可变条件
+      default: DYNAMIC_GROUP_COND_TYPES.IMMUTABLE // condition: 锁定条件 varCondition：可变条件
     },
   })
   const checkboxRef = ref('')
@@ -163,7 +163,7 @@
     const type = property?.conditionType ?? props.conditionType
     if (type !== props.conditionType) {
       return t('条件已被添加', {
-        condition: EXCHANGE_ENUMERATION[type]
+        condition: t(DYNAMIC_GROUP_COND_NAMES[type])
       })
     }
     return t('该字段不支持配置')
@@ -209,7 +209,7 @@
     matchedPropertyMap.value[bkObjId]?.forEach(property => matchedPropertyMapIdSet.add(property?.id))
     const currentCheckedCount = localSelected.value.filter(target => target.bk_obj_id === bkObjId
       && matchedPropertyMapIdSet.has(target.id)
-      && (target?.conditionType ?? 'condition') === props.conditionType)
+      && (target?.conditionType ?? DYNAMIC_GROUP_COND_TYPES.IMMUTABLE) === props.conditionType)
       ?.length || 0
     // 默认是一个都没选的状态
     let isIndeterminate = false // 半选

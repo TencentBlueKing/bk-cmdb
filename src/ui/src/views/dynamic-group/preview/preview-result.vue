@@ -111,7 +111,8 @@
     getSort,
     getPageParams,
     getPropertyCopyValue,
-    isEmptyPropertyValue
+    isEmptyPropertyValue,
+    transformHostSearchParams
   } from '@/utils/tools'
   import { transformGeneralModelCondition } from '@/components/filters/utils.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
@@ -227,7 +228,7 @@
     const { value, target } = copyLoading
     const showLoading = value && target?.propertyId === property.bk_property_id
     const tooltips = {
-      content: '复制内容',
+      content: `${t('复制内容')}`,
       placement: 'top',
       disabled: value
     }
@@ -293,7 +294,7 @@
     const { bk_property_id: propertyId, bk_obj_id: modelId } = property
     copyLoading.value = true
     copyLoading.target = { propertyId, modelId }
-    const data = await getCopyList()
+    const data = await getCopyList(propertyId)
     return data
   }
   const setCopyData = (property, list = []) => {
@@ -429,14 +430,13 @@
   const handleApplyColumnsConfig = ((properties = []) => store.dispatch('userCustom/saveUsercustom', {
     [customInstanceColumnKey.value]: properties.map(property => property.bk_property_id)
   }))
-  // isGetAll 是否获取全部数据
-  const getHostList = async (searchParams, page, config, isGetAll = false) => {
+  const getHostList = async (searchParams, page, config) => {
     const params = {
       bk_biz_id: bizId.value,
       ...searchParams,
       page
     }
-    return hostSearchService.getBizHosts({ params, config }, isGetAll)
+    return hostSearchService.getBizHosts({ params, config })
   }
   const getValue = (row, modelId, propertyId) => {
     const { mode } = props
@@ -445,7 +445,18 @@
     }
     return  row?.[propertyId]
   }
-  const getSetList = async (searchParams, page, config, isGetAll = false) => {
+  const getSetList = async (searchParams, page, config) => {
+    const setParams = getSetParams(searchParams)
+    return store.dispatch('objectSet/searchSet', {
+      bizId: bizId.value,
+      params: {
+        page,
+        filter: setParams.conditions
+      },
+      config
+    })
+  }
+  const getSetParams = (searchParams) => {
     const setCondition = {}
     const { properties } = props
     const allConditions = searchParams.condition.reduce((val, cur) => {
@@ -456,22 +467,7 @@
       const id = properties.find(item => item?.bk_property_id === condition?.field)?.id
       setCondition[id] = condition
     })
-    const setParams = transformGeneralModelCondition(setCondition, properties)
-
-    if (isGetAll) {
-      return rollReqUseCount(`set/search/${store.getters.supplierAccount}/${bizId.value}`, {
-        page,
-        filter: setParams.conditions
-      }, {}, config)
-    }
-    return store.dispatch('objectSet/searchSet', {
-      bizId: bizId.value,
-      params: {
-        page,
-        filter: setParams.conditions
-      },
-      config
-    })
+    return transformGeneralModelCondition(setCondition, properties)
   }
   const getParams = (type = 'list') => {
     const searchParams = FilterStore.getSearchParams()
@@ -485,13 +481,35 @@
     }
     return { searchParams, page, config }
   }
-  const getCopyList = (async () => {
+  const getFields = (propertyId) => {
+    if (typeof propertyId === 'symbol') {
+      return ['bk_cloud_id', 'bk_host_innerip', 'bk_host_innerip_v6']
+    }
+    return [propertyId]
+  }
+  const getCopyList = (async (propertyId) => {
     const { mode } = props
     const { searchParams, page, config } = getParams('copy')
+    const fields = getFields(propertyId)
+
     if (mode === BUILTIN_MODELS.HOST) {
-      return await getHostList(searchParams, page, config, true)
+      const url = hostSearchService.getSearchUrl('biz')
+      searchParams?.condition?.forEach((condition) => {
+        condition.fields = fields
+      })
+      return rollReqUseCount(url, transformHostSearchParams({
+        bk_biz_id: bizId.value,
+        ...searchParams,
+        page
+      }), {}, config)
     }
-    return await getSetList(searchParams, page, config, true)
+
+    const setParams = getSetParams(searchParams)
+    return rollReqUseCount(`set/search/${store.getters.supplierAccount}/${bizId.value}`, {
+      page,
+      filter: setParams.conditions,
+      fields
+    }, {}, config)
   })
   const getList = (async () => {
     try {
