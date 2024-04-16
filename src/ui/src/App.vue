@@ -73,9 +73,6 @@
         return (topRoute && topRoute.meta.view) || 'default'
       },
       loginUrl() {
-        if (process.env.NODE_ENV === 'development') {
-          return ''
-        }
         const siteLoginUrl = this.$Site.login || ''
         const [loginBaseUrl] = siteLoginUrl.split('?')
         if (loginBaseUrl) {
