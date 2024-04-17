@@ -344,7 +344,8 @@ func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64, option met
 	query := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter)
 	total, err := query.Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("ListHostApplyRule failed, db count failed, filter: %s, err: %s, rid: %s", filter, err.Error(), kit.Rid)
+		blog.ErrorJSON("ListHostApplyRule failed, db count failed, filter: %s, err: %s, rid: %s", filter,
+			err.Error(), kit.Rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	result.Count = int64(total)

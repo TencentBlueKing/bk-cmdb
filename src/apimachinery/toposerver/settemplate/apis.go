@@ -23,21 +23,30 @@ import (
 
 // SetTemplateInterface TODO
 type SetTemplateInterface interface {
-	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	CreateSetTemplate(ctx context.Context, h http.Header, bizID int64, option metadata.CreateSetTemplateOption) (
+		*metadata.SetTemplateResult, errors.CCErrorCoder)
 	CreateSetTemplateAllInfo(ctx context.Context, h http.Header, option *metadata.CreateSetTempAllInfoOption) (
 		int64, errors.CCErrorCoder)
-	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	UpdateSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
+		option metadata.UpdateSetTemplateOption) (*metadata.SetTemplateResult, errors.CCErrorCoder)
 	UpdateSetTemplateAllInfo(ctx context.Context, header http.Header,
 		option *metadata.UpdateSetTempAllInfoOption) errors.CCErrorCoder
-	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
-	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (*metadata.SetTemplateResult, errors.CCErrorCoder)
+	DeleteSetTemplate(ctx context.Context, header http.Header, bizID int64,
+		option metadata.DeleteSetTemplateOption) errors.CCErrorCoder
+	GetSetTemplate(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (
+		*metadata.SetTemplateResult, errors.CCErrorCoder)
 	GetSetTemplateAllInfo(ctx context.Context, header http.Header, option *metadata.GetSetTempAllInfoOption) (
 		*metadata.SetTempAllInfo, errors.CCErrorCoder)
-	ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
-	ListSetTemplateWeb(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
-	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) ([]metadata.ServiceTemplate, errors.CCErrorCoder)
-	ListSetTplRelatedSetsWeb(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.ListSetByTemplateOption) (*metadata.InstDataInfo, errors.CCErrorCoder)
-	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64, option metadata.DiffSetTplWithInstOption) (*metadata.SetTplDiffResult, errors.CCErrorCoder)
+	ListSetTemplate(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (
+		*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
+	ListSetTemplateWeb(ctx context.Context, header http.Header, bizID int64, option metadata.ListSetTemplateOption) (
+		*metadata.MultipleSetTemplateResult, errors.CCErrorCoder)
+	ListSetTplRelatedSvcTpl(ctx context.Context, header http.Header, bizID int64, setTemplateID int64) (
+		[]metadata.ServiceTemplate, errors.CCErrorCoder)
+	ListSetTplRelatedSetsWeb(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
+		option metadata.ListSetByTemplateOption) (*metadata.InstDataInfo, errors.CCErrorCoder)
+	DiffSetTplWithInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
+		option metadata.DiffSetTplWithInstOption) (*metadata.SetTplDiffResult, errors.CCErrorCoder)
 	SyncSetTplToInst(ctx context.Context, header http.Header, bizID int64, setTemplateID int64,
 		option *metadata.SyncSetTplToInstOption) errors.CCErrorCoder
 	UpdateSetTemplateAttr(ctx context.Context, header http.Header,

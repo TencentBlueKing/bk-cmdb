@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"configcenter/src/common"
@@ -44,6 +45,13 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 	if err != nil {
 		ctx.RespBkError(types.NotFoundErrorCode, err.Error())
 		return
+	}
+
+	if queryFilter, ok := query.Filter.(types.ListInstanceFilter); ok {
+		if queryFilter.Keyword != "" {
+			queryFilter.Keyword = regexp.QuoteMeta(queryFilter.Keyword)
+			query.Filter = queryFilter
+		}
 	}
 
 	// get response data for each iam query method, if callback method is not set, returns empty data
