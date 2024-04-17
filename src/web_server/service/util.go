@@ -18,6 +18,45 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// FileType 文件类型
+type FileType string
+
+const (
+	// FileTypeXlsx 文件格式xlsx
+	FileTypeXlsx FileType = "xlsx"
+	// FileTypeXls 文件格式xls
+	FileTypeXls FileType = "xls"
+	// FileTypeZip 文件格式zip
+	FileTypeZip FileType = "zip"
+	// FileTypeYaml 文件格式yaml
+	FileTypeYaml FileType = "yaml"
+)
+
+// ImportType 导入类型
+type ImportType string
+
+const (
+	// ImportTypeHost 导入类型为导入主机
+	ImportTypeHost ImportType = "importHost"
+	// ImportTypeInst 导入类型为导入实例
+	ImportTypeInst ImportType = "importInst"
+	// ImportTypeObject 导入类型为导入模型
+	ImportTypeObject ImportType = "importObject"
+	// ImportTypeObjectYaml 导入类型为导入模型yaml文件
+	ImportTypeObjectYaml ImportType = "importObjectYaml"
+	// ImportTypeObjectAttr 导入类型为导入模型属性字段
+	ImportTypeObjectAttr ImportType = "importObjectAttr"
+)
+
+// ImportTypeMap 导入类型与文件类型对应关系map
+var ImportTypeMap = map[ImportType][]FileType{
+	ImportTypeHost:       {FileTypeXlsx, FileTypeXls},
+	ImportTypeInst:       {FileTypeXlsx, FileTypeXls},
+	ImportTypeObjectAttr: {FileTypeXlsx, FileTypeXls},
+	ImportTypeObject:     {FileTypeZip},
+	ImportTypeObjectYaml: {FileTypeYaml},
+}
+
 func parseModelBizID(data string) (int64, error) {
 	model := &struct {
 		BizID int64 `json:"bk_biz_id"`
@@ -247,4 +286,33 @@ func (s *Service) getDepartment(c *gin.Context, objID string, infoList []mapstr.
 	}
 
 	return department.Results, propertyList, nil
+}
+
+// verifyFileType 校验导入的文件格式
+func (s *Service) verifyFileType(importType ImportType, fileName, rid string) error {
+	if fileName == "" {
+		blog.Errorf("verify file type failed, file name is empty, rid: %s", rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file name is empty")
+	}
+
+	lastIndex := strings.LastIndex(fileName, ".")
+	if lastIndex == -1 {
+		blog.Errorf("verify file type failed, file type is empty, rid: %s", rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file type is empty")
+	}
+
+	fileType := fileName[lastIndex+1:]
+	fileTypeArr, exist := ImportTypeMap[importType]
+	if !exist {
+		blog.Errorf("verify file type failed, unknown import type %s, rid: %s", importType, rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "unknown import type")
+	}
+
+	for _, ft := range fileTypeArr {
+		if ft == FileType(fileType) {
+			return nil
+		}
+	}
+	blog.Errorf("verify file type failed, unknown import type %s, rid: %s", fileType, rid)
+	return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file type is illegality")
 }

@@ -88,6 +88,13 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
+	if err := s.verifyFileType(ImportTypeHost, file.Filename, rid); err != nil {
+		blog.Errorf("ImportHost failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+			err, file.Filename, rid)
+		msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
 
 	params := c.PostForm("params")
 	if params == "" {
