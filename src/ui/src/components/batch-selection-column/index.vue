@@ -33,8 +33,8 @@
   import cloneDeep from 'lodash/cloneDeep'
   import safeGet from 'lodash/get'
 
-  // 数据 hostId:index
-  const hostIdIndex = {}
+  // 数据 this.rowKey:index
+  const keyIndex = {}
   export default {
     name: 'BatchSelectionColumn',
     props: {
@@ -187,25 +187,28 @@
         const addSelected = new Set()
         // 当前取消勾选的
         const removeSelected = new Set()
-        oldSelected.forEach(item => removeSelected.add(item?.hostId  ?? item?.host?.bk_host_id))
+        oldSelected.forEach((item) => {
+          const key = safeGet(item, this.rowKey)
+          removeSelected.add(key)
+        })
         selected.forEach((row) => {
-          const hostId =  row?.hostId ?? row?.host?.bk_host_id
-          if (removeSelected.has(hostId)) {
-            removeSelected.delete(hostId)
+          const key = safeGet(row, this.rowKey)
+          if (removeSelected.has(key)) {
+            removeSelected.delete(key)
           } else {
-            addSelected.add(hostId)
+            addSelected.add(key)
           }
         })
-        addSelected.forEach((hostId) => {
-          const index = hostIdIndex[hostId] ?? -1
+        addSelected.forEach((key) => {
+          const index = keyIndex[key] ?? -1
           const row = this.rows[index]
           if (row && !row?.checked) {
             row.checked = true
             this.handleRowSelectionChange(row)
           }
         })
-        removeSelected.forEach((hostId) => {
-          const index = hostIdIndex[hostId] ?? -1
+        removeSelected.forEach((key) => {
+          const index = keyIndex[key] ?? -1
           const row = this.rows[index]
           if (row && row?.checked) {
             row.checked = false
@@ -214,17 +217,15 @@
         })
         this.generatePageSelection()
       },
-      initHostIdIndex() {
+      initKeyIndex() {
         this.rows.forEach((row, index) => {
-          const hostId = row?.host?.bk_host_id
-          if (hostId) {
-            hostIdIndex[hostId] = index
-          }
+          const key = safeGet(row, this.rowKey)
+          keyIndex[key] = index
         })
       },
       initRows() {
         this.rows = cloneDeep(this.data)
-        this.initHostIdIndex(this.rows)
+        this.initKeyIndex(this.rows)
         if (this.reserveSelection && this.rowKey) {
           this.generateRowSelection()
           this.generatePageSelection()
