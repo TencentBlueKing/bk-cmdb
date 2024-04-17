@@ -13,6 +13,7 @@
 const path = require('path')
 const MockJS = require('mockjs')
 const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser');
 const { pathToRegexp } = require('path-to-regexp')
 
 const mock = require('../../mock/index')
@@ -27,6 +28,8 @@ module.exports = config => ({
     }
 
     if (config.dev.useMock) {
+      devServer.app.use(cookieParser())
+
       // parse application/x-www-form-urlencoded
       devServer.app.use(bodyParser.urlencoded({ extended: true }))
 

@@ -14,10 +14,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Document</title>
+    <title>Login Success</title>
 </head>
 <script>
-    window.parent.location.reload()
+    window.opener && window.opener.location.reload()
+    window.close()
 </script>
 <body>
 </body>

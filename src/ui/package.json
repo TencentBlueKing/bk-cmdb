@@ -16,8 +16,8 @@
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
+    "@blueking/login-modal": "^1.0.0",
     "@blueking/notice-component-vue2": "^2.0.1-beta.2",
-    "@blueking/paas-login": "^0.0.11",
     "@blueking/user-selector": "^1.0.6",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "await-to-js": "^3.0.0",
@@ -87,6 +87,7 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "chalk": "^4.1.0",
+    "cookie-parser": "^1.4.6",
     "copy-webpack-plugin": "^8.1.1",
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.0",
