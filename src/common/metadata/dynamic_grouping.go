@@ -258,23 +258,50 @@ func (c *DynamicGroupInfoCondition) Validate(validatefunc Validatefunc) error {
 
 // DynamicGroupInfo is info field in DynamicGroup struct.
 type DynamicGroupInfo struct {
-	// Condition is dynamic group index conditions set.
+	// Condition is dynamic group index lock conditions set.
 	Condition []DynamicGroupInfoCondition `json:"condition" bson:"condition"`
+
+	// VariableCondition is dynamic group index variable conditions set.
+	VariableCondition []DynamicGroupInfoCondition `json:"variable_condition" bson:"variable_condition"`
 }
 
 // Validate validates dynamic group info format, it's OK if conditions empty in this level.
 func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) error {
+	cond := make([]DynamicGroupInfoCondition, 0)
+	cond = append(cond, c.Condition...)
+	cond = append(cond, c.VariableCondition...)
+
+	if err := ValidDynamicGroupCond(cond, objectID, validatefunc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidDynamicGroupCond validate dynamic group info condition
+func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID string, validatefunc Validatefunc) error {
 	types, isSupport := DynamicGroupConditionTypes[objectID]
 	if !isSupport {
 		return fmt.Errorf("not support dynamic group type, %s", objectID)
 	}
 
-	for _, cond := range c.Condition {
+	fields := make(map[string]map[string]struct{})
+	for _, cond := range condition {
+		if _, exist := fields[cond.ObjID]; !exist {
+			fields[cond.ObjID] = map[string]struct{}{}
+		}
+
 		for _, item := range cond.Condition {
 			if err := item.VerifyRegexValidity(); err != nil {
 				blog.Errorf("verify regex validity failed, err: %v, input: %v, objectID: %s", err, item, objectID)
 				return err
 			}
+
+			if _, exist := fields[cond.ObjID][item.Field]; exist {
+				return errors.New("cannot set the same field")
+			}
+
+			fields[cond.ObjID][item.Field] = struct{}{}
 		}
 
 		if _, isSupport = types[cond.ObjID]; !isSupport {
@@ -284,7 +311,20 @@ func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) 
 		if err := cond.Validate(validatefunc); err != nil {
 			return err
 		}
+
+		if cond.TimeCondition == nil {
+			continue
+		}
+
+		for _, rule := range cond.TimeCondition.Rules {
+			if _, exist := fields[cond.ObjID][rule.Field]; exist {
+				return errors.New("cannot set the same field")
+			}
+
+			fields[cond.ObjID][rule.Field] = struct{}{}
+		}
 	}
+
 	return nil
 }
 
@@ -334,9 +374,9 @@ func (g *DynamicGroup) Validate(validatefunc Validatefunc) error {
 	}
 
 	// check conditions format.
-	if len(g.Info.Condition) == 0 {
+	if len(g.Info.Condition) == 0 && len(g.Info.VariableCondition) == 0 {
 		// it's not OK if conditions empty in this level.
-		return errors.New("empty info.condition")
+		return errors.New("info.condition and info.variable_condition can not be empty at the same time")
 	}
 	return g.Info.Validate(g.ObjID, validatefunc)
 }
@@ -369,4 +409,12 @@ func NewDynamicGroupID() (string, error) {
 		return "", err
 	}
 	return uuid.String(), nil
+}
+
+// ExecuteOption execute dynamic group option
+type ExecuteOption struct {
+	VariableCondition []DynamicGroupInfoCondition `json:"variable_condition"`
+	Fields            []string                    `json:"fields"`
+	Page              BasePage                    `json:"page"`
+	DisableCounter    bool                        `json:"disable_counter"`
 }
