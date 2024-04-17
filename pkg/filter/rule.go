@@ -90,10 +90,6 @@ func (ar *AtomRule) Validate(opt *ExprOption) error {
 		return err
 	}
 
-	if ar.Value == nil {
-		return errors.New("rule value can not be nil")
-	}
-
 	if opt == nil {
 		return errors.New("validate option must be set")
 	}
@@ -286,6 +282,11 @@ func (ar *AtomRule) UnmarshalJSON(raw []byte) error {
 
 	ar.Field = br.Field
 	ar.Operator = br.Operator
+
+	if len(br.Value) == 0 {
+		return nil
+	}
+
 	switch br.Operator {
 	case OpFactory(In), OpFactory(NotIn):
 		// in and nin operator's value should be an array.
