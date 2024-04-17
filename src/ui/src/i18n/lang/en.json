@@ -1338,7 +1338,7 @@
     "确认删除xx": "Confirm to delete {model} {instance}?",
     "云账户禁止删除提示": "The cloud account is being used by a task and cannot be deleted.",
     "同步频率提示语": "The current public cloud supports real-time sync.",
-    "管控区域提示语": "BK-Network Area enter from {resource} or create from {agent}",
+    "管控区域提示语": "BK-Network Area enter from {resource} or create from {agent}. For hosts under the domain that are not assigned to a BK-Network Area, they can be reassigned and have the Agent installed through node management.",
     "云账户提示语": "After entering the cloud account，you can synchronize {resource} to BlueKing CMDB",
     "云资源": "cloud resource",
     "云资源发现提示语": "Configure cloud host tasks to automatically discover and synchronize newly added or attribute-changed hosts to the host pool",

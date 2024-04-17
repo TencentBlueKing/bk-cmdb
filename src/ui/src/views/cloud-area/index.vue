@@ -71,10 +71,13 @@
         <div class="row-status" slot-scope="{ row }"
           v-bk-tooltips="{
             content: row.bk_status_detail,
-            disabled: row.bk_status === '1' || !row.bk_status_detail
+            disabled: row.bk_status === '1' || !row.bk_status_detail || isUnassigned(row)
           }">
-          <i :class="['status', { 'is-error': row.bk_status !== '1' }]"></i>
-          {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
+          <span v-if="!isUnassigned(row)">
+            <i :class="['status', { 'is-error': row.bk_status !== '1' }]"></i>
+            {{row.bk_status === '1' ? $t('正常') : $t('异常')}}
+          </span>
+          <span v-else>--</span>
         </div>
       </bk-table-column>
       <bk-table-column :label="$t('所属云厂商')" prop="bk_cloud_vendor" sortable="custom" show-overflow-tooltip>
@@ -135,6 +138,7 @@
   import throttle from 'lodash.throttle'
   import debounce from 'lodash.debounce'
   import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
+  import { UNASSIGNED_CLOUD_ID } from '@/dictionary/global-constants.js'
   import TaskRegionSelector from '@/views/cloud-resource/children/task-region-selector'
   export default {
     components: {
@@ -147,7 +151,8 @@
         filter: '',
         list: [],
         pagination: this.$tools.getDefaultPaginationConfig(),
-        sort: 'bk_cloud_id',
+        // 默认排序，内置倒序+ID升序
+        sort: '-default, bk_cloud_id',
         request: {
           search: Symbol('search'),
           count: []
@@ -217,10 +222,14 @@
         return null
       },
       isLimited(row) {
-        return row.bk_cloud_id === 0
+        // 0默认区域，90000000-99999999为系统限定区域，90000001为“未分配”的管控区域ID
+        return row.bk_cloud_id === 0 || (row.bk_cloud_id >= 90000000 && row.bk_cloud_id <= 99999999)
+      },
+      isUnassigned(row) {
+        return row.bk_cloud_id === UNASSIGNED_CLOUD_ID
       },
       handleSortChange(sort) {
-        this.sort = this.$tools.getSort(sort, { prop: 'bk_cloud_id' })
+        this.sort = this.$tools.getSort(sort, { prop: '-default, bk_cloud_id' })
         this.getData()
       },
       handlePageChange(page) {
@@ -279,6 +288,16 @@
             this.handlePageChange(this.pagination.current - 1)
             return
           }
+
+          // 置顶“未分配”管控区域
+          if (data.info?.length) {
+            const unassignedIndex = data.info.findIndex(item => item.bk_cloud_id === UNASSIGNED_CLOUD_ID)
+            if (unassignedIndex !== -1) {
+              const [unassigned] = data.info.splice(unassignedIndex, 1)
+              data.info.unshift(unassigned)
+            }
+          }
+
           this.list = data.info
           this.pagination.count = data.count
           data.count && this.getHostCount()
