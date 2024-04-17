@@ -71,6 +71,14 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
+	if err := s.verifyFileType(ImportTypeObjectAttr, file.Filename, rid); err != nil {
+		blog.Errorf("ImportObjectAttribute failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+			err, file.Filename, rid)
+		msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
+
 	modelBizID, err := parseModelBizID(c.PostForm(common.BKAppIDField))
 	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed,
@@ -527,6 +535,13 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
+	if err := s.verifyFileType(ImportTypeObject, file.Filename, rid); err != nil {
+		blog.Errorf("ImportObject failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+			err, file.Filename, rid)
+		msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -572,6 +587,13 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		// file name start with '.' means hidden file, ignore
 		if strings.HasPrefix(item.FileInfo().Name(), ".") {
 			continue
+		}
+		if err := s.verifyFileType(ImportTypeObjectYaml, item.FileInfo().Name(), rid); err != nil {
+			blog.Errorf("ImportObjectYaml failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+				err, file.Filename, rid)
+			msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+			c.String(http.StatusOK, msg)
+			return
 		}
 
 		errCode, err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result)
