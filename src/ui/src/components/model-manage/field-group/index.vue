@@ -98,7 +98,7 @@
                   text: $t('编辑分组'),
                   auth: authResources,
                   onUpdateAuth: handleReceiveAuth,
-                  disabled: !isEditable(group.info),
+                  disabled: !isEditable(group.info) || group.info['bk_isdefault'],
                   handler: () => handleEditGroup(group)
                 },
                 {
@@ -384,6 +384,7 @@
 <script>
   import Draggable from 'vuedraggable'
   import has from 'has'
+  import qs from 'qs'
   import debounce from 'lodash.debounce'
   import theFieldDetail from './field-detail'
   import previewField from './preview-field'
@@ -586,6 +587,10 @@
       this.groups = groups
       this.uniqueList = uniqueList
       this.init(properties, groups)
+
+      this.$nextTick(() => {
+        this.execRouteAction()
+      })
     },
     beforeDestroy() {
       // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
@@ -1235,6 +1240,35 @@
           })
         }
         this.configProperty.show = false
+      },
+      execRouteAction() {
+        const { action, payload } = this.$route.query
+        const params = qs.parse(payload)
+        if (action === 'view-field') {
+          let fieldIndex
+          let fieldGroup
+          let groupIndex
+          let property
+          for (let i = 0; i < this.displayGroupedProperties.length; i++) {
+            const groupItem = this.displayGroupedProperties[i]
+            for (let j = 0; j < groupItem.properties.length; j++) {
+              const fieldItem = groupItem.properties[j]
+              if (fieldItem.bk_property_id === params.id) {
+                groupIndex = i
+                fieldIndex = j
+                fieldGroup = groupItem
+                property = fieldItem
+                break
+              }
+            }
+          }
+          this.handleFieldDetailsView({
+            group: fieldGroup,
+            index: groupIndex,
+            fieldIndex,
+            property
+          })
+        }
       }
     }
   }

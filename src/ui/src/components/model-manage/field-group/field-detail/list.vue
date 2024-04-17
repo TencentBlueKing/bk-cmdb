@@ -56,6 +56,7 @@
       <div class="cmdb-form-item" :class="{ 'is-error': errors.has('defaultValueSelect') }">
         <bk-select style="width: 100%;"
           :clearable="true"
+          :searchable="true"
           :disabled="isReadOnly"
           name="defaultValueSelect"
           data-vv-validate-on="change"

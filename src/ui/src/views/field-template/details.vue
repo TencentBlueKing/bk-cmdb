@@ -317,9 +317,12 @@
           </cmdb-auth>
           <cmdb-auth :auth="{ type: $OPERATION.D_FIELD_TEMPLATE, relation: [templateId] }">
             <template #default="{ disabled }">
-              <bk-button theme="default" @click="handleDelete" :disabled="disabled || modelCount > 0">
-                {{$t('删除')}}
-              </bk-button>
+              <div v-bk-tooltips.top="{ content: $t('已被模型绑定，不能删除'), disabled: !modelCount }">
+                <bk-button theme="default" @click="handleDelete"
+                  :disabled="disabled || modelCount > 0">
+                  {{$t('删除')}}
+                </bk-button>
+              </div>
             </template>
           </cmdb-auth>
         </div>

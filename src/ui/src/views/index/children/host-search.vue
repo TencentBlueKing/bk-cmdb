@@ -60,6 +60,7 @@
   import FilterStore, { setupFilterStore } from '@/components/filters/store'
   import FilterForm from '@/components/filters/filter-form.js'
   import { LT_REGEXP } from '@/dictionary/regexp'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
 
   export default {
     components: {
@@ -181,13 +182,13 @@
         const propertyId = 'bk_asset_id'
 
         FilterStore.setIPField('text', IPText)
-        FilterStore.setConditonField(propertyId, '')
+        FilterStore.setConditonField(propertyId)
         this.ipEditableBlock.clear()
 
         if (type === 'asset') {
           FilterStore.setSelectedField(propertyId)
           FilterStore.setSelectedFieldIndex(propertyId)
-          FilterStore.setConditonField(propertyId, assetList)
+          FilterStore.setConditonField(propertyId, { operator: QUERY_OPERATOR.IN, value: assetList })
         }
         if (type !== 'fuzzy') {
           FilterStore.setIPField('exact', true)

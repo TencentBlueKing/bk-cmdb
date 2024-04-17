@@ -307,6 +307,11 @@ func (h *HostIdentifier) getV2Task(events []*IdentifierEvent, statusMap map[stri
 			}
 		}
 
+		if isFileExceedLimit(event.RawEvent) {
+			blog.Errorf("file exceed limit: %d, unit:byte, hostID: %d, rid: %s", fileLimit, event.HostID, rid)
+			continue
+		}
+
 		h.metric.agentStatusTotal.WithLabelValues("on").Inc()
 		blog.Infof("agent status is on, agentID: %s, rid: %s", event.AgentID, rid)
 
@@ -731,6 +736,13 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 		blog.Errorf("hostIDs count is 0, rid: %s", rid)
 		return nil, errors.New("hostIDs count is 0")
 	}
+	hostInfoMap := make(map[int64]*HostInfo)
+	for _, hostInfo := range hostInfos {
+		if hostInfo == nil {
+			continue
+		}
+		hostInfoMap[hostInfo.HostID] = hostInfo
+	}
 
 	// 1、查询主机身份
 	ctx, header := util.SetReadPreference(h.ctx, header, common.SecondaryPreferredMode)
@@ -748,6 +760,7 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 	// 2、构造想要推送的主机身份文件信息
 	fileList := make([]*pushfile.API_FileInfoV2, 0)
 	file2List := make([]*gse.Task, 0)
+	hosts := make([]*HostInfo, 0)
 	for _, identifier := range rsp.Info {
 		hostIdentifier, err := json.Marshal(identifier)
 		if err != nil {
@@ -759,15 +772,19 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 		case types.V1:
 			fileList = append(fileList, h.buildV1PushFile(string(hostIdentifier), hostMap[identifier.HostID],
 				identifier.CloudID))
+			hosts = append(hosts, hostInfoMap[identifier.HostID])
 			continue
 
 		case types.V2:
+			if isFileExceedLimit(string(hostIdentifier)) {
+				blog.Errorf("file exceed limit: %d, unit:byte, hostID: %d, rid: %s", fileLimit, identifier.HostID, rid)
+				continue
+			}
 			file := h.buildV2PushFile(string(hostIdentifier), hostMap[identifier.HostID])
 			file2List = append(file2List, file)
-			continue
+			hosts = append(hosts, hostInfoMap[identifier.HostID])
 		}
 	}
-
 	switch h.apiVersion {
 	case types.V1:
 		if len(fileList) == 0 {
@@ -794,5 +811,5 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 		task.V2Task = file2List
 	}
 
-	return h.pushFile(false, hostInfos, task, header, rid)
+	return h.pushFile(false, hosts, task, header, rid)
 }

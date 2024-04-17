@@ -340,7 +340,8 @@ data:
 
     # 调用apigw接口相关配置
     apiGW:
-      address: {{ .Values.common.apiGW.address }}
+      bkGseApiGatewayUrl: {{ .Values.bkGseApiGatewayUrl }}
+      bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       appCode: {{ .Values.common.apiGW.appCode }}
       appSecret: {{ .Values.common.apiGW.appSecret }}
       username: {{ .Values.common.apiGW.username }}

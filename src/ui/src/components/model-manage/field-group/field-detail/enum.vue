@@ -72,6 +72,7 @@
           <bk-select style="width: 100%;"
             :key="defaultCompKey"
             :scroll-height="150"
+            :searchable="true"
             :clearable="false"
             :disabled="isReadOnly"
             :multiple="isDefaultCompMultiple"

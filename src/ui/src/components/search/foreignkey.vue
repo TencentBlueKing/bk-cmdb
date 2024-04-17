@@ -11,23 +11,25 @@
 -->
 
 <template>
-  <bk-select v-if="displayType === 'selector'"
-    searchable
-    v-model="localValue"
-    v-bind="$attrs"
-    :multiple="multiple"
-    display-tag
-    selected-style="checkbox"
-    :loading="$loading(requestId)"
-    :remote-method="searchArea"
-    @clear="() => $emit('clear')"
-    @toggle="handleToggle">
-    <bk-option v-for="option in options"
-      :key="option.bk_cloud_id"
-      :id="option.bk_cloud_id"
-      :name="`${option.bk_cloud_name}[${option.bk_cloud_id}]`">
-    </bk-option>
-  </bk-select>
+  <div class="g-expand" v-if="displayType === 'selector'">
+    <bk-select
+      searchable
+      v-model="localValue"
+      v-bind="$attrs"
+      :multiple="multiple"
+      display-tag
+      selected-style="checkbox"
+      :loading="$loading(requestId)"
+      :remote-method="searchArea"
+      @clear="() => $emit('clear')"
+      @toggle="handleToggle">
+      <bk-option v-for="option in options"
+        :key="option.bk_cloud_id"
+        :id="option.bk_cloud_id"
+        :name="`${option.bk_cloud_name}[${option.bk_cloud_id}]`">
+      </bk-option>
+    </bk-select>
+  </div>
   <span v-else>
     <slot name="info-prepend"></slot>
     {{info}}

@@ -11,18 +11,20 @@
 -->
 
 <template>
-  <bk-tag-input ref="tagInput"
-    allow-create
-    allow-auto-match
-    v-if="multiple"
-    v-model="localValue"
-    v-bind="$attrs"
-    :list="[]"
-    :has-delete-icon="true"
-    @removeAll="() => $emit('clear')"
-    @click.native="handleToggle(true)"
-    @blur="handleToggle(false, ...arguments)">
-  </bk-tag-input>
+  <div class="g-expand" v-if="multiple">
+    <bk-tag-input ref="tagInput"
+      allow-create
+      allow-auto-match
+      :collapse-tags="true"
+      v-model="localValue"
+      v-bind="$attrs"
+      :list="[]"
+      :has-delete-icon="true"
+      @removeAll="() => $emit('clear')"
+      @click.native="handleToggle(true)"
+      @blur="handleToggle(false, ...arguments)">
+    </bk-tag-input>
+  </div>
   <bk-input v-else
     v-model.trim="localValue"
     v-bind="$attrs"

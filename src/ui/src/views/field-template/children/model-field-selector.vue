@@ -172,7 +172,7 @@
     .main-content {
       max-height: calc(100% - 52px);
       @include scrollbar-y;
-      padding: 20px 40px;
+      padding: 20px 24px;
     }
 
     .model-selector {

@@ -475,6 +475,21 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 		return
 	}
 
+	filter := util.SetQueryOwner(make(map[string]interface{}), ctx.Kit.SupplierAccount)
+	count, err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(filter).Count(ctx.Kit.Ctx)
+	if err != nil {
+		blog.Errorf("count field templates failed, err: %v, filter: %+v, rid: %s", err, filter, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if count >= metadata.FieldTmplNumLimit {
+		blog.Errorf("field template exceeds the maximum number limit, count: %d, limit: %d, rid: %s", count,
+			metadata.FieldTmplNumLimit, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "field template", count))
+		return
+	}
+
 	id, err := mongodb.Client().NextSequence(ctx.Kit.Ctx, common.BKTableNameFieldTemplate)
 	if err != nil {
 		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s", common.BKTableNameFieldTemplate, err,

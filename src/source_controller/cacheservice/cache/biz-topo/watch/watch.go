@@ -19,17 +19,22 @@
 package watch
 
 import (
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
 	"configcenter/src/storage/stream"
 )
 
 // Watcher defines mongodb event watcher for biz topology
 type Watcher struct {
-	loopW stream.LoopInterface
+	loopW    stream.LoopInterface
+	cacheSet *cache.CacheSet
 }
 
 // New  biz topology mongodb event watcher
-func New(loopW stream.LoopInterface) (*Watcher, error) {
-	watcher := &Watcher{loopW: loopW}
+func New(loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Watcher, error) {
+	watcher := &Watcher{
+		loopW:    loopW,
+		cacheSet: cacheSet,
+	}
 
 	if err := watcher.watchKube(); err != nil {
 		return nil, err

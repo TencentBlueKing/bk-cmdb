@@ -14,6 +14,7 @@
   <bk-input
     v-model="localValue"
     v-bind="$attrs"
+    ref="autoSize"
     :placeholder="placeholder || $t('请输入长字符')"
     :disabled="disabled"
     :type="'textarea'"
@@ -22,11 +23,14 @@
     :clearable="!disabled"
     @blur="handleBlur"
     @enter="handleEnter"
-    @on-change="handleChange">
+    @change="handleChange"
+    @on-change="handleChange"
+    @focus="handleFocus">
   </bk-input>
 </template>
 
 <script>
+  import { calcTextareaHeight } from '@/utils/util.js'
   export default {
     name: 'cmdb-form-longchar',
     props: {
@@ -55,6 +59,12 @@
         default: ''
       }
     },
+    data() {
+      return {
+        height: 0,
+        minHeight: 0
+      }
+    },
     computed: {
       localValue: {
         get() {
@@ -65,17 +75,53 @@
         }
       }
     },
+    mounted() {
+      this.init()
+    },
     methods: {
+      init() {
+        const { autoSize } = this.$refs
+        const { textarea } = autoSize.$refs
+        const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
+        const { height, minHeight } = calcTextareaHeight(textarea, this.row)
+
+        this.minHeight = minHeight + 4
+        this.height = height
+
+        textarea.style.height = `${minHeight}px`
+        autoSize.$el.style.height = `${this.minHeight}px`
+        parent.style.height = `${this.minHeight}px`
+        parent.style.minHeight = `${this.minHeight}px`
+      },
       handleChange(value) {
         this.$emit('on-change', value)
+        const { autoSize } = this.$refs
+        const { textarea } = autoSize.$refs
+        this.$nextTick(() => {
+          const { height } = calcTextareaHeight(textarea, this.row)
+          textarea.style.height = `${height}px`
+        })
       },
       handleEnter(value) {
         this.$emit('enter', value)
       },
       handleBlur(value) {
+        const { autoSize } = this.$refs
+        const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
+        parent.style.height = `${this.minHeight}px`
+        parent.style.zIndex = ''
         this.$emit('blur', value)
       },
+      handleFocus() {
+        const { autoSize } = this.$refs
+        const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
+        // eslint-disable-next-line no-underscore-dangle
+        parent.style.zIndex = window.__bk_zIndex_manager.nextZIndex()
+      },
       focus() {
+        const { autoSize } = this.$refs
+        const { textarea } = autoSize.$refs
+        textarea.style.height = `${this.height}px`
         this.$el.querySelector('textarea').focus()
       }
     }
@@ -84,11 +130,35 @@
 
 <style lang="scss" scoped>
     .bk-form-control {
+        position: relative;
+        height: 32px;
+        &.control-active {
+          :deep(.bk-textarea-wrapper) {
+            height: auto !important;
+          }
+        }
+
+        :deep(.control-icon) {
+            z-index: 3;
+        }
+
         /deep/ .bk-textarea-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 32px;
+            min-height: 32px;
+            z-index: 999;
+            @include scrollbar-y;
+            &:hover {
+              height: auto !important;
+              z-index: 9999 !important;
+            }
+
             .bk-form-textarea {
-                min-height: auto !important;
-                padding: 5px 10px 8px;
-                @include scrollbar-y;
+                min-height: 28px;
+                max-height: 400px;
+                padding: 5px 10px;
+                @include scrollbar-y(6px);
                 &.textarea-maxlength {
                     margin-bottom: 0 !important;
                 }

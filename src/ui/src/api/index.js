@@ -138,11 +138,15 @@ async function getPromise(method, url, data, userConfig = {}) {
  * @return
  */
 const PermissionCode = 9900403
+const TokenInvalidCode = 1306000
 function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
   const { bk_error_msg: message, bk_error_code: code, permission } = transformedResponse
   if (code === PermissionCode) {
     config.globalPermission && popupPermissionModal(permission)
+    return reject({ message, permission, code })
+  }
+  if (code === TokenInvalidCode) {
     return reject({ message, permission, code })
   }
   if (!transformedResponse.result && config.globalError) {
@@ -170,6 +174,11 @@ function handleReject(error, config) {
   if (error.code && error.code === PermissionCode) {
     return Promise.reject(error)
   }
+
+  if (error.code && error.code === TokenInvalidCode) {
+    window.loginModal.show()
+  }
+
   if (Axios.isCancel(error)) {
     return Promise.reject(error)
   }

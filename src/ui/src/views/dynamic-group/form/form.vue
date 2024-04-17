@@ -53,15 +53,37 @@
               @change="handleModelChange">
             </form-target>
           </bk-form-item>
-          <h5 class="form-title">
-            {{ $t('分组条件') }}
-          </h5>
-          <bk-form-item class="">
-            <form-property-list ref="propertyList" @remove="handleRemoveProperty"
-              :disabled="isPreviewProp"></form-property-list>
-            <condition-picker :text="$t('添加条件')" icon="icon-plus-circle" :selected="selectedProperties"
+
+          <bk-form-item class="condition-form" v-for="item in conditionGroup" :key="item.id">
+            <cmdb-collapse arrow-type="filled" @collapse-change="handleCollapseChange">
+              <template #title>
+                <span v-bk-tooltips.top="{
+                  content: $t(item.tip)
+                }">
+                  {{$t(item.name)}}
+                </span>
+              </template>
+              <form-property-list
+                ref="propertyList"
+                @remove="handleRemoveProperty"
+                @toggle="handleToggleProperty"
+                :disabled="isPreviewProp"
+                :condition-type="item.type">
+              </form-property-list>
+            </cmdb-collapse>
+
+            <condition-picker class="condition-picker"
+              :text="$t('添加')"
+              icon="icon-plus-circle"
+              :selected="selectedProperties"
               :property-map="propertyMap"
-              :handler="handlePropertySelected" :disabled="isPreviewProp"></condition-picker>
+              :handler="handlePropertySelected"
+              :disabled="isPreviewProp"
+              :condition-type="item.type">
+            </condition-picker>
+          </bk-form-item>
+
+          <div class="no-condition">
             <input type="hidden"
               v-validate="'min_value:1'"
               data-vv-name="condition"
@@ -69,7 +91,8 @@
               :data-vv-as="$t('查询条件')"
               v-model="selectedProperties.length">
             <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
-          </bk-form-item>
+          </div>
+
         </bk-form>
         <div :class="['dynamic-group-options', footerIsFixed ? '' : 'no-fixed']" slot="footer">
           <cmdb-auth :auth="saveAuth">
@@ -104,7 +127,7 @@
       </div>
       <div slot="main" class="dynamic-group-preview">
         <preview-result class="preview-result"
-          :condition="previewCondition" :mode="bkObjId">
+          :condition="previewCondition" :mode="bkObjId" :properties="propertyMap[bkObjId]">
         </preview-result>
       </div>
     </bk-resize-layout>
@@ -125,7 +148,9 @@
   import FilterStore from '../store'
   import { $success } from '@/magicbox'
   import ConditionPicker from '@/components/condition-picker'
+  import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
 
+  const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
     components: {
       FormPropertyList,
@@ -174,7 +199,21 @@
         availableModelIds: Object.freeze(['host', 'module', 'set']),
         availableModels: [],
         propertyMap: {},
-        disabledPropertyMap: {}
+        disabledPropertyMap: {},
+        storageCondition: {},
+        conditionGroup: [
+          {
+            id: 1,
+            name: '可变条件',
+            tip: '动态分组可变条件',
+            type: VARIABLE
+          }, {
+            id: 2,
+            name: '锁定条件',
+            tip: '动态分组锁定条件',
+            type: IMMUTABLE
+          }
+        ]
       }
     },
     computed: {
@@ -295,80 +334,94 @@
             }
           })
           const transformedDetails = this.transformDetails(details)
-          this.originFormData.name = transformedDetails.name
-          this.originFormData.bk_obj_id = transformedDetails.bk_obj_id
-          this.formData.name = transformedDetails.name
-          this.formData.bk_obj_id = transformedDetails.bk_obj_id
+          const { name, bk_obj_id: modelId } = transformedDetails
+          this.originFormData.name = name
+          this.originFormData.bk_obj_id = modelId
+          this.formData.name = name
+          this.formData.bk_obj_id = modelId
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
-          setTimeout(this.$refs.propertyList?.setDetailsCondition, 0)
-          if (this.isPreview || this.id) {
-            setTimeout(() => this.initPreviewParams(), 0)
-          }
+          setTimeout(() => {
+            this.$refs.propertyList?.forEach(propertyList => propertyList?.setDetailsCondition())
+            if (this.isPreview || this.id) {
+              this.initPreviewParams()
+            }
+          })
         } catch (error) {
           console.error(error)
         }
       },
       transformDetails(details) {
-        const { condition } = details.info
-        const transformedCondition = []
-        condition.forEach((data) => {
-          const realCondition = (data.condition || []).reduce((accumulator, current) => {
-            if (['$gte', '$lte'].includes(current.operator)) {
-              // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
-              const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
+        const { info } = details
+        const transformedCondition = {
+          condition: [],
+          varCondition: []
+        }
+        Object.keys(info).forEach((type) => {
+          info[type]?.forEach((data) => {
+            const conditionType = type === IMMUTABLE
+              ? IMMUTABLE : VARIABLE
+            const realCondition = (data.condition || []).reduce((accumulator, current) => {
+              current.conditionType = conditionType
+              if (['$gte', '$lte'].includes(current.operator)) {
+                // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
+                const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
 
-              // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
-              let index = accumulator.findIndex(exist => exist.field === current.field)
-              if (index === -1) {
-                index = accumulator.push({
-                  field: current.field,
-                  operator: isRange ? '$range' : current.operator,
-                  value: isRange ? [] : current.value
-                }) - 1
-              }
-              const range = accumulator[index]
+                // 将相同字段的$gte/$lte两个条件合并为一个range条件，用于表单组件渲染
+                let index = accumulator.findIndex(exist => exist.field === current.field)
+                if (index === -1) {
+                  index = accumulator.push({
+                    field: current.field,
+                    operator: isRange ? '$range' : current.operator,
+                    value: isRange ? [] : current.value,
+                    conditionType
+                  }) - 1
+                }
+                const range = accumulator[index]
 
-              // 如果是范围并且确保field一致，需要组装为一个范围数组格式值
-              if (isRange && current.field === range.field) {
-                range.value?.[current.operator === '$gte' ? 'unshift' : 'push'](current.value)
-              }
-            } else if (current.operator === '$eq') {
-              // 将老数据的eq转换为当前支持的数据格式
-              const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
-              const property = this.getConditionProperty(data.bk_obj_id, current.field)
-              if (property && transformType.includes(property.bk_property_type)) {
-                accumulator.push({
-                  field: current.field,
-                  operator: '$in',
-                  value: Array.isArray(current.value) ? current.value : [current.value]
-                })
+                // 如果是范围并且确保field一致，需要组装为一个范围数组格式值
+                if (isRange && current.field === range.field) {
+                  range.value?.[current.operator === '$gte' ? 'unshift' : 'push'](current.value)
+                }
+              } else if (current.operator === '$eq') {
+                // 将老数据的eq转换为当前支持的数据格式
+                const transformType = ['singlechar', 'longchar', 'enum', 'objuser']
+                const property = this.getConditionProperty(data.bk_obj_id, current.field)
+                if (property && transformType.includes(property.bk_property_type)) {
+                  accumulator.push({
+                    field: current.field,
+                    operator: '$in',
+                    value: Array.isArray(current.value) ? current.value : [current.value],
+                    conditionType
+                  })
+                } else {
+                  accumulator.push(current)
+                }
               } else {
                 accumulator.push(current)
               }
-            } else {
-              accumulator.push(current)
-            }
-            return accumulator
-          }, [])
-          if (data.time_condition) {
-            data.time_condition.rules.forEach(({ field, start, end }) => {
-              realCondition.push({
-                field,
-                operator: '$range',
-                value: [start, end]
+              return accumulator
+            }, [])
+            if (data.time_condition) {
+              data.time_condition.rules.forEach(({ field, start, end }) => {
+                realCondition.push({
+                  field,
+                  operator: '$range',
+                  value: [start, end],
+                  conditionType
+                })
               })
+            }
+            transformedCondition[conditionType].push({
+              bk_obj_id: data.bk_obj_id,
+              condition: realCondition
             })
-          }
-          transformedCondition.push({
-            bk_obj_id: data.bk_obj_id,
-            condition: realCondition
           })
         })
         return {
           ...details,
           info: {
-            condition: transformedCondition
+            ...transformedCondition
           }
         }
       },
@@ -377,12 +430,16 @@
         return properties.find(property => property.bk_property_id === field)
       },
       setDetailsSelectedProperties() {
-        const conditions = this.details.info.condition
+        const { condition, varCondition } = this.details.info
+        const conditions = [...condition, ...varCondition]
         const properties = []
         conditions.forEach(({ bk_obj_id: modelId, condition }) => {
-          condition.forEach(({ field }) => {
+          condition.forEach(({ field, conditionType }) => {
             const property = this.propertyMap[modelId].find(property => property.bk_property_id === field)
-            property && properties.push(property)
+            if (property) {
+              property.conditionType = conditionType
+              properties.push(property)
+            }
           })
         })
         this.selectedProperties = this.$tools.clone(properties)
@@ -402,6 +459,18 @@
           }
         })
       },
+      setProperty(property, conditionType) {
+        const { bk_obj_id: modelId, bk_property_id: propertyId } = property
+        const exchangeType = {
+          [VARIABLE]: IMMUTABLE,
+          [IMMUTABLE]: VARIABLE
+        }
+        property.conditionType = exchangeType[conditionType]
+        this.getConditionProperty(modelId, propertyId).conditionType = exchangeType[conditionType]
+      },
+      handleCollapseChange() {
+        setTimeout(this.setFooterCls, 300)
+      },
       handleModelChange() {
         this.selectedProperties = []
       },
@@ -415,7 +484,38 @@
         }, this, event?.target)
       },
       handlePropertySelected(selected) {
-        this.selectedProperties = selected
+        const { length } = selected
+        if (!length) this.selectedProperties = []
+
+        const addSelect = []
+        const deleteSelect = []
+        const selectedSet = new Set()
+
+        selected.forEach(property => selectedSet.add(`${property.bk_property_id}-${property.bk_obj_id}`))
+        this.selectedProperties.forEach((property) => {
+          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+          const key = `${propertyId}-${modelId}`
+          if (selectedSet.has(key)) {
+            selectedSet.delete(key)
+          } else {
+            deleteSelect.push(property)
+          }
+        })
+        selected.forEach((property) => {
+          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+          const key = `${propertyId}-${modelId}`
+          if (selectedSet.has(key)) {
+            addSelect.push(property)
+          }
+        })
+
+        deleteSelect.forEach(property => this.handleRemoveProperty(property))
+        let start = 0
+        const limit = 10
+        while (start < addSelect.length) {
+          setTimeout(() =>  this.selectedProperties.push(...addSelect.splice(0, limit)))
+          start += limit
+        }
         this.setFooterCls()
       },
       handleRemoveProperty(property) {
@@ -425,17 +525,34 @@
         }
         this.setFooterCls()
       },
+      handleToggleProperty(property, conditionType) {
+        this.handleRemoveProperty(property)
+        this.setProperty(property, conditionType)
+        this.selectedProperties.push(property)
+      },
       async handlePreview() {
-        const result = await this.$refs.propertyList.$validator.validateAll()
+        const result = await this.validate()
         if (!result) {
           return
         }
         this.initPreviewParams()
       },
+      validate() {
+        return Promise.all(this.$refs.propertyList
+          .map(propertyList => propertyList.$validator.validateAll()))
+          .then(result => result.every(e => e))
+      },
+      getCondition() {
+        return this.$refs.propertyList.reduce((current, prev) => {
+          Object.assign(current, prev?.condition)
+          return current
+        }, {})
+      },
       initPreviewParams() {
         this.bkObjId = this.formData.bk_obj_id
         FilterStore.setDynamicGroupModel(this.formData.bk_obj_id)
-        this.previewCondition = this.$tools.clone(this.$refs.propertyList?.condition)
+        const condition = this.getCondition()
+        this.previewCondition = this.$tools.clone(condition)
       },
       async handleConfirm() {
         try {
@@ -445,7 +562,7 @@
           }
           const results = [
             await this.$validator.validateAll(),
-            await this.$refs.propertyList.$validator.validateAll()
+            await this.validate()
           ]
           if (results.some(isValid => !isValid)) {
             return false
@@ -471,7 +588,7 @@
             bk_obj_id: this.formData.bk_obj_id,
             name: this.formData.name,
             info: {
-              condition: this.getSubmitCondition()
+              ...this.getSubmitCondition()
             }
           },
           config: {
@@ -486,7 +603,7 @@
             bk_obj_id: this.formData.bk_obj_id,
             name: this.formData.name,
             info: {
-              condition: this.getSubmitCondition()
+              ...this.getSubmitCondition()
             }
           },
           config: {
@@ -495,22 +612,30 @@
         })
       },
       getSubmitCondition() {
-        const baseConditionMap = {}
-        const timeConditionMap = {}
-        const propertyCondition = this.$refs.propertyList.condition
+        const baseConditionMap = {
+          variable_condition: {},
+          condition: {}
+        }
+        const timeConditionMap = {
+          variable_condition: {},
+          condition: {}
+        }
+        const propertyCondition = this.getCondition()
         Object.values(propertyCondition).forEach(({ property, operator, value }) => {
+          const type = property?.conditionType === IMMUTABLE
+            ? IMMUTABLE : VARIABLE
           if (property.bk_property_type === 'time') { // 时间类型特殊处理
-            const timeCondition = timeConditionMap[property.bk_obj_id] || { oper: 'and', rules: [] }
+            const timeCondition = timeConditionMap[type][property.bk_obj_id] || { oper: 'and', rules: [] }
             const [start, end] = value
             timeCondition.rules.push({
               field: property.bk_property_id,
               start,
               end
             })
-            timeConditionMap[property.bk_obj_id] = timeCondition
+            timeConditionMap[type][property.bk_obj_id] = timeCondition
             return
           }
-          const submitCondition = baseConditionMap[property.bk_obj_id] || []
+          const submitCondition = baseConditionMap[type][property.bk_obj_id] || []
           if (operator === '$range') {
             const [start, end] = value
             submitCondition.push({
@@ -529,22 +654,27 @@
               value
             })
           }
-          baseConditionMap[property.bk_obj_id] = submitCondition
+          baseConditionMap[type][property.bk_obj_id] = submitCondition
         })
-        const baseConditions = Object.keys(baseConditionMap).map(modelId => ({
-          bk_obj_id: modelId,
-          condition: baseConditionMap[modelId]
-        }))
-        Object.keys(timeConditionMap).forEach((modelId) => {
-          const condition = baseConditions.find(condition => condition.bk_obj_id === modelId)
-          if (condition) {
-            condition.time_condition = timeConditionMap[modelId]
-          } else {
-            baseConditions.push({
-              bk_obj_id: modelId,
-              time_condition: timeConditionMap[modelId]
-            })
-          }
+        const baseConditions = {}
+        Object.keys(baseConditionMap).forEach((type) => {
+          baseConditions[type] = Object.keys(baseConditionMap[type]).map(modelId => ({
+            bk_obj_id: modelId,
+            condition: baseConditionMap[type][modelId]
+          }))
+        })
+        Object.keys(timeConditionMap).forEach((type) => {
+          Object.keys(timeConditionMap[type]).forEach((modelId) => {
+            const condition = baseConditions[type].find(condition => condition.bk_obj_id === modelId)
+            if (condition) {
+              condition.time_condition = timeConditionMap[type][modelId]
+            } else {
+              baseConditions[type].push({
+                bk_obj_id: modelId,
+                time_condition: timeConditionMap[type][modelId]
+              })
+            }
+          })
         })
         return baseConditions
       },
@@ -584,12 +714,57 @@
 .dynamic-slidebar {
   :deep(.bk-sideslider-content) {
     overflow-x: hidden;
+    .bk-resize-layout-border {
+      border-top: 0;
+    }
   }
 }
 .dynamic-group-info {
   width: 100%;
   float: left;
   height: calc(100% - 53px);
+
+  .no-condition {
+    height: 16px;
+    .form-error {
+      position: inherit;
+    }
+  }
+
+  .condition-form {
+    position: relative;
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 4px !important;
+      background: yellow;
+    }
+
+    :deep(.collapse-trigger) {
+      padding: 10px 8px;
+      background: #F0F1F5;
+
+      .collapse-text {
+        text-decoration: underline dashed;
+        text-underline-offset: 3px;
+      }
+    }
+    :deep(.collapse-content) {
+      .bk-form {
+        .bk-form-item {
+          &:first-child {
+            margin-top: 12px !important;
+          }
+        }
+      }
+    }
+
+    .condition-picker {
+      position: absolute;
+      right: 8px;
+      top: 5px;
+    }
+  }
 }
 .dynamic-group-preview {
   width: 100%;
@@ -599,7 +774,7 @@
   background: #F5F7FA;
 }
 .dynamic-group-form {
-  padding: 18px 16px 0;
+  padding: 18px 24px 0;
   max-height: 100%;
   @include scrollbar-y;
   .form-item {
@@ -637,7 +812,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 10px 16px;
+  padding: 10px 24px;
   border-top: 1px solid $borderColor;
   background: #FAFBFD;
   :deep(.bk-button) {
@@ -662,7 +837,6 @@
 }
 .no-fixed {
   border-top: 0;
-  padding-top: 4px;
   background: transparent;
 }
 </style>

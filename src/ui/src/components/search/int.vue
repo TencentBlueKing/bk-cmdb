@@ -13,13 +13,19 @@
 <template>
   <span class="search-input-wrapper" v-if="multiple">
     <bk-input :min="min" :max="max"
-      class="search-input" type="number" v-model="start" :allow-number-paste="allowPaste" v-on="listeners"></bk-input>
+      class="search-input" type="number" v-model="start"
+      :allow-number-paste="allowPaste"
+      :initial-control-value="0" v-on="listeners"></bk-input>
     <span class="search-input-grep">-</span>
     <bk-input :min="min" :max="max"
-      class="search-input" type="number" v-model="end" :allow-number-paste="allowPaste" v-on="listeners"></bk-input>
+      class="search-input" type="number" v-model="end"
+      :allow-number-paste="allowPaste"
+      :initial-control-value="0" v-on="listeners"></bk-input>
   </span>
   <bk-input class="search-input" type="number"
-    :min="min" :max="max" v-model="localValue" :allow-number-paste="allowPaste" v-on="listeners" v-else></bk-input>
+    :min="min" :max="max" v-model="localValue"
+    :allow-number-paste="allowPaste"
+    :initial-control-value="0" v-on="listeners" v-else></bk-input>
 </template>
 
 <script>

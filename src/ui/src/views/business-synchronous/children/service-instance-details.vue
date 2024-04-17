@@ -227,6 +227,6 @@
 
 <style lang="scss" scoped>
     .instance-details-wrapper {
-        padding: 20px;
+        padding: 20px 24px;
     }
 </style>

@@ -12,9 +12,10 @@
 
 <template>
   <bk-exception class="exception-wrap-item" type="404">
-    <p>{{$t('页面不存在')}}</p>
+    <div class="title">{{$t('页面不存在')}}</div>
+    <div class="text-subtitle">{{$t('您访问的页面不存在xxx')}}</div>
     <div class="text-wrap">
-      <bk-link theme="primary" @click="handleRedirect">{{$t('返回首页')}}</bk-link>
+      <bk-button theme="primary" @click="handleRedirect">{{$t('返回首页')}}</bk-button>
     </div>
   </bk-exception>
 </template>
@@ -33,7 +34,25 @@
 </script>
 
 <style lang="scss" scoped>
-    .exception-wrap-item {
-        justify-content: center;
-    }
+.exception-wrap-item {
+  justify-content: center;
+
+  .title {
+    margin: 8px 0;
+  }
+  .text-subtitle {
+    color: #979BA5;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .text-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3A84FF;
+    font-size: 14px;
+    margin-top: 24px;
+  }
+}
 </style>

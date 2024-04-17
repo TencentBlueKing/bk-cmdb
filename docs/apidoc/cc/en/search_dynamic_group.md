@@ -92,6 +92,38 @@ Query dynamic group list (Version: v3.9.6, Permission: Business access permissio
                 					}
                 				]
                 			}
+                    ],
+                    "variable_condition":[
+                      {
+                        "bk_obj_id":"set",
+                        "condition":[
+                          {
+                            "field":"bk_parent_id",
+                            "operator":"$ne",
+                            "value":1
+                          }
+                        ]
+                      },
+                      {
+                        "bk_obj_id":"module",
+                        "condition":[
+                          {
+                            "field":"bk_parent_id",
+                            "operator":"$ne",
+                            "value":1
+                          }
+                        ]
+                      },
+                      {
+                        "bk_obj_id":"host",
+                        "condition":[
+                          {
+                            "field":"bk_host_outerip",
+                            "operator":"$eq",
+                            "value":"127.0.0.1"
+                          }
+                        ]
+                      }
                     ]
                 },
                 "name": "test",
@@ -141,6 +173,12 @@ Query dynamic group list (Version: v3.9.6, Permission: Business access permissio
 | create_time | string | Creation time                                                |
 | create_user | string | Creator                                                      |
 
+#### data.info.info
+| Field     | Type   | Description                    |
+|-----------|-------|-------------------------|
+| condition | object   | dynamic group locking condition |
+| variable_condition | object | dynamic group variable condition  |
+
 #### data.info.info.condition
 
 | Field     | Type   | Description                           |
@@ -150,8 +188,23 @@ Query dynamic group list (Version: v3.9.6, Permission: Business access permissio
 
 #### data.info.info.condition.condition
 
-| Field    | Type   | Description                                                  |
-| -------- | ------ | ------------------------------------------------------------ |
-| field    | string | Object field                                                 |
-| operator | string | Operator, op value is eq (equal) / ne (not equal) / in (belongs to) / nin (does not belong to) / like (fuzzy match) |
-| value    | object | Value corresponding to the field                             |
+| Field    | Type   | Description                                                                                                              |
+| -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
+| field    | string | Object field                                                                                                             |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| value    | object | Value corresponding to the field                                                                                         |
+
+#### data.info.info.variable_condition
+
+| Field     | Type   | Description                           |
+| --------- | ------ | ------------------------------------- |
+| bk_obj_id | string | Object name, can be set, module, host |
+| condition | array  | Query condition                       |
+
+#### data.info.info.variable_condition.condition
+
+| Field    | Type   | Description                                                                                                              |
+| -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
+| field    | string | Object field                                                                                                             |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| value    | object | Value corresponding to the field                                                                                         |

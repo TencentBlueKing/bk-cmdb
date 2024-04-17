@@ -24,6 +24,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+
 	"github.com/emicklei/go-restful/v3"
 	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,6 +58,7 @@ const (
 	LabelProcessName = "process_name"
 	LabelAppCode     = "app_code"
 	LabelHost        = "host"
+	LabelUser        = "user"
 )
 
 // labels
@@ -78,6 +81,7 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
+	userTotal       *prometheus.CounterVec
 }
 
 // NewService returns new metrics service
@@ -91,12 +95,14 @@ func NewService(conf Config) *Service {
 
 	srv := Service{conf: conf, registry: register}
 
+	requestTotalLabels := []string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode}
+
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: Namespace + "_http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode},
+		requestTotalLabels,
 	)
 	register.MustRegister(srv.requestTotal)
 
@@ -111,6 +117,18 @@ func NewService(conf Config) *Service {
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
+
+	// add user metrics for api-server
+	if conf.ProcessName == types.CC_MODULE_APISERVER {
+		srv.userTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: Namespace + "_user_http_request_total",
+				Help: "user http request total.",
+			},
+			[]string{LabelUser, LabelOrigin},
+		)
+		register.MustRegister(srv.userTotal)
+	}
 
 	srv.httpHandler = promhttp.InstrumentMetricHandler(
 		registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
@@ -170,12 +188,20 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).
 			Observe(float64(time.Since(before) / time.Millisecond))
 
-		s.requestTotal.With(s.label(
+		requestTotalLabels := []string{
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
 			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
-		)).Inc()
+		}
+
+		s.requestTotal.With(s.label(requestTotalLabels...)).Inc()
+
+		// add user metrics for api-server
+		if s.conf.ProcessName == types.CC_MODULE_APISERVER {
+			s.userTotal.With(s.label(LabelUser, r.Header.Get(common.BKHTTPHeaderUser), LabelOrigin,
+				getOrigin(r.Header))).Inc()
+		}
 	})
 }
 
@@ -198,6 +224,10 @@ func (s *Service) label(labelKVs ...string) prometheus.Labels {
 }
 
 func getOrigin(header http.Header) string {
+	if header.Get(common.BKHTTPRequestFromWeb) == "true" {
+		return "webserver"
+	}
+
 	if header.Get(common.BKHTTPOtherRequestID) != "" {
 		return "ESB"
 	}

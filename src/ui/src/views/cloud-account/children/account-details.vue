@@ -158,7 +158,7 @@
 
 <style lang="scss" scoped>
     .details-layout {
-        padding: 18px 27px;
+        padding: 18px 24px;
         .details-item {
             margin-top: 10px;
             /deep/ {

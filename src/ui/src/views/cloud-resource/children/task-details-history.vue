@@ -111,13 +111,13 @@
 <style lang="scss" scoped>
     .history-layout {
         .history-options {
-            padding: 12px 30px;
+            padding: 12px 24px;
             .options-date {
                 width: 320px;
             }
         }
         .history-table {
-            padding: 0 30px;
+            padding: 0 24px;
             /deep/ {
                 .bk-table-expanded-cell {
                     padding: 0;

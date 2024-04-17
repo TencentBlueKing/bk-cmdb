@@ -21,8 +21,10 @@
           v-for="property in group.properties"
           :key="property.id"
           :id="`property-item-${property.id}`">
-          <span class="property-name" v-bk-overflow-tips>
-            <span>{{property.bk_property_name}}</span>
+          <span class="property-name">
+            <span @mouseenter="(event) => handlePropertyNameMouseenter(event, property)">
+              {{property.bk_property_name}}
+            </span>
             <i class="property-name-tooltips icon-cc-tips"
               v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
               v-bk-tooltips.top="{
@@ -188,15 +190,47 @@
         </li>
       </ul>
     </div>
+
+    <!-- hover字段摘要 -->
+    <div ref="propertySummary" v-show="hoverPropertyPopover.show">
+      <dl class="property-summary-content">
+        <dt class="content-head">
+          <span class="name">{{hoverPropertyPopover.data.bk_property_name}}</span>
+          <span class="more-link" @click="handleViewProperty(hoverPropertyPopover.data.bk_property_id)">
+            {{$t('更多信息')}}<i class="link-icon icon-cc-share"></i>
+          </span>
+        </dt>
+        <div class="content-body">
+          <dd class="row-item">
+            <span class="item-name">{{$t('唯一标识')}}</span>
+            <span class="item-value">{{hoverPropertyPopover.data.bk_property_id}}</span>
+            <i class="copy-icon icon-cc-details-copy"
+              @click="handleCopyPropertyId(hoverPropertyPopover.data.bk_property_id)"></i>
+          </dd>
+          <dd class="row-item">
+            <span class="item-name">{{$t('字段名称')}}</span>
+            <span class="item-value">{{hoverPropertyPopover.data.bk_property_name}}</span>
+          </dd>
+          <dd class="row-item">
+            <span class="item-name">{{$t('字段类型')}}</span>
+            <span class="item-value">
+              {{fieldTypeMap[hoverPropertyPopover.data.bk_property_type]}}
+              ({{hoverPropertyPopover.data.bk_property_type}})
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </div>
   </div>
 </template>
 
 <script>
   import { mapGetters, mapState } from 'vuex'
-  import { MENU_BUSINESS_HOST_APPLY } from '@/dictionary/menu-symbol'
+  import qs from 'qs'
+  import { MENU_BUSINESS_HOST_APPLY, MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
-  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   export default {
     name: 'cmdb-host-property',
@@ -229,7 +263,13 @@
         request: {
           rules: Symbol('rules')
         },
-        PROPERTY_TYPES
+        PROPERTY_TYPES,
+        fieldTypeMap: PROPERTY_TYPE_NAMES,
+        hoverPropertyPopover: {
+          show: false,
+          data: {},
+          instance: null
+        }
       }
     },
     computed: {
@@ -296,10 +336,10 @@
         const value = this.host[property.bk_property_id]
         this.editState.value = (value === null || value === undefined) ? '' : value
         this.editState.property = property
-        this.$nextTick(() => {
+        setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
-          component[0] && component[0].focus && component[0].focus()
-        })
+          component?.[0]?.focus()
+        }, 100)
       },
       async confirm() {
         const { property, value } = this.editState
@@ -347,6 +387,52 @@
           }, 200)
         }, () => {
           this.$error(this.$t('复制失败'))
+        })
+      },
+      handleCopyPropertyId(propertyId) {
+        this.$copyText(propertyId).then(() => {
+          this.$success(this.$t('复制成功'))
+        }, () => {
+          this.$error(this.$t('复制失败'))
+        })
+      },
+      handlePropertyNameMouseenter(event, property) {
+        this.hoverPropertyPopover.instance?.destroy?.()
+        this.hoverPropertyPopover.data = property
+        this.hoverPropertyPopover.instance = this.$bkPopover(event.target, {
+          content: this.$refs.propertySummary,
+          delay: [300, 0],
+          hideOnClick: true,
+          interactive: true,
+          placement: 'top',
+          animateFill: false,
+          sticky: true,
+          theme: 'light property-summary-popover',
+          boundary: 'window',
+          trigger: 'mouseenter', // 'manual mouseenter',
+          arrow: true,
+          onShow: () => {
+            this.hoverPropertyPopover.show = true
+          },
+          onHidden: () => {
+            this.hoverPropertyPopover.show = false
+          }
+        })
+
+        this.hoverPropertyPopover.instance.show()
+      },
+      handleViewProperty(propertyId) {
+        this.$routerActions.open({
+          name: MENU_MODEL_DETAILS,
+          params: {
+            modelId: this.objId,
+          },
+          query: {
+            action: 'view-field',
+            payload: qs.stringify({
+              id: propertyId
+            })
+          }
         })
       }
     }
@@ -560,6 +646,7 @@
             height: 32px;
             width: 260px;
             margin: 0 4px 0 0;
+            position: relative;
             > [class^=cmdb-form-] {
               width: 100%;
             }
@@ -572,6 +659,51 @@
                 vertical-align: top;
             }
         }
+    }
+
+    .property-summary-content {
+      font-size: 14px;
+      padding: 8px 12px;
+      min-width: 260px;
+      .content-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .name {
+          font-weight: 700;
+        }
+        .more-link {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          color: $primaryColor;
+          cursor: pointer;
+        }
+      }
+      .content-body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+        .copy-icon {
+          color: $primaryColor;
+          cursor: pointer;
+          margin-left: 8px;
+        }
+        .row-item {
+          display: flex;
+          align-items: center;
+          .item-name {
+            position: relative;
+            padding-right: 14px;
+            &::after {
+              position: absolute;
+              right: 0;
+              content: "：";
+            }
+          }
+        }
+      }
     }
 
     @media (min-width: 1600px) {
@@ -587,4 +719,9 @@
         }
       }
     }
+</style>
+<style>
+  .tippy-tooltip.property-summary-popover-theme {
+    box-shadow: 0 0 6px 0.5px #dcdee5;
+  }
 </style>
