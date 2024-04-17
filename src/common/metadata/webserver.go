@@ -326,3 +326,9 @@ type FieldTmplResCount struct {
 	TemplateID int64 `json:"bk_template_id"`
 	Count      int   `json:"count"`
 }
+
+// CountFieldTemplateAttrResult count field template attr result
+type CountFieldTemplateAttrResult struct {
+	BaseResp `json:",inline"`
+	Data     []FieldTmplResCount `json:"data"`
+}
