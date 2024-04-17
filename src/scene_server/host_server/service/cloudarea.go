@@ -381,7 +381,7 @@ func (s *Service) UpdatePlat(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField))
 		return
 	}
-	if 0 == platID {
+	if util.ContainsInt(common.BuiltInCloudAreaIDs, platID) {
 		blog.Infof("UpdatePlat failed, update built in cloud area forbidden, platID:%+v, rid:%s", platID, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoUpdateBuiltInCloudForbidden))
 		return
@@ -475,14 +475,20 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	}
 
 	if len(input.HostIDs) > common.BKMaxRecordsAtOnce {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce, common.BKMaxRecordsAtOnce))
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrExceedMaxOperationRecordsAtOnce,
+			common.BKMaxRecordsAtOnce))
+		return
+	}
+
+	if input.CloudID == common.UnassignedCloudAreaID {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKCloudIDField))
 		return
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(ctx.Kit.Ctx, ctx.Kit.Header, input)
 		if ccErr != nil {
-			blog.ErrorJSON("UpdateHostCloudAreaField failed, core service UpdateHostCloudAreaField failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
+			blog.ErrorJSON("update host cloud area failed, input: %s, err: %s, rid: %s", input, ccErr.Error(), rid)
 			return ccErr
 		}
 		return nil
@@ -555,7 +561,8 @@ func (s *Service) FindCloudAreaHostCount(ctx *rest.Contexts) {
 		return
 	}
 	if false == res.Result {
-		blog.Errorf("FindCloudAreaHostCount http reply error.  input:%#v, err code:%d, err msg:%s, rid:%s", *input, res.Code, res.ErrMsg, rid)
+		blog.Errorf("FindCloudAreaHostCount http reply error.  input:%#v, err code:%d, err msg:%s, rid:%s", *input,
+			res.Code, res.ErrMsg, rid)
 		ctx.RespAutoError(res.CCError())
 		return
 	}
