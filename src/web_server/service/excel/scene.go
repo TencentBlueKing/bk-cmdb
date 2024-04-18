@@ -270,7 +270,7 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 	}
 	if err := VerifyFileType(ImportTypeInst, file.Filename, kit.Rid); err != nil {
 		blog.Errorf("file type verify failed, err: %v, fileName: %s, rid: %s", err, file.Filename, kit.Rid)
-		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommParamsValueInvalidError, err.Error()))
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrInvalidFileTypeFail, err.Error()))
 		return
 	}
 
@@ -381,7 +381,7 @@ func (s *service) ImportObject(c *gin.Context) {
 
 	if err := VerifyFileType(ImportTypeObjectAttr, file.Filename, kit.Rid); err != nil {
 		blog.Errorf("file type verify failed, err: %v, fileName: %s, rid: %s", err, file.Filename, kit.Rid)
-		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommParamsValueInvalidError, err.Error()))
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrInvalidFileTypeFail, err.Error()))
 		return
 	}
 
