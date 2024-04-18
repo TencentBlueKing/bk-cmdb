@@ -613,12 +613,12 @@
       },
       getSubmitCondition() {
         const baseConditionMap = {
-          variable_condition: {},
-          condition: {}
+          [VARIABLE]: {},
+          [IMMUTABLE]: {}
         }
         const timeConditionMap = {
-          variable_condition: {},
-          condition: {}
+          [VARIABLE]: {},
+          [IMMUTABLE]: {}
         }
         const propertyCondition = this.getCondition()
         Object.values(propertyCondition).forEach(({ property, operator, value }) => {
@@ -676,6 +676,8 @@
             }
           })
         })
+        baseConditions.variable_condition = baseConditions[VARIABLE]
+        delete baseConditions[VARIABLE]
         return baseConditions
       },
       close(type) {
