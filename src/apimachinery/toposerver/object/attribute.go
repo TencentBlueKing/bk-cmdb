@@ -19,10 +19,10 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// CreateObjectAtt TODO
-func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response,
+// CreateObjectAtt create object attribute
+func (t *object) CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.CreateObjAttDesResp,
 	err error) {
-	resp = new(metadata.Response)
+	resp = new(metadata.CreateObjAttDesResp)
 	subPath := "/create/objectattr"
 
 	err = t.client.Post().

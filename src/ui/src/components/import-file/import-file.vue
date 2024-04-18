@@ -19,8 +19,9 @@
     </cmdb-tips>
     <div class="file-trigger" v-if="!file">
       <input type="file"
+        ref="fileInput"
         accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        @change.prevent="changeFile" />
+        @change.prevent="handleFileChange" />
       <i class="trigger-icon bk-icon icon-upload-cloud"></i>
       <i18n class="trigger-text" path="导入文件拖拽提示">
         <template #clickUpload><span class="trigger-text-link">{{$t('点击上传')}}</span></template>
@@ -82,6 +83,24 @@
       }
     },
     methods: {
+      handleFileChange(event) {
+        const { files: [file] } = event.target
+
+        // 格式与大小限制目前是固定的
+        if (!file.name.endsWith('.xlsx')) {
+          this.$refs.fileInput.value = ''
+          this.$error(this.$t('文件格式非法', { allowType: '.xlsx' }))
+          return false
+        }
+
+        if (file.size / 1024 > 20 * 1024) {
+          this.$refs.fileInput.value = ''
+          this.$error(this.$t('文件大小溢出', { maxSize: '20MB' }))
+          return false
+        }
+
+        this.changeFile(event)
+      },
       async handleNextStep() {
         try {
           this.setFileState('resolving')
