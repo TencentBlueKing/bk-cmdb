@@ -376,6 +376,9 @@
         this.editState.property = null
         this.editState.value = null
       },
+      showPopover() {
+        this.hoverPropertyPopover.instance.show()
+      },
       handleCopy(propertyId) {
         const [component] = this.$refs[`property-value-${propertyId}`]
         const copyText = component?.getCopyValue() ?? ''
@@ -397,6 +400,12 @@
         })
       },
       handlePropertyNameMouseenter(event, property) {
+        const { bk_property_id: propertyId } = property
+        const { bk_property_id: lastPropertyId } = this.hoverPropertyPopover.data
+        if (propertyId === lastPropertyId) {
+          return this.showPopover()
+        }
+
         this.hoverPropertyPopover.instance?.destroy?.()
         this.hoverPropertyPopover.data = property
         this.hoverPropertyPopover.instance = this.$bkPopover(event.target, {
@@ -419,7 +428,7 @@
           }
         })
 
-        this.hoverPropertyPopover.instance.show()
+        return this.showPopover()
       },
       handleViewProperty(propertyId) {
         this.$routerActions.open({
