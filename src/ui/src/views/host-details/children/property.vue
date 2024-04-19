@@ -428,7 +428,7 @@
           }
         })
 
-        return this.showPopover()
+        this.showPopover()
       },
       handleViewProperty(propertyId) {
         this.$routerActions.open({
@@ -516,6 +516,11 @@
                     position: absolute;
                     right: 2px;
                     content: "：";
+                }
+                :first-child {
+                  &:hover {
+                    color: $primaryColor;
+                  }
                 }
             }
             .property-value {
