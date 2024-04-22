@@ -191,7 +191,7 @@ Query dynamic group list (Version: v3.9.6, Permission: Business access permissio
 | Field    | Type   | Description                                                                                                              |
 | -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
 | field    | string | Object field                                                                                                             |
-| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $regex (fuzzy match) |
 | value    | object | Value corresponding to the field                                                                                         |
 
 #### data.info.info.variable_condition
@@ -206,5 +206,5 @@ Query dynamic group list (Version: v3.9.6, Permission: Business access permissio
 | Field    | Type   | Description                                                                                                              |
 | -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
 | field    | string | Object field                                                                                                             |
-| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $regex (fuzzy match) |
 | value    | object | Value corresponding to the field                                                                                         |

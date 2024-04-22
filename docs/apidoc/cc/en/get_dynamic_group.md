@@ -161,7 +161,7 @@ Get details of a dynamic group (Version: v3.9.6, Permission: Business access per
 | Field    | Type   | Description                                                                                      |
 | -------- | ------ |--------------------------------------------------------------------------------------------------|
 | field    | string | Object field                                                                                     |
-| operator | string | Operator, op value can be $eq (equal)/$ne (not equal)/$in (belongs to)/$nin (does not belong to)/ $like (fuzzy match) |
+| operator | string | Operator, op value can be $eq (equal)/$ne (not equal)/$in (belongs to)/$nin (does not belong to)/ $regex (fuzzy match) |
 | value    | object | Value corresponding to the field                                                                 |
 
 #### data.info.variable_condition
@@ -176,5 +176,5 @@ Get details of a dynamic group (Version: v3.9.6, Permission: Business access per
 | Field    | Type   | Description                                                                                                              |
 | -------- | ------ |--------------------------------------------------------------------------------------------------------------------------|
 | field    | string | Object field                                                                                                             |
-| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $like (fuzzy match) |
+| operator | string | Operator, op value is $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to) / $regex (fuzzy match) |
 | value    | object | Value corresponding to the field                                                                                         |
