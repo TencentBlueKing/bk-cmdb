@@ -150,6 +150,9 @@ const FilterStore = new Vue({
     setCondition(data = {}) {
       this.condition = data.condition || this.condition
     },
+    getCondition() {
+      return this.condition
+    },
     setDynamicCollection(data) {
       if (!data) {
         return
