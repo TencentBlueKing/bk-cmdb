@@ -268,7 +268,7 @@ func (h *HostIdentifier) LaunchTaskForFailedHost() {
 		}
 
 		// 4、查询主机身份并推送
-		if _, err := h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, rid, header); err != nil {
+		if _, err := h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, false, rid, header); err != nil {
 			blog.Errorf("launch task for failed host error, err: %v, rid: %s", err, rid)
 		}
 	}
