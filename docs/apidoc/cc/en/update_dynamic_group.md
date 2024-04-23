@@ -34,7 +34,7 @@ Update dynamic group (Version: v3.9.6, Permission: Dynamic group editing permiss
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
 | field    | string | Yes      | Object field                                                 |
-| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $regex (fuzzy match) |
 | value    | object | Yes      | Field corresponding value                                    |
 
 #### info.variable_condition
@@ -49,7 +49,7 @@ Update dynamic group (Version: v3.9.6, Permission: Dynamic group editing permiss
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
 | field    | string | Yes      | Object field                                                 |
-| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $regex (fuzzy match) |
 | value    | object | Yes      | Value of the field                                           |
 
 ### Request Parameter Example

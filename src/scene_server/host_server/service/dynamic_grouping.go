@@ -13,6 +13,8 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -561,7 +563,8 @@ func (s *Service) checkAndBuildParam(kit *rest.Kit, input *meta.ExecuteOption, b
 	validateFunc := func(objectID string) ([]meta.Attribute, error) {
 		return logics.NewLogics(s.Engine, s.CacheDB, s.AuthManager).SearchObjectAttributes(kit, bizID, objectID)
 	}
-	if err = meta.ValidDynamicGroupCond(input.VariableCondition, result.Data.ObjID, validateFunc); err != nil {
+	if err = meta.ValidDynamicGroupCond(input.VariableCondition, result.Data.ObjID, validateFunc,
+		make(map[string]map[string]struct{})); err != nil {
 		blog.Errorf("dynamic group info condition is invalid, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, nil, err
 	}
@@ -589,7 +592,11 @@ func buildFinalCond(kit *rest.Kit, reqCondArr, originCondArr []meta.DynamicGroup
 	}
 
 	if len(reqCondArr) != 0 && len(originCondArr) == 0 {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "variable_condition")
+		return nil, errors.New("variable_condition param is invalid")
+	}
+
+	if err := validateCond(kit, reqCondArr, originCondArr); err != nil {
+		return nil, err
 	}
 
 	reqCondMap := make(map[string]meta.DynamicGroupInfoCondition)
@@ -639,6 +646,37 @@ func buildFinalCond(kit *rest.Kit, reqCondArr, originCondArr []meta.DynamicGroup
 	}
 
 	return originCondArr, nil
+}
+
+// validateCond 校验请求的可变条件字段是否在该动态分组设置的可变条件中
+func validateCond(kit *rest.Kit, reqCondArr, originCondArr []meta.DynamicGroupInfoCondition) error {
+	originFieldMap := meta.GetMapFromDynamicCond(originCondArr)
+
+	for _, cond := range reqCondArr {
+		if _, ok := originFieldMap[cond.ObjID]; !ok {
+			return errors.New("variable_condition param is invalid")
+		}
+
+		for _, subCond := range cond.Condition {
+			if _, ok := originFieldMap[cond.ObjID][subCond.Field]; !ok {
+				blog.Errorf("variable_condition param field:%s is invalid, rid: %s", subCond.Field, kit.Rid)
+				return fmt.Errorf("variable_condition param field:%s is invalid", subCond.Field)
+			}
+		}
+
+		if cond.TimeCondition == nil {
+			continue
+		}
+
+		for _, rule := range cond.TimeCondition.Rules {
+			if _, ok := originFieldMap[cond.ObjID][rule.Field]; !ok {
+				blog.Errorf("variable_condition param field:%s is invalid, rid: %s", rule.Field, kit.Rid)
+				return fmt.Errorf("variable_condition param field:%s is invalid", rule.Field)
+			}
+		}
+	}
+
+	return nil
 }
 
 func parseCond(conditions []meta.DynamicGroupInfoCondition) []meta.SearchCondition {

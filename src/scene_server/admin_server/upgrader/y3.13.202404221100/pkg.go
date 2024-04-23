@@ -15,35 +15,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_13_202404101100
+package y3_13_202404221100
 
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func updateCloudAreaPlaceHolder(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	cond := mapstr.MapStr{
-		common.BKObjIDField:      common.BKInnerObjIDHost,
-		common.BKPropertyIDField: common.BKCloudIDField,
-		common.BKDBOR: []mapstr.MapStr{
-			{metadata.AttributeFieldPlaceHolder: ""},
-			{metadata.AttributeFieldPlaceHolder: mapstr.MapStr{common.BKDBExists: false}},
-		},
-	}
-	msg := "管控区域为“未分配”的主机可在节点管理中重新指定管控区域并安装Agent"
-	updateData := mapstr.MapStr{metadata.AttributeFieldPlaceHolder: msg}
+func init() {
+	upgrader.RegistUpgrader("y3.13.202404221100", upgrade)
+}
 
-	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, cond, updateData); err != nil {
-		blog.Errorf("change host cloud area place holder failed, err: %v, cond: %+v, data: %+v", err, cond, updateData)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.13.202404221100")
+
+	if err = addUnassignedCloudArea(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.13.202404221100 add unassigned cloud area failed, err: %v", err)
 		return err
 	}
 
+	if err = updateHostField(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.13.202404221100 update host field failed, err: %v", err)
+		return err
+	}
+
+	if err = changeDefaultAreaDefaultField(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.13.202404221100 change default cloud area default field failed, err: %v", err)
+		return err
+	}
+
+	blog.Infof("upgrade y3.13.202404221100 add unassigned cloud area, update host cloud area place holder, change " +
+		"default cloud area default field success")
 	return nil
 }

@@ -105,7 +105,7 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 
 	attributeType, isSupport := attributeMap[c.Field]
 	if !isSupport {
-		return fmt.Errorf("not support condition filed, %+v", c.Field)
+		return fmt.Errorf("not support condition field, %+v", c.Field)
 	}
 
 	attrType, err := getAttributeType(attributeType)
@@ -267,41 +267,67 @@ type DynamicGroupInfo struct {
 
 // Validate validates dynamic group info format, it's OK if conditions empty in this level.
 func (c *DynamicGroupInfo) Validate(objectID string, validatefunc Validatefunc) error {
-	cond := make([]DynamicGroupInfoCondition, 0)
-	cond = append(cond, c.Condition...)
-	cond = append(cond, c.VariableCondition...)
+	err := ValidDynamicGroupCond(c.Condition, objectID, validatefunc, make(map[string]map[string]struct{}))
+	if err != nil {
+		return err
+	}
 
-	if err := ValidDynamicGroupCond(cond, objectID, validatefunc); err != nil {
+	err = ValidDynamicGroupCond(c.VariableCondition, objectID, validatefunc, GetMapFromDynamicCond(c.Condition))
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// GetMapFromDynamicCond get map from dynamic group condition
+func GetMapFromDynamicCond(condArr []DynamicGroupInfoCondition) map[string]map[string]struct{} {
+	result := make(map[string]map[string]struct{})
+
+	for _, cond := range condArr {
+		if _, exist := result[cond.ObjID]; !exist {
+			result[cond.ObjID] = map[string]struct{}{}
+		}
+
+		for _, item := range cond.Condition {
+			result[cond.ObjID][item.Field] = struct{}{}
+		}
+
+		if cond.TimeCondition == nil {
+			continue
+		}
+
+		for _, item := range cond.TimeCondition.Rules {
+			result[cond.ObjID][item.Field] = struct{}{}
+		}
+	}
+
+	return result
+}
+
 // ValidDynamicGroupCond validate dynamic group info condition
-func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID string, validatefunc Validatefunc) error {
+func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID string, validatefunc Validatefunc,
+	checkDupMap map[string]map[string]struct{}) error {
+
 	types, isSupport := DynamicGroupConditionTypes[objectID]
 	if !isSupport {
 		return fmt.Errorf("not support dynamic group type, %s", objectID)
 	}
 
-	fields := make(map[string]map[string]struct{})
 	for _, cond := range condition {
-		if _, exist := fields[cond.ObjID]; !exist {
-			fields[cond.ObjID] = map[string]struct{}{}
-		}
-
 		for _, item := range cond.Condition {
 			if err := item.VerifyRegexValidity(); err != nil {
 				blog.Errorf("verify regex validity failed, err: %v, input: %v, objectID: %s", err, item, objectID)
 				return err
 			}
 
-			if _, exist := fields[cond.ObjID][item.Field]; exist {
-				return errors.New("cannot set the same field")
+			if _, ok := checkDupMap[cond.ObjID]; !ok {
+				continue
 			}
 
-			fields[cond.ObjID][item.Field] = struct{}{}
+			if _, exist := checkDupMap[cond.ObjID][item.Field]; exist {
+				return errors.New("cannot set the same field")
+			}
 		}
 
 		if _, isSupport = types[cond.ObjID]; !isSupport {
@@ -317,11 +343,13 @@ func ValidDynamicGroupCond(condition []DynamicGroupInfoCondition, objectID strin
 		}
 
 		for _, rule := range cond.TimeCondition.Rules {
-			if _, exist := fields[cond.ObjID][rule.Field]; exist {
-				return errors.New("cannot set the same field")
+			if _, ok := checkDupMap[cond.ObjID]; !ok {
+				continue
 			}
 
-			fields[cond.ObjID][rule.Field] = struct{}{}
+			if _, exist := checkDupMap[cond.ObjID][rule.Field]; exist {
+				return errors.New("cannot set the same field")
+			}
 		}
 	}
 

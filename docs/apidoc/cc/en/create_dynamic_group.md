@@ -33,7 +33,7 @@ Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Per
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
 | field    | string | Yes      | Object field                                                 |
-| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $regex (fuzzy match) |
 | value    | object | Yes      | Value of the field                                           |
 
 #### info.variable_condition
@@ -48,7 +48,7 @@ Create a dynamic group (Version: v3.9.6+, Permission: Dynamic Group Creation Per
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ | -------- | ------------------------------------------------------------ |
 | field    | string | Yes      | Object field                                                 |
-| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $like (fuzzy match) |
+| operator | string | Yes      | Operator, op value can be $eq (equal) / $ne (not equal) / $in (belongs to) / $nin (does not belong to)/ $regex (fuzzy match) |
 | value    | object | Yes      | Value of the field                                           |
 
 

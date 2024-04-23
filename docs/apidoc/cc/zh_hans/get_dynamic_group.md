@@ -161,7 +161,7 @@
 | 字段       | 类型     | 描述                                     |
 |----------|--------|----------------------------------------|
 | field    | string | 对象的字段                                  |
-| operator | string | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$like(模糊匹配) |
+| operator | string | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$regex(模糊匹配) |
 | value    | object | 字段对应的值                                 |
 
 #### data.info.variable_condition
@@ -176,5 +176,5 @@
 | 字段       | 类型  | 描述                                     |
 |----------|------|----------------------------------------|
 | field    | string |对象的字段                                  |
-| operator | string |  操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$like(模糊匹配) |
+| operator | string |  操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$regex(模糊匹配) |
 | value    | object | 字段对应的值                                 |
