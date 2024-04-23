@@ -23,7 +23,7 @@
     "1111022": "Failed to verify file content, %s",
     "1111023": "Failed to verify password, %s",
     "1111024": "Failed to create zip, %s",
-    "1111025": "Invalid file type: %s",
+    "1111027": "Invalid file type: %s",
      
     "": ""	   
 }
