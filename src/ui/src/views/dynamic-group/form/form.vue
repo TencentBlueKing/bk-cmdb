@@ -48,14 +48,21 @@
           </bk-form-item>
           <bk-form-item :label="$t('查询对象')" required>
             <form-target class="form-item"
+              ref="formTarget"
               v-model="formData.bk_obj_id"
               :disabled="!isCreateMode"
+              :show-cancel-dialog="true"
+              @canShowDialog="handleCanShowDialog"
               @change="handleModelChange">
             </form-target>
           </bk-form-item>
 
           <bk-form-item class="condition-form" v-for="item in conditionGroup" :key="item.id">
-            <cmdb-collapse arrow-type="filled" @collapse-change="handleCollapseChange">
+            <cmdb-collapse
+              arrow-type="filled"
+              :auto-expand="true"
+              :list="getList(item.type)"
+              @collapse-change="handleCollapseChange">
               <template #title>
                 <span v-bk-tooltips.top="{
                   content: $t(item.tip)
@@ -258,12 +265,16 @@
       if (this.id) {
         this.getDetails()
       }
-      const { beforeClose, setChanged } = useSideslider()
+      const { beforeClose, setChanged, setInfoData } = useSideslider()
       this.beforeClose = beforeClose
       this.setChanged = setChanged
+      this.setInfoData = setInfoData
       this.isPreviewData = this.isPreview
     },
     methods: {
+      getList(type) {
+        return this.selectedProperties.filter(property => property.conditionType === type)
+      },
       async getMainLineModels() {
         try {
           const models = await this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
@@ -468,8 +479,29 @@
         property.conditionType = exchangeType[conditionType]
         this.getConditionProperty(modelId, propertyId).conditionType = exchangeType[conditionType]
       },
+      setFormTarget(item) {
+        this.$refs?.formTarget?.setSelected(item)
+      },
       handleCollapseChange() {
         setTimeout(this.setFooterCls, 300)
+      },
+      handleCanShowDialog(item) {
+        const data = {
+          subTitle: '填写内容会清空，确认切换？',
+          title: '确认切换？'
+        }
+        const isChange = !isEqual(this.selectedProperties, this.originProperties)
+        if (isChange) {
+          this.setChanged(true)
+          this.setInfoData(data)
+          return this.beforeClose(() => {
+            this.setInfoData()
+            this.setFormTarget(item)
+          }, () => {
+            this.setInfoData()
+          })
+        }
+        this.setFormTarget(item)
       },
       handleModelChange() {
         this.selectedProperties = []
@@ -737,18 +769,15 @@
     position: relative;
     margin-bottom: 24px;
 
-    &:last-child {
-      margin-bottom: 4px !important;
-      background: yellow;
-    }
 
     :deep(.collapse-trigger) {
-      padding: 10px 8px;
+      padding: 3px 8px;
       background: #F0F1F5;
 
-      .collapse-text {
-        text-decoration: underline dashed;
-        text-underline-offset: 3px;
+      .collapse-text{
+        >span {
+          border-bottom: 1px dashed #63656E;
+        }
       }
     }
     :deep(.collapse-content) {
@@ -764,7 +793,9 @@
     .condition-picker {
       position: absolute;
       right: 8px;
-      top: 5px;
+      top: 0px;
+      display: flex;
+      align-items: center;
     }
   }
 }
@@ -800,8 +831,11 @@
     margin-bottom: 20px;
     margin-top: 0 !important;
   }
-  .form-condition-button {
-    /deep/ > div {
+  :deep(.form-condition-button) {
+    margin-top: 0 !important;
+    height: 36px;
+
+    > div {
       display: flex;
       align-items: center;
       .bk-icon {

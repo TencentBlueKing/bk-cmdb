@@ -217,14 +217,13 @@
   })
   const getColumnSortable = (column => (isPropertySortable(column) ? 'custom' : false))
   const renderHeader = ((property) => {
-    const content = [getHeaderPropertyName(property)]
+    const content = [<span class="property-name">{getHeaderPropertyName(property)}</span>]
     const modelId = property.bk_obj_id
     if (modelId !== BUILTIN_MODELS.HOST && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById(modelId)
       const suffix = h('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
       content.push(suffix)
     }
-
     const { value, target } = copyLoading
     const showLoading = value && target?.propertyId === property.bk_property_id
     const tooltips = {
@@ -238,7 +237,10 @@
       size: 'mini',
       zIndex: 999
     }
-    const copy = <i class="icon-copy bk-icon copy-icon"
+    const copyClass = ['icon-copy', 'bk-icon', 'copy-icon', {
+      'no-sort': !getColumnSortable(property)
+    }]
+    const copy = <i class={ copyClass }
                     disabled={ value }
                     data-copy-loading={ showLoading }
                     on-click={ event => handleCopy(event, property)}
@@ -630,6 +632,13 @@
             opacity: 1;
           }
         }
+
+        .property-name {
+            display: inline-block;
+            max-width: 100%;
+            @include ellipsis;
+            line-height: 100%;
+        }
       }
     }
 
@@ -653,6 +662,11 @@
       .bk-loading {
         background: transparent !important;
       }
+    }
+
+    :deep(.no-sort) {
+      transform: translate(0, -50%);
+      margin-left: 1px;
     }
   }
 }
