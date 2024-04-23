@@ -19,7 +19,7 @@
         disabled: disabled,
         selected: selected === item.bk_obj_id
       }"
-      @click="setSelected(item)">
+      @click="handleSelect(item)">
       <span class="item-checkbox"></span>
       <span class="item-info">
         <span class="info-name">{{item.bk_obj_name}}</span>
@@ -36,7 +36,11 @@
         type: String,
         default: ''
       },
-      disabled: Boolean
+      disabled: Boolean,
+      showCancelDialog: {
+        type: Boolean,
+        default: false
+      },
     },
     data() {
       return {
@@ -63,8 +67,14 @@
       }
     },
     methods: {
+      handleSelect(item) {
+        const { bk_obj_id: modelId } = item
+
+        if (this.value === modelId || this.disabled) return
+        if (this.showCancelDialog) return this.$emit('canShowDialog', item)
+        this.setSelected(item)
+      },
       setSelected(item) {
-        if (this.disabled) return
         this.selected = item.bk_obj_id
       }
     }
