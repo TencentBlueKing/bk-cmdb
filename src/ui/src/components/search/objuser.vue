@@ -54,6 +54,15 @@
         const userSelector = this.$refs.objUserRef?.$refs?.userSelector
         return h('span', {
           class: ['user-selector-selected-value', { 'non-existent': !user.id }],
+          directives: [
+            {
+              name: 'bkTooltips',
+              value: {
+                content: this.$t('该人员不存在'),
+                disabled: user.id
+              }
+            }
+          ],
         }, userSelector?.getDisplayText?.(user))
       }
     }
