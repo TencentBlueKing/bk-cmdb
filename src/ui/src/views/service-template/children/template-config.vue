@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h } from 'vue'
+  import { computed, defineComponent, del, reactive, ref, toRefs, watchEffect, getCurrentInstance, nextTick, h, onBeforeUnmount } from 'vue'
   import { t } from '@/i18n'
   import router from '@/router/index.js'
   import store from '@/store'
@@ -102,6 +102,7 @@
         type: OPERATION.U_SERVICE_TEMPLATE,
         relation: [bizId.value, templateId.value]
       }))
+      const sidesliderComp = ref(null)
 
       watchEffect(async () => {
         const {
@@ -497,6 +498,10 @@
         })
       }
 
+      onBeforeUnmount(() => {
+        sidesliderComp.value?.handleClose?.()
+      })
+
       return {
         ...toRefs(state),
         bizId,
@@ -739,8 +744,12 @@
 
     <bk-sideslider
       v-transfer-dom
+      ref="sidesliderComp"
       :is-show.sync="processSlider.show"
       :title="processSlider.title"
+      :show-mask="false"
+      :quick-close="false"
+      style="pointer-events: none;"
       :width="800"
       :before-close="handleProcessSliderBeforeClose">
       <template slot="content" v-if="processSlider.show">
