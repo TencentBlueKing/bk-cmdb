@@ -196,7 +196,7 @@
       <dl class="property-summary-content">
         <dt class="content-head">
           <span class="name">{{hoverPropertyPopover.data.bk_property_name}}</span>
-          <span class="more-link" @click="handleViewProperty(hoverPropertyPopover.data.bk_property_id)">
+          <span class="more-link" @click="handleViewProperty(hoverPropertyPopover.data)">
             {{$t('更多信息')}}<i class="link-icon icon-cc-share"></i>
           </span>
         </dt>
@@ -227,7 +227,7 @@
 <script>
   import { mapGetters, mapState } from 'vuex'
   import qs from 'qs'
-  import { MENU_BUSINESS_HOST_APPLY, MENU_MODEL_DETAILS } from '@/dictionary/menu-symbol'
+  import { MENU_BUSINESS_HOST_APPLY, MENU_MODEL_DETAILS, MENU_BUSINESS_CUSTOM_FIELDS } from '@/dictionary/menu-symbol'
   import authMixin from '../mixin-auth'
   import { readonlyMixin } from '../mixin-readonly'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
@@ -376,6 +376,9 @@
         this.editState.property = null
         this.editState.value = null
       },
+      showPopover() {
+        this.hoverPropertyPopover.instance.show()
+      },
       handleCopy(propertyId) {
         const [component] = this.$refs[`property-value-${propertyId}`]
         const copyText = component?.getCopyValue() ?? ''
@@ -397,6 +400,12 @@
         })
       },
       handlePropertyNameMouseenter(event, property) {
+        const { bk_property_id: propertyId } = property
+        const { bk_property_id: lastPropertyId } = this.hoverPropertyPopover.data
+        if (propertyId === lastPropertyId) {
+          return this.showPopover()
+        }
+
         this.hoverPropertyPopover.instance?.destroy?.()
         this.hoverPropertyPopover.data = property
         this.hoverPropertyPopover.instance = this.$bkPopover(event.target, {
@@ -419,16 +428,20 @@
           }
         })
 
-        this.hoverPropertyPopover.instance.show()
+        this.showPopover()
       },
-      handleViewProperty(propertyId) {
+      handleViewProperty(property) {
+        const { bk_property_id: propertyId, bk_biz_id: bizId } = property
+        const name = !bizId ? MENU_MODEL_DETAILS : MENU_BUSINESS_CUSTOM_FIELDS
+
         this.$routerActions.open({
-          name: MENU_MODEL_DETAILS,
+          name,
           params: {
             modelId: this.objId,
           },
           query: {
             action: 'view-field',
+            modelId: this.objId, // 跳转到自定义字段使用
             payload: qs.stringify({
               id: propertyId
             })
@@ -507,6 +520,11 @@
                     position: absolute;
                     right: 2px;
                     content: "：";
+                }
+                :first-child {
+                  &:hover {
+                    color: $primaryColor;
+                  }
                 }
             }
             .property-value {
