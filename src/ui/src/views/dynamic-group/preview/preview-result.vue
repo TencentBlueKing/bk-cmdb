@@ -447,29 +447,22 @@
     }
     return  row?.[propertyId]
   }
-  const getSetList = async (searchParams, page, config) => {
-    const setParams = getSetParams(searchParams)
+  const getSetList = async (page, config) => {
+    const setParams = getSetParams()
+    const { time_condition, conditions } = setParams
     return store.dispatch('objectSet/searchSet', {
       bizId: bizId.value,
       params: {
         page,
-        filter: setParams.conditions
+        filter: conditions,
+        time_condition
       },
       config
     })
   }
-  const getSetParams = (searchParams) => {
-    const setCondition = {}
+  const getSetParams = () => {
     const { properties } = props
-    const allConditions = searchParams.condition.reduce((val, cur) => {
-      val.push(...cur.condition)
-      return val
-    }, [])
-    allConditions.forEach((condition) => {
-      const id = properties.find(item => item?.bk_property_id === condition?.field)?.id
-      setCondition[id] = condition
-    })
-    return transformGeneralModelCondition(setCondition, properties)
+    return transformGeneralModelCondition(FilterStore.getCondition(), properties)
   }
   const getParams = (type = 'list') => {
     const searchParams = FilterStore.getSearchParams()
@@ -506,11 +499,13 @@
       }), {}, config)
     }
 
-    const setParams = getSetParams(searchParams)
+    const setParams = getSetParams()
+    const { time_condition, conditions } = setParams
     return rollReqUseCount(`set/search/${store.getters.supplierAccount}/${bizId.value}`, {
       page,
-      filter: setParams.conditions,
-      fields
+      filter: conditions,
+      fields,
+      time_condition
     }, {}, config)
   })
   const getList = (async () => {
@@ -522,7 +517,7 @@
       if (mode === BUILTIN_MODELS.HOST) {
         result = await getHostList(searchParams, page, config)
       } else {
-        result = await getSetList(searchParams, page, config)
+        result = await getSetList(page, config)
       }
 
       table.data = result.info || []
