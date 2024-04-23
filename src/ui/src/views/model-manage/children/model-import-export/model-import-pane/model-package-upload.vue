@@ -250,6 +250,10 @@
           files: [file]
         } = dt
 
+        if (!validateFileName(file.name, '.zip')) {
+          return
+        }
+
         isDragging.value = false
 
         preProcessFile(file)
@@ -258,13 +262,19 @@
       const handleFileChange = (e) => {
         const [file] = e.target.files
 
-        if (!file.name.endsWith('.zip')) {
+        if (!validateFileName(file.name, '.zip')) {
+          return
+        }
+        preProcessFile(file)
+      }
+
+      const validateFileName = (name, type) => {
+        if (!name.endsWith(type)) {
           fileInputRef.value.value = null
-          $error(t('文件格式非法', { allowType: '.zip' }))
+          $error(t('文件格式非法', { allowType: type }))
           return false
         }
-
-        preProcessFile(file)
+        return true
       }
 
       return {
