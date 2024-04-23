@@ -188,14 +188,16 @@ function handleReject(error, config) {
     if (status === 401) {
       const successUrl = `${window.location.origin}/static/login_success.html`
 
-      const siteLoginUrl = window.Site.login || ''
+      const siteLoginUrl = window.Site.login
       if (!siteLoginUrl) {
         console.error('Login URL not configured!')
         return
       }
 
-      const [loginBaseUrl] = siteLoginUrl.split('?')
-      const loginUrl = `${loginBaseUrl}plain?c_url=${encodeURIComponent(successUrl)}`
+      const loginURL = new URL(siteLoginUrl)
+      loginURL.searchParams.set('c_url', successUrl)
+      const pathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`
+      const loginUrl = `${loginURL.origin}${pathname}plain/${loginURL.search}`
 
       showLoginModal({ loginUrl })
     } else if (data && data.bk_error_msg) {
