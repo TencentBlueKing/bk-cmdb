@@ -1751,7 +1751,7 @@
     "离开将会导致未保存信息丢失": "Leaving will cause the loss of any unsaved data",
     "离开将会导致表单填写的内容丢失": "Leaving will result in the loss of the content filled in the form",
     "填写内容会清空，确认切换？": "Fill content will be cleared, confirm the switch?",
-    "确认切换？": "'Do you want to switch?",
+    "确认切换？": "Do you want to switch?",
     "离开": "Leave",
     "请输入模板描述": "Please enter the template description",
     "克隆字段组合模板": "Clone field template",
