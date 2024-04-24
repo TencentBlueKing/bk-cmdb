@@ -488,7 +488,8 @@
       handleCanShowDialog(item) {
         const data = {
           subTitle: '填写内容会清空，确认切换？',
-          title: '确认切换？'
+          title: '确认切换？',
+          okText: '确认'
         }
         const isChange = !isEqual(this.selectedProperties, this.originProperties)
         if (isChange) {
