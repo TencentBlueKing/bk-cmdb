@@ -25,6 +25,7 @@ import (
 	fieldtmpl "configcenter/src/apimachinery/coreservice/field_template"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/hostapplyrule"
+	"configcenter/src/apimachinery/coreservice/id_rule"
 	"configcenter/src/apimachinery/coreservice/instance"
 	"configcenter/src/apimachinery/coreservice/kube"
 	"configcenter/src/apimachinery/coreservice/label"
@@ -68,6 +69,7 @@ type CoreServiceClientInterface interface {
 	Project() project.ProjectClientInterface
 	ModelQuote() modelquote.Interface
 	FieldTemplate() fieldtmpl.Interface
+	IDRule() idrule.Interface
 }
 
 // NewCoreServiceClient TODO
@@ -196,4 +198,9 @@ func (c *coreService) ModelQuote() modelquote.Interface {
 // FieldTemplate return the field template client
 func (c *coreService) FieldTemplate() fieldtmpl.Interface {
 	return fieldtmpl.New(c.restCli)
+}
+
+// IDRule return the id rule client
+func (c *coreService) IDRule() idrule.Interface {
+	return idrule.New(c.restCli)
 }

@@ -291,7 +291,7 @@ func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, input
 			isMainline); err != nil {
 			blog.Errorf("update instance validation failed, err: %v, objID: %s, update data: %#v, inst: %#v, rid: %s",
 				err, objID, inputParam.Data, origin, kit.Rid)
-			return nil, err
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 	}
 

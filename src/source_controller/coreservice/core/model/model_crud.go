@@ -62,18 +62,33 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 	model.ID = int64(id)
 	model.OwnerID = kit.SupplierAccount
 
+	now := time.Now()
 	if model.LastTime == nil {
 		model.LastTime = &metadata.Time{}
-		model.LastTime.Time = time.Now()
+		model.LastTime.Time = now
 		model.Modifier = kit.User
 	}
 	if model.CreateTime == nil {
 		model.CreateTime = &metadata.Time{}
-		model.CreateTime.Time = time.Now()
+		model.CreateTime.Time = now
 		model.Creator = kit.User
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameObjDes).Insert(kit.Ctx, model)
+	if err = mongodb.Client().Table(common.BKTableNameObjDes).Insert(kit.Ctx, model); err != nil {
+		return 0, err
+	}
+
+	assetIDGenerator := map[string]interface{}{
+		common.BKFieldDBID:     util.GetIDRule(model.ObjectID),
+		common.BKFieldSeqID:    0,
+		common.CreateTimeField: now,
+		common.LastTimeField:   now,
+	}
+	if err = mongodb.Client().Table(common.BKTableNameIDgenerator).Insert(kit.Ctx, assetIDGenerator); err != nil {
+		blog.Errorf("add id generator data failed, data: %+v, err: %v, rid: %s", assetIDGenerator, err, kit.Rid)
+		return 0, err
+	}
+
 	return id, err
 }
 

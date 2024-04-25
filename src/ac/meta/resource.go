@@ -67,6 +67,7 @@ const (
 	Project                  ResourceType = "project"
 	FulltextSearch           ResourceType = "fulltextSearch"
 	FieldTemplate            ResourceType = "fieldTemplate"
+	IDRuleIncrID             ResourceType = "idRuleIncrID"
 )
 
 // kube related auth resource in CMDB

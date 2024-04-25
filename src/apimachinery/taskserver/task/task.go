@@ -135,20 +135,27 @@ func (t *task) ListLatestTask(ctx context.Context, header http.Header, name stri
 	return resp.Data, nil
 }
 
-// TaskDetail TODO
-func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse,
-	err error) {
-	resp = new(metadata.TaskDetailResponse)
+// TaskDetail task detail
+func (t *task) TaskDetail(ctx context.Context, header http.Header, taskID string) (*metadata.TaskDetailData, error) {
+	resp := new(metadata.TaskDetailResponse)
 	subPath := "/task/findone/detail/%s"
 
-	err = t.client.Post().
+	err := t.client.Post().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef(subPath, taskID).
 		WithHeaders(header).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err = resp.CCError(); err != nil {
+		return nil, resp.CCError()
+	}
+
+	return &resp.Data, nil
 }
 
 // DeleteTask delete task

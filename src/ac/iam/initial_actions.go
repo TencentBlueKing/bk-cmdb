@@ -154,6 +154,7 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewFieldGroupingTemplate:           "字段组合模板查看",
 	EditFieldGroupingTemplate:           "字段组合模板编辑",
 	DeleteFieldGroupingTemplate:         "字段组合模板删除",
+	EditIDRuleIncrID:                    "id规则自增id编辑",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -199,6 +200,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
 	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
+	resourceActionList = append(resourceActionList, genIDRuleActions()...)
 
 	return resourceActionList
 }
@@ -1741,6 +1743,18 @@ func genFieldGroupingTemplateActions() []ResourceAction {
 			RelatedResourceTypes: []RelateResourceType{templateResource},
 			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
 			Version:              1,
+		},
+	}
+}
+
+func genIDRuleActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      EditIDRuleIncrID,
+			Name:    ActionIDNameMap[EditIDRuleIncrID],
+			NameEn:  "Edit ID Rule",
+			Type:    Edit,
+			Version: 1,
 		},
 	}
 }

@@ -146,7 +146,8 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 }
 
 // CreateModel create a new model
-func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
+func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult,
+	error) {
 
 	locker := lock.NewLocker(redis.Client())
 	redisKey := lock.GetLockKey(lock.CreateModelFormat, inputParam.Spec.ObjectID)
@@ -329,7 +330,8 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	}
 
 	// set model attributes
-	setAttrResult, err := m.modelAttribute.SetModelAttributes(kit, inputParam.Spec.ObjectID, metadata.SetModelAttributes{Attributes: inputParam.Attributes})
+	setAttrResult, err := m.modelAttribute.SetModelAttributes(kit, inputParam.Spec.ObjectID,
+		metadata.SetModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to update the attributes (%#v) for the model (%s), error info is %s",
 			kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
@@ -482,6 +484,10 @@ func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metada
 	}
 
 	if err := m.deleteModelAndFieldTemplateRelation(kit, modelID); err != nil {
+		return nil, err
+	}
+
+	if err = delIDRuleGenerator(kit, objIDs); err != nil {
 		return nil, err
 	}
 
@@ -743,5 +749,20 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop 
 		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
 		return err
 	}
+	return nil
+}
+
+func delIDRuleGenerator(kit *rest.Kit, objIDs []string) error {
+	ids := make([]string, len(objIDs))
+	for idx, objID := range objIDs {
+		ids[idx] = util.GetIDRule(objID)
+	}
+	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
+
+	if err := mongodb.Client().Table(common.BKTableNameIDgenerator).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("delete id generator data failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+
 	return nil
 }

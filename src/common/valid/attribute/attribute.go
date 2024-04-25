@@ -47,6 +47,8 @@ func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{},
 		return ValidFieldTypeString(kit, option, defaultVal)
 	case common.FieldTypeBool:
 		return valid.ValidateBoolType(option)
+	case common.FieldTypeIDRule:
+		return ValidIDRuleOption(kit, option)
 	}
 
 	return nil
@@ -297,7 +299,7 @@ var validTableFieldType = map[string]struct{}{
 
 // ValidTableFieldOption judging the legitimacy of the basic type of the form field
 func ValidTableFieldOption(kit *rest.Kit, propertyType string, option, defaultValue interface{},
-	isMultiple *bool) error {
+	isMultiple *bool, objID string) error {
 
 	_, exists := validTableFieldType[propertyType]
 	if !exists {
@@ -332,4 +334,13 @@ func IsStrProperty(propertyType string) bool {
 	}
 
 	return false
+}
+
+// ValidIDRuleOption validate id rule field type's option
+func ValidIDRuleOption(kit *rest.Kit, val interface{}) error {
+	if _, err := metadata.ParseSubIDRules(val); err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	return nil
 }

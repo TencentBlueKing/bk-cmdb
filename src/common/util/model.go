@@ -55,8 +55,8 @@ func AddModelBizIDCondition(cond mapstr.MapStr, modelBizID int64) {
 	delete(cond, common.BKAppIDField)
 }
 
-// AddModelWithMultipleBizIDCondition 此函数与上面函数的区别是此函数适用于多个bizId的场景。当传入多个biz id的场景，需要对每一个bizID进行校验,
-// 如果加入条件的biz id是单个，请用上面 AddModelBizIDCondition 进行操作。
+// AddModelWithMultipleBizIDCondition 此函数与上面函数的区别是此函数适用于多个bizId的场景。当传入多个biz id的场景，
+// 需要对每一个bizID进行校验, 如果加入条件的biz id是单个，请用上面 AddModelBizIDCondition 进行操作。
 func AddModelWithMultipleBizIDCondition(cond mapstr.MapStr, modelBizIDs []int64) error {
 	var modelBizIDOrCondArr []mapstr.MapStr
 
@@ -106,4 +106,9 @@ func AddModelWithMultipleBizIDCondition(cond mapstr.MapStr, modelBizIDs []int64)
 	}
 	delete(cond, common.BKAppIDField)
 	return nil
+}
+
+// GetIDRule get id rule
+func GetIDRule(flag string) string {
+	return fmt.Sprintf("%s%s", common.IDRulePrefix, flag)
 }

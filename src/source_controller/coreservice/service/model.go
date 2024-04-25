@@ -13,11 +13,14 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -832,4 +835,58 @@ func (s *coreService) CreateTableModelTables(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntityWithError(nil, s.core.ModelOperation().CreateTableModelTables(ctx.Kit, inputData))
+}
+
+// UpdateIDGenerator update id generator
+func (s *coreService) UpdateIDGenerator(ctx *rest.Contexts) {
+	opt := new(metadata.UpdateIDGenOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	cond := mapstr.MapStr{common.BKFieldDBID: opt.Type}
+	result := make(map[string]interface{})
+	err := mongodb.Client().Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldSeqID).One(ctx.Kit.Ctx,
+		&result)
+	if err != nil {
+		blog.Errorf("find id generator failed, err: %v, filter: %+v, rid: %s", err, cond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectSelectInstFailed))
+		return
+	}
+
+	curID, err := util.GetInt64ByInterface(result[common.BKFieldSeqID])
+	if err != nil {
+		blog.Errorf("get id generator sequence failed, data: %v, err: %v, rid: %s", result, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectSelectInstFailed))
+		return
+	}
+
+	if curID > opt.SequenceID {
+		blog.Errorf("sequence can not be less than current value, cur: %d, opt: %+v, rid: %s", curID, opt, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, fmt.Sprintf("sequence can not "+
+			"be less than current value: %d", curID)))
+		return
+	}
+
+	cond = mapstr.MapStr{
+		common.BKFieldDBID:  opt.Type,
+		common.BKFieldSeqID: mapstr.MapStr{common.BKDBLT: opt.SequenceID},
+	}
+	data := mapstr.MapStr{
+		common.BKFieldSeqID:  opt.SequenceID,
+		common.LastTimeField: time.Now(),
+	}
+	if err := mongodb.Client().Table(common.BKTableNameIDgenerator).Update(ctx.Kit.Ctx, cond, data); err != nil {
+		blog.Errorf("update id generator failed, err: %v, filter: %+v, rid: %s", err, cond, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
+		return
+	}
+
+	ctx.RespEntity(nil)
 }
