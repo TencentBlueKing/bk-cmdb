@@ -793,7 +793,6 @@
           }
           &:last-child {
             margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
           }
         }
       }
