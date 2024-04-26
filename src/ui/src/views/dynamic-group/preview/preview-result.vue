@@ -36,7 +36,7 @@
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
       :pagination="table.pagination"
-      :max-height="$APP.height - filtersTagHeight - 250"
+      :height="$APP.height - 115"
       @page-change="handlePageChange"
       @page-limit-change="handleLimitChange"
       @sort-change="handleSortChange"
@@ -134,7 +134,6 @@
   })
 
   const now = ref(new Date())
-  const filtersTagHeight = ref(0)
   const tableHeader = ref([])
   const copyLoading = reactive({
     value: false,
@@ -662,6 +661,14 @@
     :deep(.no-sort) {
       transform: translate(0, -50%);
       margin-left: 1px;
+    }
+
+    :deep(.bk-table-pagination-wrapper) {
+      z-index: 9;
+    }
+
+    :deep(.bk-table-body-wrapper ) {
+      @include scrollbar-y;
     }
   }
 }
