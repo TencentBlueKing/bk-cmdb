@@ -233,14 +233,13 @@
         IPs.IPv6WithCloudList.forEach(([cloud, ip]) => IPList.push(`${cloud}:[${ip}]`))
 
         const IPText = isFuzzy ? searchContent : IPList.join('\n')
-        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPText })
+        const ip = Object.assign(FilterUtils.getDefaultIP(), { text: IPText, exact: !isFuzzy })
 
         this.$routerActions.redirect({
           name: MENU_RESOURCE_HOST,
           query: {
             scope: 'all',
-            ip: QS.stringify(ip, { encode: false }),
-            isFuzzy,
+            ip: QS.stringify(ip, { encode: false })
           },
           history: true
         })

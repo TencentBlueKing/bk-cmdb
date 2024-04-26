@@ -241,7 +241,7 @@
         let modelPropertyMap = { ...FilterStore.modelPropertyMap }
         const ignoreHostProperties = ['bk_host_innerip', 'bk_host_outerip', '__bk_host_topology__', 'bk_host_innerip_v6', 'bk_host_outerip_v6']
         modelPropertyMap.host = modelPropertyMap.host
-          .filter(property => !ignoreHostProperties.includes(property.bk_property_id))
+          ?.filter(property => !ignoreHostProperties.includes(property.bk_property_id))
 
         // 暂时不支持node对象map类型的字段
         modelPropertyMap.node = modelPropertyMap.node
@@ -565,8 +565,10 @@
       },
       focusIP() {
         const ele = this.$refs.ipEditableBlock
-        ele?.focus()
-        setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
+        if (ele) {
+          ele?.focus()
+          setCursorPosition(ele?.$refs?.searchInput, ele?.searchContent?.length)
+        }
       }
     }
   }
