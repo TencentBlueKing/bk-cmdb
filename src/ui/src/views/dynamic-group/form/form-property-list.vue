@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="form-property-list">
+  <div class="form-property-list" ref="propertyList">
     <bk-form form-type="vertical" :label-width="400">
       <bk-form-item
         v-for="property in properties"
