@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="form-property-list">
+  <div class="form-property-list" ref="propertyList">
     <bk-form form-type="vertical" :label-width="400">
       <bk-form-item
         v-for="property in properties"
@@ -38,6 +38,13 @@
               display-tag
               :disabled="disabled"
               v-validate="'required'"
+              @change="handleChange"
+              @click.native="handleClick"
+              :popover-options="{
+                duration: 0,
+                onShown: handleShow,
+                onHidden: handleHidden
+              }"
               v-bk-tooltips.top="{
                 disabled: !property.placeholder,
                 theme: 'light',
@@ -139,6 +146,34 @@
       }
     },
     methods: {
+      handleClick(e) {
+        if (~e?.target?.className.indexOf('is-focus')) {
+          // select专属
+          return
+        }
+        this.calcPosition('click')
+      },
+      handleChange() {
+        this.calcPosition()
+      },
+      handleShow() {
+        this.calcPosition()
+      },
+      handleHidden() {
+        this.$refs.propertyList.classList.remove('over-height')
+      },
+      calcPosition(type = 'change') {
+        if (type === 'click') this.$refs.propertyList.classList.remove('over-height')
+
+        this.$nextTick(() => {
+          const parent = document.querySelector('.dynamic-group-form')
+          const { scrollHeight } = parent
+          const { height } = parent.getClientRects()[0]
+          if (scrollHeight > Math.ceil(height)) {
+            this.$refs.propertyList.classList.add('over-height')
+          }
+        })
+      },
       getDefaultData(property) {
         const defaultMap = {
           bool: {
@@ -270,17 +305,23 @@
         return `${modelName} - ${propertyName}`
       },
       getPlaceholder(property) {
-        const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time', 'enumquote', 'enummulti']
+        const selectTypes = ['list', 'enum', 'timezone', 'organization', 'date', 'time', 'enumquote', 'enummulti', 'foreignkey']
+        const name = this.$t(this.conditionType === IMMUTABLE ? '条件值' : '默认值')
         if (selectTypes.includes(property.bk_property_type)) {
-          return this.$t('请选择xx', { name: property.bk_property_name })
+          return this.$t('请选择xx', { name })
         }
-        return this.$t('请输入xx', { name: property.bk_property_name })
+        return this.$t('请输入xx', { name })
       }
     }
   }
 </script>
 
 <style lang="scss" scoped>
+.over-height {
+  .g-expand {
+    bottom: -32px;
+  }
+}
 .form-property-list {
   /deep/ .bk-form-item {
     padding: 8px;

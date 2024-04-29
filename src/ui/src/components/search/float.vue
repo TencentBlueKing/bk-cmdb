@@ -28,6 +28,7 @@
     type="number"
     :min="min"
     :max="max"
+    v-bind="$attrs"
     v-model="localValue"
     :precision="precision"
     :allow-number-paste="allowPaste"

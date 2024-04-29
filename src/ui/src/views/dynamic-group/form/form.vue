@@ -27,110 +27,114 @@
       slot="content"
       style="height: 100%;">
       <div slot="aside" class="dynamic-group-info">
-        <bk-form
-          class="dynamic-group-form"
-          ref="form"
-          form-type="vertical"
-          v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
-          <h5 class="form-title">
-            {{ $t('基础信息') }}
-          </h5>
-          <bk-form-item :label="$t('分组名称')" required>
-            <bk-input class="form-item"
-              v-model.trim="formData.name"
-              v-validate="'required|length:256'"
-              data-vv-name="name"
-              :data-vv-as="$t('查询名称')"
-              :disabled="isPreviewProp"
-              :placeholder="$t('请输入xx', { name: $t('查询名称') })">
-            </bk-input>
-            <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
-          </bk-form-item>
-          <bk-form-item :label="$t('查询对象')" required>
-            <form-target class="form-item"
-              ref="formTarget"
-              v-model="formData.bk_obj_id"
-              :disabled="!isCreateMode"
-              :show-cancel-dialog="true"
-              @canShowDialog="handleCanShowDialog"
-              @change="handleModelChange">
-            </form-target>
-          </bk-form-item>
+        <cmdb-sticky-layout class="dynamic-sticky-layout">
+          <template #default="{ sticky }">
+            <bk-form
+              class="dynamic-group-form"
+              ref="form"
+              form-type="vertical"
+              v-bkloading="{ isLoading: $loading([request.mainline, request.property, request.details]) }">
+              <h5 class="form-title">
+                {{ $t('基础信息') }}
+              </h5>
+              <bk-form-item :label="$t('分组名称')" required>
+                <bk-input class="form-item"
+                  v-model.trim="formData.name"
+                  v-validate="'required|length:256'"
+                  data-vv-name="name"
+                  :data-vv-as="$t('查询名称')"
+                  :disabled="isPreviewProp"
+                  :placeholder="$t('请输入xx', { name: $t('查询名称') })">
+                </bk-input>
+                <p class="form-error" v-if="errors.has('name')">{{errors.first('name')}}</p>
+              </bk-form-item>
+              <bk-form-item :label="$t('查询对象')" required>
+                <form-target class="form-item"
+                  ref="formTarget"
+                  v-model="formData.bk_obj_id"
+                  :disabled="!isCreateMode"
+                  :show-cancel-dialog="true"
+                  @canShowDialog="handleCanShowDialog"
+                  @change="handleModelChange">
+                </form-target>
+              </bk-form-item>
 
-          <bk-form-item class="condition-form" v-for="item in conditionGroup" :key="item.id">
-            <cmdb-collapse
-              arrow-type="filled"
-              :auto-expand="true"
-              :list="getList(item.type)"
-              @collapse-change="handleCollapseChange">
-              <template #title>
-                <span v-bk-tooltips.top="{
-                  content: $t(item.tip)
-                }">
-                  {{$t(item.name)}}
-                </span>
-              </template>
-              <form-property-list
-                ref="propertyList"
-                @remove="handleRemoveProperty"
-                @toggle="handleToggleProperty"
-                :disabled="isPreviewProp"
-                :condition-type="item.type">
-              </form-property-list>
-            </cmdb-collapse>
+              <bk-form-item class="condition-form" v-for="item in conditionGroup" :key="item.id">
+                <cmdb-collapse
+                  arrow-type="filled"
+                  :auto-expand="true"
+                  :list="getList(item.type)"
+                  @collapse-change="handleCollapseChange">
+                  <template #title>
+                    <span v-bk-tooltips.top="{
+                      content: $t(item.tip)
+                    }">
+                      {{$t(item.name)}}
+                    </span>
+                  </template>
+                  <form-property-list
+                    ref="propertyList"
+                    @remove="handleRemoveProperty"
+                    @toggle="handleToggleProperty"
+                    :disabled="isPreviewProp"
+                    :condition-type="item.type">
+                  </form-property-list>
+                </cmdb-collapse>
 
-            <condition-picker class="condition-picker"
-              :text="$t('添加')"
-              icon="icon-plus-circle"
-              :selected="selectedProperties"
-              :property-map="propertyMap"
-              :handler="handlePropertySelected"
-              :disabled="isPreviewProp"
-              :condition-type="item.type">
-            </condition-picker>
-          </bk-form-item>
+                <condition-picker class="condition-picker"
+                  :text="$t('添加')"
+                  icon="icon-plus-circle"
+                  :selected="selectedProperties"
+                  :property-map="propertyMap"
+                  :handler="handlePropertySelected"
+                  :disabled="isPreviewProp"
+                  :condition-type="item.type">
+                </condition-picker>
+              </bk-form-item>
 
-          <div class="no-condition">
-            <input type="hidden"
-              v-validate="'min_value:1'"
-              data-vv-name="condition"
-              data-vv-validate-on="submit"
-              :data-vv-as="$t('查询条件')"
-              v-model="selectedProperties.length">
-            <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
-          </div>
-
-        </bk-form>
-        <div :class="['dynamic-group-options', footerIsFixed ? '' : 'no-fixed']" slot="footer">
-          <cmdb-auth :auth="saveAuth">
-            <bk-button class="mr10" slot-scope="{ disabled }"
-              theme="primary"
-              :disabled="disabled"
-              :loading="$loading([request.create, request.update])"
-              @click="handleConfirm">
-              {{ $t(confirmText) }}
-            </bk-button>
-          </cmdb-auth>
-          <bk-button v-show="!isPreviewProp"
-            class="mr10" theme="default" @click="handlePreview" :disabled="!selectedProperties.length">
-            {{$t('预览')}}
-          </bk-button>
-          <bk-popconfirm
-            :content="$t('确定清空分组条件')"
-            width="280"
-            trigger="click"
-            :confirm-text="$t('确定')"
-            :cancel-text="$t('取消')"
-            @confirm="handleClearCondition">
-            <bk-button v-show="!isPreviewProp" class="mr10" theme="default" :disabled="!selectedProperties.length">
-              {{$t('清空条件')}}
-            </bk-button>
-          </bk-popconfirm>
-          <bk-button v-show="!isPreviewProp"
-            class="mr10 btn-cancel" theme="default" @click="handleSliderBeforeClose('cancel')">
-            {{$t('取消')}}
-          </bk-button>
-        </div>
+              <div class="no-condition">
+                <input type="hidden"
+                  v-validate="'min_value:1'"
+                  data-vv-name="condition"
+                  data-vv-validate-on="submit"
+                  :data-vv-as="$t('查询条件')"
+                  v-model="selectedProperties.length">
+                <p class="form-error" v-if="errors.has('condition')">{{$t('请添加查询条件')}}</p>
+              </div>
+              <div :class="['dynamic-group-options', { 'no-fixed': !sticky }]">
+                <cmdb-auth :auth="saveAuth">
+                  <bk-button class="mr10" slot-scope="{ disabled }"
+                    theme="primary"
+                    :disabled="disabled"
+                    :loading="$loading([request.create, request.update])"
+                    @click="handleConfirm">
+                    {{ $t(confirmText) }}
+                  </bk-button>
+                </cmdb-auth>
+                <bk-button v-show="!isPreviewProp"
+                  class="mr10" theme="default" @click="handlePreview" :disabled="!selectedProperties.length">
+                  {{$t('预览')}}
+                </bk-button>
+                <bk-popconfirm
+                  :content="$t('确定清空分组条件')"
+                  width="280"
+                  trigger="click"
+                  :confirm-text="$t('确定')"
+                  :cancel-text="$t('取消')"
+                  @confirm="handleClearCondition">
+                  <bk-button v-show="!isPreviewProp" class="mr10" theme="default"
+                    :disabled="!selectedProperties.length">
+                    {{$t('清空条件')}}
+                  </bk-button>
+                </bk-popconfirm>
+                <bk-button v-show="!isPreviewProp"
+                  class="btn-cancel" theme="default" @click="handleSliderBeforeClose('cancel')">
+                  {{$t('取消')}}
+                </bk-button>
+              </div>
+            </bk-form>
+          </template>
+        </cmdb-sticky-layout>
       </div>
       <div slot="main" class="dynamic-group-preview">
         <preview-result class="preview-result"
@@ -757,7 +761,7 @@
 .dynamic-group-info {
   width: 100%;
   float: left;
-  height: calc(100% - 53px);
+  height: 100%;
 
   .no-condition {
     height: 16px;
@@ -787,6 +791,9 @@
           &:first-child {
             margin-top: 12px !important;
           }
+          &:last-child {
+            margin-bottom: 0 !important;
+          }
         }
       }
     }
@@ -804,13 +811,17 @@
   width: 100%;
   float: right;
   height: 100%;
-  padding-bottom: 11px;
   background: #F5F7FA;
+}
+.dynamic-sticky-layout {
+  @include scrollbar-y;
+  height: 100%;
 }
 .dynamic-group-form {
   padding: 18px 24px 0;
-  max-height: 100%;
-  @include scrollbar-y;
+  :nth-last-child(4) {
+    margin-bottom: 0px !important;
+  }
   .form-item {
     width: 100%;
   }
@@ -848,10 +859,16 @@
 .dynamic-group-options {
   display: flex;
   align-items: center;
-  width: 100%;
   padding: 10px 24px;
+  margin: 0 -24px;
   border-top: 1px solid $borderColor;
   background: #FAFBFD;
+  position: sticky;
+  bottom: 0;
+  z-index: 999;
+  left: 24px;
+  right: 24px;
+
   :deep(.bk-button) {
     width: 88px;
     padding: 0 !important;
@@ -873,7 +890,15 @@
   }
 }
 .no-fixed {
+  position: static;
   border-top: 0;
   background: transparent;
+}
+:deep(.form-property-list) {
+  .form-property-item {
+    .item-value {
+      margin: 0 !important;
+    }
+  }
 }
 </style>
