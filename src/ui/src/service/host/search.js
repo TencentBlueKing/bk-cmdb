@@ -135,5 +135,6 @@ export default {
   findByIds,
   getBizHosts,
   getResourceHosts,
-  getHosts
+  getHosts,
+  getSearchUrl
 }

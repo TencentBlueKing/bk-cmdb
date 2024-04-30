@@ -36,7 +36,7 @@
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
       :pagination="table.pagination"
-      :max-height="$APP.height - filtersTagHeight - 250"
+      :height="$APP.height - 115"
       @page-change="handlePageChange"
       @page-limit-change="handleLimitChange"
       @sort-change="handleSortChange"
@@ -75,13 +75,22 @@
         :stuff="dataEmpty">
       </cmdb-data-empty>
     </div>
+
+    <ul class="copy-list" ref="copyRef" v-show="showCopy">
+      <li v-for="(item, index) in copyList"
+        class="copy-item"
+        :key="index"
+        @click="(event) => handleCopy(event, item)">
+        {{item.bk_property_name}}
+      </li>
+    </ul>
   </div>
 </template>
 
 <script setup>
   import hostValueFilter from '@/filters/host'
   import tableMixin from '@/mixins/table'
-  import { computed, ref, watch, reactive, h } from 'vue'
+  import { computed, ref, watch, reactive, h, nextTick, getCurrentInstance } from 'vue'
   import store from '@/store'
   import { t } from '@/i18n'
   import {
@@ -100,11 +109,18 @@
     getHeaderPropertyMinWidth,
     isUseComplexValueType,
     getSort,
-    getPageParams
+    getPageParams,
+    getPropertyCopyValue,
+    isEmptyPropertyValue,
+    transformHostSearchParams
   } from '@/utils/tools'
   import { transformGeneralModelCondition } from '@/components/filters/utils.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import FilterUtils from '@/components/filters/utils'
+  import { $bkPopover, $error, $success } from '@/magicbox/index.js'
+  import { rollReqUseCount } from '@/service/utils.js'
 
+  const { proxy } = getCurrentInstance()
   const props = defineProps({
     condition: {
       type: Object,
@@ -118,8 +134,21 @@
   })
 
   const now = ref(new Date())
-  const filtersTagHeight = ref(0)
   const tableHeader = ref([])
+  const copyLoading = reactive({
+    value: false,
+    target: ''
+  })
+  const copyRef = ref(null)
+  const showCopy = ref(false)
+
+  const IPv4Symbol = Symbol('IPV4')
+  const IPv6Symbol = Symbol('IPV6')
+  const IPWithCloudSymbol = Symbol('IPWithCloud')
+  const IPv6WithCloudSymbol = Symbol('IPv6WithCloud')
+  const IPv46WithCloudSymbol = Symbol('IPv46WithCloud')
+  const IPv64WithCloudSymbol = Symbol('IPv64WithCloud')
+  let copyTip = null
 
   const dataEmpty = reactive({
     type: 'empty',
@@ -151,6 +180,24 @@
     return 'business_topology_table_column_config'
   })
   const bizId = computed(() => store.getters['objectBiz/bizId'])
+  const copyList = computed(() => {
+    const IPWithCloudFields = {
+      [IPv4Symbol]: `${t('内网')}IPv4`,
+      [IPv6Symbol]: `${t('内网')}IPv6`,
+      [IPWithCloudSymbol]: `${t('管控区域')}:${t('内网')}IPv4`,
+      [IPv6WithCloudSymbol]: `${t('管控区域')}:[${t('内网')}IPv6]`,
+      [IPv46WithCloudSymbol]: `${t('管控区域')}:${t('内网')}IP(${t('IPv4优先')})`,
+      [IPv64WithCloudSymbol]: `${t('管控区域')}:${t('内网')}IP(${t('IPv6优先')})`
+    }
+    const IPWithClouds = Object.getOwnPropertySymbols(IPWithCloudFields).map(key => FilterUtils.defineProperty({
+      id: key,
+      bk_obj_id: 'host',
+      bk_property_id: key,
+      bk_property_name: IPWithCloudFields[key],
+      bk_property_type: 'singlechar'
+    }))
+    return IPWithClouds
+  })
   const getModelById = store.getters['objectModelClassify/getModelById']
 
   const handleRefresh = (() => {
@@ -169,13 +216,37 @@
   })
   const getColumnSortable = (column => (isPropertySortable(column) ? 'custom' : false))
   const renderHeader = ((property) => {
-    const content = [getHeaderPropertyName(property)]
+    const content = [<span class="property-name">{getHeaderPropertyName(property)}</span>]
     const modelId = property.bk_obj_id
     if (modelId !== BUILTIN_MODELS.HOST && modelId !== CONTAINER_OBJECTS.NODE) {
       const model = getModelById(modelId)
       const suffix = h('span', { style: { color: '#979BA5', marginLeft: '4px' } }, [`(${model.bk_obj_name})`])
       content.push(suffix)
     }
+    const { value, target } = copyLoading
+    const showLoading = value && target?.propertyId === property.bk_property_id
+    const tooltips = {
+      content: `${t('复制内容')}`,
+      placement: 'top',
+      disabled: value
+    }
+    const directive = {
+      isLoading: showLoading,
+      mode: 'spin',
+      size: 'mini',
+      zIndex: 999
+    }
+    const copyClass = ['icon-copy', 'bk-icon', 'copy-icon', {
+      'no-sort': !getColumnSortable(property)
+    }]
+    const copy = <i class={ copyClass }
+                    disabled={ value }
+                    data-copy-loading={ showLoading }
+                    on-click={ event => handleCopy(event, property)}
+                    v-bk-tooltips={ tooltips }
+                    v-bkloading={ directive }>
+                  </i>
+    content.push(copy)
     return h('span', {}, content)
   })
   const getColumnMinWidth = ((property) => {
@@ -198,6 +269,121 @@
     }
     table.pagination.current = current
   })
+  const showCopyList = (event) => {
+    if (!copyTip) {
+      copyTip = $bkPopover(event.target?.parentElement, {
+        content: copyRef.value,
+        allowHTML: true,
+        trigger: 'mannual',
+        boundary: 'window',
+        placement: 'bottom-start',
+        theme: 'light',
+        distance: 6,
+        interactive: true,
+        arrow: false,
+        onHidden() {
+          showCopy.value = false
+        },
+      })
+    }
+    nextTick(() => {
+      showCopy.value = true
+      copyTip?.show()
+    })
+  }
+  const getCopyData = async (property) => {
+    const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+    copyLoading.value = true
+    copyLoading.target = { propertyId, modelId }
+    const data = await getCopyList(propertyId)
+    return data
+  }
+  const setCopyData = (property, list = []) => {
+    const copyText = list.map((data) => {
+      const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+      const modelData = data[modelId] ?? data
+      const IPWithCloudKeys = [
+        IPv4Symbol,
+        IPv6Symbol,
+        IPWithCloudSymbol,
+        IPv6WithCloudSymbol,
+        IPv46WithCloudSymbol,
+        IPv64WithCloudSymbol
+      ]
+
+      if (IPWithCloudKeys.includes(property.id)) {
+        const cloud = getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
+        const ip = getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
+        const ipv6 = getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
+        const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
+        const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
+        if (property.id === IPv4Symbol) {
+          return `${ip}`
+        }
+        if (property.id === IPv6Symbol) {
+          return `${ipv6}`
+        }
+        if (property.id === IPWithCloudSymbol) {
+          return `${cloud}:${ip}`
+        }
+        if (property.id === IPWithCloudSymbol) {
+          return `${cloud}:${ip}`
+        }
+        if (property.id === IPWithCloudSymbol) {
+          return `${cloud}:${ip}`
+        }
+        if (property.id === IPv6WithCloudSymbol) {
+          return `${cloud}:[${ipv6}]`
+        }
+        if (property.id === IPv46WithCloudSymbol) {
+          if (!isEmptyIPv4Value || isEmptyIPv6Value) {
+            return `${cloud}:${ip}`
+          }
+          return `${cloud}:[${ipv6}]`
+        }
+        if (property.id === IPv64WithCloudSymbol) {
+          if (isEmptyIPv4Value || !isEmptyIPv6Value) {
+            return `${cloud}:[${ipv6}]`
+          }
+          return `${cloud}:${ip}`
+        }
+      }
+
+      const copyValueOptions = {}
+      if (propertyId === 'bk_cloud_id') {
+        copyValueOptions.isFullCloud = true
+      }
+      if (Array.isArray(modelData)) {
+        const value = modelData
+          .map(item => getPropertyCopyValue(item[propertyId], property, copyValueOptions))
+        return value.join(',')
+      }
+      return getPropertyCopyValue(modelData[propertyId], property, copyValueOptions)
+    })
+
+    proxy.$copyText(copyText.join('\n')).then(() => {
+      $success(t('复制成功'))
+    }, () => {
+      $error(t('复制失败'))
+    })
+      .finally(() => {
+        copyLoading.value = false
+        copyLoading.target = ''
+      })
+  }
+  const handleCopy = async (event, property) => {
+    event.stopPropagation()
+    if (copyLoading.value) return
+
+    const { bk_property_id: propertyId } = property
+    if (propertyId === 'bk_host_innerip') {
+      return showCopyList(event)
+    }
+
+    copyTip?.hide()
+    const data = await getCopyData(property)
+    return setCopyData(property, data)
+  }
   const handlePageChange = ((current = 1) => pageCurrentChange(current))
   const handleLimitChange = ((limit) => {
     table.pagination.limit = limit
@@ -260,46 +446,77 @@
     }
     return  row?.[propertyId]
   }
-  const getSetList = async (searchParams, page, config) => {
-    const setCondition = {}
-    const { properties } = props
-    const allConditions = searchParams.condition.reduce((val, cur) => {
-      val.push(...cur.condition)
-      return val
-    }, [])
-    allConditions.forEach((condition) => {
-      const id = properties.find(item => item?.bk_property_id === condition?.field)?.id
-      setCondition[id] = condition
-    })
-    const setParams = transformGeneralModelCondition(setCondition, properties)
-
+  const getSetList = async (page, config) => {
+    const setParams = getSetParams()
+    const { time_condition, conditions } = setParams
     return store.dispatch('objectSet/searchSet', {
       bizId: bizId.value,
       params: {
         page,
-        filter: setParams.conditions
+        filter: conditions,
+        time_condition
       },
       config
     })
   }
+  const getSetParams = () => {
+    const { properties } = props
+    return transformGeneralModelCondition(FilterStore.getCondition(), properties)
+  }
+  const getParams = (type = 'list') => {
+    const searchParams = FilterStore.getSearchParams()
+    const page =  {
+      ...getPageParams(table.pagination),
+      sort: table.sort
+    }
+    const config = {
+      requestId: type === 'list' ? request.table : 'copy',
+      cancelPrevious: true
+    }
+    return { searchParams, page, config }
+  }
+  const getFields = (propertyId) => {
+    if (typeof propertyId === 'symbol') {
+      return ['bk_cloud_id', 'bk_host_innerip', 'bk_host_innerip_v6']
+    }
+    return [propertyId]
+  }
+  const getCopyList = (async (propertyId) => {
+    const { mode } = props
+    const { searchParams, page, config } = getParams('copy')
+    const fields = getFields(propertyId)
+
+    if (mode === BUILTIN_MODELS.HOST) {
+      const url = hostSearchService.getSearchUrl('biz')
+      searchParams?.condition?.forEach((condition) => {
+        condition.fields = fields
+      })
+      return rollReqUseCount(url, transformHostSearchParams({
+        bk_biz_id: bizId.value,
+        ...searchParams,
+        page
+      }), {}, config)
+    }
+
+    const setParams = getSetParams()
+    const { time_condition, conditions } = setParams
+    return rollReqUseCount(`set/search/${store.getters.supplierAccount}/${bizId.value}`, {
+      page,
+      filter: conditions,
+      fields,
+      time_condition
+    }, {}, config)
+  })
   const getList = (async () => {
     try {
       const { mode } = props
-      const searchParams = FilterStore.getSearchParams()
-      const page =  {
-        ...getPageParams(table.pagination),
-        sort: table.sort
-      }
-      const config = {
-        requestId: request.table,
-        cancelPrevious: true
-      }
+      const { searchParams, page, config } = getParams()
 
       let result = {}
       if (mode === BUILTIN_MODELS.HOST) {
         result = await getHostList(searchParams, page, config)
       } else {
-        result = await getSetList(searchParams, page, config)
+        result = await getSetList(page, config)
       }
 
       table.data = result.info || []
@@ -339,6 +556,23 @@
 </script>
 
 <style lang="scss" scoped>
+.copy-list {
+  width: 240px;
+  color: #63656E;
+  letter-spacing: 0;
+  cursor: pointer;
+
+  .copy-item {
+    line-height: 32px;
+    margin: 0 -0.6rem;
+    padding: 0 0.6rem;
+
+    &:hover {
+      background: #E1ECFF;
+      color: #3A84FF;
+    }
+  }
+}
 .list-layout {
   overflow: hidden;
   height: 100%;
@@ -384,6 +618,59 @@
   .result-list {
     margin: 12px 15px 0 24px;
     width: calc(100% - 39px);
+
+    :deep(.bk-table-header) {
+      .cell {
+        &:hover {
+          .copy-icon {
+            opacity: 1;
+          }
+        }
+
+        .property-name {
+            display: inline-block;
+            max-width: 100%;
+            @include ellipsis;
+            line-height: 100%;
+        }
+      }
+    }
+
+    :deep(.copy-icon) {
+      position: absolute !important;
+      top: 50%;
+      transform: translate(18px, -50%);
+      font-size: 14px;
+      color: #3A84FF;
+      opacity: 0;
+      cursor: pointer;
+
+      &[disabled] {
+        color: #c4c6cc;
+      }
+
+      &[data-copy-loading] {
+        color: transparent;
+      }
+
+      .bk-loading {
+        background: transparent !important;
+      }
+    }
+
+    :deep(.no-sort) {
+      transform: translate(0, -50%);
+      margin-left: 1px;
+    }
+
+    :deep(.bk-table-pagination-wrapper) {
+      z-index: 9;
+    }
+
+    :deep(.bk-table-body-wrapper ) {
+      @include scrollbar-y;
+      overflow-x: auto;
+    }
   }
 }
 

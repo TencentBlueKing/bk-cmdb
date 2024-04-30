@@ -8,13 +8,30 @@
 
 #### 接口参数
 
-| 字段              | 类型     | 必选 | 描述                                                            |
-|-----------------|--------|----|---------------------------------------------------------------|
-| bk_biz_id       | int    | 是  | 业务ID                                                          |
-| id              | string | 是  | 动态分组主键ID                                                      |
+| 字段              | 类型     | 必选 | 描述                                                       |
+|-----------------|--------|----|----------------------------------------------------------|
+| bk_biz_id       | int    | 是  | 业务ID                                                     |
+| id              | string | 是  | 动态分组主键ID                                                 |
+| variable_condition | object | 否  | 动态分组可变条件, 如果没有填写的话则按照"变量条件"的默认值执行 |
 | fields          | array  | 是  | 主机属性列表，控制返回结果的主机里有哪些字段，能够加速接口请求和减少网络流量传输,目标资源不具备指定的字段时该字段将被忽略 |
-| disable_counter | bool   | 否  | 是否返回总记录条数，默认返回                                                |
-| page            | object | 是  | 分页设置                                                          |
+| disable_counter | bool   | 否  | 是否返回总记录条数，默认返回                                           |
+| page            | object | 是  | 分页设置                                                     |
+
+#### variable_condition
+
+| 字段        | 类型     | 必选 | 描述                                                                                    |
+|-----------|--------|----|---------------------------------------------------------------------------------------|
+| bk_obj_id | string | 是  | 条件对象资源类型, host类型的动态分组支持的info.conditon:set,module,host；set类型的动态分组支持的info.condition:set |
+| condition | array  | 是  | 查询条件                                                                                  |
+
+
+#### variable_condition.condition
+
+| 字段       | 类型     | 必选 | 描述                                     |
+|----------|--------|----|----------------------------------------|
+| field    | string | 是  | 对象的字段                                  |
+| operator | string | 是  | 操作符, op值为$eq(相等)/$ne(不等)/$in(属于)/$nin(不属于))/$regex(模糊匹配) |
+| value    | object | 是  | 字段对应的值                                 |
 
 #### page
 
@@ -35,6 +52,38 @@
     "bk_biz_id": 1,
     "disable_counter": true,
     "id": "XXXXXXXX",
+    "variable_condition":[
+      {
+        "bk_obj_id":"set",
+        "condition":[
+          {
+            "field":"bk_parent_id",
+            "operator":"$ne",
+            "value":1
+          }
+        ]
+      },
+      {
+        "bk_obj_id":"module",
+        "condition":[
+          {
+            "field":"bk_parent_id",
+            "operator":"$ne",
+            "value":1
+          }
+        ]
+      },
+      {
+        "bk_obj_id":"host",
+        "condition":[
+          {
+            "field":"bk_host_outerip",
+            "operator":"$eq",
+            "value":"127.0.0.1"
+          }
+        ]
+      }
+    ],
     "fields": [
         "bk_host_id",
         "bk_cloud_id",

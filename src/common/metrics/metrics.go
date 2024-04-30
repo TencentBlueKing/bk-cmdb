@@ -81,6 +81,7 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
+	userTotal       *prometheus.CounterVec
 }
 
 // NewService returns new metrics service
@@ -95,10 +96,6 @@ func NewService(conf Config) *Service {
 	srv := Service{conf: conf, registry: register}
 
 	requestTotalLabels := []string{LabelHandler, LabelHTTPStatus, LabelOrigin, LabelAppCode}
-	// add user label for webserver
-	if conf.ProcessName == types.CC_MODULE_WEBSERVER {
-		requestTotalLabels = append(requestTotalLabels, LabelUser)
-	}
 
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -120,6 +117,18 @@ func NewService(conf Config) *Service {
 	register.MustRegister(srv.requestDuration)
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
+
+	// add user metrics for api-server
+	if conf.ProcessName == types.CC_MODULE_APISERVER {
+		srv.userTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: Namespace + "_user_http_request_total",
+				Help: "user http request total.",
+			},
+			[]string{LabelUser, LabelOrigin},
+		)
+		register.MustRegister(srv.userTotal)
+	}
 
 	srv.httpHandler = promhttp.InstrumentMetricHandler(
 		registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
@@ -186,12 +195,13 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
 		}
 
-		// add user label for webserver
-		if s.conf.ProcessName == types.CC_MODULE_WEBSERVER {
-			requestTotalLabels = append(requestTotalLabels, LabelUser, r.Header.Get(common.BKHTTPHeaderUser))
-		}
-
 		s.requestTotal.With(s.label(requestTotalLabels...)).Inc()
+
+		// add user metrics for api-server
+		if s.conf.ProcessName == types.CC_MODULE_APISERVER {
+			s.userTotal.With(s.label(LabelUser, r.Header.Get(common.BKHTTPHeaderUser), LabelOrigin,
+				getOrigin(r.Header))).Inc()
+		}
 	})
 }
 
@@ -214,6 +224,10 @@ func (s *Service) label(labelKVs ...string) prometheus.Labels {
 }
 
 func getOrigin(header http.Header) string {
+	if header.Get(common.BKHTTPRequestFromWeb) == "true" {
+		return "webserver"
+	}
+
 	if header.Get(common.BKHTTPOtherRequestID) != "" {
 		return "ESB"
 	}

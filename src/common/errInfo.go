@@ -773,6 +773,7 @@ const (
 	CCErrWebBuildZipFail                = 1111024
 	CCErrWebDisableNotification         = 1111025
 	CCErrWebGetAnnFail                  = 1111026
+	CCErrInvalidFileTypeFail            = 1111027
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail            = 1112000

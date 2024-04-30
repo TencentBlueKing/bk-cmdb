@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.13.5
+  version: 3.13.6
   # 版本标题
-  title: "3.13.5"
+  title: "3.13.6"
   # 版本描述
-  comment: "3.13.5"
+  comment: "3.13.6"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
@@ -62,7 +62,7 @@ grant_permissions:
   - bk_app_code: "{{ settings.BK_APP_CODE }}"
     # 授权维度，可选值：gateway，按网关授权，包括网关下所有资源，以及未来新创建的资源
     grant_dimension: "gateway"
-  - bk_app_code: "bk_job"
+  - bk_app_code: {{ environ.BK_JOB_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
       - list_kube_container_by_topo
@@ -75,6 +75,11 @@ grant_permissions:
       - list_kube_container
       - list_cached_kube_pod_label_key
       - list_cached_kube_pod_label_value
+  - bk_app_code: {{ environ.BK_NODEMAN_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - batch_update_host_all_properties
+
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
