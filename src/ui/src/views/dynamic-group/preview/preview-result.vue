@@ -669,6 +669,7 @@
 
     :deep(.bk-table-body-wrapper ) {
       @include scrollbar-y;
+      overflow-x: auto;
     }
   }
 }
