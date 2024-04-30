@@ -20,7 +20,7 @@
     class="dynamic-slidebar"
     @hidden="handleHidden">
     <bk-resize-layout
-      :collapsible="true"
+      :collapsible="false"
       :initial-divide="412"
       :min="400"
       :max="500"
