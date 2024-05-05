@@ -1163,7 +1163,7 @@ common:
     ## @param common.auth.tls.password paas password
     ##
     tls:
-      insecureSkipVerify:
+      insecureSkipVerify: true
       certFile:
       keyFile:
       caFile:
@@ -1190,7 +1190,7 @@ common:
   ##
   paas:
     tls:
-      insecureSkipVerify:
+      insecureSkipVerify: true
       certFile:
       keyFile:
       caFile:
@@ -1350,7 +1350,7 @@ common:
     ## @param common.openTelemetry.tls.password openTelemetry password
     ##
     tls:
-      insecureSkipVerify:
+      insecureSkipVerify: true
       certFile:
       keyFile:
       caFile:
@@ -1491,7 +1491,7 @@ common:
   ## cmdb证书相关信息
   ##
   tls:
-    insecureSkipVerify:
+    insecureSkipVerify: true
     certFile:
     keyFile:
     caFile:
@@ -1505,7 +1505,7 @@ common:
     username: admin
     tls:
       # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
-      insecureSkipVerify:
+      insecureSkipVerify: true
       # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
       certFile:
       # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
@@ -1900,3 +1900,7 @@ apigatewaySync:
   host: "http://bk-cmdb-api"
   maintainer: "admin"
   stageName: "prod"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  jobAppCode: "bk_job"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  nodeManAppCode: "bk_nodeman"

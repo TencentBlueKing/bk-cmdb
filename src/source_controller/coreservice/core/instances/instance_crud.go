@@ -13,6 +13,7 @@
 package instances
 
 import (
+	"sort"
 	"time"
 
 	"configcenter/src/common"
@@ -31,7 +32,7 @@ import (
 func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
 	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
 	instIDFieldName := common.GetInstIDField(objID)
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, instTableName, len(params))
+	ids, err := getSequences(kit, instTableName, len(params))
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +103,14 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	}
 
 	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
-	id, err := mongodb.Client().NextSequence(kit.Ctx, instTableName)
+	ids, err := getSequences(kit, instTableName, 1)
 	if err != nil {
 		return 0, err
 	}
 
 	// build new object instance data.
 	instIDFieldName := common.GetInstIDField(objID)
-	inputParam[instIDFieldName] = id
+	inputParam[instIDFieldName] = ids[0]
 	if !valid.IsInnerObject(objID) {
 		inputParam[common.BKObjIDField] = objID
 	}
@@ -125,7 +126,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	// build and save new object mapping data for inner object instance.
 	if metadata.IsCommon(objID) {
 		mapping := make(mapstr.MapStr, 0)
-		mapping[instIDFieldName] = id
+		mapping[instIDFieldName] = ids[0]
 		mapping[common.BKObjIDField] = objID
 		mapping[common.BkSupplierAccount] = kit.SupplierAccount
 
@@ -141,12 +142,50 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		blog.ErrorJSON("save instance error. err: %s, objID: %s, instance: %s, rid: %s",
 			err.Error(), objID, inputParam, kit.Rid)
 		if mongodb.Client().IsDuplicatedError(err) {
-			return id, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
+			return ids[0], kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return 0, err
 	}
 
-	return id, nil
+	return ids[0], nil
+}
+
+func getSequences(kit *rest.Kit, table string, count int) ([]uint64, error) {
+	if count <= 0 {
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPInputInvalid)
+	}
+
+	ids, err := mongodb.Client().NextSequences(kit.Ctx, table, count)
+	if err != nil {
+		return nil, err
+	}
+
+	if table != common.BKTableNameBasePlat {
+		return ids, nil
+	}
+
+	sort.Sort(util.Uint64Slice(ids))
+
+	if ids[0] > common.ReservedCloudAreaEndID {
+		return ids, nil
+	}
+
+	if ids[len(ids)-1] < common.ReservedCloudAreaStartID {
+		return ids, nil
+	}
+
+	// 此处不要求那么准确，直接跳过保留的管控区域长度，然后再获取id即可
+	if _, err = mongodb.Client().NextSequences(kit.Ctx, table,
+		common.ReservedCloudAreaEndID-common.ReservedCloudAreaStartID); err != nil {
+		return nil, err
+	}
+
+	ids, err = mongodb.Client().NextSequences(kit.Ctx, table, count)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {

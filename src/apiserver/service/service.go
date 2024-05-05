@@ -112,6 +112,7 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/findmany/hosts/by_service_templates/biz/{.*}").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/module_relation/bk_biz_id/{.*}").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/hosts/relation/with_topo").Filter(s.HostFilterChan).To(s.Post))
+	ws.Route(ws.PUT("/updatemany/hosts/all/property").Filter(s.HostFilterChan).To(s.Put))
 	ws.Route(ws.POST("/check/objectattr/host_apply_enabled").Filter(s.HostFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/update/transaction/commit").Filter(s.TxnFilterChan).To(s.Post))

@@ -161,6 +161,12 @@ type ObjAttDes struct {
 	PropertyGroupName string `json:"bk_property_group_name"`
 }
 
+// CreateObjAttDesResp 创建对象模型属性返回结构体
+type CreateObjAttDesResp struct {
+	BaseResp `json:",inline"`
+	Data     ObjAttDes `json:"data"`
+}
+
 // Validate Attribute
 func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
 	var attrValidatorMap = map[string]func(context.Context, interface{}, string) errors.RawErrorInfo{

@@ -20,6 +20,7 @@
           resource-type="project"
           :properties="properties"
           :property-groups="propertyGroups"
+          :obj-id="objId"
           :inst="inst">
         </cmdb-property>
       </bk-tab-panel>

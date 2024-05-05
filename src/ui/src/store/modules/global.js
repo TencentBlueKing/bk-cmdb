@@ -39,7 +39,8 @@ const state = {
   businessSelectorResolver: null,
   scrollerState: {
     scrollbar: false
-  }
+  },
+  noticeHeight: 0
 }
 
 const getters = {
@@ -99,7 +100,8 @@ const mutations = {
     state.permission = permission
   },
   setAppHeight(state, height) {
-    state.appHeight = height
+    // 在实际使用中appHeight不能包含公告栏的高度
+    state.appHeight = height - state.noticeHeight
   },
   setTitle(state, title) {
     changeDocumentTitle([title])
@@ -119,6 +121,9 @@ const mutations = {
   setScrollerState(state, scrollerState) {
     Object.assign(state.scrollerState, scrollerState)
   },
+  setNoticeHeight(state, height) {
+    state.noticeHeight = height
+  }
 }
 
 export default {

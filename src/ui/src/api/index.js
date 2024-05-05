@@ -12,11 +12,12 @@
 
 import Axios from 'axios'
 import md5 from 'md5'
-import CachedPromise from './_cached-promise'
-import RequestQueue from './_request-queue'
+import has from 'has'
 import { $error } from '@/magicbox'
 import i18n, { language } from '@/i18n'
-import has from 'has'
+import { showLoginModal } from '@blueking/login-modal'
+import CachedPromise from './_cached-promise'
+import RequestQueue from './_request-queue'
 import customHeaders from './custom-header'
 
 // axios实例
@@ -137,11 +138,15 @@ async function getPromise(method, url, data, userConfig = {}) {
  * @return
  */
 const PermissionCode = 9900403
+const TokenInvalidCode = 1306000
 function handleResponse({ config, response, resolve, reject }) {
   const transformedResponse = response.data
   const { bk_error_msg: message, bk_error_code: code, permission } = transformedResponse
   if (code === PermissionCode) {
     config.globalPermission && popupPermissionModal(permission)
+    return reject({ message, permission, code })
+  }
+  if (code === TokenInvalidCode) {
     return reject({ message, permission, code })
   }
   if (!transformedResponse.result && config.globalError) {
@@ -169,6 +174,11 @@ function handleReject(error, config) {
   if (error.code && error.code === PermissionCode) {
     return Promise.reject(error)
   }
+
+  if (error.code && error.code === TokenInvalidCode) {
+    window.loginModal.show()
+  }
+
   if (Axios.isCancel(error)) {
     return Promise.reject(error)
   }
@@ -176,12 +186,20 @@ function handleReject(error, config) {
     const { status, data } = error.response
     const nextError = { message: error.message, status }
     if (status === 401) {
-      if (window.loginModal) {
-        window.loginModal.show()
-      } else {
-        // 接口401需要拿html中定义的Site
-        window.Site.login && (window.location.href = window.Site.login)
+      const successUrl = `${window.location.origin}/static/login_success.html`
+
+      const siteLoginUrl = window.Site.login
+      if (!siteLoginUrl) {
+        console.error('Login URL not configured!')
+        return
       }
+
+      const loginURL = new URL(siteLoginUrl)
+      loginURL.searchParams.set('c_url', successUrl)
+      const pathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`
+      const loginUrl = `${loginURL.origin}${pathname}plain/${loginURL.search}`
+
+      showLoginModal({ loginUrl })
     } else if (data && data.bk_error_msg) {
       nextError.message = data.bk_error_msg
     } else if (status === 403) {
