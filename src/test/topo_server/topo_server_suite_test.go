@@ -23,6 +23,8 @@ var serviceClient = clientSet.ProcServer().Service()
 var hostServerClient = test.GetClientSet().HostServer()
 
 var kubeClient = topoServerClient.Kube()
+var fieldTemplateClient = topoServerClient.FieldTemplate()
+var modelQuoteClient = apiServerClient.ModelQuote()
 
 func TestTopoServer(t *testing.T) {
 	RegisterFailHandler(util.Fail)

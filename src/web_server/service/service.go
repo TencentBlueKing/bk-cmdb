@@ -131,6 +131,7 @@ func (s *Service) initService(ws *gin.Engine) {
 	ws.GET("/hosts/:bk_host_id/listen_ip_options", s.ListenIPOptions)
 	ws.POST("/logout", s.LogOutUser)
 	ws.GET("/login", s.Login)
+	ws.GET("/is_login", s.IsLogin)
 	ws.POST("/login", s.LoginUser)
 	ws.POST("/object/exportmany", s.BatchExportObject)
 	ws.POST("/object/importmany/analysis", s.BatchImportObjectAnalysis)

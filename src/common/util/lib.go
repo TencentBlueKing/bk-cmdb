@@ -163,6 +163,18 @@ func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 // Swap 用于排序
 func (p Int64Slice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
+// Uint64Slice uint64 slice
+type Uint64Slice []uint64
+
+// Len 用于排序
+func (p Uint64Slice) Len() int { return len(p) }
+
+// Less 用于排序
+func (p Uint64Slice) Less(i, j int) bool { return p[i] < p[j] }
+
+// Swap 用于排序
+func (p Uint64Slice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
 // GenerateRID TODO
 func GenerateRID() string {
 	unused := "0000"

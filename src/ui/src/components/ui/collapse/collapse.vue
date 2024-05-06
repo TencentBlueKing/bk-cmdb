@@ -35,6 +35,7 @@
 </template>
 
 <script>
+  import isEqual from 'lodash/isEqual'
   export default {
     name: 'cmdb-collapse',
     props: {
@@ -48,6 +49,14 @@
       },
       size: {
         type: String
+      },
+      autoExpand: { // 是否可以自动展开
+        type: Boolean,
+        default: false
+      },
+      list: {
+        type: [Object, Array],
+        default: (() => {})
       }
     },
     data() {
@@ -65,6 +74,12 @@
       }
     },
     watch: {
+      list(val, lastVal) {
+        const isSame = isEqual(val, lastVal)
+        if (!isSame && this.hidden && this.autoExpand) {
+          this.toggle()
+        }
+      },
       collapse(collapse) {
         this.hidden = collapse
       },

@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/web_server/service/excel"
 
 	"github.com/alexmullins/zip"
 	"github.com/gin-gonic/gin"
@@ -176,6 +177,13 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		c.String(http.StatusOK, msg)
 		return
 	}
+	if err := excel.VerifyFileType(excel.ImportTypeObject, file.Filename, rid); err != nil {
+		blog.Errorf("ImportObject failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+			err, file.Filename, rid)
+		msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+		c.String(http.StatusOK, msg)
+		return
+	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -221,6 +229,13 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		// file name start with '.' means hidden file, ignore
 		if strings.HasPrefix(item.FileInfo().Name(), ".") {
 			continue
+		}
+		if err := excel.VerifyFileType(excel.ImportTypeObjectYaml, item.FileInfo().Name(), rid); err != nil {
+			blog.Errorf("ImportObjectYaml failed, file type verify failed, err: %v, fileName: %s, rid: %s",
+				err, file.Filename, rid)
+			msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
+			c.String(http.StatusOK, msg)
+			return
 		}
 
 		errCode, err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result)

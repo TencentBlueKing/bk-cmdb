@@ -22,7 +22,7 @@
       :allow-number-paste="allowPaste"
       :initial-control-value="0" v-on="listeners"></bk-input>
   </span>
-  <bk-input class="search-input" type="number"
+  <bk-input v-bind="$attrs" class="search-input" type="number"
     :min="min" :max="max" v-model="localValue"
     :allow-number-paste="allowPaste"
     :initial-control-value="0" v-on="listeners" v-else></bk-input>

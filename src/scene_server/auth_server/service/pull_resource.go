@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"configcenter/src/common"
@@ -115,6 +116,10 @@ func (s *AuthService) listInstance(kit *rest.Kit, method types.ResourcePullMetho
 	filter, err := s.lgc.ValidateListInstanceRequest(kit, query)
 	if err != nil {
 		return nil, err
+	}
+
+	if filter.Keyword != "" {
+		filter.Keyword = regexp.QuoteMeta(filter.Keyword)
 	}
 
 	res, err := method.ListInstance(kit, query.Type, filter, query.Page)

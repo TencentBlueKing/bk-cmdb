@@ -34,6 +34,9 @@ import (
 const (
 	// maxSecondForSleep is the maximum number of seconds of sleep
 	maxSecondForSleep = 60
+
+	// fileLimit 10 * 1024 字节 = 10KB
+	fileLimit = 10240
 )
 
 func strMd5(str string) (retMd5 string) {
@@ -154,4 +157,15 @@ type TaskInfo struct {
 // CloudIDIPToAgentID get agentID from ip and cloudID
 func CloudIDIPToAgentID(cloudID, innerIP string) string {
 	return cloudID + ":" + innerIP
+}
+
+func isFileExceedLimit(str string) bool {
+	bytes := []byte(str)
+	length := len(bytes)
+
+	if length > fileLimit {
+		return true
+	}
+
+	return false
 }

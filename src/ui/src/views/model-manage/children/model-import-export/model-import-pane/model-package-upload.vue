@@ -97,6 +97,7 @@
   import { defineComponent, ref, reactive, computed } from 'vue'
   import unzip from 'unzip-js'
   import { t } from '@/i18n'
+  import { $error } from '@/magicbox'
   import { batchImportFileAnalysis } from '@/service/model/import-export.js'
   import { autofocus } from '@/directives/autofocus'
 
@@ -249,6 +250,10 @@
           files: [file]
         } = dt
 
+        if (!validateFileName(file.name, '.zip')) {
+          return
+        }
+
         isDragging.value = false
 
         preProcessFile(file)
@@ -257,7 +262,19 @@
       const handleFileChange = (e) => {
         const [file] = e.target.files
 
+        if (!validateFileName(file.name, '.zip')) {
+          return
+        }
         preProcessFile(file)
+      }
+
+      const validateFileName = (name, type) => {
+        if (!name.endsWith(type)) {
+          fileInputRef.value.value = null
+          $error(t('文件格式非法', { allowType: type }))
+          return false
+        }
+        return true
       }
 
       return {

@@ -35,6 +35,10 @@ spec:
           value: {{ .Values.apigatewaySync.maintainer }}
         - name: BK_CMDB_STAGE_NAME
           value: {{ .Values.apigatewaySync.stageName }}
+        - name: BK_JOB_APP_CODE
+          value: {{ .Values.apigatewaySync.jobAppCode }}
+        - name: BK_NODEMAN_APP_CODE
+          value: {{ .Values.apigatewaySync.nodeManAppCode }}
         resources:
           limits:
             cpu: 200m

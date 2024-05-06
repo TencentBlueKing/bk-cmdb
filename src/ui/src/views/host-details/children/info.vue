@@ -55,7 +55,7 @@
         href="javascript:void(0)"
         v-if="showMore"
         @click="viewAll">
-        {{$t('更多信息')}}
+        {{$t('更多')}}
         <i class="bk-icon icon-angle-down" :class="{ 'is-all-show': showAll }"></i>
       </a>
       <a class="action-btn change-topology" v-if="isBusinessHost && !readonly"

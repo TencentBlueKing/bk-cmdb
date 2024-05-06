@@ -653,7 +653,7 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 	legalHost := make(map[int]map[string]interface{})
 	lang := i.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(i.GetKit().Header))
 
-	cloudNames := []string{common.DefaultCloudName}
+	cloudNames := []string{common.UnassignedCloudAreaName}
 	for _, host := range hosts {
 		if name, ok := host[common.BKCloudIDField]; ok {
 			cloudNames = append(cloudNames, util.GetStrByInterface(name))
@@ -674,7 +674,7 @@ func (i *Importer) transferCloudArea(hosts map[int]map[string]interface{}) (map[
 			continue
 		}
 
-		cloudStr := common.DefaultCloudName
+		cloudStr := common.UnassignedCloudAreaName
 		if _, ok := host[common.BKCloudIDField]; ok {
 			cloudStr = util.GetStrByInterface(hosts[index][common.BKCloudIDField])
 		}

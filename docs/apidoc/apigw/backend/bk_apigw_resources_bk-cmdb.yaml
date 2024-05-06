@@ -10099,3 +10099,29 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/updatemany/hosts/all/property:
+    put:
+      operationId: batch_update_host_all_properties
+      description: 根据主机id和属性批量更新主机属性
+      tags:
+        - nodeman
+        - host
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/hosts/all/property
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:

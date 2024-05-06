@@ -204,7 +204,7 @@
           }
           // 账号多选转为Array
           if (usefulCondition.user) {
-            usefulCondition.user = usefulCondition.user.split(',')
+            usefulCondition.user = Array.isArray(usefulCondition.user) ? usefulCondition.user : usefulCondition.user.split(',')
           }
 
           return usefulCondition

@@ -65,8 +65,13 @@
       } catch (e) {
         this.mainLine = []
       }
+      this.initActive()
     },
     methods: {
+      initActive() {
+        const { modelId = 'set' } = this.$route.query
+        this.active = modelId
+      },
       getMainLine() {
         return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
           config: {

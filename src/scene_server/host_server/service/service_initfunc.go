@@ -158,6 +158,8 @@ func (s *Service) initHost(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/kube/search",
 		Handler: s.SearchHostWithKube})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/all/property",
+		Handler: s.UpdateHostAllProperty})
 	utility.AddToRestfulWebService(web)
 
 }

@@ -25,6 +25,7 @@
     "1111024": "Failed to create zip, %s",
     "1111025": "Notification is not enabled",
     "1111026": "Failed to get announcement list，%s",
+    "1111027": "Invalid file type: %s",
 
     "": ""
 }

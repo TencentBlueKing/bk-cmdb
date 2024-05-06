@@ -58,7 +58,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		c.Request.Header.Del("Accept-Encoding")
 
 		switch path1 {
-		case "healthz", "metrics", "login", "static":
+		case "healthz", "metrics", "login", "static", "is_login":
 			c.Next()
 			return
 		}
