@@ -1,0 +1,37 @@
+spec_version: 3
+app_version: "0.0.1"
+app:
+  region: "default"
+  bkAppCode: "bk-cmdb"
+  bkAppName: "bk-cmdb"
+  market:
+    introduction: "蓝鲸配置平台"
+    description: "蓝鲸配置平台"
+    displayOptions:
+      width: 800
+      height: 600
+modules:
+  - name: "web"
+    isDefault: true
+    sourceDir: "bk-cmdb"
+    language: "Go"
+    spec:
+      processes:
+        - command:
+            - /app/bin/start-web.sh
+          name: web
+          replicas: 1
+          resQuotaPlan: default
+          targetPort: 80
+      build:
+        buildpacks:
+        - name: bk-buildpack-go
+          version: v168
+      configuration:
+        env:
+        - name: "GO_INSTALL_PACKAGE_SPEC"
+          value: "./src/web_server"
+        - name: "CGO_CFLAGS"
+          value: "-I/app/Tongsuo-8.3.2/include -Wno-deprecated-declarations"
+        - name: "CGO_LDFLAGS"
+          value: "-L/opt/tongsuo/lib -lssl -lcrypto"
