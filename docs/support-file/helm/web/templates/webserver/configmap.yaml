@@ -8,7 +8,17 @@ data:
     es:
       # 全文检索功能开关(取值：off/on)，默认是off，开启是on
       fullTextSearch: {{ .Values.web.es.fullTextSearch | quote }}
-      # web_server专属配置
+    # esb配置
+    esb:
+      addr: {{ .Values.bkComponentApiUrl }}
+      appCode: {{ .Values.web.esb.appCode }}
+      appSecret: {{ .Values.web.esb.appSecret }}
+      insecureSkipVerify: true
+      certFile:
+      keyFile:
+      caFile:
+      password:
+    # web_server专属配置
     webServer:
       api:
         version:  v3

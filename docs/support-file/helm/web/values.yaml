@@ -176,6 +176,13 @@ bkCmdbApiGatewayUrl: "http://bkapi.example.com"
 ## @section bk-cmdb common config parameters
 ##
 web:
+  ## bk-cmdb common config esb parameters
+  ## @param common.esb.appCode bk-cmdb app code used in esb
+  ## @param common.esb.appSecret bk-cmdb app secret used in esb
+  ##
+  esb:
+    appCode: bk_cmdb
+    appSecret:
   ## bk-cmdb common config paas parameters
   ## @param common.paas.tls.insecureSkipVerify paas insecureSkipVerify config
   ## @param common.paas.tls.certFile paas certFile
