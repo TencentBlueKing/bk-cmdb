@@ -61,6 +61,106 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/create/kube/cluster:
+    post:
+      operationId: create_kube_cluster
+      description: 创建容器集群
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/cluster:
+    put:
+      operationId: batch_update_kube_cluster
+      description: 批量更新容器集群信息
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/kube/cluster/type:
+    put:
+      operationId: update_kube_cluster_type
+      description: 更新容器集群类型
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/kube/cluster/type
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/kube/cluster:
+    delete:
+      operationId: batch_delete_kube_cluster
+      description: 批量删除容器集群
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
   /api/v3/findmany/kube/cluster:
     post:
       operationId: list_kube_cluster
@@ -86,23 +186,23 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/kube/container:
+  /api/v3/createmany/kube/node:
     post:
-      operationId: list_kube_container
-      description: 查询Container列表
+      operationId: batch_create_kube_node
+      description: 批量创建容器节点
       tags:
         - kube
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
           method: post
-          path: /api/v3/findmany/kube/container
+          path: /api/v3/createmany/kube/node
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -111,23 +211,48 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/kube/namespace:
-    post:
-      operationId: list_kube_namespace
-      description: 查询namespace
+  /api/v3/updatemany/kube/node:
+    put:
+      operationId: batch_update_kube_node
+      description: 批量更新容器节点信息
       tags:
         - kube
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
-          method: post
-          path: /api/v3/findmany/kube/namespace
+          method: put
+          path: /api/v3/updatemany/kube/node
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/node:
+    delete:
+      operationId: batch_delete_kube_node
+      description: 批量删除容器节点
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/node
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -161,6 +286,56 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/createmany/kube/pod:
+    post:
+      operationId: batch_create_kube_pod
+      description: 批量创建容器pod
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/pod:
+    delete:
+      operationId: batch_delete_kube_pod
+      description: 批量删除Pod
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
   /api/v3/findmany/kube/pod:
     post:
       operationId: list_kube_pod
@@ -178,6 +353,206 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/findmany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/kube/container:
+    post:
+      operationId: list_kube_container
+      description: 查询Container列表
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/kube/container
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/kube/namespace:
+    post:
+      operationId: batch_create_kube_namespace
+      description: 批量创建namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/namespace:
+    put:
+      operationId: batch_update_kube_namespace
+      description: 批量更新namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/namespace:
+    delete:
+      operationId: batch_delete_kube_namespace
+      description: 批量删除namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/kube/namespace:
+    post:
+      operationId: list_kube_namespace
+      description: 查询namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/kube/workload/{kind}:
+    post:
+      operationId: batch_create_kube_workload
+      description: 批量创建workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/workload/{kind}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/workload/{kind}:
+    put:
+      operationId: batch_update_kube_workload
+      description: 批量更新workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/workload/{kind}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/workload/{kind}:
+    delete:
+      operationId: batch_delete_kube_workload
+      description: 批量删除workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/workload/{kind}
           matchSubpath: false
           timeout: 0
           upstreams: {}
