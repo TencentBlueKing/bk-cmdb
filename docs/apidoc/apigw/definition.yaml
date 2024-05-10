@@ -103,7 +103,7 @@ grant_permissions:
       - batch_update_kube_workload
       - batch_delete_kube_workload
       - list_kube_workload
-
+      - list_hosts_without_biz
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
