@@ -24,6 +24,7 @@ import cmdbUI from './components/ui'
 import cmdbSearchComponent from './components/search/index'
 import routerActions from './router/actions'
 import tools from './utils/tools'
+import { gotoLoginPage } from '@/utils/login-helper'
 import clipboard from 'vue-clipboard2'
 import './magicbox'
 import './directives'
@@ -58,17 +59,7 @@ api.get(`${window.API_HOST}is_login`).then(() => {
   })
 })
   .catch(() => {
-    if (!window.Site.login) {
-      console.error('The login URL is not configured!')
-      return
-    }
-    try {
-      const loginURL = new URL(window.Site.login)
-      loginURL.searchParams.set('c_url', location.href)
-      location.href = loginURL.href
-    } catch (_) {
-      console.error('The login URL invalid!')
-    }
+    gotoLoginPage()
   })
 
 if (process.env.COMMIT_ID) {
