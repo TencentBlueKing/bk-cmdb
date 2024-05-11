@@ -116,17 +116,12 @@
                     </div>
                     <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                     <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                    <div class="form-default"
-                      v-if="showDefault(property.bk_property_id)">
-                      <span>
-                        默认值：
-                      </span>
-                      <span class="form-default-text">{{ propertyDefault[property.bk_property_id] }}</span>
-                      <span class="form-default-operate"
-                        @mousedown="() => handleDefault(propertyDefault[property.bk_property_id])">
-                        填入
-                      </span>
-                    </div>
+                    <cmdb-default-picker
+                      v-if="showDefault(property.bk_property_id)"
+                      :value="propertyDefaults[property.bk_property_id]"
+                      :property="property"
+                      @pick-default="handlePickDefault">
+                    </cmdb-default-picker>
                     <span class="form-error"
                       v-else-if="errors.has(property.bk_property_id)">
                       {{errors.first(property.bk_property_id)}}
@@ -245,8 +240,13 @@
   import { readonlyMixin } from '../mixin-readonly'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
+
   export default {
     name: 'cmdb-host-property',
+    components: {
+      cmdbDefaultPicker
+    },
     filters: {
       filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
@@ -292,8 +292,8 @@
       host() {
         return this.$tools.getInstFormValues(this.properties, this.info.host, false)
       },
-      propertyDefault() {
-        return this.$tools.getInstFormDefault(this.properties)
+      propertyDefaults() {
+        return this.$tools.getInstFormDefaults(this.properties)
       },
       bizId() {
         return this.isFromResource ? undefined : this.business
@@ -398,7 +398,7 @@
       },
       showDefault(propertyId) {
         const { value, focus } = this.editState
-        return this.propertyDefault[propertyId]
+        return this.propertyDefaults[propertyId]
           && !value
           && focus
       },
@@ -408,7 +408,7 @@
       handleBlur() {
         this.editState.focus = false
       },
-      handleDefault(val) {
+      handlePickDefault(val) {
         this.editState.value = val
       },
       handleCopy(propertyId) {
@@ -688,23 +688,6 @@
             font-size: 12px;
             line-height: 1;
             color: $cmdbDangerColor;
-        }
-        .form-default {
-          display: flex;
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 80px;
-          font-size: 12px;
-
-          .form-default-text {
-            flex: 1;
-            @include ellipsis;
-          }
-          .form-default-operate {
-            color: $primaryColor;
-            cursor: pointer;
-          }
         }
         .form-component {
             display: inline-flex;

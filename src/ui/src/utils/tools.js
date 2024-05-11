@@ -140,7 +140,7 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
  * @param {Array} properties - 模型属性
  * @return {Object} 实例默认值
  */
-export function getInstFormDefault(properties) {
+export function getInstFormDefaults(properties) {
   const {
     SINGLECHAR,
     LONGCHAR,
@@ -683,7 +683,7 @@ export default {
   formatTime,
   clone,
   getInstFormValues,
-  getInstFormDefault,
+  getInstFormDefaults,
   formatValue,
   formatValues,
   getValidateRules,

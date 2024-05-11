@@ -105,17 +105,13 @@
                   </div>
                   <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                   <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
-                  <div class="form-default"
-                    v-if="showDefault(property.bk_property_id)">
-                    <span>
-                      默认值：
-                    </span>
-                    <span class="form-default-text">{{ propertyDefault[property.bk_property_id] }}</span>
-                    <span class="form-default-operate"
-                      @mousedown="() => handleDefault(propertyDefault[property.bk_property_id])">
-                      填入
-                    </span>
-                  </div>
+                  <cmdb-default-picker
+                    v-if="showDefault(property.bk_property_id)"
+                    :value="propertyDefaults[property.bk_property_id]"
+                    :property="property"
+                    :instance="instState"
+                    @pick-default="handlePickDefault">
+                  </cmdb-default-picker>
                   <span class="form-error"
                     v-else-if="errors.has(property.bk_property_id)">
                     {{errors.first(property.bk_property_id)}}
@@ -206,12 +202,16 @@
   import authMixin from './mixin-auth'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { keyupCallMethod } from '@/utils/util'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
 
   export default {
     filters: {
       filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
       }
+    },
+    components: {
+      cmdbDefaultPicker
     },
     mixins: [formMixins, authMixin],
     props: {
@@ -239,7 +239,7 @@
       return {
         PROPERTY_TYPES,
         instState: this.inst,
-        propertyDefault: this.$tools.getInstFormDefault(this.properties),
+        propertyDefaults: this.$tools.getInstFormDefaults(this.properties),
         editState: {
           property: null,
           value: null,
@@ -272,7 +272,7 @@
     watch: {
       inst(val) {
         this.instState = this.$tools.getInstFormValues(this.properties, val, false)
-        this.propertyDefault = this.$tools.getInstFormDefault(this.properties)
+        this.propertyDefaults = this.$tools.getInstFormDefaults(this.properties)
       }
     },
     methods: {
@@ -367,7 +367,7 @@
       },
       showDefault(propertyId) {
         const { value, focus } = this.editState
-        return this.propertyDefault[propertyId]
+        return this.propertyDefaults[propertyId]
           && this.showDefaultValue
           && !value
           && focus
@@ -378,7 +378,7 @@
       handleBlur() {
         this.editState.focus = false
       },
-      handleDefault(val) {
+      handlePickDefault(val) {
         this.editState.value = val
       },
       handleCopy(propertyId) {
@@ -653,23 +653,6 @@
             font-size: 12px;
             line-height: 1;
             color: $cmdbDangerColor;
-        }
-        .form-default {
-          display: flex;
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 80px;
-          font-size: 12px;
-
-          .form-default-text {
-            flex: 1;
-            @include ellipsis;
-          }
-          .form-default-operate {
-            color: $primaryColor;
-            cursor: pointer;
-          }
         }
         .form-component {
             display: inline-block;

@@ -72,17 +72,12 @@
                         :auth="saveAuth"
                         v-model.trim="values[property['bk_property_id']]" />
                       <form-append :type="type" :property="property" :render="renderAppend"></form-append>
-                      <div class="form-default"
-                        v-if="showDefault(property.bk_property_id)">
-                        <span>
-                          默认值：
-                        </span>
-                        <span class="form-default-text">{{ propertyDefault[property.bk_property_id] }}</span>
-                        <span class="form-default-operate"
-                          @mousedown="() => handleDefault(property.bk_property_id)">
-                          填入
-                        </span>
-                      </div>
+                      <cmdb-default-picker
+                        v-if="showDefault(property.bk_property_id)"
+                        :value="propertyDefaults[property.bk_property_id]"
+                        :property="property"
+                        @pick-default="(val) => handlePickDefault(property.bk_property_id, val)">
+                      </cmdb-default-picker>
                       <span v-else-if="errors.has(property.bk_property_id)" class="form-error"
                         :title="errors.first(property['bk_property_id'])">
                         {{errors.first(property['bk_property_id'])}}
@@ -127,12 +122,14 @@
   import { BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
 
   export default {
     name: 'cmdb-form',
     components: {
       FormTips,
-      FormAppend
+      FormAppend,
+      cmdbDefaultPicker
     },
     mixins: [formMixins],
     props: {
@@ -192,7 +189,7 @@
         refrenceValues: {},
         validating: false,
         focusId: '',
-        propertyDefault: this.$tools.getInstFormDefault(this.properties)
+        propertyDefaults: this.$tools.getInstFormDefaults(this.properties)
       }
     },
     computed: {
@@ -239,7 +236,7 @@
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
         this.refrenceValues = this.$tools.clone(this.values)
-        this.propertyDefault = this.$tools.getInstFormDefault(this.properties)
+        this.propertyDefaults = this.$tools.getInstFormDefaults(this.properties)
       },
       checkGroupAvailable(properties) {
         const availabelProperties = properties.filter(property => this.checkEditable(property))
@@ -282,7 +279,7 @@
         return rules
       },
       showDefault(propertyId) {
-        return this.propertyDefault[propertyId]
+        return this.propertyDefaults[propertyId]
           && this.showDefaultValue
           && !this.values[propertyId]
           && this.focusId === propertyId
@@ -293,8 +290,7 @@
       handleBlur() {
         this.focusId = ''
       },
-      handleDefault(id) {
-        const val = this.propertyDefault[id]
+      handlePickDefault(id, val) {
         this.values[id] = val
       },
       async handleSave() {
@@ -450,20 +446,6 @@
         @include ellipsis;
     }
     .form-default {
-        display: flex;
-        position: absolute;
-        top: 100%;
-        left: 0;
         right: 0;
-        font-size: 12px;
-
-        .form-default-text {
-            flex: 1;
-            @include ellipsis;
-        }
-        .form-default-operate {
-            color: $primaryColor;
-            cursor: pointer;
-        }
     }
 </style>
