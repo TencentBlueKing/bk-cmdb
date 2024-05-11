@@ -135,6 +135,34 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
   return { ...inst, ...values }
 }
 
+/**
+ * 获取实例的默认值
+ * @param {Array} properties - 模型属性
+ * @return {Object} 实例默认值
+ */
+export function getInstFormDefault(properties) {
+  const {
+    SINGLECHAR,
+    LONGCHAR,
+    INT,
+    FLOAT,
+    OBJUSER
+  } = PROPERTY_TYPES
+  const defaultValue = {}
+  properties.forEach((property) => {
+    const {
+      bk_property_type: propertyType,
+      default: propertyDefault,
+      bk_property_id: propertyId
+    } = property
+
+    if ([SINGLECHAR, LONGCHAR, INT, FLOAT, OBJUSER].includes(propertyType)) {
+      defaultValue[propertyId] = propertyDefault || ''
+    }
+  })
+  return defaultValue
+}
+
 export function isEmptyValue(value) {
   return value === '' || value === null || value === void 0
 }
@@ -655,6 +683,7 @@ export default {
   formatTime,
   clone,
   getInstFormValues,
+  getInstFormDefault,
   formatValue,
   formatValues,
   getValidateRules,

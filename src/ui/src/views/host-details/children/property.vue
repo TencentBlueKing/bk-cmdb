@@ -109,13 +109,26 @@
                           showOnInit: true,
                           trigger: 'click',
                           content: property.placeholder
-                        }">
+                        }"
+                        @focus="handleFocus"
+                        @blur="handleBlur">
                       </component>
                     </div>
                     <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                     <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    <div class="form-default"
+                      v-if="showDefault(property.bk_property_id)">
+                      <span>
+                        默认值：
+                      </span>
+                      <span class="form-default-text">{{ propertyDefault[property.bk_property_id] }}</span>
+                      <span class="form-default-operate"
+                        @mousedown="() => handleDefault(propertyDefault[property.bk_property_id])">
+                        填入
+                      </span>
+                    </div>
                     <span class="form-error"
-                      v-if="errors.has(property.bk_property_id)">
+                      v-else-if="errors.has(property.bk_property_id)">
                       {{errors.first(property.bk_property_id)}}
                     </span>
                   </div>
@@ -255,7 +268,8 @@
         objId: BUILTIN_MODELS.HOST,
         editState: {
           property: null,
-          value: null
+          value: null,
+          focus: false
         },
         loadingState: [],
         showCopyTips: false,
@@ -277,6 +291,9 @@
       ...mapGetters('hostDetails', ['groupedProperties', 'properties']),
       host() {
         return this.$tools.getInstFormValues(this.properties, this.info.host, false)
+      },
+      propertyDefault() {
+        return this.$tools.getInstFormDefault(this.properties)
       },
       bizId() {
         return this.isFromResource ? undefined : this.business
@@ -378,6 +395,21 @@
       },
       showPopover() {
         this.hoverPropertyPopover.instance.show()
+      },
+      showDefault(propertyId) {
+        const { value, focus } = this.editState
+        return this.propertyDefault[propertyId]
+          && !value
+          && focus
+      },
+      handleFocus() {
+        this.editState.focus = true
+      },
+      handleBlur() {
+        this.editState.focus = false
+      },
+      handleDefault(val) {
+        this.editState.value = val
       },
       handleCopy(propertyId) {
         const [component] = this.$refs[`property-value-${propertyId}`]
@@ -656,6 +688,23 @@
             font-size: 12px;
             line-height: 1;
             color: $cmdbDangerColor;
+        }
+        .form-default {
+          display: flex;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 80px;
+          font-size: 12px;
+
+          .form-default-text {
+            flex: 1;
+            @include ellipsis;
+          }
+          .form-default-operate {
+            color: $primaryColor;
+            cursor: pointer;
+          }
         }
         .form-component {
             display: inline-flex;

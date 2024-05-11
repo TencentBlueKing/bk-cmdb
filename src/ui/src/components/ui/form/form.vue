@@ -58,7 +58,9 @@
                         :multiple="property.ismultiple"
                         v-bind="{ ...$attrs, ...$tools.getValidateEvents(property) }"
                         v-validate="getValidateRules(property)"
-                        v-model.trim="values[property['bk_property_id']]">
+                        v-model.trim="values[property['bk_property_id']]"
+                        @focus="() => handleFocus(property.bk_property_id)"
+                        @blur="handleBlur">
                       </component>
                       <cmdb-form-innertable v-else
                         :mode="type"
@@ -70,7 +72,18 @@
                         :auth="saveAuth"
                         v-model.trim="values[property['bk_property_id']]" />
                       <form-append :type="type" :property="property" :render="renderAppend"></form-append>
-                      <span class="form-error"
+                      <div class="form-default"
+                        v-if="showDefault(property.bk_property_id)">
+                        <span>
+                          默认值：
+                        </span>
+                        <span class="form-default-text">{{ propertyDefault[property.bk_property_id] }}</span>
+                        <span class="form-default-operate"
+                          @mousedown="() => handleDefault(property.bk_property_id)">
+                          填入
+                        </span>
+                      </div>
+                      <span v-else-if="errors.has(property.bk_property_id)" class="form-error"
                         :title="errors.first(property['bk_property_id'])">
                         {{errors.first(property['bk_property_id'])}}
                       </span>
@@ -147,6 +160,10 @@
         type: Object,
         default: null
       },
+      showDefaultValue: {
+        type: Boolean,
+        default: false
+      },
       renderTips: Function,
       renderAppend: Function,
       flexProperties: {
@@ -173,7 +190,9 @@
         PROPERTY_TYPES,
         values: {},
         refrenceValues: {},
-        validating: false
+        validating: false,
+        focusId: '',
+        propertyDefault: this.$tools.getInstFormDefault(this.properties)
       }
     },
     computed: {
@@ -220,6 +239,7 @@
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
         this.refrenceValues = this.$tools.clone(this.values)
+        this.propertyDefault = this.$tools.getInstFormDefault(this.properties)
       },
       checkGroupAvailable(properties) {
         const availabelProperties = properties.filter(property => this.checkEditable(property))
@@ -260,6 +280,22 @@
         }
 
         return rules
+      },
+      showDefault(propertyId) {
+        return this.propertyDefault[propertyId]
+          && this.showDefaultValue
+          && !this.values[propertyId]
+          && this.focusId === propertyId
+      },
+      handleFocus(propertyId) {
+        this.focusId = propertyId
+      },
+      handleBlur() {
+        this.focusId = ''
+      },
+      handleDefault(id) {
+        const val = this.propertyDefault[id]
+        this.values[id] = val
       },
       async handleSave() {
         const validatePromise = [this.$validator.validateAll()]
@@ -412,5 +448,22 @@
         color: #ff5656;
         max-width: 100%;
         @include ellipsis;
+    }
+    .form-default {
+        display: flex;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        font-size: 12px;
+
+        .form-default-text {
+            flex: 1;
+            @include ellipsis;
+        }
+        .form-default-operate {
+            color: $primaryColor;
+            cursor: pointer;
+        }
     }
 </style>

@@ -19,7 +19,8 @@
     v-bind="$attrs"
     @blur="handleBlur"
     @change="handleChange"
-    @enter="handleEnter">
+    @enter="handleEnter"
+    @focus="handleFocus">
   </bk-input>
 </template>
 
@@ -58,6 +59,9 @@
       }
     },
     methods: {
+      handleFocus() {
+        this.$emit('focus')
+      },
       handleChange(value) {
         this.$emit('on-change', value)
       },
@@ -65,6 +69,7 @@
         this.$emit('enter', value)
       },
       handleBlur(value) {
+        this.localValue = String(value).trim().length ? value : null
         this.$emit('blur', value)
       },
       focus() {
