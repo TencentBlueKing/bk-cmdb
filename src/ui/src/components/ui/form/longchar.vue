@@ -110,6 +110,7 @@
         const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
         parent.style.height = `${this.minHeight}px`
         parent.style.zIndex = ''
+        this.localValue = String(value).trim().length ? value : null
         this.$emit('blur', value)
       },
       handleFocus() {
@@ -117,6 +118,7 @@
         const parent = autoSize.$el.querySelector('.bk-textarea-wrapper')
         // eslint-disable-next-line no-underscore-dangle
         parent.style.zIndex = window.__bk_zIndex_manager.nextZIndex()
+        this.$emit('focus')
       },
       focus() {
         const { autoSize } = this.$refs

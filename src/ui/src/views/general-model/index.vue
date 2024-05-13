@@ -178,6 +178,7 @@
           :properties="properties"
           :property-groups="propertyGroups"
           :save-auth="saveAuth"
+          :show-default-value="true"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
