@@ -109,6 +109,7 @@
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - filterTagHeight - 190"
+      :shift-multi-checked="true"
       @sort-change="handleSortChange"
       @page-limit-change="handleSizeChange"
       @page-change="handlePageChange"
