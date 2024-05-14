@@ -15,6 +15,7 @@ import Router from 'vue-router'
 import has from 'has'
 
 import StatusError from './StatusError.js'
+import { rootPath, connectToMain } from '@blueking/sub-saas'
 
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
@@ -31,12 +32,17 @@ import {
 
 import {
   MENU_ENTRY,
+  MENU_INDEX,
   MENU_BUSINESS_SET,
   MENU_BUSINESS,
   MENU_RESOURCE,
   MENU_MODEL,
+  MENU_MODEL_MANAGEMENT,
+  MENU_RESOURCE_MANAGEMENT,
   MENU_ANALYSIS,
-  MENU_PLATFORM_MANAGEMENT
+  MENU_ANALYSIS_AUDIT,
+  MENU_PLATFORM_MANAGEMENT,
+  MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG
 } from '@/dictionary/menu-symbol'
 
 import {
@@ -54,22 +60,25 @@ import dynamicRouterView from '@/components/layout/dynamic-router-view'
 
 Vue.use(Router)
 
-export const viewRouters = []
+export const getRoutePath = (subPath) => {
+  const path = subPath.startsWith('/') ? subPath.slice(1) : subPath
+  return `${rootPath}${path}`
+}
 
 const statusRouters = [
   {
     name: 'no-business',
-    path: '/no-business',
+    path: getRoutePath('/no-business'),
     components: require('@/views/status/non-exist-business')
   },
   {
     name: '404',
-    path: '/404',
+    path: getRoutePath('/404'),
     components: require('@/views/status/404')
   },
   {
     name: 'error',
-    path: '/error',
+    path: getRoutePath('/error'),
     components: require('@/views/status/error')
   }
 ]
@@ -91,8 +100,8 @@ const router = new Router({
       name: MENU_ENTRY,
       component: dynamicRouterView,
       children: indexViews,
-      path: '/',
-      redirect: '/index'
+      path: rootPath,
+      redirect: { name: MENU_INDEX }
     },
     {
       name: MENU_BUSINESS_SET,
@@ -102,7 +111,7 @@ const router = new Router({
         permission: require('@/views/status/non-exist-business-set').default
       },
       children: businessSetViews,
-      path: '/business-set/:bizSetId',
+      path: getRoutePath('/business-set/:bizSetId'),
       meta: {
         menu: {
           i18n: '业务集'
@@ -117,7 +126,7 @@ const router = new Router({
         permission: require('@/views/status/non-exist-business').default
       },
       children: businessViews,
-      path: '/business/:bizId?',
+      path: getRoutePath('/business/:bizId?'),
       meta: {
         menu: {
           i18n: '业务'
@@ -128,8 +137,8 @@ const router = new Router({
       name: MENU_MODEL,
       component: dynamicRouterView,
       children: modelViews,
-      path: '/model',
-      redirect: '/model/index',
+      path: getRoutePath('/model'),
+      redirect: { name: MENU_MODEL_MANAGEMENT },
       meta: {
         menu: {
           i18n: '模型'
@@ -140,8 +149,8 @@ const router = new Router({
       name: MENU_RESOURCE,
       component: dynamicRouterView,
       children: resourceViews,
-      path: '/resource',
-      redirect: '/resource/index',
+      path: getRoutePath('/resource'),
+      redirect: { name: MENU_RESOURCE_MANAGEMENT },
       meta: {
         menu: {
           i18n: '资源'
@@ -152,8 +161,8 @@ const router = new Router({
       name: MENU_ANALYSIS,
       component: dynamicRouterView,
       children: analysisViews,
-      path: '/analysis',
-      redirect: '/analysis/audit',
+      path: getRoutePath('/analysis'),
+      redirect: { name: MENU_ANALYSIS_AUDIT },
       meta: {
         menu: {
           i18n: '运营分析'
@@ -164,8 +173,8 @@ const router = new Router({
       name: MENU_PLATFORM_MANAGEMENT,
       component: dynamicRouterView,
       children: platformManagementViews,
-      path: '/platform-management',
-      redirect: '/platform-management/global-config',
+      path: getRoutePath('/platform-management'),
+      redirect: { name: MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG },
       meta: {
         auth: {
           view: [{ type: OPERATION.R_CONFIG_ADMIN }, { type: OPERATION.U_CONFIG_ADMIN }]
@@ -380,6 +389,8 @@ router.onError((error) => {
     $error(i18n.t('资源请求失败提示'))
   }
 })
+
+connectToMain(router)
 
 export const useRouter = () => router
 
