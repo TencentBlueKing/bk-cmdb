@@ -241,6 +241,15 @@ func (sh *searchHost) ParseCondition() error {
 }
 
 func (sh *searchHost) validateObjCond(objCond *metadata.SearchCondition) error {
+	if len(objCond.Condition) == 0 {
+		return nil
+	}
+
+	// mainline object condition only allows condition of 'bk_inst_id $eq value' form, and is validated elsewhere
+	if objCond.ObjectID == common.BKInnerObjIDObject {
+		return nil
+	}
+
 	attributes, err := sh.lgc.SearchObjectAttributes(sh.kit, sh.hostSearchParam.AppID, objCond.ObjectID)
 	if err != nil {
 		blog.Errorf("search %s obj attr for validation failed, err: %v, rid: %s", objCond.ObjectID, err, sh.kit.Rid)
