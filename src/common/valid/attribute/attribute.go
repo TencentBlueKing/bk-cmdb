@@ -31,7 +31,7 @@ import (
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{}, isMultiple bool,
+func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{}, isMultiple *bool,
 	defaultVal interface{}) error {
 
 	switch propertyType {
@@ -53,9 +53,13 @@ func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{},
 }
 
 // ValidFieldTypeEnumOption validate enum field type's option
-func ValidFieldTypeEnumOption(kit *rest.Kit, option interface{}, isMultiple bool) error {
+func ValidFieldTypeEnumOption(kit *rest.Kit, option interface{}, isMultiple *bool) error {
 	if option == nil {
 		return kit.CCError.Errorf(common.CCErrCommParamsLostField, "option")
+	}
+
+	if isMultiple == nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
 	}
 
 	enumOption, err := metadata.ParseEnumOption(option)
@@ -109,7 +113,7 @@ func ValidFieldTypeEnumOption(kit *rest.Kit, option interface{}, isMultiple bool
 		}
 	}
 
-	if !isMultiple && count != 1 {
+	if !*isMultiple && count != 1 {
 		blog.Errorf("field type is single choice, but default value is multiple, count: %d, rid: %s", count,
 			kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommParamsNeedSingleChoice)
@@ -305,16 +309,16 @@ func ValidTableFieldOption(kit *rest.Kit, propertyType string, option, defaultVa
 		isMultiple = &bFalse
 	}
 
-	return ValidPropertyOption(kit, propertyType, option, *isMultiple, defaultValue)
+	return ValidPropertyOption(kit, propertyType, option, isMultiple, defaultValue)
 }
 
 // ValidPropertyTypeIsMultiple valid object attr field type is multiple
-func ValidPropertyTypeIsMultiple(kit *rest.Kit, propertyType string, isMultiple bool) error {
+func ValidPropertyTypeIsMultiple(kit *rest.Kit, propertyType string, isMultiple *bool) error {
 	switch propertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeEnum,
 		common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeLongChar, common.FieldTypeTimeZone,
 		common.FieldTypeBool, common.FieldTypeList:
-		if isMultiple {
+		if isMultiple != nil && *isMultiple {
 			return kit.CCError.Errorf(common.CCErrCommFieldTypeNotSupportMultiple, propertyType)
 		}
 	}
