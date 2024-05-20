@@ -96,6 +96,7 @@ func addAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 	}
 
 	now := metadata.Now()
+	isMultiple := false
 
 	createAttrs := make([]attribute, 0)
 	createAttrIdx := 0
@@ -114,6 +115,7 @@ func addAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error 
 		attr.Creator = conf.User
 		attr.CreateTime = &now
 		attr.LastTime = &now
+		attr.IsMultiple = &isMultiple
 		createAttrs = append(createAttrs, attr)
 		createAttrIdx++
 	}
