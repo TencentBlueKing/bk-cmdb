@@ -192,6 +192,15 @@ func (sh *searchHost) ParseCondition() error {
 }
 
 func (sh *searchHost) validateObjCond(objCond *metadata.SearchCondition) error {
+	if len(objCond.Condition) == 0 {
+		return nil
+	}
+
+	// mainline object condition only allows condition of 'bk_inst_id $eq value' form, and is validated elsewhere
+	if objCond.ObjectID == common.BKInnerObjIDObject {
+		return nil
+	}
+
 	attributes, err := sh.lgc.SearchObjectAttributes(sh.kit, sh.hostSearchParam.AppID, objCond.ObjectID)
 	if err != nil {
 		blog.Errorf("search %s obj attr for validation failed, err: %v, rid: %s", objCond.ObjectID, err, sh.kit.Rid)
@@ -291,14 +300,14 @@ func init() {
 		attrTypeSupportedOpMap[attrType] = strOpMap
 	}
 
-	numericOpMap := make(map[string]struct{})
+	comparableOpMap := make(map[string]struct{})
 	for _, op := range append(commonOps, common.BKDBGT, common.BKDBGTE, common.BKDBLT, common.BKDBLTE) {
-		numericOpMap[op] = struct{}{}
+		comparableOpMap[op] = struct{}{}
 	}
 
-	numericAttrTypes := []string{common.FieldTypeInt, common.FieldTypeFloat}
+	numericAttrTypes := []string{common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeDate, common.FieldTypeTime}
 	for _, attrType := range numericAttrTypes {
-		attrTypeSupportedOpMap[attrType] = numericOpMap
+		attrTypeSupportedOpMap[attrType] = comparableOpMap
 	}
 }
 

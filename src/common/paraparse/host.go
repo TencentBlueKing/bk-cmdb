@@ -39,10 +39,11 @@ func ParseHostParams(input []metadata.ConditionItem) (map[string]interface{}, er
 	for _, i := range input {
 		switch i.Operator {
 		case common.BKDBEQ, common.BKDBNE:
-			output[i.Field], err = common.ConvertIpv6ToFullWord(i.Field, i.Value)
+			value, err := common.ConvertIpv6ToFullWord(i.Field, i.Value)
 			if err != nil {
 				return nil, err
 			}
+			output[i.Field] = mapstr.MapStr{i.Operator: value}
 		case common.BKDBIN, common.BKDBNIN:
 			queryCondItem := make(map[string]interface{})
 			if i.Value == nil {
