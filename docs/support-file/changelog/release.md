@@ -1,5 +1,12 @@
-## [Version: v3.13.7-alpha2] - 2024-05-20
+## [Version: v3.13.7-alpha3] - 2024-05-21
 **缺陷修复**
+- 修复search_host接口问题
+
+## [Version: v3.13.7-alpha2] - 2024-05-20
+**功能优化**
+- 仅校验枚举类型字段的isMultiple字段
+
+- **缺陷修复**
 - 修复一些watch相关的问题
 - 升级bk-magic-vue版本解决表格shift选择体验问题
 - 修复一些search_host接口问题
