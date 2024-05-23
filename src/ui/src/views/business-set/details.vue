@@ -21,7 +21,8 @@
           :properties="properties"
           :property-groups="propertyGroups"
           :inst="inst"
-          :obj-id="objId">
+          :obj-id="objId"
+          :show-default-value="true">
           <template #append>
             <div class="group business-scope-group">
               <div class="group-title">{{$t('资源定义范围')}}</div>

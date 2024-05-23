@@ -69,7 +69,9 @@
                       }"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
-                      v-model.trim="values[property['bk_property_id']]">
+                      v-model.trim="values[property['bk_property_id']]"
+                      @focus="() => handleFocus(property.bk_property_id)"
+                      @blur="handleBlur">
                     </component>
                     <cmdb-form-innertable v-else
                       :mode="'update'"
@@ -77,7 +79,13 @@
                       :immediate="false"
                       :readonly="true"
                       v-model.trim="values[property['bk_property_id']]" />
-                    <span class="form-error"
+                    <cmdb-default-picker
+                      v-if="showDefault(property.bk_property_id)"
+                      :value="propertyDefaults[property.bk_property_id]"
+                      :property="property"
+                      @pick-default="(val) => handlePickDefault(property.bk_property_id, val)">
+                    </cmdb-default-picker>
+                    <span v-else-if="errors.has(property.bk_property_id)" class="form-error"
                       :title="errors.first(property['bk_property_id'])">
                       {{errors.first(property['bk_property_id'])}}
                     </span>
@@ -116,9 +124,13 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
 
   export default {
     name: 'cmdb-form-multiple',
+    components: {
+      cmdbDefaultPicker
+    },
     mixins: [formMixins],
     props: {
       saveAuth: {
@@ -128,6 +140,10 @@
       loading: {
         type: Boolean,
         default: false,
+      },
+      showDefaultValue: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -140,7 +156,9 @@
         editable: {},
         groupState: {
           none: true
-        }
+        },
+        focusId: '',
+        propertyDefaults: this.$tools.getInstFormDefaults(this.properties)
       }
     },
     computed: {
@@ -212,6 +230,7 @@
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, {}, false)
         this.refrenceValues = this.$tools.clone(this.values)
+        this.propertyDefaults = this.$tools.getInstFormDefaults(this.properties)
       },
       initEditableStatus() {
         const editable = {}
@@ -250,6 +269,22 @@
           }
         })
         return this.$tools.formatValues(multipleValues, this.properties)
+      },
+      showDefault(propertyId) {
+        return this.propertyDefaults[propertyId]
+          && this.showDefaultValue
+          && this.editable[propertyId]
+          && !this.values[propertyId]
+          && this.focusId === propertyId
+      },
+      handleFocus(propertyId) {
+        this.focusId = propertyId
+      },
+      handleBlur() {
+        this.focusId = ''
+      },
+      handlePickDefault(id, val) {
+        this.values[id] = val
       },
       handleSave() {
         this.allValidating = true
@@ -393,6 +428,9 @@
         color: #ff5656;
         max-width: 100%;
         @include ellipsis;
+    }
+    .form-default {
+        right: 0;
     }
     .form-empty {
         height: 100%;

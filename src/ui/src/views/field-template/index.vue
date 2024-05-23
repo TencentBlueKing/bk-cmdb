@@ -406,7 +406,8 @@
       templateName: '',
       modelName: '',
       modifier: '',
-      _t: Date.now()
+      _t: Date.now(),
+      page: 1
     }
     filter.forEach((item) => {
       query[item.id] = item.values.map(val => val.name).join(',')

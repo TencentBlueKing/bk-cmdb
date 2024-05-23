@@ -79,6 +79,8 @@
     "host_property_bk_cloud_inst_id": "Cloud Instance ID",
     "host_property_bk_cloud_host_status": "Cloud Host status",
     "host_property_bk_cloud_vendor": "Cloud vendor",
+    "host_property_bk_cloud_region": "Cloud Region",
+    "host_property_bk_cloud_zone": "Cloud Zone",
     "process_property_bk_biz_id": "Business ID",
     "process_property_bk_process_name": "Alias",
     "process_property_description": "Description",

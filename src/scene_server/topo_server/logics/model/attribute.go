@@ -397,7 +397,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 
 	if isUpdate {
 		if data.IsMultiple != nil {
-			if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, *data.IsMultiple); err != nil {
+			if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, data.IsMultiple); err != nil {
 				return err
 			}
 		}
@@ -439,7 +439,7 @@ func (a *attribute) isValid(kit *rest.Kit, isUpdate bool, data *metadata.Attribu
 }
 
 func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) error {
-	if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, *data.IsMultiple); err != nil {
+	if err := attrvalid.ValidPropertyTypeIsMultiple(kit, data.PropertyType, data.IsMultiple); err != nil {
 		return err
 	}
 
@@ -466,7 +466,7 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		err := attrvalid.ValidPropertyOption(kit, data.PropertyType, data.Option, *data.IsMultiple, data.Default)
+		err := attrvalid.ValidPropertyOption(kit, data.PropertyType, data.Option, data.IsMultiple, data.Default)
 		if err != nil {
 			return err
 		}

@@ -59,6 +59,7 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 				opts.Collection, err)
 			// reset the resume token, because we can not use the former resume token to watch success for now.
 			streamOptions.StartAfter = nil
+			opts.StartAfterToken = nil
 			// cause we have already got a fatal error, we can not try to watch from where we lost.
 			// so re-watch from 1 minutes ago to avoid lost events.
 			// Note: apparently, we may got duplicate events with this re-watch
@@ -67,6 +68,7 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 				T: startAtTime,
 				I: 0,
 			}
+			opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
 
 			if opts.WatchFatalErrorCallback != nil {
 				err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})

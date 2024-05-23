@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.13.6
+  version: 3.13.7
   # 版本标题
-  title: "3.13.6"
+  title: "3.13.7"
   # 版本描述
-  comment: "3.13.6"
+  comment: "3.13.7"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
@@ -79,7 +79,31 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - batch_update_host_all_properties
-
+  - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - create_kube_cluster
+      - batch_update_kube_cluster
+      - update_kube_cluster_type
+      - batch_delete_kube_cluster
+      - list_kube_cluster
+      - batch_create_kube_node
+      - batch_update_kube_node
+      - batch_delete_kube_node
+      - list_kube_node
+      - batch_create_kube_pod
+      - batch_delete_kube_pod
+      - list_kube_pod
+      - list_kube_container
+      - batch_create_kube_namespace
+      - batch_update_kube_namespace
+      - batch_delete_kube_namespace
+      - list_kube_namespace
+      - batch_create_kube_workload
+      - batch_update_kube_workload
+      - batch_delete_kube_workload
+      - list_kube_workload
+      - list_hosts_without_biz
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`

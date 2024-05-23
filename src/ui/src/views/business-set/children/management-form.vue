@@ -25,6 +25,7 @@
         :inst="formData"
         :type="isEdit ? 'update' : 'create'"
         :save-auth="saveAuth"
+        :show-default-value="true"
         :submitting="submitting"
         :slot-append-is-change="scopeChanged"
         @on-submit="handleSave"

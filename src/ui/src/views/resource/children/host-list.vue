@@ -20,6 +20,7 @@
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - filtersTagHeight - 230"
+      :shift-multi-checked="true"
       @selection-change="handleSelectionChange"
       @sort-change="handleSortChange"
       @page-change="handlePageChange"
