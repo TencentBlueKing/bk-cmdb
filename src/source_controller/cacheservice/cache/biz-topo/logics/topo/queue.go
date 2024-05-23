@@ -32,14 +32,14 @@ type bizRefreshQueue struct {
 	sync.Mutex
 	topoKey  key.Key
 	bizIDs   []int64
-	bizIDMap map[int64]int
+	bizIDMap map[int64]struct{}
 }
 
 func newBizRefreshQueue(topoType types.TopoType) *bizRefreshQueue {
 	queue := &bizRefreshQueue{
 		topoKey:  key.TopoKeyMap[topoType],
 		bizIDs:   make([]int64, 0),
-		bizIDMap: make(map[int64]int),
+		bizIDMap: make(map[int64]struct{}),
 	}
 
 	return queue
@@ -73,7 +73,7 @@ func (q *bizRefreshQueue) Push(bizIDs ...int64) {
 		_, exists := q.bizIDMap[bizID]
 		if !exists {
 			q.bizIDs = append(q.bizIDs, bizID)
-			q.bizIDMap[bizID] = len(q.bizIDs) - 1
+			q.bizIDMap[bizID] = struct{}{}
 		}
 	}
 }
@@ -99,12 +99,18 @@ func (q *bizRefreshQueue) Remove(bizID int64) {
 	q.Lock()
 	defer q.Unlock()
 
-	idx, exists := q.bizIDMap[bizID]
+	_, exists := q.bizIDMap[bizID]
 	if !exists {
 		return
 	}
 
-	q.bizIDs = append(q.bizIDs[:idx], q.bizIDs[idx+1:]...)
+	for idx, id := range q.bizIDs {
+		if id == bizID {
+			q.bizIDs = append(q.bizIDs[:idx], q.bizIDs[idx+1:]...)
+			break
+		}
+	}
+
 	delete(q.bizIDMap, bizID)
 }
 

@@ -175,6 +175,7 @@
             :properties="properties"
             :property-groups="propertyGroups"
             :save-auth="saveAuth"
+            :show-default-value="true"
             @on-submit="handleMultipleSave"
             :loading="batchUpdateSlider.loading"
             @on-cancel="handleBatchUpdateSliderBeforeClose"

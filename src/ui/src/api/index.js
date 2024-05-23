@@ -15,7 +15,7 @@ import md5 from 'md5'
 import has from 'has'
 import { $error } from '@/magicbox'
 import i18n, { language } from '@/i18n'
-import { showLoginModal } from '@blueking/login-modal'
+import { showLoginModal } from '@/utils/login-helper'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 import customHeaders from './custom-header'
@@ -176,7 +176,7 @@ function handleReject(error, config) {
   }
 
   if (error.code && error.code === TokenInvalidCode) {
-    window.loginModal.show()
+    showLoginModal()
   }
 
   if (Axios.isCancel(error)) {
@@ -186,20 +186,7 @@ function handleReject(error, config) {
     const { status, data } = error.response
     const nextError = { message: error.message, status }
     if (status === 401) {
-      const successUrl = `${window.location.origin}/static/login_success.html`
-
-      const siteLoginUrl = window.Site.login
-      if (!siteLoginUrl) {
-        console.error('Login URL not configured!')
-        return
-      }
-
-      const loginURL = new URL(siteLoginUrl)
-      loginURL.searchParams.set('c_url', successUrl)
-      const pathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`
-      const loginUrl = `${loginURL.origin}${pathname}plain/${loginURL.search}`
-
-      showLoginModal({ loginUrl })
+      showLoginModal()
     } else if (data && data.bk_error_msg) {
       nextError.message = data.bk_error_msg
     } else if (status === 403) {

@@ -88,6 +88,7 @@
           :properties="properties.host"
           :property-groups="propertyGroups"
           :save-auth="saveAuth"
+          :show-default-value="true"
           @on-submit="handleMultipleSave"
           @on-cancel="handleSliderBeforeClose">
         </component>

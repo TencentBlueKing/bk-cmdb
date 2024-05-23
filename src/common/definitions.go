@@ -832,6 +832,11 @@ const (
 
 	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
 	ObjectIDField = "object_id"
+
+	// BKCloudRegionField is the cloud region field
+	BKCloudRegionField = "bk_cloud_region"
+	// BKCloudZoneField is the cloud zone field
+	BKCloudZoneField = "bk_cloud_zone"
 )
 
 const (
