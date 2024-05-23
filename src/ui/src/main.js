@@ -24,6 +24,7 @@ import cmdbUI from './components/ui'
 import cmdbSearchComponent from './components/search/index'
 import routerActions from './router/actions'
 import tools from './utils/tools'
+import { gotoLoginPage } from '@/utils/login-helper'
 import clipboard from 'vue-clipboard2'
 import './magicbox'
 import './directives'
@@ -47,14 +48,19 @@ Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 Vue.prototype.$routerActions = routerActions
 
-window.CMDB_APP = new Vue({
-  el: '#app',
-  router,
-  store,
-  i18n,
-  components: { App },
-  template: '<App/>'
+api.get(`${window.API_HOST}is_login`).then(() => {
+  window.CMDB_APP = new Vue({
+    el: '#app',
+    router,
+    store,
+    i18n,
+    components: { App },
+    template: '<App/>'
+  })
 })
+  .catch(() => {
+    gotoLoginPage()
+  })
 
 if (process.env.COMMIT_ID) {
   window.CMDB_COMMIT_ID = process.env.COMMIT_ID

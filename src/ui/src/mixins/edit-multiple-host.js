@@ -83,6 +83,7 @@ export default {
           this.slider.props.propertyGroups = groups
           this.slider.props.properties = this.properties
           this.slider.props.saveAuth = this.saveAuth
+          this.slider.props.showDefaultValue = true
         }, 200)
       } catch (e) {
         console.error(e)

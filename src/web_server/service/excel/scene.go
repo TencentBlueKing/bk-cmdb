@@ -28,6 +28,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -40,6 +41,42 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// FileType 文件类型
+type FileType string
+
+const (
+	// FileTypeXlsx 文件格式xlsx
+	FileTypeXlsx FileType = "xlsx"
+	// FileTypeXls 文件格式xls
+	FileTypeXls FileType = "xls"
+	// FileTypeZip 文件格式zip
+	FileTypeZip FileType = "zip"
+	// FileTypeYaml 文件格式yaml
+	FileTypeYaml FileType = "yaml"
+)
+
+// ImportType 导入类型
+type ImportType string
+
+const (
+	// ImportTypeInst 导入类型为导入实例
+	ImportTypeInst ImportType = "importInst"
+	// ImportTypeObject 导入类型为导入模型
+	ImportTypeObject ImportType = "importObject"
+	// ImportTypeObjectYaml 导入类型为导入模型yaml文件
+	ImportTypeObjectYaml ImportType = "importObjectYaml"
+	// ImportTypeObjectAttr 导入类型为导入模型属性字段
+	ImportTypeObjectAttr ImportType = "importObjectAttr"
+)
+
+// ImportTypeMap 导入类型与文件类型对应关系map
+var ImportTypeMap = map[ImportType][]FileType{
+	ImportTypeInst:       {FileTypeXlsx, FileTypeXls},
+	ImportTypeObjectAttr: {FileTypeXlsx, FileTypeXls},
+	ImportTypeObject:     {FileTypeZip},
+	ImportTypeObjectYaml: {FileTypeYaml},
+}
 
 // BuildTemplate build excel download template
 func (s *service) BuildTemplate(c *gin.Context) {
@@ -231,6 +268,11 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileNoFound))
 		return
 	}
+	if err := VerifyFileType(ImportTypeInst, file.Filename, kit.Rid); err != nil {
+		blog.Errorf("file type verify failed, err: %v, fileName: %s, rid: %s", err, file.Filename, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrInvalidFileTypeFail, err.Error()))
+		return
+	}
 
 	dir := webCommon.ResourcePath + "/import/"
 	if _, err = os.Stat(dir); err != nil {
@@ -269,7 +311,6 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		c.String(http.StatusInternalServerError, fmt.Errorf("handle import request failed, err: %+v", err).Error())
 		return
 	}
-
 	if err := op.Clean(); err != nil {
 		blog.Errorf("clean importer resource failed, err: %v, rid: %s", err, kit.Rid)
 		c.String(http.StatusInternalServerError, fmt.Errorf("clean importer resource failed, err: %+v", err).Error())
@@ -335,6 +376,12 @@ func (s *service) ImportObject(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebFileNoFound))
+		return
+	}
+
+	if err := VerifyFileType(ImportTypeObjectAttr, file.Filename, kit.Rid); err != nil {
+		blog.Errorf("file type verify failed, err: %v, fileName: %s, rid: %s", err, file.Filename, kit.Rid)
+		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrInvalidFileTypeFail, err.Error()))
 		return
 	}
 
@@ -408,4 +455,33 @@ func addDownExcelHttpHeader(c *gin.Context, name string) {
 	c.Header("Cache-Control", "must-revalidate, post-check=0, pre-check=0")
 	c.Header("Pragma", "no-cache")
 	c.Header("Expires", "0")
+}
+
+// VerifyFileType 校验导入的文件格式
+func VerifyFileType(importType ImportType, fileName, rid string) error {
+	if fileName == "" {
+		blog.Errorf("verify file type failed, file name is empty, rid: %s", rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file name is empty")
+	}
+
+	lastIndex := strings.LastIndex(fileName, ".")
+	if lastIndex == -1 {
+		blog.Errorf("verify file type failed, file type is empty, rid: %s", rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file type is empty")
+	}
+
+	fileType := fileName[lastIndex+1:]
+	fileTypeArr, exist := ImportTypeMap[importType]
+	if !exist {
+		blog.Errorf("verify file type failed, unknown import type %s, rid: %s", importType, rid)
+		return errors.NewCCError(common.CCErrInvalidFileTypeFail, "unknown import type")
+	}
+
+	for _, ft := range fileTypeArr {
+		if ft == FileType(fileType) {
+			return nil
+		}
+	}
+	blog.Errorf("verify file type failed, unknown import type %s, rid: %s", fileType, rid)
+	return errors.NewCCError(common.CCErrInvalidFileTypeFail, "file type is illegality")
 }

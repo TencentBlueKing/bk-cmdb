@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -35,7 +36,9 @@ import (
 func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, flag bool) (
 	*metadata.SearchHost, *metadata.BaseResp, error) {
 	searchHostInst := NewSearchHost(kit, lgc, data)
-	searchHostInst.ParseCondition()
+	if err := searchHostInst.ParseCondition(); err != nil {
+		return nil, nil, err
+	}
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
@@ -71,7 +74,9 @@ func (lgc *Logics) SearchHost(kit *rest.Kit, data *metadata.HostCommonSearch, fl
 // the host pool host view permission
 func (lgc *Logics) SearchHostForResource(kit *rest.Kit, data *metadata.HostCommonSearch) (*metadata.SearchHost, error) {
 	searchHostInst := NewSearchHost(kit, lgc, data)
-	searchHostInst.ParseCondition()
+	if err := searchHostInst.ParseCondition(); err != nil {
+		return nil, err
+	}
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
@@ -171,7 +176,7 @@ type appLevelInfo struct {
 
 // searchHostInterface Too many methods, hiding private methods
 type searchHostInterface interface {
-	ParseCondition()
+	ParseCondition() error
 	SearchHostByConds() errors.CCError
 	AuthorizeSearchHost() (*metadata.BaseResp, bool)
 	FillTopologyData() ([]mapstr.MapStr, int, errors.CCError)
@@ -197,9 +202,13 @@ func NewSearchHost(kit *rest.Kit, lgc *Logics, hostSearchParam *metadata.HostCom
 }
 
 // ParseCondition TODO
-func (sh *searchHost) ParseCondition() {
+func (sh *searchHost) ParseCondition() error {
 
 	for _, object := range sh.hostSearchParam.Condition {
+		if err := sh.validateObjCond(&object); err != nil {
+			return err
+		}
+
 		if object.ObjectID == common.BKInnerObjIDHost {
 			sh.conds.hostCond = object
 		} else if object.ObjectID == common.BKInnerObjIDSet {
@@ -228,6 +237,145 @@ func (sh *searchHost) ParseCondition() {
 
 	sh.tryParseAppID()
 
+	return nil
+}
+
+func (sh *searchHost) validateObjCond(objCond *metadata.SearchCondition) error {
+	if len(objCond.Condition) == 0 {
+		return nil
+	}
+
+	// mainline object condition only allows condition of 'bk_inst_id $eq value' form, and is validated elsewhere
+	if objCond.ObjectID == common.BKInnerObjIDObject {
+		return nil
+	}
+
+	attributes, err := sh.lgc.SearchObjectAttributes(sh.kit, sh.hostSearchParam.AppID, objCond.ObjectID)
+	if err != nil {
+		blog.Errorf("search %s obj attr for validation failed, err: %v, rid: %s", objCond.ObjectID, err, sh.kit.Rid)
+		return err
+	}
+
+	attributeMap := make(map[string]string)
+	for _, attribute := range attributes {
+		attributeMap[attribute.PropertyID] = attribute.PropertyType
+	}
+
+	switch objCond.ObjectID {
+	case common.BKInnerObjIDApp:
+		attributeMap[common.BKAppIDField] = common.FieldTypeInt
+		attributeMap[common.BKDefaultField] = common.FieldTypeInt
+	case common.BKInnerObjIDSet:
+		attributeMap[common.BKSetIDField] = common.FieldTypeInt
+	case common.BKInnerObjIDModule:
+		attributeMap[common.BKModuleIDField] = common.FieldTypeInt
+	case common.BKInnerObjIDHost:
+		attributeMap[common.BKHostIDField] = common.FieldTypeInt
+		attributeMap[common.BKCloudIDField] = common.FieldTypeInt
+	}
+
+	for _, cond := range objCond.Condition {
+		attrType, exists := attributeMap[cond.Field]
+		if !exists {
+			blog.Errorf("%s condition item field %s not exists, rid: %s", objCond.ObjectID, cond.Field, sh.kit.Rid)
+			return fmt.Errorf("condition field %s not exists", cond.Field)
+		}
+
+		supportedOpMap, exists := attrTypeSupportedOpMap[attrType]
+		if !exists {
+			blog.Errorf("%s condition item field %s attr type %s is invalid, rid: %s", objCond.ObjectID, cond.Field,
+				attrType, sh.kit.Rid)
+			return fmt.Errorf("condition field %s is invalid", cond.Field)
+		}
+
+		_, exists = supportedOpMap[cond.Operator]
+		if !exists {
+			blog.Errorf("%s condition item field %s op %s is invalid, rid: %s", objCond.ObjectID, cond.Field,
+				cond.Operator, sh.kit.Rid)
+			return fmt.Errorf("condition operator %s is invalid", cond.Operator)
+		}
+
+		switch cond.Operator {
+		case common.BKDBIN, common.BKDBNIN:
+			valueArr, ok := cond.Value.([]interface{})
+			if !ok {
+				blog.Errorf("%s condition item field %s op %s value(%+v) is invalid, rid: %s", objCond.ObjectID,
+					cond.Field, cond.Operator, cond.Value, sh.kit.Rid)
+				return fmt.Errorf("operator %s only support array value", cond.Operator)
+			}
+
+			for _, value := range valueArr {
+				if err = sh.validCondValueType(attrType, value); err != nil {
+					blog.Errorf("%s condition item field %s array value(%+v) is invalid, err: %v, rid: %s",
+						objCond.ObjectID, cond.Field, value, err, sh.kit.Rid)
+					return err
+				}
+			}
+		default:
+			if err = sh.validCondValueType(attrType, cond.Value); err != nil {
+				blog.Errorf("%s condition item field %s value(%+v) is invalid, err: %v, rid: %s", objCond.ObjectID,
+					cond.Field, cond.Value, err, sh.kit.Rid)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+var attrTypeSupportedOpMap = make(map[string]map[string]struct{})
+
+func init() {
+	commonOps := []string{common.BKDBIN, common.BKDBNIN, common.BKDBEQ, common.BKDBNE}
+
+	commonOpMap := make(map[string]struct{})
+	for _, op := range commonOps {
+		commonOpMap[op] = struct{}{}
+	}
+
+	commonAttrTypes := []string{common.FieldTypeBool, common.FieldTypeOrganization}
+	for _, attrType := range commonAttrTypes {
+		attrTypeSupportedOpMap[attrType] = commonOpMap
+	}
+
+	strOpMap := make(map[string]struct{})
+	for _, op := range append(commonOps, common.BKDBLIKE) {
+		strOpMap[op] = struct{}{}
+	}
+
+	strAttrTypes := []string{common.FieldTypeSingleChar, common.FieldTypeEnum, common.FieldTypeEnumMulti,
+		common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeLongChar, common.FieldTypeUser,
+		common.FieldTypeTimeZone, common.FieldTypeList}
+	for _, attrType := range strAttrTypes {
+		attrTypeSupportedOpMap[attrType] = strOpMap
+	}
+
+	comparableOpMap := make(map[string]struct{})
+	for _, op := range append(commonOps, common.BKDBGT, common.BKDBGTE, common.BKDBLT, common.BKDBLTE) {
+		comparableOpMap[op] = struct{}{}
+	}
+
+	numericAttrTypes := []string{common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeDate, common.FieldTypeTime}
+	for _, attrType := range numericAttrTypes {
+		attrTypeSupportedOpMap[attrType] = comparableOpMap
+	}
+}
+
+func (sh *searchHost) validCondValueType(attrType string, value interface{}) error {
+	switch attrType {
+	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeOrganization:
+		if !util.IsNumeric(value) {
+			return fmt.Errorf("%s attribute type only support numeric value", attrType)
+		}
+	case common.FieldTypeBool:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("%s attribute type only support bool value", attrType)
+		}
+	default:
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("%s attribute type only support string value", attrType)
+		}
+	}
+	return nil
 }
 
 // AuthorizeSearchHost query the host according to the business access authority.

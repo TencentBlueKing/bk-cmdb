@@ -61,6 +61,106 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/create/kube/cluster:
+    post:
+      operationId: create_kube_cluster
+      description: 创建容器集群
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/cluster:
+    put:
+      operationId: batch_update_kube_cluster
+      description: 批量更新容器集群信息
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/kube/cluster/type:
+    put:
+      operationId: update_kube_cluster_type
+      description: 更新容器集群类型
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/kube/cluster/type
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/kube/cluster:
+    delete:
+      operationId: batch_delete_kube_cluster
+      description: 批量删除容器集群
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/kube/cluster
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
   /api/v3/findmany/kube/cluster:
     post:
       operationId: list_kube_cluster
@@ -86,23 +186,23 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/kube/container:
+  /api/v3/createmany/kube/node:
     post:
-      operationId: list_kube_container
-      description: 查询Container列表
+      operationId: batch_create_kube_node
+      description: 批量创建容器节点
       tags:
         - kube
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
           method: post
-          path: /api/v3/findmany/kube/container
+          path: /api/v3/createmany/kube/node
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -111,23 +211,48 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/findmany/kube/namespace:
-    post:
-      operationId: list_kube_namespace
-      description: 查询namespace
+  /api/v3/updatemany/kube/node:
+    put:
+      operationId: batch_update_kube_node
+      description: 批量更新容器节点信息
       tags:
         - kube
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
-          method: post
-          path: /api/v3/findmany/kube/namespace
+          method: put
+          path: /api/v3/updatemany/kube/node
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/node:
+    delete:
+      operationId: batch_delete_kube_node
+      description: 批量删除容器节点
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/node
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -161,6 +286,56 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/createmany/kube/pod:
+    post:
+      operationId: batch_create_kube_pod
+      description: 批量创建容器pod
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/pod:
+    delete:
+      operationId: batch_delete_kube_pod
+      description: 批量删除Pod
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
   /api/v3/findmany/kube/pod:
     post:
       operationId: list_kube_pod
@@ -178,6 +353,206 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/findmany/kube/pod
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/kube/container:
+    post:
+      operationId: list_kube_container
+      description: 查询Container列表
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/kube/container
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/kube/namespace:
+    post:
+      operationId: batch_create_kube_namespace
+      description: 批量创建namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/namespace:
+    put:
+      operationId: batch_update_kube_namespace
+      description: 批量更新namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/namespace:
+    delete:
+      operationId: batch_delete_kube_namespace
+      description: 批量删除namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/kube/namespace:
+    post:
+      operationId: list_kube_namespace
+      description: 查询namespace
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/kube/namespace
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/kube/workload/{kind}:
+    post:
+      operationId: batch_create_kube_workload
+      description: 批量创建workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/kube/workload/{kind}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/kube/workload/{kind}:
+    put:
+      operationId: batch_update_kube_workload
+      description: 批量更新workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/kube/workload/{kind}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/kube/workload/{kind}:
+    delete:
+      operationId: batch_delete_kube_workload
+      description: 批量删除workload
+      tags:
+        - kube
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/kube/workload/{kind}
           matchSubpath: false
           timeout: 0
           upstreams: {}
@@ -255,6 +630,3914 @@ paths:
           type: HTTP
           method: post
           path: /api/v3/cache/findmany/kube/pod/label/value
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/hosts/all/property:
+    put:
+      operationId: batch_update_host_all_properties
+      description: 根据主机id和属性批量更新主机属性
+      tags:
+        - nodeman
+        - host
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/hosts/all/property
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v3/biz/status/{flag}/{bk_supplier_account}/{bk_biz_id}:
+    put:
+      operationId: update_business_enable_status
+      description: 修改业务启用状态
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/biz/status/{flag}/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/set/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: find_set_batch
+      description: 批量查询某业务的集群详情
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/set/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/module/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: find_module_batch
+      description: 批量查询某业务的模块详情
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/module/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/instance/object/{bk_obj_id}:
+    post:
+      operationId: create_inst
+      description: 创建实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/instance/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/instassociation/object/{bk_obj_id}:
+    post:
+      operationId: search_inst
+      description: 根据关联关系实例查询模型实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/instassociation/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/instance/object/{bk_obj_id}/inst/{bk_inst_id}:
+    put:
+      operationId: update_inst
+      description: 更新对象实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/instance/object/{bk_obj_id}/inst/{bk_inst_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/instance/object/{bk_obj_id}:
+    put:
+      operationId: batch_update_inst
+      description: 批量更新对象实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/instance/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/instance/object/{bk_obj_id}/inst/{bk_inst_id}:
+    delete:
+      operationId: delete_inst
+      description: 删除实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/instance/object/{bk_obj_id}/inst/{bk_inst_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/instance/object/{bk_obj_id}:
+    delete:
+      operationId: batch_delete_inst
+      description: 批量删除实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/instance/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/insttopo/object/{bk_obj_id}/inst/{bk_inst_id}:
+    post:
+      operationId: search_inst_association_topo
+      description: 查询实例关联拓扑
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/insttopo/object/{bk_obj_id}/inst/{bk_inst_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/object:
+    post:
+      operationId: create_object
+      description: 创建模型
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/object
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/object/{id}:
+    delete:
+      operationId: delete_object
+      description: 删除模型
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/object/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/object/{id}:
+    put:
+      operationId: update_object
+      description: 更新定义
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/object/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/object:
+    post:
+      operationId: search_objects
+      description: 查询模型
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/object
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objecttopology:
+    post:
+      operationId: search_object_topo
+      description: 查询普通模型拓扑
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objecttopology
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectclassification:
+    post:
+      operationId: create_classification
+      description: 添加模型分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectclassification
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/objectclassification/{id}:
+    delete:
+      operationId: delete_classification
+      description: 删除模型分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/objectclassification/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectclassification/{id}:
+    put:
+      operationId: update_classification
+      description: 更新模型分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectclassification/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectclassification:
+    post:
+      operationId: search_classifications
+      description: 查询模型分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectclassification
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectattr:
+    post:
+      operationId: create_object_attribute
+      description: 创建模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectattr
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/objectattr/{id}:
+    delete:
+      operationId: delete_object_attribute
+      description: 删除对象模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/objectattr/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectattr/{id}:
+    put:
+      operationId: update_object_attribute
+      description: 更新对象模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectattr/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectattr:
+    post:
+      operationId: search_object_attribute
+      description: 查询对象模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectattr
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/objectattr/biz/{bk_biz_id}:
+    post:
+      operationId: create_biz_custom_field
+      description: 创建业务自定义模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/objectattr/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/objectattr/biz/{bk_biz_id}/id/{id}:
+    put:
+      operationId: update_biz_custom_field
+      description: 更新业务自定义模型属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/objectattr/biz/{bk_biz_id}/id/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/app/{bk_biz_id}/list_hosts:
+    post:
+      operationId: list_biz_hosts
+      description: 查询业务下的主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/app/{bk_biz_id}/list_hosts
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/app/{bk_biz_id}/list_hosts_topo:
+    post:
+      operationId: list_biz_hosts_topo
+      description: 查询业务下的主机和拓扑信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/app/{bk_biz_id}/list_hosts_topo
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/list_hosts_without_app:
+    post:
+      operationId: list_hosts_without_biz
+      description: 没有业务ID的主机查询
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/list_hosts_without_app
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/list_resource_pool_hosts:
+    post:
+      operationId: list_resource_pool_hosts
+      description: 查询资源池中的主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/list_resource_pool_hosts
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/idle/set:
+    post:
+      operationId: transfer_sethost_to_idle_module
+      description: 清空业务下集群/模块中主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/idle/set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/property/clone:
+    put:
+      operationId: clone_host_property
+      description: 克隆主机属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/property/clone
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/property/batch:
+    put:
+      operationId: batch_update_host
+      description: 批量更新主机属性
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/property/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topomodelmainline:
+    post:
+      operationId: get_mainline_object_topo
+      description: 查询主线模型的业务拓扑
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topomodelmainline
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}:
+    get:
+      operationId: get_biz_internal_module
+      description: 查询业务的空闲机/故障机/待回收模块
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/module_relation/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: find_module_host_relation
+      description: 根据模块ID查询主机和模块的关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/module_relation/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/by_service_templates/biz/{bk_biz_id}:
+    post:
+      operationId: find_host_by_service_template
+      description: 查询服务模板下的主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/by_service_templates/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/by_set_templates/biz/{bk_biz_id}:
+    post:
+      operationId: find_host_by_set_template
+      description: 查询集群模板下的主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/by_set_templates/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/read:
+    post:
+      operationId: find_host_biz_relations
+      description: 查询主机业务关系信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/read
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/objectassociation:
+    post:
+      operationId: find_object_association
+      description: 查询模型之间的关联关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/objectassociation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/instassociation:
+    post:
+      operationId: find_instance_association
+      description: 查询模型实例之间的关联关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/instassociation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/instassociation:
+    post:
+      operationId: add_instance_association
+      description: 新建模型实例之间的关联关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/instassociation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/instassociation/{bk_obj_id}/{id}:
+    delete:
+      operationId: delete_instance_association
+      description: 删除模型实例之间的关联关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/instassociation/{bk_obj_id}/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/topo/relation/read:
+    post:
+      operationId: find_host_topo_relation
+      description: 获取主机与拓扑的关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/topo/relation/read
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/cloudarea:
+    post:
+      operationId: search_cloud_area
+      description: 查询管控区域
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/cloudarea
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/cloudarea:
+    post:
+      operationId: create_cloud_area
+      description: 创建管控区域
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/cloudarea
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/cloudarea/{bk_cloud_id}:
+    put:
+      operationId: update_cloud_area
+      description: 更新管控区域
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/cloudarea/{bk_cloud_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/cloudarea/{bk_cloud_id}:
+    delete:
+      operationId: delete_cloud_area
+      description: 删除管控区域
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/cloudarea/{bk_cloud_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_category:
+    post:
+      operationId: list_service_category
+      description: 查询服务分类列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_category
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/proc/service_category:
+    post:
+      operationId: create_service_category
+      description: 新建服务分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/proc/service_category
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/service_category:
+    put:
+      operationId: update_service_category
+      description: 更新服务分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/service_category
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/proc/service_category:
+    delete:
+      operationId: delete_service_category
+      description: 删除服务分类
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/proc/service_category
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/proc/service_template:
+    post:
+      operationId: create_service_template
+      description: 新建服务模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/proc/service_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/service_template:
+    put:
+      operationId: update_service_template
+      description: 更新服务模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/service_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/service_template/{service_template_id}:
+    get:
+      operationId: get_service_template
+      description: 获取服务模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/find/proc/service_template/{service_template_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template:
+    post:
+      operationId: list_service_template
+      description: 服务模板列表查询
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/proc/service_template:
+    delete:
+      operationId: delete_service_template
+      description: 删除服务模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/proc/service_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates:
+    get:
+      operationId: list_set_template_related_service_template
+      description: 获取某集群模版下的服务模版列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/proc/proc_template:
+    post:
+      operationId: batch_create_proc_template
+      description: 批量创建进程模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/proc/proc_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/proc_template:
+    put:
+      operationId: update_proc_template
+      description: 更新进程模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/proc_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/proc/proc_template:
+    delete:
+      operationId: delete_proc_template
+      description: 删除进程模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/proc/proc_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/proc/proc_template/id/{process_template_id}:
+    post:
+      operationId: get_proc_template
+      description: 获取进程模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/proc/proc_template/id/{process_template_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/proc_template:
+    post:
+      operationId: list_proc_template
+      description: 查询进程模板列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/proc_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/proc/service_instance:
+    post:
+      operationId: create_service_instance
+      description: 创建服务实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/proc/service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_instance:
+    post:
+      operationId: list_service_instance
+      description: 查询服务实例列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_instance/with_host:
+    post:
+      operationId: list_service_instance_by_host
+      description: 通过主机查询关联的服务实例列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_instance/with_host
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}:
+    post:
+      operationId: list_service_instance_by_set_template
+      description: 通过集群模版查询关联的服务实例列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_instance/details:
+    post:
+      operationId: list_service_instance_detail
+      description: 获取服务实例详细信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_instance/details
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/proc/service_instance:
+    delete:
+      operationId: delete_service_instance
+      description: 删除服务实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/proc/service_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/proc/service_instance/labels:
+    post:
+      operationId: add_label_for_service_instance
+      description: 为服务实例添加标签
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/proc/service_instance/labels
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/proc/service_instance/labels:
+    delete:
+      operationId: remove_label_from_service_instance
+      description: 从服务实例移除标签
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/proc/service_instance/labels
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/proc/process_instance:
+    post:
+      operationId: create_process_instance
+      description: 创建进程实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/proc/process_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/proc/process_instance:
+    put:
+      operationId: update_process_instance
+      description: 更新进程实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/proc/process_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/proc/process_instance:
+    delete:
+      operationId: delete_process_instance
+      description: 删除进程实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/proc/process_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/process_instance:
+    post:
+      operationId: list_process_instance
+      description: 查询进程实例列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/process_instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/process_related_info/biz/{bk_biz_id}:
+    post:
+      operationId: list_process_related_info
+      description: 点分五位查询进程实例相关信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/process_related_info/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/service_template/sync_status/biz/{bk_biz_id}:
+    post:
+      operationId: list_service_template_difference
+      description: 列出服务模版和服务实例之间的差异
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/service_template/sync_status/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/proc/process_instance/detail/biz/{bk_biz_id}:
+    post:
+      operationId: list_process_detail_by_ids
+      description: 查询某业务下进程ID对应的进程详情
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/proc/process_instance/detail/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/inst/association/association_object/inst_base_info:
+    post:
+      operationId: search_inst_asst_object_inst_base_info
+      description: 查询实例关联模型实例基本信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/inst/association/association_object/inst_base_info
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/hosts/cloudarea_field:
+    put:
+      operationId: update_host_cloud_area_field
+      description: 更新主机的管控区域字段
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/hosts/cloudarea_field
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/identifier/host/search:
+    post:
+      operationId: search_hostidentifier
+      description: 根据条件查询主机身份
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/identifier/host/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/install/bk:
+    post:
+      operationId: host_install_bk
+      description: 机器新加到蓝鲸业务拓扑中
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/install/bk
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/topo/set_template/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: create_set_template
+      description: 新建集群模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/topo/set_template/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}:
+    post:
+      operationId: list_set_template
+      description: 查询集群模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}:
+    put:
+      operationId: update_set_template
+      description: 编辑集群模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/topo/set_template/bk_biz_id/{bk_biz_id}:
+    delete:
+      operationId: delete_set_template
+      description: 删除集群模板
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/topo/set_template/bk_biz_id/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sync_to_instances:
+    post:
+      operationId: sync_set_template_to_set
+      description: 集群模板同步
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/updatemany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sync_to_instances
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/event/watch/resource/{bk_resource}:
+    post:
+      operationId: resource_watch
+      description: 监听资源变化事件
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/event/watch/resource/{bk_resource}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/lock:
+    post:
+      operationId: add_host_lock
+      description: 新加主机锁
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/lock
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_host_lock
+      description: 删除主机锁
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/host/lock
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/lock/search:
+    post:
+      operationId: search_host_lock
+      description: 查询主机锁
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/lock/search
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/cache/find/cache/topo/node_path/biz/{bk_biz_id}:
+    post:
+      operationId: find_topo_node_paths
+      description: 查询业务拓扑节点的拓扑路径
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/cache/find/cache/topo/node_path/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/by_topo/biz/{bk_biz_id}:
+    post:
+      operationId: find_host_by_topo
+      description: 查询拓扑节点下的主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/by_topo/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/delete/instassociation/batch:
+    delete:
+      operationId: delete_related_inst_asso
+      description: 删除某实例所有的关联关系（包含其作为关联关系原模型和关联关系目标模型的情况）
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/delete/instassociation/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/instassociation/related:
+    post:
+      operationId: search_related_inst_asso
+      description: 查询某实例所有的关联关系（包含其作为关联关系原模型和关联关系目标模型的情况）
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/instassociation/related
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/dynamicgroup:
+    post:
+      operationId: create_dynamic_group
+      description: 创建动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/dynamicgroup
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/dynamicgroup/{bk_biz_id}/{id}:
+    put:
+      operationId: update_dynamic_group
+      description: 更新动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/dynamicgroup/{bk_biz_id}/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    get:
+      operationId: get_dynamic_group
+      description: 查询指定动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/dynamicgroup/{bk_biz_id}/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_dynamic_group
+      description: 删除动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/dynamicgroup/{bk_biz_id}/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/dynamicgroup/search/{bk_biz_id}:
+    post:
+      operationId: search_dynamic_group
+      description: 搜索动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/dynamicgroup/search/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/dynamicgroup/data/{bk_biz_id}/{id}:
+    post:
+      operationId: execute_dynamic_group
+      description: 执行动态分组
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/dynamicgroup/data/{bk_biz_id}/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/module/with_relation/biz/{bk_biz_id}:
+    post:
+      operationId: find_module_with_relation
+      description: 根据条件查询业务下的模块
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/module/with_relation/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/audit_list:
+    post:
+      operationId: list_operation_audit
+      description: 根据条件获取操作审计日志
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/audit_list
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/audit:
+    post:
+      operationId: find_audit_by_id
+      description: 根据审计ID获取详细信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/audit
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topo/tree/brief/biz/{bk_biz_id}:
+    post:
+      operationId: find_biz_tree_brief_info
+      description: 查询业务topo树的简要信息, 只包含集群、模块和主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topo/tree/brief/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/cache/find/cache/topo/brief/biz/{bk_biz_id}:
+    get:
+      operationId: get_biz_brief_cache_topo
+      description: 查询业务的简要拓扑树信息，包含所有层级的数据，不包含主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/cache/find/cache/topo/brief/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/recycle:
+    post:
+      operationId: transfer_host_to_recyclemodule
+      description: 上交主机到业务的待回收模块
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/recycle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/relation/with_topo:
+    post:
+      operationId: find_host_relations_with_topo
+      description: 根据业务拓扑中的实例节点查询其下的主机关系信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/relation/with_topo
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/detail_topo:
+    post:
+      operationId: list_host_detail_topology
+      description: 根据主机条件信息查询主机详情及其所属的拓扑信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/detail_topo
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/search/instances/object/{bk_obj_id}:
+    post:
+      operationId: search_object_instances
+      description: 查询模型实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/search/instances/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/count/instances/object/{bk_obj_id}:
+    post:
+      operationId: count_object_instances
+      description: 查询模型实例数量
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/count/instances/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/search/instance_associations/object/{bk_obj_id}:
+    post:
+      operationId: search_instance_associations
+      description: 查询模型实例关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/search/instance_associations/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/count/instance_associations/object/{bk_obj_id}:
+    post:
+      operationId: count_instance_associations
+      description: 查询模型实例关系数量
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/count/instance_associations/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/topo/biz/brief_node_relation:
+    post:
+      operationId: find_brief_biz_topo_node_relation
+      description: 查询业务主线实例拓扑源与目标节点的关系信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/topo/biz/brief_node_relation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/instance/object/{bk_obj_id}:
+    post:
+      operationId: batch_create_inst
+      description: 批量创建通用模型实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/instance/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/instassociation:
+    post:
+      operationId: batch_create_instance_association
+      description: 批量创建模型实例关联关系
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/instassociation
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/create/biz_set:
+    post:
+      operationId: create_business_set
+      description: 创建业务集
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/create/biz_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/biz_set:
+    post:
+      operationId: batch_delete_business_set
+      description: 批量删除业务集
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/deletemany/biz_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/biz_set/biz_list:
+    post:
+      operationId: list_business_in_business_set
+      description: 查询业务集中的业务列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/biz_set/biz_list
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/biz_set:
+    post:
+      operationId: list_business_set
+      description: 查询业务集
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/biz_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/biz_set/topo_path:
+    post:
+      operationId: list_business_set_topo
+      description: 查询业务集拓扑
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/biz_set/topo_path
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/biz_set:
+    put:
+      operationId: batch_update_business_set
+      description: 批量更新业务集信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/biz_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/service_template:
+    post:
+      operationId: list_host_service_template_id
+      description: 查询主机所属的服务模版id列表信息
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/service_template
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/find/instassociation/object/{bk_obj_id}/inst/detail:
+    post:
+      operationId: find_instassociation_with_inst
+      description: 查询模型实例的关联关系及可选返回原模型或目标模型的实例详情
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/instassociation/object/{bk_obj_id}/inst/detail
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/add/resource:
+    post:
+      operationId: add_host_to_resource_pool
+      description: 添加主机到资源池
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/add/resource
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/hosts/total_mainline_topo/biz/{bk_biz_id}:
+    post:
+      operationId: list_host_total_mainline_topo
+      description: 查询主机及其对应topo
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/hosts/total_mainline_topo/biz/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/count/cpu:
+    post:
+      operationId: count_biz_host_cpu
+      description: 统计每个业务下主机CPU数量（成本管理专用接口）
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/count/cpu
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/event/push/host_identifier:
+    post:
+      operationId: push_host_identifier
+      description: 推送主机身份
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/event/push/host_identifier
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/cloud_hosts:
+    post:
+      operationId: add_cloud_host_to_biz
+      description: 新增云主机到业务的空闲机模块
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/cloud_hosts
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/cloud_hosts:
+    delete:
+      operationId: delete_cloud_host_from_biz
+      description: 从业务空闲机集群删除云主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/cloud_hosts
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/event/find/host_identifier_push_result:
+    post:
+      operationId: find_host_identifier_push_result
+      description: 获取推送主机身份任务结果
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/event/find/host_identifier_push_result
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/add/business_idle:
+    post:
+      operationId: add_host_to_business_idle
+      description: 添加主机到业务空闲机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/add/business_idle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/bind/agent:
+    post:
+      operationId: bind_host_agent
+      description: 将agent绑定到主机上
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/bind/agent
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/host/unbind/agent:
+    post:
+      operationId: unbind_host_agent
+      description: 将agent和主机解绑
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/host/unbind/agent
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/project:
+    post:
+      operationId: batch_create_project
+      description: 批量创建项目
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/project
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/project:
+    put:
+      operationId: batch_update_project
+      description: 批量更新项目
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/project
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/project:
+    delete:
+      operationId: batch_delete_project
+      description: 批量删除项目
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/project
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/project:
+    post:
+      operationId: list_project
+      description: 查询项目
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/project
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/update/project/bk_project_id:
+    put:
+      operationId: update_project_id
+      description: 更新项目id
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/project/bk_project_id
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/across/biz:
+    post:
+      operationId: transfer_host_across_biz
+      description: 跨业务转移主机
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/across/biz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/createmany/quoted/instance:
+    post:
+      operationId: batch_create_quoted_inst
+      description: 批量创建被引用的模型的实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/createmany/quoted/instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/quoted/instance:
+    post:
+      operationId: list_quoted_inst
+      description: 查询被引用的模型的实例列表
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/quoted/instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/updatemany/quoted/instance:
+    put:
+      operationId: batch_update_quoted_inst
+      description: 批量更新被引用的模型的实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/updatemany/quoted/instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/deletemany/quoted/instance:
+    delete:
+      operationId: batch_delete_quoted_inst
+      description: 批量删除被引用的模型的实例
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/deletemany/quoted/instance
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/add:
+    post:
+      operationId: add_host_to_resource
+      description: 新增主机到资源池
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/add
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/{bk_supplier_account}:
+    post:
+      operationId: create_business
+      description: 新建业务
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/biz/{bk_supplier_account}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/{bk_biz_id}/{bk_set_id}:
+    post:
+      operationId: create_module
+      description: 创建模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/module/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/{bk_biz_id}:
+    post:
+      operationId: create_set
+      description: 创建集群
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/set/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/{bk_supplier_account}/{bk_biz_id}:
+    put:
+      operationId: update_business
+      description: 修改业务
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/biz/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_business
+      description: 删除业务
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/biz/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/batch:
+    put:
+      operationId: update_host
+      description: 更新主机属性
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_host
+      description: 删除主机
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/hosts/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}:
+    put:
+      operationId: update_module
+      description: 更新模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_module
+      description: 删除模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/{bk_biz_id}/{bk_set_id}:
+    put:
+      operationId: update_set
+      description: 更新集群
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/set/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+    delete:
+      operationId: delete_set
+      description: 删除集群
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v3/set/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/{bk_supplier_account}/{bk_host_id}:
+    get:
+      operationId: get_host_base_info
+      description: 获取主机详情
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/hosts/{bk_supplier_account}/{bk_host_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/topo/inst/{bk_supplier_account}/{bk_biz_id}:
+    get:
+      operationId: search_biz_inst_topo
+      description: 查询业务实例拓扑
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/topo/inst/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/biz/search/{bk_supplier_account}:
+    post:
+      operationId: search_business
+      description: 查询业务
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/biz/search/{bk_supplier_account}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/inst/search/owner/{bk_supplier_account}/object/{bk_obj_id}:
+    post:
+      operationId: search_inst_by_object
+      description: 查询实例详情
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/inst/search/owner/{bk_supplier_account}/object/{bk_obj_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/module/search/{bk_supplier_account}/{bk_biz_id}/{bk_set_id}:
+    post:
+      operationId: search_module
+      description: 查询模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/module/search/{bk_supplier_account}/{bk_biz_id}/{bk_set_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/set/search/{bk_supplier_account}/{bk_biz_id}:
+    post:
+      operationId: search_set
+      description: 查询集群
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/set/search/{bk_supplier_account}/{bk_biz_id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules:
+    post:
+      operationId: transfer_host_module
+      description: 业务内主机转移模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/fault:
+    post:
+      operationId: transfer_host_to_faultmodule
+      description: 上交主机到业务的故障机模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/fault
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/idle:
+    post:
+      operationId: transfer_host_to_idlemodule
+      description: 上交主机到业务的空闲机模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/idle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/resource:
+    post:
+      operationId: transfer_host_to_resourcemodule
+      description: 上交主机至资源池
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/resource
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/hosts/modules/resource/idle:
+    post:
+      operationId: transfer_resourcehost_to_idlemodule
+      description: 资源池主机分配至业务的空闲机模块
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/hosts/modules/resource/idle
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/{action}:
+    post:
+      operationId: update_object_topo_graphics
+      description: 更新拓扑图
+      tags:
+        - oldesb
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/{action}
           matchSubpath: false
           timeout: 0
           upstreams: {}

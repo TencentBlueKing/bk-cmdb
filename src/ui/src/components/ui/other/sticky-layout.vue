@@ -18,7 +18,7 @@
       <slot name="header" v-if="$scopedSlots.header" v-bind:sticky="hasScrollbar"></slot>
     </div>
     <div class="sticky-content" ref="content">
-      <slot></slot>
+      <slot v-bind:sticky="hasScrollbar"></slot>
     </div>
     <div class="sticky-footer" ref="footer" v-if="$slots.footer || $scopedSlots.footer">
       <slot name="footer" v-if="$slots.footer"></slot>

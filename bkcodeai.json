@@ -1,0 +1,30 @@
+{
+  "crignore_file_patterns": [
+    "out/",
+    "dist/",
+    "assets/",
+    "images/",
+    "package.json",
+    "package-lock.json",
+    "yarn.lock",
+    ".env.*",
+    "*.env",
+    "*.map",
+    "*.yml",
+    "*.yaml",
+    "*.min.js",
+    "libs/",
+    "static/",
+    "doc/",
+    "docs/",
+    "*.mo",
+    "*.po",
+    "*.ini",
+    "*.toml",
+    "*.json",
+    "*.xml",
+    "*.lock",
+    "*.md",
+    "*.txt"
+  ]
+}

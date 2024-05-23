@@ -93,7 +93,7 @@
           </bk-select>
         </div>
       </div>
-      <div class="field-detail" v-show="!['foreignkey'].includes(fieldType)">
+      <div class="field-detail" v-if="!['foreignkey'].includes(fieldType)">
         <!-- 添加key防止复用组件时内部状态错误 -->
         <component
           class="cmdb-form-item"
@@ -507,7 +507,7 @@
         const validate = [
           this.$validator.validateAll()
         ]
-        if (this.$refs.component) {
+        if (this.$refs?.component?.$validator) {
           validate.push(this.$refs.component.$validator.validateAll())
         }
         const results = await Promise.all(validate)

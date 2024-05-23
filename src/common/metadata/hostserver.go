@@ -957,6 +957,17 @@ type UpdateHostPropertyBatchParameter struct {
 	Update []UpdateHostProperty `json:"update"`
 }
 
+// Convert UpdateHostPropertyBatchParameter to UpdateHostOpt
+func (u *UpdateHostPropertyBatchParameter) Convert() *UpdateHostOpt {
+	result := &UpdateHostOpt{}
+	for _, update := range u.Update {
+		result.Update = append(result.Update,
+			UpdateHost{Properties: update.Properties, HostIDs: []int64{update.HostID}})
+	}
+
+	return result
+}
+
 // UpdateHostProperty host property parameter
 type UpdateHostProperty struct {
 	HostID     int64                  `json:"bk_host_id"`
@@ -1280,6 +1291,46 @@ func (c *DeleteCloudHostFromBizParam) Validate() errors.RawErrorInfo {
 	if len(c.HostIDs) > common.BKWriteOpLimit {
 		return errors.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{"bk_host_ids",
 			common.BKWriteOpLimit}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// UpdateHost update host parameter
+type UpdateHost struct {
+	HostIDs    []int64                `json:"bk_host_ids"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+// UpdateHostOpt update host option
+type UpdateHostOpt struct {
+	Update []UpdateHost `json:"update"`
+}
+
+// Validate validate UpdateHostOpt
+func (u *UpdateHostOpt) Validate() errors.RawErrorInfo {
+	count := 0
+	for _, update := range u.Update {
+		count += len(update.HostIDs)
+		cloudID, ok := update.Properties[common.BKCloudIDField]
+		if !ok {
+			continue
+		}
+
+		cloudIDInt64, err := util.GetInt64ByInterface(cloudID)
+		if err != nil || cloudIDInt64 == common.UnassignedCloudAreaID {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{common.BKCloudIDField},
+			}
+		}
+	}
+
+	if count > common.BKMaxPageSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"update", common.BKMaxPageSize},
+		}
 	}
 
 	return errors.RawErrorInfo{}

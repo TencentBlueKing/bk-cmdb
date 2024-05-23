@@ -20,6 +20,7 @@
       :data="table.list"
       :pagination="table.pagination"
       :max-height="$APP.height - filtersTagHeight - 230"
+      :shift-multi-checked="true"
       @selection-change="handleSelectionChange"
       @sort-change="handleSortChange"
       @page-change="handlePageChange"
@@ -171,7 +172,6 @@
           sort = 'bk_host_id',
           limit = this.table.pagination.limit,
           directory = null,
-          isFuzzy = false,
         }) => {
           if (this.$route.name !== MENU_RESOURCE_HOST) {
             return false
@@ -184,9 +184,6 @@
           this.scope = isNaN(scope) ? 'all' : parseInt(scope, 10)
 
           FilterStore.setResourceScope(scope)
-          if (isFuzzy) {
-            FilterStore.setIPField('exact', false)
-          }
 
           this.getHostList()
         }, { throttle: 100 })

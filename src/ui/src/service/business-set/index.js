@@ -123,7 +123,7 @@ const deleteById = (id, config) => http.post('deletemany/biz_set', {
   bk_biz_set_ids: [id]
 }, config)
 
-const getAll = config => http.get('findmany/biz_set/simplify', config)
+const getAll = config => http.get('findmany/biz_set/simplify?sort=bk_biz_set_id', config)
 
 export default {
   find,

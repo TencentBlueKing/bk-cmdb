@@ -137,7 +137,7 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 			return
 		}
 
-		err = attrvalid.ValidPropertyOption(ctx.Kit, attrs[idx].PropertyType, attrs[idx].Option, attrs[idx].IsMultiple,
+		err = attrvalid.ValidPropertyOption(ctx.Kit, attrs[idx].PropertyType, attrs[idx].Option, &attrs[idx].IsMultiple,
 			attrs[idx].Default)
 		if err != nil {
 			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attrs[idx], err,
@@ -312,7 +312,7 @@ func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attr
 			return err.ToCCError(kit.CCError)
 		}
 
-		err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default)
+		err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, &attr.IsMultiple, attr.Default)
 		if err != nil {
 			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attr, err,
 				kit.Rid)

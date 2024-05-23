@@ -59,6 +59,7 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 				opts.Collection, err)
 			// reset the resume token, because we can not use the former resume token to watch success for now.
 			streamOptions.StartAfter = nil
+			opts.StartAfterToken = nil
 			// cause we have already got a fatal error, we can not try to watch from where we lost.
 			// so re-watch from 1 minutes ago to avoid lost events.
 			// Note: apparently, we may got duplicate events with this re-watch
@@ -67,6 +68,7 @@ func (e *Event) Watch(ctx context.Context, opts *types.WatchOptions) (*types.Wat
 				T: startAtTime,
 				I: 0,
 			}
+			opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
 
 			if opts.WatchFatalErrorCallback != nil {
 				err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
@@ -170,7 +172,8 @@ func (e *Event) loopWatch(ctx context.Context,
 						opts.Collection, err)
 					// reset the resume token, because we can not use the former resume token to watch success for now.
 					streamOptions.StartAfter = nil
-					// cause we have already got a fatal error, we can not try to watch from where we lost.
+					opts.StartAfterToken = nil
+					// because we have already got a fatal error, we can not try to watch from where we lost.
 					// so re-watch from 1 minutes ago to avoid lost events.
 					// Note: apparently, we may got duplicate events with this re-watch
 					startAtTime := uint32(time.Now().Unix()) - 60
@@ -178,6 +181,7 @@ func (e *Event) loopWatch(ctx context.Context,
 						T: startAtTime,
 						I: 0,
 					}
+					opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
 					currentToken.Data = ""
 
 					if opts.WatchFatalErrorCallback != nil {
@@ -230,13 +234,16 @@ func (e *Event) loopWatch(ctx context.Context,
 				// clean the last resume token to force the next try watch from the beginning. otherwise we will
 				// receive the invalid event again.
 				streamOptions.StartAfter = nil
+				opts.StartAfterToken = nil
 				// cause we have already got a fatal error, we can not try to watch from where we lost.
 				// so re-watch from 1 minutes ago to avoid lost events.
 				// Note: apparently, we may got duplicate events with this re-watch
+				startAtTime := uint32(time.Now().Unix()) - 60
 				streamOptions.StartAtOperationTime = &primitive.Timestamp{
-					T: uint32(time.Now().Unix()) - 60,
+					T: startAtTime,
 					I: 0,
 				}
+				opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
 				currentToken.Data = ""
 
 				stream.Close(ctx)
@@ -314,6 +321,10 @@ func isFatalError(err error) bool {
 	}
 
 	if strings.Contains(err.Error(), "the resume token was not found") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "CappedPositionLost") {
 		return true
 	}
 

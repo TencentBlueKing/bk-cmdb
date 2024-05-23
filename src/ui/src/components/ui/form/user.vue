@@ -23,6 +23,7 @@
       v-model="localValue"
       :class="{ 'has-fast-select': fastSelect }"
       :empty-text="$t('无匹配人员')"
+      :data-error-handler="errorHandler"
       @focus="$emit('focus')"
       @blur="$emit('blur')">
     </blueking-user-selector>
@@ -33,6 +34,8 @@
   import BluekingUserSelector from '@blueking/user-selector'
   import { mapGetters } from 'vuex'
   import Vue from 'vue'
+  import { showLoginModal } from '@/utils/login-helper'
+
   export default {
     name: 'cmdb-form-objuser',
     components: {
@@ -141,6 +144,11 @@
           value.splice(0, value.length, this.userName)
         }
         this.localValue = value
+      },
+      errorHandler(res) {
+        if (res.code === 1306000) {
+          showLoginModal()
+        }
       }
     }
   }
@@ -183,6 +191,16 @@
                 margin: 2px 0 2px 6px;
                 line-height: 20px;
               }
+          }
+        }
+        :deep(.user-selector-selected:has(.non-existent)) {
+
+          background: #FFDEDE;
+          .user-selector-selected-value {
+            color: #EB3333;
+          }
+          .user-selector-selected-clear {
+            color: #F15656
           }
         }
     }

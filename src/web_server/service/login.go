@@ -41,6 +41,28 @@ func (s *Service) LogOutUser(c *gin.Context) {
 	return
 }
 
+// IsLogin user is login
+func (s *Service) IsLogin(c *gin.Context) {
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	isLogin := user.LoginUser(c)
+	if isLogin {
+		c.JSON(200, gin.H{
+			common.HTTPBKAPIErrorCode:    0,
+			common.HTTPBKAPIErrorMessage: nil,
+			"permission":                 nil,
+			"result":                     true,
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		common.HTTPBKAPIErrorCode:    0,
+		common.HTTPBKAPIErrorMessage: "Unauthorized",
+		"permission":                 nil,
+		"result":                     false,
+	})
+	return
+}
+
 // Login html file
 func (s *Service) Login(c *gin.Context) {
 	c.HTML(200, "login.html", gin.H{})

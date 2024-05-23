@@ -199,6 +199,7 @@
             :properties="properties"
             :property-groups="propertyGroups"
             :save-auth="saveAuth"
+            :show-default-value="true"
             @on-submit="handleMultipleSave"
             :loading="batchUpdateSlider.loading"
             @on-cancel="handleBatchUpdateSliderBeforeClose"
@@ -569,10 +570,10 @@
       },
       getTableData() {
         this.getBusinessList({ cancelPrevious: true, globalPermission: false }).then((data) => {
-          if (data.count && !data.info.length) {
-            this.table.pagination.current -= 1
-            this.getTableData()
-          }
+          const { current, limit } = this.table.pagination
+          const { count } = data
+
+          this.table.pagination.current = Math.min(current, Math.ceil(count / limit))
           this.table.list = data.info
           this.table.pagination.count = data.count
 

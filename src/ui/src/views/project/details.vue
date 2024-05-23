@@ -20,7 +20,9 @@
           resource-type="project"
           :properties="properties"
           :property-groups="propertyGroups"
-          :inst="inst">
+          :obj-id="objId"
+          :inst="inst"
+          :show-default-value="true">
         </cmdb-property>
       </bk-tab-panel>
       <bk-tab-panel name="association" :label="$t('关联')">

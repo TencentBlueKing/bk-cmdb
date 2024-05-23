@@ -22,7 +22,8 @@
     :initial-control-value="0"
     @blur="handleInput"
     @enter="handleEnter"
-    @change="handleChange">
+    @change="handleChange"
+    @focus="handleFocus">
     <template slot="append" v-if="unit">
       <div class="unit" :title="unit">{{unit}}</div>
     </template>
@@ -90,12 +91,16 @@
         }
         this.localValue = value
         this.$refs.input.curValue = this.localValue
+        this.$emit('blur')
       },
       handleChange() {
         this.$emit('on-change', this.localValue)
       },
       handleEnter() {
         this.$emit('enter', this.localValue)
+      },
+      handleFocus() {
+        this.$emit('focus')
       },
       focus() {
         this.$el.querySelector('input').focus()

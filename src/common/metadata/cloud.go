@@ -348,7 +348,7 @@ type HostSyncInfo struct {
 type CloudArea struct {
 	CloudID     int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName   string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
-	Status      int       `json:"bk_status" bson:"bk_status"`
+	Status      string    `json:"bk_status" bson:"bk_status"`
 	CloudVendor string    `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
 	OwnerID     string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	VpcID       string    `json:"bk_vpc_id" bson:"bk_vpc_id"`
@@ -359,6 +359,7 @@ type CloudArea struct {
 	LastEditor  string    `json:"bk_last_editor" bson:"bk_last_editor"`
 	CreateTime  time.Time `json:"create_time" bson:"create_time"`
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
+	Default     int64     `json:"default" bson:"default"`
 }
 
 // SyncRegion TODO
