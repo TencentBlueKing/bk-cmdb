@@ -429,6 +429,23 @@ func genResourceManageActionGroups() []ActionGroup {
 						},
 					},
 				},
+				{
+					Name:   "全量同步缓存条件",
+					NameEn: "Full Sync Condition",
+					Actions: []ActionWithID{
+						{ID: CreateFullSyncCond},
+						{ID: ViewFullSyncCond},
+						{ID: EditFullSyncCond},
+						{ID: DeleteFullSyncCond},
+					},
+				},
+				{
+					Name:   "缓存",
+					NameEn: "Cache",
+					Actions: []ActionWithID{
+						{ID: ViewGeneralCache},
+					},
+				},
 			},
 		},
 	}

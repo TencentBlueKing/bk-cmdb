@@ -154,6 +154,11 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewFieldGroupingTemplate:           "字段组合模板查看",
 	EditFieldGroupingTemplate:           "字段组合模板编辑",
 	DeleteFieldGroupingTemplate:         "字段组合模板删除",
+	CreateFullSyncCond:                  "全量同步缓存条件新建",
+	ViewFullSyncCond:                    "全量同步缓存条件查看",
+	EditFullSyncCond:                    "全量同步缓存条件编辑",
+	DeleteFullSyncCond:                  "全量同步缓存条件删除",
+	ViewGeneralCache:                    "通用缓存查询",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -199,6 +204,8 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
 	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
+	resourceActionList = append(resourceActionList, genFullSyncCondActions()...)
+	resourceActionList = append(resourceActionList, genCacheActions()...)
 
 	return resourceActionList
 }
@@ -1741,6 +1748,64 @@ func genFieldGroupingTemplateActions() []ResourceAction {
 			RelatedResourceTypes: []RelateResourceType{templateResource},
 			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
 			Version:              1,
+		},
+	}
+}
+
+func genFullSyncCondActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      CreateFullSyncCond,
+			Name:    ActionIDNameMap[CreateFullSyncCond],
+			NameEn:  "Create Full Sync Cond",
+			Type:    Create,
+			Version: 1,
+			Hidden:  true,
+		},
+		{
+			ID:      EditFullSyncCond,
+			Name:    ActionIDNameMap[EditFullSyncCond],
+			NameEn:  "Edit Full Sync Cond",
+			Type:    Edit,
+			Version: 1,
+			Hidden:  true,
+		},
+		{
+			ID:      DeleteFullSyncCond,
+			Name:    ActionIDNameMap[DeleteFullSyncCond],
+			NameEn:  "Delete Full Sync Cond",
+			Type:    Delete,
+			Version: 1,
+			Hidden:  true,
+		},
+		{
+			ID:      ViewFullSyncCond,
+			Name:    ActionIDNameMap[ViewFullSyncCond],
+			NameEn:  "View Full Sync Cond",
+			Type:    View,
+			Version: 1,
+			Hidden:  true,
+		},
+	}
+}
+
+func genCacheActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:     ViewGeneralCache,
+			Name:   ActionIDNameMap[ViewGeneralCache],
+			NameEn: "View General Resource Cache",
+			Type:   View,
+			RelatedResourceTypes: []RelateResourceType{{
+				SystemID: SystemIDCMDB,
+				ID:       GeneralCache,
+				InstanceSelections: []RelatedInstanceSelection{{
+					SystemID: SystemIDCMDB,
+					ID:       GeneralCacheSelection,
+				}},
+			}},
+			Version: 1,
+			Hidden:  true,
 		},
 	}
 }

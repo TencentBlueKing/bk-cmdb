@@ -19,5 +19,5 @@ import (
 
 // ListHosts TODO
 func (hm *hostManager) ListHosts(kit *rest.Kit, input metadata.ListHosts) (*metadata.ListHostResult, error) {
-	return hm.hostSearcher.ListHosts(kit.Ctx, input)
+	return hm.hostSearcher.ListHosts(kit, input)
 }

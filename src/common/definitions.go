@@ -1828,3 +1828,8 @@ const (
 	// BuiltIn built-in value
 	BuiltIn Default = 1
 )
+
+const (
+	// MongoMetaID is mongodb meta id field
+	MongoMetaID = "_id"
+)

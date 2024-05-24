@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"testing"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -55,6 +56,7 @@ type RedisConfig struct {
 }
 
 func init() {
+	testing.Init()
 	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load ")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")

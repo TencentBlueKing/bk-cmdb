@@ -287,5 +287,14 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     GeneralCacheSelection,
+			Name:   "通用缓存类型列表",
+			NameEn: "General Resource Cache Type List",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       GeneralCache,
+			}},
+		},
 	}
 }

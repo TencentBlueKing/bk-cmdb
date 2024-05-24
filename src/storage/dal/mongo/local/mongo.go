@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	fullsynccond "configcenter/pkg/cache/full-sync-cond"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -646,6 +647,9 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case common.BKTableNameBasePlat:
 	case common.BKTableNameBaseProject:
 
+	// NOTE: should not use the table name for archive, the object instance and association
+	// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
+	// error message in order to find the wrong table name used in logics level.
 	case common.BKTableNameBaseInst:
 	case common.BKTableNameInstAsst:
 
@@ -666,11 +670,8 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	case kubetypes.BKTableNameBaseContainer:
 	case kubetypes.BKTableNameNsSharedClusterRel:
 
-		// NOTE: should not use the table name for archive, the object instance and association
-		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
-		// error message in order to find the wrong table name used in logics level.
+	case fullsynccond.BKTableNameFullSyncCond:
 
-		// TODO add del archive for container tables
 	default:
 		if !common.IsObjectShardingTable(c.collName) {
 			// do not archive the delete docs
