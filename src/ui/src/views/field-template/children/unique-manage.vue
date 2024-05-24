@@ -421,7 +421,8 @@
       position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 0 10px;
+      flex-wrap: wrap;
 
       .compose-form {
         flex: 1;
@@ -458,8 +459,7 @@
       .rules-error {
         font-size: 12px;
         color: $dangerColor;
-        position: absolute;
-        top: 100%;
+        width: 100%;
         .rules-error-name {
           color: $warningColor;
         }

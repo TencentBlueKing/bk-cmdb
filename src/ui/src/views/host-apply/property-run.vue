@@ -295,7 +295,9 @@
         if (this.propertyConfig.bk_module_ids?.length === 1) {
           query.node = `module-${this.propertyConfig.bk_module_ids[0]}`
         }
-
+        if (this.propertyConfig.service_template_ids?.length === 1) {
+          query.filter = `service_template_id.in=${this.propertyConfig.service_template_ids[0]}`
+        }
         this.leaveConfirmConfig.active = false
         this.$nextTick(() => {
           this.$routerActions.redirect({

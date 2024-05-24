@@ -246,6 +246,7 @@
     .item-content-wrapper {
       display: flex;
       align-items: flex-start;
+      min-height: 32px;
     }
     .item-operator {
       flex: 110px 0 0;

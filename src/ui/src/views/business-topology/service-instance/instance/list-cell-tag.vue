@@ -96,11 +96,11 @@
           if (referenceItemIndex > -1) {
             this.ellipsisCount = this.tags.length - referenceItemIndex
             this.insertEllipsisTag(items[referenceItemIndex], referenceItemIndex)
-            this.doubleCheckEllipsisPosition()
+            this.$nextTick(this.doubleCheckEllipsisPosition)
           } else {
             this.removeEllipsisTag()
           }
-          this.updateEditPosition()
+          this.$nextTick(this.updateEditPosition)
         })
       },
       insertEllipsisTag(reference) {
@@ -123,7 +123,7 @@
         if (ellipsis && ellipsis.previousElementSibling) {
           lastItem = ellipsis
         } else if (this.tags.length) {
-          const tagItems = this.$refs.list.querySelectorAll('.tag-item')
+          const tagItems = Array.from(this.$refs.list.querySelectorAll('.tag-item')).filter(el => el.clientHeight > 0)
           lastItem = tagItems[tagItems.length - 1]
         }
         this.$refs.editTrigger.$el.style.left = lastItem ? `${lastItem.offsetLeft + lastItem.offsetWidth + 10}px` : 0
