@@ -154,7 +154,7 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewFieldGroupingTemplate:           "字段组合模板查看",
 	EditFieldGroupingTemplate:           "字段组合模板编辑",
 	DeleteFieldGroupingTemplate:         "字段组合模板删除",
-	EditIDRuleIncrID:                    "id规则自增id编辑",
+	EditIDRuleIncrID:                    "ID规则自增ID编辑",
 }
 
 // GenerateActions generate all the actions registered to IAM.

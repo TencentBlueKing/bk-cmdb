@@ -107,8 +107,3 @@ func AddModelWithMultipleBizIDCondition(cond mapstr.MapStr, modelBizIDs []int64)
 	delete(cond, common.BKAppIDField)
 	return nil
 }
-
-// GetIDRule get id rule
-func GetIDRule(flag string) string {
-	return fmt.Sprintf("%s%s", common.IDRulePrefix, flag)
-}

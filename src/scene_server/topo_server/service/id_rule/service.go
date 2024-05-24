@@ -34,12 +34,12 @@ func InitIDRule(utility *rest.RestUtility, c *capability.Capability) {
 		Capability: c,
 	}
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/topo/update/id_rule/incr_id",
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/id_rule/incr_id",
 		Handler: s.UpdateIDRuleIncrID})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/topo/sync/inst/id_rule",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/inst/id_rule",
 		Handler: s.SyncInstIDRule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/topo/sync/id_rule/inst/task",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/sync/id_rule/inst/task",
 		Handler: s.SyncInstIDRuleTask})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/topo/find/inst/id_rule/task_status",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/inst/id_rule/task_status",
 		Handler: s.FindInstIDRuleTaskStatus})
 }

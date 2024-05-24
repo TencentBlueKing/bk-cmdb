@@ -79,7 +79,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 	}
 
 	assetIDGenerator := map[string]interface{}{
-		common.BKFieldDBID:     util.GetIDRule(model.ObjectID),
+		common.BKFieldDBID:     metadata.GetIDRule(model.ObjectID),
 		common.BKFieldSeqID:    0,
 		common.CreateTimeField: now,
 		common.LastTimeField:   now,

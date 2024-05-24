@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// Interface defines field template apis.
+// Interface defines id rule apis.
 type Interface interface {
 	UpdateInstIDRule(ctx context.Context, h http.Header, opt *metadata.UpdateInstIDRuleOption) errors.CCErrorCoder
 }

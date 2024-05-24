@@ -40,9 +40,9 @@ func addSelfIncrID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 
 	ids := make([]string, 0)
 	for _, object := range objects {
-		ids = append(ids, util.GetIDRule(object.ObjectID))
+		ids = append(ids, metadata.GetIDRule(object.ObjectID))
 	}
-	ids = append(ids, util.GetIDRule(common.GlobalIDRule))
+	ids = append(ids, metadata.GetIDRule(common.GlobalIDRule))
 
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 	data := make([]map[string]interface{}, 0)

@@ -35,6 +35,7 @@ import (
 	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -786,6 +787,7 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 	}
 
 	objIDArrMap := make(map[string][]int64, 0)
+	idRuleAttrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
 		if attr.PropertyType == common.FieldTypeInnerTable {
 			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
@@ -795,6 +797,11 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		if !isFromModel && attr.TemplateID != 0 {
 			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
 		}
+		if attr.PropertyType == common.FieldTypeIDRule {
+			idRuleAttrMap[attr.ObjectID] = append(idRuleAttrMap[attr.ObjectID], attr.ID)
+			continue
+		}
+
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
 
@@ -811,15 +818,23 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		return 0, err
 	}
 
-	exist, err := m.checkAttributeInUnique(kit, objIDArrMap)
-	if err != nil {
-		blog.ErrorJSON("check attribute in unique error. err:%s, input:%s, rid:%s", err.Error(), condMap, kit.Rid)
-		return 0, err
+	if len(objIDArrMap) != 0 {
+		exist, err := m.checkAttributeInUnique(kit, objIDArrMap)
+		if err != nil {
+			blog.ErrorJSON("check attribute in unique error. err:%s, input:%s, rid:%s", err.Error(), condMap, kit.Rid)
+			return 0, err
+		}
+		// delete field in module unique. not allow delete
+		if exist {
+			blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, kit.Rid)
+			return 0, kit.CCError.Error(common.CCErrCoreServiceNotAllowUniqueAttr)
+		}
 	}
-	// delete field in module unique. not allow delete
-	if exist {
-		blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCoreServiceNotAllowUniqueAttr)
+
+	if len(idRuleAttrMap) != 0 {
+		if err = m.delIDRuleUnique(kit, idRuleAttrMap); err != nil {
+			return 0, err
+		}
 	}
 
 	deleteCnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).DeleteMany(kit.Ctx, condMap)
@@ -1641,6 +1656,29 @@ func (m *modelAttribute) checkAttributeInUnique(kit *rest.Kit, objIDPropertyIDAr
 	}
 
 	return false, nil
+}
+
+func (m *modelAttribute) delIDRuleUnique(kit *rest.Kit, objIDPropertyIDArr map[string][]int64) error {
+	cond := mongo.NewCondition()
+
+	var orCondArr []universalsql.ConditionElement
+	for objID, propertyIDArr := range objIDPropertyIDArr {
+		orCondItem := mongo.NewCondition()
+		orCondItem.Element(mongo.Field(common.BKObjIDField).Eq(objID))
+		orCondItem.Element(mongo.Field("keys.key_id").In(propertyIDArr))
+		orCondItem.Element(mongo.Field("keys.key_kind").Eq("property"))
+		orCondArr = append(orCondArr, orCondItem)
+	}
+
+	cond.Or(orCondArr...)
+	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+
+	if _, err := mongodb.Client().Table(common.BKTableNameObjUnique).DeleteMany(kit.Ctx, condMap); err != nil {
+		blog.ErrorJSON("delete unique failed, cond: %+v, err: %v, rid: %s", condMap, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
 }
 
 // checkAddField 新加模型属性的时候，如果新加的是必填字段，需要判断是否可以新加必填字段

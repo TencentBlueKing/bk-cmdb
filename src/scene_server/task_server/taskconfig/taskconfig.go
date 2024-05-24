@@ -49,7 +49,7 @@ func init() {
 	AddCodeTaskConfig(common.SyncFieldTemplateTaskFlag, types.CC_MODULE_TOPO,
 		"/topo/v3/sync/field_template/object/task", 1, 2)
 	AddCodeTaskConfig(common.SyncInstIDRuleTaskFlag, types.CC_MODULE_TOPO,
-		"/topo/v3/topo/sync/id_rule/inst/task", 1, 2)
+		"/topo/v3/sync/id_rule/inst/task", 1, 2)
 }
 
 // AddCodeTaskConfig add task

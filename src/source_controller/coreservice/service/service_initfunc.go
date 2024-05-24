@@ -120,10 +120,6 @@ func (s *coreService) initModel(web *restful.WebService) {
 		Path:    "/read/{bk_biz_id}/model/attributes/with_table",
 		Handler: s.SearchModelAttrsWithTableByCondition})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/read/{bk_biz_id}/model/attributes/with_table",
-		Handler: s.SearchModelAttrsWithTableByCondition})
-
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/idgenerator",
 		Handler: s.UpdateIDGenerator})
 

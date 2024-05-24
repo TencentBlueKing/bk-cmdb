@@ -1107,7 +1107,7 @@ func ValidIDRuleVal(ctx context.Context, inst mapstr.MapStr, field Attribute) er
 
 	val, err := inst.String(field.PropertyID)
 	if err != nil {
-		blog.Errorf("get property:%s failed, inst: %+v, err: %v, rid: %s", field.PropertyID, inst, err, rid)
+		blog.Errorf("get property: %s failed, inst: %+v, err: %v, rid: %s", field.PropertyID, inst, err, rid)
 		return err
 	}
 

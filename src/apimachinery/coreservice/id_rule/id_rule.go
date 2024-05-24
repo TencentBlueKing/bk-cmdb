@@ -32,7 +32,7 @@ func (a *idRule) UpdateInstIDRule(ctx context.Context, h http.Header,
 
 	resp := new(metadata.BaseResp)
 
-	err := a.client.Post().
+	err := a.client.Put().
 		WithContext(ctx).
 		Body(opt).
 		SubResourcef("/update/inst/id_rule").

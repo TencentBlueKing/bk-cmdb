@@ -121,10 +121,10 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/count/{bk_obj_id}/instances").To(s.CountInstance))
 	ws.Route(ws.POST("/group/related/{kind}/resource/by_ids").Filter(s.WebCoreFilterChan).To(s.Post))
 
-	ws.Route(ws.PUT("/topo/update/id_rule/incr_id").Filter(s.TopoFilterChan).To(s.Put))
-	ws.Route(ws.POST("/topo/sync/inst/id_rule").Filter(s.TopoFilterChan).To(s.Post))
-	ws.Route(ws.POST("/topo/sync/id_rule/inst/task").Filter(s.TopoFilterChan).To(s.Post))
-	ws.Route(ws.POST("/topo/find/inst/id_rule/task_status").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.PUT("/update/id_rule/incr_id").Filter(s.TopoFilterChan).To(s.Put))
+	ws.Route(ws.POST("/sync/inst/id_rule").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.POST("/sync/id_rule/inst/task").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.POST("/find/inst/id_rule/task_status").Filter(s.TopoFilterChan).To(s.Post))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

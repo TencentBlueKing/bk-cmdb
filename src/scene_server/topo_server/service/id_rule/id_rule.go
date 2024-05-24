@@ -53,7 +53,7 @@ func (s *service) UpdateIDRuleIncrID(ctx *rest.Contexts) {
 		return
 	}
 
-	opt.Type = util.GetIDRule(opt.Type)
+	opt.Type = metadata.GetIDRule(opt.Type)
 	err := s.ClientSet.CoreService().Model().UpdateIDGenerator(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		blog.Errorf("update id generator failed, err: %v, opt: %+v, rid: %s", err, opt, ctx.Kit.Rid)
@@ -219,6 +219,7 @@ func (s *service) SyncInstIDRuleTask(ctx *rest.Contexts) {
 			return err
 		}
 
+		// 拿到更新后的数据，从里面获取最终更新的字段值；下面记审计时会把id rule字段删掉，以此相当于获取到了更新前的数据
 		cond := &metadata.QueryCondition{
 			Page:      metadata.BasePage{Limit: common.BKNoLimit},
 			Condition: mapstr.MapStr{metadata.GetInstIDFieldByObjID(opt.ObjID): mapstr.MapStr{common.BKDBIN: opt.IDs}},

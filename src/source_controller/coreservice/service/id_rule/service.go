@@ -35,8 +35,6 @@ func InitIDRule(c *capability.Capability) {
 		core: c.Core,
 	}
 
-	// field template
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/inst/id_rule",
+	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/inst/id_rule",
 		Handler: s.UpdateInstIDRule})
-
 }
