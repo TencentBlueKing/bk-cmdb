@@ -579,7 +579,8 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 		}
 	case common.FieldTypeEnumMulti:
 		// 默认值相关的检查都是按照最宽松的进行校验
-		if err := attrvalid.ValidFieldTypeEnumOption(kit, option, true); err != nil {
+		isMulti := true
+		if err := attrvalid.ValidFieldTypeEnumOption(kit, option, &isMulti); err != nil {
 			blog.Errorf("enum multi type default value not enum multi, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -1133,7 +1134,7 @@ func isBizObject(objectID string) bool {
 	}
 }
 
-//  saveTableAttrCheck form new field check
+// saveTableAttrCheck form new field check
 func (m *modelAttribute) saveTableAttrCheck(kit *rest.Kit, attribute metadata.Attribute) error {
 	if err := m.checkTableAttributeMustNotEmpty(kit, attribute); err != nil {
 		return err
@@ -1144,7 +1145,7 @@ func (m *modelAttribute) saveTableAttrCheck(kit *rest.Kit, attribute metadata.At
 	return nil
 }
 
-//  saveCheck 新加字段检查
+// saveCheck 新加字段检查
 func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
 
 	if err := m.checkAddField(kit, attribute); err != nil {
@@ -1427,11 +1428,7 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 		isMultiple = &ismultiple
 	}
 
-	if isMultiple == nil {
-		return kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKIsMultipleField)
-	}
-
-	err := attrvalid.ValidPropertyOption(kit, propertyType, option, *isMultiple, data[common.BKDefaultFiled])
+	err := attrvalid.ValidPropertyOption(kit, propertyType, option, isMultiple, data[common.BKDefaultFiled])
 	if err != nil {
 		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 		return err

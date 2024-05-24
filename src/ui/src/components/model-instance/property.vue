@@ -91,6 +91,8 @@
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="$tools.getValidateRules(property)"
                       v-model.trim="editState.value"
+                      @focus="handleFocus"
+                      @blur="handleBlur"
                       v-bk-tooltips.top="{
                         disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                         theme: 'light',
@@ -103,8 +105,15 @@
                   </div>
                   <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                   <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                  <cmdb-default-picker
+                    v-if="showDefault(property.bk_property_id)"
+                    :value="propertyDefaults[property.bk_property_id]"
+                    :property="property"
+                    :instance="instState"
+                    @pick-default="handlePickDefault">
+                  </cmdb-default-picker>
                   <span class="form-error"
-                    v-if="errors.has(property.bk_property_id)">
+                    v-else-if="errors.has(property.bk_property_id)">
                     {{errors.first(property.bk_property_id)}}
                   </span>
                 </div>
@@ -193,12 +202,16 @@
   import authMixin from './mixin-auth'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { keyupCallMethod } from '@/utils/util'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
 
   export default {
     filters: {
       filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
       }
+    },
+    components: {
+      cmdbDefaultPicker
     },
     mixins: [formMixins, authMixin],
     props: {
@@ -216,15 +229,21 @@
       },
       objId: {
         type: String
+      },
+      showDefaultValue: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
       return {
         PROPERTY_TYPES,
         instState: this.inst,
+        propertyDefaults: this.$tools.getInstFormDefaults(this.properties),
         editState: {
           property: null,
-          value: null
+          value: null,
+          focus: false
         },
         loadingState: [],
         showCopyTips: false,
@@ -253,6 +272,7 @@
     watch: {
       inst(val) {
         this.instState = this.$tools.getInstFormValues(this.properties, val, false)
+        this.propertyDefaults = this.$tools.getInstFormDefaults(this.properties)
       }
     },
     methods: {
@@ -344,6 +364,22 @@
       },
       showPopover() {
         this.hoverPropertyPopover.instance.show()
+      },
+      showDefault(propertyId) {
+        const { value, focus } = this.editState
+        return this.propertyDefaults[propertyId]
+          && this.showDefaultValue
+          && !value
+          && focus
+      },
+      handleFocus() {
+        this.editState.focus = true
+      },
+      handleBlur() {
+        this.editState.focus = false
+      },
+      handlePickDefault(val) {
+        this.editState.value = val
       },
       handleCopy(propertyId) {
         const [component] = this.$refs[`property-value-${propertyId}`]

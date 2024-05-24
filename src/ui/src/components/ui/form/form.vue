@@ -58,7 +58,9 @@
                         :multiple="property.ismultiple"
                         v-bind="{ ...$attrs, ...$tools.getValidateEvents(property) }"
                         v-validate="getValidateRules(property)"
-                        v-model.trim="values[property['bk_property_id']]">
+                        v-model.trim="values[property['bk_property_id']]"
+                        @focus="() => handleFocus(property.bk_property_id)"
+                        @blur="handleBlur">
                       </component>
                       <cmdb-form-innertable v-else
                         :mode="type"
@@ -70,7 +72,13 @@
                         :auth="saveAuth"
                         v-model.trim="values[property['bk_property_id']]" />
                       <form-append :type="type" :property="property" :render="renderAppend"></form-append>
-                      <span class="form-error"
+                      <cmdb-default-picker
+                        v-if="showDefault(property.bk_property_id)"
+                        :value="propertyDefaults[property.bk_property_id]"
+                        :property="property"
+                        @pick-default="(val) => handlePickDefault(property.bk_property_id, val)">
+                      </cmdb-default-picker>
+                      <span v-else-if="errors.has(property.bk_property_id)" class="form-error"
                         :title="errors.first(property['bk_property_id'])">
                         {{errors.first(property['bk_property_id'])}}
                       </span>
@@ -114,12 +122,14 @@
   import { BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
 
   export default {
     name: 'cmdb-form',
     components: {
       FormTips,
-      FormAppend
+      FormAppend,
+      cmdbDefaultPicker
     },
     mixins: [formMixins],
     props: {
@@ -147,6 +157,10 @@
         type: Object,
         default: null
       },
+      showDefaultValue: {
+        type: Boolean,
+        default: false
+      },
       renderTips: Function,
       renderAppend: Function,
       flexProperties: {
@@ -173,7 +187,9 @@
         PROPERTY_TYPES,
         values: {},
         refrenceValues: {},
-        validating: false
+        validating: false,
+        focusId: '',
+        propertyDefaults: this.$tools.getInstFormDefaults(this.properties)
       }
     },
     computed: {
@@ -220,6 +236,7 @@
       initValues() {
         this.values = this.$tools.getInstFormValues(this.properties, this.inst, this.type === 'create')
         this.refrenceValues = this.$tools.clone(this.values)
+        this.propertyDefaults = this.$tools.getInstFormDefaults(this.properties)
       },
       checkGroupAvailable(properties) {
         const availabelProperties = properties.filter(property => this.checkEditable(property))
@@ -260,6 +277,21 @@
         }
 
         return rules
+      },
+      showDefault(propertyId) {
+        return this.propertyDefaults[propertyId]
+          && this.showDefaultValue
+          && !this.values[propertyId]
+          && this.focusId === propertyId
+      },
+      handleFocus(propertyId) {
+        this.focusId = propertyId
+      },
+      handleBlur() {
+        this.focusId = ''
+      },
+      handlePickDefault(id, val) {
+        this.values[id] = val
       },
       async handleSave() {
         const validatePromise = [this.$validator.validateAll()]
@@ -412,5 +444,8 @@
         color: #ff5656;
         max-width: 100%;
         @include ellipsis;
+    }
+    .form-default {
+        right: 0;
     }
 </style>

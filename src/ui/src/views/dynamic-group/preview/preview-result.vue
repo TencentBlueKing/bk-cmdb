@@ -666,11 +666,6 @@
     :deep(.bk-table-pagination-wrapper) {
       z-index: 9;
     }
-
-    :deep(.bk-table-body-wrapper ) {
-      @include scrollbar-y;
-      overflow-x: auto;
-    }
   }
 }
 

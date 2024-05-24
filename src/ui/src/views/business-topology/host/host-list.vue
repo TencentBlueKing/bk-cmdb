@@ -18,6 +18,7 @@
       ref="tableRef"
       v-bkloading="{ isLoading: $loading(Object.values(request)) }"
       :data="table.data"
+      :shift-multi-checked="true"
       :pagination="table.pagination"
       :max-height="$APP.height - filtersTagHeight - 250"
       @page-change="handlePageChange"
