@@ -42,7 +42,9 @@ type clientSet struct {
 }
 
 // NewClientSet new api gateway client set
-func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (ClientSet, error) {
+func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, neededClients []ClientType) (ClientSet,
+	error) {
+
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       2000,
 		Burst:     2000,
@@ -69,26 +71,35 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer) (
 		return nil, err
 	}
 
-	gseCli, err := gse.NewClient(options)
-	if err != nil {
-		return nil, err
+	cs := new(clientSet)
+
+	neededCliMap := make(map[ClientType]struct{})
+	for _, neededClient := range neededClients {
+		neededCliMap[neededClient] = struct{}{}
 	}
 
-	cmdbCli, err := cmdb.NewClient(options)
-	if err != nil {
-		return nil, err
+	if _, exists := neededCliMap[Gse]; exists {
+		cs.gse, err = gse.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	noticeCli, err := notice.NewClient(options)
-	if err != nil {
-		return nil, err
+	if _, exists := neededCliMap[Cmdb]; exists {
+		cs.cmdb, err = cmdb.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &clientSet{
-		gse:    gseCli,
-		cmdb:   cmdbCli,
-		notice: noticeCli,
-	}, nil
+	if _, exists := neededCliMap[Notice]; exists {
+		cs.notice, err = notice.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cs, nil
 }
 
 // Gse returns gse client
@@ -105,3 +116,15 @@ func (c *clientSet) Cmdb() cmdb.ClientI {
 func (c *clientSet) Notice() notice.ClientI {
 	return c.notice
 }
+
+// ClientType is the api gateway client type, used to specify which client is needed
+type ClientType string
+
+const (
+	// Gse is the gse client type
+	Gse ClientType = "gse"
+	// Cmdb is the cmdb client type
+	Cmdb ClientType = "cmdb"
+	// Notice is the notice client type
+	Notice ClientType = "notice"
+)

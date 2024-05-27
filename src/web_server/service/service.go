@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw"
 	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
@@ -37,7 +38,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
-	"configcenter/src/web_server/service/apigw"
+	apigwsvc "configcenter/src/web_server/service/apigw"
 	"configcenter/src/web_server/service/excel"
 	"configcenter/src/web_server/service/notice"
 
@@ -110,7 +111,7 @@ func (s *Service) WebService() *gin.Engine {
 	excel.Init(c)
 
 	// init api gateway http handlers for saas
-	apigw.Init(c)
+	apigwsvc.Init(c)
 
 	// init notice func
 	notice.Init(c)
@@ -230,7 +231,7 @@ func (s *Service) InitNotice() error {
 	}
 
 	if apigwcli.Client() == nil {
-		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry())
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
 		if err != nil {
 			blog.Errorf("init apigw clientset failed, err: %v", err)
 			return err

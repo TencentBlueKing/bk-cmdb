@@ -26,7 +26,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/resource/apigw"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
@@ -35,6 +35,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/gse/client"
 )
@@ -208,7 +209,7 @@ func (es *EventServer) initConfigs() error {
 			return err
 		}
 	case eventtype.V2:
-		err = apigw.Init("apiGW", es.Engine().Metric().Registry())
+		err = apigwcli.Init("apiGW", es.Engine().Metric().Registry(), []apigw.ClientType{apigw.Gse})
 		if err != nil {
 			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
@@ -300,7 +301,7 @@ func (es *EventServer) runSyncData() error {
 		}
 
 	case eventtype.V2:
-		gwClient = apigw.Client().Gse()
+		gwClient = apigwcli.Client().Gse()
 	}
 
 	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,

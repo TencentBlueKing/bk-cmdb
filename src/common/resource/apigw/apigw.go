@@ -35,15 +35,15 @@ func Client() apigw.ClientSet {
 	return client
 }
 
-// Init the jwt handler.
-func Init(path string, metric prometheus.Registerer) error {
+// Init the api-gateway client set
+func Init(path string, metric prometheus.Registerer, neededClients []apigw.ClientType) error {
 	config, err := apigwutil.ParseApiGWConfig(path)
 	if err != nil {
 		blog.Errorf("parse %s api gateway config failed, err: %v", path, err)
 		return err
 	}
 
-	client, err = apigw.NewClientSet(config, metric)
+	client, err = apigw.NewClientSet(config, metric, neededClients)
 	if err != nil {
 		blog.Errorf("init %s api gateway client failed, err: %v", path, err)
 		return err
