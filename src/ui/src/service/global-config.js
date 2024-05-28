@@ -52,14 +52,22 @@ export const updateConfig = globalConfig => $http.put('admin/update/system_confi
 
 /**
  * 获取当前用户的全局设置
- * @returns {Promise}
+ * @returns {Object}
  */
 export const getCurrentConfig = async () => {
-  const { cookieDomain } = window.Site
-  const domain = cookieDomain.startsWith('.') ? cookieDomain : `.${cookieDomain}`
+  const { bkRepoUrl } = window.Site
+
+  let publicConfigPromise
+  if (bkRepoUrl) {
+    const repoUrl = bkRepoUrl.endsWith('/') ? bkRepoUrl : `${bkRepoUrl}/`
+    publicConfigPromise = getPlatformConfig(`${repoUrl}generic/blueking/bk-config/bk_cmdb/base.js`, initialConfig.publicConfig)
+  } else {
+    publicConfigPromise = getPlatformConfig(initialConfig.publicConfig)
+  }
+
   const [currentConfig, publicConfig] = await Promise.all([
     $http.get('admin/find/system_config/platform_setting/current'),
-    getPlatformConfig(`//bkrepo${domain}/generic/blueking/bk-config/bk_cmdb/base.js`, initialConfig.publicConfig)
+    publicConfigPromise
   ])
 
   setShortcutIcon(publicConfig.favicon)

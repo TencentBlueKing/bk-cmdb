@@ -18,7 +18,7 @@
   "dependencies": {
     "@blueking/login-modal": "^1.0.0",
     "@blueking/notice-component-vue2": "^2.0.1-beta.2",
-    "@blueking/platform-config": "^1.0.0",
+    "@blueking/platform-config": "^1.0.1",
     "@blueking/user-selector": "^1.0.6",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "await-to-js": "^3.0.0",
