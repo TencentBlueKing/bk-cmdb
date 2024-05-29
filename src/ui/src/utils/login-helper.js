@@ -29,14 +29,20 @@ export const showLoginModal = () => {
   showModal({ loginUrl })
 }
 
-export const gotoLoginPage = () => {
-  if (!window.Site.login) {
+export const gotoLoginPage = (url, isLogout = false) => {
+  const rawUrl = url ?? window.Site.login
+  if (!rawUrl) {
     console.error('The login URL is not configured!')
     return
   }
   try {
-    const loginURL = new URL(window.Site.login)
+    const loginURL = new URL(rawUrl)
     loginURL.searchParams.set('c_url', location.href)
+
+    if (isLogout) {
+      loginURL.searchParams.set('is_from_logout', 1)
+    }
+
     location.href = loginURL.href
   } catch (_) {
     console.error('The login URL invalid!')
