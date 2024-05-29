@@ -20,6 +20,7 @@
     "@blueking/functional-dependency": "^0.0.1-beta.10",
     "@blueking/login-modal": "^1.0.0",
     "@blueking/notice-component-vue2": "^2.0.1-beta.2",
+    "@blueking/platform-config": "^1.0.1",
     "@blueking/sub-saas": "^0.0.0-beta.7",
     "@blueking/user-selector": "^1.0.6",
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
