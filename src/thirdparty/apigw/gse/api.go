@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw"
+	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
 // ListAgentState list gse agent state
@@ -104,4 +106,170 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 	}
 
 	return resp, nil
+}
+
+// ConfigAddStreamTo 添加数据路由入库配置
+func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
+	*metadata.GseConfigAddStreamToResult, error) {
+
+	h.Set(apigw.AuthKey, p.service.Auth)
+	resp := new(AddStreamToResp)
+	subPath := "/api/v2/data/add_streamto/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("gse config add streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ConfigUpdateStreamTo 修改数据入库配置信息
+func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
+	data *metadata.GseConfigUpdateStreamToParams) error {
+
+	h.Set(apigw.AuthKey, p.service.Auth)
+	resp := new(apigwutil.ApiGWBaseResponse)
+	subPath := "/api/v2/data/update_streamto/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return fmt.Errorf("gse config update streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// ConfigQueryStreamTo 查询数路由入库的配置
+func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
+	[]metadata.GseConfigAddStreamToParams, error) {
+
+	h.Set(apigw.AuthKey, p.service.Auth)
+	resp := new(QueryStreamToResp)
+	subPath := "/api/v2/data/query_streamto/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("gse config query streamto failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ConfigAddRoute 添加数据路由
+func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
+	*metadata.GseConfigAddRouteResult, error) {
+
+	h.Set(apigw.AuthKey, p.service.Auth)
+	resp := new(AddRouteResp)
+	subPath := "/api/v2/data/add_route/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("gse config add route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ConfigUpdateRoute 更新路由配置
+func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error {
+
+	resp := new(apigwutil.ApiGWBaseResponse)
+	h.Set(apigw.AuthKey, p.service.Auth)
+	subPath := "/api/v2/data/update_route/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != 0 {
+		return fmt.Errorf("gse config update route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// ConfigQueryRoute 查询数据路由配置信息
+func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
+	[]metadata.GseConfigChannel, bool, error) {
+
+	h.Set(apigw.AuthKey, p.service.Auth)
+	resp := new(QueryRouteResp)
+	subPath := "/api/v2/data/query_route/"
+
+	err := p.service.Client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	// special error code for route not exists
+	if resp.Code == 14001 || resp.Code == 1014003 || resp.Code == 1014505 {
+		return nil, false, nil
+	}
+
+	if resp.Code != 0 {
+		return nil, false, fmt.Errorf("gse config query route failed, code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data, true, nil
 }

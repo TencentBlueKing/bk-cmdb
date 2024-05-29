@@ -20,10 +20,12 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
@@ -32,6 +34,9 @@ import (
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/gse"
+	"configcenter/src/thirdparty/dataid"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
@@ -50,6 +55,7 @@ type Service struct {
 	Config       options.Config
 	iam          *iam.IAM
 	ConfigCenter *configures.ConfCenter
+	GseClient    dataid.DataIDInterface
 }
 
 // NewService TODO
@@ -184,4 +190,29 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(metadata.NewSuccessResp(alam))
 
+}
+
+// InitGseClient init gse apiGW client
+func (s *Service) InitGseClient() error {
+	switch s.Config.DataIdMigrateWay {
+	case options.MigrateWayESB, "":
+		s.GseClient = esb.EsbClient().GseSrv()
+		return nil
+
+	case options.MigrateWayApiGW:
+		apiGWConfig, err := apigwutil.ParseApiGWConfig("apiGW")
+		if err != nil {
+			blog.Errorf("get api gateway config error, err: %v", err)
+			return err
+		}
+		s.GseClient, err = gse.NewGseApiGWClient(apiGWConfig, s.Engine.Metric().Registry())
+		if err != nil {
+			blog.Errorf("new gse api gateway client failed, err: %v", err)
+			return err
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("init gse client failed, unknow migrate dataid way")
+	}
 }
