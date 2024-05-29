@@ -40,12 +40,13 @@
       </div>
     </div>
     <the-map style="user-select: none;"></the-map>
-    <the-footer></the-footer>
+    <the-footer v-if="!subEnv"></the-footer>
   </div>
 </template>
 
 <script>
   import has from 'has'
+  import { subEnv } from '@blueking/sub-saas'
   import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import hostSearch from './children/host-search'
@@ -70,7 +71,8 @@
         showResultList: false,
         fullTextSearchProps: {},
         searchResult: {},
-        loading: false
+        loading: false,
+        subEnv
       }
     },
     computed: {
