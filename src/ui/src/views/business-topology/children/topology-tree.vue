@@ -98,7 +98,6 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import { isWorkload } from '@/service/container/common'
   import { CONTAINER_OBJECTS } from '@/dictionary/container'
-  import { sortTopoTree } from '@/utils/tools'
 
   export default {
     components: {
@@ -196,7 +195,7 @@
             this.getInternalTopology(),
             this.getContainerTopology()
           ])
-          sortTopoTree(topology[0]?.child, 'bk_inst_name')
+
           const { topo: containerTopo, leafIds: containerLeafIds } = container
 
           const root = topology[0] || {}
