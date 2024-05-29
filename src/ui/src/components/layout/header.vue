@@ -110,6 +110,7 @@
   } from '@/utils/business-set-helper.js'
   import { changeLocale } from '@/i18n'
   import { LANG_SET } from '@/i18n/constants'
+  import { gotoLoginPage } from '@/utils/login-helper'
   import versionLog from '../version-log'
 
   export default {
@@ -196,7 +197,7 @@
         this.$http.post(`${window.API_HOST}logout`, {
           http_scheme: window.location.protocol.replace(':', '')
         }).then((data) => {
-          window.location.href = data.url
+          gotoLoginPage(data.url, true)
         })
       },
       handleChangeLog() {

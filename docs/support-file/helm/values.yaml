@@ -1142,6 +1142,9 @@ bkGseApiGatewayUrl: "http://bkapi.example.com"
 # 蓝鲸 Notice API Gateway url
 bkNoticeApiGatewayUrl: "http://bkapi.example.com"
 
+## 蓝鲸制品库URL
+bkRepoUrl: http://bkrepo.example.com
+
 ## @section bk-cmdb common config parameters
 ##
 common:

@@ -179,10 +179,9 @@
       }
 
       const handleCreateProcess = () => {
-        state.processSlider.show = true
-        state.processSlider.title = t('添加进程')
-        state.processSlider.form.type = 'create'
-        state.processSlider.form.inst = {}
+        if (handleProcessSliderBeforeClose(setSlider)) {
+          setSlider()
+        }
       }
 
       const handleCancelProcess = () => {
@@ -190,9 +189,22 @@
       }
 
       const handleUpdateProcess = (template, index) => {
+        if (handleProcessSliderBeforeClose(() => setSlider('update', template, index))) {
+          setSlider('update', template, index)
+        }
+      }
+
+      const handleViewProcess = (template, index) => {
+        if (handleProcessSliderBeforeClose(() => setSlider('info', template, index))) {
+          setSlider('info', template, index)
+        }
+      }
+
+      const setSlider = (type = 'create', template = {}, index = 0) => {
+        const title = template?.bk_func_name?.value ?? t('添加进程')
         state.processSlider.show = true
-        state.processSlider.title = template.bk_func_name.value
-        state.processSlider.form.type = 'update'
+        state.processSlider.title = title
+        state.processSlider.form.type = type
         state.processSlider.form.inst = template
         state.processSlider.form.dataIndex = index
       }
@@ -231,11 +243,11 @@
         return Array.isArray(process) ? processList : processList[0]
       }
 
-      const handleProcessSliderBeforeClose = () => {
+      const handleProcessSliderBeforeClose = (cb) => {
         const hasChanged = processFormEl.value && processFormEl.value.hasChange()
         if (hasChanged) {
           processFormEl.value.setChanged(true)
-          processFormEl.value.beforeClose(handleCancelProcess)
+          processFormEl.value.beforeClose(cb ?? handleCancelProcess)
         } else {
           return true
         }
@@ -254,12 +266,14 @@
         auth,
         excludeModuleProperties,
         isFormDataChanged,
+        setSlider,
         formatProcessSubmitData,
         handleSelectPrimaryCategory,
         handleCreateProcess,
         handleCancelProcess,
         handleUpdateProcess,
         handleDeleteProcess,
+        handleViewProcess,
         handleProcessSliderBeforeClose
       }
     },
@@ -459,6 +473,7 @@
             :show-operation="true"
             @on-edit="handleUpdateProcess"
             @on-delete="handleDeleteProcess"
+            @on-view="handleViewProcess"
             :list="formData.processList">
           </process-table>
         </div>
@@ -467,9 +482,13 @@
 
     <bk-sideslider
       v-transfer-dom
+      class="management-form-slider"
       :is-show.sync="processSlider.show"
       :title="processSlider.title"
       :width="800"
+      :transfer="true"
+      :show-mask="false"
+      :quick-close="false"
       :before-close="handleProcessSliderBeforeClose">
       <template slot="content" v-if="processSlider.show">
         <process-form v-test-id.businessServiceTemplate="'processForm'"
@@ -491,6 +510,9 @@
 </template>
 
 <style lang="scss" scoped>
+  .management-form-slider {
+    left: calc(100% - 800px) !important;
+  }
   .management-form {
     .form-group {
       background: #fff;

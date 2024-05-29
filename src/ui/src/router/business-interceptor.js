@@ -18,6 +18,7 @@ import {
   setBizSetRecentlyUsed
 } from '@/utils/business-set-helper.js'
 import store from '@/store'
+import { getRoutePath } from '@/router'
 
 const requestId = Symbol('getAuthorizedBusiness')
 
@@ -105,7 +106,7 @@ export const before = async function (to, from, next) {
     // 无任何有权限的业务
     if (!firstAuthedBiz) {
       next({
-        path: '/no-business',
+        path: getRoutePath('/no-business'),
         replace: true
       })
       return false
@@ -117,7 +118,7 @@ export const before = async function (to, from, next) {
     window.localStorage.setItem('selectedBusiness', defaultId)
     store.commit('objectBiz/setBizId', defaultId)
     next({
-      path: `/business/${defaultId}/index`,
+      path: getRoutePath(`/business/${defaultId}/index`),
       replace: true
     })
     return false
@@ -133,7 +134,7 @@ export const before = async function (to, from, next) {
   if (!isSubRoute) {
     // next执行完之后，会再次进入route.beforeEach即会再次进入到此拦截器中，此时的route为next中指定的
     next({
-      path: `/business/${id}/index`,
+      path: getRoutePath(`/business/${id}/index`),
       replace: true
     })
     return false
