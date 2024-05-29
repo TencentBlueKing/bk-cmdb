@@ -17,7 +17,10 @@
 
 package gse
 
-import "configcenter/src/thirdparty/apigw/apigwutil"
+import (
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+)
 
 // ListAgentStateRequest use to list gse agent status request
 type ListAgentStateRequest struct {
@@ -114,4 +117,28 @@ type GetTransferFileResultContent struct {
 	DestFileName   string  `json:"dest_file_name"`
 	Status         int64   `json:"status"`
 	StatusInfo     string  `json:"status_info"`
+}
+
+// AddStreamToResp add streamto response
+type AddStreamToResp struct {
+	apigwutil.ApiGWBaseResponse
+	Data *metadata.GseConfigAddStreamToResult `json:"data"`
+}
+
+// QueryStreamToResp query streamto response
+type QueryStreamToResp struct {
+	apigwutil.ApiGWBaseResponse
+	Data []metadata.GseConfigAddStreamToParams `json:"data"`
+}
+
+// AddRouteResp add route response
+type AddRouteResp struct {
+	apigwutil.ApiGWBaseResponse
+	Data *metadata.GseConfigAddRouteResult `json:"data"`
+}
+
+// QueryRouteResp query route response
+type QueryRouteResp struct {
+	apigwutil.ApiGWBaseResponse
+	Data []metadata.GseConfigChannel `json:"data"`
 }

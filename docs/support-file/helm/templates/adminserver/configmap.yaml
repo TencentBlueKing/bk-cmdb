@@ -385,6 +385,9 @@ data:
     hostsnap:
       dataID: 1100010
 
+    dataid:
+      migrateWay: {{ .Values.adminserver.dataid.migrateWay }}
+
   mongodb.yaml: |-
     mongodb:
       host: {{ include "cmdb.mongodb.addr" . | quote }}
