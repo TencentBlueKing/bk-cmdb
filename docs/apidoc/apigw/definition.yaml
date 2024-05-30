@@ -104,6 +104,17 @@ grant_permissions:
       - batch_delete_kube_workload
       - list_kube_workload
       - list_hosts_without_biz
+  - bk_app_code: {{ environ.BK_HCM_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - search_cloud_area
+      - add_cloud_host_to_biz
+      - delete_cloud_host_from_biz
+      - list_biz_hosts
+      - find_host_topo_relation
+      - search_module
+      - get_biz_brief_cache_topo
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`

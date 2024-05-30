@@ -1971,3 +1971,5 @@ apigatewaySync:
   nodeManAppCode: "bk_nodeman"
   ## 此变量在运维维护的变量中，没有对应的变量
   bcsAppCode: "bk_bcs_app"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  hcmAppCode: "bk-hcm"
