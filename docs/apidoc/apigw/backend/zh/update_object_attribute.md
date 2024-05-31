@@ -4,21 +4,21 @@
 
 ### 输入参数
 
-| 参数名称              | 参数类型   | 必选 | 描述                                                                                                                                                                         |
-|-------------------|--------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id                | int    | 是  | 目标数据的记录ID                                                                                                                                                                  |
-| description       | string | 否  | 数据的描述信息                                                                                                                                                                    |
-| isonly            | bool   | 否  | 表明唯一性                                                                                                                                                                      |
-| isreadonly        | bool   | 否  | 表明是否只读                                                                                                                                                                     |
-| isrequired        | bool   | 否  | 表明是否必填                                                                                                                                                                     |
-| bk_property_group | string | 否  | 字段分栏的名字                                                                                                                                                                    |
-| option            | string | 否  | 用户自定义内容，存储的内容及格式由调用方决定, 以数字内容为例（{"min":"1","max":"2"}）                                                                                                                     |
-| bk_property_name  | string | 否  | 模型属性名，用于展示                                                                                                                                                                 |
-| unit              | string | 否  | 单位                                                                                                                                                                         |
-| bk_property_type  | string | 否  | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织)) |
-| placeholder       | string | 否  | 占位符                                                                                                                                                                        |
-| ismultiple        | bool   | 否  | 是否可多选，其中字段类型为短字符，长字符，数字，浮点，枚举，日期，时间，时区，布尔，列表暂时不支持可多选，在更新属性时，字段类型为上述类型时，不能将ismultiple更新为true，如果更新为true则会提示该类型暂不支持可多选。枚举多选，枚举引用，用户，组织字段支持可多选。                                |
-| default           | object | 否  | 给属性添加默认值，更新的时候，default的值根据字段的实际类型进行传递，如果想要置空字段的默认值，需要传递default:null                                                                                                        |
+| 参数名称              | 参数类型   | 必选 | 描述                                                                                                                                                                                       |
+|-------------------|--------|----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| id                | int    | 是  | 目标数据的记录ID                                                                                                                                                                                |
+| description       | string | 否  | 数据的描述信息                                                                                                                                                                                  |
+| isonly            | bool   | 否  | 表明唯一性                                                                                                                                                                                    |
+| isreadonly        | bool   | 否  | 表明是否只读                                                                                                                                                                                   |
+| isrequired        | bool   | 否  | 表明是否必填                                                                                                                                                                                   |
+| bk_property_group | string | 否  | 字段分栏的名字                                                                                                                                                                                  |
+| option            | string | 否  | 用户自定义内容，存储的内容及格式由调用方决定, 以数字内容为例（{"min":"1","max":"2"}）                                                                                                                                   |
+| bk_property_name  | string | 否  | 模型属性名，用于展示                                                                                                                                                                               |
+| unit              | string | 否  | 单位                                                                                                                                                                                       |
+| bk_property_type  | string | 否  | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织),id_rule(id规则)) |
+| placeholder       | string | 否  | 占位符                                                                                                                                                                                      |
+| ismultiple        | bool   | 否  | 是否可多选，其中字段类型为短字符，长字符，数字，浮点，枚举，日期，时间，时区，布尔，列表暂时不支持可多选，在更新属性时，字段类型为上述类型时，不能将ismultiple更新为true，如果更新为true则会提示该类型暂不支持可多选。枚举多选，枚举引用，用户，组织字段支持可多选。                                              |
+| default           | object | 否  | 给属性添加默认值，更新的时候，default的值根据字段的实际类型进行传递，如果想要置空字段的默认值，需要传递default:null                                                                                                                      |
 
 ### 调用示例
 
