@@ -187,7 +187,8 @@
           id: '',
           modify_user: '',
           bk_obj_id: '',
-          _t: Date.now()
+          _t: Date.now(),
+          page: 1
         }
         // 处理 如果是bk_obj_id 将路由上的中文name 换成 id
         filter.forEach((item) => {

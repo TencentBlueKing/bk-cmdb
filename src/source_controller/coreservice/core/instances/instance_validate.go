@@ -159,42 +159,42 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		}
 	}
 	if err := FillLostFieldValue(kit.Ctx, instanceData, valid.propertySlice); err != nil {
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if err := m.validCloudID(kit, objID, instanceData); err != nil {
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	isMainline, err := m.isMainlineObject(kit, objID)
 	if err != nil {
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if err := m.validMainlineInstanceData(kit, objID, instanceData, isMainline); err != nil {
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	err = hooks.ValidateBizBsTopoHook(kit, objID, instanceData, nil, common.ValidCreate, m.clientSet)
 	if err != nil {
 		blog.Errorf("validate biz bk_bs_topo attribute failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if err := hooks.ValidateHostBsInfoHook(kit, objID, instanceData); err != nil {
 		blog.Errorf("validate host attribute hook failed, err: %v, rid: %s", err, kit.Rid)
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	err = m.validateCreateInstValue(kit, objID, instanceData, valid)
 	if err != nil {
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	skip, err := hooks.IsSkipValidateHook(kit, objID, instanceData)
 	if err != nil {
 		blog.Errorf("check is skip validate %s hook failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	if skip {
@@ -204,7 +204,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 	if err := m.changeStringToTime(instanceData, valid.propertySlice); err != nil {
 		blog.Errorf("there is an error in converting the time type string to the time type, err: %v, rid: %s", err,
 			kit.Rid)
-		return err
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
 	switch objID {
@@ -212,13 +212,13 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 		// module instance's name must coincide with template
 		if err := m.validateModuleCreate(kit, instanceData, valid); err != nil {
 			blog.Errorf("validate create module failed, module: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
-			return err
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
 	case common.BKInnerObjIDHost:
 		if err := m.validateHostCreate(kit, instanceData, valid); err != nil {
 			blog.Errorf("validate create host failed, host: %v, err: %v, rid: %s", instanceData, err, kit.Rid)
-			return err
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 	}
 	return nil
@@ -273,6 +273,15 @@ func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, objID string, i
 		// remove inner table value
 		if property.PropertyType == common.FieldTypeInnerTable {
 			delete(instanceData, property.PropertyID)
+		}
+
+		if property.PropertyType != common.FieldTypeIDRule {
+			continue
+		}
+		if err = metadata.ValidIDRuleVal(kit.Ctx, instanceData, property); err != nil {
+			blog.Errorf("inst property is invalid, property: %s, inst: %+v, err: %v, rid: %s", property.PropertyID,
+				instanceData, err, kit.Rid)
+			return err
 		}
 	}
 	return nil
@@ -352,7 +361,7 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 
 	isInnerModel := common.IsInnerModel(objID) || isMainline
 
-	err = m.validOneUpdateInstKeyVal(kit, valid, updateData, isInnerModel, canEditAll)
+	err = m.validOneUpdateInstKeyVal(kit, valid, updateData, instanceData, isInnerModel, canEditAll)
 	if err != nil {
 		return err
 	}
@@ -376,8 +385,8 @@ func (m *instanceManager) validUpdateInstanceData(kit *rest.Kit, objID string, u
 	return nil
 }
 
-func (m *instanceManager) validOneUpdateInstKeyVal(kit *rest.Kit, valid *validator, updateData mapstr.MapStr,
-	isInnerModel, canEditAll bool) error {
+func (m *instanceManager) validOneUpdateInstKeyVal(kit *rest.Kit, valid *validator, updateData,
+	instanceData mapstr.MapStr, isInnerModel, canEditAll bool) error {
 
 	for key, val := range updateData {
 		if isInnerModel && util.InStrArr(updateIgnoreKeys, key) {
@@ -395,6 +404,28 @@ func (m *instanceManager) validOneUpdateInstKeyVal(kit *rest.Kit, valid *validat
 		if property.PropertyType == common.FieldTypeInnerTable {
 			delete(updateData, key)
 			continue
+		}
+
+		if property.PropertyType == common.FieldTypeIDRule {
+			if instanceData[property.PropertyID] != nil && instanceData[property.PropertyID] != "" {
+				blog.Errorf("can not update property: %s, rid: %s", property.PropertyID, kit.Rid)
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid,
+					fmt.Sprintf("can not update property: %s", property.PropertyID))
+			}
+
+			newInstData := make(mapstr.MapStr)
+			for k, v := range instanceData {
+				newInstData[k] = v
+			}
+			for k, v := range updateData {
+				newInstData[k] = v
+			}
+
+			if err := metadata.ValidIDRuleVal(kit.Ctx, newInstData, property); err != nil {
+				blog.Errorf("inst property is invalid, property: %s, inst: %+v, err: %v, rid: %s", property.PropertyID,
+					newInstData, err, kit.Rid)
+				return err
+			}
 		}
 
 		if value, ok := val.(string); ok {

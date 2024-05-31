@@ -199,54 +199,6 @@ func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header
 	return nil
 }
 
-// HasFindModelInstAuth has find model instance auth
-func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
-	if !am.Enabled() {
-		return nil, true, nil
-	}
-
-	if len(objIDs) == 0 {
-		return nil, true, nil
-	}
-
-	cond := &metadata.QueryCondition{
-		Fields: []string{common.BKFieldID, common.BKObjIDField},
-		Page:   metadata.BasePage{Limit: common.BKNoLimit},
-		Condition: map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBIN: objIDs,
-			},
-		},
-	}
-	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if len(modelResp.Info) == 0 {
-		return nil, false, fmt.Errorf("get model by objID failed, val: %+v", objIDs)
-	}
-
-	mainlineModels, err := am.getMainlineModel(kit)
-	if err != nil {
-		return nil, false, err
-	}
-
-	authResources := make([]meta.ResourceAttribute, 0)
-	for _, v := range modelResp.Info {
-		instanceType, err := am.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
-		if err != nil {
-			return nil, false, err
-		}
-
-		authResources = append(authResources,
-			meta.ResourceAttribute{Basic: meta.Basic{Type: instanceType, Action: meta.Find}})
-	}
-
-	authResp, authorized := am.Authorize(kit, authResources...)
-	return authResp, authorized, nil
-}
-
 // getSkipFindAttrAuthModel 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
 func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struct{}, error) {
 	models, err := am.getMainlineModel(kit)
@@ -436,4 +388,64 @@ func (am *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*meta
 
 	authResp, authorized := am.Authorize(kit, authResources...)
 	return authResp, authorized, nil
+}
+
+// HasInstOpAuth have permission to operate model instance
+func (am *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta.Action) (*metadata.BaseResp, bool,
+	error) {
+
+	if !am.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(objIDs) == 0 {
+		return nil, true, nil
+	}
+
+	cond := &metadata.QueryCondition{
+		Fields: []string{common.BKFieldID, common.BKObjIDField},
+		Page:   metadata.BasePage{Limit: common.BKNoLimit},
+		Condition: map[string]interface{}{
+			common.BKObjIDField: map[string]interface{}{
+				common.BKDBIN: objIDs,
+			},
+		},
+	}
+	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if len(modelResp.Info) == 0 {
+		return nil, false, fmt.Errorf("get model by objID failed, val: %+v", objIDs)
+	}
+
+	mainlineModels, err := am.getMainlineModel(kit)
+	if err != nil {
+		return nil, false, err
+	}
+
+	authResources := make([]meta.ResourceAttribute, 0)
+	for _, v := range modelResp.Info {
+		instanceType, err := am.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
+		if err != nil {
+			return nil, false, err
+		}
+
+		authResources = append(authResources,
+			meta.ResourceAttribute{Basic: meta.Basic{Type: instanceType, Action: action}})
+	}
+
+	authResp, authorized := am.Authorize(kit, authResources...)
+	return authResp, authorized, nil
+}
+
+// HasFindModelInstAuth has find model instance auth
+func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	return am.HasInstOpAuth(kit, objIDs, meta.Find)
+}
+
+// HasUpdateModelInstAuth has update model instance auth
+func (am *AuthManager) HasUpdateModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	return am.HasInstOpAuth(kit, objIDs, meta.Update)
 }

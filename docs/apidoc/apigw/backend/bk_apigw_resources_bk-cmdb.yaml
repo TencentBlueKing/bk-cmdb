@@ -10125,6 +10125,86 @@ paths:
           userVerifiedRequired: false
         disabledStages: [ ]
         descriptionEn:
+  /api/v3/update/id_rule/incr_id:
+    put:
+      operationId: update_id_rule_incr_id
+      description: 更新id规则自增id
+      tags:
+        - model
+        - id_rule
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/update/id_rule/incr_id
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v3/sync/inst/id_rule:
+    post:
+      operationId: sync_inst_id_rule
+      description: 同步刷新id规则字段值到该字段为空的模型实例
+      tags:
+        - instance
+        - task
+        - id_rule
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/sync/inst/id_rule
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v3/find/inst/id_rule/task_status:
+    post:
+      operationId: find_inst_id_rule_task_status
+      description: 查询同步实例id规则字段状态
+      tags:
+        - instance
+        - task
+        - id_rule
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/find/inst/id_rule/task_status
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
   /api/v3/cache/create/full/sync/cond:
     post:
       operationId: create_full_sync_cond_for_cache

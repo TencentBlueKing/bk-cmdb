@@ -109,13 +109,21 @@
                           showOnInit: true,
                           trigger: 'click',
                           content: property.placeholder
-                        }">
+                        }"
+                        @focus="handleFocus"
+                        @blur="handleBlur">
                       </component>
                     </div>
                     <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                     <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    <cmdb-default-picker
+                      v-if="showDefault(property.bk_property_id)"
+                      :value="propertyDefaults[property.bk_property_id]"
+                      :property="property"
+                      @pick-default="handlePickDefault">
+                    </cmdb-default-picker>
                     <span class="form-error"
-                      v-if="errors.has(property.bk_property_id)">
+                      v-else-if="errors.has(property.bk_property_id)">
                       {{errors.first(property.bk_property_id)}}
                     </span>
                   </div>
@@ -232,8 +240,13 @@
   import { readonlyMixin } from '../mixin-readonly'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
+
   export default {
     name: 'cmdb-host-property',
+    components: {
+      cmdbDefaultPicker
+    },
     filters: {
       filterShowText(value, unit) {
         return value === '--' ? '--' : value + unit
@@ -255,7 +268,8 @@
         objId: BUILTIN_MODELS.HOST,
         editState: {
           property: null,
-          value: null
+          value: null,
+          focus: false
         },
         loadingState: [],
         showCopyTips: false,
@@ -277,6 +291,9 @@
       ...mapGetters('hostDetails', ['groupedProperties', 'properties']),
       host() {
         return this.$tools.getInstFormValues(this.properties, this.info.host, false)
+      },
+      propertyDefaults() {
+        return this.$tools.getInstFormDefaults(this.properties)
       },
       bizId() {
         return this.isFromResource ? undefined : this.business
@@ -378,6 +395,21 @@
       },
       showPopover() {
         this.hoverPropertyPopover.instance.show()
+      },
+      showDefault(propertyId) {
+        const { value, focus } = this.editState
+        return this.propertyDefaults[propertyId]
+          && !value
+          && focus
+      },
+      handleFocus() {
+        this.editState.focus = true
+      },
+      handleBlur() {
+        this.editState.focus = false
+      },
+      handlePickDefault(val) {
+        this.editState.value = val
       },
       handleCopy(propertyId) {
         const [component] = this.$refs[`property-value-${propertyId}`]

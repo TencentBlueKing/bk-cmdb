@@ -53,6 +53,8 @@ webServer:
     bkDomain: ${BK_PAAS_BK_DOMAIN}
     # 帮助文档地址
     helpDocUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    # 蓝鲸制品库URL
+    bkRepoUrl: ${BKPAAS_REPO_URL}
     paas:
       # pass的tls相关配置
       tls:
@@ -82,9 +84,9 @@ webServer:
     #英文版版本日志存放路径
     en: ${BK_CMDB_CHANGELOG_RES}/en
   jwt:
-    enabled: false
+    enabled: ${BK_API_GATEWAY_BK_CMDB_JTW_ENABLED}
     # jwt公钥
-    publicKey:
+    publicKey: ${BK_API_GATEWAY_BK_CMDB_JTW_PUBLICKEY}
     # jwt私钥
     privateKey:
   #是否启用消息通知
@@ -129,11 +131,6 @@ openTelemetry:
   # 日志平台openTelemetry跟踪链功能的上报data_id
   bkDataID:
   bkDataToken:
-
-apiServer:
-  jwt:
-    enabled: ${BK_API_GATEWAY_BK_CMDB_JTW_ENABLED}
-    publicKey: ${BK_API_GATEWAY_BK_CMDB_JTW_PUBLICKEY}
 
 # 调用apigw接口相关配置
 apiGW:

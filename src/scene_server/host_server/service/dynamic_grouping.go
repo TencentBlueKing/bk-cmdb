@@ -692,6 +692,10 @@ func parseCond(conditions []meta.DynamicGroupInfoCondition) []meta.SearchConditi
 			conditionMap[cond.ObjID].Condition = append(conditionMap[cond.ObjID].Condition, condItem)
 		}
 
+		if cond.TimeCondition == nil {
+			continue
+		}
+
 		if conditionMap[cond.ObjID].TimeCondition == nil {
 			conditionMap[cond.ObjID].TimeCondition = cond.TimeCondition
 			continue
