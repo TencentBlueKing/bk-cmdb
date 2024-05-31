@@ -14,7 +14,7 @@
   <header class="header-layout" v-test-id.global="'header'">
     <div class="logo">
       <router-link class="logo-link" to="/index">
-        {{$t('蓝鲸配置平台')}}
+        {{appName}}
       </router-link>
     </div>
     <nav class="header-nav" v-test-id.global="'headerNav'">
@@ -110,7 +110,9 @@
   } from '@/utils/business-set-helper.js'
   import { changeLocale } from '@/i18n'
   import { LANG_SET } from '@/i18n/constants'
+  import { gotoLoginPage } from '@/utils/login-helper'
   import versionLog from '../version-log'
+  import logoSvg from '@/assets/images/logo.svg'
 
   export default {
     components: {
@@ -127,6 +129,7 @@
     computed: {
       ...mapGetters(['userName']),
       ...mapGetters('objectBiz', ['bizId']),
+      ...mapGetters('globalConfig', ['config']),
       helpDocUrl() {
         return `${this.$Site.helpDocUrl}/markdown/CMDB/UserGuide/Introduce/Overview.md`
       },
@@ -148,6 +151,13 @@
       },
       currentSysLang() {
         return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
+      },
+      appName() {
+        return this.config.site.name ?? this.$t('蓝鲸配置平台')
+      },
+      appLogo() {
+        const src = this.config.publicConfig.appLogo || logoSvg
+        return `url(${src})`
       }
     },
     async mounted() {
@@ -196,7 +206,7 @@
         this.$http.post(`${window.API_HOST}logout`, {
           http_scheme: window.location.protocol.replace(':', '')
         }).then((data) => {
-          window.location.href = data.url
+          gotoLoginPage(data.url, true)
         })
       },
       handleChangeLog() {
@@ -227,7 +237,7 @@
       padding-left: 38px;
       color: #fff;
       font-size: 16px;
-      background: url("../../assets/images/logo.svg") no-repeat 0 center;
+      background: v-bind(appLogo) no-repeat 0 center;
     }
   }
   .header-nav {

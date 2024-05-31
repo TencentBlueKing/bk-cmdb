@@ -173,6 +173,9 @@ bkNoticeApiGatewayUrl: "http://bkapi.example.com"
 # CMDB API Gateway url
 bkCmdbApiGatewayUrl: "http://bkapi.example.com"
 
+## 蓝鲸制品库URL
+bkRepoUrl: http://bkrepo.example.com
+
 ## @section bk-cmdb common config parameters
 ##
 web:

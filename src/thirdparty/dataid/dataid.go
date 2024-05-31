@@ -15,37 +15,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gse
+package dataid
 
 import (
 	"context"
 	"net/http"
 
-	"configcenter/src/thirdparty/apigw/apigwutil"
-	"configcenter/src/thirdparty/dataid"
+	"configcenter/src/common/metadata"
 )
 
-// ClientI is the gse api gateway client
-type ClientI interface {
-	ListAgentState(ctx context.Context, h http.Header, data *ListAgentStateRequest) (*ListAgentStateResp, error)
-	AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp, error)
-	GetTransferFileResult(ctx context.Context, h http.Header, data *GetTransferFileResultRequest) (
-		*GetTransferFileResultResp, error)
-	dataid.DataIDInterface
-}
-
-type gse struct {
-	service *apigwutil.ApiGWSrv
-}
-
-// NewClient create gse api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
-	service, err := apigwutil.NewApiGW(options, "apiGW.bkGseApiGatewayUrl")
-	if err != nil {
-		return nil, err
-	}
-
-	return &gse{
-		service: service,
-	}, nil
+type DataIDInterface interface {
+	ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
+		[]metadata.GseConfigChannel, bool, error)
+	ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
+		*metadata.GseConfigAddStreamToResult, error)
+	ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error
+	ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
+		[]metadata.GseConfigAddStreamToParams, error)
+	ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
+		resp *metadata.GseConfigAddRouteResult, err error)
+	ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error
 }

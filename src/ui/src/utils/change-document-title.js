@@ -13,15 +13,16 @@
 import store from '@/store'
 import router from '@/router'
 import { t } from '@/i18n'
+import { setDocumentTitle } from '@blueking/platform-config'
 
 /**
  * 更改文档标题
  * @param {Array} [appendTitles] 追加的标题，会展示在默认名称之后。不传入时会根据当前路由重新生成路径。
  */
 export const changeDocumentTitle = (appendTitles = []) => {
-  const { name, separator } = store.state.globalConfig.config.site
+  const { publicConfig } = store.state.globalConfig.config
   const { matched } = router.currentRoute
-  let matchedNames = [name]
+  let matchedNames = []
   matched.forEach((match) => {
     if (match?.meta?.menu?.i18n) {
       matchedNames.push(t(match.meta.menu.i18n))
@@ -32,5 +33,5 @@ export const changeDocumentTitle = (appendTitles = []) => {
     matchedNames = matchedNames.concat(appendTitles)
   }
 
-  document.title = matchedNames?.join(` ${separator} `)
+  setDocumentTitle(publicConfig.i18n ?? {}, matchedNames)
 }

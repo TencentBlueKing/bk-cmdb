@@ -60,6 +60,11 @@ adminserver:
   ## @param adminserver.errors bk-cmdb adminserver language config directory
   ##
   language: /data/cmdb/cmdb_adminserver/conf/language
+  ## bk-cmdb adminserver dataid parameters
+  ## @param adminserver.dataid.migrateWay bk-cmdb adminserver migrate dataid way
+  ##
+  dataid:
+    migrateWay: esb
   ## bk-cmdb adminserver start command parameters
   ## @param adminserver.command.logDir bk-cmdb adminserver log directory
   ## @param adminserver.command.logLevel bk-cmdb adminserver log level
@@ -1106,6 +1111,7 @@ migrate:
   ## @param migrate.migrateDataId Enable register dataid to GSE
   ##
   migrateDataId: false
+  migrateOldDataId: false
 
 ## @section bk-cmdb iam authentication parameters
 ##
@@ -1906,3 +1912,5 @@ apigatewaySync:
   nodeManAppCode: "bk_nodeman"
   ## 此变量在运维维护的变量中，没有对应的变量
   bcsAppCode: "bk_bcs_app"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  hcmAppCode: "bk-hcm"

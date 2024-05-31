@@ -13,38 +13,15 @@
 package gse
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/thirdparty/dataid"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 // GseClientInterface TODO
 type GseClientInterface interface {
-	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
-		err error)
-	QueryProcOperateResult(ctx context.Context, h http.Header,
-		taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
-	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
-		err error)
-	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
-		err error)
-	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse,
-		err error)
-	ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
-		*metadata.GseConfigAddStreamToResult, error)
-	ConfigUpdateStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateStreamToParams) error
-	ConfigDeleteStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteStreamToParams) error
-	ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
-		[]metadata.GseConfigAddStreamToParams, error)
-	ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
-		resp *metadata.GseConfigAddRouteResult, err error)
-	ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error
-	ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error
-	ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
-		[]metadata.GseConfigChannel, bool, error)
+	dataid.DataIDInterface
 }
 
 // NewGsecClientInterface TODO

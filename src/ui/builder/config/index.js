@@ -49,6 +49,7 @@ const dev = {
     COMPONENT_API_URL: JSON.stringify(''),
     PUBLIC_PATH: JSON.stringify('/'),
     ENABLE_NOTIFICATION: JSON.stringify(false),
+    BK_REPO_URL: JSON.stringify(''),
   }),
 
   // Paths
@@ -149,7 +150,8 @@ module.exports = {
       COOKIE_DOMAIN: '{{.cookieDomain}}',
       COMPONENT_API_URL: '{{.componentApiUrl}}',
       PUBLIC_PATH: '{{.publicPath}}',
-      ENABLE_NOTIFICATION: '{{.enableNotification}}'
+      ENABLE_NOTIFICATION: '{{.enableNotification}}',
+      BK_REPO_URL: '{{.bkRepoUrl}}'
     }),
 
     // Template for index.html

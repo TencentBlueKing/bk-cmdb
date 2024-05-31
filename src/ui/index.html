@@ -27,7 +27,7 @@
       })();
     </script>
 
-    <link rel="shortcut icon" href="<%= htmlWebpackPlugin.options.config.PUBLIC_PATH %>static/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" type="image/x-icon">
   </head>
   <body>
     <div id="app"></div>
@@ -46,7 +46,8 @@
             cookieDomain: <%= htmlWebpackPlugin.options.config.COOKIE_DOMAIN %>,
             componentApiUrl: <%= htmlWebpackPlugin.options.config.COMPONENT_API_URL %>,
             publicPath: <%= htmlWebpackPlugin.options.config.PUBLIC_PATH %>,
-            enableNotification: <%= htmlWebpackPlugin.options.config.ENABLE_NOTIFICATION %>
+            enableNotification: <%= htmlWebpackPlugin.options.config.ENABLE_NOTIFICATION %>,
+            bkRepoUrl: <%= htmlWebpackPlugin.options.config.BK_REPO_URL %>
         }
         window.User = {
             admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,

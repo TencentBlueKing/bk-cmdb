@@ -14,12 +14,17 @@
   <div class="index-layout" :style="{ '--defaultPaddingTop': `${paddingTop}px` }">
     <div :class="['search-layout', { sticky: showResultList }]">
       <div class="search-top">
-        <div class="search-tab" v-if="isFullTextSearch">
+        <div class="search-tab">
           <span :class="['tab-item', { 'active': activeName === 'host' }]"
             @click="handleChangeTab('host')">
             {{$t('主机搜索')}}
           </span>
-          <span :class="['tab-item', { 'active': activeName === 'fullText' }]"
+          <span
+            v-cursor="{
+              active: !isFullTextSearch,
+              onclick: showFullTip
+            }"
+            :class="['tab-item', { 'active': activeName === 'fullText', 'disabled': !isFullTextSearch }]"
             @click="handleChangeTab('fullText')">
             {{$t('全文检索')}}
           </span>
@@ -41,11 +46,25 @@
     </div>
     <the-map style="user-select: none;"></the-map>
     <the-footer></the-footer>
+
+    <functional-dependency
+      mode="dialog"
+      :show-dialog="showFuncDep"
+      :title="this.$t('未开启全文检索功能')"
+      :functional-desc="this.$t('使用全文检索，可以对所有纳管的资源进行无差别搜索，帮助你快速定位资源。')"
+      :guide-title="this.$t('如需使用该功能，您需要：')"
+      :guide-desc-list="[this.$t('联系平台维护人员开启')]"
+      @gotoMore="handleToMore"
+      @update:showDialog="(val) => showFuncDep = val"
+    >
+    </functional-dependency>
+    <the-footer v-if="!subEnv"></the-footer>
   </div>
 </template>
 
 <script>
   import has from 'has'
+  import { subEnv } from '@blueking/sub-saas'
   import { MENU_RESOURCE_HOST } from '@/dictionary/menu-symbol'
   import { HOME_HOST_SEARCH_CONTENT_STORE_KEY } from '@/dictionary/storage-keys.js'
   import hostSearch from './children/host-search'
@@ -54,6 +73,9 @@
   import fullTextSearchResultTab from './children/full-text-search/result-tab.vue'
   import theMap from './children/map'
   import theFooter from './children/footer'
+  import functionalDependency from '@blueking/functional-dependency/vue2'
+  import '@blueking/functional-dependency/vue2/vue2.css'
+
   export default {
     name: 'index',
     components: {
@@ -62,7 +84,8 @@
       fullTextSearchResultList,
       fullTextSearchResultTab,
       theMap,
-      theFooter
+      theFooter,
+      functionalDependency
     },
     data() {
       return {
@@ -70,7 +93,9 @@
         showResultList: false,
         fullTextSearchProps: {},
         searchResult: {},
-        loading: false
+        loading: false,
+        showFuncDep: false,
+        subEnv
       }
     },
     computed: {
@@ -97,7 +122,14 @@
       next()
     },
     methods: {
+      showFullTip() {
+        this.showFuncDep = true
+      },
+      handleToMore() {
+        window.open('https://bk.tencent.com/docs/markdown/ZH/CMDB/3.10/UserGuide/Feature/Fulltext.md')
+      },
       handleChangeTab(name) {
+        if (name === 'fullText' && !this.isFullTextSearch) return
         this.$router.push({
           query: {
             ...this.$route.query,
@@ -170,6 +202,12 @@
           background-color: #FFFFFF;
           border-bottom-color: #FFFFFF !important;
           z-index: 1000;
+        }
+
+        &.disabled {
+          background-color: #dcdee5;
+          border-color: #dcdee5;
+          color: #c4c6cc;
         }
       }
     }

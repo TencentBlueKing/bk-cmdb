@@ -95,13 +95,13 @@
       type="unborder-card"
       ref="$tab"
       :active.sync="active">
-      <bk-tab-panel :label="$t('服务模板配置')" name="config">
+      <bk-tab-panel :label="$t('服务模板配置')" name="config" render-directive="if">
         <service-template-config
           @sync-change="handleSyncStatusChange"
           @active-change="handleActiveChange">
         </service-template-config>
       </bk-tab-panel>
-      <bk-tab-panel :label="$t('服务模板实例')" name="instance">
+      <bk-tab-panel :label="$t('服务模板实例')" name="instance" render-directive="if">
         <service-template-instance
           :active="active === 'instance'"
           @sync-change="handleSyncStatusChange">

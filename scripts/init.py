@@ -725,6 +725,10 @@ language:
 # 指定monstache相关配置文件
 monstache:
   res: monstache/etc
+# migrate dataid时的相关配置
+dataid:
+  # 通过何种方式调用gse接口注册dataid, 可选值esb和apigw, 如果填写esb则必须配置common.yaml的esb配置, 如果填写apigw则必须配置common.yaml的apiGW配置,不填默认为esb
+  migrateWay: esb
     '''
 
     template = FileTemplate(migrate_file_template_str)
