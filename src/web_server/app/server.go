@@ -24,11 +24,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/resource/apigw"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/web_server/app/options"
 	webcomm "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -144,11 +145,12 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	// init api gateway client
 	switch webSvr.Config.DeploymentMethod {
 	case common.BluekingDeployment:
-		if err = apigw.Init("apiGW", engine.Metric().Registry()); err != nil {
+		err = apigwcli.Init("apiGW", engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
+		if err != nil {
 			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
 		}
 
-		cmdbCli := apigw.Client().Cmdb()
+		cmdbCli := apigwcli.Client().Cmdb()
 		headerWrapper := rest.HeaderWrapper(cmdbCli.SetApiGWAuthHeader)
 		baseUrlWrapper := rest.BaseUrlWrapper(fmt.Sprintf("/api/%s/", webcomm.API_VERSION))
 		service.ApiCli = apiserver.NewWrappedApiServerClientI(cmdbCli.Client(), baseUrlWrapper, headerWrapper)
