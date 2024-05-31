@@ -2,9 +2,10 @@ spec_version: 3
 app_version: "0.0.1"
 app:
   region: "default"
-  bkAppCode: "bk-cmdb"
-  bkAppName: "bk-cmdb"
+  bkAppCode: "bk_cmdb_saas"
+  bkAppName: "bk_cmdb_saas"
   market:
+    category: 配置管理
     introduction: "蓝鲸配置平台"
     description: "蓝鲸配置平台"
     displayOptions:
@@ -13,7 +14,6 @@ app:
 modules:
   - name: "web"
     isDefault: true
-    sourceDir: "bk-cmdb"
     language: "Go"
     spec:
       processes:
@@ -26,7 +26,7 @@ modules:
       build:
         buildpacks:
         - name: bk-buildpack-go
-          version: v168
+          version: v191
       configuration:
         env:
         - name: "GO_INSTALL_PACKAGE_SPEC"
