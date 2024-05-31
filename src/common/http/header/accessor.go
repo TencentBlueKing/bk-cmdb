@@ -176,3 +176,13 @@ func AddLanguage(header http.Header, value string) {
 		header.Add(LanguageHeader, value)
 	}
 }
+
+// IsInnerReq check if request is inner request
+func IsInnerReq(header http.Header) bool {
+	return header.Get(IsInnerReqHeader) == "true"
+}
+
+// SetIsInnerReqHeader set the request is inner flag to http header
+func SetIsInnerReqHeader(header http.Header) {
+	header.Set(IsInnerReqHeader, "true")
+}

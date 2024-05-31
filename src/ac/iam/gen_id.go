@@ -57,6 +57,8 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.HostInstance:             genHostInstanceResource,
 	meta.ProcessServiceCategory:   genProcessServiceCategoryResource,
 	meta.FieldTemplate:            genFieldTemplateResource,
+	meta.FullSyncCond:             genSkipResource,
+	meta.GeneralCache:             genGeneralCacheResource,
 }
 
 // GenIamResource TODO
@@ -777,4 +779,17 @@ func genKubeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]t
 	}
 
 	return make([]types.Resource, 0), nil
+}
+
+func genGeneralCacheResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System: SystemIDCMDB,
+		Type:   types.ResourceType(GeneralCache),
+	}
+
+	if len(att.InstanceIDEx) > 0 {
+		r.ID = att.InstanceIDEx
+	}
+
+	return []types.Resource{r}, nil
 }

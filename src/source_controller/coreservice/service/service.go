@@ -115,7 +115,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		association.New(s),
 		datasynchronize.New(s),
 		mainline.New(lang),
-		host.New(s, hostApplyRuleCore),
+		host.New(s, hostApplyRuleCore, engine.CoreAPI.CacheService().Cache().Host()),
 		auditlog.New(),
 		process.New(s),
 		label.New(),

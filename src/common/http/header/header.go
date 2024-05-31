@@ -70,4 +70,7 @@ const (
 
 	// ReqRealIPHeader is the request real ip http header key
 	ReqRealIPHeader = "X-Real-Ip"
+
+	// IsInnerReqHeader is the http header key that represents if request is an inner request
+	IsInnerReqHeader = "X-Bkcmdb-Is-Inner-Request"
 )

@@ -231,7 +231,7 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 		// collect event's basic metrics
 		f.metrics.CollectBasic(e)
 
-		chainNode, detailBytes, retry, err := f.parseEvent(f.ccDB, f.key, e, oidDetailMap, ids[index], rid)
+		chainNode, detail, retry, err := f.parseEvent(f.ccDB, f.key, e, oidDetailMap, ids[index], rid)
 		if err != nil {
 			return retry
 		}
@@ -241,7 +241,9 @@ func (f *Flow) doBatch(es []*types.Event) (retry bool) {
 
 		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
 		// is not needed to remove the overlapped cursor node's detail again.
-		pipe.Set(f.key.DetailKey(chainNode.Cursor), string(detailBytes), time.Duration(f.key.TTLSeconds())*time.Second)
+		ttl := time.Duration(f.key.TTLSeconds()) * time.Second
+		pipe.Set(f.key.DetailKey(chainNode.Cursor), string(detail.eventInfo), ttl)
+		pipe.Set(f.key.GeneralResDetailKey(chainNode), string(detail.resDetail), ttl)
 
 		// validate if the cursor already exists in the batch, this happens when the concurrency is very high.
 		// which will generate the same operation event with same cluster time, and generate with the same cursor
@@ -397,7 +399,8 @@ func (f *Flow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[s
 			monitor.Collect(&meta.Alarm{
 				RequestID: rid,
 				Type:      meta.EventFatalError,
-				Detail:    fmt.Sprintf("run event flow, but got conflict %s cursor with chain nodes", f.key.Collection()),
+				Detail: fmt.Sprintf("run event flow, but got conflict %s cursor with chain nodes",
+					f.key.Collection()),
 				Module:    types2.CC_MODULE_CACHESERVICE,
 				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
 			})

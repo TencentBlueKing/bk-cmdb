@@ -117,6 +117,14 @@ const (
 	KubePodWorkload ResourceType = "kube_pods"
 )
 
+// cache related auth resource in CMDB
+const (
+	// FullSyncCond is full sync cond auth resource type in CMDB
+	FullSyncCond ResourceType = "fullSyncCond"
+	// GeneralCache is general resource cache auth resource type in CMDB
+	GeneralCache ResourceType = "generalCache"
+)
+
 const (
 	// CMDBSysInstTypePrefix TODO
 	// CMDB侧资源的通用模型实例前缀标识

@@ -1855,3 +1855,8 @@ const (
 	// RandomIDVar random id variable
 	RandomIDVar = "random_id"
 )
+
+const (
+	// MongoMetaID is mongodb meta id field
+	MongoMetaID = "_id"
+)

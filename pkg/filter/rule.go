@@ -44,6 +44,8 @@ type RuleFactory interface {
 	RuleFields() []string
 	// ToMgo convert this rule to a mongo condition
 	ToMgo(opt ...*RuleOption) (map[string]interface{}, error)
+	// Match checks if the input data matches this rule
+	Match(data MatchedData, opt ...*RuleOption) (bool, error)
 }
 
 // RuleType is the expression rule's rule type.
@@ -271,6 +273,58 @@ func (ar *AtomRule) ToMgo(opts ...*RuleOption) (map[string]interface{}, error) {
 	return ar.Operator.Operator().ToMgo(ar.Field, ar.Value)
 }
 
+// Match checks if the input data matches this atomic rule
+func (ar *AtomRule) Match(data MatchedData, opts ...*RuleOption) (bool, error) {
+	value, err := data.GetValue(ar.Field)
+	if err != nil {
+		return false, fmt.Errorf("get value by %s field failed, err: %v", ar.Field, err)
+	}
+
+	if len(opts) > 0 && opts[0] != nil {
+		opt := opts[0]
+
+		switch opt.ParentType {
+		case enumor.Array:
+			// filter array element, matches if any of the elements matches the filter
+			switch reflect.TypeOf(value).Kind() {
+			case reflect.Array:
+			case reflect.Slice:
+			default:
+				return false, fmt.Errorf("filter array value(%+v) is not of array type", value)
+			}
+
+			v := reflect.ValueOf(value)
+			length := v.Len()
+			if length == 0 {
+				return false, errors.New("value is empty")
+			}
+
+			for i := 0; i < length; i++ {
+				item := v.Index(i).Interface()
+
+				matched, err := ar.Operator.Operator().Match(item, ar.Value)
+				if err != nil {
+					return false, fmt.Errorf("filter array element(%+v) failed, err: %v", item, err)
+				}
+
+				if matched {
+					return true, nil
+				}
+			}
+			return false, nil
+		default:
+			return false, fmt.Errorf("parent type %s is invalid", opt.ParentType)
+		}
+	}
+
+	matched, err := ar.Operator.Operator().Match(value, ar.Value)
+	if err != nil {
+		return false, fmt.Errorf("match field %s value %v failed, err: %v", ar.Field, value, err)
+	}
+
+	return matched, nil
+}
+
 type jsonAtomRuleBroker struct {
 	Field    string          `json:"field"`
 	Operator OpFactory       `json:"operator"`
@@ -471,6 +525,44 @@ func (cr *CombinedRule) ToMgo(opt ...*RuleOption) (map[string]interface{}, error
 		return map[string]interface{}{common.BKDBAND: filters}, nil
 	default:
 		return nil, fmt.Errorf("unexpected operator %s", cr.Condition)
+	}
+}
+
+// Match checks if the input data matches this combined rule
+func (cr *CombinedRule) Match(data MatchedData, opts ...*RuleOption) (bool, error) {
+	if err := cr.Condition.Validate(); err != nil {
+		return false, err
+	}
+
+	if len(cr.Rules) == 0 {
+		return false, errors.New("combined rules shouldn't be empty")
+	}
+
+	for idx, rule := range cr.Rules {
+		matched, err := rule.Match(data, opts...)
+		if err != nil {
+			blog.Errorf("match rules[%d] failed, err: %v, data: %+v", idx, err, data)
+		}
+
+		switch cr.Condition {
+		case Or:
+			if matched {
+				return true, nil
+			}
+		case And:
+			if !matched {
+				return false, nil
+			}
+		}
+	}
+
+	switch cr.Condition {
+	case Or:
+		return false, nil
+	case And:
+		return true, nil
+	default:
+		return false, fmt.Errorf("unexpected operator %s", cr.Condition)
 	}
 }
 
