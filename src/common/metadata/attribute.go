@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -186,6 +187,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		common.FieldObject:           attribute.validObjectCondition,
 		common.FieldTypeOrganization: attribute.validOrganization,
 		common.FieldTypeInnerTable:   attribute.validInnerTable,
+		common.FieldTypeIDRule:       attribute.validIDRule,
 	}
 
 	rawError := errors.RawErrorInfo{}
@@ -1073,6 +1075,102 @@ func (attribute *Attribute) validInnerTable(ctx context.Context, val interface{}
 		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
 	}
 	return errors.RawErrorInfo{}
+}
+
+func (attribute *Attribute) validIDRule(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
+	if val == nil {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+	}
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	switch t := val.(type) {
+	case string:
+		if len(t) > common.FieldTypeSingleLenChar {
+			blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommOverLimit,
+				Args:    []interface{}{key},
+			}
+		}
+	default:
+		blog.Errorf("params should be of string type, but its type is %T, rid: %s", val, rid)
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{key}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// ValidIDRuleVal validate id rule value
+func ValidIDRuleVal(ctx context.Context, inst mapstr.MapStr, field Attribute) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	val, err := inst.String(field.PropertyID)
+	if err != nil {
+		blog.Errorf("get property: %s failed, inst: %+v, err: %v, rid: %s", field.PropertyID, inst, err, rid)
+		return err
+	}
+
+	rules, err := ParseSubIDRules(field.Option)
+	if err != nil {
+		blog.Errorf("parse sub id rule failed, field: %+v, err: %v, rid: %s", field, err, rid)
+		return err
+	}
+
+	for _, rule := range rules {
+		if rule.Kind != Attr && int64(len(val)) < rule.Len {
+			blog.Errorf("val is invalid, val: %s, rule len: %d, rid: %s", val, rule.Len, rid)
+			return fmt.Errorf("val is invalid, val: %s, rule len: %d", val, rule.Len)
+		}
+
+		switch rule.Kind {
+		case Const:
+			if prefix := val[:rule.Len]; prefix != rule.Val {
+				blog.Errorf("val is invalid, val: %s, rule val: %s, rid: %s", prefix, rule.Val, rid)
+				return fmt.Errorf("val is invalid, val: %s, rule val: %s", prefix, rule.Val)
+			}
+
+		case Attr:
+			refVal, err := inst.String(rule.Val)
+			if err != nil {
+				blog.Errorf("get property:%s failed, inst: %+v, err: %v, rid: %s", rule.Val, inst, err, rid)
+				return err
+			}
+			rule.Len = int64(len(refVal))
+
+			if int64(len(val)) < rule.Len {
+				blog.Errorf("val is invalid, val: %s, rule len: %d, rid: %s", val, rule.Len, rid)
+				return fmt.Errorf("val is invalid, val: %s, rule len: %d", val, rule.Len)
+			}
+
+			if prefix := val[:len(refVal)]; prefix != refVal {
+				blog.Errorf("val is invalid, val: %s, rule val: %s, rid: %s", prefix, refVal, rid)
+				return fmt.Errorf("val is invalid, val: %s, rule val: %s", prefix, refVal)
+			}
+
+		case GlobalID, LocalID, RandomID:
+			prefix := val[:rule.Len]
+			for _, c := range prefix {
+				if !unicode.IsDigit(c) {
+					blog.Errorf("the char value needs to be a number, val: %c, rid: %s", c, rid)
+					return fmt.Errorf("the char value needs to be a number, val: %c", c)
+				}
+			}
+
+		default:
+			blog.Errorf("option is invalid, val: %+v, rid: %s", field.Option, rid)
+			return fmt.Errorf("option is invalid, val: %+v", field.Option)
+		}
+
+		val = val[rule.Len:]
+	}
+
+	if val != "" {
+		blog.Errorf("val is invalid, val: %s, rid: %s", val, rid)
+		return fmt.Errorf("val is invalid")
+	}
+
+	return nil
 }
 
 // PrevIntOption previous integer option

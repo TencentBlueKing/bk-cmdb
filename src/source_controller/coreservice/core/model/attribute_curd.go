@@ -35,6 +35,8 @@ import (
 	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -110,12 +112,10 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 }
 
 func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
-
 	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
-
 	index, err := m.GetAttrLastIndex(kit, attribute)
 	if err != nil {
 		return id, err
@@ -129,17 +129,15 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		attribute.CreateTime = &metadata.Time{}
 		attribute.CreateTime.Time = time.Now()
 	}
-
 	if attribute.LastTime == nil {
 		attribute.LastTime = &metadata.Time{}
 		attribute.LastTime.Time = time.Now()
 	}
-
 	if attribute.IsMultiple == nil {
 		switch attribute.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeInt, common.FieldTypeFloat,
 			common.FieldTypeEnum, common.FieldTypeDate, common.FieldTypeTime, common.FieldTypeTimeZone,
-			common.FieldTypeBool, common.FieldTypeList:
+			common.FieldTypeBool, common.FieldTypeList, common.FieldTypeIDRule:
 			isMultiple := false
 			attribute.IsMultiple = &isMultiple
 		case common.FieldTypeUser, common.FieldTypeOrganization, common.FieldTypeEnumQuote, common.FieldTypeEnumMulti:
@@ -149,20 +147,50 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
 		}
 	}
-
 	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
 	if attribute.Default != nil && (attribute.PropertyType == common.FieldTypeEnum ||
 		attribute.PropertyType == common.FieldTypeEnumMulti || attribute.PropertyType == common.FieldTypeEnumQuote) {
 
 		attribute.Default = nil
 	}
-
 	if err = m.saveCheck(kit, attribute); err != nil {
 		return 0, err
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute)
-	return id, err
+	if err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
+		return 0, err
+	}
+	if attribute.PropertyType == common.FieldTypeIDRule {
+		idx := types.Index{
+			Name:       common.CCLogicIndexNamePrefix + attribute.PropertyID,
+			Keys:       bson.D{{attribute.PropertyID, 1}},
+			Background: true,
+			Unique:     true,
+			PartialFilterExpression: map[string]interface{}{
+				attribute.PropertyID: map[string]string{common.BKDBType: "string", common.BKDBGT: ""},
+			},
+		}
+		table := common.GetInstTableName(attribute.ObjectID, kit.SupplierAccount)
+		if err = mongodb.Client().Table(table).CreateIndex(kit.Ctx, idx); err != nil {
+			blog.Errorf("create index failed, index: %+v, err: %v, rid: %s", idx, err, kit.Rid)
+			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+		}
+
+		unique := metadata.ObjectUnique{
+			ID:       id,
+			ObjID:    attribute.ObjectID,
+			Keys:     []metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attribute.ID)}},
+			Ispre:    false,
+			OwnerID:  kit.SupplierAccount,
+			LastTime: metadata.Now(),
+		}
+		err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
+		if nil != err {
+			blog.Errorf("create unique failed, val: %+v, err: %v, rid: %s", &unique, err, kit.Rid)
+			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
+		}
+	}
+	return id, nil
 }
 
 func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, propertyID, propertyName string,
@@ -390,7 +418,7 @@ func (m *modelAttribute) validAndGetTableAttrHeaderDetail(kit *rest.Kit, header 
 		}
 
 		if err = attrvalid.ValidTableFieldOption(kit, header[index].PropertyType, header[index].Option,
-			header[index].Default, header[index].IsMultiple); err != nil {
+			header[index].Default, header[index].IsMultiple, header[index].ObjectID); err != nil {
 			return nil, err
 		}
 		propertyAttr[header[index].PropertyID] = &header[index]
@@ -469,6 +497,7 @@ var validAttrPropertyTypes = map[string]struct{}{
 	common.FieldTypeBool:         {},
 	common.FieldTypeList:         {},
 	common.FieldTypeEnumQuote:    {},
+	common.FieldTypeIDRule:       {},
 }
 
 func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute,
@@ -516,7 +545,7 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 	}
 
 	if attribute.Default != nil && propertyType != common.FieldTypeEnum && propertyType != common.FieldTypeEnumMulti &&
-		propertyType != common.FieldTypeEnumQuote {
+		propertyType != common.FieldTypeEnumQuote && propertyType != common.FieldTypeIDRule {
 
 		if err := m.checkAttributeDefaultValue(kit, attribute, propertyType); err != nil {
 			return err
@@ -758,6 +787,7 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 	}
 
 	objIDArrMap := make(map[string][]int64, 0)
+	idRuleAttrMap := make(map[string][]int64, 0)
 	for _, attr := range resultAttrs {
 		if attr.PropertyType == common.FieldTypeInnerTable {
 			blog.Errorf("property is error, attrItem: %+v, rid: %s", attr, kit.Rid)
@@ -767,6 +797,11 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		if !isFromModel && attr.TemplateID != 0 {
 			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
 		}
+		if attr.PropertyType == common.FieldTypeIDRule {
+			idRuleAttrMap[attr.ObjectID] = append(idRuleAttrMap[attr.ObjectID], attr.ID)
+			continue
+		}
+
 		objIDArrMap[attr.ObjectID] = append(objIDArrMap[attr.ObjectID], attr.ID)
 	}
 
@@ -783,15 +818,23 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		return 0, err
 	}
 
-	exist, err := m.checkAttributeInUnique(kit, objIDArrMap)
-	if err != nil {
-		blog.ErrorJSON("check attribute in unique error. err:%s, input:%s, rid:%s", err.Error(), condMap, kit.Rid)
-		return 0, err
+	if len(objIDArrMap) != 0 {
+		exist, err := m.checkAttributeInUnique(kit, objIDArrMap)
+		if err != nil {
+			blog.ErrorJSON("check attribute in unique error. err:%s, input:%s, rid:%s", err.Error(), condMap, kit.Rid)
+			return 0, err
+		}
+		// delete field in module unique. not allow delete
+		if exist {
+			blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, kit.Rid)
+			return 0, kit.CCError.Error(common.CCErrCoreServiceNotAllowUniqueAttr)
+		}
 	}
-	// delete field in module unique. not allow delete
-	if exist {
-		blog.ErrorJSON("delete field in unique. delete cond:%s, field:%s, rid:%s", condMap, resultAttrs, kit.Rid)
-		return 0, kit.CCError.Error(common.CCErrCoreServiceNotAllowUniqueAttr)
+
+	if len(idRuleAttrMap) != 0 {
+		if err = m.delIDRuleUnique(kit, idRuleAttrMap); err != nil {
+			return 0, err
+		}
 	}
 
 	deleteCnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).DeleteMany(kit.Ctx, condMap)
@@ -1146,23 +1189,36 @@ func (m *modelAttribute) saveTableAttrCheck(kit *rest.Kit, attribute metadata.At
 }
 
 // saveCheck 新加字段检查
-func (m *modelAttribute) saveCheck(kit *rest.Kit, attribute metadata.Attribute) error {
-
-	if err := m.checkAddField(kit, attribute); err != nil {
+func (m *modelAttribute) saveCheck(kit *rest.Kit, attr metadata.Attribute) error {
+	if err := m.checkAddField(kit, attr); err != nil {
 		return err
 	}
 
-	if err := m.checkAttributeMustNotEmpty(kit, attribute); err != nil {
+	if err := m.checkAttributeMustNotEmpty(kit, attr); err != nil {
 		return err
 	}
-	if err := m.checkAttributeValidity(kit, attribute, attribute.PropertyType); err != nil {
+	if err := m.checkAttributeValidity(kit, attr, attr.PropertyType); err != nil {
 		return err
 	}
 
 	// check name duplicate
-	if err := m.checkUnique(kit, true, attribute.ObjectID, attribute.PropertyID, attribute.PropertyName,
-		attribute.BizID); err != nil {
-		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attribute, err, kit.Rid)
+	if err := m.checkUnique(kit, true, attr.ObjectID, attr.PropertyID, attr.PropertyName, attr.BizID); err != nil {
+		blog.Errorf("save attribute check unique input: %+v, err: %v, rid: %s", attr, err, kit.Rid)
+		return err
+	}
+
+	if attr.PropertyType != common.FieldTypeIDRule {
+		return nil
+	}
+
+	err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default)
+	if err != nil {
+		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid: %s", err, attr, kit.Ctx)
+		return err
+	}
+
+	if err = checkAddIDRule(kit, attr.ObjectID); err != nil {
+		blog.ErrorJSON("check add asset id, err: %s, data: %s, rid: %s", err, attr, kit.Ctx)
 		return err
 	}
 
@@ -1602,6 +1658,29 @@ func (m *modelAttribute) checkAttributeInUnique(kit *rest.Kit, objIDPropertyIDAr
 	return false, nil
 }
 
+func (m *modelAttribute) delIDRuleUnique(kit *rest.Kit, objIDPropertyIDArr map[string][]int64) error {
+	cond := mongo.NewCondition()
+
+	var orCondArr []universalsql.ConditionElement
+	for objID, propertyIDArr := range objIDPropertyIDArr {
+		orCondItem := mongo.NewCondition()
+		orCondItem.Element(mongo.Field(common.BKObjIDField).Eq(objID))
+		orCondItem.Element(mongo.Field("keys.key_id").In(propertyIDArr))
+		orCondItem.Element(mongo.Field("keys.key_kind").Eq("property"))
+		orCondArr = append(orCondArr, orCondItem)
+	}
+
+	cond.Or(orCondArr...)
+	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+
+	if _, err := mongodb.Client().Table(common.BKTableNameObjUnique).DeleteMany(kit.Ctx, condMap); err != nil {
+		blog.ErrorJSON("delete unique failed, cond: %+v, err: %v, rid: %s", condMap, err, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
+	}
+
+	return nil
+}
+
 // checkAddField 新加模型属性的时候，如果新加的是必填字段，需要判断是否可以新加必填字段
 func (m *modelAttribute) checkAddField(kit *rest.Kit, attribute metadata.Attribute) error {
 	langObjID := m.getLangObjID(kit, attribute.ObjectID)
@@ -1676,4 +1755,20 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 		return 0, nil
 	}
 	return attrs[0].PropertyIndex + 1, nil
+}
+
+func checkAddIDRule(kit *rest.Kit, objID string) error {
+	cond := mapstr.MapStr{common.BKObjIDField: objID, common.BKPropertyTypeField: common.FieldTypeIDRule}
+
+	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count attribute failed. err: %v, cond: %s, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
+	}
+
+	if count >= metadata.IDRuleFieldLimit {
+		return kit.CCError.Errorf(common.CCErrCommXXExceedLimit, common.FieldTypeIDRule, metadata.IDRuleFieldLimit)
+	}
+
+	return nil
 }

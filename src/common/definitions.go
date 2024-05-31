@@ -287,6 +287,11 @@ const (
 )
 
 const (
+	// BKFieldDBID the db id definition
+	BKFieldDBID = "_id"
+	// BKFieldSeqID the sequence id definition
+	BKFieldSeqID = "SequenceID"
+
 	// BKFieldID the id definition
 	BKFieldID = "id"
 	// BKFieldName TODO
@@ -1036,6 +1041,9 @@ const (
 	// FieldTypeOrganization the organization field type
 	FieldTypeOrganization string = "organization"
 
+	// FieldTypeIDRule the id rule field type
+	FieldTypeIDRule string = "id_rule"
+
 	// FieldTypeSingleLenChar the single char length limit
 	FieldTypeSingleLenChar int = 256
 
@@ -1621,6 +1629,8 @@ const (
 	SyncModuleHostApplyTaskFlag = "module_host_apply_sync"
 	// SyncServiceTemplateHostApplyTaskFlag  service template dimension host auto-apply async task flag.
 	SyncServiceTemplateHostApplyTaskFlag = "service_template_host_apply_sync"
+	// SyncInstIDRuleTaskFlag  instance id rule async task flag.
+	SyncInstIDRuleTaskFlag = "inst_id_rule_sync"
 
 	// BKHostState TODO
 	BKHostState = "bk_state"
@@ -1827,6 +1837,23 @@ type Default int64
 const (
 	// BuiltIn built-in value
 	BuiltIn Default = 1
+)
+
+const (
+	// GlobalIDRule global id rule flag
+	GlobalIDRule = "global"
+
+	// IDRulePrefix id rule self-increasing id prefix
+	IDRulePrefix = "id_rule:incr_id:"
+
+	// GlobalIncrIDVar global self-increasing id variable
+	GlobalIncrIDVar = "global.incr_id"
+
+	// LocalIncrIDVar model self-increasing id variable
+	LocalIncrIDVar = "local.incr_id"
+
+	// RandomIDVar random id variable
+	RandomIDVar = "random_id"
 )
 
 const (

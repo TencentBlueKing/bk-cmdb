@@ -1,0 +1,5 @@
+#!/bin/bash
+mv ./bin/web_server ./bin/cmdb_webserver
+rm -rf ./bin/go-pre-compile
+rm -rf ./bin/post-compile
+mkdir ./logs

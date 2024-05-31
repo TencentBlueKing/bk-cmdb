@@ -537,6 +537,9 @@ const (
 	// DeleteFieldGroupingTemplate delete field grouping template action id
 	DeleteFieldGroupingTemplate = "delete_field_grouping_template"
 
+	// EditIDRuleIncrID edit id rule self-increasing id action id
+	EditIDRuleIncrID ActionID = "edit_id_rule_incr_id"
+
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
 

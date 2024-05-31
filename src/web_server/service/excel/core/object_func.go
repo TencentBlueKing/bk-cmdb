@@ -42,9 +42,15 @@ func (d *Client) GetSortedColProp(kit *rest.Kit, cond mapstr.MapStr) ([]ColProp,
 		return nil, err
 	}
 
-	filterProp := getFilterProp(objID)
+	filterPropID := getFilterPropID(objID)
+	filterPropType := getFilterPropType()
 	for idx := range colProps {
-		if util.InStrArr(filterProp, colProps[idx].ID) {
+		if util.InStrArr(filterPropType, colProps[idx].PropertyType) {
+			colProps = append(colProps[:idx], colProps[idx+1:]...)
+			continue
+		}
+
+		if util.InStrArr(filterPropID, colProps[idx].ID) {
 			colProps[idx].NotExport = true
 		}
 	}
@@ -69,14 +75,19 @@ func (d *Client) GetSortedColProp(kit *rest.Kit, cond mapstr.MapStr) ([]ColProp,
 	return colProps, nil
 }
 
-// getFilterProp 不需要展示字段
-func getFilterProp(objID string) []string {
+// getFilterPropID 不需要展示字段id
+func getFilterPropID(objID string) []string {
 	switch objID {
 	case common.BKInnerObjIDHost:
 		return []string{common.BKSetNameField, common.BKModuleNameField, common.BKAppNameField}
 	default:
 		return []string{common.CreateTimeField}
 	}
+}
+
+// getFilterPropType 不需要展示字段类型
+func getFilterPropType() []string {
+	return []string{common.FieldTypeIDRule}
 }
 
 // GetObjColProp get object column property
@@ -139,7 +150,20 @@ func (d *Client) GetObjectData(kit *rest.Kit, objID string) ([]interface{}, erro
 		return nil, result.CCError()
 	}
 
-	return result.Data[objID].Attr, nil
+	attrs := result.Data[objID].Attr
+	filterPropType := getFilterPropType()
+	for idx, attr := range attrs {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("object attribute is invalid, val: %v", attr)
+		}
+
+		if util.InStrArr(filterPropType, util.GetStrByInterface(attrMap[common.BKPropertyTypeField])) {
+			attrs = append(attrs[:idx], attrs[idx+1:]...)
+		}
+	}
+
+	return attrs, nil
 }
 
 // AddObjectBatch batch add object

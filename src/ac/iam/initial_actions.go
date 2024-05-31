@@ -154,6 +154,7 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewFieldGroupingTemplate:           "字段组合模板查看",
 	EditFieldGroupingTemplate:           "字段组合模板编辑",
 	DeleteFieldGroupingTemplate:         "字段组合模板删除",
+	EditIDRuleIncrID:                    "ID规则自增ID编辑",
 	CreateFullSyncCond:                  "全量同步缓存条件新建",
 	ViewFullSyncCond:                    "全量同步缓存条件查看",
 	EditFullSyncCond:                    "全量同步缓存条件编辑",
@@ -204,6 +205,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
 	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
+	resourceActionList = append(resourceActionList, genIDRuleActions()...)
 	resourceActionList = append(resourceActionList, genFullSyncCondActions()...)
 	resourceActionList = append(resourceActionList, genCacheActions()...)
 
@@ -1748,6 +1750,18 @@ func genFieldGroupingTemplateActions() []ResourceAction {
 			RelatedResourceTypes: []RelateResourceType{templateResource},
 			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
 			Version:              1,
+		},
+	}
+}
+
+func genIDRuleActions() []ResourceAction {
+	return []ResourceAction{
+		{
+			ID:      EditIDRuleIncrID,
+			Name:    ActionIDNameMap[EditIDRuleIncrID],
+			NameEn:  "Edit ID Rule",
+			Type:    Edit,
+			Version: 1,
 		},
 	}
 }

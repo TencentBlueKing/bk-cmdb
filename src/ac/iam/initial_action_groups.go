@@ -518,6 +518,13 @@ func genModelManageActionGroups() []ActionGroup {
 						{ID: DeleteFieldGroupingTemplate},
 					},
 				},
+				{
+					Name:   "ID规则自增ID",
+					NameEn: "ID Rule Self-increasing ID",
+					Actions: []ActionWithID{
+						{ID: EditIDRuleIncrID},
+					},
+				},
 			},
 		},
 	}
