@@ -11,7 +11,10 @@
  */
 
 import Vue from 'vue'
+import { subEnv } from '@blueking/sub-saas'
+
 import App from './App.vue'
+import IframeEntry from './IframeEntry.vue'
 import router from './router/index.js'
 import store from './store'
 import i18n from './i18n'
@@ -54,8 +57,9 @@ api.get(`${window.API_HOST}is_login`).then(() => {
     router,
     store,
     i18n,
-    components: { App },
-    template: '<App/>'
+    render() {
+      return !subEnv ? <App /> : <IframeEntry />
+    }
   })
 })
   .catch(() => {

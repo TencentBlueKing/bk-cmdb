@@ -179,6 +179,9 @@
       }
     },
     watch: {
+      readonly() {
+        this.initValues()
+      },
       inst() {
         this.initValues()
       },

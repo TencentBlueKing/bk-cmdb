@@ -25,7 +25,6 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/resource/esb"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -141,7 +140,7 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 		Operation: commonOperation,
 	}
 
-	channels, isDataIDExists, err := esb.EsbClient().GseSrv().ConfigQueryRoute(s.ctx, header, queryParams)
+	channels, isDataIDExists, err := s.GseClient.ConfigQueryRoute(s.ctx, header, queryParams)
 	if err != nil {
 		// gse returns a common error for not exist case before ee1.7.18/ce3.6.18, so we ignore it for compatibility
 		blog.Errorf("query gse channel failed, ** skip this error for not exist case **, err: %v, rid: %s", err, rid)
@@ -178,7 +177,7 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 			},
 		}
 
-		err = esb.EsbClient().GseSrv().ConfigUpdateRoute(s.ctx, header, params)
+		err = s.GseClient.ConfigUpdateRoute(s.ctx, header, params)
 		if err != nil {
 			blog.Errorf("update old data id route to gse failed, err: %v, params: %#v, rid: %s", err, params, rid)
 			return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -379,7 +378,7 @@ func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, versio
 		Operation: commonOperation,
 	}
 
-	streamTos, err := esb.EsbClient().GseSrv().ConfigQueryStreamTo(s.ctx, header, params)
+	streamTos, err := s.GseClient.ConfigQueryStreamTo(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("query stream to from gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return streamToID.HostSnap, nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed,
@@ -403,7 +402,7 @@ func (s *Service) gseConfigAddStreamTo(streamTo *metadata.GseConfigStreamTo, hea
 		StreamTo: *streamTo,
 	}
 
-	addStreamResult, err := esb.EsbClient().GseSrv().ConfigAddStreamTo(s.ctx, header, params)
+	addStreamResult, err := s.GseClient.ConfigAddStreamTo(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("add stream to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return 0, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -448,7 +447,7 @@ func (s *Service) gseConfigUpdateStreamTo(streamTo *metadata.GseConfigStreamTo, 
 		},
 	}
 
-	err := esb.EsbClient().GseSrv().ConfigUpdateStreamTo(s.ctx, header, params)
+	err := s.GseClient.ConfigUpdateStreamTo(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("update stream to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -547,7 +546,7 @@ func (s *Service) gseConfigQueryRoute(header http.Header, user string, defErr er
 		Operation: commonOperation,
 	}
 
-	channels, exists, err := esb.EsbClient().GseSrv().ConfigQueryRoute(s.ctx, header, params)
+	channels, exists, err := s.GseClient.ConfigQueryRoute(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("query route from gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return nil, false, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -567,7 +566,7 @@ func (s *Service) gseConfigAddRoute(channel *metadata.GseConfigChannel, header h
 		GseConfigChannel: *channel,
 	}
 
-	_, err := esb.EsbClient().GseSrv().ConfigAddRoute(s.ctx, header, params)
+	_, err := s.GseClient.ConfigAddRoute(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("add channel to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
@@ -594,7 +593,7 @@ func (s *Service) gseConfigUpdateRoute(channel *metadata.GseConfigChannel, heade
 		},
 	}
 
-	err := esb.EsbClient().GseSrv().ConfigUpdateRoute(s.ctx, header, params)
+	err := s.GseClient.ConfigUpdateRoute(s.ctx, header, params)
 	if err != nil {
 		blog.ErrorJSON("update channel to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
 		return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}

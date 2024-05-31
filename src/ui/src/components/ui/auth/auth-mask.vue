@@ -32,9 +32,9 @@
     },
     render(h) {
       if (!this.useIAM || this.ignore) {
-        return this.$scopedSlots.default({
+        return h(this.tag, this.$scopedSlots.default({
           disabled: false
-        })
+        }))
       }
 
       return h(this.tag, {

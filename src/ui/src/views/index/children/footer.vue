@@ -14,15 +14,12 @@
   <div class="footer">
     <p class="contact" v-html="contact"></p>
     <p class="copyright">
-      {{copyright}} {{verison}}
+      {{copyright}}
     </p>
   </div>
 </template>
 
 <script>
-  import moment from 'moment'
-  import xss from 'xss'
-
   export default {
     name: 'TheFooter',
     props: {
@@ -41,36 +38,13 @@
       },
       contact() {
         if (this.previewContact) return this.parseMarkdownLink(this.previewContact)
-        return this.parseMarkdownLink(this.setting.footer.contact)
+        return this.setting.footer.contact
       },
       copyright() {
         if (this.previewCopyright) return this.parseTimeVars(this.previewCopyright)
-        return this.parseTimeVars(this.setting.footer.copyright)
-      },
-      verison() {
-        return this.$Site.buildVersion
+        return this.setting.footer.copyright
       }
-    },
-    methods: {
-      parseMarkdownLink(markdown) {
-        return xss(markdown, { stripIgnoreTagBody: true })
-          ?.replace(/\[([^\]]+)\]\(([^)]+)\)/ig, '<a target="_blank" class="contact-link" href="$2">$1</a>')
-      },
-      /**
-       * 转换时间变量
-       * @param {string} content 用户输入的 copyright 信息
-       */
-      parseTimeVars(content) {
-        const currentYear = moment().format('YYYY')
-        const currentMonth = moment().format('MM')
-        const currentDay = moment().format('DD')
-
-        return content
-          .replace(/\{\{current_year\}\}/ig, currentYear)
-          .replace(/\{\{current_month\}\}/ig, currentMonth)
-          .replace(/\{\{current_day\}\}/ig, currentDay)
-      },
-    },
+    }
   }
 </script>
 
@@ -94,7 +68,7 @@
   line-height: 24px;
 }
 
-::v-deep .contact-link {
+::v-deep .link-item {
   color: $primaryColor;
 }
 </style>

@@ -11,6 +11,37 @@
  */
 
 import $http from '@/api'
+import { getPlatformConfig, titleSeparator, setShortcutIcon } from '@blueking/platform-config'
+
+export const initialConfig = {
+  backend: {
+    maxBizTopoLevel: 0, // 最大拓扑层级数
+  },
+  site: {
+    name: '', // 网站名
+    separator: '|' // 网站名称路由分隔符
+  },
+  footer: {
+    contact: '', // 联系方式
+    copyright: '' // 脚部版权
+  },
+  validationRules: [], // 用户自定义验证规则
+  set: '', // 集群名称
+  idlePool: {
+    idle: '', // 空闲机
+    fault: '', // 故障机
+    recycle: '', // 待回收
+    userModules: [] // 用户自定义模块
+  },
+  publicConfig: {
+    name: '蓝鲸配置平台',
+    nameEn: 'BK CMDB',
+    brandName: '腾讯蓝鲸智云',
+    brandNameEn: 'BlueKing',
+    favicon: '/static/favicon.ico',
+    version: window.Site.version
+  }
+}
 
 /**
  * 更新全局设置
@@ -21,9 +52,39 @@ export const updateConfig = globalConfig => $http.put('admin/update/system_confi
 
 /**
  * 获取当前用户的全局设置
- * @returns {Promise}
+ * @returns {Object}
  */
-export const getCurrentConfig = () => $http.get('admin/find/system_config/platform_setting/current')
+export const getCurrentConfig = async () => {
+  const { bkRepoUrl } = window.Site
+
+  let publicConfigPromise
+  if (bkRepoUrl) {
+    const repoUrl = bkRepoUrl.endsWith('/') ? bkRepoUrl : `${bkRepoUrl}/`
+    publicConfigPromise = getPlatformConfig(`${repoUrl}generic/blueking/bk-config/bk_cmdb/base.js`, initialConfig.publicConfig)
+  } else {
+    publicConfigPromise = getPlatformConfig(initialConfig.publicConfig)
+  }
+
+  const [currentConfig, publicConfig] = await Promise.all([
+    $http.get('admin/find/system_config/platform_setting/current'),
+    publicConfigPromise
+  ])
+
+  setShortcutIcon(publicConfig.favicon)
+
+  return {
+    ...currentConfig,
+    site: {
+      name: publicConfig.i18n.name,
+      separator: titleSeparator
+    },
+    footer: {
+      contact: publicConfig.i18n.footerInfoHTML,
+      copyright: publicConfig.footerCopyrightContent
+    },
+    publicConfig
+  }
+}
 
 /**
  * 获取默认的全局设置，用来恢复为默认值

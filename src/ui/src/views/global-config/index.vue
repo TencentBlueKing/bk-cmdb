@@ -18,11 +18,6 @@
           <BusinessGneralConfig></BusinessGneralConfig>
         </div>
       </bk-tab-panel>
-      <bk-tab-panel name="platform-info-config" :label="$t('平台信息')">
-        <div class="config-container">
-          <PlatformInfoConfig></PlatformInfoConfig>
-        </div>
-      </bk-tab-panel>
       <bk-tab-panel name="idle-pool-config" :label="$t('业务空闲机池')">
         <div class="config-container">
           <!--加 v-if 是为了每次进入时初始化表单状态 -->
@@ -36,7 +31,6 @@
 <script>
   import { ref, watch, onMounted } from 'vue'
   import BusinessGneralConfig from './children/business-general-config.vue'
-  import PlatformInfoConfig from './children/platform-info-config.vue'
   import IdlePoolConfig from './children/idle-pool-config.vue'
   import queryStore from '@/router/query'
   import store from '@/store'
@@ -47,7 +41,6 @@
     name: 'global-config',
     components: {
       BusinessGneralConfig,
-      PlatformInfoConfig,
       IdlePoolConfig
     },
     setup() {
