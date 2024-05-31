@@ -12,6 +12,7 @@
 
 import http from '@/api'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
 function createIdProperty(objId) {
   const keyMap = {
@@ -38,9 +39,15 @@ function createIdProperty(objId) {
   }
 }
 
+
+export const propertyFilter = (data) => {
+  const allTypes = Object.values(PROPERTY_TYPES)
+  return data.filter(prop => allTypes.includes(prop.bk_property_type))
+}
+
 export const find = async (params, config, injectId = false) => {
   try {
-    const properties = await http.post('find/objectattr/web', params, config)
+    const properties = await http.post('find/objectattr/web', params, config).then(propertyFilter)
 
     if (!injectId) {
       return properties
@@ -79,5 +86,6 @@ export const findBizSet = (injectId = false, config) => {
 export default {
   find,
   findBiz,
-  findBizSet
+  findBizSet,
+  propertyFilter
 }

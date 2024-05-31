@@ -22,6 +22,7 @@ import throttle from 'lodash.throttle'
 import { CONTAINER_OBJECTS, TOPO_MODE_KEYS, MIX_SEARCH_MODES } from '@/dictionary/container.js'
 import containerPropertyService from '@/service/container/property.js'
 import { getContainerInstanceService } from '@/service/container/common'
+import { propertyFilter } from '@/service/property/property.js'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -625,7 +626,7 @@ const FilterStore = new Vue({
       }, {
         requestId: this.request.property,
         fromCache: true
-      })
+      }).then(propertyFilter)
 
       // Node的属性
       const nodeProperties = await containerPropertyService.getMany({
