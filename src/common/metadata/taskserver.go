@@ -201,9 +201,12 @@ type CreateTaskBatchResponse struct {
 // TaskDetailResponse api task detail response
 type TaskDetailResponse struct {
 	BaseResp
-	Data struct {
-		Info APITaskDetail `json:"info"`
-	} `json:"data"`
+	Data TaskDetailData `json:"data"`
+}
+
+// TaskDetailData task detail data
+type TaskDetailData struct {
+	Info APITaskDetail `json:"info"`
 }
 
 // ListAPITaskDetail list api task detail condition

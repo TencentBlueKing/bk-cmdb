@@ -18,57 +18,92 @@ import (
 	"regexp"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
+	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // FillLostFieldValue fill the value in inst map data
 func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) error {
-	var err error
-	for _, field := range propertys {
-		if _, ok := valData[field.PropertyID]; ok {
+	var idRuleField *metadata.Attribute
+	for idx, field := range propertys {
+		val, ok := valData[field.PropertyID]
+		if ok && (field.PropertyType != common.FieldTypeIDRule || val != "") {
 			continue
 		}
 
 		switch field.PropertyType {
 		case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-			err = fillLostStringFieldValue(valData, field)
+			if err := fillLostStringFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeEnum:
-			err = fillLostEnumFieldValue(ctx, valData, field)
+			if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeEnumMulti:
-			err = fillLostEnumMultiFieldValue(ctx, valData, field)
+			if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeEnumQuote:
-			err = fillLostEnumQuoteFieldValue(ctx, valData, field)
+			if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeDate:
-			err = fillLostDateFieldValue(valData, field)
+			if err := fillLostDateFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeFloat:
-			err = fillLostFloatFieldValue(valData, field)
+			if err := fillLostFloatFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeInt:
-			err = fillLostIntFieldValue(valData, field)
+			if err := fillLostIntFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeTime:
-			err = fillLostTimeFieldValue(valData, field)
+			if err := fillLostTimeFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeUser:
-			err = fillLostUserFieldValue(valData, field)
+			if err := fillLostUserFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeOrganization:
-			err = fillLostOrganizationFieldValue(valData, field)
+			if err := fillLostOrganizationFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeTimeZone:
-			err = fillLostTimeZoneFieldValue(valData, field)
+			if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeList:
-			err = fillLostListFieldValue(valData, field)
+			if err := fillLostListFieldValue(valData, field); err != nil {
+				return err
+			}
 		case common.FieldTypeBool:
-			err = fillLostBoolFieldValue(valData, field)
+			if err := fillLostBoolFieldValue(valData, field); err != nil {
+				return err
+			}
+		case common.FieldTypeIDRule:
+			idRuleField = &propertys[idx]
 		default:
 			valData[field.PropertyID] = nil
 		}
 	}
 
-	if err != nil {
-		return err
+	// 由于id规则字段可能会来自实例的其他字段，所以需要在最后进行填充
+	if idRuleField != nil {
+		if err := fillLostIDRuleFieldValue(ctx, valData, *idRuleField); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -364,4 +399,73 @@ func getEnumOption(ctx context.Context, val interface{}) ([]metadata.EnumVal, er
 	}
 
 	return defaultOptions, nil
+}
+
+func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
+	val, err := GetIDRuleVal(ctx, valData, field)
+	if err != nil {
+		return err
+	}
+
+	valData[field.PropertyID] = val
+	return nil
+}
+
+// GetIDRuleVal get id rule value
+func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) (string, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	rules, err := metadata.ParseSubIDRules(field.Option)
+	if err != nil {
+		blog.Errorf("parse sub id rule failed, field: %+v, err: %v, rid: %s", field, err, rid)
+		return "", err
+	}
+
+	var val string
+	for _, rule := range rules {
+		switch rule.Kind {
+		case metadata.Const:
+			val += rule.Val
+
+		case metadata.Attr:
+			val += util.GetStrByInterface(valData[rule.Val])
+
+		case metadata.GlobalID:
+			seqName := metadata.GetIDRule(common.GlobalIDRule)
+			id, err := mongodb.Client().NextSequence(ctx, seqName)
+			if err != nil {
+				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, rid)
+				return "", err
+			}
+			idStr, err := metadata.MakeUpDigit(id, rule.Len)
+			if err != nil {
+				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, rid)
+				return "", err
+			}
+			val += idStr
+
+		case metadata.LocalID:
+			seqName := metadata.GetIDRule(field.ObjectID)
+			id, err := mongodb.Client().NextSequence(ctx, seqName)
+			if err != nil {
+				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, rid)
+				return "", err
+			}
+			idStr, err := metadata.MakeUpDigit(id, rule.Len)
+			if err != nil {
+				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, rid)
+				return "", err
+			}
+			val += idStr
+
+		case metadata.RandomID:
+			val += metadata.GetIDRuleRandomID(rule.Len)
+
+		default:
+			blog.Errorf("option is invalid, val: %v, rid: %s", field.Option, rid)
+			return "", fmt.Errorf("option is invalid, val: %v", field.Option)
+		}
+	}
+
+	return val, nil
 }

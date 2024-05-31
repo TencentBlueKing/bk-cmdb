@@ -37,7 +37,7 @@ type TaskClientInterface interface {
 	ListLatestTask(ctx context.Context, header http.Header, name string, data *metadata.ListAPITaskLatestRequest) (
 		[]metadata.APITaskDetail, errors.CCErrorCoder)
 
-	TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailResponse, err error)
+	TaskDetail(ctx context.Context, header http.Header, taskID string) (resp *metadata.TaskDetailData, err error)
 
 	DeleteTask(ctx context.Context, header http.Header, taskCond *metadata.DeleteOption) error
 
