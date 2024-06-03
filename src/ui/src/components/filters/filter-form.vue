@@ -25,7 +25,7 @@
         {{`(${collection.name})`}}
       </template>
     </div>
-    <cmdb-sticky-layout class="filter-layout" slot="content">
+    <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
       <bk-form class="filter-form" form-type="vertical">
         <bk-form-item class="filter-ip filter-item">
           <label class="item-label">
@@ -86,7 +86,15 @@
                 trigger: 'click',
                 content: property.placeholder
               }"
-              @active-change="handleComponentActiveChange(property, ...arguments)">
+              @active-change="handleComponentActiveChange(property, ...arguments)"
+              @change="handleChange"
+              @inputchange="hanleInputChange"
+              @click.native="() => handleClick(`component-${property.id}`)"
+              :popover-options="{
+                duration: 0,
+                onShown: handleShow,
+                onHidden: handlePopoverHidden
+              }">
             </component>
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
@@ -346,6 +354,40 @@
       this.setChanged = setChanged
     },
     methods: {
+      handleClick(e) {
+        const parent = this.$refs[e][0].$el
+        this.target = parent.getElementsByClassName('bk-select-tag-container')[0]
+          || parent.getElementsByClassName('bk-tag-input')[0]
+
+        if (~this.target?.className.indexOf('is-focus')) {
+          // select专属
+          return
+        }
+        this.calcPosition('click')
+      },
+      handleChange() {
+        this.calcPosition()
+      },
+      hanleInputChange() {
+        this.calcPosition()
+      },
+      handleShow() {
+        this.calcPosition()
+      },
+      handlePopoverHidden() {
+        this.$refs.propertyList.$el.classList.remove('over-height')
+      },
+      calcPosition(type = 'change') {
+        if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+
+        this.$nextTick(() => {
+          const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
+          const { bottom } = this.target.getClientRects()[0]
+          if (bottom > Math.ceil(limit)) {
+            this.$refs.propertyList.$el.classList.add('over-height')
+          }
+        })
+      },
       setCondition(nowCondition) {
         const newCondition = this.$tools.clone(FilterStore.condition)
         Object.keys(nowCondition).forEach((id) => {
@@ -575,6 +617,11 @@
 </script>
 
 <style lang="scss" scoped>
+    .over-height {
+      .g-expand {
+        bottom: 0;
+      }
+    }
     .ip-editable-block {
       :deep(.search-input) {
         min-height: 82px;
