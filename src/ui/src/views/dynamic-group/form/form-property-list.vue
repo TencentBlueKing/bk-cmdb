@@ -50,7 +50,8 @@
                 theme: 'light',
                 trigger: 'click',
                 content: property.placeholder
-              }">
+              }"
+              @inputchange="hanleInputChange">
             </component>
           </div>
           <i class="item-remove bk-icon icon-close" v-if="!disabled" @click="handleRemove(property)"></i>
@@ -154,6 +155,9 @@
         this.calcPosition('click')
       },
       handleChange() {
+        this.calcPosition()
+      },
+      hanleInputChange() {
         this.calcPosition()
       },
       handleShow() {
