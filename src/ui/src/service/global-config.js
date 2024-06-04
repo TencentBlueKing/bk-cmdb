@@ -39,7 +39,7 @@ export const initialConfig = {
     brandName: '腾讯蓝鲸智云',
     brandNameEn: 'BlueKing',
     favicon: '/static/favicon.ico',
-    version: window.Site.version
+    version: window.Site.buildVersion
   }
 }
 
