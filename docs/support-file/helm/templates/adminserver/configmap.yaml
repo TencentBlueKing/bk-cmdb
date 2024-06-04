@@ -386,7 +386,7 @@ data:
       dataID: 1100010
 
     dataid:
-      migrateWay: {{ .Values.adminserver.dataid.migrateWay }}
+      migrateWay: {{ .Values.migrate.dataid.migrateWay }}
 
   mongodb.yaml: |-
     mongodb:

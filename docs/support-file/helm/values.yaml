@@ -60,11 +60,6 @@ adminserver:
   ## @param adminserver.errors bk-cmdb adminserver language config directory
   ##
   language: /data/cmdb/cmdb_adminserver/conf/language
-  ## bk-cmdb adminserver dataid parameters
-  ## @param adminserver.dataid.migrateWay bk-cmdb adminserver migrate dataid way
-  ##
-  dataid:
-    migrateWay: esb
   ## bk-cmdb adminserver start command parameters
   ## @param adminserver.command.logDir bk-cmdb adminserver log directory
   ## @param adminserver.command.logLevel bk-cmdb adminserver log level
@@ -1112,6 +1107,11 @@ migrate:
   ##
   migrateDataId: false
   migrateOldDataId: false
+  ## bk-cmdb migrate dataid parameters
+  ## @param migrate.dataid.migrateWay bk-cmdb migrate dataid way
+  ##
+  dataid:
+    migrateWay: esb
 
 ## @section bk-cmdb iam authentication parameters
 ##
