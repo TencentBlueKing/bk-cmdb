@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content">
+  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
     <bk-form class="filter-form" form-type="vertical">
       <bk-form-item class="filter-item"
         v-for="property in selected"
@@ -39,7 +39,15 @@
               trigger: 'click',
               content: property.placeholder
             }"
-            @active-change="handleComponentActiveChange(property, ...arguments)">
+            @active-change="handleComponentActiveChange(property, ...arguments)"
+            @change="handleChange"
+            @inputchange="hanleInputChange"
+            @click.native="() => handleClick(`component-${property.id}`)"
+            :popover-options="{
+              duration: 0,
+              onShown: handleShow,
+              onHidden: handlePopoverHidden
+            }">
           </component>
         </div>
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
@@ -131,6 +139,39 @@
       }
     },
     methods: {
+      handleClick(e) {
+        const parent = this.$refs[e][0].$el
+        this.target = parent.getElementsByClassName('bk-select-tag-container')[0]
+          || parent.getElementsByClassName('bk-tag-input')[0]
+        if (~this.target?.className.indexOf('is-focus')) {
+          // select专属
+          return
+        }
+        this.calcPosition('click')
+      },
+      handleChange() {
+        this.calcPosition()
+      },
+      hanleInputChange() {
+        this.calcPosition()
+      },
+      handleShow() {
+        this.calcPosition()
+      },
+      handlePopoverHidden() {
+        this.$refs.propertyList.$el.classList.remove('over-height')
+      },
+      calcPosition(type = 'change') {
+        if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+
+        this.$nextTick(() => {
+          const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
+          const { bottom } = this.target.getClientRects()[0]
+          if (bottom > Math.ceil(limit)) {
+            this.$refs.propertyList.$el.classList.add('over-height')
+          }
+        })
+      },
       updateCondition() {
         const newConditon = {}
         this.selected.forEach((property) => {
@@ -219,6 +260,11 @@
 </script>
 
 <style lang="scss" scoped>
+  .over-height {
+    .g-expand {
+      bottom: 0;
+    }
+  }
   .filter-layout {
     height: 100%;
     @include scrollbar-y;

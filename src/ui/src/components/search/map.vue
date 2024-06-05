@@ -20,7 +20,8 @@
       :list="list"
       @removeAll="() => $emit('clear')"
       @click.native="handleToggle(true)"
-      @blur="handleToggle(false, ...arguments)">
+      @blur="handleToggle(false, ...arguments)"
+      @inputchange="handleInputChange">
     </bk-tag-input>
   </div>
 </template>
@@ -70,6 +71,9 @@
       }
     },
     methods: {
+      handleInputChange(value) {
+        this.$emit('inputchange', value)
+      }
     }
   }
 </script>
