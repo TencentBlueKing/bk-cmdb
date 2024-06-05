@@ -22,7 +22,8 @@
       :has-delete-icon="true"
       @removeAll="() => $emit('clear')"
       @click.native="handleToggle(true)"
-      @blur="handleToggle(false, ...arguments)">
+      @blur="handleToggle(false, ...arguments)"
+      @inputchange="handleInputChange">
     </bk-tag-input>
   </div>
   <bk-input v-else
@@ -99,6 +100,9 @@
           .filter(value => value.length)
         const value = [...new Set([...this.localValue, ...values])]
         this.localValue = value
+      },
+      handleInputChange(value) {
+        this.$emit('inputchange', value)
       }
     }
   }

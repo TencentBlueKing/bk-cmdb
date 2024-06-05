@@ -165,6 +165,11 @@ func (s *service) TopoFilterChan(req *restful.Request, resp *restful.Response, c
 	s.urlFilterChan(req, resp, chain, s.discovery.TopoServer(), rootPath, "/topo/v3")
 }
 
+// CacheFilterChan cache service api filter chan
+func (s *service) CacheFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.CacheService(), rootPath+"/cache", "/cache/v3")
+}
+
 // TxnFilterChan transaction api filter chan
 func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	// right now, only allow calling from web-server
