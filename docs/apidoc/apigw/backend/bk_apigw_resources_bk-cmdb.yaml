@@ -27,7 +27,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/set/{bk_biz_id}/batch:
@@ -52,7 +52,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -74,7 +74,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/set/bk_biz_id/{bk_biz_id}:
@@ -97,7 +97,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/module/bk_biz_id/{bk_biz_id}:
@@ -120,7 +120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/instance/object/{bk_obj_id}:
@@ -143,7 +143,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation/object/{bk_obj_id}:
@@ -166,7 +166,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/instance/object/{bk_obj_id}/inst/{bk_inst_id}:
@@ -189,7 +189,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/instance/object/{bk_obj_id}:
@@ -212,7 +212,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/instance/object/{bk_obj_id}/inst/{bk_inst_id}:
@@ -235,7 +235,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/instance/object/{bk_obj_id}:
@@ -258,7 +258,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/insttopo/object/{bk_obj_id}/inst/{bk_inst_id}:
@@ -281,7 +281,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/object:
@@ -304,7 +304,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/object/{id}:
@@ -327,7 +327,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/object/{id}:
@@ -350,7 +350,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/object:
@@ -373,7 +373,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objecttopology:
@@ -396,7 +396,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectclassification:
@@ -419,7 +419,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/objectclassification/{id}:
@@ -442,7 +442,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectclassification/{id}:
@@ -465,7 +465,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectclassification:
@@ -488,7 +488,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectattr:
@@ -511,7 +511,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/objectattr/{id}:
@@ -534,7 +534,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectattr/{id}:
@@ -557,7 +557,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectattr:
@@ -580,7 +580,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectattr/biz/{bk_biz_id}:
@@ -603,7 +603,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectattr/biz/{bk_biz_id}/id/{id}:
@@ -626,7 +626,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/app/{bk_biz_id}/list_hosts:
@@ -649,7 +649,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/app/{bk_biz_id}/list_hosts_topo:
@@ -672,7 +672,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/list_hosts_without_app:
@@ -695,7 +695,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/list_resource_pool_hosts:
@@ -718,7 +718,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/idle/set:
@@ -741,7 +741,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/property/clone:
@@ -764,7 +764,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/property/batch:
@@ -787,7 +787,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topomodelmainline:
@@ -810,7 +810,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}:
@@ -833,7 +833,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/module_relation/bk_biz_id/{bk_biz_id}:
@@ -856,7 +856,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/by_service_templates/biz/{bk_biz_id}:
@@ -879,7 +879,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/by_set_templates/biz/{bk_biz_id}:
@@ -902,7 +902,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/read:
@@ -925,7 +925,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectassociation:
@@ -948,7 +948,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation:
@@ -971,7 +971,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/instassociation:
@@ -994,7 +994,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/instassociation/{bk_obj_id}/{id}:
@@ -1017,7 +1017,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/topo/relation/read:
@@ -1040,7 +1040,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloudarea:
@@ -1063,7 +1063,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/cloudarea:
@@ -1086,7 +1086,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/cloudarea/{bk_cloud_id}:
@@ -1109,7 +1109,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/cloudarea/{bk_cloud_id}:
@@ -1132,7 +1132,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_category:
@@ -1155,7 +1155,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/proc/service_category:
@@ -1178,7 +1178,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/service_category:
@@ -1201,7 +1201,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/proc/service_category:
@@ -1224,7 +1224,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/proc/service_template:
@@ -1247,7 +1247,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/service_template:
@@ -1270,7 +1270,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_template/{service_template_id}:
@@ -1293,7 +1293,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template:
@@ -1316,7 +1316,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/proc/service_template:
@@ -1339,7 +1339,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/service_templates:
@@ -1362,7 +1362,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/proc/proc_template:
@@ -1385,7 +1385,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/proc_template:
@@ -1408,7 +1408,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/proc/proc_template:
@@ -1431,7 +1431,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/proc_template/id/{process_template_id}:
@@ -1454,7 +1454,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/proc_template:
@@ -1477,7 +1477,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/proc/service_instance:
@@ -1500,7 +1500,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_instance:
@@ -1523,7 +1523,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_instance/with_host:
@@ -1546,7 +1546,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}:
@@ -1569,7 +1569,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_instance/details:
@@ -1592,7 +1592,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/proc/service_instance:
@@ -1615,7 +1615,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/proc/service_instance/labels:
@@ -1638,7 +1638,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/proc/service_instance/labels:
@@ -1661,7 +1661,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/proc/process_instance:
@@ -1684,7 +1684,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/process_instance:
@@ -1707,7 +1707,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/proc/process_instance:
@@ -1730,7 +1730,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/process_instance:
@@ -1753,7 +1753,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/process_related_info/biz/{bk_biz_id}:
@@ -1776,7 +1776,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template/sync_status/biz/{bk_biz_id}:
@@ -1799,7 +1799,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/process_instance/detail/biz/{bk_biz_id}:
@@ -1822,7 +1822,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/inst/association/association_object/inst_base_info:
@@ -1845,7 +1845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/hosts/cloudarea_field:
@@ -1868,7 +1868,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/identifier/host/search:
@@ -1891,7 +1891,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/install/bk:
@@ -1914,7 +1914,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/topo/set_template/bk_biz_id/{bk_biz_id}:
@@ -1937,7 +1937,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}:
@@ -1960,7 +1960,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}:
@@ -1983,7 +1983,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/topo/set_template/bk_biz_id/{bk_biz_id}:
@@ -2006,7 +2006,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sync_to_instances:
@@ -2029,7 +2029,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/event/watch/resource/{bk_resource}:
@@ -2052,7 +2052,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/lock:
@@ -2075,7 +2075,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -2097,7 +2097,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/lock/search:
@@ -2120,7 +2120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/cache/find/cache/topo/node_path/biz/{bk_biz_id}:
@@ -2143,7 +2143,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/by_topo/biz/{bk_biz_id}:
@@ -2166,7 +2166,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/instassociation/batch:
@@ -2189,7 +2189,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation/related:
@@ -2212,7 +2212,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/dynamicgroup:
@@ -2235,7 +2235,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/dynamicgroup/{bk_biz_id}/{id}:
@@ -2258,7 +2258,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     get:
@@ -2280,7 +2280,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -2302,7 +2302,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/dynamicgroup/search/{bk_biz_id}:
@@ -2325,7 +2325,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/dynamicgroup/data/{bk_biz_id}/{id}:
@@ -2348,7 +2348,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/module/with_relation/biz/{bk_biz_id}:
@@ -2371,7 +2371,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/audit_list:
@@ -2394,7 +2394,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/audit:
@@ -2417,7 +2417,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topo/tree/brief/biz/{bk_biz_id}:
@@ -2440,7 +2440,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/cache/find/cache/topo/brief/biz/{bk_biz_id}:
@@ -2463,7 +2463,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/recycle:
@@ -2486,7 +2486,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/relation/with_topo:
@@ -2509,7 +2509,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/detail_topo:
@@ -2532,7 +2532,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/search/instances/object/{bk_obj_id}:
@@ -2555,7 +2555,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/count/instances/object/{bk_obj_id}:
@@ -2578,7 +2578,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/search/instance_associations/object/{bk_obj_id}:
@@ -2601,7 +2601,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/count/instance_associations/object/{bk_obj_id}:
@@ -2624,7 +2624,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topo/biz/brief_node_relation:
@@ -2647,7 +2647,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/instance/object/{bk_obj_id}:
@@ -2670,7 +2670,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/instassociation:
@@ -2693,7 +2693,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/biz_set:
@@ -2716,7 +2716,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/biz_set:
@@ -2739,7 +2739,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/biz_set/biz_list:
@@ -2762,7 +2762,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/biz_set:
@@ -2785,7 +2785,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/biz_set/topo_path:
@@ -2808,7 +2808,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/biz_set:
@@ -2831,7 +2831,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/service_template:
@@ -2854,7 +2854,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation/object/{bk_obj_id}/inst/detail:
@@ -2877,7 +2877,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/add/resource:
@@ -2900,7 +2900,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/total_mainline_topo/biz/{bk_biz_id}:
@@ -2923,7 +2923,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/count/cpu:
@@ -2946,7 +2946,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/event/push/host_identifier:
@@ -2969,7 +2969,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/cloud_hosts:
@@ -2992,7 +2992,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/cloud_hosts:
@@ -3015,7 +3015,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/event/find/host_identifier_push_result:
@@ -3038,7 +3038,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/add/business_idle:
@@ -3061,7 +3061,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/bind/agent:
@@ -3084,7 +3084,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/unbind/agent:
@@ -3107,7 +3107,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/project:
@@ -3130,7 +3130,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/project:
@@ -3153,7 +3153,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/project:
@@ -3176,7 +3176,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/project:
@@ -3199,7 +3199,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/project/bk_project_id:
@@ -3222,7 +3222,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/across/biz:
@@ -3245,7 +3245,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/quoted/instance:
@@ -3268,7 +3268,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/quoted/instance:
@@ -3291,7 +3291,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/quoted/instance:
@@ -3314,7 +3314,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/quoted/instance:
@@ -3337,7 +3337,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/kube/cluster:
@@ -3360,7 +3360,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/kube/cluster:
@@ -3383,7 +3383,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/kube/cluster/type:
@@ -3406,7 +3406,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/kube/cluster:
@@ -3429,7 +3429,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/cluster:
@@ -3452,7 +3452,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/kube/node:
@@ -3475,7 +3475,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/kube/node:
@@ -3498,7 +3498,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/kube/node:
@@ -3521,7 +3521,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/node:
@@ -3544,7 +3544,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/kube/pod:
@@ -3567,7 +3567,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/kube/pod:
@@ -3590,7 +3590,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/pod:
@@ -3613,7 +3613,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/container:
@@ -3636,7 +3636,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/kube/namespace:
@@ -3659,7 +3659,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/kube/namespace:
@@ -3682,7 +3682,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/kube/namespace:
@@ -3705,7 +3705,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/namespace:
@@ -3728,7 +3728,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/kube/workload/{kind}:
@@ -3751,7 +3751,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/kube/workload/{kind}:
@@ -3774,7 +3774,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/kube/workload/{kind}:
@@ -3797,7 +3797,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/kube/workload/{kind}:
@@ -3820,7 +3820,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/topomodelmainline/object/{bk_obj_id}:
@@ -3845,7 +3845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/internal/{bk_supplier_account}/{bk_biz_id}/with_statistics:
@@ -3870,7 +3870,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/topomodelmainline:
@@ -3895,7 +3895,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topoinstnode/host_serviceinst_count/{bk_biz_id}:
@@ -3920,7 +3920,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/delete/biz/extra_moudle:
@@ -3945,7 +3945,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/update/biz/idle_set:
@@ -3970,7 +3970,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/auth/skip_url:
@@ -3995,7 +3995,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/auth/verify:
@@ -4020,7 +4020,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/simplify:
@@ -4045,7 +4045,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/with_reduced:
@@ -4070,7 +4070,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/status/disabled/{bk_supplier_account}/{bk_biz_id}:
@@ -4095,7 +4095,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/status/enable/{bk_supplier_account}/{bk_biz_id}:
@@ -4120,7 +4120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/biz_set/simplify:
@@ -4145,7 +4145,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/biz_set/with_reduced:
@@ -4170,7 +4170,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/detail/by_ids:
@@ -4195,7 +4195,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/count/topoinst/host_service_inst/biz_set/{bk_biz_set_id}:
@@ -4220,7 +4220,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/biz_set/preview:
@@ -4245,7 +4245,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/biz_set/{bk_biz_set_id}/proc_template/id/{process_template_id}:
@@ -4270,7 +4270,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topopath/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}:
@@ -4295,7 +4295,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/biz_set/{bk_biz_set_id}:
@@ -4320,7 +4320,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/module/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}/set/{bk_set_id}:
@@ -4345,7 +4345,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/proc_template:
@@ -4370,7 +4370,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance:
@@ -4395,7 +4395,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/process_instance/name_ids:
@@ -4420,7 +4420,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/labels/aggregation:
@@ -4445,7 +4445,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance:
@@ -4470,7 +4470,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/with_host:
@@ -4495,7 +4495,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/set/biz_set/{bk_biz_set_id}/biz/{bk_biz_id}:
@@ -4520,7 +4520,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/cloud/account/{id}:
@@ -4545,7 +4545,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/cloud/sync/task/{id}:
@@ -4570,7 +4570,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/cloud/account/verify:
@@ -4595,7 +4595,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/cloud/account:
@@ -4620,7 +4620,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/cloud/sync/task:
@@ -4645,7 +4645,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/cloudarea:
@@ -4670,7 +4670,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/account:
@@ -4695,7 +4695,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/account/validity:
@@ -4720,7 +4720,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/account/vpc/{id}:
@@ -4745,7 +4745,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/sync/history:
@@ -4770,7 +4770,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/sync/region:
@@ -4795,7 +4795,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloud/sync/task:
@@ -4820,7 +4820,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/cloudarea/hostcount:
@@ -4845,7 +4845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/cloud/account/{id}:
@@ -4870,7 +4870,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/cloud/sync/task/{id}:
@@ -4895,7 +4895,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/proc/service_template/attribute:
@@ -4920,7 +4920,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/proc/service_template/host_apply_rule/biz/{bk_biz_id}:
@@ -4945,7 +4945,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/deletemany/module/host_apply_rule/bk_biz_id/{bk_biz_id}:
@@ -4970,7 +4970,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_template/{id}/detail:
@@ -4995,7 +4995,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_instance/difference_detail:
@@ -5020,7 +5020,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_template/general_difference:
@@ -5045,7 +5045,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/proc/service_template/all_info:
@@ -5070,7 +5070,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_template/all_info:
@@ -5095,7 +5095,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/service_template/host_apply_rule_related:
@@ -5120,7 +5120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topoinst/bk_biz_id/{bk_biz_id}/host_apply_rule_related:
@@ -5145,7 +5145,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}:
@@ -5170,7 +5170,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/host_apply_rule/bk_biz_id/{bk_biz_id}/host_related_rules:
@@ -5195,7 +5195,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_category/with_statistics:
@@ -5220,7 +5220,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_instance/labels/aggregation:
@@ -5245,7 +5245,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template/attribute:
@@ -5270,7 +5270,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template/count_info/biz/{bk_biz_id}:
@@ -5295,7 +5295,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template/host_apply_plan/status:
@@ -5320,7 +5320,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/service_template_sync_status/bk_biz_id/{bk_biz_id}:
@@ -5345,7 +5345,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/createmany/module/host_apply_plan/preview:
@@ -5370,7 +5370,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/createmany/service_template/host_apply_plan/preview:
@@ -5395,7 +5395,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/find/service_template/host_apply_status:
@@ -5420,7 +5420,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/module/host_apply_plan/invalid_host_count:
@@ -5445,7 +5445,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/module/host_apply_plan/status:
@@ -5470,7 +5470,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/service_template/host_apply_plan/invalid_host_count:
@@ -5495,7 +5495,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/service_template/host_apply_rule:
@@ -5520,7 +5520,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/service_template/host_apply_rule_count:
@@ -5545,7 +5545,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/updatemany/module/host_apply_plan/run:
@@ -5570,7 +5570,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/module/bk_biz_id/{bk_biz_id}/service_template_id/{service_template_id}:
@@ -5595,7 +5595,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/proc/service_instance/labels:
@@ -5620,7 +5620,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/proc/service_template/host_apply_plan/run:
@@ -5645,7 +5645,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/service_instance/sync:
@@ -5670,7 +5670,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/service_template/all_info:
@@ -5695,7 +5695,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/service_template/attribute:
@@ -5720,7 +5720,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/proc/service_instance/biz/{bk_biz_id}:
@@ -5745,7 +5745,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/proc/service_template/host_apply_enable_status/biz/{bk_biz_id}:
@@ -5770,7 +5770,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/kube/{bk_obj_id}/attributes:
@@ -5795,7 +5795,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/kube/host_node_path:
@@ -5820,7 +5820,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/kube/pod_path:
@@ -5845,7 +5845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/kube/search:
@@ -5870,7 +5870,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/field_template:
@@ -5895,7 +5895,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/{id}:
@@ -5920,7 +5920,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/field_template/clone:
@@ -5945,7 +5945,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/simplify/by_attr_template_id:
@@ -5970,7 +5970,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/field_template/unbind/object:
@@ -5995,7 +5995,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/field_template:
@@ -6020,7 +6020,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/attribute/difference:
@@ -6045,7 +6045,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/model/status:
@@ -6070,7 +6070,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/sync/status:
@@ -6095,7 +6095,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/tasks_status:
@@ -6120,7 +6120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/field_template/unique/difference:
@@ -6145,7 +6145,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/attribute/count:
@@ -6170,7 +6170,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/object/count:
@@ -6195,7 +6195,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/by_object:
@@ -6220,7 +6220,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/unique:
@@ -6245,7 +6245,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/field_template/bind/object:
@@ -6270,7 +6270,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/topo/field_template/sync:
@@ -6295,7 +6295,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/field_template:
@@ -6320,7 +6320,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/field_template/info:
@@ -6345,7 +6345,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/associationtype/{id}:
@@ -6370,7 +6370,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/objectassociation/{id}:
@@ -6395,7 +6395,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/objectattgroup/{id}:
@@ -6420,7 +6420,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/operation/chart/{id}:
@@ -6445,7 +6445,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/resource/directory/{id}:
@@ -6470,7 +6470,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/topo/set_template/attribute:
@@ -6495,7 +6495,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/audit_dict:
@@ -6520,7 +6520,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}:
@@ -6545,7 +6545,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/operation/chart:
@@ -6570,7 +6570,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/proc/difference/service_instances:
@@ -6595,7 +6595,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topoinst_with_statistics/biz/{bk_biz_id}:
@@ -6620,7 +6620,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/operation/chart/position:
@@ -6645,7 +6645,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/associationtype:
@@ -6670,7 +6670,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectassociation:
@@ -6695,7 +6695,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectattgroup:
@@ -6720,7 +6720,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/objectunique/object/{bk_obj_id}:
@@ -6745,7 +6745,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/operation/chart:
@@ -6770,7 +6770,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/resource/directory:
@@ -6795,7 +6795,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/topo/set_template/all_info:
@@ -6820,7 +6820,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/delete/objectunique/object/{bk_obj_id}/unique/{id}:
@@ -6845,7 +6845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/associationtype:
@@ -6870,7 +6870,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/classificationobject:
@@ -6895,7 +6895,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/full_text:
@@ -6920,7 +6920,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/host/topopath:
@@ -6945,7 +6945,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/inst_audit:
@@ -6970,7 +6970,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/check/objectattr/host_apply_enabled:
@@ -6995,7 +6995,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objecttopo/scope_type/global/scope_id/0:
@@ -7020,7 +7020,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/operation/chart/data:
@@ -7045,7 +7045,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topo/set_template/all_info:
@@ -7070,7 +7070,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topoinst/biz/{bk_biz_id}:
@@ -7095,7 +7095,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/topopath/biz/{bk_biz_id}:
@@ -7120,7 +7120,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/search/noauth:
@@ -7145,7 +7145,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/search/resource:
@@ -7170,7 +7170,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/hosts/search/with_biz:
@@ -7195,7 +7195,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/inst/association/object/{bk_obj_id}/inst_id/{bk_inst_id}/offset/{offset}/limit/{limit}/web:
@@ -7220,7 +7220,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/object/instances/names:
@@ -7245,7 +7245,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/host/with_no_service_instance:
@@ -7270,7 +7270,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/process_instance/detail/by_ids:
@@ -7295,7 +7295,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/proc/process_instance/name_ids:
@@ -7320,7 +7320,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/resource/directory:
@@ -7345,7 +7345,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/diff_with_instances:
@@ -7370,7 +7370,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/instances_sync_status:
@@ -7395,7 +7395,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/{set_template_id}/bk_biz_id/{bk_biz_id}/sets/web:
@@ -7420,7 +7420,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/{templateId}/bk_biz_id/{bk_biz_id}/host_with_instances:
@@ -7445,7 +7445,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/attribute:
@@ -7470,7 +7470,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/set_template_status:
@@ -7495,7 +7495,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template/bk_biz_id/{bk_biz_id}/web:
@@ -7520,7 +7520,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template_sync_history/bk_biz_id/{bk_biz_id}:
@@ -7545,7 +7545,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/topo/set_template_sync_status/bk_biz_id/{bk_biz_id}:
@@ -7570,7 +7570,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/findmany/module/get_module_final_rules:
@@ -7595,7 +7595,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/transfer/resource/directory:
@@ -7620,7 +7620,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}:
@@ -7645,7 +7645,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/host/transfer_with_auto_clear_service_instance/bk_biz_id/{bk_biz_id}/preview:
@@ -7670,7 +7670,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/favorites:
@@ -7695,7 +7695,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/favorites/search:
@@ -7720,7 +7720,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/import:
@@ -7745,7 +7745,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/biz/mutilple:
@@ -7770,7 +7770,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/resource/cross/biz:
@@ -7795,7 +7795,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/search:
@@ -7820,7 +7820,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/system/config/user_config/blueking_modify:
@@ -7845,7 +7845,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectattr/index/{bk_obj_id}/{propertyId}:
@@ -7870,7 +7870,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objecttopo/scope_type/global/scope_id/0:
@@ -7895,7 +7895,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/operation/chart:
@@ -7920,7 +7920,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/usercustom:
@@ -7945,7 +7945,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/usercustom/default/model:
@@ -7970,7 +7970,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/usercustom/default/model/{bk_obj_id}:
@@ -7995,7 +7995,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/usercustom/default/search:
@@ -8020,7 +8020,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/usercustom/user/search:
@@ -8045,7 +8045,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/favorites/{id}:
@@ -8070,7 +8070,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -8094,7 +8094,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/favorites/{id}/incr:
@@ -8119,7 +8119,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/module/host_apply_enable_status/bk_biz_id/{bk_biz_id}:
@@ -8144,7 +8144,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/associationtype/{id}:
@@ -8169,7 +8169,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectassociation/{id}:
@@ -8194,7 +8194,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectattgroup:
@@ -8219,7 +8219,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectattgroup/groupindex:
@@ -8244,7 +8244,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/objectunique/object/{bk_obj_id}/unique/{id}:
@@ -8269,7 +8269,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/proc/process_instance/by_ids:
@@ -8294,7 +8294,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/resource/directory/{id}:
@@ -8319,7 +8319,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/topo/set_template/all_info:
@@ -8344,7 +8344,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/topo/set_template/attribute:
@@ -8369,7 +8369,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/kube/topo_node/{type}/count:
@@ -8394,7 +8394,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/kube/topo_path:
@@ -8419,7 +8419,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/object/by_field_template:
@@ -8444,7 +8444,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/add:
@@ -8469,7 +8469,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/{bk_supplier_account}:
@@ -8494,7 +8494,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/module/{bk_biz_id}/{bk_set_id}:
@@ -8519,7 +8519,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/set/{bk_biz_id}:
@@ -8544,7 +8544,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/{bk_supplier_account}/{bk_biz_id}:
@@ -8569,7 +8569,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -8593,7 +8593,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/batch:
@@ -8618,7 +8618,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -8642,7 +8642,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/module/{bk_biz_id}/{bk_set_id}/{bk_module_id}:
@@ -8667,7 +8667,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -8691,7 +8691,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/set/{bk_biz_id}/{bk_set_id}:
@@ -8716,7 +8716,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
     delete:
@@ -8740,7 +8740,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/{bk_supplier_account}/{bk_host_id}:
@@ -8765,7 +8765,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/inst/{bk_supplier_account}/{bk_biz_id}:
@@ -8790,7 +8790,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/search/{bk_supplier_account}:
@@ -8815,7 +8815,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/inst/search/owner/{bk_supplier_account}/object/{bk_obj_id}:
@@ -8840,7 +8840,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/module/search/{bk_supplier_account}/{bk_biz_id}/{bk_set_id}:
@@ -8865,7 +8865,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/set/search/{bk_supplier_account}/{bk_biz_id}:
@@ -8890,7 +8890,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules:
@@ -8915,7 +8915,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/fault:
@@ -8940,7 +8940,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/idle:
@@ -8965,7 +8965,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/resource:
@@ -8990,7 +8990,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/modules/resource/idle:
@@ -9015,7 +9015,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/{action}:
@@ -9040,7 +9040,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/default/{bk_supplier_account}:
@@ -9065,7 +9065,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/biz/default/{bk_supplier_account}/search:
@@ -9090,7 +9090,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/object:
@@ -9115,7 +9115,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/object/total/info:
@@ -9140,7 +9140,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instance/object/{bk_obj_id}:
@@ -9165,7 +9165,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instance/object/{bk_obj_id}/unique_fields/by/unique/{id}:
@@ -9190,7 +9190,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/search/asstdetail:
@@ -9215,7 +9215,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectattgroup/object/{bk_obj_id}:
@@ -9240,7 +9240,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/excel/add:
@@ -9265,7 +9265,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/hosts/update:
@@ -9290,7 +9290,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/create/instance/object/{bk_obj_id}/by_import:
@@ -9315,7 +9315,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/object:
@@ -9340,7 +9340,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/import/instassociation/{bk_obj_id}:
@@ -9365,7 +9365,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/collector/netcollect/device/action/search:
@@ -9390,7 +9390,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/collector/netcollect/property/action/search:
@@ -9415,7 +9415,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/collector/netcollect/device/action/batch:
@@ -9440,7 +9440,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/collector/netcollect/property/action/batch:
@@ -9465,7 +9465,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation/model:
@@ -9490,7 +9490,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/object/model:
@@ -9515,7 +9515,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instance/{bk_obj_id}:
@@ -9540,7 +9540,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectunique/object/{bk_obj_id}:
@@ -9565,7 +9565,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/topo/find/object/{bk_obj_id}/association/by/bk_obj_asst_id:
@@ -9590,7 +9590,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/createmany/object/by_import:
@@ -9615,7 +9615,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/admin/find/system_config/platform_setting/{type}:
@@ -9640,7 +9640,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/admin/update/system_config/platform_setting:
@@ -9665,7 +9665,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/updatemany/biz/property:
@@ -9690,7 +9690,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/deletemany/biz:
@@ -9715,7 +9715,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/attribute:
@@ -9740,7 +9740,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template:
@@ -9765,7 +9765,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/findmany/field_template/object/relation:
@@ -9790,7 +9790,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/objectattr/web:
@@ -9815,7 +9815,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/cache/find/biz/kube/topo:
@@ -9894,7 +9894,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/find/instassociation/biz/{bk_biz_id}:
@@ -9919,7 +9919,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /healthz:
@@ -9944,7 +9944,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/transaction/commit:
@@ -9969,7 +9969,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/update/transaction/abort:
@@ -9994,7 +9994,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/count/{bk_obj_id}/instances:
@@ -10019,7 +10019,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
   /api/v3/group/related/{kind}/resource/by_ids:
