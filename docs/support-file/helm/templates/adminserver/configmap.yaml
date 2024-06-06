@@ -64,6 +64,8 @@ data:
         bkDomain: {{ .Values.common.webServer.site.bkDomain }}
         #帮助文档地址
         helpDocUrl: {{ .Values.common.webServer.site.helpDocUrl }}
+        # 蓝鲸制品库URL
+        bkRepoUrl: {{ .Values.bkRepoUrl }}
         paas:
           # pass的tls相关配置
           tls:
@@ -382,6 +384,9 @@ data:
 
     hostsnap:
       dataID: 1100010
+
+    dataid:
+      migrateWay: {{ .Values.migrate.dataid.migrateWay }}
 
   mongodb.yaml: |-
     mongodb:

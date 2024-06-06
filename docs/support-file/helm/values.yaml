@@ -1106,6 +1106,12 @@ migrate:
   ## @param migrate.migrateDataId Enable register dataid to GSE
   ##
   migrateDataId: false
+  migrateOldDataId: false
+  ## bk-cmdb migrate dataid parameters
+  ## @param migrate.dataid.migrateWay bk-cmdb migrate dataid way
+  ##
+  dataid:
+    migrateWay: esb
 
 ## @section bk-cmdb iam authentication parameters
 ##
@@ -1141,6 +1147,9 @@ bkGseApiGatewayUrl: "http://bkapi.example.com"
 
 # 蓝鲸 Notice API Gateway url
 bkNoticeApiGatewayUrl: "http://bkapi.example.com"
+
+## 蓝鲸制品库URL
+bkRepoUrl: http://bkrepo.example.com
 
 ## @section bk-cmdb common config parameters
 ##
@@ -1962,3 +1971,5 @@ apigatewaySync:
   nodeManAppCode: "bk_nodeman"
   ## 此变量在运维维护的变量中，没有对应的变量
   bcsAppCode: "bk_bcs_app"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  hcmAppCode: "bk-hcm"

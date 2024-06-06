@@ -21,110 +21,6 @@ import (
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
-// OperateProcess TODO
-func (p *gse) OperateProcess(ctx context.Context, h http.Header,
-	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
-	resp = new(metadata.EsbResponse)
-	subPath := "/v2/gse/operate_proc/"
-	params := &esbGseProcParams{
-		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseProcRequest: data,
-	}
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// QueryProcOperateResult TODO
-func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header,
-	taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
-	resp = new(metadata.GseProcessOperateTaskResult)
-	subPath := "/v2/gse/get_proc_operate_result/"
-	params := &esbTaskIDParams{
-		EsbCommParams: esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		TaskID:        taskID,
-	}
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// QueryProcStatus TODO
-func (p *gse) QueryProcStatus(ctx context.Context, h http.Header,
-	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
-	resp = new(metadata.EsbResponse)
-	subPath := "/v2/gse/get_proc_status/"
-	params := &esbGseProcParams{
-		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseProcRequest: data,
-	}
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// RegisterProcInfo TODO
-func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header,
-	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
-	resp = new(metadata.EsbResponse)
-	subPath := "/v2/gse/register_proc_info/"
-	params := &esbGseProcParams{
-		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseProcRequest: data,
-	}
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// UnRegisterProcInfo TODO
-func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header,
-	data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
-	resp = new(metadata.EsbResponse)
-	subPath := "/v2/gse/unregister_proc_info/"
-	params := &esbGseProcParams{
-		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseProcRequest: data,
-	}
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	return
-}
-
 // ConfigAddStreamTo TODO
 func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
 	*metadata.GseConfigAddStreamToResult, error) {
@@ -176,33 +72,6 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 	}
 	if !resp.Result || resp.Code != 0 {
 		return fmt.Errorf("gse config update streamto failed, code: %d, message: %s", resp.Code, resp.Message)
-	}
-	return nil
-}
-
-// ConfigDeleteStreamTo TODO
-func (p *gse) ConfigDeleteStreamTo(ctx context.Context, h http.Header,
-	data *metadata.GseConfigDeleteStreamToParams) error {
-	resp := new(metadata.EsbBaseResponse)
-	subPath := "/v2/gse/config_delete_streamto/"
-	params := &esbGseConfigDeleteStreamToParams{
-		EsbCommParams:                 esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseConfigDeleteStreamToParams: data,
-	}
-
-	err := p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("gse config delete streamto failed, code: %d, message: %s", resp.Code, resp.Message)
 	}
 	return nil
 }
@@ -285,32 +154,6 @@ func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metada
 	}
 	if !resp.Result || resp.Code != 0 {
 		return fmt.Errorf("gse config update route failed, code: %d, message: %s", resp.Code, resp.Message)
-	}
-	return nil
-}
-
-// ConfigDeleteRoute TODO
-func (p *gse) ConfigDeleteRoute(ctx context.Context, h http.Header, data *metadata.GseConfigDeleteRouteParams) error {
-	resp := new(metadata.EsbBaseResponse)
-	subPath := "/v2/gse/config_delete_route/"
-	params := &esbGseConfigDeleteRouteParams{
-		EsbCommParams:              esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
-		GseConfigDeleteRouteParams: data,
-	}
-
-	err := p.client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(esbutil.SetEsbAuthHeader(p.config.GetConfig(), h)).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("gse config delete route failed, code: %d, message: %s", resp.Code, resp.Message)
 	}
 	return nil
 }

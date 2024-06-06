@@ -1365,6 +1365,7 @@
     "请先进行账户连通测试": "Please perform account connetion test first",
     "任务名称": "Task name",
     "最近同步状态": "Last Sync Status",
+    "同步状态": "Sync Status",
     "跳转账户管理": "Go to Account Management",
     "录入历史": "Entry History",
     "操作概要": "Operation Summary",
@@ -1765,6 +1766,7 @@
     "更新人": "Update by",
     "请输入模板名称/模型/更新人": "Please enter template name/model/updater",
     "新建字段组合模板": "Create field template",
+    "编辑字段组合模板": "Edit field template",
     "从模型导入": "Import from Model",
     "示例字段": "Demo field",
     "未填写基础信息": "Basic information not filled in",
@@ -1891,5 +1893,9 @@
     "你没有当前业务的访问权限xxx": "You do not have access rights to the current business. Please apply for business rights.",
     "申请权限": "Apply for permission",
     "超过限制，一次最多支持创建n个": "Exceeding the limit, a maximum of {n} can be created at one time",
-    "该人员不存在": "The person does not exist"
+    "该人员不存在": "The person does not exist",
+    "未开启全文检索功能": "Full-Text Search Function Not Enabled",
+    "使用全文检索，可以对所有纳管的资源进行无差别搜索，帮助你快速定位资源。": "Using Full-Text Search, you can indiscriminately search all managed resources, helping you to quickly locate resources.",
+    "如需使用该功能，您需要：": "If you need to use this function, you need to：",
+    "联系平台维护人员开启": "Contact the platform maintenance staff to enable it"
 }

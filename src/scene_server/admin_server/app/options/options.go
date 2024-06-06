@@ -63,7 +63,19 @@ type Config struct {
 	ShardingTable  ShardingTableConfig
 	// SyncIAMPeriodMinutes the period for sync IAM resources
 	SyncIAMPeriodMinutes int
+	// 通过何种方式调用gse接口注册dataid
+	DataIdMigrateWay MigrateWay
 }
+
+// MigrateWay 通过何种方式调用gse接口注册dataid
+type MigrateWay string
+
+const (
+	// MigrateWayESB 通过esb调用gse接口
+	MigrateWayESB MigrateWay = "esb"
+	// MigrateWayApiGW 通过api gateway调用gse接口
+	MigrateWayApiGW MigrateWay = "apigw"
+)
 
 // LanguageConfig TODO
 type LanguageConfig struct {

@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/dataid"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -34,6 +35,7 @@ type GseClientInterface interface {
 	AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp, error)
 	GetTransferFileResult(ctx context.Context, h http.Header, data *GetTransferFileResultRequest) (
 		*GetTransferFileResultResp, error)
+	dataid.DataIDInterface
 }
 
 type gse struct {

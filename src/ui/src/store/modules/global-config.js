@@ -14,33 +14,20 @@
  * 全局配置数据模型，提供获取全局配置、更新全局配置的能力
  * 接口数据在这里做了适配 UI 的处理，后续服务接口有更新，直接在这里更新模型即可。
  */
-import { getCurrentConfig, getDefaultConfig, updateConfig, updateIdleSet, createIdleModule, updateIdleModule, deleteIdleModule } from '@/service/global-config'
+import {
+  getCurrentConfig,
+  getDefaultConfig,
+  updateConfig,
+  updateIdleSet,
+  createIdleModule,
+  updateIdleModule,
+  deleteIdleModule,
+  initialConfig
+} from '@/service/global-config'
 import to from 'await-to-js'
 import { Base64 } from 'js-base64'
 import { language } from '@/i18n'
 import cloneDeep from 'lodash/cloneDeep'
-
-const initialConfig = {
-  backend: {
-    maxBizTopoLevel: 0, // 最大拓扑层级数
-  },
-  site: {
-    name: '蓝鲸配置平台', // 网站名
-    separator: '|' // 网站名称路由分隔符
-  },
-  footer: {
-    contact: '', // 联系方式
-    copyright: '' // 脚部版权
-  },
-  validationRules: [], // 用户自定义验证规则
-  set: '', // 集群名称
-  idlePool: {
-    idle: '', // 空闲机
-    fault: '', // 故障机
-    recycle: '', // 待回收
-    userModules: [] // 用户自定义模块
-  }
-}
 
 // 备份的远程数据，在国际化处理时用来拼装出全量数据。
 let currentConfigBackup = null
@@ -53,6 +40,10 @@ const state = () => ({
   config: cloneDeep(initialConfig), // 用户自定义配置，
   defaultConfig: cloneDeep(initialConfig) // 默认配置，用于恢复初始化
 })
+
+const getters = {
+  config: state => state.config
+}
 
 /**
  * 反序列化远程数据，分离 UI 和服务层，便于后期维护
@@ -67,12 +58,12 @@ const unserializeConfig = (remoteData, lang) => {
       snapshotBizName: remoteData.backend.snapshot_biz_name
     },
     site: {
-      name: remoteData.site.name.i18n[lang],
+      name: remoteData.site.name,
       separator: remoteData.site.separator
     },
     footer: {
-      contact: remoteData.footer.contact.i18n[lang],
-      copyright: remoteData.footer.copyright.i18n[lang]
+      contact: remoteData.footer.contact,
+      copyright: remoteData.footer.copyright
     },
     validationRules: unserializeValidationRules(remoteData.validation_rules, lang),
     set: remoteData.set,
@@ -81,7 +72,8 @@ const unserializeConfig = (remoteData, lang) => {
       fault: remoteData.idle_pool.fault,
       recycle: remoteData.idle_pool.recycle,
       userModules: unserializeUserModules(remoteData.idle_pool.user_modules) || []
-    }
+    },
+    publicConfig: remoteData.publicConfig
   }
 
   return newState
@@ -401,6 +393,7 @@ const actions = {
 export default {
   namespaced: true,
   state,
+  getters,
   actions,
   mutations
 }
