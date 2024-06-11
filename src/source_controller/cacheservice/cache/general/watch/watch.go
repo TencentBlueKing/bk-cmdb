@@ -191,7 +191,7 @@ func (w *Watcher) doWatch(ctx context.Context, opts *watch.WatchEventOptions) er
 		return nil
 	}
 
-	upsertDataArr, delDataArr := w.aggregateEvent(events)
+	upsertDataArr, delDataArr := w.aggregateEvent(events, kit.Rid)
 
 	if err = w.cache.AddData(ctx, upsertDataArr, kit.Rid); err != nil {
 		blog.Errorf("add %s cache data failed, err: %v, data: %+v, rid: %s", opts.Resource, err, upsertDataArr, kit.Rid)
@@ -211,13 +211,18 @@ func (w *Watcher) doWatch(ctx context.Context, opts *watch.WatchEventOptions) er
 	return nil
 }
 
-func (w *Watcher) aggregateEvent(events []*watch.WatchEventDetail) ([]cachetypes.WatchEventData,
+func (w *Watcher) aggregateEvent(events []*watch.WatchEventDetail, rid string) ([]cachetypes.WatchEventData,
 	[]cachetypes.WatchEventData) {
 
 	upsertDataMap, delDataMap := make(map[string]cachetypes.WatchEventData), make(map[string]cachetypes.WatchEventData)
 
 	for _, e := range events {
 		if e.Detail == nil {
+			continue
+		}
+
+		if e.ChainNode == nil {
+			blog.Errorf("event %+v has no chain node, rid: %s", e, rid)
 			continue
 		}
 
