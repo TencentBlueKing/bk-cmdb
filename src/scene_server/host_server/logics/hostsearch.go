@@ -218,56 +218,68 @@ func (sh *searchHost) validateObjCond(objCond *metadata.SearchCondition) error {
 		attributeMap[common.BKDefaultField] = common.FieldTypeInt
 	case common.BKInnerObjIDSet:
 		attributeMap[common.BKSetIDField] = common.FieldTypeInt
+		attributeMap[common.BKDefaultField] = common.FieldTypeInt
+		attributeMap[common.BKParentIDField] = common.FieldTypeInt
 	case common.BKInnerObjIDModule:
 		attributeMap[common.BKModuleIDField] = common.FieldTypeInt
+		attributeMap[common.BKDefaultField] = common.FieldTypeInt
+		attributeMap[common.BKParentIDField] = common.FieldTypeInt
 	case common.BKInnerObjIDHost:
 		attributeMap[common.BKHostIDField] = common.FieldTypeInt
 		attributeMap[common.BKCloudIDField] = common.FieldTypeInt
 	}
 
 	for _, cond := range objCond.Condition {
-		attrType, exists := attributeMap[cond.Field]
-		if !exists {
-			blog.Errorf("%s condition item field %s not exists, rid: %s", objCond.ObjectID, cond.Field, sh.kit.Rid)
-			return fmt.Errorf("condition field %s not exists", cond.Field)
+		err = sh.validateCondItem(objCond.ObjectID, cond, attributeMap)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (sh *searchHost) validateCondItem(objID string, cond metadata.ConditionItem, attrMap map[string]string) error {
+	attrType, exists := attrMap[cond.Field]
+	if !exists {
+		blog.Errorf("%s condition item field %s not exists, rid: %s", objID, cond.Field, sh.kit.Rid)
+		return fmt.Errorf("condition field %s not exists", cond.Field)
+	}
+
+	supportedOpMap, exists := attrTypeSupportedOpMap[attrType]
+	if !exists {
+		blog.Errorf("%s condition item field %s attr type %s is invalid, rid: %s", objID, cond.Field, attrType,
+			sh.kit.Rid)
+		return fmt.Errorf("condition field %s is invalid", cond.Field)
+	}
+
+	_, exists = supportedOpMap[cond.Operator]
+	if !exists {
+		blog.Errorf("%s condition item field %s op %s is invalid, rid: %s", objID, cond.Field, cond.Operator,
+			sh.kit.Rid)
+		return fmt.Errorf("condition operator %s is invalid", cond.Operator)
+	}
+
+	switch cond.Operator {
+	case common.BKDBIN, common.BKDBNIN:
+		valueArr, ok := cond.Value.([]interface{})
+		if !ok {
+			blog.Errorf("%s condition item field %s op %s value(%+v) is invalid, rid: %s", objID, cond.Field,
+				cond.Operator, cond.Value, sh.kit.Rid)
+			return fmt.Errorf("operator %s only support array value", cond.Operator)
 		}
 
-		supportedOpMap, exists := attrTypeSupportedOpMap[attrType]
-		if !exists {
-			blog.Errorf("%s condition item field %s attr type %s is invalid, rid: %s", objCond.ObjectID, cond.Field,
-				attrType, sh.kit.Rid)
-			return fmt.Errorf("condition field %s is invalid", cond.Field)
-		}
-
-		_, exists = supportedOpMap[cond.Operator]
-		if !exists {
-			blog.Errorf("%s condition item field %s op %s is invalid, rid: %s", objCond.ObjectID, cond.Field,
-				cond.Operator, sh.kit.Rid)
-			return fmt.Errorf("condition operator %s is invalid", cond.Operator)
-		}
-
-		switch cond.Operator {
-		case common.BKDBIN, common.BKDBNIN:
-			valueArr, ok := cond.Value.([]interface{})
-			if !ok {
-				blog.Errorf("%s condition item field %s op %s value(%+v) is invalid, rid: %s", objCond.ObjectID,
-					cond.Field, cond.Operator, cond.Value, sh.kit.Rid)
-				return fmt.Errorf("operator %s only support array value", cond.Operator)
-			}
-
-			for _, value := range valueArr {
-				if err = sh.validCondValueType(attrType, value); err != nil {
-					blog.Errorf("%s condition item field %s array value(%+v) is invalid, err: %v, rid: %s",
-						objCond.ObjectID, cond.Field, value, err, sh.kit.Rid)
-					return err
-				}
-			}
-		default:
-			if err = sh.validCondValueType(attrType, cond.Value); err != nil {
-				blog.Errorf("%s condition item field %s value(%+v) is invalid, err: %v, rid: %s", objCond.ObjectID,
-					cond.Field, cond.Value, err, sh.kit.Rid)
+		for _, value := range valueArr {
+			if err := sh.validCondValueType(attrType, value); err != nil {
+				blog.Errorf("%s condition item field %s array value(%+v) is invalid, err: %v, rid: %s", objID,
+					cond.Field, value, err, sh.kit.Rid)
 				return err
 			}
+		}
+	default:
+		if err := sh.validCondValueType(attrType, cond.Value); err != nil {
+			blog.Errorf("%s condition item field %s value(%+v) is invalid, err: %v, rid: %s", objID, cond.Field,
+				cond.Value, err, sh.kit.Rid)
+			return err
 		}
 	}
 	return nil
