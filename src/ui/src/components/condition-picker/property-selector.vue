@@ -168,8 +168,7 @@
 
   const getCheckDisabled = (bkObjId) => {
     const { length, disabledLength } = getLength(bkObjId)
-    if (length === disabledLength) return true
-    return false
+    return length === disabledLength
   }
 
   const getDisabledTip = (property) => {
