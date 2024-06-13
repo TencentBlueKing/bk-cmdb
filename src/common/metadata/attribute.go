@@ -1102,7 +1102,7 @@ func (attribute *Attribute) validIDRule(ctx context.Context, val interface{}, ke
 }
 
 // ValidIDRuleVal validate id rule value
-func ValidIDRuleVal(ctx context.Context, inst mapstr.MapStr, field Attribute) error {
+func ValidIDRuleVal(ctx context.Context, inst mapstr.MapStr, field Attribute, attrMap map[string]Attribute) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	val, err := inst.String(field.PropertyID)
@@ -1131,6 +1131,16 @@ func ValidIDRuleVal(ctx context.Context, inst mapstr.MapStr, field Attribute) er
 			}
 
 		case Attr:
+			attr, exists := attrMap[rule.Val]
+			if !exists {
+				blog.Errorf("attr val %s is invalid, attribute not exists, rid: %s", rule.Val, rid)
+				return fmt.Errorf("val %s related attr not exists", rule.Val)
+			}
+			if !IsValidAttrRuleType(attr.PropertyType) {
+				blog.Errorf("attr val %s type %s is invalid, rid: %s", rule.Val, attr.PropertyType, rid)
+				return fmt.Errorf("attr val %s type %s is invalid", rule.Val, attr.PropertyType)
+			}
+
 			refVal, err := inst.String(rule.Val)
 			if err != nil {
 				blog.Errorf("get property:%s failed, inst: %+v, err: %v, rid: %s", rule.Val, inst, err, rid)

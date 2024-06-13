@@ -41,12 +41,27 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := mapstr.MapStr{common.BKObjIDField: opt.ObjID, common.BKPropertyIDField: opt.PropertyID}
+	cond := mapstr.MapStr{common.BKObjIDField: opt.ObjID}
 	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
-	attr := metadata.Attribute{}
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).One(ctx.Kit.Ctx, &attr); err != nil {
+	allAttr := make([]metadata.Attribute, 0)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(ctx.Kit.Ctx, &allAttr); err != nil {
 		blog.Errorf("find attribute failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	var attr metadata.Attribute
+	attrTypeMap := make(map[string]string)
+	for _, attribute := range allAttr {
+		if attribute.PropertyID == opt.PropertyID {
+			attr = attribute
+		}
+		attrTypeMap[attribute.PropertyID] = attribute.PropertyType
+	}
+
+	if attr.PropertyID != opt.PropertyID {
+		blog.Errorf("%s id rule attribute %s not exists, rid: %s", opt.ObjID, opt.PropertyID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKPropertyIDField))
 		return
 	}
 
@@ -66,9 +81,9 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 			continue
 		}
 
-		val, err := instances.GetIDRuleVal(ctx.Kit.Ctx, inst, attr)
+		val, err := instances.GetIDRuleVal(ctx.Kit.Ctx, inst, attr, attrTypeMap)
 		if err != nil {
-			blog.Errorf("get assetid val failed, inst: %+v, attr: %+v, err: %v, rid: %s", inst, attr, err, ctx.Kit.Rid)
+			blog.Errorf("get id rule val failed, inst: %+v, attr: %+v, err: %v, rid: %s", inst, attr, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()))
 			return
 		}
@@ -94,6 +109,5 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 			return
 		}
 	}
-
 	ctx.RespEntity(nil)
 }

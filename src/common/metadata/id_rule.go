@@ -288,3 +288,12 @@ func (a *IDRuleTaskOption) Validate() ccErr.RawErrorInfo {
 func GetIDRule(flag string) string {
 	return fmt.Sprintf("%s%s", common.IDRulePrefix, flag)
 }
+
+// IsValidAttrRuleType check if attribute rule type is valid
+func IsValidAttrRuleType(typ string) bool {
+	switch typ {
+	case common.FieldTypeSingleChar, common.FieldTypeEnum, common.FieldTypeList:
+		return true
+	}
+	return false
+}

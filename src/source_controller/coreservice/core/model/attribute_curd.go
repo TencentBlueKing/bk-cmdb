@@ -1211,7 +1211,20 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attr metadata.Attribute) error
 		return nil
 	}
 
-	err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, attr.IsMultiple, attr.Default)
+	dbAttrs := make([]metadata.Attribute, 0)
+	cond := mapstr.MapStr{common.BKObjIDField: attr.ObjectID}
+	util.SetQueryOwner(cond, kit.SupplierAccount)
+	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
+		blog.Errorf("get %s attributes failed, err: %v, rid: %s", attr.ObjectID, err, kit.Rid)
+		return err
+	}
+
+	attrTypeMap := make(map[string]string)
+	for _, dbAttr := range dbAttrs {
+		attrTypeMap[dbAttr.PropertyID] = dbAttr.PropertyType
+	}
+
+	err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, attrTypeMap)
 	if err != nil {
 		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid: %s", err, attr, kit.Ctx)
 		return err
@@ -1484,7 +1497,29 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 		isMultiple = &ismultiple
 	}
 
-	err := attrvalid.ValidPropertyOption(kit, propertyType, option, isMultiple, data[common.BKDefaultFiled])
+	var extraOpt interface{}
+	switch propertyType {
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+		extraOpt = isMultiple
+	case common.FieldTypeIDRule:
+		dbAttrs := make([]metadata.Attribute, 0)
+		cond := mapstr.MapStr{common.BKObjIDField: dbAttributeArr[0].ObjectID}
+		util.SetQueryOwner(cond, kit.SupplierAccount)
+		if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
+			blog.Errorf("get %s attributes failed, err: %v, rid: %s", dbAttributeArr[0].ObjectID, err, kit.Rid)
+			return err
+		}
+
+		attrTypeMap := make(map[string]string)
+		for _, dbAttr := range dbAttrs {
+			attrTypeMap[dbAttr.PropertyID] = dbAttr.PropertyType
+		}
+		extraOpt = attrTypeMap
+	default:
+		extraOpt = data[common.BKDefaultFiled]
+	}
+
+	err := attrvalid.ValidPropertyOption(kit, propertyType, option, extraOpt)
 	if err != nil {
 		blog.ErrorJSON("valid property option failed, err: %s, data: %s, rid:%s", err, data, kit.Ctx)
 		return err

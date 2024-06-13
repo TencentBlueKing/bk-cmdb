@@ -29,9 +29,9 @@ import (
 )
 
 // FillLostFieldValue fill the value in inst map data
-func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []metadata.Attribute) error {
+func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties []metadata.Attribute) error {
 	var idRuleField *metadata.Attribute
-	for idx, field := range propertys {
+	for idx, field := range properties {
 		val, ok := valData[field.PropertyID]
 		if ok && (field.PropertyType != common.FieldTypeIDRule || val != "") {
 			continue
@@ -91,7 +91,7 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []
 				return err
 			}
 		case common.FieldTypeIDRule:
-			idRuleField = &propertys[idx]
+			idRuleField = &properties[idx]
 		default:
 			valData[field.PropertyID] = nil
 		}
@@ -99,7 +99,7 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, propertys []
 
 	// 由于id规则字段可能会来自实例的其他字段，所以需要在最后进行填充
 	if idRuleField != nil {
-		if err := fillLostIDRuleFieldValue(ctx, valData, *idRuleField); err != nil {
+		if err := fillLostIDRuleFieldValue(ctx, valData, *idRuleField, properties); err != nil {
 			return err
 		}
 	}
@@ -401,8 +401,15 @@ func getEnumOption(ctx context.Context, val interface{}) ([]metadata.EnumVal, er
 	return defaultOptions, nil
 }
 
-func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
-	val, err := GetIDRuleVal(ctx, valData, field)
+func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute,
+	allAttr []metadata.Attribute) error {
+
+	attrTypeMap := make(map[string]string)
+	for _, attr := range allAttr {
+		attrTypeMap[attr.PropertyID] = attr.PropertyType
+	}
+
+	val, err := GetIDRuleVal(ctx, valData, field, attrTypeMap)
 	if err != nil {
 		return err
 	}
@@ -412,7 +419,9 @@ func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field 
 }
 
 // GetIDRuleVal get id rule value
-func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) (string, error) {
+func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute, attrTypeMap map[string]string) (
+	string, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	rules, err := metadata.ParseSubIDRules(field.Option)
@@ -428,6 +437,17 @@ func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Att
 			val += rule.Val
 
 		case metadata.Attr:
+			attrType, exists := attrTypeMap[rule.Val]
+			if !exists {
+				blog.Errorf("attr val %s is invalid, attribute not exists, rid: %s", rule.Val, rid)
+				return "", fmt.Errorf("val %s related attr not exists", rule.Val)
+			}
+
+			if !metadata.IsValidAttrRuleType(attrType) {
+				blog.Errorf("attr val %s type %s is invalid, rid: %s", rule.Val, attrType, rid)
+				return "", fmt.Errorf("attr val %s type %s is invalid", rule.Val, attrType)
+			}
+
 			val += util.GetStrByInterface(valData[rule.Val])
 
 		case metadata.GlobalID:
