@@ -36,6 +36,7 @@
         </label>
         <bk-checkbox
           ref="checkboxRef"
+          :disabled="getCheckDisabled(model.bk_obj_id)"
           :indeterminate="indeterminate[model.bk_obj_id]"
           :checked="allChecked[model.bk_obj_id]"
           @change="handleChangeAllCheck(model.bk_obj_id, ...arguments)"
@@ -159,6 +160,18 @@
 
   const isDisabled = (model, property) => props.disabledPropertyMap[model.bk_obj_id].includes(property.bk_property_id)
 
+  const getLength = (bkObjId) => {
+    const length = matchedPropertyMap.value[bkObjId]?.length || 0
+    const disabledLength = disabledPropertyCounts[bkObjId] || 0
+    return { length, disabledLength }
+  }
+
+  const getCheckDisabled = (bkObjId) => {
+    const { length, disabledLength } = getLength(bkObjId)
+    if (length === disabledLength) return true
+    return false
+  }
+
   const getDisabledTip = (property) => {
     const type = property?.conditionType ?? props.conditionType
     if (type !== props.conditionType) {
@@ -202,8 +215,7 @@
 
   // 判断相应的全选/半选状态
   const allCheckState = ({ bk_obj_id: bkObjId }) => {
-    const length = matchedPropertyMap.value[bkObjId]?.length || 0
-    const disabledLength = disabledPropertyCounts[bkObjId] || 0
+    const { length, disabledLength } = getLength(bkObjId)
     if (length === 0) return
     const matchedPropertyMapIdSet = new Set()
     matchedPropertyMap.value[bkObjId]?.forEach(property => matchedPropertyMapIdSet.add(property?.id))
