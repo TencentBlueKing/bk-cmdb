@@ -149,7 +149,7 @@ module.exports = {
       COOKIE_DOMAIN: '{{.cookieDomain}}',
       COMPONENT_API_URL: '{{.componentApiUrl}}',
       ENABLE_NOTIFICATION: '{{.enableNotification}}',
-      BK_REPO_URL: '{{.bkRepoUrl}}'
+      SHARED_RES_URL: '{{.bkSharedResUrl}}'
     }),
 
     // Template for index.html
