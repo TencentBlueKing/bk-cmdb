@@ -12,24 +12,33 @@
 
 <template>
   <cmdb-sticky-layout class="export">
-    <bk-steps class="export-steps" :steps="steps" :cur-step="currentStep" v-show="currentStep < 3"></bk-steps>
+    <bk-steps
+      class="export-steps"
+      :steps="steps"
+      :cur-step="currentStep"
+      v-show="showSteps"></bk-steps>
     <keep-alive>
       <component :is="stepComponent"></component>
     </keep-alive>
     <div :class="['options', { 'is-sticky': sticky }]" slot="footer" slot-scope="{ sticky }">
-      <template v-if="currentStep === 1">
+      <template v-if="currentStep < stepsLen">
         <bk-button class="mr10" theme="primary"
           :disabled="nextStepDisabled"
           @click="nextStep">
           {{$t('下一步')}}
         </bk-button>
-        <bk-button theme="default" @click="close">{{$t('取消')}}</bk-button>
       </template>
-      <template v-if="currentStep === 2">
+      <template v-if="currentStep > 1 && currentStep <= stepsLen">
         <bk-button class="mr10" theme="default" @click="previousStep">{{$t('上一步')}}</bk-button>
-        <bk-button class="mr10" theme="primary" :disabled="exportDisabled" @click="startTask">{{$t('开始导出')}}</bk-button>
-        <bk-button theme="default" @click="close">{{$t('取消')}}</bk-button>
       </template>
+      <template v-if="currentStep === stepsLen">
+        <bk-button
+          class="mr10"
+          theme="primary"
+          :disabled="exportDisabled"
+          @click="startTask">{{$t('开始导出')}}</bk-button>
+      </template>
+      <bk-button theme="default" @click="close" v-if="currentStep <= stepsLen">{{$t('取消')}}</bk-button>
     </div>
   </cmdb-sticky-layout>
 </template>
@@ -54,18 +63,20 @@
         fields,
         presetFields,
         exportRelation: allowExportRelation,
-        relations
+        relations,
+        steps
       }, { setState }] = useState()
+
       const nextStep = () => setState({ step: currentStep.value + 1 })
       const previousStep = () => setState({ step: currentStep.value - 1 })
       const close = () => setState({ visible: false })
+
       const stepComponent = computed(() => {
-        const map = {
-          1: exportProperty.name,
-          2: exportRelation.name,
-          3: exportStatus.name
-        }
-        return map[currentStep.value]
+        const component = [exportProperty.name, exportRelation.name]
+        const status = exportStatus.name
+        const map = component.slice(0, stepsLen.value)
+        map.push(status)
+        return map[currentStep.value - 1]
       })
       const nextStepDisabled = computed(() => fields.value.length <= presetFields.value.length)
       const exportDisabled = computed(() => {
@@ -74,11 +85,15 @@
         }
         return Object.keys(relations.value).length === 0
       })
+      const stepsLen = computed(() => steps.value.length)
+      const showSteps = computed(() => currentStep.value < stepsLen.value + 1 && stepsLen.value > 1)
+
       const [, { start }] = useTask()
       const startTask = () => {
         nextStep()
         start()
       }
+
       return {
         nextStepDisabled,
         exportDisabled,
@@ -87,12 +102,10 @@
         previousStep,
         stepComponent,
         startTask,
-        close
-      }
-    },
-    data() {
-      return {
-        steps: [{ title: this.$t('选择字段'), icon: 1 }, { title: this.$t('选择关联模型'), icon: 2 }]
+        close,
+        steps,
+        showSteps,
+        stepsLen
       }
     }
   }
