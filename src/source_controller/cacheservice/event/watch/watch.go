@@ -247,6 +247,7 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 			Resource:  opts.Resource,
 			EventType: hitNodes[idx].EventType,
 			Detail:    watch.JsonString(detail),
+			ChainNode: hitNodes[idx],
 		}
 	}
 	return resp, nil

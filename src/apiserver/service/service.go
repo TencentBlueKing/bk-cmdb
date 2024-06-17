@@ -127,8 +127,8 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/find/inst/id_rule/task_status").Filter(s.TopoFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/cache/create/full/sync/cond").Filter(s.CacheFilterChan).To(s.Post))
-	ws.Route(ws.POST("/cache/update/full/sync/cond").Filter(s.CacheFilterChan).To(s.Put))
-	ws.Route(ws.POST("/cache/delete/full/sync/cond").Filter(s.CacheFilterChan).To(s.Delete))
+	ws.Route(ws.PUT("/cache/update/full/sync/cond").Filter(s.CacheFilterChan).To(s.Put))
+	ws.Route(ws.DELETE("/cache/delete/full/sync/cond").Filter(s.CacheFilterChan).To(s.Delete))
 	ws.Route(ws.POST("/cache/findmany/full/sync/cond").Filter(s.CacheFilterChan).To(s.Post))
 	ws.Route(ws.POST("/cache/findmany/resource/by_full_sync_cond").Filter(s.CacheFilterChan).To(s.Post))
 	ws.Route(ws.POST("/cache/findmany/resource/by_ids").Filter(s.CacheFilterChan).To(s.Post))

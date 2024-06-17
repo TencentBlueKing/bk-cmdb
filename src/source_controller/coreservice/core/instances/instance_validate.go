@@ -278,7 +278,7 @@ func (m *instanceManager) validateCreateInstValue(kit *rest.Kit, objID string, i
 		if property.PropertyType != common.FieldTypeIDRule {
 			continue
 		}
-		if err = metadata.ValidIDRuleVal(kit.Ctx, instanceData, property); err != nil {
+		if err = metadata.ValidIDRuleVal(kit.Ctx, instanceData, property, valid.properties); err != nil {
 			blog.Errorf("inst property is invalid, property: %s, inst: %+v, err: %v, rid: %s", property.PropertyID,
 				instanceData, err, kit.Rid)
 			return err
@@ -421,7 +421,7 @@ func (m *instanceManager) validOneUpdateInstKeyVal(kit *rest.Kit, valid *validat
 				newInstData[k] = v
 			}
 
-			if err := metadata.ValidIDRuleVal(kit.Ctx, newInstData, property); err != nil {
+			if err := metadata.ValidIDRuleVal(kit.Ctx, newInstData, property, valid.properties); err != nil {
 				blog.Errorf("inst property is invalid, property: %s, inst: %+v, err: %v, rid: %s", property.PropertyID,
 					newInstData, err, kit.Rid)
 				return err

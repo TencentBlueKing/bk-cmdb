@@ -467,7 +467,15 @@ func (a *attribute) isCreateDataValid(kit *rest.Kit, data *metadata.Attribute) e
 	// check option validity for creation,
 	// update validation is in coreservice cause property type need to be obtained from db
 	if a.isPropertyTypeIntEnumListSingleLong(data.PropertyType) {
-		err := attrvalid.ValidPropertyOption(kit, data.PropertyType, data.Option, data.IsMultiple, data.Default)
+		var extraOpt interface{}
+		switch data.PropertyType {
+		case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+			extraOpt = data.IsMultiple
+		default:
+			extraOpt = data.Default
+		}
+
+		err := attrvalid.ValidPropertyOption(kit, data.PropertyType, data.Option, extraOpt)
 		if err != nil {
 			return err
 		}
