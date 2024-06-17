@@ -8743,8 +8743,8 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/topo/inst/{bk_supplier_account}/{bk_biz_id}:
-    get:
+  /api/v3/find/topoinst/biz/{bk_biz_id}:
+    post:
       operationId: search_biz_inst_topo
       description: 查询业务实例拓扑
       tags:
@@ -8758,8 +8758,8 @@ paths:
         matchSubpath: false
         backend:
           type: HTTP
-          method: get
-          path: /api/v3/topo/inst/{bk_supplier_account}/{bk_biz_id}
+          method: post
+          path: /api/v3/find/topoinst/biz/{bk_biz_id}
           matchSubpath: false
           timeout: 0
           upstreams: {}

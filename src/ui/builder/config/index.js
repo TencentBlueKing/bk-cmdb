@@ -151,7 +151,7 @@ module.exports = {
       COMPONENT_API_URL: '{{.componentApiUrl}}',
       PUBLIC_PATH: '{{.publicPath}}',
       ENABLE_NOTIFICATION: '{{.enableNotification}}',
-      BK_REPO_URL: '{{.bkRepoUrl}}'
+      SHARED_RES_URL: '{{.bkSharedResUrl}}'
     }),
 
     // Template for index.html
