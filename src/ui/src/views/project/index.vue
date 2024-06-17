@@ -426,7 +426,6 @@
           count,
           steps: [{ title: this.$t('选择字段'), icon: 1 }],
           submit: (state, task) => {
-            console.log(task, 'task.current.value.name')
             const { fields } = state
             const params = {
               export_custom_fields: fields.value.map(property => property.bk_property_id),
