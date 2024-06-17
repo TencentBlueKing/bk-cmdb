@@ -1,4 +1,4 @@
-## [Version: v3.13.9-alpha1] - 2024-06-13
+## [Version: v3.13.9] - 2024-06-17
 **功能优化**
 - 将bkRepoUrl配置更新为bkSharedResUrl
 - 更新apigw接口search_biz_inst_topo的url
