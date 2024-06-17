@@ -1,9 +1,9 @@
 # 指定errors的路径
 errors:
-  res: ${BK_CMDB_ERRORS_RES}
+  res: /app/conf/errors
 # 指定language的路径
 language:
-  res: ${BK_CMDB_LANGUAGE_RES}
+  res: /app/conf/language
 
 #elasticsearch配置
 es:
@@ -35,16 +35,16 @@ webServer:
     userInfo:
   site:
     #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-    domainUrl: ${BK_CMDB_PUBLIC_URL}
-    httpsDomainUrl: ${BK_CMDB_PUBLIC_URL}
+    domainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
+    httpsDomainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
     # 登录地址
-    bkLoginUrl: ${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
-    bkHttpsLoginUrl: ${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
+    bkLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
+    bkHttpsLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
     appCode: ${BK_CMDB_APP_CODE}
     checkUrl: http://${BK_PAAS_PRIVATE_ADDR}/login/accounts/get_user/?bk_token=
     resourcesPath: /tmp/
     # 前端基础页面位置
-    htmlRoot: ${BK_CMDB_WEB_RES}
+    htmlRoot: /app/web/
     authscheme: ${BK_CMDB_AUTH_SCHENE}
     bkDesktopUrl:  ${BK_PASS2_URL}
     bkComponentApiUrl: ${BK_COMPONENT_API_URL}
@@ -53,8 +53,8 @@ webServer:
     bkDomain: ${BK_PAAS_BK_DOMAIN}
     # 帮助文档地址
     helpDocUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
-    # 蓝鲸制品库URL
-    bkRepoUrl: ${BKPAAS_REPO_URL}
+    # 蓝鲸共享资源URL
+    bkSharedResUrl: ${BKPAAS_SHARED_RES_URL}
     paas:
       # pass的tls相关配置
       tls:
@@ -80,9 +80,9 @@ webServer:
   #cmdb版本日志存放路径配置
   changelogPath:
     #中文版版本日志存放路径
-    ch: ${BK_CMDB_CHANGELOG_RES}/ch
+    ch: /app/changelog_user/ch
     #英文版版本日志存放路径
-    en: ${BK_CMDB_CHANGELOG_RES}/en
+    en: /app/changelog_user/en
   jwt:
     enabled: ${BK_API_GATEWAY_BK_CMDB_JTW_ENABLED}
     # jwt公钥

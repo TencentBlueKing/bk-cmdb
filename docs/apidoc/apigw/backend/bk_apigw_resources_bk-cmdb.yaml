@@ -7073,31 +7073,6 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
-  /api/v3/find/topoinst/biz/{bk_biz_id}:
-    post:
-      operationId: post_find_topoinst_biz
-      description: post_find_topoinst_biz
-      tags:
-        - ui
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: post
-          path: /api/v3/find/topoinst/biz/{bk_biz_id}
-          matchSubpath: false
-          timeout: 0
-          upstreams: {}
-          transformHeaders: {}
-        authConfig:
-          userVerifiedRequired: false
-        disabledStages: []
-        descriptionEn:
   /api/v3/find/topopath/biz/{bk_biz_id}:
     post:
       operationId: post_find_topopath_biz
