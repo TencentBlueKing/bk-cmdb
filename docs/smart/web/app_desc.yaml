@@ -1,5 +1,5 @@
 spec_version: 3
-app_version: "3.14.1-feature-layered-alpha2"
+app_version: "3.14.1-feature-layered-alpha3"
 app:
   region: "default"
   bkAppCode: "bk_cmdb_saas"

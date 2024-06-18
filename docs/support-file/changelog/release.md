@@ -1,3 +1,11 @@
+## [Version: v3.14.1-feature-layered-alpha3] - 2024-06-17
+**功能优化**
+- 后台的values.yaml里去掉webserver配置
+
+**缺陷修复**
+- 修复部分接口路由错误的问题
+- id_rule校验引用属性仅支持短字符、单枚举和列表类型，且至少需要配置一个ID类型的规则
+
 ## [Version: v3.14.1-feature-layered-alpha2] - 2024-06-05
 **新增功能**
 - 新增一种全量数据缓存的方式
@@ -5,6 +13,11 @@
 
 **架构调整**
 - 产品架构分层，SaaS和后台建设分离
+
+## [Version: v3.13.9] - 2024-06-17
+**功能优化**
+- 将bkRepoUrl配置更新为bkSharedResUrl
+- 更新apigw接口search_biz_inst_topo的url
 
 ## [Version: v3.13.8] - 2024-06-05
 **新增功能**

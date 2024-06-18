@@ -45,7 +45,7 @@ func (s *Service) Index(c *gin.Context) {
 		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
 		"publicPath":                getPublicPath(s.Config.Site.DomainUrl),
 		"enableNotification":        s.Config.EnableNotification,
-		"bkRepoUrl":                 s.Config.Site.BkRepoUrl,
+		"bkSharedResUrl":            s.Config.Site.BkSharedResUrl,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
