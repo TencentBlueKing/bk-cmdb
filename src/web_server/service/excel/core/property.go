@@ -165,6 +165,12 @@ func GetIDProp(colIndex int, objID string, defLang language.DefaultCCLanguageIf)
 	case common.BKInnerObjIDHost:
 		idProperty.ID = common.BKHostIDField
 		idProperty.Name = defLang.Languagef("host_property_bk_host_id")
+	case common.BKInnerObjIDApp:
+		idProperty.ID = common.BKAppIDField
+		idProperty.Name = defLang.Languagef("set_property_bk_biz_id")
+	case common.BKInnerObjIDProject:
+		idProperty.ID = common.BKFieldID
+		idProperty.Name = defLang.Languagef("common_property_bk_inst_id")
 	default:
 		idProperty.ID = common.BKInstIDField
 		idProperty.Name = defLang.Languagef("common_property_bk_inst_id")

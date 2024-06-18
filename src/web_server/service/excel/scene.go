@@ -143,14 +143,19 @@ func (s *service) ExportHost(c *gin.Context) {
 	s.exportInstFunc(c, common.BKInnerObjIDHost)
 }
 
+// ExportBiz export biz
+func (s *service) ExportBiz(c *gin.Context) {
+	s.exportInstFunc(c, common.BKInnerObjIDApp)
+}
+
+// ExportProject export project
+func (s *service) ExportProject(c *gin.Context) {
+	s.exportInstFunc(c, common.BKInnerObjIDProject)
+}
+
 func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
-	var input exporter.ExportParamI
-	if objID == common.BKInnerObjIDHost {
-		input = &exporter.HostParam{}
-	} else {
-		input = &exporter.InstParam{ObjID: objID}
-	}
+	input := exporter.GetExportParamInterface(objID)
 
 	if err := c.BindJSON(input); err != nil {
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommJSONUnmarshalFailed, ErrMsg: err.Error()})
@@ -203,9 +208,14 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	}
 
 	// 3. 将excel文件返回，并删除临时文件
-	if objID == common.BKInnerObjIDHost {
+	switch objID {
+	case common.BKInnerObjIDHost:
 		addDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
-	} else {
+	case common.BKInnerObjIDApp:
+		addDownExcelHttpHeader(c, "bk_cmdb_export_biz.xlsx")
+	case common.BKInnerObjIDProject:
+		addDownExcelHttpHeader(c, "bk_cmdb_export_project.xlsx")
+	default:
 		addDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	}
 

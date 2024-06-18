@@ -44,6 +44,35 @@ func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]map
 	return result.Data.Info, nil
 }
 
+// GetInnerObjectInst get inner object instances
+func (d *Client) GetInnerObjectInst(kit *rest.Kit, objId string, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
+	var result = new(metadata.SearchInstResult)
+	var err error
+	switch objId {
+	case common.BKInnerObjIDApp:
+		ownerID := kit.Header.Get(common.BKHTTPOwnerID)
+		result, err = d.ApiClient.SearchBusiness(kit.Ctx, ownerID, kit.Header, cond)
+	case common.BKInnerObjIDProject:
+		result, err = d.ApiClient.SearchProject(kit.Ctx, kit.Header, cond)
+	default:
+		return nil, fmt.Errorf("unknown inner object type, type: %s, rid: %s", objId, kit.Rid)
+	}
+
+	if err != nil {
+		blog.Errorf("get inner object instances data detail error: %v , search condition: %v, rid: %s", err, cond,
+			kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Data.Info) == 0 {
+		blog.Errorf("get inner object instances data detail, but got 0 instances, condition: %v, rid: %s", cond,
+			kit.Rid)
+		return nil, nil
+	}
+
+	return result.Data.Info, nil
+}
+
 // HandleImportedInst handle imported instance
 func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int64, []string) {
 	var result *metadata.ImportInstResp
