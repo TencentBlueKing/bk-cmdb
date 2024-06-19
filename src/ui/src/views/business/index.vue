@@ -509,7 +509,7 @@
                 time_condition: timeCondition
               } = this.getCondition()
               params.export_condition = {
-                biz_property_filter: conditions,
+                filter: conditions,
                 time_condition: timeCondition,
                 page: {
                   ...task.current.value.page,
