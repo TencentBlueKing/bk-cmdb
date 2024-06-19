@@ -1,5 +1,5 @@
-spec_version: 3
-app_version: "3.14.1-feature-layered-alpha3"
+specVersion: 3
+appVersion: "3.14.1-feature-layered-alpha3"
 app:
   region: "default"
   bkAppCode: "bk_cmdb_saas"
@@ -7,6 +7,7 @@ app:
   market:
     category: 配置管理
     introduction: "蓝鲸配置平台"
+    introductionEn: "blueking cmdb"
     description: "蓝鲸配置平台"
     displayOptions:
       width: 800
@@ -17,16 +18,11 @@ modules:
     language: "Go"
     spec:
       processes:
-        - command:
-            - /app/bin/start-web.sh
+        - procCommand: /app/bin/start-web.sh
           name: web
           replicas: 1
           resQuotaPlan: default
           targetPort: 80
-      build:
-        buildpacks:
-        - name: bk-buildpack-go
-          version: v191
       configuration:
         env:
         - name: "GO_INSTALL_PACKAGE_SPEC"

@@ -8,7 +8,7 @@ language:
 #elasticsearch配置
 es:
   # 全文检索功能开关(取值：off/on)，默认是off，开启是on
-  fullTextSearch: ${BK_CMDB_ES_STATUS}
+  fullTextSearch: "${BK_CMDB_ES_STATUS}"
 
 esb:
   addr: ${BK_COMPONENT_API_URL}
@@ -38,8 +38,8 @@ webServer:
     domainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
     httpsDomainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
     # 登录地址
-    bkLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
-    bkHttpsLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}?app_id=%s&c_url=%s
+    bkLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/login/?app_id=%s&c_url=%s
+    bkHttpsLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/login/?app_id=%s&c_url=%s
     appCode: ${BK_CMDB_APP_CODE}
     checkUrl: http://${BK_PAAS_PRIVATE_ADDR}/login/accounts/get_user/?bk_token=
     resourcesPath: /tmp/
@@ -52,7 +52,7 @@ webServer:
     # bkDomain 用于配置前端需要的cookie domain地址
     bkDomain: ${BK_PAAS_BK_DOMAIN}
     # 帮助文档地址
-    helpDocUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_docs_center/markdown/配置平台/产品白皮书/产品简介/Overview.md
+    helpDocUrl: ${BK_DOCS_URL_PREFIX}
     # 蓝鲸共享资源URL
     bkSharedResUrl: ${BKPAAS_SHARED_RES_URL}
     paas:
