@@ -13,6 +13,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"configcenter/src/common"
@@ -675,6 +676,22 @@ func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
 					result.Info[index].Option)
+			case common.FieldTypeTable:
+				var option []metadata.Attribute
+				optionByte, err := json.Marshal(result.Info[index].Option)
+				if err != nil {
+					blog.Errorf("marshal table type option failed, err: %v, option: %v, rid: %s, ", err,
+						result.Info[index].Option, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
+					return
+				}
+				if err := json.Unmarshal(optionByte, &option); err != nil {
+					blog.Errorf("unmarshal table type option failed, err: %v, option: %v, rid: %s, ", err,
+						result.Info[index].Option, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
+					return
+				}
+				result.Info[index].Option = s.TranslateTablePlaceholder(lang, result.Info[index].ObjectID, option)
 			}
 		}
 	}
