@@ -23,13 +23,13 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
 
 	"github.com/olivere/elastic/v7"
@@ -571,12 +571,12 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 }
 
 // initCommonSearchFilter init common search filter cond
-func initCommonSearchFilter(field string, ids []int64) *metadata.CommonSearchFilter {
-	return &metadata.CommonSearchFilter{
-		Conditions: &querybuilder.QueryFilter{
-			Rule: &querybuilder.AtomRule{
+func initCommonSearchFilter(field string, ids []int64) *metadata.SearchInstanceFilter {
+	return &metadata.SearchInstanceFilter{
+		Conditions: &filter.Expression{
+			RuleFactory: &filter.AtomRule{
 				Field:    field,
-				Operator: querybuilder.OperatorIn,
+				Operator: filter.OpFactory(filter.In),
 				Value:    ids,
 			},
 		},
@@ -585,8 +585,8 @@ func initCommonSearchFilter(field string, ids []int64) *metadata.CommonSearchFil
 }
 
 // fullTextSearchForInstanceCond composition query instance condition.
-func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.CommonSearchFilter {
-	input := &metadata.CommonSearchFilter{}
+func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.SearchInstanceFilter {
+	input := &metadata.SearchInstanceFilter{}
 	switch objectID {
 	case common.BKInnerObjIDBizSet:
 		input = initCommonSearchFilter(common.BKBizSetIDField, ids)
@@ -615,7 +615,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 	}
 
 	// query metadata instance.
-	input := &metadata.CommonSearchFilter{}
+	input := &metadata.SearchInstanceFilter{}
 	var (
 		wg       sync.WaitGroup
 		rwLock   sync.RWMutex

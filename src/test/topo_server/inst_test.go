@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/querybuilder"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -20,6 +20,7 @@ import (
 var _ = Describe("inst test", func() {
 	var instId, instId1 int64
 	var propertyID1, propertyID2, uniqueID uint64
+	option := filter.NewDefaultExprOpt(nil)
 
 	It("create object bk_classification_id = 'bk_network' and bk_obj_id='cc_test'", func() {
 		test.DeleteAllObjects()
@@ -469,18 +470,18 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("search object instances", func() {
-		input := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
 							Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "bk_switch"},
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 					},
 				},
 			},
@@ -510,7 +511,7 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("search object instances without conditions", func() {
-		input := &metadata.CommonSearchFilter{
+		input := &metadata.SearchInstanceFilter{
 			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
 			Page:   metadata.BasePage{Start: 0, Limit: 1},
 		}
@@ -537,18 +538,18 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("search object instances without fields", func() {
-		input := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
 							Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "bk_switch"},
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 					},
 				},
 			},
@@ -573,18 +574,18 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("search object instances with limit more than 500", func() {
-		input := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
 							Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "bk_switch"},
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 					},
 				},
 			},
@@ -599,18 +600,18 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("search object instances without page", func() {
-		input := &metadata.CommonSearchFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
 							Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "bk_switch"},
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 					},
 				},
 			},
@@ -624,18 +625,18 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("count object instances", func() {
-		input := &metadata.CommonCountFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionAnd,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_inst_name", Operator: querybuilder.OperatorEqual,
+		input := &metadata.CountInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
 							Value: "aaa"},
-						&querybuilder.AtomRule{Field: "bk_asset_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "123"},
-						&querybuilder.AtomRule{Field: "bk_obj_id", Operator: querybuilder.OperatorEqual,
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
 							Value: "bk_switch"},
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 					},
 				},
 			},
@@ -655,7 +656,7 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("count object instances without conditions", func() {
-		input := &metadata.CommonCountFilter{}
+		input := &metadata.CountInstanceFilter{}
 
 		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -670,17 +671,17 @@ var _ = Describe("inst test", func() {
 		Expect(int(count)).To(Equal(1))
 	})
 
-	It("count object instances with OR conditions more than 20", func() {
-		rules := []querybuilder.Rule{}
-		ruleItem := &querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"}
-		for i := 0; i < querybuilder.DefaultMaxConditionOrRulesCount+1; i++ {
+	It("count object instances with OR conditions more than 50", func() {
+		var rules []filter.RuleFactory
+		ruleItem := &filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"}
+		for i := 0; i < int(option.MaxRulesLimit)+1; i++ {
 			rules = append(rules, ruleItem)
 		}
 
-		input := &metadata.CommonCountFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionOr,
+		input := &metadata.CountInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.Or,
 					Rules:     rules,
 				},
 			},
@@ -694,16 +695,16 @@ var _ = Describe("inst test", func() {
 
 	It("count object instances with operator value elements count more than 500", func() {
 		var values []string
-		for i := 0; i < querybuilder.DefaultMaxSliceElementsCount+1; i++ {
+		for i := 0; i < int(option.MaxInLimit)+1; i++ {
 			values = append(values, fmt.Sprintf("%d", i))
 		}
 
-		input := &metadata.CommonCountFilter{
-			Conditions: &querybuilder.QueryFilter{
-				Rule: querybuilder.CombinedRule{
-					Condition: querybuilder.ConditionOr,
-					Rules: []querybuilder.Rule{
-						&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: values},
+		input := &metadata.CountInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.Or,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: values},
 					},
 				},
 			},
@@ -716,34 +717,34 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("count object instances with conditions deep more than 3", func() {
-		deep4 := &querybuilder.CombinedRule{
-			Condition: querybuilder.ConditionOr,
-			Rules: []querybuilder.Rule{
-				&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+		deep4 := &filter.CombinedRule{
+			Condition: filter.Or,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 			},
 		}
 
-		deep3 := &querybuilder.CombinedRule{
-			Condition: querybuilder.ConditionOr,
-			Rules: []querybuilder.Rule{
-				&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+		deep3 := &filter.CombinedRule{
+			Condition: filter.Or,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 				deep4,
 			},
 		}
 
-		deep2 := &querybuilder.CombinedRule{
-			Condition: querybuilder.ConditionOr,
-			Rules: []querybuilder.Rule{
-				&querybuilder.AtomRule{Field: "bk_sn", Operator: querybuilder.OperatorEqual, Value: "1234"},
+		deep2 := &filter.CombinedRule{
+			Condition: filter.Or,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
 				deep3,
 			},
 		}
 
-		deep1 := &querybuilder.QueryFilter{
-			Rule: deep2,
+		deep1 := &filter.Expression{
+			RuleFactory: deep2,
 		}
 
-		input := &metadata.CommonCountFilter{
+		input := &metadata.CountInstanceFilter{
 			Conditions: deep1,
 		}
 
