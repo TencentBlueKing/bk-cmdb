@@ -95,7 +95,7 @@ export function getOperatorSideEffect(property, operator, value) {
   let effectValue = value
   if (operator === '$range') {
     effectValue = []
-  } else if (operator === '$regex') {
+  } else if ([QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.CONTAINS_CS].includes(operator)) {
     effectValue = Array.isArray(value) ? (value[0] || '') : value
   } else {
     const defaultValue = this.getDefaultData(property).value
@@ -202,7 +202,7 @@ export function transformCondition(condition, properties, header) {
     } else {
       submitCondition.push({
         field: property.bk_property_id,
-        operator,
+        operator: operator === QUERY_OPERATOR.CONTAINS ? operator.replace('$', '') : operator,
         value: operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value
       })
     }
@@ -427,8 +427,9 @@ export function transformIP(raw) {
   return transformedIP
 }
 
-export function getOperatorSymbol(operator) {
-  return QUERY_OPERATOR_SYMBOL[operator]
+export function getOperatorSymbol(operator, symbolMap) {
+  const data = symbolMap || QUERY_OPERATOR_SYMBOL
+  return data[operator]
 }
 
 export function getDefaultIP() {
