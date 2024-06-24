@@ -64,8 +64,8 @@ data:
         bkDomain: {{ .Values.common.webServer.site.bkDomain }}
         #帮助文档地址
         helpDocUrl: {{ .Values.common.webServer.site.helpDocUrl }}
-        # 蓝鲸制品库URL
-        bkRepoUrl: {{ .Values.bkRepoUrl }}
+        # 蓝鲸共享资源URL
+        bkSharedResUrl: {{ .Values.bkSharedResUrl }}
         paas:
           # pass的tls相关配置
           tls:

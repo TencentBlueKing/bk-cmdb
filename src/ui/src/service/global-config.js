@@ -55,12 +55,12 @@ export const updateConfig = globalConfig => $http.put('admin/update/system_confi
  * @returns {Object}
  */
 export const getCurrentConfig = async () => {
-  const { bkRepoUrl } = window.Site
+  const { sharedResUrl } = window.Site
 
   let publicConfigPromise
-  if (bkRepoUrl) {
-    const repoUrl = bkRepoUrl.endsWith('/') ? bkRepoUrl : `${bkRepoUrl}/`
-    publicConfigPromise = getPlatformConfig(`${repoUrl}generic/blueking/bk-config/bk_cmdb/base.js`, initialConfig.publicConfig)
+  if (sharedResUrl) {
+    const resUrl = sharedResUrl.endsWith('/') ? sharedResUrl : `${sharedResUrl}/`
+    publicConfigPromise = getPlatformConfig(`${resUrl}bk_cmdb/base.js`, initialConfig.publicConfig)
   } else {
     publicConfigPromise = getPlatformConfig(initialConfig.publicConfig)
   }

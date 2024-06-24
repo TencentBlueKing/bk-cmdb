@@ -1,3 +1,8 @@
+## [Version: v3.13.9] - 2024-06-17
+**功能优化**
+- 将bkRepoUrl配置更新为bkSharedResUrl
+- 更新apigw接口search_biz_inst_topo的url
+
 ## [Version: v3.13.8] - 2024-06-05
 **新增功能**
 - 支持iframe加载模式

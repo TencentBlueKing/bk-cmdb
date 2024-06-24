@@ -21,6 +21,10 @@ import (
 
 // AddModelBizIDCondition add model bizID condition according to bizID value
 func AddModelBizIDCondition(cond mapstr.MapStr, modelBizID int64) {
+	if cond == nil {
+		cond = make(mapstr.MapStr)
+	}
+
 	var modelBizIDOrCondArr []mapstr.MapStr
 
 	if modelBizID > 0 {
