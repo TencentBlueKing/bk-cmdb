@@ -202,8 +202,10 @@
       :show-mask="false"
       :is-show.sync="advancedFilterShow"
       :width="400"
-      :title="$t('高级筛选')">
+      :title="$t('高级筛选')"
+      :before-close="handleFilterBeforeClose">
       <general-model-filter-form slot="content"
+        ref="filterForm"
         v-if="advancedFilterShow"
         :obj-id="objId"
         :filter-selected="filterSelected"
@@ -909,6 +911,21 @@
             return $form.beforeClose(confirmFn)
           }
           return true
+        }
+        return true
+      },
+      handleFilterBeforeClose() {
+        const $form = this.$refs.filterForm
+        const confirmFn = () => {
+          this.advancedFilterShow = false
+        }
+
+        if ($form.hasShow) {
+          return
+        }
+        if ($form.hasChange) {
+          $form.setChanged(true)
+          return $form.beforeClose(confirmFn)
         }
         return true
       },

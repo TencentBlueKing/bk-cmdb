@@ -168,6 +168,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.classList.remove('over-height')
+        if (!this.target) return
 
         this.$nextTick(() => {
           const parent = document.querySelector('.dynamic-group-form')

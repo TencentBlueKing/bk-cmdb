@@ -83,6 +83,7 @@
 
                 <condition-picker class="condition-picker"
                   :text="$t('添加')"
+                  placement="top"
                   icon="icon-plus-circle"
                   :selected="selectedProperties"
                   :property-map="propertyMap"
@@ -160,6 +161,7 @@
   import { $success } from '@/magicbox'
   import ConditionPicker from '@/components/condition-picker'
   import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
+  import { getConditionSelect, updatePropertySelect } from '@/utils/util'
 
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
@@ -524,35 +526,8 @@
         const { length } = selected
         if (!length) this.selectedProperties = []
 
-        const addSelect = []
-        const deleteSelect = []
-        const selectedSet = new Set()
-
-        selected.forEach(property => selectedSet.add(`${property.bk_property_id}-${property.bk_obj_id}`))
-        this.selectedProperties.forEach((property) => {
-          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
-          const key = `${propertyId}-${modelId}`
-          if (selectedSet.has(key)) {
-            selectedSet.delete(key)
-          } else {
-            deleteSelect.push(property)
-          }
-        })
-        selected.forEach((property) => {
-          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
-          const key = `${propertyId}-${modelId}`
-          if (selectedSet.has(key)) {
-            addSelect.push(property)
-          }
-        })
-
-        deleteSelect.forEach(property => this.handleRemoveProperty(property))
-        let start = 0
-        const limit = 10
-        while (start < addSelect.length) {
-          setTimeout(() =>  this.selectedProperties.push(...addSelect.splice(0, limit)))
-          start += limit
-        }
+        const { addSelect, deleteSelect } = getConditionSelect(selected, this.selectedProperties)
+        updatePropertySelect(this.selectedProperties, this.handleRemoveProperty, addSelect, deleteSelect, 'unshift')
         this.setFooterCls()
       },
       handleRemoveProperty(property) {

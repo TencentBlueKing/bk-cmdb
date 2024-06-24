@@ -15,7 +15,7 @@
     delay: 0,
     hideOnClick: true,
     interactive: true,
-    placement: 'top',
+    placement,
     animateFill: false,
     sticky: true,
     theme: 'light',
@@ -86,7 +86,11 @@
         type: [Object, Array],
         default: () => ({})
       },
-      handler: Function
+      handler: Function,
+      placement: {
+        type: String,
+        default: 'left-start'
+      }
     },
     inject: {
       dynamicGroupForm: {
@@ -166,17 +170,15 @@
     },
     methods: {
       confirm() {
-        const selected = this.$refs?.addConditionComp?.localSelected ?? this.selected
         this.isShow = false
-        if (this.type === 1) return
-        if (this.type !== 3) return this.handler([...selected])
-        FilterStore.updateSelected(selected)
-        FilterStore.updateUserBehavior(selected)
       },
       handleChange() {
-        if (this.type !== 1) return
         const selected = this.$refs?.addConditionComp?.localSelected ?? this.selected
-        setTimeout(() => this.handler([...selected]))
+        if (this.type !== 3) return setTimeout(() => this.handler([...selected]))
+        setTimeout(() => {
+          FilterStore.updateSelected(selected)
+          FilterStore.updateUserBehavior(selected)
+        })
       },
     }
   }
