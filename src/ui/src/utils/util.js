@@ -258,3 +258,51 @@ export function calcTextareaHeight(targetElement, rows = 1) {
   result.height = height
   return result
 }
+
+/**
+ * 获取 动态分组/筛选 条件选择框操作后得到的 添加/删除 数据
+ */
+export const getConditionSelect = (val, oldVal) => {
+  const addSelect = []
+  const deleteSelect = []
+  const selectedSet = new Set()
+
+  val.forEach(property => selectedSet.add(`${property.bk_property_id}-${property.bk_obj_id}`))
+  oldVal.forEach((property) => {
+    const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+    const key = `${propertyId}-${modelId}`
+    if (selectedSet.has(key)) {
+      selectedSet.delete(key)
+    } else {
+      deleteSelect.push(property)
+    }
+  })
+  val.forEach((property) => {
+    const { bk_property_id: propertyId, bk_obj_id: modelId } = property
+    const key = `${propertyId}-${modelId}`
+    if (selectedSet.has(key)) {
+      addSelect.push(property)
+    }
+  })
+
+  return {
+    addSelect,
+    deleteSelect
+  }
+}
+
+/**
+ * 更新 筛选/动态分组 添加/删除 条件UI
+ */
+export const updatePropertySelect = (selected, remove, addSelect, deleteSelect, type = 'push', filterCondition = []) => {
+  if (filterCondition.length) {
+    addSelect = addSelect.filter(item => !filterCondition.includes(item.bk_property_id))
+  }
+  deleteSelect.forEach(property => remove(property))
+  let start = 0
+  const limit = 10
+  while (start < addSelect.length) {
+    setTimeout(() =>  selected[type](...addSelect.splice(0, limit)))
+    start += limit
+  }
+}

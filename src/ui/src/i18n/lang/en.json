@@ -30,6 +30,7 @@
     "限制收藏个数提示": "Collect up to {max}",
     "确定删除收藏条件": "Confirm to delete collection {name} ?",
     "确定清空分组条件": "Are you sure to clear the current group condition?",
+    "确定清空筛选条件": "Confirm clear current filters?",
     "管理员": "Admin",
     "普通用户": "User",
     "注销": "Log out",

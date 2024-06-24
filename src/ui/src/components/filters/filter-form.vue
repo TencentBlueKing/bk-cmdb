@@ -58,6 +58,29 @@
             </bk-checkbox>
             <bk-checkbox v-bk-tooltips.top="$t('ipv6暂不支持模糊搜索')" v-model="IPCondition.exact">{{$t('精确')}}</bk-checkbox>
           </div>
+          <div class="filter-operate">
+            <condition-picker
+              ref="conditionPicker"
+              :text="$t(conditionText)"
+              :icon="icon"
+              :selected="selected"
+              :property-map="propertyMap"
+              :type="3">
+            </condition-picker>
+            <bk-popconfirm
+              :content="$t('确定清空筛选条件')"
+              width="280"
+              trigger="click"
+              :confirm-text="$t('确定')"
+              :cancel-text="$t('取消')"
+              @confirm="handleClearCondition">
+              <bk-button :text="true" class="mr10" theme="primary"
+                :disabled="!selected.length">
+                {{$t('清空条件')}}
+              </bk-button>
+            </bk-popconfirm>
+          </div>
+
         </bk-form-item>
         <bk-form-item class="filter-item"
           v-for="property in selected"
@@ -99,8 +122,6 @@
           </div>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
-        <condition-picker :text="$t(conditionText)" :icon="icon" :selected="selected" :property-map="propertyMap"
-          :type="3"></condition-picker>
       </bk-form>
       <div class="filter-options"
         slot="footer"
@@ -194,7 +215,7 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
-  import { setCursorPosition } from '@/utils/util'
+  import { setCursorPosition, getConditionSelect, updatePropertySelect } from '@/utils/util'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
@@ -225,6 +246,7 @@
     },
     data() {
       return {
+        scrollToBottom: false,
         isShow: false,
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         IPCondition: Utils.getDefaultIP(),
@@ -328,10 +350,16 @@
     watch: {
       storageSelected: {
         immediate: true,
-        handler() {
-          this.condition = this.setCondition(this.condition)
+        handler(val) {
           const filterCondition = ['bk_host_innerip_v6', 'bk_host_outerip_v6']
-          this.selected = [...this.storageSelected].filter(item => !filterCondition.includes(item.bk_property_id))
+          const { addSelect, deleteSelect } = getConditionSelect(val, this.selected)
+
+          this.scrollToBottom = this.hasAddSelected(val, this.selected, addSelect)
+          this.condition = this.setCondition(this.condition)
+          updatePropertySelect(this.selected, this.handleRemove, addSelect, deleteSelect, 'push', filterCondition)
+          if (this.scrollToBottom) {
+            this.toBottom()
+          }
         }
       },
       storageIPCondition: {
@@ -354,6 +382,21 @@
       this.setChanged = setChanged
     },
     methods: {
+      toBottom() {
+        setTimeout(() => {
+          const el = this.$refs.propertyList?.$el
+          el?.scrollTo(0, el?.scrollHeight)
+        }, 0)
+      },
+      hasAddSelected(val, oldVal, addSelect) {
+        return val[0] && oldVal[0] && addSelect.length > 0
+      },
+      handleClearCondition() {
+        this.clearCondition()
+        this.selected = []
+        FilterStore.updateSelected([...this.selected])
+        FilterStore.updateUserBehavior(this.selected)
+      },
       handleClick(e) {
         const parent = this.$refs[e][0].$el
         this.target = parent.getElementsByClassName('bk-select-tag-container')[0]
@@ -379,6 +422,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+        if (!this.target) return
 
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
@@ -496,16 +540,17 @@
         FilterStore.updateUserBehavior(this.selected)
       },
       handleSearch() {
-        const condition = {
-          condition: this.$tools.clone(this.condition),
-          IP: this.$tools.clone(this.IPCondition)
-        }
-        if (this.type === 'index') {
-          return this.searchAction(condition)
-        }
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
+          const condition = {
+            condition: this.$tools.clone(this.condition),
+            IP: this.$tools.clone(this.IPCondition)
+          }
+          if (this.type === 'index') {
+            return this.searchAction(condition)
+          }
+
           FilterStore.resetPage(true)
           FilterStore.updateSelected(this.selected) // 此处会额外触发一次watch
           FilterStore.setCondition(condition)
@@ -570,13 +615,16 @@
       },
       handleReset() {
         this.$refs.ipEditableBlock.clear()
+        this.clearCondition()
+        this.errors.clear()
+      },
+      clearCondition() {
         Object.keys(this.condition).forEach((id) => {
           const property = this.selected.find(property => property.id.toString() === id.toString())
           const propertyCondititon = this.condition[id]
           const defaultValue = Utils.getOperatorSideEffect(property, propertyCondititon.operator, '')
           propertyCondititon.value = defaultValue
         })
-        this.errors.clear()
       },
       focusCollectionName() {
         this.$refs.collectionName.$refs.input.focus()
@@ -588,6 +636,9 @@
       handleSliderBeforeClose() {
         const changedIPCondtion = !isEqual(this.IPCondition, this.originIPCondition)
         const changedCondition =  !isEqual(this.condition, this.originCondition)
+        const { isShow } = this.$refs.conditionPicker
+
+        if (isShow) return
         if (changedIPCondtion || changedCondition) {
           this.setChanged(true)
           return this.beforeClose(() => {
@@ -655,7 +706,12 @@
         padding: 0 14px;
     }
     .filter-ip {
-        padding: 0 10px 10px;
+        padding: 7px 10px 0px !important;
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        background: white;
+
         .filter-ip-error {
             line-height: initial;
             font-size: 12px;
@@ -664,10 +720,12 @@
         :deep(.bk-form-textarea) {
           resize: vertical;
         }
+        .filter-operate {
+          @include space-between;
+        }
     }
     .filter-item {
         padding: 2px 10px 10px;
-        margin-top: 5px !important;
         &:not(.filter-ip):hover {
             background: #f5f6fa;
             .item-remove {
@@ -726,11 +784,8 @@
             border-top: 1px solid $borderColor;
             background-color: #fff;
         }
-        .option-collect,
-        .option-collect-wrapper {
-            & ~ .option-reset {
-                margin-left: auto;
-            }
+        .option-reset {
+            margin-left: auto;
         }
     }
     .collection-form {
