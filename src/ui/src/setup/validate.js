@@ -103,6 +103,31 @@ const buildInVaidationRules = {
       return true
     }
   },
+  moduleNameMap: {
+    validate: (value) => {
+      const nameList = value.split('\n').filter(name => name)
+      const nameSet = new Set(nameList)
+      return nameList.length === nameSet.size
+    }
+  },
+  emptyModuleName: {
+    validate: (value) => {
+      const values = value.split('\n')
+      const list = values.map(text => text.trim()).filter(text => text)
+      return values.length === list.length
+    }
+  },
+  moduleNameLen: {
+    validate: (value) => {
+      const nameList = value.split('\n').filter(name => name)
+
+      for (const name of nameList) {
+        if (stringLength(name) > 256) return false
+      }
+
+      return true
+    }
+  },
   reservedWord: {
     validate: value => /^(?!bk_).*/.test(value)
   },
@@ -159,6 +184,9 @@ const dictionary = {
       setNameMap: () => '集群名称重复',
       emptySetName: () => '请勿输入空白集群名称',
       setNameLen: () => '请输入256个字符以内的内容',
+      moduleNameMap: () => '模块名称重复',
+      emptyModuleName: () => '请勿输入空白模块名称',
+      moduleNameLen: () => '请输入256个字符以内的内容',
       businessTopoInstNames: () => '格式不正确，不能包含特殊字符 | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
       ipSearchMaxCloud: () => '最多支持50个不同管控区域的混合搜索',
@@ -191,10 +219,13 @@ const dictionary = {
       dayFormat: () => 'Please enter the time between 00:00-23:59',
       min_value: (field, [val]) => `This value is less than the minimum ${val}`,
       max_value: (field, [val]) => `This value is greater than the maximum ${val}`,
+      repeatTagKey: () => 'Label key cannot be repeated',
       setNameMap: () => 'Duplicate Set name',
       emptySetName: () => 'Do not enter blank Set name',
-      repeatTagKey: () => 'Label key cannot be repeated',
       setNameLen: () => 'Content length max than 256',
+      moduleNameMap: () => 'Duplicate Module name',
+      emptyModuleName: () => 'Do not enter blank Module name',
+      moduleNameLen: () => 'Content length max than 256',
       reservedWord: () => 'Can not start with "bk_"',
       ipSearchMaxCloud: () => 'Supports mixed search for up to 50 different BK-Network Area',
       ipSearchMaxCount: () => 'Up to 10000 data searches are supported',
