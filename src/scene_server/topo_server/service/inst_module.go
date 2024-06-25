@@ -13,6 +13,8 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -51,7 +53,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 
 	if len(result.Info) == 0 {
 		blog.Errorf("set instance not exist, setID: %d, rid: %s", setID, kit.Rid)
-		return false, kit.CCError.CCError(common.CCErrCommNotFound)
+		return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetIDField)
 	}
 
 	if len(result.Info) > 1 {
@@ -123,6 +125,72 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(module)
+}
+
+// CreateManyModule Batch create module
+func (s *Service) CreateManyModule(ctx *rest.Contexts) {
+	data := metadata.CreateManyModuleRequest{}
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := data.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// 通过集群模板创建的集群禁止直接操作(只能通过集群模板同步)
+	initializedByTemplate, err := s.isSetInitializedByTemplate(ctx.Kit, data.SetID)
+	if err != nil {
+		blog.Errorf("set initialized template failed, setID: %d, err: %v, rid: %s", data.SetID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if initializedByTemplate {
+		blog.Errorf("forbidden add module to set initialized by template, setID: %d, rid: %s", data.SetID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate))
+		return
+	}
+
+	var moduleDataResp metadata.CreateManyModuleResp
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		for idx, module := range data.Modules {
+			if _, ok := module[common.BkSupplierAccount]; !ok {
+				module[common.BkSupplierAccount] = ctx.Kit.SupplierAccount
+			}
+			module[common.BKParentIDField] = data.SetID
+			resp, err := s.Logics.ModuleOperation().CreateModule(ctx.Kit, data.BizID, data.SetID, module)
+			if err != nil {
+				blog.Errorf("create module failed, idx: %d, data: %v, err: %v, rid: %s", idx, module, err,
+					ctx.Kit.Rid)
+				return err
+			}
+
+			moduleID, exists := resp.Get(common.BKModuleIDField)
+			if !exists {
+				blog.Errorf("create module but get module id by response failed, idx: %d, response: %v, rid: %s",
+					idx, resp, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCommNotFound, fmt.Sprintf("create module but get module "+
+					"id by response failed, idx: %d, response: %v, rid: %s", idx, resp, ctx.Kit.Rid))
+			}
+
+			intModuleID, err := moduleID.(json.Number).Int64()
+			if err != nil {
+				blog.Errorf("create module but parse module id failed, idx: %d, moduleID: %v, rid: %s", idx,
+					moduleID, ctx.Kit.Rid)
+				return ctx.Kit.CCError.CCErrorf(common.CCErrCommUnexpectedFieldType, moduleID)
+			}
+			moduleDataResp.IDs = append(moduleDataResp.IDs, intModuleID)
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(moduleDataResp)
 }
 
 // checkIsBuiltInModule check if object is built-in object
