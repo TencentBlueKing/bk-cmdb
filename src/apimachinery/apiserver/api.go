@@ -709,3 +709,54 @@ func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, st
 
 	return
 }
+
+// SearchBusiness search biz
+func (a *apiServer) SearchBusiness(ctx context.Context, ownerID string, h http.Header, s mapstr.MapStr) (
+	resp *metadata.SearchInstResult, err error) {
+
+	resp = new(metadata.SearchInstResult)
+	subPath := "/biz/search/%s"
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(s).
+		SubResourcef(subPath, ownerID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return
+}
+
+// SearchProject search project
+func (a *apiServer) SearchProject(ctx context.Context, h http.Header, params mapstr.MapStr) (
+	resp *metadata.SearchInstResult, err error) {
+
+	resp = new(metadata.SearchInstResult)
+	subPath := "/findmany/project"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return
+}

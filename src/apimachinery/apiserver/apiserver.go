@@ -118,6 +118,12 @@ type ApiServerClientInterface interface {
 
 	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
 		err error)
+
+	SearchBusiness(ctx context.Context, ownerID string, h http.Header, params mapstr.MapStr) (
+		resp *metadata.SearchInstResult, err error)
+
+	SearchProject(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.SearchInstResult,
+		err error)
 }
 
 // NewApiServerClientInterface TODO
