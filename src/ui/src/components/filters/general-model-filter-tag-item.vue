@@ -15,9 +15,11 @@
   import i18n from '@/i18n'
   import store from '@/store'
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
+  import Utils from './utils'
   import FilterTagItem from './filter-tag-item.vue'
   import GeneralModelFilterTagForm from './general-model-filter-tag-form.vue'
   import { clearOneSearchQuery } from './general-model-filter.js'
+  import { QUERY_OPERATOR_OTHER_SYMBOL } from '@/utils/query-builder-operator'
 
   export default {
     name: 'general-model-filter-tag-item',
@@ -26,6 +28,9 @@
     computed: {
       dynamicCondition() {
         return this.condition()
+      },
+      operatorSymbol() {
+        return Utils.getOperatorSymbol(this.operator, QUERY_OPERATOR_OTHER_SYMBOL)
       }
     },
     methods: {

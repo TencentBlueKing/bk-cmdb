@@ -40,6 +40,15 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
 
     if (String(value).length) {
       const property = Utils.findProperty(id, properties)
+
+      // 单个字段的条件不允许重复，如果当前已经存在则先删除掉
+      Object.keys(query).forEach((queryKey) => {
+        const [queryId] = queryKey.split('.')
+        if (queryId === String(id)) {
+          Reflect.deleteProperty(query, queryKey)
+        }
+      })
+
       query[key] = Array.isArray(value) ? value.join(',') : value
 
       // 与快速搜索重合，清除快速搜索此优先级更高
