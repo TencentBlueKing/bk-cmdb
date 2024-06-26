@@ -17,8 +17,9 @@ import {
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
-
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 import { OPERATION } from '@/dictionary/iam-auth'
+
 export default [{
   name: MENU_RESOURCE_BUSINESS,
   path: 'business',
@@ -26,7 +27,9 @@ export default [{
   meta: new Meta({
     menu: {
       i18n: '业务',
-      relative: MENU_RESOURCE_MANAGEMENT
+      relative: MENU_RESOURCE_MANAGEMENT,
+      showShare: true,
+      objId: BUILTIN_MODELS.BUSINESS
     },
     layout: {}
   })

@@ -24,7 +24,8 @@ export default [{
   component: () => import('./index.vue'),
   meta: new Meta({
     menu: {
-      relative: MENU_RESOURCE_MANAGEMENT
+      relative: MENU_RESOURCE_MANAGEMENT,
+      showShare: true
     },
     checkAvailable: (to, from, app) => {
       const modelId = to.params.objId

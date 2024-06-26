@@ -16,6 +16,7 @@ import {
   MENU_RESOURCE_BUSINESS_SET_DETAILS,
   MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol.js'
+import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
 export default [
   {
@@ -25,7 +26,9 @@ export default [
     meta: new Meta({
       menu: {
         i18n: '业务集',
-        relative: MENU_RESOURCE_MANAGEMENT
+        relative: MENU_RESOURCE_MANAGEMENT,
+        showShare: true,
+        objId: BUILTIN_MODELS.BUSINESS_SET
       }
     })
   },
