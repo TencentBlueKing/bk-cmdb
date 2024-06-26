@@ -13,7 +13,12 @@
 <template>
   <div class="property-selector" v-bkloading="{ isLoading: pending }">
     <div class="filter">
-      <bk-input v-model.trim="keyword" :placeholder="$t('请输入字段名称')"></bk-input>
+      <bk-input
+        v-model.trim="keyword"
+        clearable
+        :right-icon="'bk-icon icon-search'"
+        :placeholder="$t('请输入字段名称或唯一标识进行搜索')">
+      </bk-input>
     </div>
     <div class="group-list"
       v-for="{ group, properties } in groupedPropertyies"
@@ -74,7 +79,7 @@
       const [matchedProperties] = useFilter({
         list: properties,
         keyword,
-        target: 'bk_property_name'
+        targets: ['bk_property_name', 'bk_property_id']
       })
       const groupedPropertyies = useGroupProperty(groups, matchedProperties)
 
@@ -147,7 +152,7 @@
   .property-selector {
     padding: 20px 0 0 0;
     .filter {
-      width: 340px;
+      width: 100%;
     }
   }
   .group-list {

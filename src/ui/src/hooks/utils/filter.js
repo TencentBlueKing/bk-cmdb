@@ -13,7 +13,7 @@
 import { toRef, reactive, watch } from 'vue'
 import debounce from 'lodash.debounce'
 
-export default function ({ list, keyword, target }) {
+export default function ({ list, keyword, targets }) {
   const state = reactive({
     result: []
   })
@@ -23,7 +23,7 @@ export default function ({ list, keyword, target }) {
       return
     }
     const regexp = new RegExp(value, 'ig')
-    state.result = list.value.filter(item => regexp.test(item[target]))
+    state.result = list.value.filter(item => targets.some(target => regexp.test(item[target])))
   }
   const filter = debounce(handler, 300, { leading: false, trailing: true })
   watch(keyword, filter)
