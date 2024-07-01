@@ -62,6 +62,7 @@
         :buttons="buttons"
         :expand="false">
       </cmdb-button-group>
+      <cmdb-refresh class="mr10" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
     </div>
     <div class="options-right">
       <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
@@ -169,6 +170,7 @@
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import isEqual from 'lodash/isEqual'
   import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+  import cmdbRefresh from '@/components/refresh'
 
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
@@ -177,7 +179,8 @@
       cmdbImport,
       cmdbButtonGroup,
       cmdbTransferMenu,
-      FilterFastSearch
+      FilterFastSearch,
+      cmdbRefresh
     },
     data() {
       return {
@@ -382,6 +385,9 @@
       this.unwatchScope()
     },
     methods: {
+      handleRefresh() {
+        this.$emit('refresh')
+      },
       async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
