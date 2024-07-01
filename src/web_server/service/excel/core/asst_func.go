@@ -142,7 +142,7 @@ func (d *Client) GetInstAsst(kit *rest.Kit, objID string, instIDs []int64, asstI
 	// 实例作为关联关系目标模型
 	cond = mapstr.MapStr{
 		common.BKAsstObjIDField:          objID,
-		common.BKInstIDField:             mapstr.MapStr{common.BKDBIN: instIDs},
+		common.BKAsstInstIDField:         mapstr.MapStr{common.BKDBIN: instIDs},
 		common.AssociationObjAsstIDField: mapstr.MapStr{common.BKDBIN: asstIDs},
 		// 自关联数据，上面已经处理，只需要拉取一次数据即可
 		common.BKObjIDField: mapstr.MapStr{common.BKDBNE: objID},
