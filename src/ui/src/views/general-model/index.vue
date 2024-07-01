@@ -57,6 +57,7 @@
             </bk-button>
           </template>
         </cmdb-auth>
+        <cmdb-refresh class="models-button" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
       </div>
       <div class="options-button fr">
         <icon-button :class="['option-filter', 'ml5', { active: hasCondition }]" icon="icon-cc-funnel"
@@ -233,6 +234,7 @@
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbRefresh from '@/components/refresh'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -247,7 +249,8 @@
       cmdbImport,
       cmdbPropertySelector,
       generalModelFilterForm,
-      generalModelFilterTag
+      generalModelFilterTag,
+      cmdbRefresh
     },
     data() {
       return {
@@ -377,6 +380,10 @@
       }
     },
     watch: {
+      '$route.params.objId'() {
+        const { refresh } = this.$refs
+        refresh?.init()
+      },
       '$route.query'() {
         if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
           return
@@ -1001,7 +1008,11 @@
           })
         }
         this.columnsConfig.show = false
-      }
+      },
+      handleRefresh() {
+        RouterQuery.refresh()
+        this.$refs?.refresh.setCanRefresh(true)
+      },
     }
   }
 </script>

@@ -12,7 +12,7 @@
 
 <template>
   <div class="resource-layout">
-    <host-list-options @search="getExceptionType"></host-list-options>
+    <host-list-options @search="getExceptionType" @refresh="handleRefresh" ref="hostListOptions"></host-list-options>
     <host-filter-tag class="filter-tag" ref="filterTag"></host-filter-tag>
     <bk-table class="hosts-table"
       ref="tableRef"
@@ -209,6 +209,9 @@
       this.unwatchScopeAndDirectory()
     },
     methods: {
+      handleRefresh() {
+        this.$emit('refresh')
+      },
       async initFilterStore() {
         const currentRouteName = this.$route.name
         if (this.storageRouteName === currentRouteName) return
@@ -299,6 +302,8 @@
           this.table.checked = []
           this.table.list = []
           console.error(error)
+        } finally {
+          this.$refs?.hostListOptions?.$refs?.refresh.setCanRefresh(true)
         }
       },
       getSearchRequest() {

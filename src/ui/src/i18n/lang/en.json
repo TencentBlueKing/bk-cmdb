@@ -1897,5 +1897,8 @@
     "未开启全文检索功能": "Full-Text Search Function Not Enabled",
     "使用全文检索，可以对所有纳管的资源进行无差别搜索，帮助你快速定位资源。": "Using Full-Text Search, you can indiscriminately search all managed resources, helping you to quickly locate resources.",
     "如需使用该功能，您需要：": "If you need to use this function, you need to：",
-    "联系平台维护人员开启": "Contact the platform maintenance staff to enable it"
+    "联系平台维护人员开启": "Contact the platform maintenance staff to enable it",
+    "刚刚刷新": "Last refreshed just now",
+    "大于1小时前刷新": "Last refreshed more than 1h ago",
+    "x分钟前刷新": "Last refreshed {time}m ago"
 }
