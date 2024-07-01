@@ -26,7 +26,8 @@ import (
 )
 
 // NewEvent TODO
-func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB, ccDB dal.DB) error {
+func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB,
+	ccDB dal.DB) error {
 	watchMongoDB, ok := watchDB.(*local.Mongo)
 	if !ok {
 		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
@@ -122,12 +123,6 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 	if err := e.runProject(context.Background()); err != nil {
 		blog.Errorf("run project event flow failed, err: %v", err)
 	}
-
-	gc := &gc{
-		ccDB:     ccDB,
-		isMaster: isMaster,
-	}
-	gc.cleanDelArchiveData(context.Background())
 
 	return nil
 }
