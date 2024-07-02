@@ -632,46 +632,52 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	return deleteCount, err
 }
 
+var needArchiveDeletedDocCollMap = map[string]struct{}{
+	common.BKTableNameModuleHostConfig:        {},
+	common.BKTableNameBaseHost:                {},
+	common.BKTableNameBaseApp:                 {},
+	common.BKTableNameBaseSet:                 {},
+	common.BKTableNameBaseModule:              {},
+	common.BKTableNameSetTemplate:             {},
+	common.BKTableNameBaseProcess:             {},
+	common.BKTableNameProcessInstanceRelation: {},
+	common.BKTableNameBaseBizSet:              {},
+	common.BKTableNameBasePlat:                {},
+	common.BKTableNameBaseProject:             {},
+
+	common.BKTableNameBaseInst: {},
+	common.BKTableNameInstAsst: {},
+
+	kubetypes.BKTableNameBaseCluster:        {},
+	kubetypes.BKTableNameBaseNode:           {},
+	kubetypes.BKTableNameBaseNamespace:      {},
+	kubetypes.BKTableNameBaseWorkload:       {},
+	kubetypes.BKTableNameBaseDeployment:     {},
+	kubetypes.BKTableNameBaseStatefulSet:    {},
+	kubetypes.BKTableNameBaseDaemonSet:      {},
+	kubetypes.BKTableNameGameDeployment:     {},
+	kubetypes.BKTableNameGameStatefulSet:    {},
+	kubetypes.BKTableNameBaseCronJob:        {},
+	kubetypes.BKTableNameBaseJob:            {},
+	kubetypes.BKTableNameBasePodWorkload:    {},
+	kubetypes.BKTableNameBaseCustom:         {},
+	kubetypes.BKTableNameBasePod:            {},
+	kubetypes.BKTableNameBaseContainer:      {},
+	kubetypes.BKTableNameNsSharedClusterRel: {},
+}
+
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
+	delArchiveTable := common.BKTableNameDelArchive
+
 	switch c.collName {
-	case common.BKTableNameModuleHostConfig:
-	case common.BKTableNameBaseHost:
-	case common.BKTableNameBaseApp:
-	case common.BKTableNameBaseSet:
-	case common.BKTableNameBaseModule:
-	case common.BKTableNameSetTemplate:
-	case common.BKTableNameBaseProcess:
-	case common.BKTableNameProcessInstanceRelation:
-	case common.BKTableNameBaseBizSet:
-	case common.BKTableNameBasePlat:
-	case common.BKTableNameBaseProject:
-
-	case common.BKTableNameBaseInst:
-	case common.BKTableNameInstAsst:
-
-	case kubetypes.BKTableNameBaseCluster:
-	case kubetypes.BKTableNameBaseNode:
-	case kubetypes.BKTableNameBaseNamespace:
-	case kubetypes.BKTableNameBaseWorkload:
-	case kubetypes.BKTableNameBaseDeployment:
-	case kubetypes.BKTableNameBaseStatefulSet:
-	case kubetypes.BKTableNameBaseDaemonSet:
-	case kubetypes.BKTableNameGameDeployment:
-	case kubetypes.BKTableNameGameStatefulSet:
-	case kubetypes.BKTableNameBaseCronJob:
-	case kubetypes.BKTableNameBaseJob:
-	case kubetypes.BKTableNameBasePodWorkload:
-	case kubetypes.BKTableNameBaseCustom:
-	case kubetypes.BKTableNameBasePod:
 	case kubetypes.BKTableNameBaseContainer:
-	case kubetypes.BKTableNameNsSharedClusterRel:
-
-		// NOTE: should not use the table name for archive, the object instance and association
-		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
-		// error message in order to find the wrong table name used in logics level.
-
-		// TODO add del archive for container tables
+		delArchiveTable = common.BKTableNameContainerDelArchive
 	default:
+		_, exists := needArchiveDeletedDocCollMap[c.collName]
+		if exists {
+			break
+		}
+
 		if !common.IsObjectShardingTable(c.collName) {
 			// do not archive the delete docs
 			return nil
@@ -697,11 +703,12 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
 			Detail: doc.Delete("_id"),
+			Time:   time.Now(),
 			Coll:   c.collName,
 		}
 	}
 
-	_, err = c.dbc.Database(c.dbname).Collection(common.BKTableNameDelArchive).InsertMany(ctx, archives)
+	_, err = c.dbc.Database(c.dbname).Collection(delArchiveTable).InsertMany(ctx, archives)
 	return err
 }
 
