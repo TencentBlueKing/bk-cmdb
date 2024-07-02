@@ -26,7 +26,7 @@ let committed = false
 export async function getAuthorizedBusiness() {
   const { info } = await store.dispatch('objectBiz/getAuthorizedBusiness', {
     requestId,
-    fromCache: true
+    fromCache: false
   })
   if (!committed) {
     store.commit('objectBiz/setAuthorizedBusiness', Object.freeze(info))
@@ -154,14 +154,16 @@ export const before = async function (to, from, next) {
     return false
   }
 
+  // 优先使用二级路由（内页）展示无权限，并且需要取最后一个路由因dynamic-router-view组件中的view值为最后一个路由
+  const targetRoute = to.matched?.[2] ?? to.matched?.[1] ?? to.matched?.[0]
   // 业务不存在或无权限
   if (!business || !isAuthorized) {
-    // 优先使用二级路由（内页）展示无权限，并且需要取最后一个路由因dynamic-router-view组件中的view值为最后一个路由
-    const targetRoute = to.matched?.[2] ?? to.matched?.[1] ?? to.matched?.[0]
     targetRoute.meta.view = 'permission'
-    targetRoute.meta.extra.isNotFound = !business
-    targetRoute.meta.extra.isUnauthed = business && !isAuthorized
+  } else {
+    targetRoute.meta.view = 'default'
   }
+  targetRoute.meta.extra.isNotFound = !business
+  targetRoute.meta.extra.isUnauthed = business && !isAuthorized
 
   // 总是放行，因为无论如何都需要进入到二级路由，前提是之前的逻辑已经保证了路由的正确性
   return true

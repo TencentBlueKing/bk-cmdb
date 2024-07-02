@@ -29,7 +29,8 @@
         <bk-input
           class="max-biz-topo-level-input"
           type="number"
-          :min="0"
+          :min="3"
+          :max="10"
           :precision="0"
           v-model.number.trim="bizGeneralForm.maxBizTopoLevel">
           <template #append>

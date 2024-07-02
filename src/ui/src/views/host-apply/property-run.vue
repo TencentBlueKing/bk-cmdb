@@ -302,8 +302,7 @@
         this.$nextTick(() => {
           this.$routerActions.redirect({
             name: MENU_BUSINESS_HOST_AND_SERVICE,
-            query,
-            history: true
+            query
           })
         })
       },

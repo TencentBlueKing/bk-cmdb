@@ -76,7 +76,7 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right">
+      <bk-table-column :label="$t('操作')" fixed="right" min-width="154">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.R_BIZ_SET_RESOURCE, relation: [row.bk_biz_set_id] }">
             <template slot-scope="{ disabled }">
