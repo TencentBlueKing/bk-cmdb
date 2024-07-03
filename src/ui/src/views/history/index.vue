@@ -25,7 +25,8 @@
         v-model="condition.resource_name"
         :placeholder="$t('请输入xx', { name: 'IP' })"
         @enter="handlePageChange(1)"
-        @clear="handlePageChange(1)">
+        @clear="handlePageChange(1)"
+        @right-icon-click="handlePageChange(1)">
       </bk-input>
     </div>
     <bk-table class="history-table"
