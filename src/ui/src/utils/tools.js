@@ -14,7 +14,7 @@ import moment from 'moment'
 import GET_VALUE from 'get-value'
 import has from 'has'
 import { t } from '@/i18n'
-import { CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container'
+import { CONTAINER_OBJECT_INST_KEYS, CONTAINER_OBJECTS } from '@/dictionary/container'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
@@ -671,6 +671,13 @@ export function isIconTipProperty(type) {
   return ['innertable', 'bool'].includes(type)
 }
 
+/**
+ * 判断是否为容器字段
+ */
+export function isContainerObjects(objId) {
+  return Object.values(CONTAINER_OBJECTS).includes(objId)
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -704,5 +711,6 @@ export default {
   getPropertyDefaultValue,
   versionSort,
   isPropertySortable,
-  isIconTipProperty
+  isIconTipProperty,
+  isContainerObjects
 }
