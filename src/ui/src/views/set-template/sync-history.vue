@@ -14,6 +14,7 @@
   <div class="sync-history-layout">
     <div class="options clearfix">
       <bk-date-picker style="width: 300px;" class="fl"
+        ref="dataPicker"
         type="daterange"
         transfer
         :placeholder="$t('选择日期范围')"
@@ -24,7 +25,7 @@
         v-model="searchName"
         clearable
         :placeholder="$t('集群名称')"
-        @enter="getData(true)">
+        @enter="getData(!!searchName)">
       </bk-input>
     </div>
     <bk-table class="history-table"
@@ -70,7 +71,7 @@
           <span>{{row.creator || '--'}}</span>
         </template>
       </bk-table-column>
-      <cmdb-table-empty slot="empty" :stuff="table.stuff"></cmdb-table-empty>
+      <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>
   </div>
 </template>
@@ -152,6 +153,10 @@
       this.getData()
     },
     methods: {
+      handleClearFilter() {
+        this.searchName = ''
+        this.$refs.dataPicker.handleClear()
+      },
       getTopoPath(row) {
         const topoPath = this.$tools.clone(row.topo_path)
         if (topoPath.length) {
@@ -166,11 +171,11 @@
       },
       async getData(event) {
         await this.getHistoryList()
-
+        let type = 'default'
         if (event) {
-          this.table.stuff.type = 'search'
+          type = 'search'
         }
-
+        this.table.stuff.type = type
         this.setsId.length && this.getSetInstancesWithTopo()
       },
       async getSetTemplateInfo() {
@@ -237,7 +242,7 @@
       hanldeFilterByDate(daterange) {
         daterange = daterange.filter(date => date)
         this.searchDate = daterange.map((date, index) => (index === 0 ? (`${date} 00:00:00`) : (`${date} 23:59:59`)))
-        this.getData(true)
+        this.getData(!!daterange[0])
       }
     }
   }

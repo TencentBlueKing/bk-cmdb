@@ -156,13 +156,12 @@
             return this.$error(this.$t('跳转失败，服务模板已经被删除'))
           }
 
-          this.$routerActions.redirect({
+          this.$routerActions.open({
             name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
             params: {
               templateId: this.instance.service_template_id,
               bizId: data?.template?.bk_biz_id,
-            },
-            history: true
+            }
           })
         } catch (error) {
           console.error(error)
@@ -170,7 +169,7 @@
         }
       },
       linkToAutoApply() {
-        this.$routerActions.redirect({
+        this.$routerActions.open({
           name: MENU_BUSINESS_HOST_APPLY,
           params: {
             bizId: this.bizId,
@@ -178,8 +177,7 @@
           },
           query: {
             id: this.moduleId
-          },
-          history: true
+          }
         })
       }
     }
