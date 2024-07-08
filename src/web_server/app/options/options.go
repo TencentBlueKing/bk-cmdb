@@ -73,8 +73,8 @@ type Site struct {
 	// the corresponding front-end variable is: componentApiUrl.
 	BkComponentApiUrl string
 	HelpDocUrl        string
-	// BkRepoUrl is the blueking repo url
-	BkRepoUrl string
+	// BkSharedResUrl is the blueking shared resource url
+	BkSharedResUrl string
 }
 
 // Config TODO
