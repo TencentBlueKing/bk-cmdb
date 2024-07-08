@@ -32,7 +32,7 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 	error) {
 
 	resp := new(ListAgentStateResp)
-	subPath := "/prod/api/v2/cluster/list_agent_state"
+	subPath := "/api/v2/cluster/list_agent_state"
 
 	err := p.service.Client.Post().
 		WithContext(ctx).
@@ -58,7 +58,7 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 	error) {
 
 	resp := new(AsyncPushFileResp)
-	subPath := "/prod/api/v2/task/async_push_file"
+	subPath := "/api/v2/task/async_push_file"
 
 	err := p.service.Client.Post().
 		WithContext(ctx).
@@ -84,7 +84,7 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 	*GetTransferFileResultResp, error) {
 
 	resp := new(GetTransferFileResultResp)
-	subPath := "/prod/api/v2/task/async/get_transfer_file_result"
+	subPath := "/api/v2/task/async/get_transfer_file_result"
 
 	err := p.service.Client.Post().
 		WithContext(ctx).
