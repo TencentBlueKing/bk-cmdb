@@ -104,6 +104,7 @@ func (s *Service) WebService() *gin.Engine {
 	c := &capability.Capability{
 		Ws:        ws,
 		Engine:    s.Engine,
+		Config:    s.Config,
 		ApiCli:    s.ApiCli,
 		NoticeCli: s.NoticeCli,
 	}
@@ -236,12 +237,12 @@ func (s *Service) InitNotice() error {
 			blog.Errorf("init apigw clientset failed, err: %v", err)
 			return err
 		}
+	}
 
-		s.NoticeCli = apigwcli.Client().Notice()
-		if _, err = s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
-			blog.Errorf("register to the notification center failed, err: %v", err)
-			return err
-		}
+	s.NoticeCli = apigwcli.Client().Notice()
+	if _, err := s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
+		blog.Errorf("register to the notification center failed, err: %v", err)
+		return err
 	}
 
 	return nil
