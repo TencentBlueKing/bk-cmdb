@@ -260,7 +260,8 @@
               @service-selected="handleServiceTemplateSelected">
             </template-tree>
             <input type="hidden"
-              :value="formData.serviceTemplates.length"
+              v-model="formData.serviceTemplates.length"
+              data-vv-validate-on="change"
               v-validate="'min_value:1'"
               name="serviceTemplates">
             <p class="form-error" v-if="errors.has('serviceTemplates')">{{$t('请添加服务模板')}}</p>

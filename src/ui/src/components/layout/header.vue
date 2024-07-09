@@ -238,6 +238,7 @@
       color: #fff;
       font-size: 16px;
       background: v-bind(appLogo) no-repeat 0 center;
+      background-size: 28px;
     }
   }
   .header-nav {
