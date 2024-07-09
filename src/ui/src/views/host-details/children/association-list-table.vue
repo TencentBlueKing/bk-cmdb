@@ -87,6 +87,7 @@
   import { readonlyMixin } from '../mixin-readonly'
   import businessSetService from '@/service/business-set/index.js'
   import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants.js'
+  import { getHostInfoTitle } from '@/utils/util'
 
   export default {
     name: 'cmdb-host-association-list-table',
@@ -446,10 +447,22 @@
           biz: 'bk_biz_id',
           [BUILTIN_MODELS.BUSINESS_SET]: [BUILTIN_MODEL_PROPERTY_KEYS[BUILTIN_MODELS.BUSINESS_SET].ID]
         }
+        let title = `${row[nameMapping[this.id] || 'bk_inst_name']}`
+        if (this.id === 'host') {
+          const {
+            bk_host_id: hostId,
+            bk_cloud_id: cloud,
+            bk_host_innerip: ip,
+            bk_host_innerip_v6: ipv6
+          } = row
+          const cloudId = this.$tools.getPropertyCopyValue(cloud, 'foreignkey')
+          title = getHostInfoTitle(ip, ipv6, cloudId, hostId)
+        }
+
         showInstanceDetails.default({
           bk_obj_id: this.id,
           bk_inst_id: row[idMapping[this.id] || 'bk_inst_id'],
-          title: `${this.model.bk_obj_name}-${row[nameMapping[this.id] || 'bk_inst_name']}`
+          title: `${this.model.bk_obj_name}-${title}`
         })
       }
     }
