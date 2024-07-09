@@ -21,6 +21,7 @@
 * [设计理念](docs/overview/design.md)
 * [架构设计](docs/overview/architecture.md)
 * [代码目录](docs/overview/code_framework.md)
+* [数据库表结构设计](docs/db/README.md)
 
 ![front-page](docs/resource/img/frontpage.png)
 
