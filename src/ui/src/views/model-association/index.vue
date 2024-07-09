@@ -38,7 +38,8 @@
           :placeholder="$t('请输入关联类型名称')"
           font-size="medium"
           @clear="searchRelation(true)"
-          @enter="searchRelation(true)">
+          @enter="searchRelation(true)"
+          @right-icon-click="searchRelation(true)">
         </bk-input>
       </label>
     </p>

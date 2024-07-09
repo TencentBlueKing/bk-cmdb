@@ -66,6 +66,7 @@
           font-size="medium"
           v-model.trim="filter.templateName"
           @enter="setRoute()"
+          @right-icon-click="setRoute()"
           @clear="handlePageChange(1)">
         </bk-input>
       </div>
