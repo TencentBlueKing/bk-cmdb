@@ -228,6 +228,7 @@
       color: #fff;
       font-size: 16px;
       background: url("../../assets/images/logo.svg") no-repeat 0 center;
+      background-size: 28px;
     }
   }
   .header-nav {
