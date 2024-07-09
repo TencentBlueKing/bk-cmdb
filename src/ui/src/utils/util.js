@@ -9,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { t } from '@/i18n'
 
 const hex2grb = (hex) => {
   const rgb = []
@@ -105,4 +106,24 @@ export const keyupCallMethod = (event, cb, keyCode = [13]) => {
   if (keyCode.includes(nowKey)) {
     cb?.()
   }
+}
+
+export function getIPInfo(ip, ipv6, cloudId) {
+  const hostList = ip ? ip.split(',') : ipv6.split(',')
+  const { length } = hostList
+  let info
+  if (ip) {
+    info = length > 1 ? `${hostList[0]}...` : hostList[0]
+  } else {
+    // eslint-disable-next-line no-useless-escape
+    info = length > 1 ? `\[${hostList[0]}\]...` : `\[${hostList[0]}\]`
+  }
+  return `${cloudId}:${info}`
+}
+
+export function getHostInfoTitle(ip, ipv6, cloudId, hostId) {
+  if (!(ip || ipv6)) {
+    return `(${t('主机ID')})${hostId}`
+  }
+  return getIPInfo(ip, ipv6, cloudId)
 }

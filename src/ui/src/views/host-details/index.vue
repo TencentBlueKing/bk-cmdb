@@ -67,6 +67,7 @@
   import containerPropertyService from '@/service/container/property.js'
   import { maxPageParams } from '@/service/utils'
   import { CONTAINER_OBJECTS } from '@/dictionary/container.js'
+  import { getHostInfoTitle } from '@/utils/util'
 
   export default {
     components: {
@@ -109,9 +110,14 @@
     },
     watch: {
       info(info) {
-        const hostList = info.host.bk_host_innerip ? info.host.bk_host_innerip.split(',') : info.host.bk_host_innerip_v6.split(',')
-        const host = hostList.length > 1 ? `${hostList[0]}...` : hostList[0]
-        this.setBreadcrumbs(host)
+        const {
+          bk_host_innerip: ip,
+          bk_host_innerip_v6: ipv6,
+          bk_cloud_id: cloud,
+          bk_host_id: hostId
+        } = info.host
+        const cloudId = this.$tools.getPropertyCopyValue(cloud, 'foreignkey')
+        this.setBreadcrumbs(getHostInfoTitle(ip, ipv6, cloudId, hostId))
       },
       id() {
         this.getData()
