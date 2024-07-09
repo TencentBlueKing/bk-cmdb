@@ -159,16 +159,15 @@
           console.error(error)
           this.$error(error.message)
         }
-        this.$routerActions.redirect({
+        this.$routerActions.open({
           name: MENU_BUSINESS_SERVICE_TEMPLATE_DETAILS,
           params: {
             templateId: this.instance.service_template_id
-          },
-          history: true
+          }
         })
       },
       linkToAutoApply() {
-        this.$routerActions.redirect({
+        this.$routerActions.open({
           name: MENU_BUSINESS_HOST_APPLY,
           params: {
             bizId: this.bizId,
@@ -176,8 +175,7 @@
           },
           query: {
             id: this.moduleId
-          },
-          history: true
+          }
         })
       }
     }

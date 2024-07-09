@@ -78,7 +78,7 @@ export default {
     async handleMultipleEdit() {
       try {
         this.slider.show = true
-        this.slider.title = this.$t('主机属性')
+        this.slider.title = this.$t('编辑主机属性')
         const groups = await this.getPropertyGroups()
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'

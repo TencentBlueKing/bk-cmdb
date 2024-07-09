@@ -187,8 +187,8 @@
       const propertyConfigLoadingState = ref([])
 
       // 显示同步提示的方法
-      const showSyncInstanceTips = () => {
-        $success(message)
+      const showSyncInstanceTips = (msg = '') => {
+        $success(msg || message)
         emit('sync-change')
       }
 
@@ -230,7 +230,7 @@
 
         del(state.propertyConfig, property.id)
 
-        showSyncInstanceTips()
+        showSyncInstanceTips(t('成功更新模板'))
       }
 
       const handleGoToEdit = () => {

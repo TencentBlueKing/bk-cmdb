@@ -117,12 +117,11 @@
           console.error(error)
           this.$error(error.message)
         }
-        this.$routerActions.redirect({
+        this.$routerActions.open({
           name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
           params: {
             templateId: this.instance.set_template_id
-          },
-          history: true
+          }
         })
       },
       handleSyncSetTemplate() {

@@ -265,6 +265,9 @@
       },
       saveRelation() {
         this.slider.isShow = false
+        const { isEdit } = this.slider
+        const text = isEdit ? '编辑成功' : '创建成功'
+        this.$success(this.$t(text))
         this.searchRelation()
       },
       handlePageChange(current) {
