@@ -54,7 +54,7 @@ const findByIds = async ({ ids, config }) => {
 const findAll = async () => {
   const data = await http.get('biz/simplify?sort=bk_biz_id', {
     requestId: findAllRequsetId,
-    fromCache: true
+    fromCache: false
   })
 
   return Object.freeze(data.info || [])
