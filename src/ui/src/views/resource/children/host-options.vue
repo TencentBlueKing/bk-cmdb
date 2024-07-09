@@ -562,7 +562,7 @@
         })
       },
       async handleMultipleEdit() {
-        this.slider.title = this.$t('主机属性')
+        this.slider.title = this.$t('编辑主机属性')
         this.slider.show = true
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'
@@ -575,6 +575,7 @@
             bk_host_id: this.table.checked.join(',')
           }
         })
+        this.$success(this.$t('编辑成功'))
         this.slider.show = false
         RouterQuery.set({
           _t: Date.now()
