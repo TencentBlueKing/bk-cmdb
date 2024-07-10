@@ -74,11 +74,16 @@ redis的配置文件默认在/etc/redis.conf，找到如下行：
 去掉前面的注释，并修改为所需要的密码：
 ``` json
  requirepass myPassword （其中myPassword就是要设置的密码）
-``` 
+```
+由于redis版本不同，若配置文件中没有注释直接添加密码行即可
 ##### b. 重启Redis
 如果Redis已经配置为service服务，可以通过以下方式重启：
 ```json
 service redis restart
+```
+若通过brew方式安装，可以通过以下方式重启：
+```json
+brew services start redis@redis版本
 ```
 ##### c. 登录验证
 
@@ -170,6 +175,7 @@ MongoDB官方资料：
    members 里面的优先级 priority 值高的为主节点，对于仲裁点一定要加上`arbiterOnly:true`，否则主备模式不生效，
    使集群cfg配置生效：`rs.initiate(cfg)`
    查看集群状态：`rs.status()`
+   IP更改为实际ip地址
 
 ##### b. 创建数据库 cmdb 设置用户名和密码
 
@@ -346,18 +352,14 @@ python init.py  \
   --mongo_port         27017 \
   --mongo_user         cc \
   --mongo_pass         cc \
-  --blueking_cmdb_url  http://127.0.0.1:8080 \
-  --blueking_paas_url  http://paas.domain.com \
-  --listen_port        8080 \
+  --blueking_cmdb_url  http://127.0.0.1:80 \
+  --blueking_paas_url  http://127.0.0.1:80 \
+  --listen_port        80 \
   --auth_scheme        internal \
   --auth_enabled       false \
-  --auth_address       https://iam.domain.com/ \
-  --auth_app_code      bk_cmdb \
-  --auth_app_secret    xxxxxxx \
   --full_text_search   off \
   --es_url             http://127.0.0.1:9200 \
   --log_level          3 \
-  --register_ip         cmdb.domain.com \
   --user_info admin:admin
 ```
 
@@ -403,7 +405,7 @@ mechanism=SCRAM-SHA-1
 webServer:
    site :
       #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-      domainUrl: http://127.0.0.1:8082
+      domainUrl: http://127.0.0.1:80
       #登录地址
       bkLoginUr: http://127.0.0.1/login/?app_id=%s&c_url=%s
       appCode: cc
@@ -510,7 +512,7 @@ root       445     1  4 08:27 pts/0    00:00:00 ./cmdb_operationserver --addrpor
 root       642     1  7 08:27 pts/0    00:00:00 ./cmdb_procserver --addrport=127.0.0.1:60003 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
 root       661     1 11 08:27 pts/0    00:00:00 ./cmdb_taskserver --addrport=127.0.0.1:60012 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
 root       724     1  6 08:27 pts/0    00:00:00 ./cmdb_toposerver --addrport=127.0.0.1:60002 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       937     1  0 08:27 pts/0    00:00:00 ./cmdb_webserver --addrport=127.0.0.1:8090 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
+root       937     1  0 08:27 pts/0    00:00:00 ./cmdb_webserver --addrport=127.0.0.1:80 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
 process count should be: 11 , now: 11
 ```
 
@@ -530,7 +532,7 @@ process count should be: 11 , now: 11
 
 ### 3. 系统运行页面
 
-**打开浏览器:** 数据cmdb_webserver 监听的地址，如本文档中示例服务监听的地址: http://127.0.0.1:8083
+**打开浏览器:** 数据cmdb_webserver 监听的地址，如本文档中示例服务监听的地址: http://127.0.0.1:80
 
 ![image](../resource/img/page.png)
 
@@ -561,6 +563,7 @@ Running process count: 0
 ### 4. 服务启动成功，但无法访问
 
 - 启动前检查配置，`vim cmdb_adminserver/configures/common.yaml`命令进入 common.yaml ，检查输入到浏览器访问的cmdb地址和登录地址这两项是否正确。
+- 查看ip.py文件具体生成的访问ip,由于电脑版本不同可能导致获取到一些无法访问的ip,可以将ip.py末尾的print(localhost)改为print("127.0.0.1")
 
 ### 其他问题
 
