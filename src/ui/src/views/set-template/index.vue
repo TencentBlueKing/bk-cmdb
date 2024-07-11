@@ -43,6 +43,7 @@
           right-icon="icon-search"
           v-model.trim="searchName"
           @enter="handleFilterTemplate"
+          @right-icon-click="handleFilterTemplate"
           @clear="handleClearFilter">
         </bk-input>
       </div>

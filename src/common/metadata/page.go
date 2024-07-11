@@ -54,6 +54,14 @@ func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 		return "", nil
 	}
 
+	if page.Start < 0 {
+		return "start", errors.New("page start must not be less than zero")
+	}
+
+	if page.Limit < 0 {
+		return "limit", errors.New("page limit must not be less than zero")
+	}
+
 	if page.Limit > common.BKMaxPageSize {
 		if page.Limit != common.BKNoLimit || allowNoLimit != true {
 			return "limit", fmt.Errorf("exceed max page size: %d", common.BKMaxPageSize)
@@ -62,8 +70,12 @@ func (page BasePage) Validate(allowNoLimit bool) (string, error) {
 	return "", nil
 }
 
-// IsIllegal  limit is illegal
+// IsIllegal page start or limit is illegal
 func (page BasePage) IsIllegal() bool {
+	if page.Start < 0 {
+		return true
+	}
+
 	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit ||
 		page.Limit <= 0 {
 		return true
@@ -73,8 +85,8 @@ func (page BasePage) IsIllegal() bool {
 
 // ValidateLimit validates target page limit.
 func (page BasePage) ValidateLimit(maxLimit int) error {
-	if page.Limit == 0 {
-		return errors.New("page limit must not be zero")
+	if page.Limit <= 0 {
+		return errors.New("page limit must be greater than zero")
 	}
 
 	if maxLimit > common.BKMaxPageSize {
@@ -100,9 +112,16 @@ func (page BasePage) ValidateWithEnableCount(allowNoLimit bool, maxLimit ...int)
 		return ccErr.RawErrorInfo{}
 	}
 
-	if page.Limit == 0 {
+	if page.Start < 0 {
 		return ccErr.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"page.start"},
+		}
+	}
+
+	if page.Limit <= 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
 			Args:    []interface{}{"page.limit"},
 		}
 	}

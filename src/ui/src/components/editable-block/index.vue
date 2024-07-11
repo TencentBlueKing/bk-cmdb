@@ -23,7 +23,8 @@
       @keydown.enter="handleSearch"
       @focus="handleFocus"
       @input="handleInput"
-      @paste="handlePaste">
+      @paste="handlePaste"
+      @compositionend="handleCompositionend">
     </div>
     <i class="search-close bk-icon icon-close-circle-shape" @mousedown="handleClear" v-if="searchContent"></i>
   </div>
@@ -144,6 +145,20 @@
     setInputHtml(getNewHtml(content.replace(LT_REGEXP, '&lt')))
     setCursorPosition(searchInput.value, cursor)
   }
+  // 处理input/compositionend设置内容逻辑
+  const setInputContent = () => {
+    const { innerText } = searchInput.value
+    setSearchContent(innerText)
+    setHighlight()
+    setTimeout(() => {
+      const { scrollHeight, clientHeight, scrollTop } = searchInput.value
+      const bottom = scrollHeight - clientHeight - scrollTop
+      // 防止光标被遮挡
+      if (bottom > 0 && bottom < 30) {
+        searchInput.value.scrollTop = scrollHeight - 10
+      }
+    }, 0)
+  }
 
   const parseIP = () => {
     initPasteData()
@@ -173,18 +188,15 @@
     parseIP()
     emit('blur', event)
   }
-  const handleInput = () => {
-    const { innerText } = searchInput.value
-    setSearchContent(innerText)
-    setHighlight()
-    setTimeout(() => {
-      const { scrollHeight, clientHeight, scrollTop } = searchInput.value
-      const bottom = scrollHeight - clientHeight - scrollTop
-      // 防止光标被遮挡
-      if (bottom > 0 && bottom < 30) {
-        searchInput.value.scrollTop = scrollHeight - 10
-      }
-    }, 0)
+  const handleCompositionend = () => {
+    setInputContent()
+  }
+  const handleInput = (event) => {
+    // 中文输入法通过compositionend处理
+    if (event.inputType === 'insertCompositionText') {
+      return event.preventDefault()
+    }
+    setInputContent()
   }
   const handleClear = (event) => {
     initPasteData()
