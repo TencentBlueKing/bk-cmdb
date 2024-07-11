@@ -21,12 +21,14 @@ import (
 	"errors"
 	"fmt"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/querybuilder"
 )
 
 // ExportParamI export excel instance parameter interface
@@ -48,6 +50,20 @@ type ExportParamI interface {
 
 	// GetObjUniqueID get object unique id
 	GetObjUniqueID() int64
+}
+
+// GetExportParamInterface 根据模型id返回对应的接口类型
+func GetExportParamInterface(objID string) ExportParamI {
+	switch objID {
+	case common.BKInnerObjIDHost:
+		return new(HostParam)
+	case common.BKInnerObjIDApp:
+		return new(BizParam)
+	case common.BKInnerObjIDProject:
+		return new(ProjectParam)
+	default:
+		return &InstParam{ObjID: objID}
+	}
 }
 
 // BaseParam base add data parameter
@@ -87,16 +103,7 @@ type InstParam struct {
 
 // GetPropCond get condition for query property
 func (e *InstParam) GetPropCond() (mapstr.MapStr, error) {
-	cond := mapstr.MapStr{
-		common.BKObjIDField: e.ObjID,
-		metadata.PageName:   mapstr.MapStr{metadata.PageStart: 0, metadata.PageLimit: common.BKNoLimit},
-	}
-
-	if len(e.CustomFields) > 0 {
-		cond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: e.CustomFields}
-	}
-
-	return cond, nil
+	return getPropCond(e.ObjID, e.CustomFields)
 }
 
 // HasInstCond has condition for query instance
@@ -231,16 +238,7 @@ func (e *HostParam) GetInstCond() (mapstr.MapStr, error) {
 // HasInstCond has condition for query instance
 func (e *HostParam) HasInstCond() bool {
 	if e.cursor == nil {
-		limit := e.ExportCond.Page.Limit
-		if common.BKMaxExportLimit < e.ExportCond.Page.Limit {
-			limit = common.BKMaxExportLimit
-		}
-
-		e.cursor = &cursor{
-			start:  e.ExportCond.Page.Start,
-			limit:  limit,
-			maxIdx: e.ExportCond.Page.Start + e.ExportCond.Page.Limit - 1,
-		}
+		e.cursor = getCursor(e.ExportCond.Page)
 	}
 
 	return e.cursor.hasNext()
@@ -250,6 +248,178 @@ func (e *HostParam) HasInstCond() bool {
 func (e *HostParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error {
 	if e.ExportCond.Page.Limit <= 0 || e.ExportCond.Page.Limit > common.BKMaxOnceExportLimit {
 		return fmt.Errorf(lang.Languagef("export_page_limit_err", common.BKMaxOnceExportLimit))
+	}
+
+	return nil
+}
+
+// BizParam export biz parameter
+type BizParam struct {
+	BaseParam `json:",inline"`
+
+	// CustomFields 导出的业务字段
+	CustomFields []string `json:"export_custom_fields"`
+
+	// InstIDArr 指定需要导出的业务ID，设置本参数后，ExportCond限定条件无效
+	BizIDArr []int64 `json:"bk_biz_ids"`
+
+	ExportCond metadata.ExportBusinessRequest `json:"export_condition"`
+}
+
+// GetPropCond get condition for query property
+func (e *BizParam) GetPropCond() (mapstr.MapStr, error) {
+	return getPropCond(common.BKInnerObjIDApp, e.CustomFields)
+}
+
+// HasInstCond has condition for query biz
+func (e *BizParam) HasInstCond() bool {
+	if e.cursor == nil {
+		e.cursor = getCursor(e.ExportCond.Page)
+	}
+
+	return e.cursor.hasNext()
+}
+
+// GetInstCond get condition for query biz
+func (e *BizParam) GetInstCond() (mapstr.MapStr, error) {
+	fields := make([]string, 0)
+	if len(e.CustomFields) > 0 {
+		fields = append(fields, e.CustomFields...)
+		fields = append(fields, common.BKAppIDField)
+	}
+
+	if len(e.BizIDArr) > 0 {
+		if len(e.BizIDArr) > common.BKMaxExportLimit {
+			return nil, fmt.Errorf("inst id exceed max len: %d", common.BKMaxExportLimit)
+		}
+		e.cursor.setEnd()
+
+		bizCond := mapstr.MapStr{
+			"biz_property_filter": &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{
+							Field:    common.BKAppIDField,
+							Operator: filter.OpFactory(filter.In),
+							Value:    e.BizIDArr,
+						},
+					},
+				},
+			},
+			metadata.DBFields: fields,
+			metadata.PageName: e.ExportCond.Page,
+		}
+		return bizCond, nil
+	}
+
+	bizCond := mapstr.MapStr{
+		"biz_property_filter": e.ExportCond.Filter,
+		"time_condition":      e.ExportCond.TimeCondition,
+		metadata.DBFields:     fields,
+		metadata.PageName: mapstr.MapStr{
+			metadata.PageSort:  e.cursor.getPage().Sort,
+			metadata.PageStart: e.cursor.getPage().Start,
+			metadata.PageLimit: e.cursor.getPage().Limit,
+		},
+	}
+
+	e.cursor.next()
+
+	return bizCond, nil
+}
+
+// Validate validate parameter
+func (e *BizParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error {
+	if len(e.BizIDArr) > common.BKInstMaxExportLimit {
+		return fmt.Errorf("bk_biz_ids exceed max length: %d", common.BKInstMaxExportLimit)
+	}
+
+	return nil
+}
+
+// ProjectParam export project parameter
+type ProjectParam struct {
+	BaseParam `json:",inline"`
+
+	// CustomFields 导出的项目字段
+	CustomFields []string `json:"export_custom_fields"`
+
+	// InstIDArr 指定需要导出的项目ID，设置本参数后，ExportCond限定条件无效
+	IDArr []int64 `json:"ids"`
+
+	// 导出项目查询参数
+	ExportCond metadata.SearchProjectOption `json:"export_condition"`
+}
+
+// GetPropCond get condition for query property
+func (e *ProjectParam) GetPropCond() (mapstr.MapStr, error) {
+	return getPropCond(common.BKInnerObjIDProject, e.CustomFields)
+}
+
+// HasInstCond has condition for query project
+func (e *ProjectParam) HasInstCond() bool {
+	if e.cursor == nil {
+		e.cursor = getCursor(e.ExportCond.Page)
+	}
+
+	return e.cursor.hasNext()
+}
+
+// GetInstCond get condition for query biz
+func (e *ProjectParam) GetInstCond() (mapstr.MapStr, error) {
+	fields := make([]string, 0)
+	if len(e.CustomFields) > 0 {
+		fields = append(fields, e.CustomFields...)
+		fields = append(fields, common.BKFieldID)
+	}
+
+	if len(e.IDArr) > 0 {
+		if len(e.IDArr) > common.BKMaxExportLimit {
+			return nil, fmt.Errorf("inst id exceed max len: %d", common.BKMaxExportLimit)
+		}
+		e.cursor.setEnd()
+
+		projectCond := mapstr.MapStr{
+			"filter": &querybuilder.QueryFilter{
+				Rule: &querybuilder.CombinedRule{
+					Condition: querybuilder.ConditionAnd,
+					Rules: []querybuilder.Rule{
+						querybuilder.AtomRule{
+							Field:    common.BKFieldID,
+							Operator: querybuilder.OperatorIn,
+							Value:    e.IDArr,
+						},
+					},
+				},
+			},
+			metadata.DBFields: fields,
+			metadata.PageName: e.ExportCond.Page,
+		}
+		return projectCond, nil
+	}
+
+	projectCond := mapstr.MapStr{
+		"filter":          e.ExportCond.Filter,
+		"time_condition":  e.ExportCond.TimeCondition,
+		metadata.DBFields: fields,
+		metadata.PageName: metadata.BasePage{
+			Sort:        e.cursor.getPage().Sort,
+			Limit:       e.cursor.getPage().Limit,
+			Start:       e.cursor.getPage().Start,
+			EnableCount: false,
+		},
+	}
+
+	e.cursor.next()
+
+	return projectCond, nil
+}
+
+// Validate validate parameter
+func (e *ProjectParam) Validate(kit *rest.Kit, lang language.DefaultCCLanguageIf) error {
+	if len(e.IDArr) > common.BKInstMaxExportLimit {
+		return fmt.Errorf("bk_biz_ids exceed max length: %d", common.BKInstMaxExportLimit)
 	}
 
 	return nil
@@ -286,4 +456,32 @@ func (c *cursor) next() {
 
 func (c *cursor) setEnd() {
 	c.start = c.maxIdx + 1
+}
+
+// getPropCond get condition for query property
+func getPropCond(objID string, customFields []string) (mapstr.MapStr, error) {
+	cond := mapstr.MapStr{
+		common.BKObjIDField: objID,
+		metadata.PageName:   mapstr.MapStr{metadata.PageStart: 0, metadata.PageLimit: common.BKNoLimit},
+	}
+
+	if len(customFields) > 0 {
+		cond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: customFields}
+	}
+
+	return cond, nil
+}
+
+// getCursor get cursor
+func getCursor(page metadata.BasePage) *cursor {
+	limit := page.Limit
+	if common.BKMaxExportLimit < page.Limit {
+		limit = common.BKMaxExportLimit
+	}
+
+	return &cursor{
+		start:  page.Start,
+		limit:  limit,
+		maxIdx: page.Start + page.Limit - 1,
+	}
 }

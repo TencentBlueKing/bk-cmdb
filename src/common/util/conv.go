@@ -358,3 +358,20 @@ func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 	}
 	return results, nil
 }
+
+// ConvertStructToMap 将结构体转换为map[string]interface{}
+func ConvertStructToMap(obj interface{}) (map[string]interface{}, error) {
+	jsonData, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+
+	err = json.Unmarshal(jsonData, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

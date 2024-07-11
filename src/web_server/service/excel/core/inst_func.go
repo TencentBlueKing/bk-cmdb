@@ -44,6 +44,37 @@ func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]map
 	return result.Data.Info, nil
 }
 
+// GetBiz get biz
+func (d *Client) GetBiz(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
+	ownerID := kit.Header.Get(common.BKHTTPOwnerID)
+	result, err := d.ApiClient.SearchBiz(kit.Ctx, ownerID, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get biz data detail error: %v , search condition: %v, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Data.Info) == 0 {
+		return nil, nil
+	}
+
+	return result.Data.Info, nil
+}
+
+// GetProject get project
+func (d *Client) GetProject(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
+	result, err := d.ApiClient.SearchProject(kit.Ctx, kit.Header, cond)
+	if err != nil {
+		blog.Errorf("get project data detail error: %v , search condition: %v, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Data.Info) == 0 {
+		return nil, nil
+	}
+
+	return result.Data.Info, nil
+}
+
 // HandleImportedInst handle imported instance
 func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int64, []string) {
 	var result *metadata.ImportInstResp

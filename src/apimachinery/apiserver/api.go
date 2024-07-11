@@ -709,3 +709,29 @@ func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, st
 
 	return
 }
+
+// SearchProject search project
+func (a *apiServer) SearchProject(ctx context.Context, h http.Header, params mapstr.MapStr) (
+	resp *metadata.SearchInstResult, err error) {
+
+	resp = new(metadata.SearchInstResult)
+	subPath := "/findmany/project"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return
+}

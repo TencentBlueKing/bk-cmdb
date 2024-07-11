@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 )
 
 // ApiServerClientInterface TODO
@@ -91,8 +90,8 @@ type ApiServerClientInterface interface {
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
 	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error
-	SearchBiz(ctx context.Context, ownerID string, h http.Header,
-		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SearchBiz(ctx context.Context, ownerID string, h http.Header, params mapstr.MapStr) (
+		resp *metadata.SearchInstResult, err error)
 
 	ReadModuleAssociation(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (*metadata.AsstResult,
 		errors.CCErrorCoder)
@@ -117,6 +116,9 @@ type ApiServerClientInterface interface {
 		*metadata.SearchDataResult, error)
 
 	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
+		err error)
+
+	SearchProject(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.SearchInstResult,
 		err error)
 }
 

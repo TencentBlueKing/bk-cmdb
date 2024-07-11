@@ -66,8 +66,21 @@ func (s *Service) SearchBusiness(c *gin.Context) {
 			}
 		}
 	}
+
+	queryParams, err := util.ConvertStructToMap(query)
+	if err != nil {
+		blog.Error("search business, but query cond transform failed, err: %v, rid: %s", err, rid)
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result:      false,
+			Code:        common.CCErrCommFuncCalledWithInappropriateParam,
+			ErrMsg:      defErr.Error(common.CCErrCommFuncCalledWithInappropriateParam).Error(),
+			Permissions: nil,
+		})
+		return
+	}
+
 	ownerID := c.Request.Header.Get(common.BKHTTPOwnerID)
-	biz, err := s.Engine.CoreAPI.ApiServer().SearchBiz(ctx, ownerID, c.Request.Header, query)
+	biz, err := s.Engine.CoreAPI.ApiServer().SearchBiz(ctx, ownerID, c.Request.Header, queryParams)
 	if err != nil {
 		blog.Error("search business, but request to api failed, err: %v, rid: %s", err, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{

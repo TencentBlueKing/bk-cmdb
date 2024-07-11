@@ -18,8 +18,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 )
 
 // CreateBiz TODO
@@ -80,12 +80,12 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 
 // SearchBiz TODO
 func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header,
-	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	params mapstr.MapStr) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(s).
+		Body(params).
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().

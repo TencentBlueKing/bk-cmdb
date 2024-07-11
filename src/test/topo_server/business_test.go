@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -100,14 +100,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business change start limit", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 1,
 				"limit": 1,
 				"sort":  "bk_biz_id",
 			},
-			Fields:    []string{},
-			Condition: map[string]interface{}{},
+			metadata.DBFields:         []string{},
+			metadata.DBQueryCondition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -118,14 +118,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_maintainer", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "bk_biz_id",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"bk_biz_maintainer": "admin",
 			},
 		}
@@ -137,14 +137,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_tester", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "bk_biz_id",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"bk_biz_tester": "admin",
 			},
 		}
@@ -157,14 +157,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using time_zone", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "bk_biz_id",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"time_zone": "Africa/Accra",
 			},
 		}
@@ -176,14 +176,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using language", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "bk_biz_id",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"language": "1",
 			},
 		}
@@ -195,14 +195,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using life_cycle", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "bk_biz_id",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"life_cycle": "1",
 			},
 		}
@@ -305,14 +305,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "",
 			},
-			Fields:    []string{},
-			Condition: map[string]interface{}{},
+			metadata.DBFields:         []string{},
+			metadata.DBQueryCondition: map[string]interface{}{},
 		}
 		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -325,14 +325,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"bk_biz_name": "cdewdercfee",
 			},
 		}
@@ -351,14 +351,14 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_id", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
+		input := mapstr.MapStr{
+			metadata.PageName: map[string]interface{}{
 				"start": 0,
 				"limit": 10,
 				"sort":  "",
 			},
-			Fields: []string{},
-			Condition: map[string]interface{}{
+			metadata.DBFields: []string{},
+			metadata.DBQueryCondition: map[string]interface{}{
 				"bk_biz_id": bizIdInt,
 			},
 		}

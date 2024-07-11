@@ -277,6 +277,13 @@ type ListFieldTmplWithObjOption struct {
 	Fields         []string           `json:"fields"`
 }
 
+// ExportBusinessRequest 导出业务请求结构体
+type ExportBusinessRequest struct {
+	Page          BasePage           `json:"page"`
+	TimeCondition *TimeCondition     `json:"time_condition"`
+	Filter        *filter.Expression `json:"filter,omitempty"`
+}
+
 // Validate list field template with object condition option
 func (l *ListFieldTmplWithObjOption) Validate() errors.RawErrorInfo {
 	if err := l.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {

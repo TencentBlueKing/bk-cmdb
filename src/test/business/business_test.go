@@ -19,10 +19,9 @@ import (
 	"net/http"
 	"time"
 
-	// "configcenter/src/common/mapstr"
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/test"
-	// "configcenter/src/common"
-	params "configcenter/src/common/paraparse"
 	"configcenter/src/test/run"
 
 	. "github.com/onsi/ginkgo"
@@ -43,10 +42,10 @@ var _ = Describe("Business Test", func() {
 	header := test.GetHeader()
 
 	Describe("get business list load test", func() {
-		var cond *params.SearchParams
+		var cond mapstr.MapStr
 		BeforeEach(func() {
-			cond = &params.SearchParams{
-				Condition: map[string]interface{}{
+			cond = mapstr.MapStr{
+				common.Condition: map[string]interface{}{
 					"bk_data_status": map[string]interface{}{
 						"$ne": "disabled",
 					},

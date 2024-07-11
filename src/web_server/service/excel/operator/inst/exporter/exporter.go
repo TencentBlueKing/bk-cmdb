@@ -244,11 +244,16 @@ func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, row
 }
 
 func (e *Exporter) getInst(cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	if e.GetObjID() == common.BKInnerObjIDHost {
+	switch e.GetObjID() {
+	case common.BKInnerObjIDHost:
 		return e.GetClient().GetHost(e.GetKit(), cond)
+	case common.BKInnerObjIDApp:
+		return e.GetClient().GetBiz(e.GetKit(), cond)
+	case common.BKInnerObjIDProject:
+		return e.GetClient().GetProject(e.GetKit(), cond)
+	default:
+		return e.GetClient().GetInst(e.GetKit(), e.GetObjID(), cond)
 	}
-
-	return e.GetClient().GetInst(e.GetKit(), e.GetObjID(), cond)
 }
 
 // enrichInst 第一个返回值是返回实例数据，第二个返回值返回的每个实例数据所占用的excel行数
