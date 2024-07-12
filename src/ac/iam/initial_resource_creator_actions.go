@@ -222,6 +222,24 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				},
 				SubResourceTypes: nil,
 			},
+			{
+				ResourceID: Project,
+				Actions: []CreatorRelatedAction{
+					{
+						ID:         EditProject,
+						IsRequired: false,
+					},
+					{
+						ID:         DeleteProject,
+						IsRequired: false,
+					},
+					{
+						ID:         ViewProject,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
 		},
 	}
 }
