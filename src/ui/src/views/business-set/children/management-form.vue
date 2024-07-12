@@ -136,9 +136,7 @@
         }
         formData.value.bk_scope?.filter?.rules?.forEach((rule) => {
           if (rule.field === 'bk_biz_id') {
-            // 兼容api创建的业务范围类型为非数组情况
-            const val = rule.value instanceof Array ? rule.value : [rule.value]
-            data.selectedBusiness.push(...val)
+            data.selectedBusiness.push(...rule.value)
           } else {
             data.condition.push({
               field: rule.field,
