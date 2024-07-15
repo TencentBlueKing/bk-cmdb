@@ -25,7 +25,7 @@
         v-model="searchName"
         clearable
         :placeholder="$t('集群名称')"
-        @right-icon-click="getData(!!searchName)">
+        @right-icon-click="getData(!!searchName)"
         @enter="getData(!!searchName)">
       </bk-input>
     </div>
