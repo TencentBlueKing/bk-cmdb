@@ -286,7 +286,7 @@ func (s *Service) SearchSet(ctx *rest.Contexts) {
 		return
 	}
 
-	req := new(metadata.QueryReq)
+	req := new(metadata.SearchSetFilter)
 	if err = ctx.DecodeInto(req); err != nil {
 		blog.Errorf("search set failed, decode request failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

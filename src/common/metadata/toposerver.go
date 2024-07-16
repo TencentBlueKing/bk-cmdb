@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -758,4 +759,55 @@ func (q *QueryReq) GetCond() (*QueryCondition, ccErr.RawErrorInfo) {
 	}
 
 	return &q.QueryCondition, ccErr.RawErrorInfo{}
+}
+
+// SearchSetFilter set advanced filtering request struct
+type SearchSetFilter struct {
+	QueryCondition `json:",inline"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Filter *filter.Expression `json:"filter"`
+}
+
+// Validate validates the search filter struct
+func (f *SearchSetFilter) Validate() ccErr.RawErrorInfo {
+	if f.Condition != nil && f.Filter != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"condition and filter cannot be set at the same time"},
+		}
+	}
+
+	if f.Filter == nil {
+		return ccErr.RawErrorInfo{}
+	}
+
+	option := filter.NewDefaultExprOpt(nil)
+	option.IgnoreRuleFields = true
+	if err := f.Filter.Validate(option); err != nil {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{fmt.Sprintf("filter: %v", f.Filter)},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// GetCond returns  database type conditions base on the query condition.
+func (f *SearchSetFilter) GetCond() (*QueryCondition, ccErr.RawErrorInfo) {
+	if f.Filter == nil {
+		return &f.QueryCondition, ccErr.RawErrorInfo{}
+	}
+
+	var err error
+	f.Condition, err = f.Filter.ToMgo()
+	if err != nil {
+		return nil, ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{err.Error() + fmt.Sprintf(", filter: %v", f.Filter)},
+		}
+	}
+
+	return &f.QueryCondition, ccErr.RawErrorInfo{}
 }

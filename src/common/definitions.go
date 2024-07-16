@@ -175,6 +175,12 @@ const (
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
+	// BKCONTAINS 大小写不敏感关键字
+	BKCONTAINS = "contains"
+
+	// BKCONTAINSSENSITIVE 大小写敏感关键字
+	BKCONTAINSSENSITIVE = "contains_s"
+
 	// BKDBOPTIONS the db operator,used with $regex
 	// detail to see https://docs.mongodb.com/manual/reference/operator/query/regex/#op._S_options
 	BKDBOPTIONS = "$options"

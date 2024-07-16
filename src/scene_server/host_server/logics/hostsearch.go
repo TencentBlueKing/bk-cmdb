@@ -350,7 +350,7 @@ func init() {
 	}
 
 	strOpMap := make(map[string]struct{})
-	for _, op := range append(commonOps, common.BKDBLIKE) {
+	for _, op := range append(commonOps, common.BKDBLIKE, common.BKCONTAINS, common.BKCONTAINSSENSITIVE) {
 		strOpMap[op] = struct{}{}
 	}
 
