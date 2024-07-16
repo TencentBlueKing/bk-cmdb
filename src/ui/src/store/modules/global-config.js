@@ -29,8 +29,6 @@ import { Base64 } from 'js-base64'
 import { language } from '@/i18n'
 import cloneDeep from 'lodash/cloneDeep'
 
-// 备份的远程数据，在国际化处理时用来拼装出全量数据。
-let currentConfigBackup = null
 
 const state = () => ({
   auth: false, // 权限状态 true 为有权限，否则无
@@ -89,32 +87,6 @@ const serializeState = (newConfig, lang) => {
     backend: {
       max_biz_topo_level: newConfig.backend.maxBizTopoLevel,
       snapshot_biz_name: newConfig.backend.snapshotBizName,
-    },
-    site: {
-      name: {
-        ...currentConfigBackup.site.name,
-        i18n: {
-          ...currentConfigBackup.site.name.i18n,
-          [lang]: newConfig.site.name
-        }
-      },
-      separator: newConfig.site.separator
-    },
-    footer: {
-      contact: {
-        ...currentConfigBackup.footer.contact,
-        i18n: {
-          ...currentConfigBackup.footer.contact.i18n,
-          [lang]: newConfig.footer.contact
-        }
-      },
-      copyright: {
-        ...currentConfigBackup.footer.copyright,
-        i18n: {
-          ...currentConfigBackup.footer.copyright.i18n,
-          [lang]: newConfig.footer.copyright
-        }
-      }
     },
     validation_rules: serializeValidationRules(newConfig.validationRules, lang),
     set: newConfig.set,
@@ -232,7 +204,6 @@ const actions = {
     commit('setLoading', true)
     return getCurrentConfig()
       .then((config) => {
-        currentConfigBackup = Object.freeze(cloneDeep(config))
         commit('setConfig', unserializeConfig(config, state.language))
       })
       .catch((err) => {
