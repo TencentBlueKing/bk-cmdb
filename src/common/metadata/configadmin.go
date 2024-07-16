@@ -42,62 +42,7 @@ type ConfigAdminParmams struct {
 // ConfigAdmin used to admin the cmdb config
 type ConfigAdmin struct {
 	Backend         BackendCfg         `json:"backend"`
-	Site            SiteCfg            `json:"site"`
 	ValidationRules ValidationRulesCfg `json:"validationRules"`
-}
-
-// Site site name and separator config.
-type Site struct {
-	SiteName  TitleItem `json:"name"`
-	Separator string    `json:"separator"`
-}
-
-// Validate validate the fields of SiteCfg.
-func (s Site) Validate() error {
-	if strings.TrimSpace(s.SiteName.I18N.CN) == "" {
-		return fmt.Errorf("site cn name can't be empty")
-	}
-	if strings.TrimSpace(s.SiteName.I18N.EN) == "" {
-		return fmt.Errorf("site en name can't be empty")
-	}
-
-	if strings.TrimSpace(s.Separator) == "" {
-		return fmt.Errorf("separator value can't be empty")
-	}
-	return nil
-}
-
-// ContactInfoItem contact information, markdown format.
-type ContactInfoItem struct {
-	BaseCfgItem `json:",inline"`
-}
-
-// CopyrightItem copyright information, markdown format.
-type CopyrightItem struct {
-	BaseCfgItem `json:",inline"`
-}
-
-// Footer footer information.
-type Footer struct {
-	ContactInfo ContactInfoItem `json:"contact"`
-	Copyright   CopyrightItem   `json:"copyright"`
-}
-
-// Validate validate the fields of SiteCfg
-func (s Footer) Validate() error {
-	if strings.TrimSpace(s.ContactInfo.I18N.CN) == "" {
-		return fmt.Errorf("contact info cn value can't be empty")
-	}
-	if strings.TrimSpace(s.ContactInfo.I18N.EN) == "" {
-		return fmt.Errorf("contact info en value can't be empty")
-	}
-	if strings.TrimSpace(s.Copyright.I18N.CN) == "" {
-		return fmt.Errorf("copyright cn value can't be empty")
-	}
-	if strings.TrimSpace(s.Copyright.I18N.EN) == "" {
-		return fmt.Errorf("copyright en value can't be empty")
-	}
-	return nil
 }
 
 // UserModuleList custom section.
@@ -162,8 +107,6 @@ func (s ObjectString) Validate() error {
 // 函数，如果没有会panic.
 type PlatformSettingConfig struct {
 	Backend             AdminBackendCfg    `json:"backend"`
-	SiteConfig          Site               `json:"site"`
-	FooterConfig        Footer             `json:"footer"`
 	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
 	BuiltInSetName      ObjectString       `json:"set"`
 	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
@@ -571,52 +514,6 @@ func (b *BaseCfgItem) ValidateRegex() error {
 type I18N struct {
 	CN string `json:"cn"`
 	EN string `json:"en"`
-}
-
-// SiteCfg used to admin Site Config
-type SiteCfg struct {
-	Title  TitleItem  `json:"title"`
-	Footer FooterItem `json:"footer"`
-}
-
-// Validate validate the fields of SiteCfg
-func (s SiteCfg) Validate() error {
-	if err := s.Title.ValidateValueFormat(); err != nil {
-		return fmt.Errorf("title format err:%s", err.Error())
-	}
-	if err := s.Footer.Validate(); err != nil {
-		return fmt.Errorf("footer validate err:%s", err.Error())
-	}
-	return nil
-}
-
-// TitleItem TODO
-type TitleItem struct {
-	BaseCfgItem `json:",inline"`
-}
-
-// FooterItem TODO
-type FooterItem struct {
-	Links []LinksItem `json:"links"`
-}
-
-// LinksItem TODO
-type LinksItem struct {
-	BaseCfgItem `json:",inline"`
-	Enabled     bool `json:"enabled"`
-}
-
-// Validate validate the fields of FooterItem
-func (s FooterItem) Validate() error {
-	if len(s.Links) == 0 {
-		return fmt.Errorf("links can't be empty")
-	}
-	for _, link := range s.Links {
-		if err := link.ValidateValueFormat(); err != nil {
-			return fmt.Errorf("link %#v ValidateValueFormat err, %s", link, err.Error())
-		}
-	}
-	return nil
 }
 
 // ValidationRulesCfg used to admin valiedation rules Config
