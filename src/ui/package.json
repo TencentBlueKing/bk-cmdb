@@ -26,7 +26,7 @@
     "@icon-cool/bk-icon-cmdb-colorful": "0.0.1",
     "await-to-js": "^3.0.0",
     "axios": "^1.6.8",
-    "bk-magic-vue": "2.5.9-beta.26",
+    "bk-magic-vue": "2.5.9-beta.36",
     "core-js": "^3.10.1",
     "cytoscape": "3.10.0",
     "cytoscape-dagre": "2.2.2",
