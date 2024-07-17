@@ -58,7 +58,7 @@ const (
 var (
 	// 需要参与变化对比的字段
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
-		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit"}
+		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit", "bk_cpu_architecture"}
 	reqireFields = append(compareFields, "bk_host_id", "bk_host_innerip", "bk_host_outerip")
 
 	// notice: 为了对应不同版本和环境差异，再当前版本中设置compareFields中不参加对比的字段
@@ -388,6 +388,7 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 	platform := val.Get("data.system.info.platform").String()
 	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.info.platformVersion").String()
+	arch := val.Get("data.system.info.systemarch").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
 		version = strings.Replace(version, ".x86_64", "", 1)
@@ -564,6 +565,13 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		raw.Write([]byte("\"" + osbit + "\""))
 	}
 
+	if arch != "" {
+		setter["bk_cpu_architecture"] = arch
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_architecture\":")
+		raw.Write([]byte("\"" + arch + "\""))
+	}
+
 	raw.WriteByte('}')
 
 	return setter, raw.String()
@@ -583,6 +591,7 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 	platform := val.Get("data.system.platform").String()
 	platform = strings.TrimSpace(platform)
 	version := val.Get("data.system.platVer").String()
+	arch := val.Get("data.system.arch").String()
 	switch strings.ToLower(ostype) {
 	case "linux":
 		version = strings.Replace(version, ".x86_64", "", 1)
@@ -756,6 +765,13 @@ func parseV10Setter(val *gjson.Result, innerIP, outerIP string) (map[string]inte
 		raw.WriteString(",")
 		raw.WriteString("\"bk_os_bit\":")
 		raw.Write([]byte("\"" + osbit + "\""))
+	}
+
+	if arch != "" {
+		setter["bk_cpu_architecture"] = arch
+		raw.WriteString(",")
+		raw.WriteString("\"bk_cpu_architecture\":")
+		raw.Write([]byte("\"" + arch + "\""))
 	}
 
 	raw.WriteByte('}')
