@@ -83,6 +83,20 @@ func (s *coreService) TranslateEnumName(ctx context.Context, defLang language.De
 	return options
 }
 
+// TranslateTablePlaceholder table类型属性字段中英文转化
+func (s *coreService) TranslateTablePlaceholder(defLang language.DefaultCCLanguageIf, objID string,
+	attrs []metadata.Attribute) []metadata.Attribute {
+
+	if len(attrs) == 0 {
+		return nil
+	}
+	for index, attr := range attrs {
+		attrs[index].Placeholder = util.FirstNotEmptyString(defLang.Language(objID+"_"+attr.PropertyGroup+
+			"_placeholder_"+attr.PropertyID), attr.Placeholder)
+	}
+	return attrs
+}
+
 // TranslatePropertyGroupName TODO
 func (s *coreService) TranslatePropertyGroupName(defLang language.DefaultCCLanguageIf, att *metadata.Group) string {
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_group_"+att.GroupID), att.GroupName,

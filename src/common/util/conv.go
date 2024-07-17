@@ -358,3 +358,18 @@ func SliceInterfaceToBool(faceSlice []interface{}) ([]bool, error) {
 	}
 	return results, nil
 }
+
+// InterfaceToStruct 将interface解码为结构体类型
+// from为任意类型，to为要转换的结构体指针类型
+// 失败则返回error.
+func InterfaceToStruct(from interface{}, to interface{}) error {
+	toByte, err := json.Marshal(from)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(toByte, to); err != nil {
+		return err
+	}
+	return nil
+}

@@ -9,5 +9,10 @@
   "process_placeholder_bk_start_check_secs": "After executing the start command, how long to wait to check the status of the PID alive",
   "process_placeholder_priority": "Batch start processes are sorted according to priority from small to large, and stop processes are operated in reverse order. Priority value range supports input [ -100 ~ 10000 ]",
   "process_placeholder_timeout": "The timeout period for executing commands",
+
+  "process_bind_info_placeholder_ip": "Process-bound IP",
+  "process_bind_info_placeholder_port": "Process listening port</br> (Fill in example) Single port: 8080</br> (Fill in example) Port range: 8080-9090",
+  "process_bind_info_placeholder_protocol": "Protocol used by the process",
+  "process_bind_info_placeholder_enable": "Enable port monitoring (for BK-Monitor use)",
   "": ""
 }
