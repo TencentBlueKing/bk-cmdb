@@ -1,3 +1,10 @@
+## [Version: v3.14.1-feature-layered-alpha6] - 2024-07-17
+**功能优化**
+- 删除平台管理的site和footer配置项
+
+**缺陷修复**
+- 修复导出实例和主机时勾选导出关联模型实例但未成功导出的问题
+
 ## [Version: v3.14.1-feature-layered-alpha5] - 2024-07-16
 **功能优化**
 - 优化安装部署文档
