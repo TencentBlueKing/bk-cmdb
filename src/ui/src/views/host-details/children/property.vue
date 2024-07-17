@@ -231,6 +231,10 @@
               ({{hoverPropertyPopover.data.bk_property_type}})
             </span>
           </dd>
+          <dd class="row-item" v-show="getUserTips">
+            <span class="item-name">{{$t('用户提示')}}</span>
+            <span class="item-value">{{getUserTips}}</span>
+          </dd>
         </div>
       </dl>
     </div>
@@ -303,6 +307,9 @@
       },
       bizId() {
         return this.isFromResource ? undefined : this.business
+      },
+      getUserTips() {
+        return this.hoverPropertyPopover.data.placeholder
       }
     },
     inject: [
