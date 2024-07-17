@@ -126,6 +126,10 @@ func ParseHostParams(input []metadata.ConditionItem) (map[string]interface{}, er
 func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, output map[string]interface{},
 	rid string) (map[string]interface{}, error) {
 
+	exact := ipv4Cond.Exact
+	if exact != 1 && len(ipv4Cond.Data) > 10 {
+		return nil, fmt.Errorf("the number of IP condition in fuzzy query cannot more than 10")
+	}
 	var err error
 	exactOr := make([]map[string]interface{}, 0)
 	embeddedIPv4Addrs := make([]string, 0)
@@ -138,7 +142,6 @@ func ParseHostIPParams(ipv4Cond metadata.IPInfo, ipv6Cond metadata.IPInfo, outpu
 	}
 
 	ipv4Cond.Data = append(ipv4Cond.Data, embeddedIPv4Addrs...)
-	exact := ipv4Cond.Exact
 	flag := ipv4Cond.Flag
 	if len(ipv4Cond.Data) == 0 && len(exactOr) == 0 {
 		return output, nil
@@ -422,33 +425,58 @@ func addFuzzyCondition(splitIPResult SplitIPResult, fieldAndCond FieldAndConditi
 
 	orCond := make([]map[string]interface{}, 0)
 
+	// 处理未设置管控区域的IP
 	if len(splitIPResult.NoCloudIdIP) != 0 {
-		splitIPResult.NoCloudIdIP = deduplication(splitIPResult.NoCloudIdIP)
-		for _, ip := range splitIPResult.NoCloudIdIP {
-			fieldAndCond.IPCond = map[string]interface{}{common.BKDBLIKE: SpecialCharChange(ip)}
+		fieldAndCond.IPCond = spliceFuzzyIP(splitIPResult.NoCloudIdIP)
 
-			fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
-			if err != nil {
-				return nil, err
-			}
-			orCond = append(orCond, fuzzySearchCond...)
+		fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
+		if err != nil {
+			return nil, err
 		}
+
+		orCond = append(orCond, fuzzySearchCond...)
 	}
 
+	// 处理设置了管控区域的IP
 	for cloudID, ipArr := range splitIPResult.CloudIdIPMap {
-		ipArr = deduplication(ipArr)
-		for _, ip := range ipArr {
-			fieldAndCond.CloudIDCond = map[string]interface{}{common.BKDBEQ: cloudID}
-			fieldAndCond.IPCond = map[string]interface{}{common.BKDBLIKE: SpecialCharChange(ip)}
+		fieldAndCond.CloudIDCond = map[string]interface{}{common.BKDBEQ: cloudID}
+		fieldAndCond.IPCond = spliceFuzzyIP(ipArr)
 
-			fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
-			if err != nil {
-				return nil, err
-			}
-			orCond = append(orCond, fuzzySearchCond...)
+		fuzzySearchCond, err := getIPCond(flag, output, fieldAndCond)
+		if err != nil {
+			return nil, err
 		}
+
+		orCond = append(orCond, fuzzySearchCond...)
 	}
 	return orCond, nil
+}
+
+// spliceFuzzyIP 使用"|"拼接IP字符，减少模糊查询的条件复杂度，提高查询效率
+/*
+查询条件从：
+{
+	{
+		"bk_host_innerip": {"$regex": "127.0."}
+	},
+	{
+		"bk_host_innerip": {"$regex": "128.0."}
+	}
+}
+优化为：
+{
+	{
+		"bk_host_innerip": {"$regex": "127.0.|128.0."}
+	}
+}
+*/
+func spliceFuzzyIP(ipArr []string) map[string]interface{} {
+	ipArr = deduplication(ipArr)
+	regexString := SpecialCharChange(ipArr[0])
+	for i := 1; i < len(ipArr); i++ {
+		regexString = regexString + "|" + SpecialCharChange(ipArr[i])
+	}
+	return map[string]interface{}{common.BKDBLIKE: regexString}
 }
 
 // getCloudIDCond 获取output中的管控区域条件
