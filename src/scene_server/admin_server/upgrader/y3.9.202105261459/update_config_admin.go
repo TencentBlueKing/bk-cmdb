@@ -26,56 +26,6 @@ func updateConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
         "snapshotBizName": "蓝鲸",
         "maxBizTopoLevel": 7
     },
-    "site": {
-        "title": {
-            "value": "SITE_TITLE_VAL",
-            "description": "网站标题",
-            "i18n": {
-                "cn": "SITE_TITLE_VAL",
-                "en": "CMDB | BlueKing"
-            }
-        },
-        "footer": {
-            "links": [
-                {
-                    "value": "http://wpa.b.qq.com/cgi/wpa.php?ln=1&key=XzgwMDgwMjAwMV80NDMwOTZfODAwODAyMDAxXzJf",
-                    "description": "QQ咨询",
-                    "i18n": {
-                        "cn": "QQ咨询(800802001)",
-                        "en": "QQ(800802001)"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "https://bk.tencent.com/s-mart/community/",
-                    "description": "蓝鲸论坛",
-                    "i18n": {
-                        "cn": "蓝鲸论坛",
-                        "en": "Blueking Forum"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "https://bk.tencent.com/index/",
-                    "description": "蓝鲸官网",
-                    "i18n": {
-                        "cn": "蓝鲸官网",
-                        "en": "BlueKing Official"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "http://your-bk-desktop.com",
-                    "description": "蓝鲸桌面",
-                    "i18n": {
-                        "cn": "蓝鲸桌面",
-                        "en": "Blueking Desktop"
-                    },
-                    "enabled": false
-                }
-            ]
-        }
-    },
     "validationRules": {
         "number": {
             "value": "^(\\-|\\+)?\\d+$",
@@ -192,7 +142,6 @@ func updateConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
     }
 }
 `
-	config = upgrader.SetConfigSiteTitle(config)
 	upgrader.AddConfigAdminChangeItem("y3.9.202105261459", "调整拓扑实例和模板名称的校验规则的配置", config)
 	return upgrader.UpgradeConfigAdmin(ctx, db, "y3.9.202105261459")
 }
