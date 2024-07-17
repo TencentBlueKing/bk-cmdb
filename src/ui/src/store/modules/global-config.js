@@ -55,6 +55,14 @@ const unserializeConfig = (remoteData, lang) => {
       maxBizTopoLevel: remoteData.backend.max_biz_topo_level,
       snapshotBizName: remoteData.backend.snapshot_biz_name
     },
+    site: {
+      name: remoteData?.site?.name,
+      separator: remoteData?.site?.separator
+    },
+    footer: {
+      contact: remoteData?.footer?.contact,
+      copyright: remoteData?.footer?.copyright
+    },
     validationRules: unserializeValidationRules(remoteData.validation_rules, lang),
     set: remoteData.set,
     idlePool: {
