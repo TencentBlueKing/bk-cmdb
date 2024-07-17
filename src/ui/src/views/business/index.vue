@@ -58,6 +58,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :show-select-all="showSelectAll(filterProperty)"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -242,6 +243,7 @@
   import throttle from 'lodash.throttle'
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { getSelectAll } from '@/utils/tools'
   export default {
     components: {
       cmdbColumnsConfig,
@@ -645,6 +647,9 @@
         params.condition[this.filter.field] = { [this.filter.operator]: this.filter.value }
 
         return params
+      },
+      showSelectAll(property) {
+        return getSelectAll(property)
       },
       async handleEdit(inst) {
         const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')

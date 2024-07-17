@@ -77,6 +77,7 @@
             <component class="item-value r0"
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
+              :show-select-all="showSelectAll(property)"
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
@@ -197,6 +198,7 @@
   import { setCursorPosition } from '@/utils/util'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
+  import { getSelectAll } from '@/utils/tools'
   import EditableBlock from '@/components/editable-block/index.vue'
 
   export default {
@@ -454,6 +456,9 @@
       },
       getPlaceholder(property) {
         return Utils.getPlaceholder(property)
+      },
+      showSelectAll(property) {
+        return getSelectAll(property)
       },
       handleIPOptionChange(negativeType, value) {
         if (!(value || this.IPCondition[negativeType])) {

@@ -33,6 +33,7 @@
         :is="`cmdb-search-${selectedProperty['bk_property_type']}`"
         :options="selectedProperty.option || []"
         :placeholder="$t('请输入关键字')"
+        :show-select-all="showSelectAll(selectedProperty)"
         v-model.trim="localSelected.value">
       </component>
     </div>
@@ -43,6 +44,7 @@
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { escapeRegexChar } from '@/utils/util'
+  import { getSelectAll } from '@/utils/tools'
 
   export default {
     props: {
@@ -170,6 +172,9 @@
       },
       clearFilter() {
         this.localSelected.value = ''
+      },
+      showSelectAll(property) {
+        return getSelectAll(property)
       }
     }
   }
