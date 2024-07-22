@@ -185,9 +185,9 @@
               ({{hoverPropertyPopover.data.bk_property_type}})
             </span>
           </dd>
-          <dd class="row-item" v-show="getUserTips">
+          <dd class="row-item" v-show="hoverPropertyPopover.data.placeholder">
             <span class="item-name">{{$t('用户提示')}}</span>
-            <span class="item-value">{{getUserTips}}</span>
+            <span class="item-value">{{hoverPropertyPopover.data.placeholder}}</span>
           </dd>
         </div>
       </dl>
@@ -277,9 +277,6 @@
       },
       instanceId() {
         return this.instState?.[BUILTIN_MODEL_PROPERTY_KEYS[this.objId]?.ID || 'bk_inst_id']
-      },
-      getUserTips() {
-        return this.hoverPropertyPopover.data.placeholder
       }
     },
     watch: {
