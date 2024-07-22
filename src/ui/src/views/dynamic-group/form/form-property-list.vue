@@ -31,7 +31,7 @@
               class="form-element"
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
-              :show-select-all="showSelectAll(property)"
+              :property="property"
               :data-vv-name="property.bk_property_id"
               :data-vv-as="property.bk_property_name"
               v-bind="getBindProps(property)"
@@ -73,7 +73,6 @@
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
-  import { getSelectAll } from '@/utils/tools'
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
@@ -317,9 +316,6 @@
           return this.$t('请选择xx', { name })
         }
         return this.$t('请输入xx', { name })
-      },
-      showSelectAll(property) {
-        return getSelectAll(property)
       }
     }
   }

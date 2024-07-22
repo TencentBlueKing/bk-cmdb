@@ -39,7 +39,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
-          :show-select-all="showSelectAll(filterProperty)"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -171,7 +171,7 @@
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
   import Utils from '@/components/filters/utils'
-  import { getDefaultPaginationConfig, getSort, isPropertySortable, getSelectAll } from '@/utils/tools.js'
+  import { getDefaultPaginationConfig, getSort, isPropertySortable } from '@/utils/tools.js'
   import applyPermission from '@/utils/apply-permission.js'
   import businessSetService from '@/service/business-set/index.js'
   import propertyService from '@/service/property/property.js'
@@ -295,7 +295,6 @@
           }
         }
       }
-      const showSelectAll = property => getSelectAll(property)
 
       // 获取模型属性与分组
       const properties = ref([])
@@ -524,8 +523,7 @@
         handleUpdateHeader,
         handleFilterFieldChange,
         handleClearFilter,
-        getColumnSortable,
-        showSelectAll
+        getColumnSortable
       }
     }
   })

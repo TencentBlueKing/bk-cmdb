@@ -33,7 +33,7 @@
         :is="`cmdb-search-${selectedProperty['bk_property_type']}`"
         :options="selectedProperty.option || []"
         :placeholder="$t('请输入关键字')"
-        :show-select-all="showSelectAll(selectedProperty)"
+        :property="selectedProperty"
         v-model.trim="localSelected.value">
       </component>
     </div>
@@ -42,7 +42,6 @@
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import has from 'has'
-  import { getSelectAll } from '@/utils/tools'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
 
   export default {
@@ -172,9 +171,6 @@
       },
       clearFilter() {
         this.localSelected.value = ''
-      },
-      showSelectAll(property) {
-        return getSelectAll(property)
       }
     }
   }

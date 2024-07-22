@@ -83,7 +83,7 @@
         <component class="filter-value r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
-          :show-select-all="showSelectAll(filterProperty)"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="filter.fuzzyQuery"
           v-bind="filterComponentProps"
@@ -234,7 +234,6 @@
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import { getSelectAll } from '@/utils/tools'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -770,9 +769,6 @@
           }
         }
         return params
-      },
-      showSelectAll(property) {
-        return getSelectAll(property)
       },
       handleCreate() {
         this.attribute.type = 'create'

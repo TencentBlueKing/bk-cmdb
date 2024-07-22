@@ -30,7 +30,7 @@
           <component class="item-value r0"
             :is="getComponentType(property)"
             :placeholder="getPlaceholder(property)"
-            :show-select-all="showSelectAll(property)"
+            :property="property"
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
@@ -76,7 +76,6 @@
   import OperatorSelector from './operator-selector.vue'
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
-  import { getSelectAll } from '@/utils/tools'
   import ConditionPicker from '@/components/condition-picker'
 
   export default {
@@ -204,9 +203,6 @@
           return `cmdb-search-${modelId}`
         }
         return normal
-      },
-      showSelectAll(property) {
-        return getSelectAll(property)
       },
       getPlaceholder(property) {
         return Utils.getPlaceholder(property)

@@ -28,7 +28,7 @@
         <component class="form-value"
           :is="getComponentType()"
           :placeholder="getPlaceholder()"
-          :show-select-all="showSelectAll(property)"
+          :property="property"
           v-bind="getBindProps()"
           v-model.trim="value"
           @active-change="handleActiveChange">
@@ -48,7 +48,6 @@
   import Utils from './utils'
   import { mapGetters } from 'vuex'
   import { isContainerObject } from '@/service/container/common'
-  import { getSelectAll } from '@/utils/tools'
 
   export default {
     components: {
@@ -95,9 +94,6 @@
       }
     },
     methods: {
-      showSelectAll(property) {
-        return getSelectAll(property)
-      },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
       },

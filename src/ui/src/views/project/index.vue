@@ -37,7 +37,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
-          :show-select-all="showSelectAll(filterProperty)"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -221,7 +221,6 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import projectService from '@/service/project/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import { getSelectAll } from '@/utils/tools'
 
   export default {
     components: {
@@ -457,9 +456,6 @@
         }
         const params = type === 'filed' ? searchParams : countParams
         return params
-      },
-      showSelectAll(property) {
-        return getSelectAll(property)
       },
       setTableHeader() {
         return new Promise((resolve) => {
