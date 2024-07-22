@@ -139,7 +139,7 @@ func (w *sharedNsRelWatcher) getDeletedRelInfo(ctx context.Context, oids []strin
 		"coll": kubetypes.BKTableNameNsSharedClusterRel,
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("detail.bk_namespace_id").
+	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("detail.bk_namespace_id").
 		All(ctx, &delArchives)
 	if err != nil {
 		blog.Errorf("get shared ns relation del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)

@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/util/table"
 	"configcenter/src/common/watch"
 	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/event"
@@ -211,8 +212,14 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			detail := string(byt)
 			return &detail, true, nil
 		} else {
+			delArchiveTable, exists := table.GetDelArchiveTable(key.Collection())
+			if !exists {
+				blog.Errorf("collection %s related del archive table not exists", key.Collection())
+				return nil, false, fmt.Errorf("collection %s related del archive table not exists", key.Collection())
+			}
+
 			doc := make(map[string]interface{})
-			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, &doc)
+			err := c.db.Table(delArchiveTable).Find(filter).Fields(detailFields...).One(kit.Ctx, &doc)
 			if err != nil {
 				if c.db.IsNotFoundError(err) {
 					return nil, false, nil
@@ -674,8 +681,14 @@ func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, 
 			}
 		}
 	} else {
+		delArchiveTable, exists := table.GetDelArchiveTable(coll)
+		if !exists {
+			blog.Errorf("collection %s related del archive table not exists, rid: %s", coll, kit.Rid)
+			return nil, fmt.Errorf("collection %s related del archive table not exists", coll)
+		}
+
 		docs := make([]map[string]interface{}, 0)
-		err := c.db.Table(common.BKTableNameDelArchive).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
+		err := c.db.Table(delArchiveTable).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
 		if err != nil {
 			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
 				"rid: %s", coll, deletedOids, err, kit.Rid)
