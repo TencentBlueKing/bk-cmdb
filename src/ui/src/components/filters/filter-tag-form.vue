@@ -21,17 +21,22 @@
         <operator-selector class="form-operator"
           v-if="!withoutOperator.includes(property.bk_property_type)"
           :property="property"
+          :custom-type-map="customOperatorTypeMap"
+          :symbol-map="operatorSymbolMap"
+          :desc-map="operatorDescMap"
           v-model="operator"
           @change="handleOperatorChange"
           @toggle="handleActiveChange">
         </operator-selector>
-        <component class="form-value"
-          :is="getComponentType()"
-          :placeholder="getPlaceholder()"
-          v-bind="getBindProps()"
-          v-model.trim="value"
-          @active-change="handleActiveChange">
-        </component>
+        <div class="form-value">
+          <component class="form-el"
+            :is="getComponentType()"
+            :placeholder="getPlaceholder()"
+            v-bind="getBindProps()"
+            v-model.trim="value"
+            @active-change="handleActiveChange">
+          </component>
+        </div>
       </div>
       <div class="form-options">
         <bk-button class="mr10" text @click="handleConfirm">{{$t('确定')}}</bk-button>
@@ -47,6 +52,7 @@
   import Utils from './utils'
   import { mapGetters } from 'vuex'
   import { isContainerObject } from '@/service/container/common'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_HOST_SYMBOL, QUERY_OPERATOR_HOST_DESC } from '@/utils/query-builder-operator'
 
   export default {
     components: {
@@ -59,11 +65,20 @@
       }
     },
     data() {
+      const { IN, NIN, LIKE, CONTAINS } = QUERY_OPERATOR
       return {
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
         localValue: null,
-        active: false
+        active: false,
+        customOperatorTypeMap: {
+          longchar: [IN, NIN, CONTAINS, LIKE],
+          singlechar: [IN, NIN, CONTAINS, LIKE],
+          array: [IN, NIN, CONTAINS, LIKE],
+          object: [IN, NIN, CONTAINS, LIKE]
+        },
+        operatorSymbolMap: QUERY_OPERATOR_HOST_SYMBOL,
+        operatorDescMap: QUERY_OPERATOR_HOST_DESC
       }
     },
     computed: {
@@ -104,7 +119,7 @@
         } = this.property
         const normal = `cmdb-search-${propertyType}`
 
-        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.operator !== '$regex') {
+        if (modelId === 'biz' && propertyId === 'bk_biz_name' && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.operator)) {
           return `cmdb-search-${modelId}`
         }
 
@@ -115,7 +130,7 @@
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
 
-        if ((isSetName || isModuleName) && this.operator !== '$regex') {
+        if ((isSetName || isModuleName) && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.operator)) {
           return `cmdb-search-${modelId}`
         }
 
@@ -190,15 +205,17 @@
         width: 380px;
         display: flex;
         .form-operator {
-            flex: 110px 0 0;
+            flex: 128px 0 0;
             margin-right: 8px;
             align-self: baseline;
-            & ~ .form-value {
-                max-width: calc(100% - 120px);
-            }
         }
         .form-value {
             flex: 1;
+            position: relative;
+        }
+        .form-el {
+          width: 100%;
+          max-width: 100%;
         }
     }
     .form-options {
