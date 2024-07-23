@@ -189,17 +189,6 @@ func addKubeDelArchiveTable(ctx context.Context, db dal.RDB) error {
 		}
 	}
 
-	existIndexes, err := db.Table(table).Indexes(ctx)
-	if err != nil {
-		blog.Errorf("get %s indexes failed. err: %v", table, err)
-		return err
-	}
-
-	existIndexMap := make(map[string]struct{})
-	for _, index := range existIndexes {
-		existIndexMap[index.Name] = struct{}{}
-	}
-
 	// add kube del archive index
 	indexes := []types.Index{
 		{
@@ -228,6 +217,21 @@ func addKubeDelArchiveTable(ctx context.Context, db dal.RDB) error {
 			},
 			Background: true,
 		},
+	}
+
+	return addIndexes(ctx, db, table, indexes)
+}
+
+func addIndexes(ctx context.Context, db dal.RDB, table string, indexes []types.Index) error {
+	existIndexes, err := db.Table(table).Indexes(ctx)
+	if err != nil {
+		blog.Errorf("get %s indexes failed. err: %v", table, err)
+		return err
+	}
+
+	existIndexMap := make(map[string]struct{})
+	for _, index := range existIndexes {
+		existIndexMap[index.Name] = struct{}{}
 	}
 
 	needCreateIndexes := make([]types.Index, 0)
@@ -293,7 +297,8 @@ func moveKubeData(ctx context.Context, db dal.RDB) error {
 		}
 
 		if len(needMovedData) > 0 {
-			if err := db.Table(common.BKTableNameKubeDelArchive).Insert(ctx, needMovedData); err != nil {
+			err = db.Table(common.BKTableNameKubeDelArchive).Insert(ctx, needMovedData)
+			if err != nil && !db.IsDuplicatedError(err) {
 				blog.Errorf("insert kube del archive data failed, err: %v, data: %+v", err, needMovedData)
 				return err
 			}

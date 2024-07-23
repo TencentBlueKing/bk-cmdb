@@ -32,11 +32,16 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Infof("start execute y3.13.202407191507")
 
+	if err = upgradeContainer(ctx, db, conf); err != nil {
+		blog.Errorf("upgrade y3.13.202407191507 upgrade container table failed, err: %v", err)
+		return err
+	}
+
 	if err = upgradeDelArchive(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade y3.13.202407191507 upgrade del archive table failed, err: %v", err)
 		return err
 	}
 
-	blog.Infof("upgrade y3.13.202407191507 upgrade del archive success")
+	blog.Infof("upgrade y3.13.202407191507 upgrade container and del archive table success")
 	return nil
 }
