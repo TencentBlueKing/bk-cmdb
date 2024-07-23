@@ -98,4 +98,9 @@ const mapping = {
   [QUERY_OPERATOR.CONTAINS_CS]: 'contains_s'
 }
 
+export const TRANSFORM_SPECIAL_HANDLE_OPERATOR = {
+  [QUERY_OPERATOR_SYMBOL[QUERY_OPERATOR.CONTAINS]]: QUERY_OPERATOR.LIKE,
+  [QUERY_OPERATOR.LIKE]: mapping[QUERY_OPERATOR.CONTAINS_CS]
+}
+
 export default operator => mapping[operator]
