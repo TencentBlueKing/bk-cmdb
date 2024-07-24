@@ -271,11 +271,10 @@ func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oi
 func getDeletedContainerDetail(db dal.DB, podID int64, rid string) ([]interface{}, bool, error) {
 	filter := map[string]interface{}{
 		"detail.bk_pod_id": podID,
-		"coll":             kubetypes.BKTableNameBaseContainer,
 	}
 
 	docs := make([]map[string]interface{}, 0)
-	err := db.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
+	err := db.Table(common.BKTableNameKubeDelArchive).Find(filter).All(context.Background(), &docs)
 	if err != nil {
 		blog.Errorf("get archive deleted doc failed, filter: %+v, err: %v, rid: %s", filter, err, rid)
 		return nil, true, err

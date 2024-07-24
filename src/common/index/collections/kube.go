@@ -114,6 +114,39 @@ var commContainerIndexes = []types.Index{
 		},
 		Background: true,
 	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "biz_id",
+		Keys: bson.D{
+			{kubetypes.BKBizIDField, 1},
+			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "cluster_id",
+		Keys: bson.D{
+			{kubetypes.BKClusterIDFiled, 1},
+			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "namespace_id",
+		Keys: bson.D{
+			{kubetypes.BKNamespaceIDField, 1},
+			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "reference_id_reference_kind",
+		Keys: bson.D{
+			{kubetypes.RefIDField, 1},
+			{kubetypes.RefKindField, 1},
+			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
 }
 
 var commPodIndexes = []types.Index{
