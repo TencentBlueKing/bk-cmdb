@@ -1057,6 +1057,7 @@
     "新增集群": "Add Set",
     "从集群模板创建": "Create from set template",
     "集群多个创建提示": "Please enter the set name, and if you need to create multiple set in batch, use line breaks to separate",
+    "模块多个创建提示": "Please enter the module name, and if you need to create multiple module in batch, use line breaks to separate",
     "请添加服务模板": "Please add service template",
     "进程详情": "Process Details",
     "克隆服务实例": "Clone Service Instance",
