@@ -41,6 +41,8 @@ type InstOperationInterface interface {
 	// CreateManyInstance batch create instance by object and create message
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
+	//BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+	BatchCreateInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.BatchCreateInstRespData, error)
 	// CreateInstBatch batch create instance by excel
 	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*metadata.ImportInstRes, error)
 	// DeleteInst delete instance by objectid and condition
@@ -241,6 +243,44 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 	}
 	return resp, nil
+}
+
+// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+func (c *commonInst) BatchCreateInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (
+	*metadata.BatchCreateInstRespData, error) {
+
+	params := &metadata.BatchCreateModelInstOption{Data: data}
+	res, err := c.clientSet.CoreService().Instance().BatchCreateInstance(kit.Ctx, kit.Header, objID, params)
+	if err != nil {
+		blog.Errorf("failed to save the object(%s) instances, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.IDs) == 0 {
+		return res, nil
+	}
+
+	// generate audit log of instance.
+	for i, id := range res.IDs {
+		data[i][common.BKModuleIDField] = id
+	}
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, rawErr := audit.GenerateAuditLog(generateAuditParameter, objID, data)
+	if rawErr != nil {
+		blog.Errorf("create many instances, generate audit log failed, err: %v, rid: %s",
+			rawErr, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, rawErr.Error())
+	}
+
+	// save audit log.
+	rawErr = audit.SaveAuditLog(kit, auditLog...)
+	if rawErr != nil {
+		blog.Errorf("creat many instances, save audit log failed, err: %v, rid: %s", rawErr, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return res, nil
 }
 
 // createInstBatch batch create instance by excel
