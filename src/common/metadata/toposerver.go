@@ -699,6 +699,39 @@ func (p *UpdateProjectIDOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
+// CreateManyModuleRequest create project option
+type CreateManyModuleRequest struct {
+	BizID   int64           `json:"bk_biz_id"`
+	SetID   int64           `json:"bk_set_id"`
+	Modules []mapstr.MapStr `json:"modules"`
+}
+
+// Validate validate create many module request struct
+func (p *CreateManyModuleRequest) Validate() ccErr.RawErrorInfo {
+	if p.BizID <= 0 || p.SetID <= 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"bk_biz_id or bk_set_id"},
+		}
+	}
+
+	if len(p.Modules) == 0 {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsNeedSet,
+			Args:    []interface{}{"modules"},
+		}
+	}
+
+	if len(p.Modules) > common.BKMaxUpdateOrCreatePageSize {
+		return ccErr.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"modules", common.BKMaxUpdateOrCreatePageSize},
+		}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
 // QueryReq query request
 type QueryReq struct {
 	QueryCondition `json:",inline"`

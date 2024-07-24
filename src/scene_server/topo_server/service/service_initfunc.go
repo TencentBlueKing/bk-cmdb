@@ -142,6 +142,7 @@ func (s *Service) initModule(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/{app_id}/{set_id}", Handler: s.CreateModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/module", Handler: s.BatchCreateModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/module/{app_id}/{set_id}/{module_id}",
 		Handler: s.DeleteModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/{app_id}/{set_id}/{module_id}",

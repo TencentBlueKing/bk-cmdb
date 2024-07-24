@@ -31,6 +31,7 @@ import (
 // ModuleOperationInterface module operation methods
 type ModuleOperationInterface interface {
 	CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateManyModule(kit *rest.Kit, data *metadata.CreateManyModuleRequest) ([]int64, error)
 	DeleteModule(kit *rest.Kit, bizID int64, setID, moduleIDS []int64) error
 	UpdateModule(kit *rest.Kit, data mapstr.MapStr, bizID, setID, moduleID int64) error
 	GetInternalModule(kit *rest.Kit, bizID int64) (count int, result *metadata.InnterAppTopo, err errors.CCErrorCoder)
@@ -207,6 +208,59 @@ func (m *module) CreateModule(kit *rest.Kit, bizID, setID int64, data mapstr.Map
 	}
 
 	return inst, nil
+}
+
+// CreateManyModule create many module
+func (m *module) CreateManyModule(kit *rest.Kit, data *metadata.CreateManyModuleRequest) ([]int64, error) {
+	if err := m.validBizSetID(kit, data.BizID, data.SetID); err != nil {
+		return nil, err
+	}
+	modules := make([]mapstr.MapStr, 0)
+	for _, module := range data.Modules {
+		module.Set(common.BKAppIDField, data.BizID)
+		module.Set(common.BKSetIDField, data.SetID)
+		module.Set(common.BKParentIDField, data.SetID)
+		module.Set(common.BkSupplierAccount, kit.SupplierAccount)
+
+		if !module.Exists(common.BKDefaultField) {
+			module.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)
+		}
+		defaultVal, err := module.Int64(common.BKDefaultField)
+		if err != nil {
+			blog.Errorf("parse default field into int failed, err: %v, data: %v, rid: %s", err, data, kit.Rid)
+			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKDefaultField)
+		}
+		serviceTemplateID, serviceCategoryID, err := m.checkModuleServiceTemplate(kit, data.BizID, defaultVal, module)
+		if err != nil {
+			return nil, err
+		}
+
+		module.Set(common.BKServiceCategoryIDField, serviceCategoryID)
+		module.Set(common.BKServiceTemplateIDField, serviceTemplateID)
+		module.Set(common.HostApplyEnabledField, false)
+
+		// set default set template
+		_, exist := module[common.BKSetTemplateIDField]
+		if !exist {
+			module[common.BKSetTemplateIDField] = common.SetTemplateIDNotSet
+		}
+
+		// if service template has attributes, initialize module using these attributes
+		module, err = m.initModuleWithSvcTemp(kit, data.BizID, serviceTemplateID, module)
+		if err != nil {
+			return nil, err
+		}
+
+		modules = append(modules, module)
+	}
+
+	instResult, err := m.inst.BatchCreateInstance(kit, common.BKInnerObjIDModule, modules)
+	if err != nil {
+		blog.Errorf("create module many failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return instResult.IDs, nil
 }
 
 // checkModuleServiceTemplate TODO
