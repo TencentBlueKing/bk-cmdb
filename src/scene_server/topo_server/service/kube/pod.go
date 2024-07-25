@@ -529,18 +529,13 @@ func (s *service) ListContainerByTopo(ctx *rest.Contexts) {
 		req.Page.Sort = common.BKFieldID
 	}
 
-	podCond, err := req.GetPodCond()
+	podCond, containerCond, err := req.ParseCond()
 	if err != nil {
 		blog.Errorf("get pod condition failed, req: %+v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	containerCond, err := req.GetContainerCond()
-	if err != nil {
-		blog.Errorf("get container condition failed, req: %+v, err: %v, rid: %s", req, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
+
 	fields := make([]string, len(req.ContainerFields))
 	copy(fields, req.ContainerFields)
 	fields = append(req.ContainerFields, common.BKFieldID, types.BKPodIDField)

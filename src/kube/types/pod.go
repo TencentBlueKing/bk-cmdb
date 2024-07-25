@@ -61,7 +61,7 @@ var KubeTopoIDDescriptor = table.FieldsDescriptors{
 	{Field: BKClusterIDFiled, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 	{Field: BKNamespaceIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 	{Field: RefField, Type: enumor.Object, IsRequired: false, IsEditable: false},
-	{Field: RefKindField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: RefKindField, Type: enumor.String, IsRequired: false, IsEditable: false},
 	{Field: RefIDField, Type: enumor.Numeric, IsRequired: false, IsEditable: false},
 }
 
@@ -554,14 +554,44 @@ func (p *GetContainerByTopoOption) Validate() ccErr.RawErrorInfo {
 	return ccErr.RawErrorInfo{}
 }
 
-// GetPodCond get pod condition
-func (p *GetContainerByTopoOption) GetPodCond() (map[string]interface{}, error) {
-	rules := make([]filter.RuleFactory, 0)
-	rules = append(rules, filtertools.GenAtomFilter(common.BKAppIDField, filter.Equal, p.BizID))
-
-	if p.PodFilter != nil {
-		rules = append(rules, p.PodFilter)
+// ParseCond parse pod and container condition
+func (p *GetContainerByTopoOption) ParseCond() (map[string]interface{}, map[string]interface{}, error) {
+	// if pod filter is not set, add node condition to container condition and use this condition to filter container
+	if p.PodFilter == nil {
+		containerCond, err := p.MergeKubeTopoFilterRules(p.ContainerFilter)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, containerCond, nil
 	}
+
+	// container has no filter while pod has filter, use pod condition to filter container
+	if p.ContainerFilter == nil {
+		podCond, err := p.MergeKubeTopoFilterRules(p.PodFilter)
+		if err != nil {
+			return nil, nil, err
+		}
+		return podCond, nil, nil
+	}
+
+	// container has filter, change pod cond to the cond of the inner object "pod" of the container aggregation result
+	podCond, err := filtertools.GenAtomFilter("pod", filter.Object, p.PodFilter).ToMgo()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	containerCond, err := p.MergeKubeTopoFilterRules(p.ContainerFilter)
+	if err != nil {
+		return nil, nil, err
+	}
+	return podCond, containerCond, nil
+}
+
+// MergeKubeTopoFilterRules merge kube topo filter rules to condition
+func (p *GetContainerByTopoOption) MergeKubeTopoFilterRules(filterExpr *filter.Expression) (map[string]interface{},
+	error) {
+
+	rules := []filter.RuleFactory{filtertools.GenAtomFilter(common.BKAppIDField, filter.Equal, p.BizID)}
 
 	nodeMap := make(map[string][]int64)
 	for _, node := range p.Nodes {
@@ -591,6 +621,10 @@ func (p *GetContainerByTopoOption) GetPodCond() (map[string]interface{}, error) 
 		rules = append(rules, rule)
 	}
 
+	if filterExpr != nil {
+		rules = append(rules, filterExpr)
+	}
+
 	andCond, err := filtertools.And(rules...)
 	if err != nil {
 		return nil, err
@@ -602,15 +636,6 @@ func (p *GetContainerByTopoOption) GetPodCond() (map[string]interface{}, error) 
 	}
 
 	return cond, nil
-}
-
-// GetContainerCond get container condition
-func (p *GetContainerByTopoOption) GetContainerCond() (map[string]interface{}, error) {
-	if p.ContainerFilter == nil {
-		return nil, nil
-	}
-
-	return p.ContainerFilter.ToMgo()
 }
 
 // ContainerWithTopo container with topo message
