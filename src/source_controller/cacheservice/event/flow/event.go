@@ -95,31 +95,6 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 		blog.Errorf("run plat event flow failed, err: %v", err)
 	}
 
-	if err := e.runKubeCluster(context.Background()); err != nil {
-		blog.Errorf("run kube cluster event flow failed, err: %v", err)
-		return err
-	}
-
-	if err := e.runKubeNode(context.Background()); err != nil {
-		blog.Errorf("run kube node event flow failed, err: %v", err)
-		return err
-	}
-
-	if err := e.runKubeNamespace(context.Background()); err != nil {
-		blog.Errorf("run kube namespace event flow failed, err: %v", err)
-		return err
-	}
-
-	if err := e.runKubeWorkload(context.Background()); err != nil {
-		blog.Errorf("run kube workload event flow failed, err: %v", err)
-		return err
-	}
-
-	if err := e.runKubePod(context.Background()); err != nil {
-		blog.Errorf("run kube pod event flow failed, err: %v", err)
-		return err
-	}
-
 	if err := e.runProject(context.Background()); err != nil {
 		blog.Errorf("run project event flow failed, err: %v", err)
 	}
@@ -276,71 +251,6 @@ func (e *Event) runPlat(ctx context.Context) error {
 	}
 
 	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
-}
-
-func (e *Event) runKubeCluster(ctx context.Context) error {
-	opts := flowOptions{
-		key:         event.KubeClusterKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
-		EventStruct: new(map[string]interface{}),
-	}
-
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
-}
-
-func (e *Event) runKubeNode(ctx context.Context) error {
-	opts := flowOptions{
-		key:         event.KubeNodeKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
-		EventStruct: new(map[string]interface{}),
-	}
-
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
-}
-
-func (e *Event) runKubeNamespace(ctx context.Context) error {
-	opts := flowOptions{
-		key:         event.KubeNamespaceKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
-		EventStruct: new(map[string]interface{}),
-	}
-
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
-}
-
-func (e *Event) runKubeWorkload(ctx context.Context) error {
-	opts := flowOptions{
-		key:         event.KubeWorkloadKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
-		EventStruct: new(map[string]interface{}),
-	}
-
-	return newWorkloadFlow(ctx, opts, getDeleteEventDetails, parseKubeWorkloadEvent)
-}
-
-func (e *Event) runKubePod(ctx context.Context) error {
-	opts := flowOptions{
-		key:         event.KubePodKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
-		EventStruct: new(map[string]interface{}),
-	}
-
-	return newFlow(ctx, opts, getDeleteEventDetails, parsePodEvent)
 }
 
 func (e *Event) runProject(ctx context.Context) error {
