@@ -208,6 +208,7 @@
 
 <template>
   <bk-dialog
+    class="field-settings-model"
     v-model="isShow"
     width="670"
     render-directive="if"
@@ -329,9 +330,8 @@
         </div>
       </grid-layout>
 
-      <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="1">
+      <grid-layout mode="form" :gap="24" :font-size="'14px'" :max-columns="1" v-if="isUnitShow">
         <grid-item
-          v-show="isUnitShow"
           direction="column"
           :class="['cmdb-form-item', 'form-item']"
           :label="$t('单位')">
@@ -346,10 +346,23 @@
 </template>
 
 <style lang="scss" scoped>
+  .field-settings-model {
+    :deep(.bk-dialog-body) {
+      padding-bottom: 0 !important;
+    }
+  }
+
   .content-layout {
     height: 340px;
     padding: 0 12px;
     @include scrollbar-y;
+
+    .cmdb-grid-layout:last-child {
+      margin-bottom: 20px;
+    }
+    .field-option-container {
+      margin-bottom: 0;
+    }
   }
 
   .field-option-container {
