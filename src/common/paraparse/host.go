@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -85,6 +86,12 @@ func ParseHostParams(input []metadata.ConditionItem) (map[string]interface{}, er
 		case common.BKDBLIKE:
 			regex := make(map[string]interface{})
 			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
+		case string(filter.Contains):
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			// Case insensitivity to match upper and lower cases
+			regex[common.BKDBOPTIONS] = "i"
 			output[i.Field] = regex
 		case common.BKDBMULTIPLELike:
 			multi, ok := i.Value.([]interface{})

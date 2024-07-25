@@ -57,10 +57,10 @@ type InstOperationInterface interface {
 	// UpdateInst update instance by condition
 	UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) error
 	// SearchObjectInstances searches object instances.
-	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.SearchInstanceFilter) (
 		*metadata.CommonSearchResult, error)
 	// CountObjectInstances counts object instances num.
-	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult,
+	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CountInstanceFilter) (*metadata.CommonCountResult,
 		error)
 	// FindInstChildTopo find instance's child topo
 	FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (int, []*metadata.CommonInstTopo, error)
@@ -950,11 +950,11 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID s
 }
 
 // SearchObjectInstances searches object instances.
-func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.SearchInstanceFilter) (
 	*metadata.CommonSearchResult, error) {
 
 	// search conditions.
-	cond, err := input.GetConditions()
+	cond, err := input.GetCond()
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
@@ -984,10 +984,10 @@ func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *m
 
 // CountObjectInstances counts object instances num.
 func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
-	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+	input *metadata.CountInstanceFilter) (*metadata.CommonCountResult, error) {
 
 	// count conditions.
-	cond, err := input.GetConditions()
+	cond, err := input.GetCond()
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
