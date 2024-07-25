@@ -13,6 +13,7 @@
 <script>
   import FilterTagForm from './filter-tag-form.vue'
   import { setSearchQueryByCondition } from './general-model-filter.js'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
 
   export default {
     extends: FilterTagForm,
@@ -20,6 +21,19 @@
       condition: {
         type: Object,
         default: () => ({})
+      }
+    },
+    data() {
+      const { IN, NIN, LIKE, CONTAINS_CS } = QUERY_OPERATOR
+      return {
+        customOperatorTypeMap: {
+          longchar: [IN, NIN, LIKE, CONTAINS_CS],
+          singlechar: [IN, NIN, LIKE, CONTAINS_CS],
+          array: [IN, NIN, LIKE, CONTAINS_CS],
+          object: [IN, NIN, LIKE, CONTAINS_CS]
+        },
+        operatorSymbolMap: QUERY_OPERATOR_OTHER_SYMBOL,
+        operatorDescMap: QUERY_OPERATOR_OTHER_DESC
       }
     },
     computed: {
