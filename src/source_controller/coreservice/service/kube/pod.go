@@ -74,7 +74,7 @@ func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOptio
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(kit, containerID, id, now, container)
+				data, err := s.combinationContainerInfo(kit, containerID, &podTmp, now, container)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -195,13 +195,16 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec
 	return podInfo, nil
 }
 
-func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
-	types.Container, error) {
+func (s *service) combinationContainerInfo(kit *rest.Kit, containerID int64, pod *types.Pod, now int64,
+	info types.Container) (types.Container, error) {
 
 	container := types.Container{
 		ID:              containerID,
+		PodID:           pod.ID,
+		BizID:           pod.BizID,
+		ClusterID:       pod.ClusterID,
+		NamespaceID:     pod.NamespaceID,
 		SupplierAccount: kit.SupplierAccount,
-		PodID:           podID,
 		Name:            info.Name,
 		ContainerID:     info.ContainerID,
 		Image:           info.Image,
@@ -220,6 +223,13 @@ func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, no
 			Creator:    kit.User,
 			Modifier:   kit.User,
 		},
+	}
+
+	if pod.Ref != nil {
+		container.Ref = &types.Reference{
+			Kind: pod.Ref.Kind,
+			ID:   pod.Ref.ID,
+		}
 	}
 
 	return container, nil
