@@ -678,6 +678,20 @@ func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
 					result.Info[index].Option)
+			case common.FieldTypeTable:
+				option, err := metadata.ParseSubAttribute(ctx.Kit.Ctx, result.Info[index].Option)
+				if err != nil {
+					blog.Errorf("marshal table type option failed, err: %v, option: %v, rid: %s, ", err,
+						result.Info[index].Option, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
+					return
+				}
+
+				for i, attr := range option {
+					option[i].Placeholder = s.TranslateTablePlaceholder(lang, result.Info[index].ObjectID,
+						result.Info[index].PropertyID, attr.PropertyID)
+				}
+				result.Info[index].Option = option
 			}
 		}
 	}

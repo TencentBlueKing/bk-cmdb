@@ -1,7 +1,6 @@
 {
   "process_placeholder_bk_start_param_regex": "Program startup parameters that uniquely </br>identify a process, such as zookeeper's </br>startup parameters include zookeeper.",
   "process_placeholder_bk_process_name": "The service name displayed externally,</br> for example, the binary name of the program is </br>java service zookeeper, then fill in zookeeper.",
-  "process_placeholder_port": "Single port: 8080, </br>multiple consecutive ports: 8080-8089,</br> multiple discontinuous ports: 8080-8089, 8199.",
   "process_placeholder_bk_func_name": "The binary name of the program,</br> such as the binary name of zookeeper</br> is java, then fill in java.",
   "process_placeholder_bk_func_id": "Numeric field, a shortcut reference of the process",
   "process_placeholder_bk_port_enable": "Whether to enbale the port, the default value is true",
@@ -9,5 +8,10 @@
   "process_placeholder_bk_start_check_secs": "After executing the start command, how long to wait to check the status of the PID alive",
   "process_placeholder_priority": "Batch start processes are sorted according to priority from small to large, and stop processes are operated in reverse order. Priority value range supports input [ -100 ~ 10000 ]",
   "process_placeholder_timeout": "The timeout period for executing commands",
+
+  "process_bind_info_placeholder_ip": "Process-bound IP",
+  "process_bind_info_placeholder_port": "Process listening port</br> (Fill in example) Single port: 8080</br> (Fill in example) Port range: 8080-9090",
+  "process_bind_info_placeholder_protocol": "Protocol used by the process",
+  "process_bind_info_placeholder_enable": "Enable port monitoring (for BK-Monitor use)",
   "": ""
 }
