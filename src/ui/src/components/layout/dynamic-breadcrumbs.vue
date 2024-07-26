@@ -20,16 +20,7 @@
       <i class="icon icon-cc-arrow fl" v-if="(from && current)" @click="handleClick"></i>
       <h1 class="current fl" v-bk-overflow-tips>{{current}}</h1>
     </template>
-    <cmdb-auth tag="div" :auth="{ type: $OPERATION.R_MODEL, relation: [modelId] }">
-      <template #default="{ disabled }">
-        <i class="icon-cc-share share "
-          :class="{ disabled }"
-          v-if="showShare && objId"
-          v-bk-tooltips="$t('前往模型管理')"
-          @click="handleModelDetail">
-        </i>
-      </template>
-    </cmdb-auth>
+    <slot name="fast-link"></slot>
   </div>
 </template>
 
@@ -39,9 +30,6 @@
   import { Base64 } from 'js-base64'
   import Bus from '@/utils/bus'
   import { changeDocumentTitle } from '@/utils/change-document-title'
-  import {
-    MENU_MODEL_DETAILS,
-  } from '@/dictionary/menu-symbol'
 
   export default {
     data() {
@@ -59,7 +47,6 @@
     },
     computed: {
       ...mapGetters(['title']),
-      ...mapGetters('objectModelClassify', ['getModelById']),
       current() {
         const menuI18n = this.$route.meta.menu.i18n && this.$t(this.$route.meta.menu.i18n)
         return this.title || this.$route.meta.title || menuI18n
@@ -73,20 +60,6 @@
           return { name: Array.isArray(menu.relative) ? menu.relative[0] : menu.relative }
         }
         return null
-      },
-      modelId() {
-        return this.model.id
-      },
-      model() {
-        return this.getModelById(this.objId) || {}
-      },
-      objId() {
-        const route = this.$route
-        return route.params?.objId ?? route.meta.menu?.objId
-      },
-      showShare() {
-        const { menu = {} } = this.$route.meta
-        return menu?.showShare
       },
       latest() {
         let latest
@@ -122,14 +95,6 @@
       Bus.$on('disable-customize-breadcrumbs', this.disableCustomize)
     },
     methods: {
-      handleModelDetail() {
-        this.$routerActions.open({
-          name: MENU_MODEL_DETAILS,
-          params: {
-            modelId: this.objId,
-          }
-        })
-      },
       async handleClick() {
         this.$routerActions.redirect({ ...this.from, back: true })
       },
@@ -161,15 +126,6 @@
         height: 53px;
         background: #fff;
         box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.06);
-        .share {
-          color: $primaryColor;
-          cursor: pointer;
-          font-size: 14px;
-          margin-left: 5px;
-        }
-        .disabled {
-          color: #c4c6cc;
-        }
         .icon-cc-arrow {
             display: block;
             width: 24px;
