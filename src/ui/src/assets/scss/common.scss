@@ -401,3 +401,15 @@ input.cmdb-form-input {
         color: #ff5656;
     }
 }
+
+/*
+* 处理table一开始给空数据会闪过empty样式
+*/
+@keyframes table-empty-delay-show {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+ 
+.bk-table-empty-block {
+    animation: table-empty-delay-show .8s steps(1, end);
+}
