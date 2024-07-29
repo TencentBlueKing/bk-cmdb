@@ -20,7 +20,6 @@
       <i class="icon icon-cc-arrow fl" v-if="(from && current)" @click="handleClick"></i>
       <h1 class="current fl" v-bk-overflow-tips>{{current}}</h1>
     </template>
-    <slot name="fast-link"></slot>
   </div>
 </template>
 

@@ -19,7 +19,6 @@ import {
   MENU_RESOURCE_BUSINESS_HOST_DETAILS
 } from '@/dictionary/menu-symbol'
 import { OPERATION } from '@/dictionary/iam-auth'
-import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
 export default [{
   name: MENU_RESOURCE_HOST,
@@ -28,9 +27,7 @@ export default [{
   meta: new Meta({
     menu: {
       i18n: '主机',
-      relative: MENU_RESOURCE_MANAGEMENT,
-      showShare: true,
-      objId: BUILTIN_MODELS.HOST
+      relative: MENU_RESOURCE_MANAGEMENT
     },
     layout: {},
     auth: {

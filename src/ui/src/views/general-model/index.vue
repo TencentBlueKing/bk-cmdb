@@ -214,6 +214,7 @@
       </general-model-filter-form>
     </bk-sideslider>
     <router-subview></router-subview>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -233,6 +234,7 @@
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbModelFastLink from '@/components/model-fast-link'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -247,7 +249,8 @@
       cmdbImport,
       cmdbPropertySelector,
       generalModelFilterForm,
-      generalModelFilterTag
+      generalModelFilterTag,
+      cmdbModelFastLink
     },
     data() {
       return {

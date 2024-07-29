@@ -13,11 +13,7 @@
 <template>
   <div class="clearfix">
     <dynamic-navigation class="main-navigation" v-show="!isEntry"></dynamic-navigation>
-    <dynamic-breadcrumbs class="main-breadcrumbs" ref="breadcrumbs" v-if="showBreadcrumbs">
-      <template slot="fast-link" v-if="showShare && objId">
-        <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
-      </template>
-    </dynamic-breadcrumbs>
+    <dynamic-breadcrumbs class="main-breadcrumbs" ref="breadcrumbs" v-if="showBreadcrumbs"></dynamic-breadcrumbs>
     <div class="main-layout">
       <div class="main-scroller" ref="scroller">
         <router-view class="main-views" :name="view" ref="view"></router-view>
@@ -30,7 +26,6 @@
   import { mapGetters } from 'vuex'
   import dynamicNavigation from './dynamic-navigation'
   import dynamicBreadcrumbs from './dynamic-breadcrumbs'
-  import cmdbModelFastLink from '@/components/model-fast-link'
   import {
     addResizeListener,
     removeResizeListener
@@ -40,8 +35,7 @@
   export default {
     components: {
       dynamicNavigation,
-      dynamicBreadcrumbs,
-      cmdbModelFastLink
+      dynamicBreadcrumbs
     },
     data() {
       return {
@@ -62,18 +56,7 @@
       },
       showBreadcrumbs() {
         return this.$route.meta.layout && this.$route.meta.layout.breadcrumbs
-      },
-      menu() {
-        const { menu = {} } = this.$route.meta
-        return menu
-      },
-      objId() {
-        const route = this.$route
-        return route.params?.objId ?? this.menu?.objId
-      },
-      showShare() {
-        return this.menu?.showShare
-      },
+      }
     },
     watch: {
       $route() {

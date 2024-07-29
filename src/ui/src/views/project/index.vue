@@ -204,6 +204,7 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -220,13 +221,15 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import projectService from '@/service/project/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbModelFastLink from '@/components/model-fast-link'
 
   export default {
     components: {
       cmdbColumnsConfig,
       cmdbPropertySelector,
       BatchSelectionColumn,
-      InstanceStatusColumn
+      InstanceStatusColumn,
+      cmdbModelFastLink
     },
     data() {
       return {
@@ -291,6 +294,9 @@
       ...mapState('userCustom', ['globalUsercustom']),
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['getModelById']),
+      objId() {
+        return BUILTIN_MODELS.PROJECT
+      },
       filterProperty() {
         const property = this.properties.find(property => property.bk_property_id === this.filter.field)
         return property || null
@@ -311,7 +317,7 @@
         return Utils.getBindProps(this.filterProperty)
       },
       model() {
-        return this.getModelById(BUILTIN_MODELS.PROJECT) || {}
+        return this.getModelById(this.objId) || {}
       },
       saveAuth() {
         const { type } = this.attribute
@@ -349,9 +355,9 @@
     async created() {
       try {
         this.properties = await this.searchObjectAttribute({
-          injectId: BUILTIN_MODELS.PROJECT,
+          injectId: this.objId,
           params: {
-            bk_obj_id: BUILTIN_MODELS.PROJECT,
+            bk_obj_id: this.objId,
             bk_supplier_account: this.supplierAccount
           },
           config: {
@@ -563,7 +569,7 @@
       },
       getPropertyGroups() {
         return this.searchGroup({
-          objId: BUILTIN_MODELS.PROJECT,
+          objId: this.objId,
           params: {},
           config: {
             fromCache: true,

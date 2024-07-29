@@ -11,15 +11,17 @@
 -->
 
 <template>
-  <cmdb-auth tag="div" :auth="{ type: $OPERATION.R_MODEL, relation: [modelId] }">
-    <template #default="{ disabled }">
-      <i class="icon-cc-share share "
-        :class="{ disabled }"
-        v-bk-tooltips="$t('前往模型管理')"
-        @click="handleModelDetail">
-      </i>
-    </template>
-  </cmdb-auth>
+  <Teleport to=".breadcrumbs-layout">
+    <cmdb-auth tag="div" :auth="{ type: $OPERATION.R_MODEL, relation: [modelId] }">
+      <template #default="{ disabled }">
+        <i class="icon-cc-share share "
+          :class="{ disabled }"
+          v-bk-tooltips="$t('前往模型管理')"
+          @click="handleModelDetail">
+        </i>
+      </template>
+    </cmdb-auth>
+  </Teleport>
 </template>
 
 <script>
@@ -27,9 +29,13 @@
   import {
     MENU_MODEL_DETAILS,
   } from '@/dictionary/menu-symbol'
+  import Teleport from 'vue2-teleport'
 
   export default {
     name: 'cmdb-model-fast-link',
+    components: {
+      Teleport,
+    },
     props: {
       objId: {
         type: String,
@@ -59,6 +65,9 @@
 </script>
 
 <style lang="scss" scoped>
+  .auth-box {
+    @include space-between;
+  }
   .share {
     cursor: pointer;
     font-size: 14px;
