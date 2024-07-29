@@ -53,4 +53,8 @@ func Init(c *capability.Capability) {
 	c.Ws.POST("/object/object/:bk_obj_id/export", s.ExportObject)
 
 	c.Ws.POST("/object/object/:bk_obj_id/import", s.ImportObject)
+
+	c.Ws.POST("/biz/export", s.ExportBiz)
+
+	c.Ws.POST("/project/export", s.ExportProject)
 }

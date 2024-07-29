@@ -783,3 +783,29 @@ func (a *apiServer) HealthCheck() (bool, error) {
 
 	return true, nil
 }
+
+// SearchProject search project
+func (a *apiServer) SearchProject(ctx context.Context, h http.Header, params *metadata.SearchProjectOption) (
+	*metadata.InstResult, error) {
+
+	resp := new(metadata.SearchInstResult)
+	subPath := "/findmany/project"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}

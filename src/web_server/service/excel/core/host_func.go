@@ -88,8 +88,13 @@ func (d *Client) GetCloudArea(kit *rest.Kit, names ...string) ([]string, map[str
 }
 
 // GetHost get host instance
-func (d *Client) GetHost(kit *rest.Kit, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	result, err := d.ApiClient.GetHostData(kit.Ctx, kit.Header, cond)
+func (d *Client) GetHost(kit *rest.Kit, cond interface{}) ([]mapstr.MapStr, error) {
+	hostCond, ok := cond.(mapstr.MapStr)
+	if !ok {
+		blog.Errorf("get host but condition parse failed, condition: %v, rid: %s", cond, kit.Rid)
+		return nil, errors.New("get host but condition parse failed")
+	}
+	result, err := d.ApiClient.GetHostData(kit.Ctx, kit.Header, hostCond)
 	if err != nil {
 		blog.Errorf("get host failed, condition: %+v, err: %+v, rid: %s", cond, err, kit.Rid)
 		return nil, err

@@ -26,11 +26,19 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+
+	"github.com/pkg/errors"
 )
 
 // GetInst get instance
-func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	result, err := d.ApiClient.GetInstDetail(kit.Ctx, kit.Header, objID, cond)
+func (d *Client) GetInst(kit *rest.Kit, objID string, cond interface{}) ([]mapstr.MapStr, error) {
+	instCond, ok := cond.(mapstr.MapStr)
+	if !ok {
+		blog.Errorf("get inst but condition parse failed, condition: %v, rid: %s", cond, kit.Rid)
+		return nil, errors.New("get inst but condition parse failed")
+	}
+
+	result, err := d.ApiClient.GetInstDetail(kit.Ctx, kit.Header, objID, instCond)
 	if err != nil {
 		blog.Errorf("get inst data detail error: %v , search condition: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, err
@@ -42,6 +50,41 @@ func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]map
 	}
 
 	return result.Data.Info, nil
+}
+
+// GetBiz get biz
+func (d *Client) GetBiz(kit *rest.Kit, cond interface{}) ([]mapstr.MapStr, error) {
+	bizCond, ok := cond.(*metadata.QueryBusinessRequest)
+	if !ok {
+		blog.Errorf("get biz but condition parse failed, condition: %v, rid: %s", cond, kit.Rid)
+		return nil, errors.New("get biz but condition parse failed")
+	}
+
+	ownerID := httpheader.GetSupplierAccount(kit.Header)
+	result, err := d.ApiClient.SearchBiz(kit.Ctx, ownerID, kit.Header, bizCond)
+	if err != nil {
+		blog.Errorf("get biz data detail error: %v , search condition: %v, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	return result.Data.Info, nil
+}
+
+// GetProject get project
+func (d *Client) GetProject(kit *rest.Kit, cond interface{}) ([]mapstr.MapStr, error) {
+	bizCond, ok := cond.(*metadata.SearchProjectOption)
+	if !ok {
+		blog.Errorf("get project but condition parse failed, condition: %v, rid: %s", cond, kit.Rid)
+		return nil, errors.New("get project but condition parse failed")
+	}
+
+	result, err := d.ApiClient.SearchProject(kit.Ctx, kit.Header, bizCond)
+	if err != nil {
+		blog.Errorf("get project data detail error: %v , search condition: %v, rid: %s", err, cond, kit.Rid)
+		return nil, err
+	}
+
+	return result.Info, nil
 }
 
 // HandleImportedInst handle imported instance
