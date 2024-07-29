@@ -7,7 +7,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -100,11 +99,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business change start limit", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 1,
-				"limit": 1,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 1,
+				Limit: 1,
+				Sort:  "bk_biz_id",
 			},
 			Fields:    []string{},
 			Condition: map[string]interface{}{},
@@ -118,11 +117,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_maintainer", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "bk_biz_id",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -137,11 +136,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_tester", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "bk_biz_id",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -157,11 +156,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using time_zone", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "bk_biz_id",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -176,11 +175,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using language", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "bk_biz_id",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -195,11 +194,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using life_cycle", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "bk_biz_id",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "bk_biz_id",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -305,11 +304,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "",
 			},
 			Fields:    []string{},
 			Condition: map[string]interface{}{},
@@ -325,11 +324,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{
@@ -351,11 +350,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search business using bk_biz_id", func() {
-		input := &params.SearchParams{
-			Page: map[string]interface{}{
-				"start": 0,
-				"limit": 10,
-				"sort":  "",
+		input := &metadata.QueryBusinessRequest{
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+				Sort:  "",
 			},
 			Fields: []string{},
 			Condition: map[string]interface{}{

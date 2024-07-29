@@ -19,6 +19,7 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/querybuilder"
 
 	"github.com/gin-gonic/gin"
 )
@@ -275,6 +276,13 @@ type ListFieldTmplWithObjOption struct {
 	ObjectFilter   *filter.Expression `json:"object_filter"`
 	Page           BasePage           `json:"page"`
 	Fields         []string           `json:"fields"`
+}
+
+// ExportBusinessRequest 导出业务请求结构体
+type ExportBusinessRequest struct {
+	Page          BasePage                  `json:"page"`
+	TimeCondition *TimeCondition            `json:"time_condition"`
+	Filter        *querybuilder.QueryFilter `json:"filter,omitempty"`
 }
 
 // Validate list field template with object condition option
