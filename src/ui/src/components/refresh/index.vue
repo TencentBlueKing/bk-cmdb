@@ -28,7 +28,7 @@
 <script setup>
   import { reactive, onBeforeUnmount, onMounted, ref } from 'vue'
   import { t } from '@/i18n'
-  import useInterval from '@/hooks/utils/interval'
+  import interval from '@/utils/interval'
 
   const props = defineProps({
     showTime: {
@@ -48,17 +48,15 @@
     timeInterval.clear()
     timeInterval.set()
   }
-  const getTime = () => {
-    return new Date().valueOf()
-  }
+  const getTime = () => new Date().valueOf()
   const updateRefreshTime = () => {
     const now = getTime()
     const { time } = data
-    const left = parseInt((now - time) / 60000)
+    const left = parseInt((now - time) / 60000, 10)
     let text = t('刚刚刷新')  // 小于1分钟
     if (left < 60 && left >= 1) {
       // 大于1分钟 小于60分钟
-      text = t(`x分钟前刷新`, {
+      text = t('x分钟前刷新', {
         time: left
       })
     }
@@ -92,7 +90,7 @@
 
   onMounted(() => {
     if (!props.showTime) return
-    const { clearTimeInterval, setTimeInterval } = useInterval(updateRefreshTime, 60000)
+    const { clearTimeInterval, setTimeInterval } = interval(updateRefreshTime, 60000)
     timeInterval.set = setTimeInterval
     timeInterval.clear = clearTimeInterval
     init()

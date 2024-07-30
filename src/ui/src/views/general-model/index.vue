@@ -57,7 +57,7 @@
             </bk-button>
           </template>
         </cmdb-auth>
-        <cmdb-refresh class="models-button" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
+        <cmdb-refresh class="refresh-button" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
       </div>
       <div class="options-button fr">
         <icon-button :class="['option-filter', 'ml5', { active: hasCondition }]" icon="icon-cc-funnel"
@@ -1071,7 +1071,7 @@
           border-left: none;
         }
     }
-    .models-button{
+    .models-button, .refresh-button{
         display: inline-block;
         position: relative;
         &:hover{
