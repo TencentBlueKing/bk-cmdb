@@ -105,7 +105,8 @@
                   text: $t('删除分组'),
                   disabled: !isEditable(group.info) || group.info['bk_isdefault'],
                   auth: authResources,
-                  handler: () => handleDeleteGroup(group, groupIndex)
+                  handler: () => handleDeleteGroup(group, groupIndex),
+                  disabledTooltips: $t('模型默认分组不可删除')
                 }
               ]"
               v-bk-tooltips="{

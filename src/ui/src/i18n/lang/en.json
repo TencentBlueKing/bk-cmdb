@@ -1833,5 +1833,6 @@
     "已被模型绑定，不能删除": "Already bound to the model, can't delete",
     "属性设置step": "Field Setting",
     "信息确认step": "Information confirmed",
-    "属性应用step": "Field application"
+    "属性应用step": "Field application",
+    "模型默认分组不可删除": "The default model group cannot be deleted"
 }
