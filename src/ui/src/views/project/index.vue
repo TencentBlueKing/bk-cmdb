@@ -20,6 +20,11 @@
           </bk-button>
         </template>
       </cmdb-auth>
+      <cmdb-button-group
+        class="mr10"
+        :buttons="buttons"
+        :expand="false">
+      </cmdb-button-group>
       <div class="options-button fr">
         <icon-button
           icon="icon-cc-setting"
@@ -220,13 +225,15 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import projectService from '@/service/project/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbButtonGroup from '@/components/ui/other/button-group'
 
   export default {
     components: {
       cmdbColumnsConfig,
       cmdbPropertySelector,
       BatchSelectionColumn,
-      InstanceStatusColumn
+      InstanceStatusColumn,
+      cmdbButtonGroup
     },
     data() {
       return {
@@ -331,7 +338,21 @@
           type: this.$OPERATION.U_PROJECT,
           relation: [parseInt(item.id, 10)]
         }))
-      }
+      },
+      buttons() {
+        const buttonConfig = [{
+          id: 'export',
+          text: this.$t('导出选中'),
+          handler: this.exportField,
+          disabled: !this.selectedRows.length
+        }, {
+          id: 'batchExport',
+          text: this.$t('导出全部'),
+          handler: () => this.exportField('all'),
+          disabled: !this.table.pagination.count
+        }]
+        return buttonConfig
+      },
     },
     watch: {
       'filter.field'() {
@@ -393,6 +414,57 @@
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
 
+      async exportField(type = 'select') {
+        const useExport = await import('@/components/export-file')
+        const title = type === 'select' ? '导出选中' : '导出全部'
+        const count = type === 'select' ? this.selectedRows.length : this.table.pagination.count
+
+        useExport.default({
+          title: this.$t(title),
+          bk_obj_id: BUILTIN_MODELS.PROJECT,
+          defaultSelectedFields: this.table.header.map(item => item.id),
+          count,
+          steps: [{ title: this.$t('选择字段'), icon: 1 }],
+          submit: (state, task) => {
+            const { fields } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+            }
+            if (type === 'select') {
+              const selected = this.selectedRows.map(e => e.id)
+              params.ids = selected
+              params.export_condition = {
+                page: {
+                  start: 0,
+                  limit: selected.length,
+                  sort: this.table.sort
+                }
+              }
+            }
+            if (type === 'all') {
+              const {
+                conditions,
+                time_condition: timeCondition
+              } = this.getCondition()
+              params.export_condition = {
+                filter: conditions,
+                time_condition: timeCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: this.table.sort
+                }
+              }
+            }
+
+            return this.$http.download({
+              url: `${window.API_HOST}project/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
+      },
       async getTableData() {
         try {
           const [{ count }, { info }] = await Promise.all([
@@ -413,7 +485,7 @@
           }
         }
       },
-      getProjectList(type, config = { cancelPrevious: true }) {
+      getCondition() {
         // 这里先直接复用转换通用模型实例查询条件的方法
         const condition = {
           [this.filterProperty.id]: {
@@ -423,8 +495,15 @@
         }
         const {
           conditions,
-          time_condition: timeCondition
+          time_condition
         } = Utils.transformGeneralModelCondition(condition, this.properties)
+        return { conditions, time_condition }
+      },
+      getProjectList(type, config = { cancelPrevious: true }) {
+        const {
+          conditions,
+          time_condition: timeCondition
+        } = this.getCondition()
 
         const params = this.getSearchParams(type)
         if (conditions) {
