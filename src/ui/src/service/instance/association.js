@@ -62,7 +62,7 @@ const findTopology = async ({
         bk_asst_id: association.bk_asst_id,
         bk_obj_asst_id: association.bk_obj_asst_id,
         deleted: !instance,
-        target: isSource
+        target: !isSource
       }
     })
     const rootIdKey = getIdKey(currentModelId)

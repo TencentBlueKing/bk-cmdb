@@ -83,8 +83,8 @@
         }
         // 根据作为源还是目标，设置线条名称及是否翻转箭头指向
         return {
-          label: instance.target ? define.src_des : define.dest_des,
-          arrow: !instance.target && define.direction === 'src_to_dest' ? 'dest_to_src' : define.direction }
+          label: !instance.target ? define.src_des : define.dest_des,
+          arrow: !instance.target && define.direction === 'src_to_dest' ? 'src_to_dest' : define.direction }
       },
       createNodes(instances, parentNode) {
         return instances.map((instance) => {
