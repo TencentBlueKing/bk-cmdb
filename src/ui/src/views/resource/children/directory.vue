@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="directory-layout">
+  <div class="directory-layout" v-bkloading="{ isLoading: $loading('getDirectoryList') }">
     <div class="directory-options">
       <bk-input class="dir-search"
         v-model.trim="dirSearch"

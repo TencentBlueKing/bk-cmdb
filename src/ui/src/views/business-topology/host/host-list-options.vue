@@ -166,6 +166,7 @@
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
+      <cmdb-refresh class="option ml10" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
     </div>
     <div class="options options-right">
       <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
@@ -222,9 +223,11 @@
   import RouterQuery from '@/router/query'
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+  import cmdbRefresh from '@/components/refresh'
 
   export default {
     components: {
+      cmdbRefresh,
       FilterCollection,
       FilterFastSearch,
       EditMultipleHost,
@@ -327,6 +330,9 @@
       }
     },
     methods: {
+      handleRefresh() {
+        this.$emit('refresh')
+      },
       handleTransfer(event, type, disabled) {
         if (disabled) {
           event.stopPropagation()
