@@ -159,7 +159,7 @@
             :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
-              :class="{ disabled: disabled }"
+              :class="{ disabled: disabled || !count }"
               @click="handleExcelUpdate($event)">
               {{$t('导入excel更新')}}
             </span>
@@ -447,7 +447,11 @@
           }
         }).show()
       },
-      async handleExcelUpdate() {
+      async handleExcelUpdate(event) {
+        if (!this.count) {
+          event.stopPropagation()
+          return false
+        }
         const useImport = await import('@/components/import-file')
         const [, { show: showImport, setState: setImportState }] = useImport.default()
         setImportState({

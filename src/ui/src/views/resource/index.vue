@@ -40,6 +40,7 @@
       <resource-hosts class="main" ref="resourceHost" @refresh="handleRefresh"></resource-hosts>
     </div>
     <router-subview></router-subview>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -49,10 +50,14 @@
   import resourceHosts from './children/host-list.vue'
   import Bus from '@/utils/bus.js'
   import RouterQuery from '@/router/query'
+  import cmdbModelFastLink from '@/components/model-fast-link'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+
   export default {
     components: {
       resourceDirectory,
-      resourceHosts
+      resourceHosts,
+      cmdbModelFastLink
     },
     data() {
       return {
@@ -75,6 +80,9 @@
     computed: {
       isResourcePool() {
         return this.activeTab.toString() === '1'
+      },
+      objId() {
+        return BUILTIN_MODELS.HOST
       }
     },
     methods: {

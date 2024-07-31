@@ -20,6 +20,8 @@
       <i class="icon icon-cc-arrow fl" v-if="(from && current)" @click="handleClick"></i>
       <h1 class="current fl" v-bk-overflow-tips>{{current}}</h1>
     </template>
+    <div id="global-breadcrumbs-prepend"></div>
+    <div id="global-breadcrumbs-append"></div>
   </div>
 </template>
 

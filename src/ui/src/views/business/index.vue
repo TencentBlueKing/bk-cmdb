@@ -233,6 +233,7 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -247,6 +248,8 @@
   import throttle from 'lodash.throttle'
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import cmdbModelFastLink from '@/components/model-fast-link'
   import cmdbButtonGroup from '@/components/ui/other/button-group'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
 
@@ -255,6 +258,7 @@
       cmdbColumnsConfig,
       cmdbPropertySelector,
       BatchSelectionColumn,
+      cmdbModelFastLink,
       cmdbButtonGroup
     },
     data() {
@@ -318,6 +322,9 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),
+      objId() {
+        return BUILTIN_MODELS.BUSINESS
+      },
       customBusinessColumns() {
         return this.usercustom[this.columnsConfigKey] || []
       },
