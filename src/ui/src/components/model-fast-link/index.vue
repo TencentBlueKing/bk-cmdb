@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <Teleport to=".breadcrumbs-layout">
+  <Teleport to="#global-breadcrumbs-prepend">
     <cmdb-auth tag="div" :auth="{ type: $OPERATION.R_MODEL, relation: [modelId] }">
       <template #default="{ disabled }">
         <i class="icon-cc-share icon-link"
