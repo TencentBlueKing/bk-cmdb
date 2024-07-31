@@ -67,8 +67,15 @@
   left: 0;
   right: 80px;
   font-size: 12px;
+  margin-top: 4px;
+  background: #fff;
+  padding-bottom: 15px;
+  align-items: center;
+  z-index: 999;
+  white-space: nowrap;
+
   .form-default-text {
-    flex: 1;
+    margin-right: 4px;
     @include ellipsis;
   }
   .form-default-operate {
