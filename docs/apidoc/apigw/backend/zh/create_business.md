@@ -4,28 +4,22 @@
 
 ### 输入参数
 
-| 参数名称                | 参数类型   | 必选 | 描述    |
-|---------------------|--------|----|-------|
-| bk_supplier_account | string | 否  | 开发商账号 |
-| data                | dict   | 是  | 业务数据  |
-
-#### data
-
-| 参数名称              | 参数类型   | 必选 | 描述                            |
-|-------------------|--------|----|-------------------------------|
-| bk_biz_name       | string | 是  | 业务名                           |
-| bk_biz_maintainer | string | 是  | 运维人员                          |
-| bk_biz_productor  | string | 否  | 产品人员                          |
-| bk_biz_developer  | string | 否  | 开发人员                          |
-| bk_biz_tester     | string | 否  | 测试人员                          |
-| operator          | string | 否  | 操作人员                          |
-| bk_created_at     | string | 否  | 创建时间                          |
-| bk_updated_at     | string | 否  | 更新时间                          |
-| bk_created_by     | string | 否  | 创建人                           |
-| bk_updated_by     | string | 否  | 更新人                           |
-| life_cycle        | string | 否  | 生命周期：测试中(1)，已上线(2, 默认值)，停运(3) |
-| time_zone         | string | 否  | 时区                            |
-| language          | string | 否  | 语言, "1"代表中文, "2"代表英文          |
+| 参数名称                | 参数类型   | 必选 | 描述                            |
+|---------------------|--------|----|-------------------------------|
+| bk_supplier_account | string | 是  | 开发商账号                         |
+| bk_biz_name         | string | 是  | 业务名                           |
+| bk_biz_maintainer   | string | 是  | 运维人员                          |
+| bk_biz_productor    | string | 否  | 产品人员                          |
+| bk_biz_developer    | string | 否  | 开发人员                          |
+| bk_biz_tester       | string | 否  | 测试人员                          |
+| operator            | string | 否  | 操作人员                          |
+| bk_created_at       | string | 否  | 创建时间                          |
+| bk_updated_at       | string | 否  | 更新时间                          |
+| bk_created_by       | string | 否  | 创建人                           |
+| bk_updated_by       | string | 否  | 更新人                           |
+| life_cycle          | string | 否  | 生命周期：测试中(1)，已上线(2, 默认值)，停运(3) |
+| time_zone           | string | 否  | 时区                            |
+| language            | string | 否  | 语言, "1"代表中文, "2"代表英文          |
 
 **注意：此处的输入参数仅对必填以及系统内置的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段**
 
@@ -33,21 +27,19 @@
 
 ```json
 {
-  "data": {
-    "bk_biz_name": "main-a1",
-    "bk_biz_maintainer": "admin",
-    "bk_biz_productor": "admin",
-    "bk_biz_developer": "admin",
-    "bk_biz_tester": "admin",
-    "time_zone": "Asia/Shanghai",
-    "bk_created_at": "",
-    "bk_updated_at": "",
-    "bk_created_by": "admin",
-    "bk_updated_by": "admin",
-    "language": "1",
-    "operator": "admin",
-    "life_cycle": "2"
-  }
+  "bk_biz_name": "main-a1",
+  "bk_biz_maintainer": "admin",
+  "bk_biz_productor": "admin",
+  "bk_biz_developer": "admin",
+  "bk_biz_tester": "admin",
+  "time_zone": "Asia/Shanghai",
+  "bk_created_at": "",
+  "bk_updated_at": "",
+  "bk_created_by": "admin",
+  "bk_updated_by": "admin",
+  "language": "1",
+  "operator": "admin",
+  "life_cycle": "2"
 }
 ```
 
