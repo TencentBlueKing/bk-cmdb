@@ -16,7 +16,7 @@ const findAllRequsetId = Symbol('findAllRequsetId')
 
 const find = async ({ params, config }) => {
   try {
-    const { count = 0, info: list = [] } = await http.post(`${window.API_HOST}biz/search/web`, params, config)
+    const { count = 0, info: list = [] } = await http.post(`biz/search/${window.Supplier.account}`, params, config)
     return { count, list }
   } catch (error) {
     console.error(error)
@@ -54,7 +54,7 @@ const findByIds = async ({ ids, config }) => {
 const findAll = async () => {
   const data = await http.get('biz/simplify?sort=bk_biz_id', {
     requestId: findAllRequsetId,
-    fromCache: true
+    fromCache: false
   })
 
   return Object.freeze(data.info || [])

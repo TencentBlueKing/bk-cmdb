@@ -555,3 +555,13 @@ type ServiceTemplatesResponse struct {
 	BaseResp `json:",inline"`
 	Data     []SrvTemplate `json:"data"`
 }
+
+// CheckHostApplyEnabledOption check if host apply is enabled option
+type CheckHostApplyEnabledOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// CheckHostApplyEnabledRes check if host apply is enabled result
+type CheckHostApplyEnabledRes struct {
+	HostApplyEnabledIDs []int64 `json:"host_apply_enabled_ids"`
+}

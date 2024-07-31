@@ -1,0 +1,528 @@
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  storageClass: ""
+
+## @section bk-cmdb image parameters
+##
+
+## bk-cmdb image parameters
+## @param image.registry bk-cmdb image registry
+## @param image.pullPolicy bk-cmdb image pull policy
+##
+image:
+  registry: hub.bktencent.com
+  pullPolicy: IfNotPresent
+
+## @section bk-cmdb webserver parameters
+##
+webserver:
+  ## @param webserver.enabled Enable webserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb webserver image parameters
+  ## @param webserver.image.repository bk-cmdb webserver image repository
+  ## @param webserver.image.rag bk-cmdb webserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_webserver
+    tag:
+  ## @param webserver.replicas Number of webserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param webserver.dnsPolicy DNS policy
+  ##
+  dnsPolicy: ClusterFirst
+  ## @param webserver.dnsPolicy Use host network policy
+  ##
+  hostNetwork: false
+  ## bk-cmdb webserver ingress parameters
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+  ##
+  ingress:
+    ## @param webserver.ingress.enabled Enable ingress record generation for bk-cmdb webserver
+    ##
+    enabled: true
+    ## @param webserver.ingress.hostname Default host for the ingress record
+    ##
+    host: cmdb.example.com
+    ## @param webserver.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ##
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    ## @param webserver.ingress.tls Enable TLS configuration for the host defined at `ingress.host` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Relay on cert-manager to create it by setting the corresponding annotations
+    ##   - Relay on Helm to create self-signed certificates by setting `ingress.tls=true` and `ingress.certManager=false`
+    ##
+    tls: false
+  ## bk-cmdb webserver service parameters
+  ##
+  service:
+    ## @param webserver.service.type bk-cmdb webserver service type
+    ##
+    type: "ClusterIP"
+    ## @param webserver.service.ports Expose bk-cmdb webserver service by webserver.service.ports[0].nodePort when webserver.service.type is "NodePort"
+    ##
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    ## webserver.service.externalPort bk-cmdb webserver service external port
+    ##
+    externalPort: 80
+  ## @param webserver.port bk-cmdb webserver service HTTP port
+  ##
+  port: 80
+  ## @param adminserver.configDir bk-cmdb adminserver config directory
+  ##
+  configDir: /data/cmdb/cmdb_webserver/configure
+  ## @param adminserver.errors bk-cmdb adminserver errors config directory
+  ##ku  c
+  errors: /data/cmdb/cmdb_webserver/conf/errors
+  ## @param adminserver.errors bk-cmdb adminserver language config directory
+  ##
+  language: /data/cmdb/cmdb_webserver/conf/language
+  ## @param webserver.workDir bk-cmdb webserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_webserver
+  ## bk-cmdb webserver start command parameters
+  ## @param webserver.command.logDir bk-cmdb webserver log directory
+  ## @param webserver.command.logLevel bk-cmdb webserver log level
+  ## @param webserver.command.logLevel Enable bk-cmdb webserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_webserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section Blueking url parameters
+##
+## @param bkPaasUrl bk-paas url
+##
+bkPaasUrl: http://paas.example.com
+## @param bkIamApiUrl bk-iam backend url
+##
+bkIamApiUrl: http://bkiam-web
+## @param bkComponentApiUrl esb url
+##
+bkComponentApiUrl: http://bkapi.paas.example.com
+## @param bkLoginApiUrl bk-login url
+##
+bkLoginApiUrl: http://bk-login-web
+## @param bkNodemanUrl bk-nodeman url
+##
+bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
+
+# 蓝鲸 GSE API Gateway url
+bkGseApiGatewayUrl: "http://bkapi.example.com"
+
+# 蓝鲸 Notice API Gateway url
+bkNoticeApiGatewayUrl: "http://bkapi.example.com"
+
+# CMDB API Gateway url
+bkCmdbApiGatewayUrl: "http://bkapi.example.com"
+
+## 蓝鲸共享资源URL
+bkSharedResUrl:
+
+## @section bk-cmdb common config parameters
+##
+web:
+  ## bk-cmdb common config esb parameters
+  ## @param common.esb.appCode bk-cmdb app code used in esb
+  ## @param common.esb.appSecret bk-cmdb app secret used in esb
+  ##
+  esb:
+    appCode: bk_cmdb
+    appSecret:
+  ## bk-cmdb common config paas parameters
+  ## @param common.paas.tls.insecureSkipVerify paas insecureSkipVerify config
+  ## @param common.paas.tls.certFile paas certFile
+  ## @param common.paas.tls.keyFile paas keyFile
+  ## @param common.paas.tls.caFile paas caFile
+  ## @param common.paas.tls.password paas password
+  ##
+  paas:
+    tls:
+      insecureSkipVerify:
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
+  ## bk-cmdb common config elasticsearch parameters
+  ## @param common.es.fullTextSearch Enable full text search
+  ##
+  es:
+    fullTextSearch: "off"
+  ## webserver common config parameters
+  ##
+  webServer:
+    ## webserver common config site parameters
+    ## @param common.webServer.site.domainUrl bk-cmdb web domain address
+    ## @param common.webServer.site.httpsDomainUrl bk-cmdb web https domain address
+    ## @param common.webServer.site.bkDomain bk-cmdb web bk domain address
+    ## @param common.webServer.site.appCode bk-cmdb app code
+    ## @param common.webServer.site.checkUrl bk-login user check url
+    ## @param common.webServer.site.resourcesPath bk-cmdb frontend resource path
+    ## @param common.webServer.site.htmlRoot bk-cmdb frontend html root
+    ## @param common.webServer.site.authScheme bk-cmdb authentication scheme
+    ## @param common.webServer.site.helDocUrl bk-cmdb help documents url
+    ##
+    site:
+      domainUrl: http://cmdb.example.com
+      httpsDomainUrl:
+      appCode: bk_cmdb
+      resourcesPath: /tmp/
+      htmlRoot: /data/cmdb/cmdb_webserver/web
+      authScheme: internal
+      helpDocUrl:
+      bkDomain:
+    ## webserver common config session parameters
+    ## @param common.webServer.session.name bk-cmdb session name
+    ## @param common.webServer.session.multipleOwner Enable one user with multiple logins at the same time
+    ## @param common.webServer.session.userInfo bk-cmdb login user name and password
+    ##
+    session:
+      name: cc3
+      multipleOwner: "0"
+      userInfo:
+    ## webserver common config app parameters
+    ## @param common.webServer.app.authAppCode bk-iam app code
+    ## @param common.webServer.app.authUrl bk-iam url
+    ## @param common.webServer.app.agentAppUrl bk-nodeman url
+    ## @param common.webServer.app.authScheme bk-cmdb app authentication scheme
+    ##
+    app:
+      authAppCode:
+      authUrl:
+      authScheme:
+    ## webserver common config login parameters
+    ## @param common.webServer.login.version bk-cmdb login mode
+    ##
+    login:
+      version: skip-login
+    ## webserver common config changelogPath parameters
+    ## @param common.webServer.changelogPath.ch the Chinese changelog storage path
+    ## @param common.webServer.changelogPath.en the English changelog storage path
+    ##
+    # cmdb版本日志存放路径配置
+    changelogPath:
+      # 中文版版本日志存放路径
+      ch: /data/cmdb/cmdb_webserver/changelog_user/ch
+      # 英文版版本日志存放路径
+      en: /data/cmdb/cmdb_webserver/changelog_user/en
+    # web-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥
+      publicKey:
+      # jwt私钥
+      privateKey:
+    #是否启用消息通知
+    enableNotification: false
+
+  ## monitor common config parameters
+  ##
+  monitor:
+    ## @param common.monitor.enabled Enable monitor
+    enabled: false
+    ## @param common.monitor.pluginName Monitor plugin name
+    ## 监控插件名称，有noop，blueking，不填时默认为noop
+    ##
+    pluginName: noop
+    ## @param common.monitor.dataId Monitor plugin data report id
+    ## 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    ##
+    dataId: 0
+    ## @param common.monitor.queueSize Monitor plugin data collecting cache queue size
+    ## 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+    ##
+    queueSize: 100
+    ## @param common.monitor.pluginPath Monitor plugin path
+    ## 设置需要挂载到pod里的路径地址，以此能够访问到gsecmdlinePath和domainSocketPath指定路径的二进制
+    ##
+    pluginPath:
+    ## @param common.monitor.gsecmdlinePath Monitor plugin gsecmdbline path
+    ## 采集数据用的gsecmdline命令绝对路径，默认版本需要大于等于2.0.2 ，默认路径：/usr/local/gse/plugins/bin/gsecmdline
+    ##
+    gsecmdlinePath:
+    ## @param common.monitor.domainSocketPath Domain socket path for monitor plugin gsecmdbline data report
+    ## 对应的domainsocket绝对路径，默认路径：/usr/local/gse/agent/data/ipc.state.report
+    ##
+    domainSocketPath:
+    ## @param common.monitor.rateLimiter Monitor plugin data report rate limiter
+    ## 用于对数据上报进行频率控制和限流
+    ## qps的设置范围为1～50，默认值为10
+    ## burst的设置范围为1～100，默认值为20
+    ##
+    rateLimiter:
+      qps: 10
+      burst: 20
+
+  ## log platform openTelemetry config
+  ##
+  openTelemetry:
+    ## @param common.openTelemetry.enable enable openTelemetry function
+    ## 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+    ##
+    enable: false
+    ## @param common.openTelemetry.endpoint the address about tracking chain function
+    ## openTelemetry跟踪链功能的自定义上报服务地址
+    ##
+    endpoint:
+    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function，
+    ## used for data reporting of the old version
+    ## openTelemetry跟踪链功能的上报data_id，用于旧版的数据上报
+    ##
+    bkDataID:
+    ## @param common.openTelemetry.bkDataToken the bk.data.token about tracking chain function
+    ## openTelemetry跟踪链功能的bk.data.token，用于新版的数据上报
+    ## used for data reporting of the new version
+    ##
+    bkDataToken:
+    ## @param common.openTelemetry.tls.insecureSkipVerify openTelemetry insecureSkipVerify config
+    ## @param common.openTelemetry.tls.certFile openTelemetry certFile
+    ## @param common.openTelemetry.tls.keyFile openTelemetry keyFile
+    ## @param common.openTelemetry.tls.caFile openTelemetry caFile
+    ## @param common.openTelemetry.tls.password openTelemetry password
+    ##
+    tls:
+      insecureSkipVerify:
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
+  ## @param common.tls.insecureSkipVerify cmdb insecureSkipVerify config
+  ## @param common.tls.certFile cmdb certFile
+  ## @param common.tls.keyFile cmdb keyFile
+  ## @param common.tls.caFile cmdb caFile
+  ## @param common.tls.password cmdb password
+  ## cmdb证书相关信息
+  ##
+  tls:
+    insecureSkipVerify:
+    certFile:
+    keyFile:
+    caFile:
+    password:
+
+  ## api gateway config
+  ##
+  ## 调用apigw接口相关配置
+  apiGW:
+    appCode: bk_cmdb
+    appSecret:
+    username: admin
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify:
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile:
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile:
+      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+      caFile:
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password:
+
+## @section bk-cmdb config and service center parameters
+##
+# configAndServiceCenter:
+#   addr:
+
+## @section mongodb parameters
+##
+mongodb:
+  ## @param mongodb.enabled Enable internal mongodb
+  ##
+  enabled: true
+  ## @param mongodb.persistence.size mongodb persistence size
+  ##
+  persistence:
+    size: 10Gi
+  ## @param mongodb.architecture mongodb architecture
+  ##
+  architecture: replicaset
+  ## @param mongodb.replicaCount mongodb replica count
+  ##
+  replicaCount: 1
+  ## @param mongodb.arbiter.enabled Enable mongodb arbiter
+  ##
+  arbiter:
+    enabled: false
+  ## @param mongodb.auth.enabled Enable mongodb authentication
+  ## @param mongodb.auth.username mongodb auth username
+  ## @param mongodb.auth.password mongodb auth password
+  ## @param mongodb.auth.database mongodb database
+  ##
+  auth:
+    enabled: true
+    username: cc
+    password:
+    database: cmdb
+  ## @param mongodb.host mongodb host
+  ##
+  host: mongodb-headless.default.svc.cluster.local
+  ## external mongodb parameters
+  ##
+  externalMongodb:
+    ## @param mongodb.externalMongodb.enabled Enable external mongodb
+    ##
+    enabled: true
+    ## @param mongodb.externalMongodb.usr mongodb auth username
+    ##
+    # usr:
+    ## @param mongodb.externalMongodb.pwd mongodb auth password
+    ##
+    # pwd:
+    ## @param mongodb.externalMongodb.database mongodb database
+    ##
+    database: cmdb
+    ## @param mongodb.externalMongodb.host mongodb host
+    ##
+    # host:
+    ## @param mongodb.externalMongodb.maxOpenConns mongodb max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param mongodb.externalMongodb.maxIdleConns mongodb max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param mongodb.externalMongodb.mechanism mongodb mechanism
+    ##
+    mechanism: SCRAM-SHA-1
+    ## @param mongodb.externalMongodb.rsName mongodb replicaset name
+    ##
+    rsName: rs0
+    ## @param mongodb.externalMongodb.socketTimeoutSeconds mongodb socket timeout
+    ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+    ##
+    socketTimeoutSeconds: 10
+
+## @section redis parameters
+##
+redis:
+  ## @param redis.enabled Enable internal redis
+  ##
+  enabled: true
+  ## @param redis.master.persistence.size redis master persistence size
+  ##
+  master:
+    persistence:
+      size: 10Gi
+  ## @param redis.architecture redis architecture
+  ##
+  architecture: standalone
+  ## @param redis.auth.enabled Enable redis authentication
+  ## @param redis.auth.password redis authentication password
+  auth:
+    enabled: true
+    password:
+  ## external redis parameters
+  ##
+  redis:
+    ## @param redis.redis.host external redis host
+    ##
+    # host:
+    ## @param redis.redis.pwd external redis password
+    ##
+    # pwd:
+    ## @param redis.redis.database external redis database
+    ##
+    database: "0"
+    ## @param redis.redis.maxOpenConns external redis max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param redis.redis.maxIdleConns external redis max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ##
+    sentinelPwd:
+    ## @param redis.redis.masterName external redis master name
+    ##
+    masterName:
+
+## @section ServiceMonitor parameters
+##
+serviceMonitor:
+  ## @param serviceMonitor.enabled Creates a ServiceMonitor to monitor kube-state-metrics
+  ##
+  enabled: false
+  ## @param serviceMonitor.interval Scrape interval (use by default, falling back to Prometheus' default)
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+  ##
+  interval: "15s"
+  ## @param serviceMonitor.metricRelabelings ServiceMonitor metricRelabelings
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+  ##
+  metricRelabelings: [ ]
+
+## @section Blueking log collecting parameters
+##
+bkLogConfig:
+  ## @param bkLogConfig.file.enabled Enable container log file collecting
+  ## @param bkLogConfig.file.dataId Container log file collecting dataid
+  ##
+  file:
+    enabled: false
+    dataId: 1
+  ## @param bkLogConfig.std.enabled Enable container std log collecting
+  ## @param bkLogConfig.std.dataId Container std log collecting dataid
+  ##
+  std:
+    enabled: false
+    dataId: 1

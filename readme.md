@@ -21,6 +21,7 @@
 * [设计理念](docs/overview/design.md)
 * [架构设计](docs/overview/architecture.md)
 * [代码目录](docs/overview/code_framework.md)
+* [数据库表结构设计](docs/db/README.md)
 
 ![front-page](docs/resource/img/frontpage.png)
 
@@ -45,7 +46,7 @@
 * [版本升级说明](docs/wiki/db_upgrade.md)
 * [API使用说明见这里](docs/apidoc/)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
-* [使用Helm部署CMDB到K8S环境](docs/support-file/helm/README.md)
+* [使用Helm部署CMDB到K8S环境](docs/support-file/helm/backend/README.md)
 
 ## Roadmap
 * [版本日志](docs/support-file/changelog/release.md)

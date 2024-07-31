@@ -333,7 +333,8 @@
       const showSyncInstanceTips = (from = 'process') => {
         const messages = {
           config: tipsConfigMessage,
-          process: tipsProcessMessage
+          process: tipsProcessMessage,
+          no_sync: t('成功更新模板')
         }
         $success(messages[from])
         emit('sync-change')
@@ -380,7 +381,7 @@
 
         del(state.propertyConfig, property.id)
 
-        showSyncInstanceTips('config')
+        showSyncInstanceTips('no_sync')
       }
 
       const handleCreateProcess = () => {

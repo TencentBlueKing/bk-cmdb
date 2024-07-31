@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/lock"
@@ -93,7 +94,7 @@ func (m *modelAttribute) CreateTableModelAttributes(kit *rest.Kit, objID string,
 		}
 
 		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
-			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			lang := m.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
 				attr.PropertyName, attr.PropertyID)
 		}
@@ -191,7 +192,7 @@ func (m *modelAttribute) CreateModelAttributes(kit *rest.Kit, objID string, inpu
 		}
 
 		if attr.IsPre && attr.PropertyID == common.BKInstNameField {
-			lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+			lang := m.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 			attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
 				attr.PropertyName, attr.PropertyID)
 		}
@@ -453,7 +454,7 @@ func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam me
 		for _, attr := range inputParam.CreateData.Data {
 			if attr.IsPre {
 				if attr.PropertyID == common.BKInstNameField {
-					lang := m.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+					lang := m.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 					attr.PropertyName = util.FirstNotEmptyString(lang.Language("common_property_"+attr.PropertyID),
 						attr.PropertyName, attr.PropertyID)
 				}

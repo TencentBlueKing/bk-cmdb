@@ -15,6 +15,7 @@ package metadata
 import (
 	"fmt"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -352,4 +353,115 @@ func GetTableData(originData map[string]interface{}, relRes []ModelQuoteRelation
 	}
 
 	return nil, nil
+}
+
+// SearchInstanceFilter model instance advanced filtering request struct
+type SearchInstanceFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *filter.Expression `json:"conditions"`
+
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
+
+	// Fields indicates which fields should be returns, it's would be ignored if not exists.
+	Fields []string `json:"fields"`
+
+	// Page batch query action page.
+	Page BasePage `json:"page"`
+}
+
+// Validate validates the search filter struct
+func (f *SearchInstanceFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate page parameter.
+	if err := f.Page.ValidateLimit(common.BKMaxInstanceLimit); err != nil {
+		return "page.limit", err
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return "", nil
+	}
+
+	option := filter.NewDefaultExprOpt(nil)
+	option.IgnoreRuleFields = true
+	if err := f.Conditions.Validate(option); err != nil {
+		return fmt.Sprintf("conditions: %v", f.Conditions), err
+	}
+
+	return "", nil
+}
+
+// GetCond returns a database type conditions base on the query filter.
+func (f *SearchInstanceFilter) GetCond() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid conditions: %v, err: %s", f.Conditions, err)
+	}
+
+	return mgoFilter, nil
+}
+
+// CountInstanceFilter count model instance request struct
+type CountInstanceFilter struct {
+	// ObjectID is target model object id.
+	ObjectID string `json:"bk_obj_id"`
+
+	// Conditions is target search conditions that make up by the query filter.
+	Conditions *filter.Expression `json:"conditions"`
+
+	// 非必填，只能用来查时间，且与Condition是与关系
+	TimeCondition *TimeCondition `json:"time_condition,omitempty"`
+}
+
+// Validate validates the search filter struct
+func (f *CountInstanceFilter) Validate() (string, error) {
+	// validates object id parameter.
+	if len(f.ObjectID) == 0 {
+		return "bk_obj_id", fmt.Errorf("empty bk_obj_id")
+	}
+
+	// validate conditions parameter.
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return "", nil
+	}
+
+	option := filter.NewDefaultExprOpt(nil)
+	option.IgnoreRuleFields = true
+	if err := f.Conditions.Validate(option); err != nil {
+		return fmt.Sprintf("conditions: %v", f.Conditions), err
+	}
+
+	return "", nil
+}
+
+// GetCond returns a database type conditions base on the query filter.
+func (f *CountInstanceFilter) GetCond() (map[string]interface{}, error) {
+	if f.Conditions == nil {
+		// empty conditions to match all.
+		return map[string]interface{}{}, nil
+	}
+
+	// convert to mongo conditions.
+	mgoFilter, err := f.Conditions.ToMgo()
+	if err != nil {
+		return nil, fmt.Errorf("invalid conditions: %v, err: %s", f.Conditions, err)
+	}
+
+	return mgoFilter, nil
 }

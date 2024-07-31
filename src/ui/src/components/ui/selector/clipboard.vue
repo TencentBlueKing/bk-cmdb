@@ -12,6 +12,7 @@
 
 <template>
   <bk-cascade
+    class="f0"
     v-model="selected"
     :list="cascadeList"
     :scroll-width="190"

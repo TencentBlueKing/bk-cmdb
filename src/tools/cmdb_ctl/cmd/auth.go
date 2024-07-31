@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -152,10 +152,7 @@ func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error
 	if err != nil {
 		return err
 	}
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
+	header := headerutil.BuildHeader("admin", common.BKDefaultOwnerID)
 
 	userInfo := meta.UserInfo{
 		UserName:        userName,

@@ -23,7 +23,7 @@ function refresh_config(){
   fi
   echo "localIp:${localIp}"
 
-  curl -X POST -H 'Content-Type:application/json' -H 'BK_USER:migrate' -H 'HTTP_BLUEKING_SUPPLIER_ID:0' http://${localIp}:60004/migrate/v3/migrate/config/refresh --data "{\"config_name\":\"$1\"}"
+  curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bkcmdb-Supplier-Account:0' http://${localIp}:60004/migrate/v3/migrate/config/refresh --data "{\"config_name\":\"$1\"}"
 }
 
 # 判断入参

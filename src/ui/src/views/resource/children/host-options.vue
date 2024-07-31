@@ -62,6 +62,7 @@
         :buttons="buttons"
         :expand="false">
       </cmdb-button-group>
+      <cmdb-refresh class="mr10" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
     </div>
     <div class="options-right">
       <filter-fast-search class="option-fast-search" @search="searchFilter"></filter-fast-search>
@@ -169,6 +170,7 @@
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import isEqual from 'lodash/isEqual'
   import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+  import cmdbRefresh from '@/components/refresh'
 
   const CUSTOM_STICKY_KEY = 'sticky-directory'
 
@@ -177,7 +179,8 @@
       cmdbImport,
       cmdbButtonGroup,
       cmdbTransferMenu,
-      FilterFastSearch
+      FilterFastSearch,
+      cmdbRefresh
     },
     data() {
       return {
@@ -382,6 +385,9 @@
       this.unwatchScope()
     },
     methods: {
+      handleRefresh() {
+        this.$emit('refresh')
+      },
       async getFullAmountBusiness() {
         try {
           const data = await this.$http.get('biz/simplify?sort=bk_biz_id')
@@ -600,7 +606,7 @@
         })
       },
       async handleMultipleEdit() {
-        this.slider.title = this.$t('主机属性')
+        this.slider.title = this.$t('编辑主机属性')
         this.slider.show = true
         setTimeout(() => {
           this.slider.component = 'cmdb-form-multiple'
@@ -613,6 +619,7 @@
             bk_host_id: this.table.checked.join(',')
           }
         })
+        this.$success(this.$t('编辑成功'))
         this.slider.show = false
         RouterQuery.set({
           _t: Date.now()

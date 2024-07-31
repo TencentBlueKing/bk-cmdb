@@ -43,7 +43,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	taskSrv := new(TaskServer)
 
 	input := &backbone.BackboneParameter{
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: taskSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,

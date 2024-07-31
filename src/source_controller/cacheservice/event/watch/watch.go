@@ -81,7 +81,8 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 
 	// start from is ahead of the latest's event time, watch from now.
 	if int64(tailNode.ClusterTime.Sec) <= opts.StartFrom {
-		if !c.isNodeHitEventType(tailNode, opts.EventTypes) || !c.isNodeHitSubResource(tailNode, opts.Filter.SubResource) {
+		if !c.isNodeHitEventType(tailNode, opts.EventTypes) ||
+			!c.isNodeHitSubResource(tailNode, opts.Filter.SubResource, opts.Filter.SubResources) {
 			// not matched, set to no event cursor with empty detail
 			return []*watch.WatchEventDetail{{
 				Cursor:    watch.NoEventCursor,
@@ -105,6 +106,7 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 			Cursor:    tailNode.Cursor,
 			Resource:  opts.Resource,
 			EventType: tailNode.EventType,
+			ChainNode: tailNode,
 		}
 
 		if detail == nil {
@@ -131,12 +133,6 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 		},
 	}
 
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
-	}
-
 	node := new(watch.ChainNode)
 	err = c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
 	if err != nil {
@@ -154,11 +150,12 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 	}
 
 	searchOpt := &searchFollowingChainNodesOption{
-		id:          node.ID,
-		limit:       eventStep,
-		types:       opts.EventTypes,
-		key:         key,
-		subResource: opts.Filter.SubResource,
+		id:           node.ID,
+		limit:        eventStep,
+		types:        opts.EventTypes,
+		key:          key,
+		subResource:  opts.Filter.SubResource,
+		subResources: opts.Filter.SubResources,
 	}
 	nodes, err := c.searchFollowingEventChainNodesByID(kit, searchOpt)
 	if err != nil {
@@ -167,7 +164,8 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 	}
 
 	// since the first node is after the start time, we need to include it in the nodes after the start time
-	if c.isNodeHitEventType(node, opts.EventTypes) && c.isNodeHitSubResource(node, opts.Filter.SubResource) {
+	if c.isNodeHitEventType(node, opts.EventTypes) && c.isNodeHitSubResource(node, opts.Filter.SubResource,
+		opts.Filter.SubResources) {
 		nodes = append([]*watch.ChainNode{node}, nodes...)
 	}
 
@@ -187,7 +185,8 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 }
 
 // getEventDetailsWithNodes get event details with nodes, first get from redis, then get failed ones from mongo
-func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventOptions, hitNodes []*watch.ChainNode, key event.Key) (
+func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventOptions, hitNodes []*watch.ChainNode,
+	key event.Key) (
 	[]*watch.WatchEventDetail, error) {
 
 	if len(hitNodes) == 0 {
@@ -204,47 +203,29 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 		return c.getBizSetRelationEventDetailWithNodes(kit, hitNodes)
 	}
 
-	cursors := make([]string, len(hitNodes))
-	for index, node := range hitNodes {
-		cursors[index] = node.Cursor
-	}
-
-	details, errCursors, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, cursors, key)
+	details, errNodes, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, hitNodes, key)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(errCursors) == 0 {
+	if len(errNodes) == 0 {
 		resp := make([]*watch.WatchEventDetail, len(details))
 		for idx, detail := range details {
-			jsonStr := types.GetEventDetail(&detail)
-			detail = *json.CutJsonDataWithFields(jsonStr, opts.Fields)
+			detail = *json.CutJsonDataWithFields(&detail, opts.Fields)
 			resp[idx] = &watch.WatchEventDetail{
 				Cursor:    hitNodes[idx].Cursor,
 				Resource:  opts.Resource,
 				EventType: hitNodes[idx].EventType,
 				Detail:    watch.JsonString(detail),
+				ChainNode: hitNodes[idx],
 			}
 		}
 		return resp, nil
 	}
 
-	// get event chain nodes from db for cursors that failed when reading redis
-	errCursorsExistMap := make(map[string]struct{})
-	for _, errCursor := range errCursors {
-		errCursorsExistMap[errCursor] = struct{}{}
-	}
-
-	errNodes := make([]*watch.ChainNode, 0)
-	for _, node := range hitNodes {
-		if _, exists := errCursorsExistMap[node.Cursor]; exists {
-			errNodes = append(errNodes, node)
-		}
-	}
-
 	indexDetailMap, err := c.searchEventDetailsFromMongo(kit, errNodes, opts.Fields, errCursorIndexMap, key)
 	if err != nil {
-		blog.Errorf("get details from mongo failed, err: %v, cursors: %+v, rid: %s", err, errCursors, kit.Rid)
+		blog.Errorf("get details from mongo failed, err: %v, cursors: %+v, rid: %s", err, errNodes, kit.Rid)
 		return nil, err
 	}
 
@@ -254,7 +235,10 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 		if exists {
 			detail = errDetail
 		} else {
-			jsonStr := types.GetEventDetail(&detail)
+			jsonStr := &detail
+			if !key.IsGeneralRes() {
+				jsonStr = types.GetEventDetail(&detail)
+			}
 			detail = *json.CutJsonDataWithFields(jsonStr, opts.Fields)
 		}
 
@@ -263,6 +247,7 @@ func (c *Client) getEventDetailsWithNodes(kit *rest.Kit, opts *watch.WatchEventO
 			Resource:  opts.Resource,
 			EventType: hitNodes[idx].EventType,
 			Detail:    watch.JsonString(detail),
+			ChainNode: hitNodes[idx],
 		}
 	}
 	return resp, nil
@@ -363,43 +348,31 @@ func (c *Client) getBizSetRelationEventDetailWithNodes(kit *rest.Kit, hitNodes [
 		return make([]*watch.WatchEventDetail, 0), nil
 	}
 
-	cursors := make([]string, len(hitNodes))
-	for index, node := range hitNodes {
-		cursors[index] = node.Cursor
-	}
-
 	// get biz set relation event detail from redis, ignore the fields in watch option, return the whole detail
-	details, errCursors, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, cursors, event.BizSetRelationKey)
+	details, errNodes, errCursorIndexMap, err := c.searchEventDetailsFromRedis(kit, hitNodes, event.BizSetRelationKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(errCursors) == 0 {
+	if len(errNodes) == 0 {
 		resp := make([]*watch.WatchEventDetail, len(details))
 		for idx, detail := range details {
 			resp[idx] = &watch.WatchEventDetail{
 				Cursor:    hitNodes[idx].Cursor,
 				Resource:  watch.BizSetRelation,
 				EventType: hitNodes[idx].EventType,
-				Detail:    watch.JsonString(*types.GetEventDetail(&detail)),
+				Detail:    watch.JsonString(detail),
 			}
 		}
 		return resp, nil
 	}
 
 	// get event chain nodes related details from db for cursors that failed when reading redis
-	errCursorsExistMap := make(map[string]struct{})
-	for _, errCursor := range errCursors {
-		errCursorsExistMap[errCursor] = struct{}{}
-	}
-
 	bizSetIDs := make([]int64, 0)
 	indexBizSetIDMap := make(map[int]int64)
-	for _, node := range hitNodes {
-		if _, exists := errCursorsExistMap[node.Cursor]; exists {
-			bizSetIDs = append(bizSetIDs, node.InstanceID)
-			indexBizSetIDMap[errCursorIndexMap[node.Cursor]] = node.InstanceID
-		}
+	for _, node := range errNodes {
+		bizSetIDs = append(bizSetIDs, node.InstanceID)
+		indexBizSetIDMap[errCursorIndexMap[node.Cursor]] = node.InstanceID
 	}
 
 	bizSetDetailMap, err := c.getBizSetRelationEventDetailFromMongo(kit, bizSetIDs)
@@ -550,7 +523,8 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		}, nil
 	}
 
-	if !c.isNodeHitEventType(node, opts.EventTypes) || !c.isNodeHitSubResource(node, opts.Filter.SubResource) {
+	if !c.isNodeHitEventType(node, opts.EventTypes) || !c.isNodeHitSubResource(node, opts.Filter.SubResource,
+		opts.Filter.SubResources) {
 		// not matched, set to no event cursor with empty detail
 		return &watch.WatchEventDetail{
 			Cursor:    watch.NoEventCursor,
@@ -574,6 +548,7 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 		Cursor:    node.Cursor,
 		Resource:  opts.Resource,
 		EventType: node.EventType,
+		ChainNode: node,
 	}
 
 	if detail == nil {
@@ -602,15 +577,15 @@ func (c *Client) WatchFromNow(kit *rest.Kit, key event.Key, opts *watch.WatchEve
 func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.WatchEventOptions) (
 	[]*watch.WatchEventDetail, error) {
 
-	rid := kit.Rid
 	start := time.Now().Unix()
 
 	searchOpt := &searchFollowingChainNodesOption{
-		startCursor: opts.Cursor,
-		limit:       eventStep,
-		types:       opts.EventTypes,
-		key:         key,
-		subResource: opts.Filter.SubResource,
+		startCursor:  opts.Cursor,
+		limit:        eventStep,
+		types:        opts.EventTypes,
+		key:          key,
+		subResource:  opts.Filter.SubResource,
+		subResources: opts.Filter.SubResources,
 	}
 	exists, nodes, nodeID, err := c.searchFollowingEventChainNodes(kit, searchOpt)
 	if err != nil {
@@ -629,13 +604,13 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 
 		// we got not even one event, sleep a little, and then try to continue the loop watch
 		time.Sleep(loopInternal)
-		blog.V(5).Infof("watch key: %s with resource: %s, got nothing, try next round. rid: %s",
-			key.Namespace(), opts.Resource, rid)
+		blog.V(5).Infof("watch key: %s with resource: %s, got nothing, try next round. rid: %s", key.Namespace(),
+			opts.Resource, kit.Rid)
 
 		if time.Now().Unix()-start > timeoutWatchLoopSeconds {
 			lastNode, exists, err := c.getLatestEvent(kit, key)
 			if err != nil {
-				blog.Errorf("watch from now, but get latest event failed, err: %v, rid: %s", err, rid)
+				blog.Errorf("watch from now, but get latest event failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
 
@@ -656,7 +631,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 				searchOpt.id = nodeID
 				nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
 				if err != nil {
-					blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
+					blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
 					return nil, err
 				}
 				if len(nodes) != 0 {
@@ -668,8 +643,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 					Resource: opts.Resource,
 					Detail:   nil,
 				}
-
-				// at least the tail node should can be scan, so something goes wrong.
+				// at least the tail node should be scanned, so something goes wrong.
 				return []*watch.WatchEventDetail{resp}, nil
 			}
 		}
@@ -677,7 +651,7 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 		searchOpt.id = nodeID
 		nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
 		if err != nil {
-			blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, rid)
+			blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
 			return nil, err
 		}
 	}
@@ -698,13 +672,13 @@ func (c *Client) isNodeHitEventType(node *watch.ChainNode, types []watch.EventTy
 
 // isNodeHitSubResource check if node hit the sub resource, not specifying sub resource means matching all and is hit
 // only used for common and mainline instances that contains sub resource
-func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string) bool {
-	if len(subResource) == 0 {
+func (c *Client) isNodeHitSubResource(node *watch.ChainNode, subResource string, subResources []string) bool {
+	if len(subResource) == 0 && len(subResources) == 0 {
 		return true
 	}
 
 	for _, subRes := range node.SubResource {
-		if subRes == subResource {
+		if subRes == subResource || util.Contains(subResources, subRes) {
 			return true
 		}
 	}

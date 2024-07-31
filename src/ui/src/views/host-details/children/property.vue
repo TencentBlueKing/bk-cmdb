@@ -22,7 +22,12 @@
           :key="property.id"
           :id="`property-item-${property.id}`">
           <span class="property-name">
-            <span @mouseenter="(event) => handlePropertyNameMouseenter(event, property)">
+            <span v-if="isContainerObjects(property.bk_obj_id)" class="no-show-more">
+              {{property.bk_property_name}}
+            </span>
+            <span v-else
+              @mouseenter="(event) => handlePropertyNameMouseenter(event, property)"
+            >
               {{property.bk_property_name}}
             </span>
             <i class="property-name-tooltips icon-cc-tips"
@@ -226,6 +231,10 @@
               ({{hoverPropertyPopover.data.bk_property_type}})
             </span>
           </dd>
+          <dd class="row-item" v-show="hoverPropertyPopover.data.placeholder">
+            <span class="item-name">{{$t('用户提示')}}</span>
+            <span class="item-value">{{hoverPropertyPopover.data.placeholder}}</span>
+          </dd>
         </div>
       </dl>
     </div>
@@ -241,6 +250,7 @@
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
+  import { isContainerObjects } from '@/utils/tools'
 
   export default {
     name: 'cmdb-host-property',
@@ -342,6 +352,9 @@
           this.hostRelatedRules = []
           console.error(e)
         }
+      },
+      isContainerObjects(objId) {
+        return isContainerObjects(objId)
       },
       isPropertyEditable(property) {
         const isSystemLimited = property.editable && !property.bk_isapi
@@ -553,7 +566,7 @@
                     right: 2px;
                     content: "：";
                 }
-                :first-child {
+                :first-child:not(.no-show-more) {
                   &:hover {
                     color: $primaryColor;
                   }

@@ -47,7 +47,7 @@ func New(ctx context.Context, confPath string, disc crd.ConfRegDiscvIf, handler 
 
 	// parse config only from file
 	if len(confPath) != 0 {
-		return LoadConfigFromLocalFile(confPath, handler)
+		return GetLocalConf(confPath, handler)
 	}
 
 	if err := confC.run(); err != nil {

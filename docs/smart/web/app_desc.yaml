@@ -1,0 +1,33 @@
+specVersion: 3
+appVersion: "3.14.1-feature-layered-alpha3"
+app:
+  region: "default"
+  bkAppCode: "bk_cmdb_saas"
+  bkAppName: "蓝鲸配置平台"
+  market:
+    category: 配置管理
+    introduction: "蓝鲸配置平台"
+    introductionEn: "blueking cmdb"
+    description: "蓝鲸配置平台"
+    displayOptions:
+      width: 800
+      height: 600
+modules:
+  - name: "web"
+    isDefault: true
+    language: "Go"
+    spec:
+      processes:
+        - procCommand: /app/bin/start-web.sh
+          name: web
+          replicas: 1
+          resQuotaPlan: default
+          targetPort: 80
+      configuration:
+        env:
+        - name: "GO_INSTALL_PACKAGE_SPEC"
+          value: "./src/web_server"
+        - name: "CGO_CFLAGS"
+          value: "-I/app/Tongsuo-8.3.2/include -Wno-deprecated-declarations"
+        - name: "CGO_LDFLAGS"
+          value: "-L/opt/tongsuo/lib -lssl -lcrypto"

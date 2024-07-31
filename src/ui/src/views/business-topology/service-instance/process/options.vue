@@ -42,7 +42,8 @@
         :max-width="200"
         :placeholder="$t('请输入进程别名')"
         @enter="handleSearch"
-        @clear="handleSearch">
+        @clear="handleSearch"
+        @right-icon-click="handleSearch">
       </bk-input>
       <view-switcher class="ml10" active="process"></view-switcher>
     </div>

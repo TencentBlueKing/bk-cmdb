@@ -51,7 +51,7 @@ func (s *Service) isSetInitializedByTemplate(kit *rest.Kit, setID int64) (bool, 
 
 	if len(result.Info) == 0 {
 		blog.Errorf("set instance not exist, setID: %d, rid: %s", setID, kit.Rid)
-		return false, kit.CCError.CCError(common.CCErrCommNotFound)
+		return false, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKSetIDField)
 	}
 
 	if len(result.Info) > 1 {
@@ -123,6 +123,50 @@ func (s *Service) CreateModule(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(module)
+}
+
+// BatchCreateModule Batch create module
+func (s *Service) BatchCreateModule(ctx *rest.Contexts) {
+	data := new(metadata.CreateManyModuleRequest)
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := data.Validate(); err.ErrCode != 0 {
+		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// 通过集群模板创建的集群禁止直接操作(只能通过集群模板同步)
+	initializedByTemplate, err := s.isSetInitializedByTemplate(ctx.Kit, data.SetID)
+	if err != nil {
+		blog.Errorf("set initialized template failed, err: %v, setID: %d, rid: %s", err, data.SetID, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if initializedByTemplate {
+		blog.Errorf("forbidden add module to set initialized by template, setID: %d, rid: %s", data.SetID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoForbiddenOperateModuleOnSetInitializedByTemplate))
+		return
+	}
+
+	var resp metadata.RspIDs
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		var createErr error
+		resp.IDs, createErr = s.Logics.ModuleOperation().CreateManyModule(ctx.Kit, data)
+		if createErr != nil {
+			return createErr
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		blog.Errorf("create module failed, err: %v, data: %v, rid: %s", txnErr, data, ctx.Kit.Rid)
+		ctx.RespAutoError(txnErr)
+		return
+	}
+
+	ctx.RespEntity(resp)
 }
 
 // checkIsBuiltInModule check if object is built-in object

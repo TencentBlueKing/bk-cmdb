@@ -15,7 +15,9 @@ package event
 import (
 	"fmt"
 
+	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
+	"configcenter/src/common/watch"
 	kubetypes "configcenter/src/kube/types"
 
 	"github.com/tidwall/gjson"
@@ -27,9 +29,10 @@ var hostFields = []string{common.BKHostIDField, common.BKHostInnerIPField, commo
 
 // HostKey TODO
 var HostKey = Key{
-	namespace:  watchCacheNamespace + "host",
-	collection: common.BKTableNameBaseHost,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + "host",
+	collection:         common.BKTableNameBaseHost,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.HostKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, hostFields...)
 		for idx := range hostFields {
@@ -50,9 +53,10 @@ var HostKey = Key{
 
 // ModuleHostRelationKey TODO
 var ModuleHostRelationKey = Key{
-	namespace:  watchCacheNamespace + "host_relation",
-	collection: common.BKTableNameModuleHostConfig,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + "host_relation",
+	collection:         common.BKTableNameModuleHostConfig,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ModuleHostRelKey,
 	instName: func(doc []byte) string {
 		fields := gjson.GetManyBytes(doc, "bk_module_id", "bk_host_id")
 		return fmt.Sprintf("module id: %s, host id: %s", fields[0].String(), fields[1].String())
@@ -63,9 +67,10 @@ var bizFields = []string{common.BKAppIDField, common.BKAppNameField}
 
 // BizKey TODO
 var BizKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDApp,
-	collection: common.BKTableNameBaseApp,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDApp,
+	collection:         common.BKTableNameBaseApp,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.BizKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, bizFields...)
 		for idx := range bizFields {
@@ -88,9 +93,10 @@ var setFields = []string{common.BKSetIDField, common.BKSetNameField}
 
 // SetKey TODO
 var SetKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDSet,
-	collection: common.BKTableNameBaseSet,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDSet,
+	collection:         common.BKTableNameBaseSet,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.SetKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, setFields...)
 		for idx := range setFields {
@@ -113,9 +119,10 @@ var moduleFields = []string{common.BKModuleIDField, common.BKModuleNameField}
 
 // ModuleKey TODO
 var ModuleKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDModule,
-	collection: common.BKTableNameBaseModule,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDModule,
+	collection:         common.BKTableNameBaseModule,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ModuleKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, moduleFields...)
 		for idx := range moduleFields {
@@ -136,9 +143,10 @@ var ModuleKey = Key{
 
 // ObjectBaseKey TODO
 var ObjectBaseKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDObject,
-	collection: common.BKTableNameBaseInst,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDObject,
+	collection:         common.BKTableNameBaseInst,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ObjInstKey,
 	validator: func(doc []byte) error {
 		field := gjson.GetBytes(doc, common.BKInstIDField)
 		if !field.Exists() {
@@ -161,9 +169,10 @@ var ObjectBaseKey = Key{
 
 // MainlineInstanceKey TODO
 var MainlineInstanceKey = Key{
-	namespace:  watchCacheNamespace + "mainline_instance",
-	collection: common.BKTableNameMainlineInstance,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + "mainline_instance",
+	collection:         common.BKTableNameMainlineInstance,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.MainlineInstKey,
 	validator: func(doc []byte) error {
 		field := gjson.GetBytes(doc, common.BKInstIDField)
 		if !field.Exists() {
@@ -188,9 +197,10 @@ var processFields = []string{common.BKProcessIDField, common.BKProcessNameField}
 
 // ProcessKey TODO
 var ProcessKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDProc,
-	collection: common.BKTableNameBaseProcess,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDProc,
+	collection:         common.BKTableNameBaseProcess,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ProcessKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, processFields...)
 		for idx := range processFields {
@@ -209,13 +219,15 @@ var ProcessKey = Key{
 	},
 }
 
-var processInstanceRelationFields = []string{common.BKProcessIDField, common.BKServiceInstanceIDField, common.BKHostIDField}
+var processInstanceRelationFields = []string{common.BKProcessIDField, common.BKServiceInstanceIDField,
+	common.BKHostIDField}
 
 // ProcessInstanceRelationKey TODO
 var ProcessInstanceRelationKey = Key{
-	namespace:  watchCacheNamespace + "process_instance_relation",
-	collection: common.BKTableNameProcessInstanceRelation,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + "process_instance_relation",
+	collection:         common.BKTableNameProcessInstanceRelation,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ProcessRelationKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, processInstanceRelationFields...)
 		for idx := range processInstanceRelationFields {
@@ -256,9 +268,10 @@ var HostIdentityKey = Key{
 
 // InstAsstKey instance association watch key
 var InstAsstKey = Key{
-	namespace:  watchCacheNamespace + "instance_association",
-	collection: common.BKTableNameInstAsst,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + "instance_association",
+	collection:         common.BKTableNameInstAsst,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.InstAsstKey,
 	validator: func(doc []byte) error {
 		field := gjson.GetBytes(doc, common.BKFieldID)
 		if !field.Exists() {
@@ -280,9 +293,10 @@ var bizSetFields = []string{common.BKBizSetIDField, common.BKBizSetNameField}
 
 // BizSetKey TODO
 var BizSetKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDBizSet,
-	collection: common.BKTableNameBaseBizSet,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDBizSet,
+	collection:         common.BKTableNameBaseBizSet,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.BizSetKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, bizSetFields...)
 		for idx := range bizSetFields {
@@ -329,9 +343,10 @@ var platFields = []string{common.BKCloudIDField, common.BKCloudNameField}
 
 // PlatKey cloud area event watch key
 var PlatKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDPlat,
-	collection: common.BKTableNameBasePlat,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDPlat,
+	collection:         common.BKTableNameBasePlat,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.PlatKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, platFields...)
 		for idx := range platFields {
@@ -354,9 +369,10 @@ var kubeFields = []string{common.BKFieldID, common.BKFieldName}
 
 // KubeClusterKey kube cluster event watch key
 var KubeClusterKey = Key{
-	namespace:  watchCacheNamespace + kubetypes.KubeCluster,
-	collection: kubetypes.BKTableNameBaseCluster,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + kubetypes.KubeCluster,
+	collection:         kubetypes.BKTableNameBaseCluster,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.KubeClusterKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
 		for idx := range kubeFields {
@@ -376,9 +392,10 @@ var KubeClusterKey = Key{
 
 // KubeNodeKey kube node event watch key
 var KubeNodeKey = Key{
-	namespace:  watchCacheNamespace + kubetypes.KubeNode,
-	collection: kubetypes.BKTableNameBaseNode,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + kubetypes.KubeNode,
+	collection:         kubetypes.BKTableNameBaseNode,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.KubeNodeKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
 		for idx := range kubeFields {
@@ -398,9 +415,10 @@ var KubeNodeKey = Key{
 
 // KubeNamespaceKey kube namespace event watch key
 var KubeNamespaceKey = Key{
-	namespace:  watchCacheNamespace + kubetypes.KubeNamespace,
-	collection: kubetypes.BKTableNameBaseNamespace,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + kubetypes.KubeNamespace,
+	collection:         kubetypes.BKTableNameBaseNamespace,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.KubeNamespaceKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
 		for idx := range kubeFields {
@@ -420,9 +438,10 @@ var KubeNamespaceKey = Key{
 
 // KubeWorkloadKey kube workload event watch key
 var KubeWorkloadKey = Key{
-	namespace:  watchCacheNamespace + kubetypes.KubeWorkload,
-	collection: kubetypes.BKTableNameBaseWorkload,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + kubetypes.KubeWorkload,
+	collection:         kubetypes.BKTableNameBaseWorkload,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.KubeWorkloadKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, kubeFields...)
 		for idx := range kubeFields {
@@ -445,6 +464,7 @@ var KubeWorkloadKey = Key{
 }
 
 // KubePodKey kube Pod event watch key
+// NOTE: pod event detail has container info, can not be treated as general resource cache detail
 var KubePodKey = Key{
 	namespace:  watchCacheNamespace + kubetypes.KubePod,
 	collection: kubetypes.BKTableNameBasePod,
@@ -470,9 +490,10 @@ var projectFields = []string{common.BKFieldID, common.BKProjectNameField}
 
 // ProjectKey project event watch key
 var ProjectKey = Key{
-	namespace:  watchCacheNamespace + common.BKInnerObjIDProject,
-	collection: common.BKTableNameBaseProject,
-	ttlSeconds: 6 * 60 * 60,
+	namespace:          watchCacheNamespace + common.BKInnerObjIDProject,
+	collection:         common.BKTableNameBaseProject,
+	ttlSeconds:         6 * 60 * 60,
+	generalResCacheKey: general.ProjectKey,
 	validator: func(doc []byte) error {
 		fields := gjson.GetManyBytes(doc, projectFields...)
 		for idx := range projectFields {
@@ -500,6 +521,8 @@ type Key struct {
 	// if use's watch start from value is older than time.Now().Unix() - startFrom value,
 	// that means use's is watching event that has already deleted, it's not allowed.
 	ttlSeconds int64
+	// generalResCacheKey is the general resource cache key, general res detail cache will reuse the event res detail
+	generalResCacheKey *general.Key
 
 	// validator validate whether the event data is valid or not.
 	// if not, then this event should not be handle, should be dropped.
@@ -512,11 +535,29 @@ type Key struct {
 	instID func(doc []byte) int64
 }
 
-// DetailKey TODO
+// DetailKey generates the event detail key by cursor
+// general resource detail will be stored by ResDetailKey while event related info will be stored by this key
 // Note: do not change the format, it will affect the way in event server to
 // get the details with lua scripts.
 func (k Key) DetailKey(cursor string) string {
 	return k.namespace + ":detail:" + cursor
+}
+
+// GeneralResDetailKey generates the general resource detail key by chain node, in the order of instance id then oid
+// NOTE: only general resource detail will be stored by this key and reused by general resource detail cache,
+// mix-event or special event detail will all be stored by DetailKey
+func (k Key) GeneralResDetailKey(node *watch.ChainNode) string {
+	if k.generalResCacheKey == nil || node == nil {
+		return ""
+	}
+
+	uniqueKey, _ := k.generalResCacheKey.IDKey(node.InstanceID, node.Oid)
+	return k.generalResCacheKey.DetailKey(uniqueKey, node.SubResource...)
+}
+
+// IsGeneralRes returns if the event is general resource whose detail is stored separately
+func (k Key) IsGeneralRes() bool {
+	return k.generalResCacheKey != nil
 }
 
 // Namespace TODO

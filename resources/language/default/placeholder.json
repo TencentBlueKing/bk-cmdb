@@ -1,7 +1,6 @@
 {
     "process_placeholder_bk_start_param_regex": "程序启动参数</br> 用于唯一识别一个进程，例如 -cp zookeeper",
     "process_placeholder_bk_process_name": "对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper",
-    "process_placeholder_port": "单个端口：8080 </br>多个连续端口：8080-8089 </br>多个不连续端口：8080-8089,8199",
     "process_placeholder_bk_func_name": "程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java",
     "process_placeholder_bk_func_id": "对进程的数字型标注，便于快速检索",
     "process_placeholder_bk_port_enable": "是否启动端口，默认值为true",
@@ -9,5 +8,10 @@
     "process_placeholder_bk_start_check_secs": "在执行启动命令后，等待多久检查PID存活的状态",
     "process_placeholder_priority": "批量启动进程依据优先级从小到大排序操作，停止进程按反序操作。优先级数值范围支持输入 [ -100 ~ 10000 ]",
     "process_placeholder_timeout": "执行命令的超时时长",
+
+    "process_bind_info_placeholder_ip": "进程绑定的IP",
+    "process_bind_info_placeholder_port": "进程监听的端口</br> (填写示例)单端口: 8080</br> (填写示例)端口段: 8080-9090",
+    "process_bind_info_placeholder_protocol": "进程使用的协议",
+    "process_bind_info_placeholder_enable": "是否开启端口监控",
     "": ""
 }

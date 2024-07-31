@@ -21,16 +21,12 @@ import (
 	"context"
 	"net/http"
 
-	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
-	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/dataid"
-
-	"github.com/prometheus/client_golang/prometheus"
 )
 
-type GseClientInterface interface {
+// ClientI is the gse api gateway client
+type ClientI interface {
 	ListAgentState(ctx context.Context, h http.Header, data *ListAgentStateRequest) (*ListAgentStateResp, error)
 	AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp, error)
 	GetTransferFileResult(ctx context.Context, h http.Header, data *GetTransferFileResultRequest) (
@@ -39,19 +35,12 @@ type GseClientInterface interface {
 }
 
 type gse struct {
-	service *apigw.ApiGWSrv
+	service *apigwutil.ApiGWSrv
 }
 
-// NewGseApiGWClient create gse api gateway client
-func NewGseApiGWClient(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (GseClientInterface, error) {
-	var err error
-	config.Address, err = cc.StringSlice("apiGW.bkGseApiGatewayUrl")
-	if err != nil {
-		blog.Errorf("get gse api gateway address config error, err: %v", err)
-		return nil, err
-	}
-
-	service, err := apigw.NewApiGW(config, reg)
+// NewClient create gse api gateway client
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkGseApiGatewayUrl")
 	if err != nil {
 		return nil, err
 	}

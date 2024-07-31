@@ -47,6 +47,7 @@ const dev = {
     DISABLE_OPERATION_STATISTIC: false,
     COOKIE_DOMAIN: JSON.stringify(''),
     COMPONENT_API_URL: JSON.stringify(''),
+    PUBLIC_PATH: JSON.stringify('/'),
     ENABLE_NOTIFICATION: JSON.stringify(false),
     BK_REPO_URL: JSON.stringify(''),
   }),
@@ -148,6 +149,7 @@ module.exports = {
       DISABLE_OPERATION_STATISTIC: '{{.disableOperationStatistic}}',
       COOKIE_DOMAIN: '{{.cookieDomain}}',
       COMPONENT_API_URL: '{{.componentApiUrl}}',
+      PUBLIC_PATH: '{{.publicPath}}',
       ENABLE_NOTIFICATION: '{{.enableNotification}}',
       SHARED_RES_URL: '{{.bkSharedResUrl}}'
     }),
@@ -162,7 +164,7 @@ module.exports = {
     assetsRoot: `${path.resolve(config.BUILD_OUTPUT)}/web`,
 
     assetsSubDirectory: '',
-    assetsPublicPath: '/static/',
+    assetsPublicPath: '{{.publicPath}}static/',
 
     /**
          * Source Maps

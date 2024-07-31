@@ -19,7 +19,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	biztopo "configcenter/src/source_controller/cacheservice/cache/biz-topo"
 	"configcenter/src/source_controller/cacheservice/cache/custom"
-	"configcenter/src/source_controller/cacheservice/cache/host"
+	"configcenter/src/source_controller/cacheservice/cache/general"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
 	"configcenter/src/source_controller/cacheservice/cache/topology"
 	"configcenter/src/source_controller/cacheservice/cache/topotree"
@@ -39,17 +39,12 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
 	}
 
-	if err := host.NewCache(reflector); err != nil {
-		return nil, fmt.Errorf("new host cache failed, err: %v", err)
-	}
-
 	bizBriefTopoClient, err := topology.NewTopology(isMaster, loopW)
 	if err != nil {
 		return nil, err
 	}
 
 	mainlineClient := mainline.NewMainlineClient()
-	hostClient := host.NewClient()
 
 	customCache, err := custom.New(isMaster, loopW)
 	if err != nil {
@@ -61,14 +56,21 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
 	}
 
+	watchCli := watch.NewClient(watchDB, mongodb.Client(), redis.Client())
+
+	generalCache, err := general.New(isMaster, loopW, watchCli)
+	if err != nil {
+		return nil, fmt.Errorf("new general resource cache failed, err: %v", err)
+	}
+
 	cache := &ClientSet{
 		Tree:     topotree.NewTopologyTree(mainlineClient),
-		Host:     hostClient,
 		Business: mainlineClient,
 		Topology: bizBriefTopoClient,
 		Topo:     topoTreeClient,
-		Event:    watch.NewClient(watchDB, mongodb.Client(), redis.Client()),
+		Event:    watchCli,
 		Custom:   customCache,
+		General:  generalCache,
 	}
 	return cache, nil
 }
@@ -78,8 +80,8 @@ type ClientSet struct {
 	Tree     *topotree.TopologyTree
 	Topology *topology.Topology
 	Topo     *biztopo.Topo
-	Host     *host.Client
 	Business *mainline.Client
 	Event    *watch.Client
 	Custom   *custom.Cache
+	General  *general.Cache
 }

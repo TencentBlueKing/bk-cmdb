@@ -41,6 +41,8 @@ type WatchEventOptions struct {
 type WatchEventFilter struct {
 	// SubResource the sub resource you want to watch, eg. object ID of the instance resource, watch all if not set
 	SubResource string `json:"bk_sub_resource,omitempty"`
+	// SubResources is the sub resources you want to watch, NOTE: this is a special parameter for internal use only
+	SubResources []string `json:"-"`
 }
 
 // Validate TODO
@@ -65,7 +67,7 @@ func (w *WatchEventOptions) Validate() error {
 		return errors.New("bk_start_from and bk_cursor can not use at the same time")
 	}
 
-	if len(w.Filter.SubResource) > 0 {
+	if len(w.Filter.SubResource) > 0 || len(w.Filter.SubResources) > 0 {
 		switch w.Resource {
 		case ObjectBase, MainlineInstance, InstAsst, KubeWorkload:
 		default:
@@ -96,6 +98,10 @@ type WatchEventDetail struct {
 	EventType EventType  `json:"bk_event_type"`
 	// Default instance is JsonString type
 	Detail DetailInterface `json:"bk_detail"`
+
+	// ChainNode is the chain node of this watch event
+	// NOTE: this is a special return value for internal use only
+	ChainNode *ChainNode `json:"-"`
 }
 
 type jsonWatchEventDetail struct {

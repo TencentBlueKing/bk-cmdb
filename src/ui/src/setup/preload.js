@@ -93,7 +93,7 @@ const getMainLineModels = async () => {
 
 export default async function (app) {
   // 设置全局请求头
-  $http.setHeader('HTTP_BLUEKING_SUPPLIER_ID', store.getters.supplierAccount)
+  $http.setHeader('X-Bkcmdb-Supplier-Account', store.getters.supplierAccount)
 
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()

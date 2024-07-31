@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -34,8 +35,7 @@ import (
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw/apigwutil"
-	"configcenter/src/thirdparty/apigw/gse"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/dataid"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/thirdparty/monitor"
@@ -200,16 +200,12 @@ func (s *Service) InitGseClient() error {
 		return nil
 
 	case options.MigrateWayApiGW:
-		apiGWConfig, err := apigwutil.ParseApiGWConfig("apiGW")
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Gse})
 		if err != nil {
-			blog.Errorf("get api gateway config error, err: %v", err)
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
 		}
-		s.GseClient, err = gse.NewGseApiGWClient(apiGWConfig, s.Engine.Metric().Registry())
-		if err != nil {
-			blog.Errorf("new gse api gateway client failed, err: %v", err)
-			return err
-		}
+		s.GseClient = apigwcli.Client().Gse()
 		return nil
 
 	default:

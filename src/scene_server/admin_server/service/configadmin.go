@@ -19,8 +19,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -28,8 +28,8 @@ import (
 // SearchConfigAdmin search the config
 func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	cond := map[string]interface{}{
 		"_id": common.ConfigAdminID,
@@ -60,8 +60,8 @@ func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response
 // UpdateConfigAdmin udpate the config
 func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	config := new(metadata.ConfigAdmin)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -106,8 +106,8 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 // UpdatePlatformSettingConfig update platform_setting.
 func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	config := new(metadata.PlatformSettingConfig)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -226,8 +226,8 @@ func (s *Service) searchInitConfig(rid string) (*metadata.PlatformSettingConfig,
 // SearchPlatformSettingConfig search the platform config.typeId:current db's config ,typeId:initial initial config.
 func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	typeId := req.PathParameter("type")
 
 	conf := new(metadata.PlatformSettingConfig)

@@ -18,6 +18,7 @@
 package capability
 
 import (
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
 	"configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/web_server/app/options"
@@ -30,5 +31,6 @@ type Capability struct {
 	Ws        *gin.Engine
 	Engine    *backbone.Engine
 	Config    *options.Config
-	NoticeCli notice.NoticeClientInterface
+	NoticeCli notice.ClientI
+	ApiCli    apiserver.ApiServerClientInterface
 }

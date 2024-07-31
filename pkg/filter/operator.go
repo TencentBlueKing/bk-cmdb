@@ -18,8 +18,11 @@
 package filter
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/criteria/enumor"
@@ -272,6 +275,8 @@ type Operator interface {
 	ValidateValue(v interface{}, opt *ExprOption) error
 	// ToMgo generate an operator's mongo condition with its field and value.
 	ToMgo(field string, value interface{}) (map[string]interface{}, error)
+	// Match checks if the first data matches the second data by this operator
+	Match(value1, value2 interface{}) (bool, error)
 }
 
 // UnknownOp is unknown operator
@@ -290,6 +295,11 @@ func (o UnknownOp) ValidateValue(_ interface{}, _ *ExprOption) error {
 // ToMgo convert this operator's field and value to a mongo query condition.
 func (o UnknownOp) ToMgo(_ string, _ interface{}) (map[string]interface{}, error) {
 	return nil, errors.New("unknown operator, can not gen mongo expression")
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o UnknownOp) Match(_, _ interface{}) (bool, error) {
+	return false, errors.New("unknown operator, can not check if two value matches this operator")
 }
 
 // EqualOp is equal operator type
@@ -319,6 +329,34 @@ func (o EqualOp) ToMgo(field string, value interface{}) (map[string]interface{},
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o EqualOp) Match(value1, value2 interface{}) (bool, error) {
+	switch t := value1.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		val1, val2, err := parseNumericValues(value1, value2)
+		if err != nil {
+			return false, err
+		}
+		return val1 == val2, nil
+	case string:
+		val, ok := value2.(string)
+		if !ok {
+			return false, fmt.Errorf("rule value type(%T) not matches input type(%T)", value2, value1)
+		}
+		return val == t, nil
+	case bool:
+		val, ok := value2.(bool)
+		if !ok {
+			return false, fmt.Errorf("rule value type(%T) not matches input type(%T)", value2, value1)
+		}
+		return val == t, nil
+	case nil:
+		return false, nil
+	default:
+		return false, fmt.Errorf("value(%+v) is not of basic type", value1)
+	}
+}
+
 // NotEqualOp is not equal operator type
 type NotEqualOp OpType
 
@@ -344,6 +382,15 @@ func (ne NotEqualOp) ToMgo(field string, value interface{}) (map[string]interfac
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBNE: value},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (ne NotEqualOp) Match(value1, value2 interface{}) (bool, error) {
+	matched, err := OpFactory(Equal).Operator().Match(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !matched, nil
 }
 
 // InOp is in operator
@@ -379,6 +426,74 @@ func (o InOp) ToMgo(field string, value interface{}) (map[string]interface{}, er
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o InOp) Match(value1, value2 interface{}) (bool, error) {
+	var itemType string
+
+	switch value1.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		itemType = "numeric"
+	case string:
+		itemType = "string"
+	case bool:
+		itemType = "bool"
+	case nil:
+		return false, nil
+	default:
+		return false, fmt.Errorf("value(%+v) is not of basic type", value1)
+	}
+
+	if value2 == nil {
+		return false, errors.New("rule value is nil")
+	}
+
+	switch reflect.TypeOf(value2).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return false, fmt.Errorf("rule value(%+v) is not of array type", value2)
+	}
+
+	v := reflect.ValueOf(value2)
+	length := v.Len()
+	if length == 0 {
+		return false, errors.New("value is empty")
+	}
+
+	for i := 0; i < length; i++ {
+		item := v.Index(i).Interface()
+
+		switch itemType {
+		case "numeric":
+			val1, val2, err := parseNumericValues(value1, item)
+			if err != nil {
+				return false, err
+			}
+			if val1 == val2 {
+				return true, nil
+			}
+		case "string":
+			val, ok := item.(string)
+			if !ok {
+				return false, fmt.Errorf("array ele index(%d) type(%T) not matches input type(%s)", i, item, itemType)
+			}
+			if val == value1 {
+				return true, nil
+			}
+		case "bool":
+			val, ok := item.(bool)
+			if !ok {
+				return false, fmt.Errorf("array ele index(%d) type(%T) not matches input type(%s)", i, item, itemType)
+			}
+			if val == value1 {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
 // NotInOp is not in operator
 type NotInOp OpType
 
@@ -412,6 +527,15 @@ func (o NotInOp) ToMgo(field string, value interface{}) (map[string]interface{},
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o NotInOp) Match(value1, value2 interface{}) (bool, error) {
+	matched, err := OpFactory(In).Operator().Match(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !matched, nil
+}
+
 // LessOp is less than operator
 type LessOp OpType
 
@@ -437,6 +561,15 @@ func (o LessOp) ToMgo(field string, value interface{}) (map[string]interface{}, 
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBLT: value},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o LessOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseNumericValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1 < val2, nil
 }
 
 // LessOrEqualOp is less than or equal operator
@@ -466,6 +599,15 @@ func (o LessOrEqualOp) ToMgo(field string, value interface{}) (map[string]interf
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o LessOrEqualOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseNumericValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1 <= val2, nil
+}
+
 // GreaterOp is greater than operator
 type GreaterOp OpType
 
@@ -493,6 +635,15 @@ func (o GreaterOp) ToMgo(field string, value interface{}) (map[string]interface{
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o GreaterOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseNumericValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1 > val2, nil
+}
+
 // GreaterOrEqualOp is greater than or equal operator
 type GreaterOrEqualOp OpType
 
@@ -518,6 +669,15 @@ func (o GreaterOrEqualOp) ToMgo(field string, value interface{}) (map[string]int
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBGTE: value},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o GreaterOrEqualOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseNumericValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1 >= val2, nil
 }
 
 // DatetimeLessOp is datetime less than operator
@@ -553,6 +713,15 @@ func (o DatetimeLessOp) ToMgo(field string, value interface{}) (map[string]inter
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o DatetimeLessOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseTimeValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1.Before(val2), nil
+}
+
 // DatetimeLessOrEqualOp is datetime less than or equal operator
 type DatetimeLessOrEqualOp OpType
 
@@ -584,6 +753,15 @@ func (o DatetimeLessOrEqualOp) ToMgo(field string, value interface{}) (map[strin
 	return mapstr.MapStr{
 		field: map[string]interface{}{common.BKDBLTE: v},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o DatetimeLessOrEqualOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseTimeValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1.Before(val2) || val1.Equal(val2), nil
 }
 
 // DatetimeGreaterOp is datetime greater than operator
@@ -620,6 +798,15 @@ func (o DatetimeGreaterOp) ToMgo(field string, value interface{}) (map[string]in
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o DatetimeGreaterOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseTimeValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1.After(val2), nil
+}
+
 // DatetimeGreaterOrEqualOp is datetime greater than or equal operator
 type DatetimeGreaterOrEqualOp OpType
 
@@ -653,6 +840,15 @@ func (o DatetimeGreaterOrEqualOp) ToMgo(field string, value interface{}) (map[st
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o DatetimeGreaterOrEqualOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseTimeValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return val1.After(val2) || val1.Equal(val2), nil
+}
+
 // BeginsWithOp is begins with operator
 type BeginsWithOp OpType
 
@@ -682,6 +878,15 @@ func (o BeginsWithOp) ToMgo(field string, value interface{}) (map[string]interfa
 			common.BKDBLIKE: fmt.Sprintf("^%s", value),
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o BeginsWithOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.HasPrefix(val1, val2), nil
 }
 
 // BeginsWithInsensitiveOp is begins with insensitive operator
@@ -716,6 +921,15 @@ func (o BeginsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[str
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o BeginsWithInsensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.HasPrefix(strings.ToLower(val1), strings.ToLower(val2)), nil
+}
+
 // NotBeginsWithOp is not begins with operator
 type NotBeginsWithOp OpType
 
@@ -745,6 +959,15 @@ func (o NotBeginsWithOp) ToMgo(field string, value interface{}) (map[string]inte
 			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf("^%s", value)},
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o NotBeginsWithOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.HasPrefix(val1, val2), nil
 }
 
 // NotBeginsWithInsensitiveOp is not begins with insensitive operator
@@ -781,6 +1004,15 @@ func (o NotBeginsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o NotBeginsWithInsensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.HasPrefix(strings.ToLower(val1), strings.ToLower(val2)), nil
+}
+
 // ContainsOp is contains operator
 type ContainsOp OpType
 
@@ -811,6 +1043,15 @@ func (o ContainsOp) ToMgo(field string, value interface{}) (map[string]interface
 			common.BKDBOPTIONS: "i",
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o ContainsOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(strings.ToLower(val1), strings.ToLower(val2)), nil
 }
 
 // ContainsSensitiveOp is contains sensitive operator
@@ -844,6 +1085,15 @@ func (o ContainsSensitiveOp) ToMgo(field string, value interface{}) (map[string]
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o ContainsSensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(val1, val2), nil
+}
+
 // NotContainsOp is not contains operator
 type NotContainsOp OpType
 
@@ -873,6 +1123,15 @@ func (o NotContainsOp) ToMgo(field string, value interface{}) (map[string]interf
 			common.BKDBNot: map[string]interface{}{common.BKDBLIKE: value},
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o NotContainsOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.Contains(val1, val2), nil
 }
 
 // NotContainsInsensitiveOp is not contains insensitive operator
@@ -909,6 +1168,15 @@ func (o NotContainsInsensitiveOp) ToMgo(field string, value interface{}) (map[st
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o NotContainsInsensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.Contains(strings.ToLower(val1), strings.ToLower(val2)), nil
+}
+
 // EndsWithOp is ends with operator
 type EndsWithOp OpType
 
@@ -938,6 +1206,15 @@ func (o EndsWithOp) ToMgo(field string, value interface{}) (map[string]interface
 			common.BKDBLIKE: fmt.Sprintf("%s$", value),
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o EndsWithOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.HasSuffix(val1, val2), nil
 }
 
 // EndsWithInsensitiveOp is ends with insensitive operator
@@ -972,6 +1249,15 @@ func (o EndsWithInsensitiveOp) ToMgo(field string, value interface{}) (map[strin
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o EndsWithInsensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return strings.HasSuffix(strings.ToLower(val1), strings.ToLower(val2)), nil
+}
+
 // NotEndsWithOp is not ends with operator
 type NotEndsWithOp OpType
 
@@ -1003,6 +1289,15 @@ func (o NotEndsWithOp) ToMgo(field string, value interface{}) (map[string]interf
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o NotEndsWithOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.HasSuffix(val1, val2), nil
+}
+
 // NotEndsWithInsensitiveOp is not ends with insensitive operator
 type NotEndsWithInsensitiveOp OpType
 
@@ -1019,6 +1314,15 @@ func (o NotEndsWithInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) 
 	}
 
 	return nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o NotEndsWithInsensitiveOp) Match(value1, value2 interface{}) (bool, error) {
+	val1, val2, err := parseStringValues(value1, value2)
+	if err != nil {
+		return false, err
+	}
+	return !strings.HasSuffix(strings.ToLower(val1), strings.ToLower(val2)), nil
 }
 
 // ToMgo convert the not ends with insensitive operator's field and value to a mongo query condition.
@@ -1063,6 +1367,22 @@ func (o IsEmptyOp) ToMgo(field string, value interface{}) (map[string]interface{
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o IsEmptyOp) Match(value1, value2 interface{}) (bool, error) {
+	if value1 == nil {
+		return false, errors.New("input value is nil")
+	}
+
+	switch reflect.TypeOf(value1).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return false, fmt.Errorf("rule value(%+v) is not of array type", value1)
+	}
+
+	return reflect.ValueOf(value1).Len() == 0, nil
+}
+
 // IsNotEmptyOp is not empty operator
 type IsNotEmptyOp OpType
 
@@ -1087,6 +1407,22 @@ func (o IsNotEmptyOp) ToMgo(field string, value interface{}) (map[string]interfa
 			common.BKDBSize: map[string]interface{}{common.BKDBGT: 0},
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o IsNotEmptyOp) Match(value1, value2 interface{}) (bool, error) {
+	if value1 == nil {
+		return false, errors.New("input value is nil")
+	}
+
+	switch reflect.TypeOf(value1).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return false, fmt.Errorf("rule value(%+v) is not of array type", value1)
+	}
+
+	return reflect.ValueOf(value1).Len() > 0, nil
 }
 
 // SizeOp size operator
@@ -1123,6 +1459,27 @@ func (o SizeOp) ToMgo(field string, value interface{}) (map[string]interface{}, 
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o SizeOp) Match(value1, value2 interface{}) (bool, error) {
+	if value1 == nil {
+		return false, errors.New("input value is nil")
+	}
+
+	switch reflect.TypeOf(value1).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return false, fmt.Errorf("rule value(%+v) is not of array type", value1)
+	}
+
+	intVal, err := util.GetIntByInterface(value2)
+	if err != nil {
+		return false, fmt.Errorf("invalid size operator's value, should be a numeric value, err: %v", err)
+	}
+
+	return reflect.ValueOf(value1).Len() == intVal, nil
+}
+
 // IsNullOp is null operator
 type IsNullOp OpType
 
@@ -1147,6 +1504,11 @@ func (o IsNullOp) ToMgo(field string, value interface{}) (map[string]interface{}
 			common.BKDBEQ: nil,
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o IsNullOp) Match(value1, value2 interface{}) (bool, error) {
+	return value1 == nil, nil
 }
 
 // IsNotNullOp is not null operator
@@ -1175,6 +1537,11 @@ func (o IsNotNullOp) ToMgo(field string, value interface{}) (map[string]interfac
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o IsNotNullOp) Match(value1, value2 interface{}) (bool, error) {
+	return value1 != nil, nil
+}
+
 // ExistOp is 'exist' operator
 type ExistOp OpType
 
@@ -1201,6 +1568,11 @@ func (o ExistOp) ToMgo(field string, value interface{}) (map[string]interface{},
 	}, nil
 }
 
+// Match checks if the first data matches the second data by this operator
+func (o ExistOp) Match(value1, value2 interface{}) (bool, error) {
+	return value1 == nil, nil
+}
+
 // NotExistOp is not exist operator
 type NotExistOp OpType
 
@@ -1225,6 +1597,11 @@ func (o NotExistOp) ToMgo(field string, value interface{}) (map[string]interface
 			common.BKDBExists: false,
 		},
 	}, nil
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o NotExistOp) Match(value1, value2 interface{}) (bool, error) {
+	return value1 != nil, nil
 }
 
 // ObjectOp is filter object operator
@@ -1278,6 +1655,29 @@ func (o ObjectOp) ToMgo(field string, value interface{}) (map[string]interface{}
 	}
 
 	return subRule.ToMgo(parentOpt)
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o ObjectOp) Match(value1, value2 interface{}) (bool, error) {
+	subRule, ok := value2.(RuleFactory)
+	if !ok {
+		return false, fmt.Errorf("filter object operator's value(%+v) is not a rule type", value2)
+	}
+
+	switch t := value1.(type) {
+	case MatchedData:
+		return subRule.Match(t)
+	case map[string]interface{}:
+		return subRule.Match(MapStr(t))
+	case mapstr.MapStr:
+		return subRule.Match(MapStr(t))
+	case string:
+		return subRule.Match(JsonString(t))
+	case json.RawMessage:
+		return subRule.Match(JsonString(t))
+	default:
+		return false, fmt.Errorf("filter object operator's input value(%+v) is not an object type", value1)
+	}
 }
 
 const (
@@ -1337,4 +1737,26 @@ func (o ArrayOp) ToMgo(field string, value interface{}) (map[string]interface{},
 	}
 
 	return subRule.ToMgo(parentOpt)
+}
+
+// Match checks if the first data matches the second data by this operator
+func (o ArrayOp) Match(value1, value2 interface{}) (bool, error) {
+	if value1 == nil {
+		return false, errors.New("input value is nil")
+	}
+
+	subRule, ok := value2.(RuleFactory)
+	if !ok {
+		return false, fmt.Errorf("filter array operator's value(%+v) is not a rule type", value2)
+	}
+
+	val := MapStr{
+		ArrayElement: value1,
+	}
+
+	parentOpt := &RuleOption{
+		ParentType: enumor.Array,
+	}
+
+	return subRule.Match(val, parentOpt)
 }

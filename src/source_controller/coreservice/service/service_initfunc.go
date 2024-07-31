@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/coreservice/service/capability"
 	fieldtmpl "configcenter/src/source_controller/coreservice/service/field_template"
+	"configcenter/src/source_controller/coreservice/service/id_rule"
 	"configcenter/src/source_controller/coreservice/service/kube"
 	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
 
@@ -118,6 +119,10 @@ func (s *coreService) initModel(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/read/{bk_biz_id}/model/attributes/with_table",
 		Handler: s.SearchModelAttrsWithTableByCondition})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/idgenerator",
+		Handler: s.UpdateIDGenerator})
+
 	utility.AddToRestfulWebService(web)
 }
 
@@ -502,6 +507,8 @@ func (s *coreService) initCommon(web *restful.WebService) {
 		Path: "/findmany/common/distinct_field", Handler: s.GetDistinctField})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/common/distinct_count",
 		Handler: s.GetDistinctCount})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/group/related/{kind}/resource/by_ids",
+		Handler: s.GroupRelResByIDs})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -578,6 +585,7 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initProject(web)
 	s.initModelQuote(web)
 	fieldtmpl.InitFieldTemplate(c)
+	idrule.InitIDRule(c)
 
 	c.Utility.AddToRestfulWebService(web)
 }

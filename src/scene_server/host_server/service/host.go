@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	ccErrs "configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
@@ -916,14 +917,14 @@ func (s *Service) MoveSetHost2IdleModule(ctx *rest.Contexts) {
 
 	if 0 == data.ApplicationID {
 		blog.Errorf("MoveSetHost2IdleModule bk_biz_id cannot be empty at the same time,input:%#v,rid:%s", data,
-			util.GetHTTPCCRequestID(header))
+			httpheader.GetRid(header))
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
 
 	if 0 == data.SetID && 0 == data.ModuleID {
 		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v, "+
-			"rid:%s", data, util.GetHTTPCCRequestID(header))
+			"rid:%s", data, httpheader.GetRid(header))
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
@@ -1282,7 +1283,7 @@ func (s *Service) UpdateImportHosts(ctx *rest.Contexts) {
 	indexHostIDMap := make(map[int64]int64, 0)
 	var errMsg []string
 	var successMsg []int64
-	CCLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(ctx.Kit.Header))
+	CCLang := s.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(ctx.Kit.Header))
 	for _, index := range util.SortedMapInt64Keys(hostList.HostInfo) {
 		hostInfo := hostList.HostInfo[index]
 		if hostInfo == nil {

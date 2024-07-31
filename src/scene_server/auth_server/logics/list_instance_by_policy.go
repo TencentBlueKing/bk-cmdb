@@ -20,6 +20,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -181,7 +182,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	if supplierAccount == "" {
 		supplierAccount = common.BKDefaultOwnerID
 	}
-	header := util.NewHeaderFromContext(ctx)
+	header := headerutil.NewHeaderFromContext(ctx)
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {
 		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)

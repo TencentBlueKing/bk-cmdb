@@ -50,7 +50,9 @@
     </bk-table-column>
     <bk-table-column :label="$t('进程数量')" prop="process_count" width="240" :resizable="false">
       <template #default="{ row }">
-        {{row.process_count}}
+        <loading :loading="row.counting">
+          {{row.process_count}}
+        </loading>
       </template>
     </bk-table-column>
     <bk-table-column :label="$t('标签')" prop="tag" min-width="150">
@@ -72,16 +74,19 @@
   import { mapGetters, mapState } from 'vuex'
   import ExpandList from '@/views/business-topology/service-instance/instance/expand-list'
   import ListCellTag from '@/views/business-topology/service-instance/instance/list-cell-tag'
+  import Loading from '@/components/loading/index.vue'
   import RouterQuery from '@/router/query'
   import Bus from '@/views/business-topology/service-instance/common/bus'
   import has from 'has'
   import { ServiceInstanceService } from '@/service/business-set/service-instance.js'
   import { ProcessInstanceService } from '@/service/business-set/process-instance.js'
+  import { rollReqByDataKey } from '@/service/utils'
 
   export default {
     components: {
       ExpandList,
-      ListCellTag
+      ListCellTag,
+      Loading
     },
     data() {
       return {
@@ -191,15 +196,29 @@
           this.list = info.map(data => ({
             ...data,
             pending: true,
+            counting: true,
             editing: { name: false },
           }))
           this.pagination.count = count
           this.table.stuff.type = this.filters.length === 0 ? 'default' : 'search'
+
+          if (this.list?.length) {
+            this.getProcessCounts()
+          }
         } catch (error) {
           this.list = []
           this.pagination.count = 0
           console.error(error)
         }
+      },
+      async getProcessCounts() {
+        const serviceInstIds = this.list.map(item => item.id)
+        const processCounts = await rollReqByDataKey(`${window.API_HOST}count/service_instance/processes`, { ids: serviceInstIds }, { limit: 100 })
+        this.list.forEach((serviceInst) => {
+          const processCount = processCounts.find(item => item.id === serviceInst.id) || {}
+          this.$set(serviceInst, 'counting', false)
+          this.$set(serviceInst, 'process_count', processCount.count)
+        })
       },
       processListRequest(reqParams, reqConfig) {
         return ProcessInstanceService.findProcessByServiceInstance(this.bizSetId, reqParams, reqConfig)

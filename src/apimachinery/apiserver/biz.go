@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 )
 
 // CreateBiz TODO
@@ -34,7 +33,7 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -49,7 +48,7 @@ func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string,
 		SubResourcef(subPath, ownerID, bizID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -66,7 +65,7 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 		SubResourcef(subPath, flag, ownerID, bizID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError
@@ -80,16 +79,16 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 
 // SearchBiz TODO
 func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header,
-	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	param *metadata.QueryBusinessRequest) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(s).
+		Body(param).
 		SubResourcef(subPath, ownerID).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -104,7 +103,7 @@ func (a *apiServer) UpdateBizPropertyBatch(ctx context.Context, h http.Header,
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 	return
 }
 
@@ -119,7 +118,7 @@ func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError

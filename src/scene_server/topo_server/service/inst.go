@@ -442,7 +442,7 @@ func (s *Service) SearchObjectInstances(ctx *rest.Contexts) {
 	}
 
 	// decode input parameter.
-	input := new(metadata.CommonSearchFilter)
+	input := new(metadata.SearchInstanceFilter)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -492,7 +492,7 @@ func (s *Service) CountObjectInstances(ctx *rest.Contexts) {
 	}
 
 	// decode input parameter.
-	input := new(metadata.CommonCountFilter)
+	input := new(metadata.CountInstanceFilter)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return

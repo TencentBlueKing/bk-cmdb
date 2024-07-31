@@ -31,22 +31,32 @@ import (
 )
 
 // ValidPropertyOption valid property field option
-func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{}, isMultiple *bool,
-	defaultVal interface{}) error {
-
+func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{}, extraOpt interface{}) error {
 	switch propertyType {
 	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+		isMultiple, ok := extraOpt.(*bool)
+		if !ok {
+			blog.Errorf("extra opt(%+v) type %T is invalid, rid: %s", extraOpt, extraOpt, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
 		return ValidFieldTypeEnumOption(kit, option, isMultiple)
 	case common.FieldTypeInt:
-		return ValidFieldTypeInt(kit, option, defaultVal)
+		return ValidFieldTypeInt(kit, option, extraOpt)
 	case common.FieldTypeFloat:
-		return ValidFieldTypeFloat(kit, option, defaultVal)
+		return ValidFieldTypeFloat(kit, option, extraOpt)
 	case common.FieldTypeList:
-		return ValidFieldTypeList(kit, option, defaultVal)
+		return ValidFieldTypeList(kit, option, extraOpt)
 	case common.FieldTypeLongChar, common.FieldTypeSingleChar:
-		return ValidFieldTypeString(kit, option, defaultVal)
+		return ValidFieldTypeString(kit, option, extraOpt)
 	case common.FieldTypeBool:
 		return valid.ValidateBoolType(option)
+	case common.FieldTypeIDRule:
+		attrTypeMap, ok := extraOpt.(map[string]string)
+		if !ok {
+			blog.Errorf("extra opt(%+v) type %T is invalid, rid: %s", extraOpt, extraOpt, kit.Rid)
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+		}
+		return ValidIDRuleOption(kit, option, attrTypeMap)
 	}
 
 	return nil
@@ -297,19 +307,19 @@ var validTableFieldType = map[string]struct{}{
 
 // ValidTableFieldOption judging the legitimacy of the basic type of the form field
 func ValidTableFieldOption(kit *rest.Kit, propertyType string, option, defaultValue interface{},
-	isMultiple *bool) error {
+	isMultiple *bool, objID string) error {
 
 	_, exists := validTableFieldType[propertyType]
 	if !exists {
 		return fmt.Errorf("type(%s) is not among the underlying types supported by the table field", propertyType)
 	}
 
-	bFalse := false
-	if isMultiple == nil {
-		isMultiple = &bFalse
+	switch propertyType {
+	case common.FieldTypeEnumMulti:
+		return ValidFieldTypeEnumOption(kit, option, isMultiple)
+	default:
+		return ValidPropertyOption(kit, propertyType, option, defaultValue)
 	}
-
-	return ValidPropertyOption(kit, propertyType, option, isMultiple, defaultValue)
 }
 
 // ValidPropertyTypeIsMultiple valid object attr field type is multiple
@@ -332,4 +342,29 @@ func IsStrProperty(propertyType string) bool {
 	}
 
 	return false
+}
+
+// ValidIDRuleOption validate id rule field type's option
+func ValidIDRuleOption(kit *rest.Kit, val interface{}, attrTypeMap map[string]string) error {
+	rules, err := metadata.ParseSubIDRules(val)
+	if err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
+	}
+
+	for _, rule := range rules {
+		switch rule.Kind {
+		case metadata.Attr:
+			attrType, exists := attrTypeMap[rule.Val]
+			if !exists {
+				blog.Errorf("attr val %s is invalid, attribute not exists, rid: %s", rule.Val, kit.Rid)
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+			}
+			if !metadata.IsValidAttrRuleType(attrType) {
+				blog.Errorf("attr val %s type %s is invalid, rid: %s", rule.Val, attrType, kit.Rid)
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+			}
+		}
+	}
+
+	return nil
 }

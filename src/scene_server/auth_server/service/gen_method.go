@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/pkg/cache/general"
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -89,6 +90,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		return types.ResourcePullMethod{}, nil
 	case iam.KubeWorkloadEvent:
 		return s.genKubeWorkloadEventMethod(kit)
+	case iam.GeneralCache:
+		return genGeneralCacheMethod(kit)
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{
@@ -360,6 +363,86 @@ func (s *AuthService) genKubeWorkloadEventMethod(kit *rest.Kit) (types.ResourceP
 		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
 			page types.Page) (*types.ListInstanceResult, error) {
 			return nil, fmt.Errorf("%s do not support %s", iam.KubeWorkloadEvent, types.ListInstanceByPolicyMethod)
+		},
+	}, nil
+}
+
+func genGeneralCacheMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+
+			// get supported general cache resource types that matches the filter
+			resTypes := make([]string, 0)
+			for resType := range general.SupportedResTypeMap {
+				resTypes = append(resTypes, string(resType))
+			}
+
+			if filter != nil {
+				if filter.Parent != nil {
+					return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+				}
+
+				if len(filter.Keyword) != 0 {
+					filteredResTypes := make([]string, 0)
+					for _, resType := range resTypes {
+						if strings.Contains(strings.ToLower(resType), strings.ToLower(filter.Keyword)) {
+							filteredResTypes = append(filteredResTypes, resType)
+						}
+					}
+					resTypes = filteredResTypes
+				}
+			}
+
+			// generate iam instance resource by supported general cache resource types, do pagination
+			resLen := int64(len(resTypes))
+			if page.Offset >= resLen {
+				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+			}
+
+			end := page.Offset + page.Limit
+			if end > resLen {
+				end = resLen
+			}
+
+			res := make([]types.InstanceResource, 0)
+			for _, resType := range resTypes[page.Offset:end] {
+				res = append(res, types.InstanceResource{
+					ID:          resType,
+					DisplayName: resType,
+				})
+			}
+
+			return &types.ListInstanceResult{Count: resLen, Results: res}, nil
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+
+			// only support query name field, name field is the same with the id field
+			hasNameField := false
+			for _, attr := range filter.Attrs {
+				if attr == types.NameField {
+					hasNameField = true
+					break
+				}
+			}
+			if !hasNameField {
+				return make([]map[string]interface{}, 0), nil
+			}
+
+			res := make([]map[string]interface{}, 0)
+			for _, id := range filter.IDs {
+				_, exists := general.SupportedResTypeMap[general.ResType(id)]
+				if exists {
+					res = append(res, map[string]interface{}{types.NameField: id})
+				}
+			}
+
+			return res, nil
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return nil, fmt.Errorf("%s do not support %s", iam.GeneralCache, types.ListInstanceByPolicyMethod)
 		},
 	}, nil
 }

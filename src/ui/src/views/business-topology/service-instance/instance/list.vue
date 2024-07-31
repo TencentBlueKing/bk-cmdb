@@ -72,6 +72,7 @@
   import Bus from '../common/bus'
   import LabelBatchDialog from './dialog/label-batch-dialog.js'
   import has from 'has'
+  import { rollReqByDataKey } from '@/service/utils'
   export default {
     components: {
       ListCellName,
@@ -182,14 +183,27 @@
               cancelPrevious: true
             }
           })
-          this.list = info.map(data => ({ ...data, pending: true, editing: { name: false } }))
+          this.list = info.map(data => ({ ...data, counting: true, pending: true, editing: { name: false } }))
           this.pagination.count = count
           this.table.stuff.type = this.filters.length === 0 ? 'default' : 'search'
+
+          if (this.list?.length) {
+            this.getProcessCounts()
+          }
         } catch (error) {
           this.list = []
           this.pagination.count = 0
           console.error(error)
         }
+      },
+      async getProcessCounts() {
+        const serviceInstIds = this.list.map(item => item.id)
+        const processCounts = await rollReqByDataKey(`${window.API_HOST}count/service_instance/processes`, { ids: serviceInstIds }, { limit: 100 })
+        this.list.forEach((serviceInst) => {
+          const processCount = processCounts.find(item => item.id === serviceInst.id) || {}
+          this.$set(serviceInst, 'counting', false)
+          this.$set(serviceInst, 'process_count', processCount.count)
+        })
       },
       processListRequest(reqParams, reqConfig) {
         return this.$store.dispatch('processInstance/getServiceInstanceProcesses', {

@@ -32,12 +32,12 @@
         :max="480"
         :disabled="layout.collapse"
         direction="right">
-        <resource-directory></resource-directory>
+        <resource-directory ref="resourceDirectory"></resource-directory>
         <i class="directory-collapse-icon bk-icon icon-angle-left"
           @click="layout.collapse = !layout.collapse">
         </i>
       </cmdb-resize-layout>
-      <resource-hosts class="main"></resource-hosts>
+      <resource-hosts class="main" ref="resourceHost" @refresh="handleRefresh"></resource-hosts>
     </div>
     <router-subview></router-subview>
     <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
@@ -86,6 +86,11 @@
       }
     },
     methods: {
+      handleRefresh() {
+        const { resourceHost, resourceDirectory } = this.$refs
+        resourceHost.getHostList()
+        resourceDirectory.getDirectoryList()
+      },
       handleTabChange(tab) {
         Bus.$emit('toggle-host-filter', false)
         Bus.$emit('reset-host-filter')
