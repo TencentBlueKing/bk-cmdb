@@ -13,7 +13,6 @@
 import Meta from '@/router/meta'
 import { MENU_RESOURCE_PROJECT, MENU_RESOURCE_PROJECT_DETAILS, MENU_RESOURCE_MANAGEMENT } from '@/dictionary/menu-symbol'
 import { OPERATION } from '@/dictionary/iam-auth'
-import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
 
 export default [
   {
@@ -23,9 +22,7 @@ export default [
     meta: new Meta({
       menu: {
         i18n: '项目',
-        relative: MENU_RESOURCE_MANAGEMENT,
-        showShare: true,
-        objId: BUILTIN_MODELS.PROJECT
+        relative: MENU_RESOURCE_MANAGEMENT
       },
       auth: {
         view: { type: OPERATION.R_PROJECT }

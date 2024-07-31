@@ -14,7 +14,7 @@
   <Teleport to=".breadcrumbs-layout">
     <cmdb-auth tag="div" :auth="{ type: $OPERATION.R_MODEL, relation: [modelId] }">
       <template #default="{ disabled }">
-        <i class="icon-cc-share share "
+        <i class="icon-cc-share icon-link"
           :class="{ disabled }"
           v-bk-tooltips="$t('前往模型管理')"
           @click="handleModelDetail">
@@ -68,7 +68,7 @@
   .auth-box {
     @include space-between;
   }
-  .share {
+  .icon-link {
     cursor: pointer;
     font-size: 14px;
     margin-left: 5px;
