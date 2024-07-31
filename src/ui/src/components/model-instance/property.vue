@@ -185,6 +185,10 @@
               ({{hoverPropertyPopover.data.bk_property_type}})
             </span>
           </dd>
+          <dd class="row-item" v-show="hoverPropertyPopover.data.placeholder">
+            <span class="item-name">{{$t('用户提示')}}</span>
+            <span class="item-value">{{hoverPropertyPopover.data.placeholder}}</span>
+          </dd>
         </div>
       </dl>
     </div>
