@@ -19,7 +19,6 @@ package kube
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -75,7 +74,7 @@ func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOptio
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(kit, containerID, id, now, container)
+				data, err := s.combinationContainerInfo(kit, containerID, &podTmp, now, container)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -197,13 +196,16 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec
 	return podInfo, nil
 }
 
-func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
-	types.Container, error) {
+func (s *service) combinationContainerInfo(kit *rest.Kit, containerID int64, pod *types.Pod, now int64,
+	info types.Container) (types.Container, error) {
 
 	container := types.Container{
 		ID:              containerID,
+		PodID:           pod.ID,
+		BizID:           pod.BizID,
+		ClusterID:       pod.ClusterID,
+		NamespaceID:     pod.NamespaceID,
 		SupplierAccount: kit.SupplierAccount,
-		PodID:           podID,
 		Name:            info.Name,
 		ContainerID:     info.ContainerID,
 		Image:           info.Image,
@@ -222,6 +224,13 @@ func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, no
 			Creator:    kit.User,
 			Modifier:   kit.User,
 		},
+	}
+
+	if pod.Ref != nil {
+		container.Ref = &types.Reference{
+			Kind: pod.Ref.Kind,
+			ID:   pod.Ref.ID,
+		}
 	}
 
 	return container, nil
@@ -410,65 +419,11 @@ func (s *service) ListContainerByPod(ctx *rest.Contexts) {
 		return
 	}
 
-	fieldPrefix := "container"
-	fieldMap := make(map[string]string)
-	for _, name := range types.ContainerFields.GetFieldNames() {
-		fieldMap[name] = fmt.Sprintf("$%s.%s", fieldPrefix, name)
-	}
-	filter := make([]map[string]interface{}, 0)
-	if len(input.PodCond) > 0 {
-		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.PodCond})
-	}
-	subFilter := []map[string]interface{}{
-		{
-			common.BKDBLookup: map[string]string{
-				common.BKDBFrom:         types.BKTableNameBaseContainer,
-				common.BKDBLocalField:   common.BKFieldID,
-				common.BKDBForeignField: types.BKPodIDField,
-				common.BKDBAs:           fieldPrefix,
-			},
-		},
-		{common.BKDBUnwind: fmt.Sprintf("$%s", fieldPrefix)},
-		{common.BKDBProject: fieldMap},
-	}
-	filter = append(filter, subFilter...)
-	if input.ContainerCond != nil {
-		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.ContainerCond})
-	}
-
-	if input.Page.EnableCount {
-		total := "total"
-		result := map[string]int64{}
-		filter = append(filter, map[string]interface{}{common.BKDBCount: total})
-		err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateOne(ctx.Kit.Ctx, filter, &result)
-		if err != nil && !mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("get container count failed, cond: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		ctx.RespEntity(types.GetContainerByPodResp{Count: result[total]})
-		return
-	}
-
-	containerFieldMap := make(map[string]int64)
-	for _, field := range input.Fields {
-		containerFieldMap[field] = 1
-	}
-	if len(containerFieldMap) != 0 {
-		filter = append(filter, map[string]interface{}{common.BKDBProject: containerFieldMap})
-	}
-	filter = append(filter, []map[string]interface{}{{common.BKDBSkip: input.Page.Start},
-		{common.BKLimit: input.Page.Limit}, {common.BKDBSort: map[string]int64{input.Page.Sort: 1}}}...)
-
-	containers := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateAll(ctx.Kit.Ctx, filter, &containers)
+	res, err := s.core.KubeOperation().ListContainerByPod(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(types.GetContainerByPodResp{Info: containers})
-	return
+	ctx.RespEntity(res)
 }
