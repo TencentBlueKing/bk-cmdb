@@ -33,6 +33,7 @@
               class="form-element"
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
+              :property="property"
               :data-vv-name="property.bk_property_id"
               :data-vv-as="property.bk_property_name"
               v-bind="getBindProps(property)"

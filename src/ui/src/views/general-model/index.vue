@@ -84,6 +84,7 @@
         <component class="filter-value r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="filter.fuzzyQuery"
           v-bind="filterComponentProps"

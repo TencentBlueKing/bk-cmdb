@@ -103,6 +103,7 @@
             <component class="item-value r0"
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
+              :property="property"
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"

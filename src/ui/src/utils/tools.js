@@ -685,6 +685,22 @@ export function isContainerObjects(objId) {
   return Object.values(CONTAINER_OBJECTS).includes(objId)
 }
 
+/**
+ * 下拉框是否要展示全部选项
+ * 需要展示的： 由用户自定义数据的枚举、枚举(多选)、列表三个类型的字段
+ */
+export function getSelectAll(property = {}) {
+  if (!property) return false
+
+  const fields = [
+    PROPERTY_TYPES.ENUM,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.LIST
+  ]
+  const { bk_property_type: type, ispre } = property
+  return !ispre && fields.includes(type)
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -719,5 +735,6 @@ export default {
   versionSort,
   isPropertySortable,
   isIconTipProperty,
-  isContainerObjects
+  isContainerObjects,
+  getSelectAll
 }
