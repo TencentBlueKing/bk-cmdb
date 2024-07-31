@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 )
 
+// TODO replace these cache with the general resource cache
 // key file is used to manage all the business's mainline topology
 // cache keys with keyGenerator.
 

@@ -300,7 +300,27 @@ func (c *client) ZRem(ctx context.Context, key string, members ...interface{}) I
 	return c.cli.ZRem(key, members...)
 }
 
-// ZRangeWithScores returns the members in the specified range of the sorted set through the index range.
+// ZRangeWithScores returns the members with scores in the specified range of the sorted set through the index range.
 func (c *client) ZRangeWithScores(ctx context.Context, key string, start, stop int64) ZSliceResult {
 	return c.cli.ZRangeWithScores(key, start, stop)
+}
+
+// ZRange returns the members in the specified range of the sorted set through the index range.
+func (c *client) ZRange(ctx context.Context, key string, start, stop int64) StringSliceResult {
+	return c.cli.ZRange(key, start, stop)
+}
+
+// ZRangeByScore returns the members in the specified range of the sorted set through the score range.
+func (c *client) ZRangeByScore(ctx context.Context, key string, opt *redis.ZRangeBy) StringSliceResult {
+	return c.cli.ZRangeByScore(key, opt)
+}
+
+// ZRangeByLex returns the members in the specified range of the sorted set through the lexicographical range.
+func (c *client) ZRangeByLex(ctx context.Context, key string, opt *redis.ZRangeBy) StringSliceResult {
+	return c.cli.ZRangeByLex(key, opt)
+}
+
+// ZCard count redis sorted set members.
+func (c *client) ZCard(ctx context.Context, key string) IntResult {
+	return c.cli.ZCard(key)
 }

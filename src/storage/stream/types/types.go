@@ -350,11 +350,16 @@ type UpdateDescription struct {
 	RemovedFields []string `json:"removedFields" bson:"removedFields"`
 }
 
+// EventInfo is mongodb event info
+type EventInfo struct {
+	UpdatedFields map[string]interface{} `json:"update_fields,omitempty"`
+	RemovedFields []string               `json:"deleted_fields,omitempty"`
+}
+
 // EventDetail event document detail and changed fields
 type EventDetail struct {
-	Detail        JsonString             `json:"detail"`
-	UpdatedFields map[string]interface{} `json:"update_fields"`
-	RemovedFields []string               `json:"deleted_fields"`
+	Detail    JsonString `json:"detail"`
+	EventInfo `json:",inline"`
 }
 
 // JsonString TODO

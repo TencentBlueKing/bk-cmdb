@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -754,7 +755,7 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 func (b *business) validateDeleteModuleName(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) (
 	metadata.PlatformSettingConfig, error) {
 
-	header := util.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 
 	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, header)
 	if err != nil {

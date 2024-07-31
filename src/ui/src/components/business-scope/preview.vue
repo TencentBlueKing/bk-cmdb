@@ -28,7 +28,8 @@
           right-icon="icon-search"
           :placeholder="$t('业务名')"
           @enter="handleSearch"
-          @clear="handleSearch">
+          @clear="handleSearch"
+          @right-icon-click="handleSearch">
         </bk-input>
       </div>
       <div class="content-main">

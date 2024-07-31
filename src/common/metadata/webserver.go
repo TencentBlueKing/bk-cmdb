@@ -19,6 +19,7 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/querybuilder"
 
 	"github.com/gin-gonic/gin"
 )
@@ -277,6 +278,13 @@ type ListFieldTmplWithObjOption struct {
 	Fields         []string           `json:"fields"`
 }
 
+// ExportBusinessRequest 导出业务请求结构体
+type ExportBusinessRequest struct {
+	Page          BasePage                  `json:"page"`
+	TimeCondition *TimeCondition            `json:"time_condition"`
+	Filter        *querybuilder.QueryFilter `json:"filter,omitempty"`
+}
+
 // Validate list field template with object condition option
 func (l *ListFieldTmplWithObjOption) Validate() errors.RawErrorInfo {
 	if err := l.Page.ValidateWithEnableCount(false, common.BKMaxLimitSize); err.ErrCode != 0 {
@@ -332,4 +340,31 @@ type FieldTmplResCount struct {
 type CountFieldTemplateAttrResult struct {
 	BaseResp `json:",inline"`
 	Data     []FieldTmplResCount `json:"data"`
+}
+
+// CountByIDsOption count by ids option
+type CountByIDsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
+// Validate CountByIDsOption
+func (c *CountByIDsOption) Validate() errors.RawErrorInfo {
+	if len(c.IDs) == 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"ids"}}
+	}
+
+	if len(c.IDs) > common.BKMaxUpdateOrCreatePageSize {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommXXExceedLimit,
+			Args:    []interface{}{"ids", common.BKMaxUpdateOrCreatePageSize},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// IDCountInfo id to count info
+type IDCountInfo struct {
+	ID    int64 `json:"id"`
+	Count int   `json:"count"`
 }

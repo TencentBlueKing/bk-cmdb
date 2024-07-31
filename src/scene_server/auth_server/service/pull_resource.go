@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/types"
 )
@@ -41,6 +42,7 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 		}
 	}()
 
+	ctx.Kit.Header = util.ConvertLegacyHeader(ctx.Kit.Header)
 	method, err := s.genResourcePullMethod(ctx.Kit, query.Type)
 	if err != nil {
 		ctx.RespBkError(types.NotFoundErrorCode, err.Error())

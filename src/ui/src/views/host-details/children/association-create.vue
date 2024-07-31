@@ -649,16 +649,33 @@
       },
       getBizInstance(config) {
         const params = {
-          condition: {
-            bk_data_status: { $ne: 'disabled' }
-          },
           fields: [],
           page: this.page
         }
+
+        const condition = { bk_data_status: { $ne: 'disabled' } }
         const property = this.getProperty(this.filter.id)
         if (!isEmptyPropertyValue(this.filter.value)) {
-          params.condition[this.filter.id] = formatValue(this.filter.value, property)
+          condition[this.filter.id] = {
+            value: formatValue(this.filter.value, property),
+            operator: this.filter.operator
+          }
         }
+
+        const {
+          conditions,
+          time_condition: timeCondition
+        } = Utils.transformGeneralModelCondition(condition, this.properties) || {}
+        if (timeCondition) {
+          params.time_condition = timeCondition
+        }
+        if (conditions) {
+          params.biz_property_filter = {
+            condition: 'AND',
+            rules: conditions.rules
+          }
+        }
+
         return this.searchBusiness({
           params,
           config

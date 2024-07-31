@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"configcenter/src/ac/meta"
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
@@ -36,7 +36,7 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 	}
 
 	requestContext := &RequestContext{
-		Rid:      util.GetHTTPCCRequestID(req.Request.Header),
+		Rid:      httpheader.GetRid(req.Request.Header),
 		Header:   req.Request.Header,
 		Method:   req.Request.Method,
 		URI:      req.Request.URL.Path,
@@ -59,7 +59,7 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 }
 
 // ParseCommonInfo get common info from req, aims at avoiding too much repeat code
-func ParseCommonInfo(requestHeader *http.Header) (*meta.CommonInfo, error) {
+func ParseCommonInfo(requestHeader http.Header) (*meta.CommonInfo, error) {
 	commonInfo := new(meta.CommonInfo)
 
 	userInfo, err := ParseUserInfo(requestHeader)
@@ -72,14 +72,14 @@ func ParseCommonInfo(requestHeader *http.Header) (*meta.CommonInfo, error) {
 }
 
 // ParseUserInfo TODO
-func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
+func ParseUserInfo(requestHeader http.Header) (*meta.UserInfo, error) {
 	userInfo := new(meta.UserInfo)
-	user := requestHeader.Get(common.BKHTTPHeaderUser)
+	user := httpheader.GetUser(requestHeader)
 	if len(user) == 0 {
-		return nil, errors.New("parse user info failed, miss BK_User in your request header")
+		return nil, errors.New("parse user info failed, miss user header in your request header")
 	}
 	userInfo.UserName = user
-	supplierID := requestHeader.Get(common.BKHTTPOwnerID)
+	supplierID := httpheader.GetSupplierAccount(requestHeader)
 	if len(supplierID) == 0 {
 		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
 	}

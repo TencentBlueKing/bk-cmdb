@@ -21,7 +21,9 @@
           <form-operator-selector class="item-operator"
             v-if="!withoutOperator.includes(property.bk_property_type)"
             :property="property"
-            :custom-type-map="customTypeMap"
+            :custom-type-map="customOperatorTypeMap"
+            :symbol-map="operatorSymbolMap"
+            :desc-map="operatorDescMap"
             v-model="condition[property.id].operator"
             :disabled="disabled"
             @selected="handleOperatorChange(property, ...arguments)">
@@ -70,8 +72,15 @@
 <script>
   import FormOperatorSelector from '@/components/filters/operator-selector.vue'
   import has from 'has'
-  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
+  import {
+    QUERY_OPERATOR,
+    QUERY_OPERATOR_OTHER_SYMBOL,
+    QUERY_OPERATOR_HOST_SYMBOL,
+    QUERY_OPERATOR_OTHER_DESC,
+    QUERY_OPERATOR_HOST_DESC
+  } from '@/utils/query-builder-operator'
   import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
@@ -90,14 +99,9 @@
       }
     },
     data() {
-      const { EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
         condition: {},
-        withoutOperator: ['date', 'time', 'bool', 'service-template'],
-        customTypeMap: {
-          float: [EQ, NE, GTE, LTE, RANGE],
-          int: [EQ, NE, GTE, LTE, RANGE]
-        }
+        withoutOperator: ['date', 'time', 'bool', 'service-template']
       }
     },
     computed: {
@@ -127,6 +131,44 @@
       },
       details() {
         return this.dynamicGroupForm.details
+      },
+      searchObjId() {
+        return this.dynamicGroupForm.formData.bk_obj_id
+      },
+      customOperatorTypeMap() {
+        const { EQ, NE, GTE, LTE, RANGE, IN, NIN, LIKE, CONTAINS, CONTAINS_CS } = QUERY_OPERATOR
+        const operatorTypeMap = {
+          float: [EQ, NE, GTE, LTE, RANGE],
+          int: [EQ, NE, GTE, LTE, RANGE]
+        }
+        if (this.searchObjId === BUILTIN_MODELS.HOST) {
+          return {
+            ...operatorTypeMap,
+            longchar: [IN, NIN, CONTAINS, LIKE],
+            singlechar: [IN, NIN, CONTAINS, LIKE],
+            array: [IN, NIN, CONTAINS, LIKE],
+            object: [IN, NIN, CONTAINS, LIKE]
+          }
+        }
+        return {
+          ...operatorTypeMap,
+          longchar: [IN, NIN, LIKE, CONTAINS_CS],
+          singlechar: [IN, NIN, LIKE, CONTAINS_CS],
+          array: [IN, NIN, LIKE, CONTAINS_CS],
+          object: [IN, NIN, LIKE, CONTAINS_CS]
+        }
+      },
+      operatorSymbolMap() {
+        if (this.searchObjId === BUILTIN_MODELS.HOST) {
+          return QUERY_OPERATOR_HOST_SYMBOL
+        }
+        return QUERY_OPERATOR_OTHER_SYMBOL
+      },
+      operatorDescMap() {
+        if (this.searchObjId === BUILTIN_MODELS.HOST) {
+          return QUERY_OPERATOR_HOST_DESC
+        }
+        return QUERY_OPERATOR_OTHER_DESC
       }
     },
     watch: {
@@ -241,9 +283,9 @@
         this.condition = newConditon
       },
       handleOperatorChange(property, operator) {
-        if (operator === '$range') {
+        if (operator === QUERY_OPERATOR.RANGE) {
           this.condition[property.id].value = []
-        } else if (operator === '$regex') {
+        } else if ([QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.CONTAINS_CS].includes(operator)) {
           const currentValue = this.condition[property.id].value
           this.condition[property.id].value = Array.isArray(currentValue) ? (currentValue[0] || '') : currentValue
         } else {
@@ -270,7 +312,8 @@
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
 
-        if ((isSetName || isModuleName) && this.condition[property.id].operator !== '$regex') {
+        if ((isSetName || isModuleName)
+          && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.condition[property.id].operator)) {
           return `cmdb-search-${modelId}`
         }
 
@@ -357,13 +400,11 @@
     display: flex;
     align-items: flex-start;
     .item-operator {
-      flex: 110px 0 0;
+      flex: 128px 0 0;
       margin-right: 10px;
     }
     .item-value {
       flex: 1;
-      margin: 0 10px 0 0;
-      width: calc(100% - 150px);
       display: flex;
       align-items: self-start;
       position: relative;

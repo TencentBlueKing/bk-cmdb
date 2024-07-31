@@ -248,13 +248,12 @@ func (s *Service) transferHostWithAutoClearServiceInstance(
 
 	// update host properties according to specified rules.
 	ruleOpt := option.Options.HostApplyTransPropertyRule
-	if !ruleOpt.Changed {
-		return nil
-	}
-	err := s.updateHostApplyByRule(kit, ruleOpt.FinalRules, hostIDs)
-	if err != nil {
-		blog.Errorf("update host properties by apply rules(%#v) failed, err: %v, rid: %s", ruleOpt, err, kit.Rid)
-		return err
+	if ruleOpt.Changed {
+		err := s.updateHostApplyByRule(kit, ruleOpt.FinalRules, hostIDs)
+		if err != nil {
+			blog.Errorf("update host properties by apply rules(%#v) failed, err: %v, rid: %s", ruleOpt, err, kit.Rid)
+			return err
+		}
 	}
 
 	if err := audit.SaveAudit(kit); err != nil {

@@ -71,7 +71,7 @@
       <bk-table-column :label="$t('修改时间')" prop="last_time" sortable="custom">
         <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')">
+      <bk-table-column :label="$t('操作')" fixed="right" min-width="125">
         <template slot-scope="{ row }">
           <link-button class="mr10" @click="handleView(row)">{{$t('查看')}}</link-button>
           <cmdb-auth :auth="{ type: $OPERATION.D_CLOUD_ACCOUNT, relation: [row.bk_account_id] }">

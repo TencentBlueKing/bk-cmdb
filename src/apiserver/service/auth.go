@@ -22,20 +22,19 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
-
 	"github.com/emicklei/go-restful/v3"
 )
 
 // AuthVerify verify if user is authorized.
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
-	rid := util.GetHTTPCCRequestID(pheader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
+	ownerID := httpheader.GetSupplierAccount(pheader)
+	rid := httpheader.GetRid(pheader)
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
@@ -52,7 +51,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	user := meta.UserInfo{
-		UserName:        util.GetUser(pheader),
+		UserName:        httpheader.GetUser(pheader),
 		SupplierAccount: ownerID,
 	}
 
@@ -131,8 +130,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 // GetAnyAuthorizedAppList TODO
 func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
+	rid := httpheader.GetRid(pheader)
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
@@ -142,12 +141,12 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	}
 
 	userInfo := meta.UserInfo{
-		UserName:        util.GetUser(pheader),
-		SupplierAccount: util.GetOwnerID(pheader),
+		UserName:        httpheader.GetUser(pheader),
+		SupplierAccount: httpheader.GetSupplierAccount(pheader),
 	}
 
 	authInput := meta.ListAuthorizedResourcesParam{
-		UserName:     util.GetUser(pheader),
+		UserName:     httpheader.GetUser(pheader),
 		ResourceType: meta.Business,
 		Action:       meta.ViewBusinessResource,
 	}
@@ -209,8 +208,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 // have the authorize to access resource(s).
 func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Response) {
 	reqHeader := req.Request.Header
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(reqHeader))
-	rid := util.GetHTTPCCRequestID(reqHeader)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(reqHeader))
+	rid := httpheader.GetRid(reqHeader)
 
 	p := new(metadata.IamPermission)
 	err := json.NewDecoder(req.Request.Body).Decode(p)

@@ -113,6 +113,27 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/findmany/module_relation/bk_biz_id/{.*}").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/hosts/relation/with_topo").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.PUT("/updatemany/hosts/all/property").Filter(s.HostFilterChan).To(s.Put))
+	ws.Route(ws.POST("/check/objectattr/host_apply_enabled").Filter(s.HostFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/update/transaction/commit").Filter(s.TxnFilterChan).To(s.Post))
+	ws.Route(ws.POST("/update/transaction/abort").Filter(s.TxnFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/count/{bk_obj_id}/instances").To(s.CountInstance))
+	ws.Route(ws.POST("/group/related/{kind}/resource/by_ids").Filter(s.WebCoreFilterChan).To(s.Post))
+
+	ws.Route(ws.PUT("/update/id_rule/incr_id").Filter(s.TopoFilterChan).To(s.Put))
+	ws.Route(ws.POST("/sync/inst/id_rule").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.POST("/sync/id_rule/inst/task").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.POST("/find/inst/id_rule/task_status").Filter(s.TopoFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/cache/create/full/sync/cond").Filter(s.CacheFilterChan).To(s.Post))
+	ws.Route(ws.PUT("/cache/update/full/sync/cond").Filter(s.CacheFilterChan).To(s.Put))
+	ws.Route(ws.DELETE("/cache/delete/full/sync/cond").Filter(s.CacheFilterChan).To(s.Delete))
+	ws.Route(ws.POST("/cache/findmany/full/sync/cond").Filter(s.CacheFilterChan).To(s.Post))
+	ws.Route(ws.POST("/cache/findmany/resource/by_full_sync_cond").Filter(s.CacheFilterChan).To(s.Post))
+	ws.Route(ws.POST("/cache/findmany/resource/by_ids").Filter(s.CacheFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/createmany/module").Filter(s.TopoFilterChan).To(s.Post))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

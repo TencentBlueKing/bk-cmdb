@@ -94,6 +94,9 @@
             <operator-selector class="item-operator"
               v-if="!withoutOperator.includes(property.bk_property_type)"
               :property="property"
+              :custom-type-map="customOperatorTypeMap"
+              :symbol-map="operatorSymbolMap"
+              :desc-map="operatorDescMap"
               v-model="condition[property.id].operator"
               @change="handleOperatorChange(property, ...arguments)">
             </operator-selector>
@@ -219,6 +222,7 @@
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_HOST_SYMBOL, QUERY_OPERATOR_HOST_DESC } from '@/utils/query-builder-operator'
 
   export default {
     components: {
@@ -245,6 +249,7 @@
       }
     },
     data() {
+      const { IN, NIN, LIKE, CONTAINS } = QUERY_OPERATOR
       return {
         scrollToBottom: false,
         isShow: false,
@@ -257,7 +262,15 @@
         collectionForm: {
           name: '',
           error: ''
-        }
+        },
+        customOperatorTypeMap: {
+          longchar: [IN, NIN, CONTAINS, LIKE],
+          singlechar: [IN, NIN, CONTAINS, LIKE],
+          array: [IN, NIN, CONTAINS, LIKE],
+          object: [IN, NIN, CONTAINS, LIKE]
+        },
+        operatorSymbolMap: QUERY_OPERATOR_HOST_SYMBOL,
+        operatorDescMap: QUERY_OPERATOR_HOST_DESC
       }
     },
     computed: {
@@ -453,7 +466,8 @@
         } = property
         const normal = `cmdb-search-${propertyType}`
         // 业务名在包含与非包含操作符时使用输入联想组件
-        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
+        if (modelId === 'biz' && propertyId === 'bk_biz_name'
+          && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.condition[property.id].operator)) {
           return `cmdb-search-${modelId}`
         }
 
@@ -466,10 +480,10 @@
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
 
         // 在业务视图并且非模糊查询的情况，模块与集群名称使用专属的输入联想组件，否则使用与propertyType匹配的相应组件
-        if ((isSetName || isModuleName) && this.condition[property.id].operator !== '$regex') {
+        if ((isSetName || isModuleName)
+          && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.condition[property.id].operator)) {
           return `cmdb-search-${modelId}`
         }
-
         return normal
       },
       getBindProps(property) {
@@ -749,10 +763,10 @@
             min-height: 32px;
         }
         .item-operator {
-            flex: 110px 0 0;
+            flex: 128px 0 0;
             margin-right: 8px;
             & ~ .item-value {
-                max-width: calc(100% - 118px);
+                max-width: calc(100% - 136px);
             }
         }
         .item-value {

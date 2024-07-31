@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+# 下载铜锁, 编译, 安装
+cd /tmp/
+wget --no-check-certificate https://github.com/Tongsuo-Project/Tongsuo/archive/refs/tags/8.3.2.tar.gz
+tar xzvf 8.3.2.tar.gz
+
+cd /tmp/Tongsuo-8.3.2/
+./config --prefix=/app/Tongsuo-8.3.2 -static
+make -j
+make install_programs

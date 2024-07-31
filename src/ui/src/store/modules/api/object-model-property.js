@@ -13,6 +13,7 @@
 /* eslint-disable no-unused-vars */
 
 import $http from '@/api'
+import { propertyFilter } from '@/service/property/property.js'
 
 function createIdProperty(objId) {
   const keyMap = {
@@ -118,18 +119,20 @@ const actions = {
      * @return {promises} promises 对象
      */
   searchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr/web', params, config).then((data) => {
-      if (injectId !== params.bk_obj_id) {
+    return $http.post('find/objectattr/web', params, config)
+      .then(propertyFilter)
+      .then((data) => {
+        if (injectId !== params.bk_obj_id) {
+          return data
+        }
+        // eslint-disable-next-line no-underscore-dangle
+        const alreadyInject = data.some(property => property._is_inject_)
+        if (alreadyInject) {
+          return data
+        }
+        data.unshift(createIdProperty(injectId))
         return data
-      }
-      // eslint-disable-next-line no-underscore-dangle
-      const alreadyInject = data.some(property => property._is_inject_)
-      if (alreadyInject) {
-        return data
-      }
-      data.unshift(createIdProperty(injectId))
-      return data
-    })
+      })
   },
 
   /**
@@ -141,25 +144,27 @@ const actions = {
      * @return {promises} promises 对象
      */
   batchSearchObjectAttribute({ commit, state, dispatch }, { params, config, injectId = false }) {
-    return $http.post('find/objectattr/web', params, config).then((properties) => {
-      const result = {}
-      params.bk_obj_id.$in.forEach((objId) => {
-        result[objId] = []
-      })
-      properties.forEach((property) => {
-        result[property.bk_obj_id].push(property)
-      })
-      Object.keys(result).forEach((objId) => {
-        if (injectId === objId) {
+    return $http.post('find/objectattr/web', params, config)
+      .then(propertyFilter)
+      .then((properties) => {
+        const result = {}
+        params.bk_obj_id.$in.forEach((objId) => {
+          result[objId] = []
+        })
+        properties.forEach((property) => {
+          result[property.bk_obj_id].push(property)
+        })
+        Object.keys(result).forEach((objId) => {
+          if (injectId === objId) {
           // eslint-disable-next-line no-underscore-dangle
-          const alreadyInject = result[objId].some(property => property._is_inject_)
-          if (!alreadyInject) {
-            result[objId].unshift(createIdProperty(objId))
+            const alreadyInject = result[objId].some(property => property._is_inject_)
+            if (!alreadyInject) {
+              result[objId].unshift(createIdProperty(objId))
+            }
           }
-        }
+        })
+        return result
       })
-      return result
-    })
   }
 }
 

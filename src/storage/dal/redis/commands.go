@@ -71,5 +71,9 @@ type Commands interface {
 	ZRemRangeByRank(key string, start, stop int64) IntResult
 	ZRem(ctx context.Context, key string, members ...interface{}) IntResult
 	ZRangeWithScores(ctx context.Context, key string, start, stop int64) ZSliceResult
+	ZRange(ctx context.Context, key string, start, stop int64) StringSliceResult
 	ZAdd(ctx context.Context, key string, members ...*redis.Z) IntResult
+	ZRangeByScore(ctx context.Context, key string, opt *redis.ZRangeBy) StringSliceResult
+	ZRangeByLex(ctx context.Context, key string, opt *redis.ZRangeBy) StringSliceResult
+	ZCard(ctx context.Context, key string) IntResult
 }

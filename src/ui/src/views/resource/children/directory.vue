@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <div class="directory-layout">
+  <div class="directory-layout" v-bkloading="{ isLoading: $loading('getDirectoryList') }">
     <div class="directory-options">
       <bk-input class="dir-search"
         v-model.trim="dirSearch"
@@ -223,14 +223,15 @@
       },
       async createdDir() {
         try {
+          const { name } = this.createInfo
           const data = await this.$store.dispatch('resourceDirectory/createDirectory', {
             params: {
-              bk_module_name: this.createInfo.name
+              bk_module_name: name
             }
           })
           const newDir = {
             bk_module_id: data.created.id,
-            bk_module_name: this.createInfo.name,
+            bk_module_name: name,
             host_count: 0
           }
           this.$store.commit('resourceHost/addDirectory', newDir)

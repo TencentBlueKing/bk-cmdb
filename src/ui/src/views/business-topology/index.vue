@@ -45,7 +45,13 @@
               </template>
             </i18n>
           </bk-exception>
-          <host-list v-show="!emptySet" :active="activeTab === 'hostList'" ref="hostList" v-test-id></host-list>
+          <host-list
+            v-show="!emptySet"
+            :active="activeTab === 'hostList'"
+            ref="hostList"
+            @refresh="handleRefresh"
+            v-test-id>
+          </host-list>
         </bk-tab-panel>
 
         <bk-tab-panel
@@ -156,6 +162,12 @@
       this.unwatch()
     },
     methods: {
+      handleRefresh() {
+        const { hostList, topologyTree } = this.$refs
+        hostList.getHostList()
+        topologyTree.initTopology()
+        topologyTree.handleFilter()
+      },
       handleTabToggle() {
         Bus.$emit('toggle-host-filter', false)
         return true

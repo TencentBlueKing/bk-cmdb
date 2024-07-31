@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -111,7 +112,7 @@ func (d *Discover) TryUnsetRedis(key string) {
 // GetInst get instance by objid,instkey and condition
 func (d *Discover) GetInst(ownerID, objID string, instKey string, cond map[string]interface{}) (map[string]interface{},
 	error) {
-	rid := util.GetHTTPCCRequestID(d.httpHeader)
+	rid := httpheader.GetRid(d.httpHeader)
 	instData, err := d.GetInstFromRedis(instKey)
 	if err == nil {
 		blog.Infof("inst exist in redis: %s", instKey)
@@ -145,7 +146,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		return fmt.Errorf("message nil")
 	}
 
-	rid := util.GetHTTPCCRequestID(d.httpHeader)
+	rid := httpheader.GetRid(d.httpHeader)
 
 	ownerID := d.parseOwnerId(msg)
 
@@ -240,7 +241,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 				Rid:             rid,
 				Header:          d.httpHeader,
 				Ctx:             d.ctx,
-				CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
+				CCError:         d.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(d.httpHeader)),
 				User:            common.CCSystemCollectorUserName,
 				SupplierAccount: common.BKDefaultOwnerID,
 			}
@@ -328,7 +329,7 @@ func (d *Discover) UpdateOrCreateInst(msg *string) error {
 		Rid:             rid,
 		Header:          d.httpHeader,
 		Ctx:             d.ctx,
-		CCError:         d.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(d.httpHeader)),
+		CCError:         d.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(d.httpHeader)),
 		User:            common.CCSystemCollectorUserName,
 		SupplierAccount: common.BKDefaultOwnerID,
 	}

@@ -104,7 +104,7 @@
 
 不同模型bk_inst_id, bk_inst_name 对应的值
 
-| 字段   | 类型            | 描述               |
+| 模型   | bk_inst_id    | bk_inst_name     |
 |------|---------------|------------------|
 | 业务   | bk_biz_id     | bk_biz_name      |
 | 集群   | bk_set_id     | bk_set_name      |

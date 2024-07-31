@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/gse"
 	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
@@ -53,11 +54,8 @@ func sleepForFail(failCount int) {
 }
 
 func newHeaderWithRid() (http.Header, string) {
-	header := http.Header{}
-	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemOperatorUserName)
 	rid := util.GenerateRID()
-	header.Add(common.BKHTTPCCRequestID, rid)
+	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID, rid)
 	return header, rid
 }
 

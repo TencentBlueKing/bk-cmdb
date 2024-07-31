@@ -19,14 +19,19 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery/apiserver"
+	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/web_server/app/options"
+	webcomm "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
 )
@@ -43,15 +48,19 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	service := new(websvc.Service)
-
 	webSvr := new(WebServer)
+	webSvr.Config.DeploymentMethod = op.DeploymentMethod
+
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		SrvInfo:      svrInfo,
 	}
+	if op.DeploymentMethod == common.BluekingDeployment {
+		input.Disable = true
+	}
+
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -66,45 +75,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			break
 		}
 	}
-	if false == configReady {
+	if !configReady {
 		return errors.New("configuration item not found")
 	}
 
-	webSvr.Config.Redis, err = engine.WithRedis()
+	service, err := initWebService(webSvr, engine)
 	if err != nil {
 		return err
-	}
-	var redisErr error
-	if webSvr.Config.Redis.MasterName == "" {
-		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
-		service.Session, redisErr = redis.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address,
-			webSvr.Config.Redis.Password, []byte("secret"))
-	} else {
-		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
-		address := strings.Split(webSvr.Config.Redis.Address, ";")
-		service.Session, redisErr = redis.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp",
-			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
-	}
-	if redisErr != nil {
-		return fmt.Errorf("create new redis store failed, err: %v", redisErr)
-	}
-
-	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
-	if err != nil {
-		return err
-	}
-
-	service.Engine = engine
-	service.CacheCli = cacheCli
-	service.Logics = &logics.Logics{Engine: engine}
-	service.Config = &webSvr.Config
-
-	// init esb client
-	esb.InitEsbClient(nil)
-
-	// init jwt handler
-	if err = jwt.Init("webServer"); err != nil {
-		return fmt.Errorf("init jwt failed, err: %v", err)
 	}
 
 	if err := service.InitNotice(); err != nil {
@@ -121,6 +98,68 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	return nil
+}
+
+func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service, error) {
+	service := new(websvc.Service)
+
+	var err error
+	webSvr.Config.Redis, err = engine.WithRedis()
+	if err != nil {
+		return nil, err
+	}
+
+	var redisErr error
+	if webSvr.Config.Redis.MasterName == "" {
+		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
+		service.Session, redisErr = redis.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address,
+			webSvr.Config.Redis.Password, []byte("secret"))
+	} else {
+		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
+		address := strings.Split(webSvr.Config.Redis.Address, ";")
+		service.Session, redisErr = redis.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp",
+			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
+	}
+	if redisErr != nil {
+		return nil, fmt.Errorf("create new redis store failed, err: %v", redisErr)
+	}
+
+	cacheCli, err := redis.NewFromConfig(webSvr.Config.Redis)
+	if err != nil {
+		return nil, err
+	}
+
+	service.Engine = engine
+	service.CacheCli = cacheCli
+	service.Logics = &logics.Logics{Engine: engine}
+	service.Config = &webSvr.Config
+
+	// init esb client
+	esb.InitEsbClient(nil)
+
+	// init jwt handler
+	if err = jwt.Init("webServer"); err != nil {
+		return nil, fmt.Errorf("init jwt failed, err: %v", err)
+	}
+
+	// init api gateway client
+	switch webSvr.Config.DeploymentMethod {
+	case common.BluekingDeployment:
+		err = apigwcli.Init("apiGW", engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
+		if err != nil {
+			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
+		}
+
+		cmdbCli := apigwcli.Client().Cmdb()
+		headerWrapper := rest.HeaderWrapper(cmdbCli.SetApiGWAuthHeader)
+		baseUrlWrapper := rest.BaseUrlWrapper(fmt.Sprintf("/api/%s/", webcomm.API_VERSION))
+		service.ApiCli = apiserver.NewWrappedApiServerClientI(cmdbCli.Client(), baseUrlWrapper, headerWrapper)
+	default:
+		service.ApiCli = engine.CoreAPI.ApiServer()
+	}
+	service.Logics.ApiCli = service.ApiCli
+
+	return service, nil
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {

@@ -17,9 +17,9 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/synchronize"
-	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
@@ -40,23 +40,23 @@ type Logics struct {
 
 // NewFromHeader new Logic from header
 func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
-	lang := util.GetLanguage(header)
-	rid := util.GetHTTPCCRequestID(header)
+	lang := httpheader.GetLanguage(header)
+	rid := httpheader.GetRid(header)
 	if rid == "" {
 		if lgc.rid == "" {
 			rid = util.GenerateRID()
 		} else {
 			rid = lgc.rid
 		}
-		header.Set(common.BKHTTPCCRequestID, rid)
+		httpheader.SetRid(header, rid)
 	}
 	newLgc := &Logics{
 		header:         header,
 		Engine:         lgc.Engine,
 		rid:            rid,
 		cache:          lgc.cache,
-		user:           util.GetUser(header),
-		ownerID:        util.GetOwnerID(header),
+		user:           httpheader.GetUser(header),
+		ownerID:        httpheader.GetSupplierAccount(header),
 		synchronizeSrv: lgc.synchronizeSrv,
 	}
 	// if language not exist, use old language
@@ -73,15 +73,15 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 // NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header, cache redis.Client,
 	synchronizeSrv synchronize.SynchronizeClientInterface) *Logics {
-	lang := util.GetLanguage(header)
+	lang := httpheader.GetLanguage(header)
 	return &Logics{
 		Engine:         b,
 		header:         header,
-		rid:            util.GetHTTPCCRequestID(header),
+		rid:            httpheader.GetRid(header),
 		ccErr:          b.CCErr.CreateDefaultCCErrorIf(lang),
 		ccLang:         b.Language.CreateDefaultCCLanguageIf(lang),
-		user:           util.GetUser(header),
-		ownerID:        util.GetOwnerID(header),
+		user:           httpheader.GetUser(header),
+		ownerID:        httpheader.GetSupplierAccount(header),
 		cache:          cache,
 		synchronizeSrv: synchronizeSrv,
 	}

@@ -28,10 +28,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/service/excel/core"
 	"configcenter/src/web_server/service/excel/operator"
@@ -88,7 +88,7 @@ func (s *service) BuildTemplate(c *gin.Context) {
 	randNum := rand.Uint32()
 	filePath := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -143,20 +143,25 @@ func (s *service) ExportHost(c *gin.Context) {
 	s.exportInstFunc(c, common.BKInnerObjIDHost)
 }
 
+// ExportBiz export biz
+func (s *service) ExportBiz(c *gin.Context) {
+	s.exportInstFunc(c, common.BKInnerObjIDApp)
+}
+
+// ExportProject export project
+func (s *service) ExportProject(c *gin.Context) {
+	s.exportInstFunc(c, common.BKInnerObjIDProject)
+}
+
 func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	kit := rest.NewKitFromHeader(c.Request.Header, s.engine.CCErr)
-	var input exporter.ExportParamI
-	if objID == common.BKInnerObjIDHost {
-		input = &exporter.HostParam{}
-	} else {
-		input = &exporter.InstParam{ObjID: objID}
-	}
+	input := exporter.GetExportParamInterface(objID)
 
 	if err := c.BindJSON(input); err != nil {
 		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommJSONUnmarshalFailed, ErrMsg: err.Error()})
 		return
 	}
-	lang := s.engine.Language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	lang := s.engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 	if err := input.Validate(kit, lang); err != nil {
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrWebGetObjectFail, err.Error()))
 		return
@@ -166,7 +171,7 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer(), GinCtx: c}
+	client := &core.Client{ApiClient: s.apiCli, GinCtx: c}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -203,9 +208,14 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	}
 
 	// 3. 将excel文件返回，并删除临时文件
-	if objID == common.BKInnerObjIDHost {
+	switch objID {
+	case common.BKInnerObjIDHost:
 		addDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
-	} else {
+	case common.BKInnerObjIDApp:
+		addDownExcelHttpHeader(c, "bk_cmdb_export_biz.xlsx")
+	case common.BKInnerObjIDProject:
+		addDownExcelHttpHeader(c, "bk_cmdb_export_project.xlsx")
+	default:
 		addDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	}
 
@@ -289,7 +299,7 @@ func (s *service) importInstFunc(c *gin.Context, objID string, handleType core.H
 		return
 	}
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -328,7 +338,7 @@ func (s *service) ExportObject(c *gin.Context) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%d_%s.xlsx", dir, time.Now().UnixNano(), objID)
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {
@@ -399,7 +409,7 @@ func (s *service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	client := &core.Client{ApiClient: s.engine.CoreAPI.ApiServer()}
+	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
 		operator.Kit(kit), operator.Language(s.engine.Language))
 	if err != nil {

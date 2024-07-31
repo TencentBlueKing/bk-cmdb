@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"testing"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -16,6 +17,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	kubetypes "configcenter/src/kube/types"
@@ -54,6 +56,7 @@ type RedisConfig struct {
 }
 
 func init() {
+	testing.Init()
 	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load ")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
@@ -124,11 +127,7 @@ func GetTestConfig() TestConfig {
 
 // GetHeader TODO
 func GetHeader() http.Header {
-	header := make(http.Header)
-	header.Add(common.BKHTTPOwnerID, "0")
-	header.Add(common.BKHTTPHeaderUser, "admin")
-	header.Add("Content-Type", "application/json")
-	return header
+	return headerutil.GenDefaultHeader()
 }
 
 // ClearDatabase TODO

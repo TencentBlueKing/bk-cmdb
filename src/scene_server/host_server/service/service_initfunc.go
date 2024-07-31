@@ -223,6 +223,9 @@ func (s *Service) initHostapplyrule(web *restful.WebService) {
 		Path:    "/host/findmany/module/host_apply_plan/status",
 		Handler: s.GetHostApplyTaskStatus})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/check/objectattr/host_apply_enabled",
+		Handler: s.CheckAttrHostApplyEnabled})
+
 	utility.AddToRestfulWebService(web)
 }
 

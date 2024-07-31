@@ -25,6 +25,7 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -43,7 +44,7 @@ func (am *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Heade
 				common.BKDBIN: bizSetIDs,
 			},
 		},
-		Fields: []string{common.BKBizSetIDField, common.BKBizSetNameField},
+		Fields:         []string{common.BKBizSetIDField, common.BKBizSetNameField},
 		DisableCounter: true,
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDBizSet, &cond)
@@ -80,7 +81,7 @@ func (am *AuthManager) makeResourcesByBizSet(header http.Header, action meta.Act
 				Name:       bizSet.BKBizSetNameField,
 				InstanceID: bizSet.BKBizSetIDField,
 			},
-			SupplierAccount: util.GetOwnerID(header),
+			SupplierAccount: httpheader.GetSupplierAccount(header),
 		}
 
 		resources = append(resources, resource)

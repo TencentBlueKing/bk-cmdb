@@ -9,6 +9,9 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { t } from '@/i18n'
+
 const hex2grb = (hex) => {
   const rgb = []
   hex = hex.substr(1)
@@ -45,7 +48,7 @@ const getBase64Image = (image, color) => {
 const HIDDEN_STYLE = `
   height:0 !important;
   visibility:hidden !important;
-  
+
   position:absolute !important;
   z-index:-1000 !important;
   top:0 !important;
@@ -209,6 +212,7 @@ export const setCursorPosition = (element, cursor) => {
   // 添加新建的范围
   selection.addRange(range)
 }
+
 function calculateNodeStyling(targetElement) {
   const style = window.getComputedStyle(targetElement)
   const boxSizing = style.getPropertyValue('box-sizing')
@@ -220,6 +224,7 @@ function calculateNodeStyling(targetElement) {
 
   return { contextStyle, paddingSize, borderSize, boxSizing }
 }
+
 /**
  * textarea框悬浮计算当前高度
  */
@@ -305,4 +310,24 @@ export const updatePropertySelect = (selected, remove, addSelect, deleteSelect, 
     setTimeout(() =>  selected[type](...addSelect.splice(0, limit)))
     start += limit
   }
+}
+
+export function getIPInfo(ip, ipv6, cloudId) {
+  const hostList = ip ? ip.split(',') : ipv6.split(',')
+  const { length } = hostList
+  let info
+  if (ip) {
+    info = length > 1 ? `${hostList[0]}...` : hostList[0]
+  } else {
+    // eslint-disable-next-line no-useless-escape
+    info = length > 1 ? `\[${hostList[0]}\]...` : `\[${hostList[0]}\]`
+  }
+  return `${cloudId}:${info}`
+}
+
+export function getHostInfoTitle(ip, ipv6, cloudId, hostId) {
+  if (!(ip || ipv6)) {
+    return `(${t('主机ID')})${hostId}`
+  }
+  return getIPInfo(ip, ipv6, cloudId)
 }

@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strings"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -48,7 +49,10 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			// Case insensitivity to match upper and lower cases
 			regex[common.BKDBOPTIONS] = "i"
 			output[i.Field] = regex
-
+		case string(filter.ContainsSensitive):
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
 		case common.BKDBMULTIPLELike:
 			multi, ok := i.Value.([]interface{})
 			if !ok {

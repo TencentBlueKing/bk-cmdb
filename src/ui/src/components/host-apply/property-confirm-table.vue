@@ -25,7 +25,7 @@
             class="ip-value" theme="primary" text @click="handleShowDetails(row)">
             {{row.expect_host.bk_host_innerip }}
           </bk-button>
-          <span v-else>{{'--'}}</span>
+          <span v-else @click="handleNoIPShowDetails(row)" :class="{ 'noIP': hasIP(row) }">{{'--'}}</span>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('内网IPv6')" min-width="150" show-overflow-tooltip>
@@ -86,6 +86,7 @@
 <script>
   import { mapGetters, mapState } from 'vuex'
   import hostSearchService from '@/service/host/search'
+  import { getHostInfoTitle } from '@/utils/util'
 
   export default {
     components: {
@@ -152,6 +153,13 @@
       this.setTableList()
     },
     methods: {
+      hasIP(row) {
+        const {
+          bk_host_innerip: ip,
+          bk_host_innerip_v6: ipv6
+        } = row.expect_host
+        return !(ip || ipv6)
+      },
       async getHostPropertyList() {
         try {
           const data = await this.$store.dispatch('hostApply/getProperties', {
@@ -228,8 +236,23 @@
         this.table.pagination.current = 1
         this.setTableList()
       },
+      handleNoIPShowDetails(row) {
+        const {
+          bk_host_innerip_v6: ipv6,
+        } = row.expect_host
+        if (ipv6) return
+        this.handleShowDetails(row)
+      },
       async handleShowDetails(row) {
-        this.slider.title = `${this.$t('属性详情')}【${row.expect_host.bk_host_innerip}】`
+        const {
+          bk_host_innerip: ip,
+          bk_host_innerip_v6: ipv6,
+          bk_cloud_id: cloudId,
+          bk_host_id: hostId
+        } = row.expect_host
+        const detail = getHostInfoTitle(ip, ipv6, cloudId, hostId)
+
+        this.slider.title = `${this.$t('属性详情')}【${detail}】`
         const properties = this.propertyList
         // 管控区域数据
         row.cloud_area.bk_inst_name = row.cloud_area.bk_cloud_name
@@ -292,6 +315,10 @@
     }
     .ip-value {
       white-space: nowrap;
+    }
+    .noIP {
+      color: #3a84ff;
+      cursor: pointer;
     }
 </style>
 <style lang="scss">
