@@ -131,17 +131,7 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 			return
 		}
 
-		if err := attrs[idx].Validate(); err.ErrCode != 0 {
-			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attrs[idx], err, ctx.Kit.Rid)
-			ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
-			return
-		}
-
-		err = attrvalid.ValidPropertyOption(ctx.Kit, attrs[idx].PropertyType, attrs[idx].Option, &attrs[idx].IsMultiple,
-			attrs[idx].Default)
-		if err != nil {
-			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attrs[idx], err,
-				ctx.Kit.Rid)
+		if err := validateFieldTemplateAttr(ctx.Kit, &attrs[idx]); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}
@@ -165,6 +155,29 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(metadata.RspIDs{IDs: result})
+}
+
+func validateFieldTemplateAttr(kit *rest.Kit, attr *metadata.FieldTemplateAttr) error {
+	if err := attr.Validate(); err.ErrCode != 0 {
+		blog.Errorf("field template attribute(%+v) is invalid, err: %v, rid: %s", attr, err, kit.Rid)
+		return err.ToCCError(kit.CCError)
+	}
+
+	var extraOpt interface{}
+	switch attr.PropertyType {
+	case common.FieldTypeEnum, common.FieldTypeEnumMulti:
+		extraOpt = &attr.IsMultiple
+	default:
+		extraOpt = attr.Default
+	}
+
+	err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, extraOpt)
+	if err != nil {
+		blog.Errorf("validate field template attribute(%+v) option failed, err: %v, rid: %s", attr, err, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // DeleteFieldTemplateAttrs delete field template attributes
@@ -306,16 +319,8 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 
 func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attrs []metadata.FieldTemplateAttr) error {
 	now := time.Now()
-	for _, attr := range attrs {
-		if err := attr.Validate(); err.ErrCode != 0 {
-			blog.Errorf("field template attribute is invalid, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
-			return err.ToCCError(kit.CCError)
-		}
-
-		err := attrvalid.ValidPropertyOption(kit, attr.PropertyType, attr.Option, &attr.IsMultiple, attr.Default)
-		if err != nil {
-			blog.Errorf("validate field template attribute option failed, data: %v, err: %v, rid: %s", attr, err,
-				kit.Rid)
+	for idx, attr := range attrs {
+		if err := validateFieldTemplateAttr(kit, &attrs[idx]); err != nil {
 			return err
 		}
 
@@ -327,7 +332,7 @@ func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attr
 			common.BKTemplateID: templateID,
 		}
 
-		err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Update(kit.Ctx, cond, attr)
+		err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Update(kit.Ctx, cond, attr)
 		if err != nil {
 			blog.Errorf("update field template attribute failed, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
 			return err

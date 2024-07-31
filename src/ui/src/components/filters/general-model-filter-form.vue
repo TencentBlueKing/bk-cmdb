@@ -24,6 +24,9 @@
           <operator-selector class="item-operator"
             v-if="!withoutOperator.includes(property.bk_property_type)"
             :property="property"
+            :custom-type-map="customOperatorTypeMap"
+            :symbol-map="operatorSymbolMap"
+            :desc-map="operatorDescMap"
             v-model="condition[property.id].operator"
             @change="handleOperatorChange(property, ...arguments)">
           </operator-selector>
@@ -77,6 +80,7 @@
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
   import ConditionPicker from '@/components/condition-picker'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
 
   export default {
     components: {
@@ -105,10 +109,19 @@
       }
     },
     data() {
+      const { IN, NIN, LIKE, CONTAINS_CS } = QUERY_OPERATOR
       return {
         withoutOperator: ['date', 'time', 'bool'],
         condition: {},
-        selected: []
+        selected: [],
+        customOperatorTypeMap: {
+          longchar: [IN, NIN, LIKE, CONTAINS_CS],
+          singlechar: [IN, NIN, LIKE, CONTAINS_CS],
+          array: [IN, NIN, LIKE, CONTAINS_CS],
+          object: [IN, NIN, LIKE, CONTAINS_CS]
+        },
+        operatorSymbolMap: QUERY_OPERATOR_OTHER_SYMBOL,
+        operatorDescMap: QUERY_OPERATOR_OTHER_DESC
       }
     },
     computed: {
@@ -164,7 +177,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
-
+        if (!this.target) return
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
           const { bottom } = this.target.getClientRects()[0]
@@ -186,22 +199,10 @@
       },
       getComponentType(property) {
         const {
-          bk_obj_id: modelId,
-          bk_property_id: propertyId,
           bk_property_type: propertyType
         } = property
         const normal = `cmdb-search-${propertyType}`
 
-        // 业务名在包含与非包含操作符时使用输入联想组件
-        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
-          return `cmdb-search-${modelId}`
-        }
-
-        const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
-        const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
-          return `cmdb-search-${modelId}`
-        }
         return normal
       },
       getPlaceholder(property) {
@@ -296,10 +297,10 @@
       min-height: 32px;
     }
     .item-operator {
-      flex: 110px 0 0;
+      flex: 128px 0 0;
       margin-right: 8px;
       & ~ .item-value {
-        max-width: calc(100% - 118px);
+        max-width: calc(100% - 136px);
       }
     }
     .item-value {

@@ -22,10 +22,10 @@ import (
 // NewMockBackbone TODO
 func NewMockBackbone(c *Config) (*Engine, error) {
 	engine := &Engine{
-		CoreAPI:  apimachinery.NewMockApiMachinery(),
-		SvcDisc:  &mockDisc{},
-		Language: language.NewFromCtx(language.EmptyLanguageSetting),
-		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CoreAPI:     apimachinery.NewMockApiMachinery(),
+		SrvRegdiscv: SrvRegdiscv{SvcDisc: &mockDisc{}},
+		Language:    language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:       errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
 
 	return engine, nil

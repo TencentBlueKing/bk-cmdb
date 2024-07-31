@@ -26,6 +26,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/event_server/app/options"
 	svc "configcenter/src/scene_server/event_server/service"
@@ -34,7 +35,7 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/gse/client"
 )
@@ -85,7 +86,7 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
 		ConfigUpdate: newEventServer.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		Regdiscv:     op.ServConf.RegDiscover,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {
@@ -208,12 +209,11 @@ func (es *EventServer) initConfigs() error {
 			return err
 		}
 	case eventtype.V2:
-		config, err := apigwutil.ParseApiGWConfig("apiGW")
+		err = apigwcli.Init("apiGW", es.Engine().Metric().Registry(), []apigw.ClientType{apigw.Gse})
 		if err != nil {
-			blog.Errorf("get gse api gateway config error, err: %v", err)
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
 		}
-		es.config.ApiGWConfig = config
 	}
 
 	return nil
@@ -285,7 +285,7 @@ func (es *EventServer) runSyncData() error {
 	var err error
 	var gseTaskClient *client.GseTaskServerClient
 	var gseApiClient *client.GseApiServerClient
-	var gwClient gse.GseClientInterface
+	var gwClient gse.ClientI
 	switch es.config.IdentifierConf.Version {
 	case eventtype.V1:
 		gseTaskClient, err = client.NewGseTaskServerClient(es.config.TaskConf.Endpoints, es.config.TaskConf.TLSConf)
@@ -301,11 +301,7 @@ func (es *EventServer) runSyncData() error {
 		}
 
 	case eventtype.V2:
-		gwClient, err = gse.NewGseApiGWClient(es.config.ApiGWConfig, es.engine.Metric().Registry())
-		if err != nil {
-			blog.Errorf("new gse api gateway client error, err: %v", err)
-			return err
-		}
+		gwClient = apigwcli.Client().Gse()
 	}
 
 	syncData, err := hostidentifier.NewHostIdentifier(es.ctx, es.redisCli, es.engine, es.config.IdentifierConf,

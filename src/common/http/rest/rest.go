@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/util"
 
@@ -115,16 +116,16 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		restContexts.uri = action.Path
 
 		header := req.Request.Header
-		rid := util.GetHTTPCCRequestID(header)
-		user := util.GetUser(header)
-		owner := util.GetOwnerID(header)
+		rid := httpheader.GetRid(header)
+		user := httpheader.GetUser(header)
+		owner := httpheader.GetSupplierAccount(header)
 		ctx := req.Request.Context()
 		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
 
 		// time out after 2 minutes, in case long request does not terminate, skip ui requests like import
-		if header.Get(common.BKHTTPRequestFromWeb) != "true" {
+		if httpheader.IsReqFromWeb(header) {
 			var cancel context.CancelFunc
 			// task server has some task with 2 minutes' timeout, so we set the timeout of all servers to 2 minute
 			ctx, cancel = context.WithTimeout(ctx, time.Minute*2)
@@ -146,7 +147,7 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 			Rid:             rid,
 			Ctx:             ctx,
 			User:            user,
-			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)),
+			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header)),
 			SupplierAccount: owner,
 		}
 

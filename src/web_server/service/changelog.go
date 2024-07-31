@@ -13,8 +13,8 @@ import (
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/thirdparty/hooks"
 	webCommon "configcenter/src/web_server/common"
@@ -44,7 +44,7 @@ type VersionDetailResult struct {
 // GetVersionList  get all cmdb version info from changelog path directory
 func (s *Service) GetVersionList(c *gin.Context) {
 	header := c.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -104,7 +104,7 @@ func (s *Service) GetVersionList(c *gin.Context) {
 // GetVersionDetail get specific version changelog
 func (s *Service) GetVersionDetail(c *gin.Context) {
 	header := c.Request.Header
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 
 	option := new(metadata.ChangelogDetailConfigOption)

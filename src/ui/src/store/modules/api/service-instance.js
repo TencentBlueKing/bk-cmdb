@@ -16,10 +16,10 @@ import $http from '@/api'
 
 const actions = {
   getHostServiceInstances(context, { params, config }) {
-    return $http.post('findmany/proc/web/service_instance/with_host', params, config)
+    return $http.post('findmany/proc/service_instance/with_host', params, config)
   },
   getModuleServiceInstances(context, { params, config }) {
-    return $http.post('findmany/proc/web/service_instance', params, config)
+    return $http.post('findmany/proc/service_instance', params, config)
   },
   createProcServiceInstanceWithRaw(context, { params, config }) {
     return $http.post('create/proc/service_instance', params, config)

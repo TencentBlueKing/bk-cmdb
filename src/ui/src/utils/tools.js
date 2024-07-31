@@ -16,6 +16,7 @@ import has from 'has'
 import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS, CONTAINER_OBJECTS } from '@/dictionary/container'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import { TRANSFORM_SPECIAL_HANDLE_OPERATOR } from '@/utils/query-builder-operator'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
@@ -460,8 +461,12 @@ export function transformHostSearchParams(params) {
   const conditions = transformedParams.condition
   conditions.forEach((item) => {
     item.condition.forEach((field) => {
-      const { operator } = field
-      const { value } = field
+      const { bk_obj_id: objId } = item
+      const { operator, value } = field
+      if (objId !== BUILTIN_MODELS.HOST) {
+        // 主机接口参数condition特殊处理 非host情况下： 1. 操作符为$regex处理成contains_s  2. 操作符为contains处理成$regex
+        field.operator = transformNoHostOperator(operator)
+      }
       if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
         field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length)
           .map(str => str.trim())
@@ -470,6 +475,8 @@ export function transformHostSearchParams(params) {
   })
   return transformedParams
 }
+
+const transformNoHostOperator = operator => TRANSFORM_SPECIAL_HANDLE_OPERATOR?.[operator] ?? operator
 
 const defaultPaginationConfig = window.innerHeight > 750
   ? { limit: 20, 'limit-list': [20, 50, 100, 500] }

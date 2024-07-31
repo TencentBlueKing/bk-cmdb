@@ -18,26 +18,32 @@
 package apigw
 
 import (
-	"fmt"
-
 	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/cmdb"
+	"configcenter/src/thirdparty/apigw/gse"
+	"configcenter/src/thirdparty/apigw/notice"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var AuthKey = "x-bkapi-authorization"
-
-// ApiGWSrv api gateway service
-type ApiGWSrv struct {
-	Client rest.ClientInterface
-	Auth   string
+// ClientSet is the api gateway client set
+type ClientSet interface {
+	Gse() gse.ClientI
+	Cmdb() cmdb.ClientI
+	Notice() notice.ClientI
 }
 
-// NewApiGW new a api gateway client
-func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWSrv, error) {
+type clientSet struct {
+	gse    gse.ClientI
+	cmdb   cmdb.ClientI
+	notice notice.ClientI
+}
+
+// NewClientSet new api gateway client set
+func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, neededClients []ClientType) (ClientSet,
+	error) {
 
 	apiMachineryConfig := &util.APIMachineryConfig{
 		QPS:       2000,
@@ -46,25 +52,79 @@ func NewApiGW(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (*ApiGWS
 	}
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
 	flowControl := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
 
-	esbCapability := &util.Capability{
-		Client: client,
-		Discover: &apigwutil.ApiGWDiscovery{
-			Servers: config.Address,
+	options := &apigwutil.ApiGWOptions{
+		Config: config,
+		Capability: util.Capability{
+			Client:     client,
+			Throttle:   flowControl,
+			MetricOpts: util.MetricOption{Register: metric},
 		},
-		Throttle:   flowControl,
-		MetricOpts: util.MetricOption{Register: reg},
 	}
 
-	apigw := &ApiGWSrv{
-		Client: rest.NewRESTClient(esbCapability, "/"),
-		Auth: fmt.Sprintf(`{"bk_username": "%s", "bk_app_code": "%s", "bk_app_secret": "%s"}`, config.Username,
-			config.AppCode, config.AppSecret),
+	if options.Auth, err = apigwutil.GenDefaultAuthHeader(config); err != nil {
+		return nil, err
 	}
-	return apigw, nil
+
+	cs := new(clientSet)
+
+	neededCliMap := make(map[ClientType]struct{})
+	for _, neededClient := range neededClients {
+		neededCliMap[neededClient] = struct{}{}
+	}
+
+	if _, exists := neededCliMap[Gse]; exists {
+		cs.gse, err = gse.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if _, exists := neededCliMap[Cmdb]; exists {
+		cs.cmdb, err = cmdb.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if _, exists := neededCliMap[Notice]; exists {
+		cs.notice, err = notice.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cs, nil
 }
+
+// Gse returns gse client
+func (c *clientSet) Gse() gse.ClientI {
+	return c.gse
+}
+
+// Cmdb returns cmdb client
+func (c *clientSet) Cmdb() cmdb.ClientI {
+	return c.cmdb
+}
+
+// Notice returns bk-notice client
+func (c *clientSet) Notice() notice.ClientI {
+	return c.notice
+}
+
+// ClientType is the api gateway client type, used to specify which client is needed
+type ClientType string
+
+const (
+	// Gse is the gse client type
+	Gse ClientType = "gse"
+	// Cmdb is the cmdb client type
+	Cmdb ClientType = "cmdb"
+	// Notice is the notice client type
+	Notice ClientType = "notice"
+)

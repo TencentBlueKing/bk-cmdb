@@ -2020,8 +2020,6 @@ const (
 	createObjectAttributeLatestPattern  = "/api/v3/create/objectattr"
 	findObjectAttributeLatestPattern    = "/api/v3/find/objectattr"
 	findObjectAttributeForLatestPattern = "/api/v3/find/objectattr/web"
-
-	findHostObjectAttributeLatestPattern = "/api/v3/find/objectattr/host"
 )
 
 var (
@@ -2245,17 +2243,6 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Action: meta.SkipAction,
 				},
 			})
-	}
-	if ps.hitPattern(findHostObjectAttributeLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = append(ps.Attribute.Resources,
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.ModelAttribute,
-					Action: meta.SkipAction,
-				},
-			})
-
-		return ps
 	}
 
 	// create business custom field operation

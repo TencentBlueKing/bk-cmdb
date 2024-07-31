@@ -26,9 +26,9 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 	"configcenter/src/web_server/service/excel/operator"
 )
@@ -119,7 +119,7 @@ const (
 )
 
 func (op *Operator) setExcelTitle() error {
-	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 
 	header := make([][]excel.Cell, headerLen)
@@ -181,7 +181,7 @@ func (op *Operator) setExcelData() error {
 		return err
 	}
 
-	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 	data := make([][]excel.Cell, len(attrs))
 	for i := range data {
@@ -276,7 +276,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 		break
 	}
 
-	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(op.GetKit().Header))
 	fields := getSortFields(lang)
 	idTypeMap := make(map[string]string)
 	for _, field := range fields {
@@ -317,7 +317,7 @@ func (op *Operator) getImportAttr() (map[int]map[string]interface{}, error) {
 }
 
 func (op *Operator) getImportAttrVal(id, idType, val string) (interface{}, error) {
-	lang := op.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(op.GetKit().Header))
+	lang := op.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(op.GetKit().Header))
 	boolType := lang.Language("val_type_bool")
 	integerType := lang.Language("val_type_integer")
 

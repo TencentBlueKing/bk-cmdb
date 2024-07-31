@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -35,8 +36,8 @@ import (
 // GetObjectCount search object count
 func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond *metadata.ObjectCountParams) (
 	*metadata.ObjectCountResult, error) {
-	rid := util.GetHTTPCCRequestID(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := httpheader.GetRid(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	objIDs := cond.Condition.ObjectIDs
 	if len(objIDs) > 20 {
@@ -70,36 +71,30 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 				wg.Done()
 				<-pipeline
 			}()
+
 			if metadata.IsCommon(objID) {
-				params := &metadata.Condition{Condition: map[string]interface{}{common.BKObjIDField: objID}}
-				count, err := lgc.CoreAPI.CoreService().Instance().CountInstances(ctx, header, objID, params)
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+				countRes, ccErr := lgc.ApiCli.CountObjectInstances(ctx, header, objID, new(metadata.CommonCountFilter))
+				if ccErr != nil {
+					blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, ccErr, rid)
+					apiErr = ccErr
 					return
 				}
-				if count == nil {
+
+				objCount.InstCount = countRes.Count
+			} else {
+				count, err := lgc.ApiCli.CountObjInstByFilters(ctx, header, objID, []map[string]interface{}{{}})
+				if err != nil {
+					blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
 					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 					return
 				}
 
-				objCount.InstCount = count.Count
-			} else {
-				tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
-				count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName,
-					[]map[string]interface{}{{}})
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
 				if len(count) == 0 {
 					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
 					return
 				}
 				objCount.InstCount = uint64(count[0])
 			}
-
 			existObjResult[idx] = objCount
 
 		}(ctx, header, objID, idx, objCount)
@@ -119,11 +114,11 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 // ProcessObjectIDArray process objectIDs
 func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header, objectArray []string) ([]string,
 	[]string, error) {
-	rid := util.GetHTTPCCRequestID(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := httpheader.GetRid(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
-	objects, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, &metadata.QueryCondition{
+	objects, err := lgc.ApiCli.ReadModel(ctx, header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKObjIDField: map[string]interface{}{
 				common.BKDBIN: objArray,
@@ -157,7 +152,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data interface{},
 	exportType string) ([]byte, error) {
 
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	nowTime := time.Now().Local()
 
 	expirationTime := nowTime.UnixNano()
@@ -184,7 +179,7 @@ func (lgc *Logics) BuildExportYaml(header http.Header, expiration int64, data in
 func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName string, password string,
 	data []byte) error {
 
-	rid := util.GetHTTPCCRequestID(header)
+	rid := httpheader.GetRid(header)
 	fh := &zip.FileHeader{
 		Name:   fileName,
 		Method: zip.Deflate,
@@ -211,8 +206,8 @@ func (lgc *Logics) BuildZipFile(header http.Header, zipw *zip.Writer, fileName s
 func (lgc *Logics) GetDataFromZipFile(header http.Header, file *zip.File, password string,
 	result *metadata.AnalysisResult) (int, error) {
 
-	rid := util.GetHTTPCCRequestID(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := httpheader.GetRid(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	if file.IsEncrypted() {
 		if len(password) == 0 {

@@ -1,0 +1,1805 @@
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  storageClass: ""
+  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+  bkCryptoType: "CLASSIC"
+
+## @section bk-cmdb image parameters
+##
+
+## bk-cmdb image parameters
+## @param image.registry bk-cmdb image registry
+## @param image.pullPolicy bk-cmdb image pull policy
+##
+image:
+  registry: hub.bktencent.com
+  pullPolicy: IfNotPresent
+
+## @section bk-cmdb adminserver parameters
+##
+adminserver:
+  ## @param adminserver.enabled Enable adminserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb adminserver image parameters
+  ## @param adminserver.image.repository bk-cmdb adminserver image repository
+  ## @param adminserver.image.rag bk-cmdb adminserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_adminserver
+    tag:
+  ## @param adminserver.replicas Number of administrator replicas to deploy
+  ##
+  replicas: 1
+  ## @param adminserver.port bk-cmdb adminserver service HTTP port
+  ##
+  port: 80
+  ## @param adminserver.workDir bk-cmdb adminserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_adminserver
+  ## @param adminserver.configDir bk-cmdb adminserver config directory
+  ##
+  configDir: /data/cmdb/cmdb_adminserver/configure
+  ## @param adminserver.errors bk-cmdb adminserver errors config directory
+  ##
+  errors: /data/cmdb/cmdb_adminserver/conf/errors
+  ## @param adminserver.errors bk-cmdb adminserver language config directory
+  ##
+  language: /data/cmdb/cmdb_adminserver/conf/language
+  ## bk-cmdb adminserver start command parameters
+  ## @param adminserver.command.logDir bk-cmdb adminserver log directory
+  ## @param adminserver.command.logLevel bk-cmdb adminserver log level
+  ## @param adminserver.command.logLevel Enable bk-cmdb adminserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_adminserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb apiserver parameters
+##
+apiserver:
+  ## @param apiserver.enabled Enable apiserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb apiserver image parameters
+  ## @param apiserver.image.repository bk-cmdb apiserver image repository
+  ## @param apiserver.image.rag bk-cmdb apiserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_apiserver
+    tag:
+  ## @param apiserver.replicas Number of apiserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param apiserver.port bk-cmdb apiserver service HTTP port
+  ##
+  ingress:
+    ## @param apiserver.ingress.enabled Enable ingress record generation for bk-cmdb apiserver
+    ##
+    enabled: true
+    ## @param apiserver.ingress.hostname Default host for the ingress record
+    ##
+    host: cmdb-api.example.com
+    ## @param apiserver.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ##
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    ## @param apiserver.ingress.tls Enable TLS configuration for the host defined at `ingress.host` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Relay on cert-manager to create it by setting the corresponding annotations
+    ##   - Relay on Helm to create self-signed certificates by setting `ingress.tls=true` and `ingress.certManager=false`
+    ##
+    tls:
+  ## bk-cmdb apiserver service parameters
+  ##
+  service:
+    ## @param apiserver.service.type bk-cmdb apiserver service type
+    ##
+    type: "ClusterIP"
+    ## @param apiserver.service.ports Expose bk-cmdb webserver service by apiserver.service.ports[0].nodePort when apiserver.service.type is "NodePort"
+    ##
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    ## apiserver.service.externalPort bk-cmdb apiserver service external port
+    ##
+    externalPort: 80
+  ## @param apiserver.port bk-cmdb apiserver service HTTP port
+  ##
+  port: 80
+  ## @param apiserver.workDir bk-cmdb apiserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_apiserver
+  ## bk-cmdb apiserver start command parameters
+  ## @param apiserver.command.logDir bk-cmdb apiserver log directory
+  ## @param apiserver.command.logLevel bk-cmdb apiserver log level
+  ## @param apiserver.command.logLevel Enable bk-cmdb apiserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_apiserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb authserver parameters
+##
+authserver:
+  ## @param authserver.enabled Enable authserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb authserver image parameters
+  ## @param authserver.image.repository bk-cmdb authserver image repository
+  ## @param authserver.image.rag bk-cmdb authserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_authserver
+    tag:
+  ## @param authserver.replicas Number of authserver replicas to deploy
+  ##
+  replicas: 1
+  ## bk-cmdb authserver ingress parameters
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+  ##
+  ingress:
+    ## @param authserver.ingress.enabled Enable ingress record generation for bk-cmdb authserver
+    ##
+    enabled: true
+    ## @param authserver.ingress.hostname Default host for the ingress record
+    ##
+    host: cmdb-auth.example.com
+    ## @param authserver.ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+    ## For a full list of possible ingress annotations, please see
+    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+    ## Use this parameter to set the required annotations for cert-manager, see
+    ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+    ##
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    ## @param authserver.ingress.tls Enable TLS configuration for the host defined at `ingress.host` parameter
+    ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+    ## You can:
+    ##   - Use the `ingress.secrets` parameter to create this TLS secret
+    ##   - Relay on cert-manager to create it by setting the corresponding annotations
+    ##   - Relay on Helm to create self-signed certificates by setting `ingress.tls=true` and `ingress.certManager=false`
+    ##
+    tls:
+  ## bk-cmdb authserver service parameters
+  ##
+  service:
+    ## @param authserver.service.type bk-cmdb authserver service type
+    ##
+    type: "ClusterIP"
+    ## @param authserver.service.ports Expose bk-cmdb webserver service by authserver.service.ports[0].nodePort when authserver.service.type is "NodePort"
+    ##
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+    ## authserver.service.externalPort bk-cmdb authserver service external port
+    ##
+    externalPort: 80
+  ## @param authserver.port bk-cmdb authserver service HTTP port
+  ##
+  port: 80
+  ## @param authserver.workDir bk-cmdb authserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_authserver
+  ## bk-cmdb authserver start command parameters
+  ## @param authserver.command.logDir bk-cmdb authserver log directory
+  ## @param authserver.command.logLevel bk-cmdb authserver log level
+  ## @param authserver.command.logLevel Enable bk-cmdb authserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_authserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb cacheservice parameters
+##
+cacheservice:
+  ## @param cacheservice.enabled Enable cacheservice deployment
+  ##
+  enabled: true
+  ## bk-cmdb cacheservice image parameters
+  ## @param cacheservice.image.repository bk-cmdb cacheservice image repository
+  ## @param cacheservice.image.rag bk-cmdb cacheservice image tag
+  ##
+  image:
+    repository: blueking/cmdb_cacheservice
+    tag:
+  ## @param cacheservice.replicas Number of cacheservice replicas to deploy
+  ##
+  replicas: 1
+  ## @param cacheservice.port bk-cmdb cacheservice service HTTP port
+  ##
+  port: 80
+  ## @param cacheservice.workDir bk-cmdb cacheservice work directory
+  ##
+  workDir: /data/cmdb/cmdb_cacheservice
+  ## bk-cmdb cacheservice start command parameters
+  ## @param cacheservice.command.logDir bk-cmdb cacheservice log directory
+  ## @param cacheservice.command.logLevel bk-cmdb cacheservice log level
+  ## @param cacheservice.command.logLevel Enable bk-cmdb cacheservice print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_cacheservice/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb cloudserver parameters
+##
+cloudserver:
+  ## @param cloudserver.enabled Enable cloudserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb cloudserver image parameters
+  ## @param cloudserver.image.repository bk-cmdb cloudserver image repository
+  ## @param cloudserver.image.rag bk-cmdb cloudserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_cloudserver
+    tag:
+  ## @param cloudserver.replicas Number of cloudserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param cloudserver.port bk-cmdb cloudserver service HTTP port
+  ##
+  port: 80
+  ## @param cloudserver.workDir bk-cmdb cloudserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_cloudserver
+  ## bk-cmdb cloudserver start command parameters
+  ## @param cloudserver.command.logDir bk-cmdb cloudserver log directory
+  ## @param cloudserver.command.logLevel bk-cmdb cloudserver log level
+  ## @param cloudserver.command.logLevel Enable bk-cmdb cloudserver print log to stderr
+  ## @param cloudserver.command.enableCryptor Enable bk-cmdb cloudserver secret service
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_cloudserver/logs
+    logLevel: 3
+    logToStdErr: false
+    enableCryptor: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb coreservice parameters
+##
+coreservice:
+  ## @param coreservice.enabled Enable coreservice deployment
+  ##
+  enabled: true
+  ## bk-cmdb coreservice image parameters
+  ## @param coreservice.image.repository bk-cmdb coreservice image repository
+  ## @param coreservice.image.rag bk-cmdb coreservice image tag
+  ##
+  image:
+    repository: blueking/cmdb_coreservice
+    tag:
+  ## @param coreservice.replicas Number of coreservice replicas to deploy
+  ##
+  replicas: 1
+  ## @param coreservice.port bk-cmdb coreservice service HTTP port
+  ##
+  port: 80
+  ## @param coreservice.workDir bk-cmdb coreservice work directory
+  ##
+  workDir: /data/cmdb/cmdb_coreservice
+  ## bk-cmdb coreservice start command parameters
+  ## @param coreservice.command.logDir bk-cmdb coreservice log directory
+  ## @param coreservice.command.logLevel bk-cmdb coreservice log level
+  ## @param coreservice.command.logLevel Enable bk-cmdb coreservice print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_coreservice/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb datacollection parameters
+##
+datacollection:
+  ## @param datacollection.enabled Enable datacollection deployment
+  ##
+  enabled: true
+  ## bk-cmdb datacollection image parameters
+  ## @param datacollection.image.repository bk-cmdb datacollection image repository
+  ## @param datacollection.image.rag bk-cmdb datacollection image tag
+  ##
+  image:
+    repository: blueking/cmdb_datacollection
+    tag:
+  ## @param datacollection.replicas Number of datacollection replicas to deploy
+  ##
+  replicas: 1
+  ## @param datacollection.port bk-cmdb datacollection service HTTP port
+  ##
+  port: 80
+  ## @param datacollection.workDir bk-cmdb datacollection work directory
+  ##
+  workDir: /data/cmdb/cmdb_datacollection
+  ## bk-cmdb datacollection start command parameters
+  ## @param datacollection.command.logDir bk-cmdb datacollection log directory
+  ## @param datacollection.command.logLevel bk-cmdb datacollection log level
+  ## @param datacollection.command.logLevel Enable bk-cmdb datacollection print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_datacollection/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb eventserver parameters
+##
+eventserver:
+  ## @param eventserver.enabled Enable eventserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb eventserver image parameters
+  ## @param eventserver.image.repository bk-cmdb eventserver image repository
+  ## @param eventserver.image.rag bk-cmdb eventserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_eventserver
+    tag:
+  ## @param eventserver.replicas Number of eventserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param eventserver.port bk-cmdb eventserver service HTTP port
+  ##
+  port: 80
+  ## @param eventserver.workDir bk-cmdb eventserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_eventserver
+  ## bk-cmdb eventserver start command parameters
+  ## @param eventserver.command.logDir bk-cmdb eventserver log directory
+  ## @param eventserver.command.logLevel bk-cmdb eventserver log level
+  ## @param eventserver.command.logLevel Enable bk-cmdb eventserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_eventserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb hostserver parameters
+##
+hostserver:
+  ## @param hostserver.enabled Enable hostserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb hostserver image parameters
+  ## @param hostserver.image.repository bk-cmdb hostserver image repository
+  ## @param hostserver.image.rag bk-cmdb hostserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_hostserver
+    tag:
+  ## @param hostserver.replicas Number of hostserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param hostserver.port bk-cmdb hostserver service HTTP port
+  ##
+  port: 80
+  ## @param hostserver.workDir bk-cmdb hostserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_hostserver
+  ## bk-cmdb hostserver start command parameters
+  ## @param hostserver.command.logDir bk-cmdb hostserver log directory
+  ## @param hostserver.command.logLevel bk-cmdb hostserver log level
+  ## @param hostserver.command.logLevel Enable bk-cmdb hostserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_hostserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb operationserver parameters
+##
+operationserver:
+  ## @param operationserver.enabled Enable operationserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb operationserver image parameters
+  ## @param operationserver.image.repository bk-cmdb operationserver image repository
+  ## @param operationserver.image.rag bk-cmdb operationserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_operationserver
+    tag:
+  ## @param operationserver.replicas Number of operationserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param operationserver.port bk-cmdb operationserver service HTTP port
+  ##
+  port: 80
+  ## @param operationserver.workDir bk-cmdb operationserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_operationserver
+  ## bk-cmdb operationserver start command parameters
+  ## @param operationserver.command.logDir bk-cmdb operationserver log directory
+  ## @param operationserver.command.logLevel bk-cmdb operationserver log level
+  ## @param operationserver.command.logLevel Enable bk-cmdb operationserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_operationserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb procserver parameters
+##
+procserver:
+  ## @param procserver.enabled Enable procserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb procserver image parameters
+  ## @param procserver.image.repository bk-cmdb procserver image repository
+  ## @param procserver.image.rag bk-cmdb procserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_procserver
+    tag:
+  ## @param procserver.replicas Number of procserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param procserver.port bk-cmdb procserver service HTTP port
+  ##
+  port: 80
+  ## @param procserver.workDir bk-cmdb procserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_procserver
+  ## bk-cmdb procserver start command parameters
+  ## @param procserver.command.logDir bk-cmdb procserver log directory
+  ## @param procserver.command.logLevel bk-cmdb procserver log level
+  ## @param procserver.command.logLevel Enable bk-cmdb procserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_procserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb synchronizeserver parameters
+##
+synchronizeserver:
+  ## @param synchronizeserver.enabled Enable synchronizeserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb synchronizeserver image parameters
+  ## @param synchronizeserver.image.repository bk-cmdb synchronizeserver image repository
+  ## @param synchronizeserver.image.rag bk-cmdb synchronizeserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_synchronizeserver
+    tag:
+  ## @param synchronizeserver.replicas Number of synchronizeserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param synchronizeserver.port bk-cmdb synchronizeserver service HTTP port
+  ##
+  port: 80
+  ## @param synchronizeserver.workDir bk-cmdb synchronizeserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_synchronizeserver
+  ## bk-cmdb synchronizeserver start command parameters
+  ## @param synchronizeserver.command.logDir bk-cmdb synchronizeserver log directory
+  ## @param synchronizeserver.command.logLevel bk-cmdb synchronizeserver log level
+  ## @param synchronizeserver.command.logLevel Enable bk-cmdb synchronizeserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_synchronizeserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb taskserver parameters
+##
+taskserver:
+  ## @param taskserver.enabled Enable taskserver deployment
+  ##
+  enabled: true
+  ## bk-cmdb taskserver image parameters
+  ## @param taskserver.image.repository bk-cmdb taskserver image repository
+  ## @param taskserver.image.rag bk-cmdb taskserver image tag
+  ##
+  image:
+    repository: blueking/cmdb_taskserver
+    tag:
+  ## @param taskserver.replicas Number of taskserver replicas to deploy
+  ##
+  replicas: 1
+  ## @param taskserver.port bk-cmdb taskserver service HTTP port
+  ##
+  port: 80
+  ## @param taskserver.workDir bk-cmdb taskserver work directory
+  ##
+  workDir: /data/cmdb/cmdb_taskserver
+  ## bk-cmdb taskserver start command parameters
+  ## @param taskserver.command.logDir bk-cmdb taskserver log directory
+  ## @param taskserver.command.logLevel bk-cmdb taskserver log level
+  ## @param taskserver.command.logLevel Enable bk-cmdb taskserver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_taskserver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb toposerver parameters
+##
+toposerver:
+  ## @param toposerver.enabled Enable toposerver deployment
+  ##
+  enabled: true
+  ## bk-cmdb toposerver image parameters
+  ## @param toposerver.image.repository bk-cmdb toposerver image repository
+  ## @param toposerver.image.rag bk-cmdb toposerver image tag
+  ##
+  image:
+    repository: blueking/cmdb_toposerver
+    tag:
+  ## @param toposerver.replicas Number of toposerver replicas to deploy
+  ##
+  replicas: 1
+  ## @param toposerver.port bk-cmdb toposerver service HTTP port
+  ##
+  port: 80
+  ## @param toposerver.workDir bk-cmdb toposerver work directory
+  ##
+  workDir: /data/cmdb/cmdb_toposerver
+  ## bk-cmdb toposerver start command parameters
+  ## @param toposerver.command.logDir bk-cmdb toposerver log directory
+  ## @param toposerver.command.logLevel bk-cmdb toposerver log level
+  ## @param toposerver.command.logLevel Enable bk-cmdb toposerver print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_toposerver/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section bk-cmdb migrate job parameters
+##
+migrate:
+  ## @param migrate.enabled Enable bk-cmdb migrate job
+  ##
+  enabled: true
+  ## bk-cmdb migrate image parameters
+  ## @param migrate.image.repository bk-cmdb migrate image repository
+  ## @param migrate.image.rag bk-cmdb migrate image tag
+  ##
+  image:
+    repository: blueking/cmdb_migrate
+    tag:
+  ## @param migrate.migrateDataId Enable register dataid to GSE
+  ##
+  migrateDataId: false
+  migrateOldDataId: false
+  ## bk-cmdb migrate dataid parameters
+  ## @param migrate.dataid.migrateWay bk-cmdb migrate dataid way
+  ##
+  dataid:
+    migrateWay: esb
+
+## @section bk-cmdb iam authentication parameters
+##
+iam:
+  auth:
+    ## @parem iam.auth.enabled Enable bk-iam authentication
+    enabled: false
+
+## @section Blueking url parameters
+##
+## @param bkPaasUrl bk-paas url
+##
+bkPaasUrl: http://paas.example.com
+## @param bkIamApiUrl bk-iam backend url
+##
+bkIamApiUrl: http://bkiam-web
+## @param bkComponentApiUrl esb url
+##
+bkComponentApiUrl: http://bkapi.paas.example.com
+## @param bkLoginApiUrl bk-login url
+##
+bkLoginApiUrl: http://bk-login-web
+## @param bkNodemanUrl bk-nodeman url
+##
+bkNodemanUrl: http://apps.paas.example.com/bk--nodeman
+
+## @param bkApigatewayName apigateway name for cmdb
+##
+bkApigatewayName: "bk-cmdb"
+
+# 蓝鲸 GSE API Gateway url
+bkGseApiGatewayUrl: "http://bkapi.example.com"
+
+# 蓝鲸 Notice API Gateway url
+bkNoticeApiGatewayUrl: "http://bkapi.example.com"
+
+# CMDB API Gateway url
+bkCmdbApiGatewayUrl: "http://bkapi.example.com"
+
+## @section bk-cmdb common config parameters
+##
+common:
+  ## bk-cmdb common config authentication parameters
+  ## @param common.auth.appCode bk-cmdb app code used in bk-iam
+  ## @param common.auth.appSecret bk-cmdb app secret used in bk-iam
+  ##
+  auth:
+    appCode: bk_cmdb
+    appSecret:
+    ## bk-cmdb common config auth center parameters
+    ## @param common.auth.tls.insecureSkipVerify paas insecureSkipVerify config
+    ## @param common.auth.tls.certFile paas certFile
+    ## @param common.auth.tls.keyFile paas keyFile
+    ## @param common.auth.tls.caFile paas caFile
+    ## @param common.auth.tls.password paas password
+    ##
+    tls:
+      insecureSkipVerify: true
+      certFile:
+      keyFile:
+      caFile:
+      password:
+    # 空间级权限版本中，find_module_host_relation、find_host_by_service_template、find_host_by_set_template、
+    # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
+    # 可以配置不进行业务访问鉴权
+    skipViewBizAuth: false
+
+  ## bk-cmdb common config esb parameters
+  ## @param common.esb.appCode bk-cmdb app code used in esb
+  ## @param common.esb.appSecret bk-cmdb app secret used in esb
+  ##
+  esb:
+    appCode: bk_cmdb
+    appSecret:
+
+  ## bk-cmdb common config paas parameters
+  ## @param common.paas.tls.insecureSkipVerify paas insecureSkipVerify config
+  ## @param common.paas.tls.certFile paas certFile
+  ## @param common.paas.tls.keyFile paas keyFile
+  ## @param common.paas.tls.caFile paas caFile
+  ## @param common.paas.tls.password paas password
+  ##
+  paas:
+    tls:
+      insecureSkipVerify: true
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
+  ## bk-cmdb common config elasticsearch parameters
+  ## @param common.es.fullTextSearch Enable full text search
+  ## @param common.es.utl elasticsearch url
+  ## @param common.es.usr elasticsearch username
+  ## @param common.es.pwd elasticsearch password
+  ##
+  es:
+    fullTextSearch: "off"
+    url:
+    usr:
+    pwd:
+  #auth_server专属配置
+  authServer:
+    #开发商ID
+    supplierID: "0"
+  #cloudServer专属配置
+  cloudServer:
+    # 加密服务使用
+    cryptor:
+      enableCryptor: false
+      # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
+      secretKeyUrl:
+      # 密钥服务的地址，必须以http://或者https://开头
+      secretsAddrs:
+      # 密码服务的权限凭证Token
+      secretsToken:
+      # 密码服务的项目名称
+      secretsProject:
+      # 密码服务的环境名称
+      secretsEnv:
+    syncTask:
+      syncPeriodMinutes: 5
+  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+  crypto:
+    # 是否开启加密
+    enabled: false
+    # 使用SM4算法时所需的配置
+    sm4:
+      # 密钥
+      key:
+    # 使用AES-GCM算法时所需的配置
+    aesGcm:
+      # 密钥
+      key:
+  #datacollection专属配置
+  datacollection:
+    hostSnapshot:
+      # 主机静态数据采集模式，将数据导入kafka或者redis，可选值是 kafka、redis，默认值为redis（仅用于新插件bkmonitorbeat）
+      reportMode: redis
+      # 当主机快照数据属性,如cpu,bk_cpu_mhz,bk_disk,bk_mem这些数值型数据变动的范围大于该配置的值时，进行db数据的更新，默认值为10%，最小值为5%，以百分比为单位
+      changeRangePercent: 10
+      # 用于设置主机快照key在redis中的过期时间，该时间会有上下50%的波动，当key存在时，同一id的主机数据不会更新，默认值为10分钟，最小值为5分钟，以分钟为单位
+      changeCountExpireMinute: 10
+      # 用于设置单个服务主机快照处理请求能力，起到限流的作用，令牌桶配置，最多请求数通过burst设置。qps的默认值为40，burst的默认值为100
+      rateLimiter:
+        qps: 40
+        burst: 100
+      # 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口，用于限制在指定周期的前多少分钟可以让请求通过，超过限定时间将不会处理请求。
+      # 它的下一级有三个参数，atTime,checkIntervalHours，windowMinute 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime
+      # 或者checkIntervalHours中的一个，否则不生效。当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
+      # 如果窗口生效，启动的时候，会先跑完windowMinutes，然后再生效。
+      timeWindow:
+        # atTime，设置一天中，几点开启时间窗口，如配置成14:40，表示14:40开启窗口，如果配置格式不正确，默认值为1:00
+        atTime:
+        # checkIntervalHours，规定每隔几个小时窗口开启，单位为小时，如配置成 3，表示每隔3个小时，开启时间窗口，如果配置格式不正确，默认值为 1
+        checkIntervalHours: 1
+        # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
+        # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
+        windowMinutes: 15
+  ## operationserver common config parameters
+  ##
+  operationServer:
+    ## @param common.operationServer.timer.spec operation statistic collecting time
+    ## 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
+    ##
+    timer:
+      spec: 15:30
+    ## @param common.operationServer.timer
+    ## 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
+    ##
+    disableOperationStatistic: false
+
+  ## monitor common config parameters
+  ##
+  monitor:
+    ## @param common.monitor.enabled Enable monitor
+    enabled: false
+    ## @param common.monitor.pluginName Monitor plugin name
+    ## 监控插件名称，有noop，blueking，不填时默认为noop
+    ##
+    pluginName: noop
+    ## @param common.monitor.dataId Monitor plugin data report id
+    ## 当使用blueking监控插件时，上报数据所需要的数据通道标识,如1500000
+    ##
+    dataId: 0
+    ## @param common.monitor.queueSize Monitor plugin data collecting cache queue size
+    ## 采集数据后能够缓存的队列长度，设置范围为1～1000, 默认为100
+    ##
+    queueSize: 100
+    ## @param common.monitor.bkMonitorReportUrl Monitor report url
+    ## 当使用blueking监控插件时，上报数据的接收端URL
+    ##
+    bkMonitorReportUrl:
+    ## @param common.monitor.accessToken Monitor plugin data report access token
+    ## 当使用blueking监控插件时，上报数据所需要的数据通道标识验证码，防止数据误上报至其他管道
+    ##
+    accessToken:
+    ## @param common.monitor.rateLimiter Monitor plugin data report rate limiter
+    ## 用于对数据上报进行频率控制和限流
+    ## qps的设置范围为1～50，默认值为10
+    ## burst的设置范围为1～100，默认值为20
+    ##
+    rateLimiter:
+      qps: 10
+      burst: 20
+  ## monitor common config parameters
+  ##
+  cacheService:
+    ## @param common.cacheService.briefTopologySyncIntervalMinutes bk-cmdb cacheservice sync brief topo interval
+    ## 业务简要拓扑缓存的定时刷新时间，默认为15分钟，最小为2分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+    ##
+    briefTopologySyncIntervalMinutes: 15
+    ## @param common.cacheService.kubeTopoSyncIntervalMinutes bk-cmdb cacheservice sync kube topo interval
+    ## 业务容器拓扑缓存的定时刷新时间，默认为15分钟，最小为15分钟。每次会将所有的业务的拓扑刷新一次到缓存中
+    ##
+    kubeTopoSyncIntervalMinutes: 15
+  ## log platform openTelemetry config
+  ##
+  openTelemetry:
+    ## @param common.openTelemetry.enable enable openTelemetry function
+    ## 表示是否开启openTelemetry跟踪链接入相关功能，布尔值, 默认值为false不开启
+    ##
+    enable: false
+    ## @param common.openTelemetry.endpoint the address about tracking chain function
+    ## openTelemetry跟踪链功能的自定义上报服务地址
+    ##
+    endpoint:
+    ## @param common.openTelemetry.bkDataID the bkDataID about tracking chain function，
+    ## used for data reporting of the old version
+    ## openTelemetry跟踪链功能的上报data_id，用于旧版的数据上报
+    ##
+    bkDataID:
+    ## @param common.openTelemetry.bkDataToken the bk.data.token about tracking chain function
+    ## openTelemetry跟踪链功能的bk.data.token，用于新版的数据上报
+    ## used for data reporting of the new version
+    ##
+    bkDataToken:
+    ## @param common.openTelemetry.tls.insecureSkipVerify openTelemetry insecureSkipVerify config
+    ## @param common.openTelemetry.tls.certFile openTelemetry certFile
+    ## @param common.openTelemetry.tls.keyFile openTelemetry keyFile
+    ## @param common.openTelemetry.tls.caFile openTelemetry caFile
+    ## @param common.openTelemetry.tls.password openTelemetry password
+    ##
+    tls:
+      insecureSkipVerify: true
+      certFile:
+      keyFile:
+      caFile:
+      password:
+
+  ## eventServer common config parameters
+  ##
+  eventServer:
+    ## 下发主机身份相关配置
+    hostIdentifier:
+      ## @param common.eventServer.hostIdentifier.startUp startUp sync host identifier
+      ## 是否开始下发主机身份功能, 有两个值，true和false，当处于true时，开启下发主机身份功能，false时，关闭该功能
+      ##
+      startUp: false
+      # 可选值为v1或v2, v1表示采用的是使用thrift方式连接gse，需要配置gse.apiServer和gse.taskServer
+      # v2表示使用的是apigw接口与gse交互，此接口在gse2.0提供，需要配置apiGW相关配置
+      version: v1
+      ## @param common.eventServer.hostIdentifier.batchSyncIntervalHours batch sync interval hours
+      ## 每隔多少个小时进行一次全量主机身份批量的同步操作，整数值，单位为小时，注：刚启动服务时，会等一个周期后再进行全量同步操作
+      ##
+      batchSyncIntervalHours: 6
+      ## @param common.eventServer.hostIdentifier.rateLimiter.qps ratelimiter qps
+      ## @param common.eventServer.hostIdentifier.rateLimiter.burst ratelimiter burst
+      ## 用于设置推送主机身份请求gse的taskServer能力，起到限流的作用。qps的默认值为200, 代表每秒最多推送的主机数量，burst的默认值为200
+      ##
+      rateLimiter:
+        qps: 200
+        burst: 200
+      ## @param common.eventServer.hostIdentifier.fileName host identifier file name
+      ## 下发主机身份文件名
+      ##
+      fileName: "hostid"
+      ## 当下发主机为linux操作系统时，相关配置
+      linux:
+        ## @param common.eventServer.hostIdentifier.linux.filePath host identifier linux filepath
+        ## 下发主机身份文件路径
+        ##
+        filePath: "/var/lib/gse/host"
+        ## @param common.eventServer.hostIdentifier.linux.fileOwner host identifier linux file owner
+        ## 下发主机身份文件所有者
+        ##
+        fileOwner: "root"
+        ## @param common.eventServer.hostIdentifier.linux.filePrivilege host identifier linux file privilege
+        ## 下发主机身份文件权限值
+        ##
+        filePrivilege: 644
+      ## 当下发主机为windows操作系统时，相关配置
+      windows:
+        ## @param common.eventServer.hostIdentifier.windows.filePath host identifier windows file path
+        ## 下发主机身份文件路径
+        ##
+        filePath: "c:/gse/data/host"
+        ## @param common.eventServer.hostIdentifier.windows.fileOwner host identifier windows file owner
+        ## 下发主机身份文件所有者
+        ##
+        fileOwner: "SYSTEM"
+        ## @param common.eventServer.hostIdentifier.windows.filePrivilege host identifier windows file privilege
+        ## 下发主机身份文件权限值
+        ##
+        filePrivilege: 644
+
+  ## apiServer common config parameters
+  apiServer:
+    # api-server使用的jwt配置
+    jwt:
+      # 是否开启jwt认证功能
+      enabled: false
+      # jwt公钥
+      publicKey:
+
+  ## gse server config
+  ##
+  gse:
+    ## 调用gse的apiServer服务时相关配置
+    apiServer:
+      ## @param common.gse.apiServer.endpoints the endpoints about gse api server
+      ## 此配置为数组类型，可配置连接gse的apiServer的多个host:port格式的值，去建立连接
+      ##
+      endpoints:
+        - gse-api.example.com:59313
+      ## @param common.gse.apiServer.insecureSkipVerify gse api server insecureSkipVerify config
+      ## @param common.gse.apiServer.certFile gse api server certFile
+      ## @param common.gse.apiServer.keyFile gse api server keyFile
+      ## @param common.gse.apiServer.caFile gse api server caFile
+      ## @param common.gse.apiServer.password gse api server password
+      ## 证书相关信息
+      ##
+      insecureSkipVerify: true
+      certFile: "cmdb.cert"
+      keyFile: "cmdb.key"
+      caFile: "gseca.crt"
+      password:
+    ## 调用gse的taskServer服务时相关配置
+    taskServer:
+      ## @param common.gse.taskServer.endpoints the endpoints about gse task server
+      ## 此配置为数组类型，可配置连接gse的taskServer的多个host:port格式的值，去建立连接
+      ##
+      endpoints:
+        - gse-task.example.com:48673
+      ## @param common.gse.apiServer.insecureSkipVerify gse task server insecureSkipVerify config
+      ## @param common.gse.apiServer.certFile gse task server certFile
+      ## @param common.gse.apiServer.keyFile gse task server keyFile
+      ## @param common.gse.apiServer.caFile gse task server caFile
+      ## @param common.gse.apiServer.password gse task server password
+      ## 证书相关信息
+      ##
+      insecureSkipVerify: true
+      certFile: "cmdb.cert"
+      keyFile: "cmdb.key"
+      caFile: "gseca.crt"
+      password:
+
+  ## host snapshot kafka parameters
+  ##
+  kafka:
+    ## @param common.kafka.groupID kafka group id
+    ## groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
+    ##
+    groupID: bk_cmdb_snapshot_group
+    ## @param common.kafka.partition kafka partition count
+    ## partition数量固定为1，保证消息的顺序性
+    ##
+    partition: 1
+    ## @param common.kafka.brokers kafka brokers config, the value is array type
+    ##
+    brokers:
+    ## @param common.kafka.brokers.user kafka user config
+    ## @param common.kafka.brokers.password kafka password config
+    ## 安全协议SASL_PLAINTEXT，SASL机制SCRAM-SHA-512的账号、密码信息
+    ##
+    user:
+    password:
+  ## @param common.tls.insecureSkipVerify cmdb insecureSkipVerify config
+  ## @param common.tls.certFile cmdb certFile
+  ## @param common.tls.keyFile cmdb keyFile
+  ## @param common.tls.caFile cmdb caFile
+  ## @param common.tls.password cmdb password
+  ## cmdb证书相关信息
+  ##
+  tls:
+    insecureSkipVerify: true
+    certFile:
+    keyFile:
+    caFile:
+    password:
+  ## api gateway config
+  ##
+  ## apigw配置
+  apiGW:
+    appCode: bk_cmdb
+    appSecret:
+    username: admin
+    tls:
+      # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
+      insecureSkipVerify: true
+      # 服务使用的证书的路径,如:/data/cmdb/cert/server.crt
+      certFile:
+      # 服务使用的证书对应的密钥的路径,如:/data/cmdb/cert/server.key
+      keyFile:
+      # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
+      caFile:
+      # 用于解密根据RFC1423加密的证书密钥的PEM块
+      password:
+
+## @section zookeeper parameters
+##
+zookeeper:
+  ## @param zookeeper.enabled Enable internal zookeeper
+  ##
+  enabled: true
+  ## @param zookeeper.persistence.size zookeeper persistence size
+  ##
+  persistence:
+    size: 10Gi
+
+## @section bk-cmdb config and service center parameters
+##
+# configAndServiceCenter:
+#   addr:
+
+## @section mongodb parameters
+##
+mongodb:
+  ## @param mongodb.enabled Enable internal mongodb
+  ##
+  enabled: true
+  ## @param mongodb.persistence.size mongodb persistence size
+  ##
+  persistence:
+    size: 10Gi
+  ## @param mongodb.architecture mongodb architecture
+  ##
+  architecture: replicaset
+  ## @param mongodb.replicaCount mongodb replica count
+  ##
+  replicaCount: 1
+  ## @param mongodb.arbiter.enabled Enable mongodb arbiter
+  ##
+  arbiter:
+    enabled: false
+  ## @param mongodb.auth.enabled Enable mongodb authentication
+  ## @param mongodb.auth.username mongodb auth username
+  ## @param mongodb.auth.password mongodb auth password
+  ## @param mongodb.auth.database mongodb database
+  ##
+  auth:
+    enabled: true
+    username: cc
+    password:
+    database: cmdb
+  ## @param mongodb.host mongodb host
+  ##
+  host: mongodb-headless.default.svc.cluster.local
+  ## external mongodb parameters
+  ##
+  externalMongodb:
+    ## @param mongodb.externalMongodb.enabled Enable external mongodb
+    ##
+    enabled: true
+    ## @param mongodb.externalMongodb.usr mongodb auth username
+    ##
+    # usr:
+    ## @param mongodb.externalMongodb.pwd mongodb auth password
+    ##
+    # pwd:
+    ## @param mongodb.externalMongodb.database mongodb database
+    ##
+    database: cmdb
+    ## @param mongodb.externalMongodb.host mongodb host
+    ##
+    # host:
+    ## @param mongodb.externalMongodb.maxOpenConns mongodb max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param mongodb.externalMongodb.maxIdleConns mongodb max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param mongodb.externalMongodb.mechanism mongodb mechanism
+    ##
+    mechanism: SCRAM-SHA-1
+    ## @param mongodb.externalMongodb.rsName mongodb replicaset name
+    ##
+    rsName: rs0
+    ## @param mongodb.externalMongodb.socketTimeoutSeconds mongodb socket timeout
+    ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+    ##
+    socketTimeoutSeconds: 10
+  ## external mongodb for event watch parameters
+  ##
+  watch:
+    ## @param mongodb.watch.usr mongodb auth username
+    ##
+    # usr:
+    ## @param mongodb.watch.pwd mongodb auth password
+    ##
+    # pwd:
+    ## @param mongodb.watch.database mongodb database
+    ##
+    database: cmdb
+    ## @param mongodb.watch.host mongodb host
+    ##
+    # host:
+    ## @param mongodb.watch.maxOpenConns mongodb max open connections
+    ##
+    maxOpenConns: 10
+    ## @param mongodb.watch.maxIdleConns mongodb max idle connections
+    ##
+    maxIdleConns: 5
+    ## @param mongodb.watch.mechanism mongodb mechanism
+    ##
+    mechanism: SCRAM-SHA-1
+    ## @param mongodb.watch.rsName mongodb replicaset name
+    ##
+    rsName: rs0
+    ## @param mongodb.watch.socketTimeoutSeconds mongodb socket timeout
+    ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
+    ##
+    socketTimeoutSeconds: 10
+
+## @section redis parameters
+##
+redis:
+  ## @param redis.enabled Enable internal redis
+  ##
+  enabled: true
+  ## @param redis.master.persistence.size redis master persistence size
+  ##
+  master:
+    persistence:
+      size: 10Gi
+  ## @param redis.architecture redis architecture
+  ##
+  architecture: standalone
+  ## @param redis.auth.enabled Enable redis authentication
+  ## @param redis.auth.password redis authentication password
+  auth:
+    enabled: true
+    password:
+  ## external redis parameters
+  ##
+  redis:
+    ## @param redis.redis.host external redis host
+    ##
+    # host:
+    ## @param redis.redis.pwd external redis password
+    ##
+    # pwd:
+    ## @param redis.redis.database external redis database
+    ##
+    database: "0"
+    ## @param redis.redis.maxOpenConns external redis max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param redis.redis.maxIdleConns external redis max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ##
+    sentinelPwd:
+    ## @param redis.redis.masterName external redis master name
+    ##
+    masterName:
+  ## external redis for host snapshot parameters
+  ##
+  snapshotRedis:
+    ## @param redis.snapshotRedis.host external redis host
+    ##
+    # host:
+    ## @param redis.snapshotRedis.pwd external redis password
+    ##
+    # pwd:
+    ## @param redis.snapshotRedis.database external redis database
+    ##
+    database: "0"
+    ## @param redis.snapshotRedis.maxOpenConns external redis max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param redis.snapshotRedis.maxIdleConns external redis max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ##
+    sentinelPwd:
+    ## @param redis.redis.masterName external redis master name
+    ##
+    masterName:
+  ## external redis for discover parameters
+  ##
+  discoverRedis:
+    ## @param redis.discoverRedis.host external redis host
+    ##
+    # host:
+    ## @param redis.discoverRedis.pwd external redis password
+    ##
+    # pwd:
+    ## @param redis.discoverRedis.database external redis database
+    ##
+    database: "0"
+    ## @param redis.discoverRedis.maxOpenConns external redis max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param redis.discoverRedis.maxIdleConns external redis max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ##
+    sentinelPwd:
+    ## @param redis.redis.masterName external redis master name
+    ##
+    masterName:
+  ## external redis for network device collecting parameters
+  ##
+  netCollectRedis:
+    ## @param redis.netCollectRedis.host external redis host
+    ##
+    # host:
+    ## @param redis.netCollectRedis.pwd external redis password
+    ##
+    # pwd:
+    ## @param redis.netCollectRedis.database external redis database
+    ##
+    database: "0"
+    ## @param redis.netCollectRedis.maxOpenConns external redis max open connections
+    ##
+    maxOpenConns: 3000
+    ## @param redis.netCollectRedis.maxIdleConns external redis max idle connections
+    ##
+    maxIdleConns: 100
+    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ##
+    sentinelPwd:
+    ## @param redis.redis.masterName external redis master name
+    ##
+    masterName:
+
+## @section elasticsearch parameters
+##
+elasticsearch:
+  ## @param elasticsearch.enabled Enable elasticsearch
+  ##
+  enabled: false
+  ## @param elasticsearch.master.persistence.size elasticsearch master persistence size
+  ## @param elasticsearch.master.replicas elasticsearch master node replicas number
+  ##
+  master:
+    persistence:
+      size: 10Gi
+    replicas: 1
+  ## @param elasticsearch.coordinating.replicas elasticsearch coordinating node replicas number
+  ##
+  coordinating:
+    replicas: 1
+  ## @param elasticsearch.data.persistence.size elasticsearch data persistence size
+  ## @param elasticsearch.data.replicas elasticsearch data node replicas number
+  ##
+  data:
+    persistence:
+      size: 10Gi
+    replicas: 1
+
+## @section monstache parameters
+##
+monstache:
+  ## @param monstache.enabled Enable monstache
+  ##
+  enabled: false
+  ## bk-cmdb monstache image parameters
+  ## @param monstache.image.repository monstache image repository
+  ## @param monstache.image.rag monstache image tag
+  ##
+  image:
+    repository: blueking/cmdb_monstache
+    tag: v2.0.0
+  ## @param monstache.replicas Number of monstache replicas to deploy
+  ##
+  replicas: 1
+  ## @param monstache.port monstache service HTTP port
+  ##
+  port: 80
+  ## @param monstache.workDir  monstache work directory
+  ##
+  workDir: /data/cmdb/monstache
+  ## @param monstache.configDir  monstache config directory
+  ##
+  configDir: /data/cmdb/monstache/etc
+  ## @param monstache.directReadDynamicIncludeRegex monstache direct read dynamic include regex
+  ##
+  directReadDynamicIncludeRegex: cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_"
+    namespace-regex = "cmdb.cc_ApplicationBase$|cc_SetBase$|cc_ModuleBase$|cmdb.cc_HostBase$|cmdb.cc_ObjDes$|cc_ObjAttDes$|cmdb.cc_ObjectBase_(.*)_pub_
+  ## @param monstache.mapperPluginPath monstache plugin path
+  ##
+  mapperPluginPath: /data/cmdb/monstache/monstache-plugin.so
+  ## @param monstache.elasticsearchShardNum elasticsearch sharding number
+  ##
+  elasticsearchShardNum: 1
+  ## @param monstache.elasticsearchReplicaNum elasticsearch replicas number
+  ##
+  elasticsearchReplicaNum: 1
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+## @section ServiceMonitor parameters
+##
+serviceMonitor:
+  ## @param serviceMonitor.enabled Creates a ServiceMonitor to monitor kube-state-metrics
+  ##
+  enabled: false
+  ## @param serviceMonitor.interval Scrape interval (use by default, falling back to Prometheus' default)
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+  ##
+  interval: "15s"
+  ## @param serviceMonitor.metricRelabelings ServiceMonitor metricRelabelings
+  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+  ##
+  metricRelabelings: [ ]
+
+## @section Blueking log collecting parameters
+##
+bkLogConfig:
+  ## @param bkLogConfig.file.enabled Enable container log file collecting
+  ## @param bkLogConfig.file.dataId Container log file collecting dataid
+  ##
+  file:
+    enabled: false
+    dataId: 1
+  ## @param bkLogConfig.std.enabled Enable container std log collecting
+  ## @param bkLogConfig.std.dataId Container std log collecting dataid
+  ##
+  std:
+    enabled: false
+    dataId: 1
+
+## @param certPath cert path.
+##
+certPath: "/data/cmdb/cert"
+
+## @section gse Certificate parameters
+##
+gseCert:
+  ## @param gseCert.ca the content of the gseca.crt from bk-gse
+  ## certificate package and encoded in base64
+  ##
+  ca: ""
+
+  ## @param gseCert.cmdbCert certificate to connect to gse
+  ## certificate package and encoded in base64
+  ##
+  cmdbCert: ""
+
+  ## @param gseCert.cmdbKey key to connect to gse
+  ## certificate package and encoded in base64
+  ##
+  cmdbKey: ""
+
+apigatewaySync:
+  enabled: false
+  image:
+    repository: blueking/cmdb-apigw-manager
+    tag:
+  host: "http://bk-cmdb-api"
+  maintainer: "admin"
+  stageName: "prod"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  jobAppCode: "bk_job"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  nodeManAppCode: "bk_nodeman"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  bcsAppCode: "bk_bcs_app"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  hcmAppCode: "bk-hcm"

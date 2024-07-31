@@ -21,33 +21,22 @@ import (
 	"context"
 	"net/http"
 
-	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
-	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
-
-	"github.com/prometheus/client_golang/prometheus"
 )
 
-type NoticeClientInterface interface {
+// ClientI is the bk-notice api gateway client
+type ClientI interface {
 	GetCurAnn(ctx context.Context, h http.Header, params map[string]string) ([]CurAnnData, error)
 	RegApp(ctx context.Context, h http.Header) (*RegAppData, error)
 }
 
 type notice struct {
-	service *apigw.ApiGWSrv
+	service *apigwutil.ApiGWSrv
 }
 
-// NewNoticeApiGWClient create notice api gateway client
-func NewNoticeApiGWClient(config *apigwutil.ApiGWConfig, reg prometheus.Registerer) (NoticeClientInterface, error) {
-	var err error
-	config.Address, err = cc.StringSlice("apiGW.bkNoticeApiGatewayUrl")
-	if err != nil {
-		blog.Errorf("get notice api gateway address config error, err: %v", err)
-		return nil, err
-	}
-
-	service, err := apigw.NewApiGW(config, reg)
+// NewClient create bk-notice api gateway client
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkNoticeApiGatewayUrl")
 	if err != nil {
 		return nil, err
 	}

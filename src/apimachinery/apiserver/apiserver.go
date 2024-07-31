@@ -21,13 +21,13 @@ import (
 	fieldtmpl "configcenter/src/apimachinery/apiserver/field_template"
 	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/transaction"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	params "configcenter/src/common/paraparse"
 )
 
 // ApiServerClientInterface TODO
@@ -35,6 +35,7 @@ type ApiServerClientInterface interface {
 	Client() rest.ClientInterface
 	ModelQuote() modelquote.Interface
 	FieldTemplate() fieldtmpl.Interface
+	Txn() transaction.Interface
 
 	AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response,
 		err error)
@@ -70,9 +71,6 @@ type ApiServerClientInterface interface {
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
 
-	GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (resp *metadata.InstDataInfo,
-		err error)
-
 	SearchNetCollectDevice(ctx context.Context, h http.Header,
 		cond condition.Condition) (resp *metadata.ResponseInstData, err error)
 	SearchNetDeviceProperty(ctx context.Context, h http.Header,
@@ -91,8 +89,8 @@ type ApiServerClientInterface interface {
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
 	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error
-	SearchBiz(ctx context.Context, ownerID string, h http.Header,
-		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SearchBiz(ctx context.Context, ownerID string, h http.Header, param *metadata.QueryBusinessRequest) (
+		resp *metadata.SearchInstResult, err error)
 
 	ReadModuleAssociation(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (*metadata.AsstResult,
 		errors.CCErrorCoder)
@@ -118,6 +116,17 @@ type ApiServerClientInterface interface {
 
 	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
 		err error)
+
+	CountObjectInstances(ctx context.Context, h http.Header, objID string, input *metadata.CommonCountFilter) (
+		*metadata.CommonCountResult, errors.CCErrorCoder)
+	CountObjInstByFilters(ctx context.Context, h http.Header, objID string, filters []map[string]interface{}) (
+		[]int64, errors.CCErrorCoder)
+	GroupRelResByIDs(ctx context.Context, h http.Header, kind metadata.GroupByResKind,
+		opt *metadata.GroupRelResByIDsOption) (map[int64][]interface{}, errors.CCErrorCoder)
+
+	HealthCheck() (bool, error)
+	SearchProject(ctx context.Context, h http.Header, params *metadata.SearchProjectOption) (resp *metadata.InstResult,
+		err error)
 }
 
 // NewApiServerClientInterface TODO
@@ -125,6 +134,13 @@ func NewApiServerClientInterface(c *util.Capability, version string) ApiServerCl
 	base := fmt.Sprintf("/api/%s", version)
 	return &apiServer{
 		client: rest.NewRESTClient(c, base),
+	}
+}
+
+// NewWrappedApiServerClientI new wrapped api server client interface by restful client
+func NewWrappedApiServerClientI(client rest.ClientInterface, wrappers ...rest.RequestWrapper) ApiServerClientInterface {
+	return &apiServer{
+		client: rest.NewClientWrapper(client, wrappers...),
 	}
 }
 
@@ -140,4 +156,9 @@ func (a *apiServer) ModelQuote() modelquote.Interface {
 // FieldTemplate return the field template client
 func (a *apiServer) FieldTemplate() fieldtmpl.Interface {
 	return fieldtmpl.New(a.client)
+}
+
+// Txn returns transaction client
+func (a *apiServer) Txn() transaction.Interface {
+	return transaction.NewTxn(a.client)
 }

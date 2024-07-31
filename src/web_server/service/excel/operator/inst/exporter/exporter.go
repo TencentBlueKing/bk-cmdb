@@ -21,9 +21,9 @@ import (
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/web_server/service/excel/core"
 )
 
@@ -104,7 +104,7 @@ func (e *Exporter) Export() error {
 func (e *Exporter) addExtraProp(colProps []core.ColProp) ([]core.ColProp, error) {
 	result := make([]core.ColProp, 0)
 	idColIdx := common.HostAddMethodExcelDefaultIndex
-	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 
 	if e.GetObjID() == common.BKInnerObjIDHost {
 		topoProps, err := e.getTopoProps()
@@ -142,7 +142,7 @@ const (
 )
 
 func (e *Exporter) getTopoProps() ([]core.ColProp, error) {
-	defLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	defLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 	topoMsg := make([]core.TopoBriefMsg, 0)
 
 	topoMsg = append(topoMsg, core.TopoBriefMsg{ObjID: core.TopoObjID, Name: defLang.Language(topoName)})
@@ -192,7 +192,7 @@ func (e *Exporter) exportInst(colProps []core.ColProp) ([]int64, error) {
 	return result, nil
 }
 
-func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, rowIndex int) (int, []int64, error) {
+func (e *Exporter) exportByCond(cond interface{}, colProps []core.ColProp, rowIndex int) (int, []int64, error) {
 	insts, err := e.getInst(cond)
 	if err != nil {
 		blog.Errorf("get instance failed, objID: %s, cond: %v, err: %v, rid: %s", e.GetObjID(), cond, err,
@@ -243,12 +243,17 @@ func (e *Exporter) exportByCond(cond mapstr.MapStr, colProps []core.ColProp, row
 	return rowIndex, instIDs, nil
 }
 
-func (e *Exporter) getInst(cond mapstr.MapStr) ([]mapstr.MapStr, error) {
-	if e.GetObjID() == common.BKInnerObjIDHost {
+func (e *Exporter) getInst(cond interface{}) ([]mapstr.MapStr, error) {
+	switch e.GetObjID() {
+	case common.BKInnerObjIDHost:
 		return e.GetClient().GetHost(e.GetKit(), cond)
+	case common.BKInnerObjIDApp:
+		return e.GetClient().GetBiz(e.GetKit(), cond)
+	case common.BKInnerObjIDProject:
+		return e.GetClient().GetProject(e.GetKit(), cond)
+	default:
+		return e.GetClient().GetInst(e.GetKit(), e.GetObjID(), cond)
 	}
-
-	return e.GetClient().GetInst(e.GetKit(), e.GetObjID(), cond)
 }
 
 // enrichInst 第一个返回值是返回实例数据，第二个返回值返回的每个实例数据所占用的excel行数
@@ -259,7 +264,7 @@ func (e *Exporter) enrichInst(insts []mapstr.MapStr, colProps []core.ColProp) ([
 		return nil, nil, err
 	}
 
-	ccLang := e.GetLang().CreateDefaultCCLanguageIf(util.GetLanguage(e.GetKit().Header))
+	ccLang := e.GetLang().CreateDefaultCCLanguageIf(httpheader.GetLanguage(e.GetKit().Header))
 	insts, err = e.GetClient().GetInstWithOrgName(e.GetKit(), ccLang, insts, colProps)
 	if err != nil {
 		blog.Errorf("get instance with organization name field failed, err: %v, rid: %s", err, e.GetKit().Rid)

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/notice"
@@ -37,7 +38,7 @@ type service struct {
 	ws        *gin.Engine
 	engine    *backbone.Engine
 	config    *options.Config
-	noticeCli notice.NoticeClientInterface
+	noticeCli notice.ClientI
 }
 
 // Init notice service
@@ -66,10 +67,8 @@ func (s *service) GetCurAnn(c *gin.Context) {
 	for key, val := range c.Request.URL.Query() {
 		params[key] = val[0]
 	}
-	// todo 分层版本合入后，将platform参数设置放到GetCurAnn方法中
-	params["platform"] = s.config.Site.AppCode
 
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 
 	ann, err := s.noticeCli.GetCurAnn(ctx, c.Request.Header, params)

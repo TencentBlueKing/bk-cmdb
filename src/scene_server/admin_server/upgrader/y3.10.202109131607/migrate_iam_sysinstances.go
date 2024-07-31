@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
@@ -306,7 +307,7 @@ func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, 
 	actionID iamtype.ActionID, instances []metadata.IamInstance, objectID int64) error {
 
 	header := http.Header{}
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemOperatorUserName)
+	httpheader.SetUser(header, common.CCSystemOperatorUserName)
 	req := &metadata.IamBatchOperateInstanceAuthReq{
 		Asynchronous: false,
 		Operate:      metadata.IamGrantOperation,

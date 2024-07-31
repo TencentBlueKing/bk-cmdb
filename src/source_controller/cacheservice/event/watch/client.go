@@ -59,12 +59,6 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 		},
 	}
 
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
-	}
-
 	node := new(watch.ChainNode)
 	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID+":-1").One(kit.Ctx, node)
 	if err != nil {
@@ -83,12 +77,6 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(key.TTLSeconds()) * time.Second).UTC()},
 		},
-	}
-
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if key.Collection() == common.BKTableNameBaseInst ||
-		key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -125,7 +113,7 @@ func (c *Client) getEventDetail(kit *rest.Kit, node *watch.ChainNode, fields []s
 		return getFirstEventDetail(details)
 
 	default:
-		detail, err := c.getEventDetailFromRedis(kit, node.Cursor, fields, key)
+		detail, err := c.getEventDetailFromRedis(kit, node, fields, key)
 		if err == nil {
 			return detail, true, nil
 		}
@@ -152,16 +140,34 @@ func getFirstEventDetail(details []*watch.WatchEventDetail) (*string, bool, erro
 }
 
 // getEventDetailFromRedis get event detail with the needed fields by cursor from redis
-func (c *Client) getEventDetailFromRedis(kit *rest.Kit, cursor string, fields []string, key event.Key) (
+func (c *Client) getEventDetailFromRedis(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (
 	*string, error) {
 
-	detail, err := c.cache.Get(kit.Ctx, key.DetailKey(cursor)).Result()
+	var detailKey string
+	if key.IsGeneralRes() {
+		detailKey = key.GeneralResDetailKey(node)
+	} else {
+		detailKey = key.DetailKey(node.Cursor)
+	}
+
+	detail, err := c.cache.Get(kit.Ctx, detailKey).Result()
 	if err != nil {
-		blog.Errorf("get watch detail from redis failed, err: %v, cursor: %s", err, cursor)
+		blog.Errorf("get watch detail from redis failed, err: %v, key: %s", err, detailKey)
 		return nil, fmt.Errorf("get event detail from redis failed, err: %v", err)
 	}
 
-	jsonStr := types.GetEventDetail(&detail)
+	// since event flow and cache are reused, deleted event detail might be set to empty string by handleNotExistKey
+	if detail == "" {
+		blog.Errorf("get empty watch detail from redis, key: %s", detailKey)
+		return nil, fmt.Errorf("get empty event detail from redis")
+	}
+
+	var jsonStr *string
+	if key.IsGeneralRes() {
+		jsonStr = &detail
+	} else {
+		jsonStr = types.GetEventDetail(&detail)
+	}
 	return json.CutJsonDataWithFields(jsonStr, fields), nil
 }
 
@@ -180,7 +186,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 				blog.Errorf("%s delete event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
 				return nil, false, nil
 			}
-			filter["coll"] = key.ShardingCollection(node.SubResource[0], kit.SupplierAccount)
+			filter["coll"] = key.ShardingCollection(node.SubResource[0], node.SupplierAccount)
 		} else {
 			filter["coll"] = key.Collection()
 		}
@@ -256,7 +262,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			blog.Errorf("%s event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
 			return nil, false, nil
 		}
-		collection = key.ShardingCollection(node.SubResource[0], kit.SupplierAccount)
+		collection = key.ShardingCollection(node.SubResource[0], node.SupplierAccount)
 	}
 
 	if err := c.db.Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
@@ -296,18 +302,19 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		}
 
 		idOpts := &searchFollowingChainNodesOption{
-			id:          node.ID,
-			limit:       opts.limit,
-			types:       opts.types,
-			key:         opts.key,
-			subResource: opts.subResource,
+			id:           node.ID,
+			limit:        opts.limit,
+			types:        opts.types,
+			key:          opts.key,
+			subResource:  opts.subResource,
+			subResources: opts.subResources,
 		}
 		nodes, err := c.searchFollowingEventChainNodesByID(kit, idOpts)
 		if err != nil {
 			return false, nil, 0, err
 		}
 
-		if c.isNodeHitEventType(node, opts.types) && c.isNodeHitSubResource(node, opts.subResource) {
+		if c.isNodeHitEventType(node, opts.types) && c.isNodeHitSubResource(node, opts.subResource, opts.subResources) {
 			return true, append([]*watch.ChainNode{node}, nodes...), node.ID, nil
 		}
 		return true, nodes, node.ID, nil
@@ -318,12 +325,6 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		common.BKClusterTimeField: map[string]interface{}{
 			common.BKDBGTE: metadata.Time{Time: time.Now().Add(-time.Duration(opts.key.TTLSeconds()) * time.Second).UTC()},
 		},
-	}
-
-	// filters out the previous version where sub resource is string type // TODO remove this
-	if opts.key.Collection() == common.BKTableNameBaseInst ||
-		opts.key.Collection() == common.BKTableNameMainlineInstance {
-		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBType: "array"}
 	}
 
 	node := new(watch.ChainNode)
@@ -396,11 +397,11 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	}
 
 	if len(opt.subResource) > 0 {
-		filter[common.BKSubResourceField] = map[string]interface{}{
-			common.BKDBEQ: opt.subResource,
-			// filters out the previous version where sub resource is string type // TODO remove this
-			common.BKDBType: "array",
-		}
+		filter[common.BKSubResourceField] = opt.subResource
+	}
+
+	if len(opt.subResources) > 0 {
+		filter[common.BKSubResourceField] = map[string]interface{}{common.BKDBIN: opt.subResources}
 	}
 
 	nodes := make([]*watch.ChainNode, 0)
@@ -413,38 +414,42 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	return nodes, nil
 }
 
-// searchEventDetailsFromRedis TODO
-/** searchEventDetailsFromRedis get event details by cursors from redis, record the failed ones.
-  returns the details that are successfully acquired from redis, the cursors with no detail in redis, and their map to
-  the index in detail array so that we can get detail from mongo and fill them into the proper location in detail array
-*/
-func (c *Client) searchEventDetailsFromRedis(kit *rest.Kit, cursors []string, key event.Key) (
-	[]string, []string, map[string]int, error) {
+// searchEventDetailsFromRedis get event details by cursors from redis, record the failed ones.
+// returns the details that are successfully acquired from redis, the cursors with no detail in redis, and their map to
+// the index in detail array so that we can get detail from mongo and fill them into the proper location in detail array
+func (c *Client) searchEventDetailsFromRedis(kit *rest.Kit, nodes []*watch.ChainNode, key event.Key) (
+	[]string, []*watch.ChainNode, map[string]int, error) {
 
-	if len(cursors) == 0 {
-		return make([]string, 0), make([]string, 0), make(map[string]int), nil
+	if len(nodes) == 0 {
+		return make([]string, 0), make([]*watch.ChainNode, 0), make(map[string]int), nil
 	}
 
-	detailKeys := make([]string, len(cursors))
-	for idx, cursor := range cursors {
-		detailKeys[idx] = key.DetailKey(cursor)
+	detailKeys := make([]string, len(nodes))
+	for idx, node := range nodes {
+		if key.IsGeneralRes() {
+			detailKeys[idx] = key.GeneralResDetailKey(node)
+			continue
+		}
+		detailKeys[idx] = key.DetailKey(node.Cursor)
 	}
 
 	results, err := c.cache.MGet(kit.Ctx, detailKeys...).Result()
 	if err != nil {
-		blog.Errorf("search event details by cursors(%+v) failed, err: %v, rid: %s", cursors, err, kit.Rid)
-		return nil, nil, nil, fmt.Errorf("search event details by cursors(%+v) failed, err: %v", cursors, err)
+		blog.Errorf("search event details by keys(%+v) failed, err: %v, rid: %s", detailKeys, err, kit.Rid)
+		return nil, nil, nil, fmt.Errorf("search event details by keys(%+v) failed, err: %v", detailKeys, err)
 	}
 
 	details := make([]string, len(results))
 	errCursorIndexMap := make(map[string]int)
-	errCursors := make([]string, 0)
+	errNodes := make([]*watch.ChainNode, 0)
 	for index, result := range results {
-		if result == nil {
-			cursor := cursors[index]
+		// since event flow and cache are reused, deleted event detail might be set to empty string by handleNotExistKey
+		// we need to get event detail from db if result is not exist or is set to empty string
+		if result == nil || result == "" {
+			cursor := nodes[index].Cursor
 			blog.Errorf("event detail for cursor(%s) do not exist in redis, rid: %s", cursor, kit.Rid)
 			errCursorIndexMap[cursor] = index
-			errCursors = append(errCursors, cursor)
+			errNodes = append(errNodes, nodes[index])
 			continue
 		}
 
@@ -454,9 +459,13 @@ func (c *Client) searchEventDetailsFromRedis(kit *rest.Kit, cursors []string, ke
 			return nil, nil, nil, fmt.Errorf("search event details from redis, but result is not string")
 		}
 
-		details[index] = resultStr
+		if key.IsGeneralRes() {
+			details[index] = resultStr
+		} else {
+			details[index] = *types.GetEventDetail(&resultStr)
+		}
 	}
-	return details, errCursors, errCursorIndexMap, nil
+	return details, errNodes, errCursorIndexMap, nil
 }
 
 // searchEventDetailsFromMongo get map of array index and detail with the needed fields by nodes from mongo
@@ -710,4 +719,6 @@ type searchFollowingChainNodesOption struct {
 	types       []watch.EventType
 	key         event.Key
 	subResource string
+	// subResources is the sub resources you want to watch, NOTE: this is a special parameter for internal use only
+	subResources []string
 }

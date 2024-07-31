@@ -48,7 +48,8 @@ func init() {
 		"/process/v3/updatemany/service_template/host_apply_plan/task", 1, 2)
 	AddCodeTaskConfig(common.SyncFieldTemplateTaskFlag, types.CC_MODULE_TOPO,
 		"/topo/v3/sync/field_template/object/task", 1, 2)
-
+	AddCodeTaskConfig(common.SyncInstIDRuleTaskFlag, types.CC_MODULE_TOPO,
+		"/topo/v3/sync/id_rule/inst/task", 1, 2)
 }
 
 // AddCodeTaskConfig add task

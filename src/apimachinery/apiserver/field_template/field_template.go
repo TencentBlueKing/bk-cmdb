@@ -37,7 +37,7 @@ func (t template) ListFieldTemplate(ctx context.Context, h http.Header, opt *met
 		SubResourcef("/findmany/field_template").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError
@@ -62,7 +62,7 @@ func (t template) ListObjFieldTmplRel(ctx context.Context, h http.Header, opt *m
 		SubResourcef("/findmany/field_template/object/relation").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError
@@ -87,7 +87,7 @@ func (t template) CountFieldTemplateObj(ctx context.Context, h http.Header, opt 
 		SubResourcef("/findmany/field_template/object/count").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError

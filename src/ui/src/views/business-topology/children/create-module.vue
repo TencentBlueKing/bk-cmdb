@@ -70,6 +70,7 @@
           </i>
         </label>
         <cmdb-form-singlechar
+          v-if="withTemplate"
           v-model="moduleName"
           v-validate="'required|businessTopoInstNames|length:256'"
           data-vv-name="moduleName"
@@ -78,7 +79,22 @@
           :placeholder="$t('请输入xx', { name: $t('模块名称') })"
           :disabled="!!withTemplate">
         </cmdb-form-singlechar>
+        <bk-input class="form-textarea" v-else
+          type="textarea"
+          data-vv-name="moduleNameMulti"
+          v-validate="
+            `required|longchar|businessTopoInstNames|emptyModuleName|moduleNameMap|moduleNameLen|splitMaxLength:100
+            ,${$t('超过限制，一次最多支持创建n个', { n: 100 })}
+          `"
+          v-model="moduleNameMulti"
+          :rows="rows"
+          :placeholder="!!withTemplate ? $t('请输入xx', { name: $t('模块名称') }) : $t('模块多个创建提示')"
+          :disabled="!!withTemplate"
+          @keydown="handleKeydown"
+          @paste="handlePaste">
+        </bk-input>
         <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
+        <span class="form-error" v-if="errors.has('moduleNameMulti')">{{errors.first('moduleNameMulti')}}</span>
       </div>
       <div class="form-item clearfix" v-if="!withTemplate">
         <label>{{$t('所属服务分类')}}<font color="red">*</font></label>
@@ -140,6 +156,8 @@
         template: '',
         templateList: [],
         moduleName: '',
+        moduleNameMulti: '',
+        rows: 1,
         firstClass: '',
         firstClassList: [],
         secondClass: '',
@@ -197,6 +215,22 @@
       this.getServiceTemplates()
     },
     methods: {
+      setRows() {
+        setTimeout(() => {
+          const rows = this.moduleNameMulti.split('\n').length
+          this.rows = Math.min(3, Math.max(rows, 1))
+        })
+      },
+      handleKeydown(value, keyEvent) {
+        if (['Enter', 'NumpadEnter'].includes(keyEvent.code)) {
+          this.rows = Math.min(this.rows + 1, 3)
+        } else if (keyEvent.code === 'Backspace') {
+          this.setRows()
+        }
+      },
+      handlePaste() {
+        this.setRows()
+      },
       async getServiceTemplates() {
         if (has(this.serviceTemplateMap, this.business)) {
           this.templateList = this.serviceTemplateMap[this.business]
@@ -266,11 +300,18 @@
       handleSave() {
         this.$validator.validateAll().then((isValid) => {
           if (isValid) {
-            this.$emit('submit', {
-              bk_module_name: this.moduleName,
+            const data = {
               service_category_id: this.withTemplate ? this.currentTemplate.service_category_id : this.secondClass,
               service_template_id: this.withTemplate ? this.template : 0
-            })
+            }
+            if (this.withTemplate) {
+              data.bk_module_name = this.moduleName
+            } else {
+              const nameList = this.moduleNameMulti.split('\n').filter(name => name.trim().length)
+                .map(name => name.trim())
+              data.bk_module_name = nameList
+            }
+            this.$emit('submit', data)
           }
         })
       },
@@ -323,6 +364,13 @@
         .service-class {
             width: 260px;
             @include inlineBlock;
+        }
+        .form-textarea {
+            /deep/ textarea {
+                min-height: auto !important;
+                line-height: 22px;
+                @include scrollbar-y(6px);
+            }
         }
         .form-error {
             position: absolute;
