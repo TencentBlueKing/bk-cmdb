@@ -61,6 +61,7 @@ func (c *cmdb) Proxy(req *http.Request, rw http.ResponseWriter) {
 		WithContext(req.Context()).
 		Body(body).
 		SubResourcef(req.URL.Path).
+		WithParamsFromURL(req.URL).
 		WithHeaders(c.SetApiGWAuthHeader(req.Header)).
 		Do()
 
