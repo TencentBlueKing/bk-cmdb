@@ -4,16 +4,9 @@ Create a cluster (Permission: Business Topology Creation Permission)
 
 ### Parameters
 
-| Name                | Type   | Required | Description       |
-|---------------------|--------|----------|-------------------|
-| bk_supplier_account | string | No       | Developer account |
-| bk_biz_id           | int    | Yes      | Business ID       |
-| data                | dict   | Yes      | Cluster data      |
-
-#### data
-
 | Name              | Type   | Required | Description                                                                                                                                                                |
 |-------------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id         | int    | Yes      | Business ID                                                                                                                                                                |
 | bk_parent_id      | int    | Yes      | The ID of the parent instance node, the last level instance node of the current instance node, in the topology structure, for sets, it generally refers to the business ID |
 | bk_set_name       | string | Yes      | Cluster name                                                                                                                                                               |
 | default           | int    | No       | 0-ordinary cluster, 1-built-in module collection, default is 0                                                                                                             |
@@ -36,21 +29,18 @@ configuration of the cluster's attribute fields.**
 
 ```json
 {
-    "bk_biz_id": 1,
-    "data": {
-        "bk_parent_id": 3,
-        "bk_set_name": "set_a1",
-        "set_template_id": 0,
-        "default": 0,
-        "bk_capacity": 1000,
-        "bk_set_desc": "test-set",
-        "bk_set_env": "1",
-        "bk_service_status": "1",
-        "bk_created_at": "",
-        "bk_updated_at": "",
-        "bk_created_by": "admin",
-        "bk_updated_by": "admin"
-    }
+  "bk_parent_id": 3,
+  "bk_set_name": "set_a1",
+  "set_template_id": 0,
+  "default": 0,
+  "bk_capacity": 1000,
+  "bk_set_desc": "test-set",
+  "bk_set_env": "1",
+  "bk_service_status": "1",
+  "bk_created_at": "",
+  "bk_updated_at": "",
+  "bk_created_by": "admin",
+  "bk_updated_by": "admin"
 }
 ```
 
@@ -58,30 +48,30 @@ configuration of the cluster's attribute fields.**
 
 ```json
 {
-    "result": true,
-    "code": 0,
-    "message": "success",
-    "permission": null,
-    "data": {
-        "bk_biz_id": 3,
-        "bk_capacity": 1000,
-        "bk_created_at": "2023-11-14T17:30:43.048+08:00",
-        "bk_created_by": "admin",
-        "bk_parent_id": 3,
-        "bk_service_status": "1",
-        "bk_set_desc": "test-set",
-        "bk_set_env": "1",
-        "bk_set_id": 10,
-        "bk_set_name": "set_a1",
-        "bk_supplier_account": "0",
-        "bk_updated_at": "2023-11-14T17:30:43.048+08:00",
-        "create_time": "2023-11-14T17:30:43.048+08:00",
-        "default": 0,
-        "description": "",
-        "last_time": "2023-11-14T17:30:43.048+08:00",
-        "set_template_id": 0,
-        "set_template_version": null
-    }
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": {
+    "bk_biz_id": 3,
+    "bk_capacity": 1000,
+    "bk_created_at": "2023-11-14T17:30:43.048+08:00",
+    "bk_created_by": "admin",
+    "bk_parent_id": 3,
+    "bk_service_status": "1",
+    "bk_set_desc": "test-set",
+    "bk_set_env": "1",
+    "bk_set_id": 10,
+    "bk_set_name": "set_a1",
+    "bk_supplier_account": "0",
+    "bk_updated_at": "2023-11-14T17:30:43.048+08:00",
+    "create_time": "2023-11-14T17:30:43.048+08:00",
+    "default": 0,
+    "description": "",
+    "last_time": "2023-11-14T17:30:43.048+08:00",
+    "set_template_id": 0,
+    "set_template_version": null
+  }
 }
 ```
 
