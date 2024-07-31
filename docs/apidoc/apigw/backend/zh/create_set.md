@@ -4,16 +4,9 @@
 
 ### 输入参数
 
-| 参数名称                | 参数类型   | 必选 | 描述    |
-|---------------------|--------|----|-------|
-| bk_supplier_account | string | 否  | 开发商账号 |
-| bk_biz_id           | int    | 是  | 业务ID  |
-| data                | dict   | 是  | 集群数据  |
-
-#### data
-
 | 参数名称              | 参数类型   | 必选 | 描述                                           |
 |-------------------|--------|----|----------------------------------------------|
+| bk_biz_id         | int    | 是  | 业务ID                                         |
 | bk_parent_id      | int    | 是  | 父实例节点的ID，当前实例节点的上一级实例节点，在拓扑结构中对于set一般指的是业务ID |
 | bk_set_name       | string | 是  | 集群名字                                         |
 | default           | int    | 否  | 0-普通集群，1-内置模块集合，默认为0                         |
@@ -35,21 +28,18 @@
 
 ```json
 {
-  "bk_biz_id": 1,
-  "data": {
-    "bk_parent_id": 3,
-    "bk_set_name": "set_a1",
-    "set_template_id": 0,
-    "default": 0,
-    "bk_capacity": 1000,
-    "bk_set_desc": "test-set",
-    "bk_set_env": "1",
-    "bk_service_status": "1",
-    "bk_created_at": "",
-    "bk_updated_at": "",
-    "bk_created_by": "admin",
-    "bk_updated_by": "admin"
-  }
+  "bk_parent_id": 3,
+  "bk_set_name": "set_a1",
+  "set_template_id": 0,
+  "default": 0,
+  "bk_capacity": 1000,
+  "bk_set_desc": "test-set",
+  "bk_set_env": "1",
+  "bk_service_status": "1",
+  "bk_created_at": "",
+  "bk_updated_at": "",
+  "bk_created_by": "admin",
+  "bk_updated_by": "admin"
 }
 ```
 

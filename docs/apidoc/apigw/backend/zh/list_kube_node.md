@@ -49,7 +49,7 @@
 
 ### 调用示例
 
-#### 详细信息请求参数
+#### 详细信息请求参数示例
 
 ```json
 {
@@ -82,7 +82,7 @@
 }
 ```
 
-### 响应示例
+#### 获取节点数量请求参数示例
 
 ```json
 {
@@ -119,4 +119,96 @@
 }
 ```
 
+### 响应示例
+
+#### 详细信息接口响应示例
+
+```json
+{
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": {
+    "count": 0,
+    "info": [
+      {
+        "name": "k8s",
+        "roles": "master",
+        "labels": {
+          "env": "test"
+        },
+        "taints": {
+          "type": "gpu"
+        },
+        "unschedulable": false,
+        "internal_ip": [
+          "127.0.0.1"
+        ],
+        "external_ip": [
+          "127.0.0.1"
+        ],
+        "hostname": "name",
+        "runtime_component": "runtime_component",
+        "kube_proxy_mode": "ipvs",
+        "pod_cidr": "127.0.0.128/26"
+      }
+    ]
+  }
+}
+```
+
+#### 获取容器节点数量接口响应示例
+
+```json
+{
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": {
+    "count": 1,
+    "info": [
+    ]
+  },
+  "request_id": "87de106ab55549bfbcc46e47ecf5bcc7"
+}
+```
+
 ### 响应参数说明
+
+| 参数名称       | 参数类型   | 描述                         |
+|------------|--------|----------------------------|
+| result     | bool   | 请求成功与否。true:请求成功；false请求失败 |
+| code       | int    | 错误编码。 0表示success，>0表示失败错误  |
+| message    | string | 请求失败返回的错误信息                |
+| permission | object | 权限信息                       |
+| data       | object | 请求返回的数据                    |
+| request_id | string | 请求链id                      |
+
+#### data
+
+| 参数名称  | 参数类型  | 描述      |
+|-------|-------|---------|
+| count | int   | 记录条数    |
+| info  | array | 节点的实际数据 |
+
+#### info[x]
+
+| 参数名称              | 参数类型   | 描述                           |
+|-------------------|--------|------------------------------|
+| name              | string | 节点名称                         |
+| roles             | string | 节点类型                         |
+| labels            | object | 标签                           |
+| taints            | object | 污点                           |
+| unschedulable     | bool   | 是否关闭可调度，true为不可调度，false代表可调度 |
+| internal_ip       | array  | 内网IP                         |
+| external_ip       | array  | 外网IP                         |
+| hostname          | string | 主机名                          |
+| runtime_component | string | 运行时组件                        |
+| kube_proxy_mode   | string | kube-proxy 代理模式              |
+| pod_cidr          | string | 此节点Pod地址的分配范围                |
+
+**注意：**
+
+- 如果本次请求是查询详细信息那么count为0，如果查询的是数量，那么info为空。
