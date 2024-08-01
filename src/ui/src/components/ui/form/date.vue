@@ -87,5 +87,10 @@
         }
       }
     }
+    :deep(.bk-date-picker-editor) {
+        &:focus {
+        border-color: #3a84ff !important;
+      }
+    }
   }
 </style>
