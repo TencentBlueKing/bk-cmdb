@@ -29,7 +29,7 @@ import (
 )
 
 // updateNodeHasPodField here you need to update the has_pod in the node uniformly
-func (s *service) updateNodeHasPodField(kit *rest.Kit, nodeIDs []int64) error {
+func (s *service) updateNodeHasPodField(kit *rest.Kit, nodeIDs []int64, value bool) error {
 	if len(nodeIDs) == 0 {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (s *service) updateNodeHasPodField(kit *rest.Kit, nodeIDs []int64) error {
 	}
 
 	updateData := map[string]interface{}{
-		types.HasPodField: true,
+		types.HasPodField: value,
 	}
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Update(kit.Ctx, filter, updateData); err != nil {
 		blog.Errorf("update node has_pod field failed, filter: %v, err: %+v, rid: %s", filter, err, kit.Rid)

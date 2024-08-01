@@ -197,8 +197,8 @@ func (w *podLabelWatcher) getDeletedPodInfo(ctx context.Context, oids []string, 
 		"coll": kubetypes.BKTableNameBasePod,
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("detail.labels", "detail.bk_biz_id",
-		"detail.bk_namespace_id").All(ctx, &delArchives)
+	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("detail.labels",
+		"detail.bk_biz_id", "detail.bk_namespace_id").All(ctx, &delArchives)
 	if err != nil {
 		blog.Errorf("get pod del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
 		return nil, err

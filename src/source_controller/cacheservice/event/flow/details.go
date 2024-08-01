@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/util"
+	"configcenter/src/common/util/table"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream/types"
@@ -54,13 +55,19 @@ func getDeleteEventDetails(es []*types.Event, db dal.DB, metrics *event.EventMet
 	}
 
 	for collection, deletedEventOids := range deletedEventOidMap {
+		delArchiveTable, exists := table.GetDelArchiveTable(collection)
+		if !exists {
+			blog.Errorf("collection %s related del archive table not exists", collection)
+			continue
+		}
+
 		filter := map[string]interface{}{
 			"oid":  map[string]interface{}{common.BKDBIN: deletedEventOids},
 			"coll": collection,
 		}
 
 		docs := make([]map[string]interface{}, 0)
-		err := db.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
+		err := db.Table(delArchiveTable).Find(filter).All(context.Background(), &docs)
 		if err != nil {
 			metrics.CollectMongoError()
 			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v",

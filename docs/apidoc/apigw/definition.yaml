@@ -82,6 +82,11 @@ grant_permissions:
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
+      - list_hosts_without_biz
+      - list_biz_hosts
+  - bk_app_code: {{ environ.BK_BCS_SYNC_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
       - create_kube_cluster
       - batch_update_kube_cluster
       - update_kube_cluster_type
@@ -103,7 +108,7 @@ grant_permissions:
       - batch_update_kube_workload
       - batch_delete_kube_workload
       - list_kube_workload
-      - list_hosts_without_biz
+      - list_biz_hosts
   - bk_app_code: {{ environ.BK_HCM_APP_CODE }}
     grant_dimension: "resource"
     resource_names:

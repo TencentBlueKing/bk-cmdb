@@ -4,17 +4,10 @@
 
 ### 输入参数
 
-| 参数名称                | 参数类型   | 必选 | 描述    |
-|---------------------|--------|----|-------|
-| bk_supplier_account | string | 否  | 开发商账号 |
-| bk_biz_id           | int    | 是  | 业务ID  |
-| bk_set_id           | int    | 是  | 集群id  |
-| data                | dict   | 是  | 业务数据  |
-
-#### data
-
 | 参数名称            | 参数类型   | 必选 | 描述                                                       |
 |-----------------|--------|----|----------------------------------------------------------|
+| bk_biz_id       | int    | 是  | 业务ID                                                     |
+| bk_set_id       | int    | 是  | 集群id                                                     |
 | bk_parent_id    | int    | 是  | 父实例节点的ID，当前实例节点的上一级实例节点，在拓扑结构中对于module一般指的是set的bk_set_id |
 | bk_module_name  | string | 是  | 模块名                                                      |
 | bk_module_type  | string | 否  | 模块类型                                                     |
@@ -32,19 +25,15 @@
 
 ```json
 {
-    "bk_biz_id": 3,
-    "bk_set_id": 4,
-    "data": {
-        "bk_parent_id": 4,
-        "bk_module_name": "redis-1",
-        "bk_module_type": "2",
-        "operator": "admin",
-        "bk_bak_operator": "admin",
-        "bk_created_at": "",
-        "bk_updated_at": "",
-        "bk_created_by": "admin",
-        "bk_updated_by": "admin"
-    }
+  "bk_parent_id": 4,
+  "bk_module_name": "redis-1",
+  "bk_module_type": "2",
+  "operator": "admin",
+  "bk_bak_operator": "admin",
+  "bk_created_at": "",
+  "bk_updated_at": "",
+  "bk_created_by": "admin",
+  "bk_updated_by": "admin"
 }
 ```
 
@@ -52,31 +41,31 @@
 
 ```json
 {
-    "result": true,
-    "code": 0,
-    "message": "success",
-    "permission": null,
-    "data": {
-        "bk_bak_operator": "admin",
-        "bk_biz_id": 3,
-        "bk_created_at": "2023-11-14T17:11:21.225+08:00",
-        "bk_created_by": "admin",
-        "bk_module_id": 20,
-        "bk_module_name": "redis-1",
-        "bk_module_type": "2",
-        "bk_parent_id": 4,
-        "bk_set_id": 4,
-        "bk_supplier_account": "0",
-        "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
-        "create_time": "2023-11-14T17:11:21.225+08:00",
-        "default": 0,
-        "host_apply_enabled": false,
-        "last_time": "2023-11-14T17:11:21.225+08:00",
-        "operator": "admin",
-        "service_category_id": 2,
-        "service_template_id": 0,
-        "set_template_id": 0
-    },
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": {
+    "bk_bak_operator": "admin",
+    "bk_biz_id": 3,
+    "bk_created_at": "2023-11-14T17:11:21.225+08:00",
+    "bk_created_by": "admin",
+    "bk_module_id": 20,
+    "bk_module_name": "redis-1",
+    "bk_module_type": "2",
+    "bk_parent_id": 4,
+    "bk_set_id": 4,
+    "bk_supplier_account": "0",
+    "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
+    "create_time": "2023-11-14T17:11:21.225+08:00",
+    "default": 0,
+    "host_apply_enabled": false,
+    "last_time": "2023-11-14T17:11:21.225+08:00",
+    "operator": "admin",
+    "service_category_id": 2,
+    "service_template_id": 0,
+    "set_template_id": 0
+  }
 }
 ```
 
