@@ -236,7 +236,7 @@
       },
       filterMethod({ remote: remoteData, keyword }, node) {
         // eslint-disable-next-line newline-per-chained-call
-        const keywordFilter = (keyword, node) => String(node.name).toLowerCase().indexOf(keyword) > -1
+        const keywordFilter = (keyword, node) => String(node.name).toLowerCase().indexOf(keyword.toLowerCase()) > -1
         // eslint-disable-next-line max-len
         const remoteFilter = (remoteData, node) => remoteData.some(item => item.bk_inst_id === node.data.bk_inst_id && item.bk_obj_id === node.data.bk_obj_id)
 

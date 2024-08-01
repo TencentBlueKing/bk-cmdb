@@ -337,9 +337,12 @@ func (s *service) getTopoHostNumByFilter(kit *rest.Kit, bizID int64, id int, fil
 		}, nil
 	}
 
-	resultHostMap, err := s.getClusterNumFromFolder(kit, bizID, filter)
-	if err != nil {
-		return types.KubeTopoCountRsp{}, err
+	resultHostMap := map[int64]struct{}{}
+	if resourceInfos[id].Kind == types.KubeCluster {
+		resultHostMap, err = s.getClusterNumFromFolder(kit, bizID, resourceInfos[id].ID)
+		if err != nil {
+			return types.KubeTopoCountRsp{}, err
+		}
 	}
 
 	for hostID := range hostMap {
@@ -355,12 +358,11 @@ func (s *service) getTopoHostNumByFilter(kit *rest.Kit, bizID int64, id int, fil
 
 // getClusterNumFromFolder for the calculation of the number of hosts under the cluster,
 // it is necessary to add the number of hosts under the folder node under the cluster.
-func (s *service) getClusterNumFromFolder(kit *rest.Kit, bizID int64, filter map[string]interface{}) (
+func (s *service) getClusterNumFromFolder(kit *rest.Kit, bizID int64, clusterID int64) (
 	map[int64]struct{}, error) {
 
 	result := make(map[int64]struct{})
-	clusterID, ok := filter[types.BKClusterIDFiled]
-	if !ok {
+	if clusterID == 0 {
 		return result, nil
 	}
 

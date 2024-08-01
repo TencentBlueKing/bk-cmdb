@@ -103,16 +103,16 @@ export const style = [{
 }, {
   selector: 'edge[direction="src_to_dest"]', // 源指向目标
   style: {
-    'source-arrow-shape': 'triangle-backcurve',
+    'source-arrow-shape': 'none',
     'source-arrow-color': '#c3cdd7',
-    'target-arrow-shape': 'none'
+    'target-arrow-shape': 'triangle-backcurve'
   }
 }, {
-  selector: 'edge[direction="dest_to_src"]', // 源指向目标
+  selector: 'edge[direction="dest_to_src"]', // 目标指向源
   style: {
-    'target-arrow-shape': 'triangle-backcurve',
+    'target-arrow-shape': 'none',
     'target-arrow-color': '#c3cdd7',
-    'source-arrow-shape': 'none'
+    'source-arrow-shape': 'triangle-backcurve'
   }
 }, {
   selector: '.weaken',

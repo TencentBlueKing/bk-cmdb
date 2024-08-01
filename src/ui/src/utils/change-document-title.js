@@ -33,5 +33,7 @@ export const changeDocumentTitle = (appendTitles = []) => {
     matchedNames = matchedNames.concat(appendTitles)
   }
 
-  setDocumentTitle(publicConfig.i18n ?? {}, matchedNames)
+  if (publicConfig.i18n) {
+    setDocumentTitle(publicConfig.i18n, matchedNames)
+  }
 }

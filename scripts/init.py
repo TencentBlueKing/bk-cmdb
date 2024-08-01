@@ -494,10 +494,7 @@ apiGW:
     '''
 
     template = FileTemplate(common_file_template_str)
-    loginVersion = 'opensource'
-    if auth_enabled == "true":
-        loginVersion = 'blueking'
-    result = template.substitute(loginVersion=loginVersion, **context)
+    result = template.substitute(**context)
     with open(output + "common.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
@@ -659,7 +656,10 @@ mongodb:
     '''
 
     template = FileTemplate(web_file_template_str)
-    result = template.substitute(**context)
+    loginVersion = 'opensource'
+    if auth_enabled == "true":
+        loginVersion = 'blueking'
+    result = template.substitute(loginVersion=loginVersion, **context)
     web_dir = os.getcwd() + "/cmdb_webserver/"
     with open(web_dir + "web.yaml", 'w') as tmp_file:
         tmp_file.write(result)
@@ -761,8 +761,7 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     filedata = filedata.replace('rd_server_placeholder', "configures/migrate.yaml")
                     filedata = filedata.replace('regdiscv', "config")
                 elif d == "cmdb_webserver":
-                    filedata = filedata.replace('rd_server_placeholder', "web.yaml")
-                    filedata = filedata.replace('regdiscv', "config")
+                    filedata = filedata.replace('rd_server_placeholder', rd_server + " --config=web.yaml")
                 else:
                     filedata = filedata.replace('rd_server_placeholder', rd_server)
 
