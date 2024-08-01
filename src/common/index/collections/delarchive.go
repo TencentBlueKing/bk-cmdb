@@ -25,11 +25,18 @@ func init() {
 	registerIndexes(common.BKTableNameDelArchive, deprecatedDelArchiveIndexes)
 	registerIndexes(common.BKTableNameDelArchive, commDelArchiveIndexes)
 
+	registerIndexes(common.BKTableNameKubeDelArchive, commKubeDelArchiveIndexes)
+
 }
 
 //  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
-var commDelArchiveIndexes = []types.Index{}
+var commDelArchiveIndexes = []types.Index{{
+	Name:               common.CCLogicIndexNamePrefix + "time",
+	Keys:               bson.D{{"time", -1}},
+	Background:         true,
+	ExpireAfterSeconds: 7 * 24 * 60 * 60,
+}}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedDelArchiveIndexes = []types.Index{
@@ -53,6 +60,35 @@ var deprecatedDelArchiveIndexes = []types.Index{
 		Name: "idx_coll",
 		Keys: bson.D{{
 			"coll", 1},
+		},
+		Background: true,
+	},
+}
+
+var commKubeDelArchiveIndexes = []types.Index{
+	{
+		Name:               common.CCLogicIndexNamePrefix + "time",
+		Keys:               bson.D{{"time", -1}},
+		Background:         true,
+		ExpireAfterSeconds: 2 * 24 * 60 * 60,
+	}, {
+		Name: common.CCLogicIndexNamePrefix + "coll_oid",
+		Keys: bson.D{
+			{"coll", 1},
+			{"oid", 1},
+		},
+		Unique:     true,
+		Background: true,
+	}, {
+		Name: common.CCLogicIndexNamePrefix + "coll",
+		Keys: bson.D{
+			{"coll", 1},
+		},
+		Background: true,
+	}, {
+		Name: common.CCLogicIndexNamePrefix + "oid",
+		Keys: bson.D{
+			{"oid", 1},
 		},
 		Background: true,
 	},

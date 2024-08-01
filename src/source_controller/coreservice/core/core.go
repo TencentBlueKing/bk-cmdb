@@ -133,6 +133,8 @@ type KubeOperation interface {
 	BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreateOption) ([]*types.Node, errors.CCErrorCoder)
 	GetSysSpecInfoByCond(kit *rest.Kit, podsInfos []types.PodsInfoArray) ([]types.SysSpec, []int64, errors.CCErrorCoder)
 	CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][]int64) errors.CCErrorCoder
+	ListContainerByPod(kit *rest.Kit, input *types.GetContainerByPodOption) (*types.GetContainerByPodResp,
+		errors.CCErrorCoder)
 }
 
 // AssociationKind association kind methods

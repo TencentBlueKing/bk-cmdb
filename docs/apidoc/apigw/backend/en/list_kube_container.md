@@ -7,7 +7,7 @@ Query Container list (Version: v3.12.1+, Permission: Business access)
 | Name      | Type         | Required | Description                                                                                                                                    |
 |-----------|--------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------|
 | bk_biz_id | int          | Yes      | Business ID                                                                                                                                    |
-| bk_pod_id | int          | Yes      | ID of the pod to which the container belongs                                                                                                   |
+| bk_pod_id | int          | No       | ID of the pod to which the container belongs                                                                                                   |
 | filter    | object       | No       | Query conditions for the container                                                                                                             |
 | fields    | string array | Yes      | List of container properties, controls which fields are returned in the container, speeding up interface requests and reducing network traffic |
 | page      | object       | Yes      | Pagination information                                                                                                                         |

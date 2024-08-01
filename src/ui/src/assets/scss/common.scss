@@ -328,8 +328,32 @@ input.cmdb-form-input {
     .form-float-input,
     .form-longchar-input,
     .form-singlechar-input,
-    .member-container {
-        border-color: #ff5566 !important;
+    .member-container,
+    .bk-select:not(.is-focus),
+    .bk-form-input,
+    .bk-textarea-wrapper,
+    .bk-date-picker-editor,
+    .user-selector-container {
+        border-color: #ff5566;
+    }
+}
+
+.form-component {
+    .error{
+        input[name="date-select"],
+        .bk-selector-input,
+        .form-int-input,
+        .form-float-input,
+        .form-longchar-input,
+        .form-singlechar-input,
+        .member-container,
+        .bk-select:not(.is-focus),
+        .bk-form-input,
+        .bk-textarea-wrapper,
+        .bk-date-picker-editor,
+        .user-selector-container {
+            border-color: #ff5566;
+        }
     }
 }
 
@@ -446,4 +470,16 @@ input.cmdb-form-input {
     &.disabled {
         color: #a3c5fd;
     }
+}
+
+/*
+* 处理table一开始给空数据会闪过empty样式
+*/
+@keyframes table-empty-delay-show {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.bk-table-empty-block {
+    animation: table-empty-delay-show .8s steps(1, end);
 }
