@@ -165,36 +165,15 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 				wg.Done()
 				<-pipeline
 			}()
-			if metadata.IsCommon(objID) {
-				params := &metadata.Condition{Condition: map[string]interface{}{common.BKObjIDField: objID}}
-				count, err := lgc.CoreAPI.CoreService().Instance().CountInstances(ctx, header, objID, params)
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				if count == nil {
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
 
-				objCount.InstCount = count.Count
-			} else {
-				tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
-				count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName,
-					[]map[string]interface{}{{}})
-				if err != nil {
-					blog.Errorf("get %s instance count failed, err: %s, rid: %s", objID, err.Error(), rid)
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				if len(count) == 0 {
-					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
-					return
-				}
-				objCount.InstCount = uint64(count[0])
+			count, err := lgc.getObjInstCount(ctx, header, objID)
+			if err != nil {
+				blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
+				apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
+				return
 			}
 
+			objCount.InstCount = count
 			existObjResult[idx] = objCount
 
 		}(ctx, header, objID, idx, objCount)
@@ -209,6 +188,47 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 
 	resp.Result = true
 	return resp, nil
+}
+
+// GetObjInstCount get object instance count
+func (lgc *Logics) getObjInstCount(ctx context.Context, header http.Header, objID string) (uint64, error) {
+	rid := util.GetHTTPCCRequestID(header)
+	if metadata.IsCommon(objID) {
+		params := &metadata.Condition{Condition: map[string]interface{}{common.BKObjIDField: objID}}
+		count, err := lgc.CoreAPI.CoreService().Instance().CountInstances(ctx, header, objID, params)
+		if err != nil {
+			blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
+			return 0, err
+		}
+		if count == nil {
+			blog.Errorf("get %s instance count but get count is nil failed, rid: %s", objID, rid)
+			return 0, errors.New(common.CCErrCommHTTPDoRequestFailed, fmt.Sprintf("get %s instance count but count is"+
+				" nil failed", objID))
+		}
+
+		return count.Count, nil
+	}
+
+	tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
+	params := []map[string]interface{}{{}}
+	if objID == common.BKInnerObjIDApp {
+		params = []map[string]interface{}{{
+			common.BKDefaultField:    common.DefaultFlagDefaultValue,
+			common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
+		}}
+	}
+	count, err := lgc.CoreAPI.CoreService().Count().GetCountByFilter(ctx, header, tableName, params)
+	if err != nil {
+		blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
+		return 0, err
+	}
+	if len(count) == 0 {
+		blog.Errorf("get %s instance count but get count is 0 failed, rid: %s", objID, rid)
+		return 0, errors.New(common.CCErrCommHTTPDoRequestFailed, fmt.Sprintf("get %s instance count but count is 0"+
+			" failed", objID))
+	}
+
+	return uint64(count[0]), nil
 }
 
 // ProcessObjectIDArray process objectIDs
