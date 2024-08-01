@@ -13,7 +13,7 @@
 |----------------|--------------|----|-----------------------------------------------|
 | bk_biz_id      | string       | 否  | 业务id                                          |
 | bk_obj_id      | string       | 是  | 源模型ID                                         |
-| bk_property_id | string       | 是  | 源模型引用该模型的属性ID                                 |
+| bk_property_id | string       | 是  | 源模型引用该模型的表格字段的唯一标识                            |
 | filter         | object       | 否  | 被引用的模型实例的查询条件                                 |
 | fields         | string array | 否  | 被引用的模型的属性列表，控制返回结果的实例里有哪些字段，能够加速接口请求和减少网络流量传输 |
 | page           | object       | 是  | 分页信息                                          |

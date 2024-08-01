@@ -340,7 +340,7 @@ func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string
 		}
 
 		docs := make([]commonDelArchive, 0)
-		err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).All(ctx, &docs)
+		err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).All(ctx, &docs)
 		if err != nil {
 			blog.Errorf("get del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
 			return nil, err
@@ -528,7 +528,8 @@ func (w *kubeWatcher) getDeletePodInfo(ctx context.Context, oids []string, rid s
 	}
 
 	archives := make([]podDelArchive, 0)
-	err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).Fields("oid", "detail").All(ctx, &archives)
+	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("oid", "detail").All(ctx,
+		&archives)
 	if err != nil {
 		blog.Errorf("get pod del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
 		return nil, nil, err

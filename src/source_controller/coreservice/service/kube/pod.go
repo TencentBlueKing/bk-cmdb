@@ -19,8 +19,8 @@ package kube
 
 import (
 	"errors"
-	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/pkg/conv"
@@ -74,7 +74,7 @@ func (s *service) combinePodData(kit *rest.Kit, inputData *types.CreatePodsOptio
 				// due to the need to be compatible with the scenario where there is no container in the pod,
 				// the left and right bits of the array "ids" need to be obtained to obtain the podID that really
 				// needs redundancy.
-				data, err := s.combinationContainerInfo(kit, containerID, id, now, container)
+				data, err := s.combinationContainerInfo(kit, containerID, &podTmp, now, container)
 				if err != nil {
 					return nil, nil, nil, err
 				}
@@ -135,6 +135,11 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
+	if err = s.updateNodeHasPodField(ctx.Kit, nodeIDs, true); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	if len(containers) == 0 {
 		ctx.RespEntity(pods)
 		return
@@ -148,10 +153,6 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	if err = s.updateNodeHasPodField(ctx.Kit, nodeIDs); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
 	ctx.RespEntity(pods)
 }
 
@@ -195,13 +196,16 @@ func (s *service) combinationPodsInfo(kit *rest.Kit, pod types.PodsInfo, sysSpec
 	return podInfo, nil
 }
 
-func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, now int64, info types.Container) (
-	types.Container, error) {
+func (s *service) combinationContainerInfo(kit *rest.Kit, containerID int64, pod *types.Pod, now int64,
+	info types.Container) (types.Container, error) {
 
 	container := types.Container{
 		ID:              containerID,
+		PodID:           pod.ID,
+		BizID:           pod.BizID,
+		ClusterID:       pod.ClusterID,
+		NamespaceID:     pod.NamespaceID,
 		SupplierAccount: kit.SupplierAccount,
-		PodID:           podID,
 		Name:            info.Name,
 		ContainerID:     info.ContainerID,
 		Image:           info.Image,
@@ -220,6 +224,13 @@ func (s *service) combinationContainerInfo(kit *rest.Kit, containerID, podID, no
 			Creator:    kit.User,
 			Modifier:   kit.User,
 		},
+	}
+
+	if pod.Ref != nil {
+		container.Ref = &types.Reference{
+			Kind: pod.Ref.Kind,
+			ID:   pod.Ref.ID,
+		}
 	}
 
 	return container, nil
@@ -290,6 +301,14 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		types.BKIDField: mapstr.MapStr{common.BKDBIN: opt.PodIDs},
 	}
 
+	nodeIDArr, err := mongodb.Client().Table(types.BKTableNameBasePod).Distinct(ctx.Kit.Ctx, types.BKNodeIDField,
+		delPodCond)
+	if err != nil {
+		blog.Errorf("get nodes failed, cond: %+v, err: %v, rid: %s", delPodCond, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	err = mongodb.Client().Table(types.BKTableNameBasePod).Delete(ctx.Kit.Ctx, delPodCond)
 	if err != nil {
 		blog.Errorf("delete pods failed, cond: %+v, err: %v, rid: %s", delPodCond, err, ctx.Kit.Rid)
@@ -297,7 +316,75 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		return
 	}
 
+	// 更新node的has_pod字段
+	nodeIDs, err := s.getNodeIDsWithoutPod(ctx, nodeIDArr)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(nodeIDs) != 0 {
+		if err = s.updateNodeHasPodField(ctx.Kit, nodeIDs, false); err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+	}
+
 	ctx.RespEntity(nil)
+}
+
+// getNodeIDsWithoutPod 获取没有运行任何Pod的Node的id
+func (s *service) getNodeIDsWithoutPod(ctx *rest.Contexts, nodeIDArr []interface{}) ([]int64, error) {
+
+	nodeIDs := make([]int64, len(nodeIDArr))
+	var wg sync.WaitGroup
+	var lock sync.RWMutex
+	var firstErr error
+	pipeline := make(chan bool, 10)
+
+	for idx, nodeID := range nodeIDArr {
+		pipeline <- true
+		wg.Add(1)
+		go func(idx int, nodeID interface{}) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			countPodCond := mapstr.MapStr{
+				types.BKNodeIDField: nodeID,
+			}
+			podCount, err := mongodb.Client().Table(types.BKTableNameBasePod).Find(countPodCond).Count(ctx.Kit.Ctx)
+			if err != nil {
+				blog.Errorf("count pods failed, err: %v, cond: %v, rid: %s", err, countPodCond, ctx.Kit.Rid)
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
+			}
+
+			if podCount == 0 {
+				nodeIDInt, err := util.GetInt64ByInterface(nodeID)
+				if err != nil {
+					blog.Errorf("parse nodeID failed, err: %v, nodeID: %v, rid: %s", err, nodeID, ctx.Kit.Rid)
+					if firstErr == nil {
+						firstErr = err
+					}
+					return
+				}
+				lock.Lock()
+				nodeIDs[idx] = nodeIDInt
+				lock.Unlock()
+			}
+		}(idx, nodeID)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nodeIDs, firstErr
+	}
+
+	return nodeIDs, nil
 }
 
 // ListContainer list container
@@ -332,65 +419,11 @@ func (s *service) ListContainerByPod(ctx *rest.Contexts) {
 		return
 	}
 
-	fieldPrefix := "container"
-	fieldMap := make(map[string]string)
-	for _, name := range types.ContainerFields.GetFieldNames() {
-		fieldMap[name] = fmt.Sprintf("$%s.%s", fieldPrefix, name)
-	}
-	filter := make([]map[string]interface{}, 0)
-	if len(input.PodCond) > 0 {
-		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.PodCond})
-	}
-	subFilter := []map[string]interface{}{
-		{
-			common.BKDBLookup: map[string]string{
-				common.BKDBFrom:         types.BKTableNameBaseContainer,
-				common.BKDBLocalField:   common.BKFieldID,
-				common.BKDBForeignField: types.BKPodIDField,
-				common.BKDBAs:           fieldPrefix,
-			},
-		},
-		{common.BKDBUnwind: fmt.Sprintf("$%s", fieldPrefix)},
-		{common.BKDBProject: fieldMap},
-	}
-	filter = append(filter, subFilter...)
-	if input.ContainerCond != nil {
-		filter = append(filter, map[string]interface{}{common.BKDBMatch: input.ContainerCond})
-	}
-
-	if input.Page.EnableCount {
-		total := "total"
-		result := map[string]int64{}
-		filter = append(filter, map[string]interface{}{common.BKDBCount: total})
-		err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateOne(ctx.Kit.Ctx, filter, &result)
-		if err != nil && !mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("get container count failed, cond: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
-			ctx.RespAutoError(err)
-			return
-		}
-
-		ctx.RespEntity(types.GetContainerByPodResp{Count: result[total]})
-		return
-	}
-
-	containerFieldMap := make(map[string]int64)
-	for _, field := range input.Fields {
-		containerFieldMap[field] = 1
-	}
-	if len(containerFieldMap) != 0 {
-		filter = append(filter, map[string]interface{}{common.BKDBProject: containerFieldMap})
-	}
-	filter = append(filter, []map[string]interface{}{{common.BKDBSkip: input.Page.Start},
-		{common.BKLimit: input.Page.Limit}, {common.BKDBSort: map[string]int64{input.Page.Sort: 1}}}...)
-
-	containers := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(types.BKTableNameBasePod).AggregateAll(ctx.Kit.Ctx, filter, &containers)
+	res, err := s.core.KubeOperation().ListContainerByPod(ctx.Kit, input)
 	if err != nil {
-		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(types.GetContainerByPodResp{Info: containers})
-	return
+	ctx.RespEntity(res)
 }

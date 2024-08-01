@@ -41,6 +41,8 @@ spec:
           value: {{ .Values.apigatewaySync.nodeManAppCode }}
         - name: BK_BCS_APP_CODE
           value: {{ .Values.apigatewaySync.bcsAppCode }}
+        - name: BK_BCS_SYNC_APP_CODE
+          value: {{ .Values.apigatewaySync.bcsSyncAppCode }}
         - name: BK_HCM_APP_CODE
           value: {{ .Values.apigatewaySync.hcmAppCode }}
         resources:

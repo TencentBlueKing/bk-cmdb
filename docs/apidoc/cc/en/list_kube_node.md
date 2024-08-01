@@ -53,7 +53,7 @@ Assembly rules can be referred to: [QueryBuilder README](https://github.com/Tenc
 
 ### Request Parameter Example
 
-### Detailed Information Request Parameter
+#### Detailed Information Request Parameter
 
 ```json
 {
@@ -90,7 +90,7 @@ Assembly rules can be referred to: [QueryBuilder README](https://github.com/Tenc
 }
 ```
 
-### Quantity Request Parameter
+#### Quantity Request Parameter
 
 ```json
 {
@@ -129,7 +129,7 @@ Assembly rules can be referred to: [QueryBuilder README](https://github.com/Tenc
 
 ### Response Example
 
-### Detailed Information Interface Response
+#### Detailed Information Interface Response
 
 ```json
 {
@@ -166,7 +166,7 @@ Assembly rules can be referred to: [QueryBuilder README](https://github.com/Tenc
 }
 ```
 
-### Quantity Response Example
+#### Quantity Response Example
 
 ```json
 {

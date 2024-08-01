@@ -26,6 +26,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -51,6 +58,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -73,6 +87,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -96,6 +117,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -119,6 +147,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -142,6 +177,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -165,6 +207,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -188,6 +237,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -211,6 +267,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -234,6 +297,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -257,6 +327,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -280,6 +357,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -303,6 +387,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -326,6 +417,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -349,6 +447,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -372,6 +477,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -395,6 +507,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -418,6 +537,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -441,6 +567,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -464,6 +597,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -487,6 +627,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -510,6 +657,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -533,6 +687,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -556,6 +717,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -579,6 +747,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -602,6 +777,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -625,6 +807,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -648,6 +837,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -671,6 +867,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -694,6 +897,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -717,6 +927,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -740,6 +957,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -763,6 +987,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -786,6 +1017,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -809,6 +1047,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -832,6 +1077,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -855,6 +1107,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -878,6 +1137,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -901,6 +1167,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -924,6 +1197,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -947,6 +1227,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -970,6 +1257,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -993,6 +1287,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1016,6 +1317,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1039,6 +1347,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1062,6 +1377,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1085,6 +1407,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1108,6 +1437,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1131,6 +1467,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1154,6 +1497,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1177,6 +1527,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1200,6 +1557,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1223,6 +1587,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1246,6 +1617,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1269,6 +1647,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1292,6 +1677,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1315,6 +1707,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1338,6 +1737,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1361,6 +1767,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1384,6 +1797,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1407,6 +1827,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1430,6 +1857,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1453,6 +1887,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1476,6 +1917,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1499,6 +1947,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1522,6 +1977,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1545,6 +2007,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1568,6 +2037,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1591,6 +2067,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1614,6 +2097,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1637,6 +2127,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1660,6 +2157,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1683,6 +2187,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1706,6 +2217,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1729,6 +2247,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1752,6 +2277,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1775,6 +2307,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1798,6 +2337,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1821,6 +2367,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1844,6 +2397,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1867,6 +2427,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1890,6 +2457,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1913,6 +2487,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1936,6 +2517,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1959,6 +2547,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -1982,6 +2577,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2005,6 +2607,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2028,6 +2637,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2051,6 +2667,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2074,6 +2697,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2096,6 +2726,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2119,6 +2756,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2142,6 +2786,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2165,6 +2816,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2188,6 +2846,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2211,6 +2876,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2234,6 +2906,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2257,6 +2936,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2279,6 +2965,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2301,6 +2994,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2324,6 +3024,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2347,6 +3054,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2370,6 +3084,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2393,6 +3114,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2416,6 +3144,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2439,6 +3174,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2462,6 +3204,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2485,6 +3234,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2508,6 +3264,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2531,6 +3294,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2554,6 +3324,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2577,6 +3354,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2600,6 +3384,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2623,6 +3414,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2646,6 +3444,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2669,6 +3474,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2692,6 +3504,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2715,6 +3534,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2738,6 +3564,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2761,6 +3594,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2784,6 +3624,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2807,6 +3654,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2830,6 +3684,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2853,6 +3714,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2876,6 +3744,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2899,6 +3774,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2922,6 +3804,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2945,6 +3834,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2968,6 +3864,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -2991,6 +3894,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3014,6 +3924,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3037,6 +3954,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3060,6 +3984,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3083,6 +4014,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3106,6 +4044,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3129,6 +4074,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3152,6 +4104,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3175,6 +4134,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3198,6 +4164,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3221,6 +4194,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3244,6 +4224,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3267,6 +4254,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3290,6 +4284,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3313,6 +4314,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3336,6 +4344,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3359,6 +4374,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3382,6 +4404,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3405,6 +4434,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3428,6 +4464,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3451,6 +4494,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3474,6 +4524,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3497,6 +4554,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3520,6 +4584,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3543,6 +4614,16 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  bk-bcs-cmdb-sync:
+                  - period: 1
+                    tokens: 150
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3566,6 +4647,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3589,6 +4677,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3612,6 +4707,16 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  bk-bcs-cmdb-sync:
+                  - period: 1
+                    tokens: 400
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3635,6 +4740,16 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  bk-bcs-cmdb-sync:
+                  - period: 1
+                    tokens: 200
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3658,6 +4773,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3681,6 +4803,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3704,6 +4833,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3727,6 +4863,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3750,6 +4893,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3773,6 +4923,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3796,6 +4953,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3819,6 +4983,16 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  bk-bcs-cmdb-sync:
+                  - period: 1
+                    tokens: 200
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3844,6 +5018,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3869,6 +5050,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3894,6 +5082,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3919,6 +5114,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3944,6 +5146,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3969,6 +5178,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -3994,6 +5210,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4019,6 +5242,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4044,6 +5274,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4069,6 +5306,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4094,6 +5338,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4119,6 +5370,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4144,6 +5402,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4169,6 +5434,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4194,6 +5466,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4219,6 +5498,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4244,6 +5530,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4269,6 +5562,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4294,6 +5594,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4319,6 +5626,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4344,6 +5658,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4369,6 +5690,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4394,6 +5722,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4419,6 +5754,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4444,6 +5786,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4469,6 +5818,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4494,6 +5850,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4519,6 +5882,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4544,6 +5914,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4569,6 +5946,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4594,6 +5978,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4619,6 +6010,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4644,6 +6042,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4669,6 +6074,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4694,6 +6106,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4719,6 +6138,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4744,6 +6170,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4769,6 +6202,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4794,6 +6234,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4819,6 +6266,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4844,6 +6298,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4869,6 +6330,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4894,6 +6362,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4919,6 +6394,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4944,6 +6426,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4969,6 +6458,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -4994,6 +6490,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5019,6 +6522,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5044,6 +6554,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5069,6 +6586,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5094,6 +6618,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5119,6 +6650,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5144,6 +6682,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5169,6 +6714,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5194,6 +6746,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5219,6 +6778,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5244,6 +6810,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5269,6 +6842,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5294,6 +6874,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5319,6 +6906,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5344,6 +6938,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5369,6 +6970,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5394,6 +7002,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5419,6 +7034,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5444,6 +7066,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5469,6 +7098,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5494,6 +7130,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5519,6 +7162,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5544,6 +7194,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5569,6 +7226,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5594,6 +7258,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5619,6 +7290,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5644,6 +7322,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5669,6 +7354,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5694,6 +7386,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5719,6 +7418,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5744,6 +7450,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5769,6 +7482,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5794,6 +7514,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5819,6 +7546,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5844,6 +7578,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5869,6 +7610,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5894,6 +7642,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5919,6 +7674,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5944,6 +7706,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5969,6 +7738,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -5994,6 +7770,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6019,6 +7802,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6044,6 +7834,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6069,6 +7866,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6094,6 +7898,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6119,6 +7930,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6144,6 +7962,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6169,6 +7994,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6194,6 +8026,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6219,6 +8058,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6244,6 +8090,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6269,6 +8122,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6294,6 +8154,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6319,6 +8186,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6344,6 +8218,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6369,6 +8250,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6394,6 +8282,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6419,6 +8314,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6444,6 +8346,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6469,6 +8378,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6494,6 +8410,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6519,6 +8442,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6544,6 +8474,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6569,6 +8506,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6594,6 +8538,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6619,6 +8570,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6644,6 +8602,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6669,6 +8634,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6694,6 +8666,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6719,6 +8698,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6744,6 +8730,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6769,6 +8762,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6794,6 +8794,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6819,6 +8826,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6844,6 +8858,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6869,6 +8890,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6894,6 +8922,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6919,6 +8954,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6944,6 +8986,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6969,6 +9018,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -6994,6 +9050,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7019,6 +9082,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7044,6 +9114,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7069,6 +9146,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7094,6 +9178,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7119,6 +9210,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7144,6 +9242,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7169,6 +9274,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7194,6 +9306,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7219,6 +9338,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7244,6 +9370,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7269,6 +9402,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7294,6 +9434,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7319,6 +9466,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7344,6 +9498,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7369,6 +9530,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7394,6 +9562,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7419,6 +9594,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7444,6 +9626,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7469,6 +9658,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7494,6 +9690,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7519,6 +9722,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7544,6 +9754,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7569,6 +9786,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7594,6 +9818,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7619,6 +9850,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7644,6 +9882,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7669,6 +9914,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7694,6 +9946,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7719,6 +9978,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7744,6 +10010,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7769,6 +10042,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7794,6 +10074,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7819,6 +10106,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7844,6 +10138,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7869,6 +10170,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7894,6 +10202,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7919,6 +10234,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7944,6 +10266,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7969,6 +10298,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -7994,6 +10330,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8019,6 +10362,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8044,6 +10394,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8068,6 +10425,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8093,6 +10457,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8118,6 +10489,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8143,6 +10521,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8168,6 +10553,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8193,6 +10585,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8218,6 +10617,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8243,6 +10649,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8268,6 +10681,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8293,6 +10713,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8318,6 +10745,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8343,6 +10777,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8368,6 +10809,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8393,6 +10841,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8418,6 +10873,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8443,6 +10905,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8468,6 +10937,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8493,6 +10969,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8518,6 +11001,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8543,30 +11033,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
-        authConfig:
-          userVerifiedRequired: false
-        disabledStages: []
-        descriptionEn:
-    delete:
-      operationId: delete_business
-      description: 删除业务
-      tags:
-        - oldesb
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: delete
-          path: /api/v3/biz/{bk_supplier_account}/{bk_biz_id}
-          matchSubpath: false
-          timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8592,6 +11065,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8616,6 +11096,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8641,6 +11128,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8665,6 +11159,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8690,6 +11191,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8714,6 +11222,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8739,6 +11254,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8764,6 +11286,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8789,6 +11318,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8814,6 +11350,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8839,6 +11382,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8864,6 +11414,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8889,6 +11446,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8914,6 +11478,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8939,6 +11510,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8964,6 +11542,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -8989,6 +11574,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9003,8 +11595,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -9014,6 +11606,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9039,6 +11638,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9064,6 +11670,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9089,6 +11702,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9114,6 +11734,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9139,6 +11766,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9164,6 +11798,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9189,6 +11830,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9214,6 +11862,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9239,6 +11894,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9264,6 +11926,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9289,6 +11958,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9314,6 +11990,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9339,6 +12022,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9364,6 +12054,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9389,6 +12086,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9414,6 +12118,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9439,6 +12150,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9464,6 +12182,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9489,6 +12214,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9514,6 +12246,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9539,6 +12278,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9564,6 +12310,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9589,6 +12342,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9614,6 +12374,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9639,6 +12406,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9664,6 +12438,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9689,6 +12470,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9714,6 +12502,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9739,6 +12534,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9764,6 +12566,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9789,6 +12598,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9868,6 +12684,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9893,6 +12716,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9918,6 +12748,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9943,6 +12780,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9968,6 +12812,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -9993,6 +12844,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10018,6 +12876,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10044,6 +12909,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10070,6 +12942,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10201,6 +13080,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10226,6 +13112,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10251,6 +13144,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10276,6 +13176,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10301,6 +13208,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
@@ -10326,6 +13240,13 @@ paths:
           timeout: 0
           upstreams: {}
           transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
