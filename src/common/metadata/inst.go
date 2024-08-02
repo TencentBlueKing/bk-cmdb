@@ -30,6 +30,7 @@ type SetInst struct {
 	SetEnv        string `bson:"bk_set_env" json:"bk_set_env" mapstructure:"bk_set_env"`
 	SetTemplateID int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
 	ParentID      int64  `bson:"bk_parent_id" json:"bk_parent_id" mapstructure:"bk_parent_id"`
+	Default       int    `bson:"default" json:"default" field:"default" mapstructure:"default"`
 
 	Creator         string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`

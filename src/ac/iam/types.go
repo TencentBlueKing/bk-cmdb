@@ -226,6 +226,11 @@ const (
 	// GeneralCache defines general resource cache auth type
 	GeneralCache TypeID = "general_cache"
 
+	// Set is set auth type
+	Set TypeID = "set"
+	// Module is module auth type
+	Module TypeID = "module"
+
 	// SkipType TODO
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
@@ -743,6 +748,8 @@ const (
 	SysHostRscPoolDirectorySelection InstanceSelectionID = "sys_host_rsc_pool_directory"
 	// GeneralCacheSelection general resource cache instance selection id
 	GeneralCacheSelection InstanceSelectionID = "general_cache"
+	// BizTopoSelection is biz topo instance selection id
+	BizTopoSelection InstanceSelectionID = "biz_topo"
 )
 
 // InstanceSelection TODO

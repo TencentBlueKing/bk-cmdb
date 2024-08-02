@@ -64,10 +64,10 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameBaseProject
 	case iam.FieldGroupingTemplate:
 		return common.BKTableNameFieldTemplate
-	// case iam.Set:
-	//	return common.BKTableNameBaseSet
-	// case iam.Module:
-	//	return common.BKTableNameBaseModule
+	case iam.Set:
+		return common.BKTableNameBaseSet
+	case iam.Module:
+		return common.BKTableNameBaseModule
 	default:
 		return ""
 	}
