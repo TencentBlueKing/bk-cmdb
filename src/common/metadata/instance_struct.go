@@ -63,3 +63,17 @@ type ProcInstanceData struct {
 	Count int       `json:"count"`
 	Info  []Process `json:"info"`
 }
+
+// ResponseMainlineInst mainline instance response
+// 只有主线模型实例的企业版本部分属性，使用前请注意
+type ResponseMainlineInst struct {
+	BaseResp `json:",inline"`
+	Data     MainlineInstData `json:"data"`
+}
+
+// MainlineInstData mainline instance data
+// 只有主线模型实例的企业版本部分属性，使用前请注意
+type MainlineInstData struct {
+	Count int                `json:"count"`
+	Info  []MainlineInstInfo `json:"info"`
+}
