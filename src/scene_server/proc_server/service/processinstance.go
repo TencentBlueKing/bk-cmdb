@@ -56,7 +56,8 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		var err error
 		processIDs, err = ps.createProcessInstances(ctx, input)
 		if err != nil {
-			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
+			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v",
+				input.ServiceInstanceID, input, err)
 			return err
 		}
 
@@ -487,7 +488,8 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			var err error
 			processData, err = mapstruct.Struct2Map(process)
 			if nil != err {
-				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v, rid: %s", processData, err, ctx.Kit.Rid)
+				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s,"+
+					" err: %+v, rid: %s", processData, err, ctx.Kit.Rid)
 				return nil, ctx.Kit.CCError.CCError(common.CCErrCommJsonDecode)
 			}
 			delete(processData, common.BKProcessIDField)
