@@ -55,6 +55,8 @@ var ResourceTypeIDMap = map[TypeID]string{
 	BizProcessServiceTemplate: "服务模板",
 	FieldGroupingTemplate:     "字段组合模板",
 	GeneralCache:              "通用缓存",
+	Set:                       "集群",
+	Module:                    "模块",
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
@@ -210,34 +212,34 @@ func genBusinessResources() []ResourceType {
 			},
 			Version: 1,
 		},
-		// only for host topology usage, not related to actions
-		// {
-		//	ID:            Set,
-		//	Name:          ResourceTypeIDMap[Set],
-		//	NameEn:        "Set",
-		//	Description:   "集群列表",
-		//	DescriptionEn: "all the sets in blueking cmdb.",
-		//	Parents:       []Parent{businessParent},
-		//	ProviderConfig: ResourceConfig{
-		//		Path: "/auth/v3/find/resource",
-		//	},
-		//	Version: 1,
-		// },
-		// {
-		//	ID:            Module,
-		//	Name:          ResourceTypeIDMap[Module],
-		//	NameEn:        "Module",
-		//	Description:   "模块列表",
-		//	DescriptionEn: "all the modules in blueking cmdb.",
-		//	Parents: []Parent{{
-		//		SystemID:   SystemIDCMDB,
-		//		ResourceID: Set,
-		//	}},
-		//	ProviderConfig: ResourceConfig{
-		//		Path: "/auth/v3/find/resource",
-		//	},
-		//	Version: 1,
-		// },
+		// only for biz topology usage, not related to actions
+		{
+			ID:            Set,
+			Name:          ResourceTypeIDMap[Set],
+			NameEn:        "Set",
+			Description:   "业务拓扑集群",
+			DescriptionEn: "business topology set",
+			Parents:       []Parent{businessParent},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            Module,
+			Name:          ResourceTypeIDMap[Module],
+			NameEn:        "Module",
+			Description:   "业务拓扑模块",
+			DescriptionEn: "business topology module",
+			Parents: []Parent{{
+				SystemID:   SystemIDCMDB,
+				ResourceID: Set,
+			}},
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
 	}
 }
 

@@ -89,14 +89,6 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 			ResourceTypeChain: []ResourceChain{
 				// select the business at first.
 				businessChain,
-				// {
-				//	SystemID: SystemIDCMDB,
-				//	ID:       Set,
-				// },
-				// {
-				//	SystemID: SystemIDCMDB,
-				//	ID:       Module,
-				// },
 				// then select the host instances.
 				{
 					SystemID: SystemIDCMDB,
@@ -295,6 +287,22 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				SystemID: SystemIDCMDB,
 				ID:       GeneralCache,
 			}},
+		},
+		// only for other system's biz topo instance selection usage, not related to actions
+		{
+			ID:     BizTopoSelection,
+			Name:   "业务拓扑",
+			NameEn: "Business Topology",
+			ResourceTypeChain: []ResourceChain{
+				businessChain,
+				{
+					SystemID: SystemIDCMDB,
+					ID:       Set,
+				}, {
+					SystemID: SystemIDCMDB,
+					ID:       Module,
+				},
+			},
 		},
 	}
 }
