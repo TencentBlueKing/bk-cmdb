@@ -66,7 +66,8 @@ func (s *coreService) TranslateEnumName(ctx context.Context, defLang language.De
 		return val
 	}
 	for index := range options {
-		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
+		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+
+			"_enum_"+options[index].ID), options[index].Name, options[index].ID)
 	}
 	return options
 }

@@ -76,7 +76,8 @@ func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (c
 
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%#v), error info is"+
+			" %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
