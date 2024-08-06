@@ -11,7 +11,11 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
+  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList" v-scroll="{
+    targetClass: 'last-item',
+    orientation: 'bottom',
+    distance: 63
+  }">
     <bk-form class="filter-form" form-type="vertical">
       <div class="filter-operate">
         <condition-picker
@@ -37,9 +41,11 @@
         </bk-popconfirm>
       </div>
       <bk-form-item class="filter-item"
-        v-for="property in selected"
+        v-for="(property, index) in selected"
         :key="property.id"
-        :class="`filter-item-${property.bk_property_type}`">
+        :class="[`filter-item-${property.bk_property_type}`, {
+          'last-item': index === selected.length - 1 && scrollToBottom
+        }]">
         <label class="item-label">
           {{property.bk_property_name}}
         </label>
@@ -133,6 +139,7 @@
     data() {
       const { IN, NIN, LIKE, CONTAINS_CS } = QUERY_OPERATOR
       return {
+        scrollToBottom: false,
         withoutOperator: ['date', 'time', 'bool'],
         condition: {},
         originCondition: {},
@@ -177,9 +184,6 @@
         const { addSelect, deleteSelect } = getConditionSelect(val, oldVal)
         this.scrollToBottom = this.hasAddSelected(val, oldVal, addSelect)
         updatePropertySelect(oldVal, this.handleRemove, addSelect, deleteSelect)
-        if (this.scrollToBottom) {
-          this.toBottom()
-        }
       }
     },
     created() {
@@ -197,12 +201,6 @@
           }
         })
         return newCondition
-      },
-      toBottom() {
-        setTimeout(() => {
-          const el = this.$refs.propertyList?.$el
-          el?.scrollTo(0, el?.scrollHeight)
-        }, 0)
       },
       hasAddSelected(val, oldVal, addSelect) {
         return val[0] && oldVal[0] && addSelect.length > 0

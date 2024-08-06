@@ -25,7 +25,11 @@
         {{`(${collection.name})`}}
       </template>
     </div>
-    <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
+    <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList" v-scroll="{
+      targetClass: 'last-item',
+      orientation: 'bottom',
+      distance: 63
+    }">
       <bk-form class="filter-form" form-type="vertical">
         <bk-form-item class="filter-ip filter-item">
           <label class="item-label">
@@ -83,9 +87,11 @@
 
         </bk-form-item>
         <bk-form-item class="filter-item"
-          v-for="property in selected"
+          v-for="(property, index) in selected"
           :key="property.id"
-          :class="`filter-item-${property.bk_property_type}`">
+          :class="[`filter-item-${property.bk_property_type}`, {
+            'last-item': index === selected.length - 1 && scrollToBottom
+          }]">
           <label class="item-label">
             {{property.bk_property_name}}
             <span class="item-label-suffix">({{getLabelSuffix(property)}})</span>
@@ -371,9 +377,6 @@
           this.scrollToBottom = this.hasAddSelected(val, this.selected, addSelect)
           this.condition = this.setCondition(this.condition)
           updatePropertySelect(this.selected, this.handleRemove, addSelect, deleteSelect, 'push', filterCondition)
-          if (this.scrollToBottom) {
-            this.toBottom()
-          }
         }
       },
       storageIPCondition: {
@@ -396,12 +399,6 @@
       this.setChanged = setChanged
     },
     methods: {
-      toBottom() {
-        setTimeout(() => {
-          const el = this.$refs.propertyList?.$el
-          el?.scrollTo(0, el?.scrollHeight)
-        }, 0)
-      },
       hasAddSelected(val, oldVal, addSelect) {
         return val[0] && oldVal[0] && addSelect.length > 0
       },

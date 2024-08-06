@@ -15,6 +15,7 @@
  * @scrollEle 滚动的元素
  * @param {Element} targetClass 目标元素的className
  * @param {String} direction 滚动方向 vertical竖向 / horizontal横向
+ * @param {String} orientation 计算距离用的方位 vertical=> top/bottom  horizontal=> left/right
  * @param {Number} distance 距离
  * @param {Boolean} scrollInViewport 目标元素已在可视区域了是否还需要滚动
  */
@@ -22,6 +23,7 @@
 const defaultParams = {
   direction: 'vertical',
   distance: 10,
+  orientation: 'top',
   scrollInViewport: false
 }
 
@@ -36,18 +38,25 @@ const isElementInViewport = (rect, scrollRect) => {
         && right <= scrollRight
   )
 }
-const toScrollViewport = (scrollEle, rect, scrollRect, direction, distance) => {
-  const { top, left } = rect
+const toScrollViewport = (scrollEle, rect, scrollRect, direction, distance, orientation) => {
+  const val = calcScrollBarLoc(rect, scrollRect, orientation, distance)
   if (direction === 'vertical') {
-    scrollEle.scrollTop = top -  distance - scrollRect.top
-  } else {
-    scrollEle.scrollLeft = left -  distance - scrollRect.left
+    scrollEle.scrollTop += val
+    return
   }
+  scrollEle.scrollLeft += val
+}
+// 计算滚动条最后的位置
+const calcScrollBarLoc = (rect, scrollRect, orientation, distance) => {
+  if (orientation === 'bottom' || orientation === 'right') {
+    return rect[orientation] - scrollRect[orientation] + distance
+  }
+  return scrollRect[orientation] + distance - rect[orientation]
 }
 const init = (scrollEle, value) => {
   setTimeout(() => {
     const params = Object.assign(defaultParams, value)
-    const { targetClass, direction, distance, scrollInViewport } = params
+    const { targetClass, direction, distance, scrollInViewport, orientation } = params
     const target = scrollEle.querySelector(`.${targetClass}`)
     if (!target) return
 
@@ -55,7 +64,7 @@ const init = (scrollEle, value) => {
     const scrollRect = scrollEle.getBoundingClientRect()
     const isInViewport = isElementInViewport(rect, scrollRect)
     if (!isInViewport || (isInViewport && scrollInViewport)) {
-      toScrollViewport(scrollEle, rect, scrollRect, direction, distance)
+      toScrollViewport(scrollEle, rect, scrollRect, direction, distance, orientation)
     }
   }, 0)
 }
