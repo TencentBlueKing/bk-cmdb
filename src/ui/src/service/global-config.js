@@ -34,10 +34,10 @@ export const initialConfig = {
     userModules: [] // 用户自定义模块
   },
   publicConfig: {
-    name: '蓝鲸配置平台',
-    nameEn: 'BK CMDB',
-    brandName: '腾讯蓝鲸智云',
-    brandNameEn: 'BlueKing',
+    name: '配置平台',
+    nameEn: 'CMDB',
+    brandName: '蓝鲸智云',
+    brandNameEn: 'Tencent BlueKing',
     favicon: '/static/favicon.ico',
     version: window.Site.buildVersion
   }
