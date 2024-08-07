@@ -1,3 +1,15 @@
+## [Version: v3.14.1-alpha7] - 2024-08-07
+**功能优化**
+- footer和title规范优化
+- 调整SaaS配置文件
+- 字段详情英文样式优化
+- 清理容器审计数据
+
+**缺陷修复**
+- 修复apigw文档问题
+- 修复saas将请求proxy到apigw时遗漏URL参数的问题
+- 国际化相关问题修复
+
 ## [Version: v3.14.1-feature-layered-alpha6] - 2024-07-17
 **功能优化**
 - 删除平台管理的site和footer配置项
