@@ -47,18 +47,26 @@ const (
 
 	// DynamicGroupOperatorLIKE like operator.
 	DynamicGroupOperatorLIKE = "$regex"
+
+	// DynamicGroupOperatorContains contains operator.
+	DynamicGroupOperatorContains = "contains"
+
+	// DynamicGroupOperatorContainsSensitive contains sensitive operator.
+	DynamicGroupOperatorContainsSensitive = "contains_s"
 )
 
 var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
-		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:   DynamicGroupOperatorNE,
-		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
-		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
-		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
-		DynamicGroupOperatorGTE:  DynamicGroupOperatorGTE,
-		DynamicGroupOperatorLIKE: DynamicGroupOperatorLIKE,
+		DynamicGroupOperatorEQ:                DynamicGroupOperatorEQ,
+		DynamicGroupOperatorNE:                DynamicGroupOperatorNE,
+		DynamicGroupOperatorIN:                DynamicGroupOperatorIN,
+		DynamicGroupOperatorNIN:               DynamicGroupOperatorNIN,
+		DynamicGroupOperatorLTE:               DynamicGroupOperatorLTE,
+		DynamicGroupOperatorGTE:               DynamicGroupOperatorGTE,
+		DynamicGroupOperatorLIKE:              DynamicGroupOperatorLIKE,
+		DynamicGroupOperatorContains:          DynamicGroupOperatorContains,
+		DynamicGroupOperatorContainsSensitive: DynamicGroupOperatorContainsSensitive,
 	}
 
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
