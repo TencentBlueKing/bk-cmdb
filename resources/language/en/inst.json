@@ -4,5 +4,6 @@
     "inst_module_recycle": "recycle host",
     "inst_biz_default": "resource pool",
     "inst_set_default": "idle pool",
+    "inst_plat_unassigned": "Unassigned Area",
     "": ""
 }

@@ -36,7 +36,7 @@ var BuildInInstanceNamePkg = map[string]map[string][]string{
 	},
 }
 
-// TranslateInstanceName is used to translate build-in model(module/set/biz) instance's name to the
+// TranslateInstanceName is used to translate build-in model(module/set/biz/plat) instance's name to the
 // corresponding language.
 // Note: these instances's name is related it's default field's value, different value have different name.
 // such as the module's instance, the different meaning of default value is as follows:
@@ -65,5 +65,19 @@ func TranslateInstanceName(defLang language.DefaultCCLanguageIf, objectID string
 					fmt.Sprint(instances[idx][subResult[1]]))
 			}
 		}
+		return
+	}
+
+	// translate unassigned cloud area name
+	if objectID == common.BKInnerObjIDPlat {
+		for idx, inst := range instances {
+			cloudAreaName := util.GetStrByInterface(inst[common.BKCloudNameField])
+			if cloudAreaName == common.UnassignedCloudAreaName {
+				instances[idx][common.BKCloudNameField] = util.FirstNotEmptyString(
+					defLang.Language("inst_plat_unassigned"), cloudAreaName)
+			}
+		}
+		return
+
 	}
 }
