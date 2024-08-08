@@ -80,12 +80,8 @@
         return map[currentStep.value - 1]
       })
       const nextStepDisabled = computed(() => fields.value.length <= presetFields.value.length)
-      const exportDisabled = computed(() => {
-        if (!allowExportRelation.value) {
-          return false
-        }
-        return Object.keys(relations.value).length === 0
-      })
+      const exportDisabled = computed(() => fields.value.length === 0
+        || (allowExportRelation.value && Object.keys(relations.value).length === 0))
       const stepsLen = computed(() => steps.value.length)
       const showSteps = computed(() => currentStep.value < stepsLen.value + 1 && stepsLen.value > 1)
 
