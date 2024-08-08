@@ -14,13 +14,16 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
+	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -132,7 +135,18 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
-	err := s.updatePlatformSetting(config)
+	if err := s.validateIDGenConf(&config.IDGenerator, rid); err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	preConf, err := s.searchCurrentConfig(rid)
+	if err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	err = s.updatePlatformSetting(config)
 	if err != nil {
 		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -146,11 +160,93 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
+	if err = s.savePlatformSettingUpdateAudit(preConf, config, rHeader, rid); err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
 	err = resp.WriteEntity(metadata.NewSuccessResp("udpate config admin success"))
 	if err != nil {
 		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
 		return
 	}
+}
+
+// validateIDGenConf validate id generator config
+func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) error {
+	if len(conf.InitID) == 0 {
+		return nil
+	}
+
+	// check if init id types are valid, and get current sequence ids by sequence names
+	seqNames := make([]string, 0)
+	for typ := range conf.InitID {
+		seqName, exists := idgen.GetIDGenSequenceName(typ)
+		if !exists {
+			blog.Errorf("id generator config type %s is invalid, rid: %s", rid)
+			return fmt.Errorf("id generator type %s is invalid", typ)
+		}
+		seqNames = append(seqNames, seqName)
+	}
+
+	idGenCond := map[string]interface{}{
+		"_id": map[string]interface{}{common.BKDBIN: seqNames},
+	}
+
+	idGens := make([]local.Idgen, 0)
+	err := s.db.Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id", "SequenceID").All(s.ctx, &idGens)
+	if err != nil {
+		blog.Errorf("get id generator data failed, err: %v, cond: %+v, rid: %s", err, idGenCond, rid)
+		return err
+	}
+
+	seqNameIDMap := make(map[string]uint64)
+	for _, data := range idGens {
+		seqNameIDMap[data.ID] = data.SequenceID
+	}
+
+	// check if init id config is greater than current sequence id
+	for typ, id := range conf.InitID {
+		seqName, _ := idgen.GetIDGenSequenceName(typ)
+
+		if id <= seqNameIDMap[seqName] {
+			blog.Errorf("id generator type %s id %d <= current id: %d, rid: %s", typ, id, seqNameIDMap[seqName], rid)
+			return fmt.Errorf("id generator type %s id %d is invalid", typ, id)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.PlatformSettingConfig,
+	header http.Header, rid string) error {
+
+	id, err := s.db.NextSequence(s.ctx, common.BKTableNameAuditLog)
+	if err != nil {
+		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, rid)
+		return err
+	}
+
+	audit := metadata.AuditLog{
+		ID:              int64(id),
+		AuditType:       metadata.PlatformSetting,
+		SupplierAccount: util.GetOwnerID(header),
+		User:            util.GetUser(header),
+		ResourceType:    metadata.PlatformSettingRes,
+		Action:          metadata.AuditUpdate,
+		OperateFrom:     metadata.FromUser,
+		OperationDetail: &metadata.GenericOpDetail{Data: preConf, UpdateFields: curConf},
+		OperationTime:   metadata.Now(),
+		AppCode:         header.Get(common.BKHTTPRequestAppCode),
+		RequestID:       rid,
+	}
+
+	if err = s.db.Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
+		blog.Errorf("save audit log failed, err: %v, audit: %+v, rid: %s", err, audit, rid)
+		return err
+	}
+
+	return nil
 }
 
 // updatePlatformSetting update current configuration to database.
