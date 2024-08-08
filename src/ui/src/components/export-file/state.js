@@ -30,7 +30,8 @@ const defaultState = {
   fields: [],
   relations: {},
   exportRelation: false,
-  object_unique_id: ''
+  object_unique_id: '',
+  confirmBtn: t('开始导出')
 }
 
 const state = reactive(useClone(defaultState))

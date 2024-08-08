@@ -22,10 +22,11 @@ export default function (options = {}, config) {
   const refresh = async (value) => {
     if (!value.bk_obj_id) return
     state.pending = true
-    state.properties = await propertyService.find(value, config)
     if (value.bk_obj_id === BUILTIN_MODELS.PROJECT) {
       state.invisibleProperties = ['bk_project_icon']
     }
+    state.properties = (await propertyService.find(value, config))
+      .filter(property => !state.invisibleProperties.includes(property.bk_property_id))
     state.pending = false
   }
   watch(() => (isRef(options) ? options.value : options), refresh, { immediate: true, deep: true })

@@ -495,6 +495,7 @@
           defaultSelectedFields: this.table.header.map(item => item.id),
           count,
           steps: [{ title: this.$t('选择字段'), icon: 1 }],
+          confirmBtn: this.$t('导出'),
           submit: (state, task) => {
             const { fields } = state
             const params = {
