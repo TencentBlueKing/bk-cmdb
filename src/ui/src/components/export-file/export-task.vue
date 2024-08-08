@@ -113,7 +113,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 60px;
+        min-width: 60px;
         height: 100%;
         font-size: 12px;
         flex-direction: column;
