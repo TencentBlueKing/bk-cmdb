@@ -17,6 +17,8 @@ import i18n from '@/i18n'
 import useState from './state'
 import useTask from './task'
 import { bkInfoBox } from 'bk-magic-vue'
+import isEqual from 'lodash/isEqual'
+
 let instance = null
 const [state, { setState, resetState }] = useState()
 const [, { reset: resetTask }] = useTask()
@@ -24,6 +26,7 @@ const visible = toRef(state, 'visible')
 const title = toRef(state, 'title')
 const step = toRef(state, 'step')
 const status = toRef(state, 'status')
+const fields = toRef(state, 'fields')
 const show = () => {
   instance = createSideslider()
   instance.$mount()
@@ -43,8 +46,9 @@ watch(visible, (value) => {
   }, 200)
 })
 
+const hasChange = () => !isEqual(state.originFields.value, fields.value) || step.value !== 1 || status.value === 'pending'
 const beforeClose = () => {
-  if (step.value !== 2 || !status.value === 'pending') {
+  if (!hasChange()) {
     return true
   }
   return new Promise((resolve) => {
