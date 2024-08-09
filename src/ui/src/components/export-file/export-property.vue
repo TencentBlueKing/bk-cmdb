@@ -63,7 +63,7 @@
   export default {
     name: 'export-property',
     setup() {
-      const [exportState] = useState()
+      const [exportState, { setState }] = useState()
       // 加载属性与属性分组
       const [{ properties, pending }] = useProperty({
         bk_obj_id: exportState.bk_obj_id.value,
@@ -96,6 +96,9 @@
         exportState.defaultSelectedFields.value.forEach((field) => {
           const property = value.find(property => property.bk_property_id === field)
           property && selection.value.indexOf(property) === -1 && selection.value.push(property)
+        })
+        setState({
+          originFields: [...selection.value]
         })
       })
       const isPreset = property => presetProperties.value.includes(property)
