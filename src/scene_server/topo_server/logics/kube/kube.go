@@ -325,32 +325,6 @@ func (k *kube) BatchCreatePod(kit *rest.Kit, data *types.CreatePodsOption) ([]in
 
 // BatchCreateNode batch create node.
 func (k *kube) BatchCreateNode(kit *rest.Kit, data *types.CreateNodesOption, bizID int64) ([]int64, error) {
-
-	conds := make([]map[string]interface{}, 0)
-	for _, node := range data.Nodes {
-		conds = append(conds, map[string]interface{}{
-			common.BKFieldName:     *node.Name,
-			types.BKClusterIDFiled: node.ClusterID,
-		})
-	}
-
-	cond := map[string]interface{}{
-		common.BKDBOR:       conds,
-		common.BKAppIDField: bizID,
-	}
-
-	counts, err := k.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
-		types.BKTableNameBaseNode, []map[string]interface{}{cond})
-	if err != nil {
-		blog.Errorf("count cluster failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrTopoInstCreateFailed)
-	}
-
-	if counts[0] > 0 {
-		blog.Errorf("duplicate node name exists, num: %d, err: %v, rid: %s", counts[0], err, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "duplicate node name has been created")
-	}
-
 	result, err := k.clientSet.CoreService().Kube().BatchCreateNode(kit.Ctx, kit.Header, data.Nodes)
 	if err != nil {
 		blog.Errorf("create nodes failed, data: %#v, err: %v, rid: %s", data, err, kit.Rid)

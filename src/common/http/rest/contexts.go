@@ -185,6 +185,9 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		Data: data,
 	}
 	if err != nil {
+		blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
+			c.Kit.User, c.Kit.Rid, err)
+
 		if err == ac.NoAuthorizeError {
 			body, err := json.Marshal(data)
 			if err != nil {
@@ -261,7 +264,8 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "rid: %s, %s, err: %v", c.Kit.Rid, fmt.Sprintf(format, args), err)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
+		c.Kit.User, c.Kit.Rid, fmt.Sprintf(format, args), err)
 
 	var code int
 	var errMsg string
@@ -304,7 +308,8 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 func (c *Contexts) RespAutoError(err error) {
 	c.collectErrorMetric()
 
-	blog.ErrorfDepthf(1, "rid: %s, err: %v", c.Kit.Rid, err)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
+		c.Kit.User, c.Kit.Rid, err)
 	var code int
 	var errMsg string
 	if err != nil {
@@ -346,7 +351,8 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "rid: %s, %s", c.Kit.Rid, logMsg)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s", c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User,
+		c.Kit.Rid, logMsg)
 
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
@@ -368,7 +374,8 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "%s, rid: %s", fmt.Sprintf(format, args), c.Kit.Rid)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, %s, rid: %s", c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User,
+		fmt.Sprintf(format, args), c.Kit.Rid)
 
 	c.resp.Header().Set("Content-Type", "application/json")
 	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
@@ -407,6 +414,9 @@ func (c *Contexts) RespBkEntity(data interface{}) {
 // RespBkError TODO
 func (c *Contexts) RespBkError(errCode int, errMsg string) {
 	c.collectErrorMetric()
+
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, errCode: %d, errMsg: %s",
+		c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User, c.Kit.Rid, errCode, errMsg)
 
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)

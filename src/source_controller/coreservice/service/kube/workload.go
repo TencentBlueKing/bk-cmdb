@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	errutil "configcenter/src/common/util/errors"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
@@ -118,7 +119,7 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, createData)
 	if err != nil {
 		blog.Errorf("add %s workload failed,data: %v, err: %v, rid: %s", tableName, createData, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
 		return
 	}
 

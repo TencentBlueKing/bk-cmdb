@@ -18,6 +18,7 @@
 	"bk_firewall_property_group_default": "基础信息",
 	"bk_biz_set_obj_property_group_default": "基础信息",
 	"bk_biz_set_obj_property_group_role": "角色",
+	"bk_project_property_group_default": "基础信息",
 	
 	"biz_property_group_bizdefault": "业务基础信息",
 	"set_property_group_bizdefault": "业务基础信息",
@@ -29,5 +30,6 @@
     "bk_router_property_group_bizdefault": "业务基础信息",
     "bk_load_balance_property_group_bizdefault": "业务基础信息",
     "bk_firewall_property_group_bizdefault": "业务基础信息",
+    "bk_project_property_group_bizdefault": "业务基础信息",
 	"": ""
 }

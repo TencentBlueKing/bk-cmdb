@@ -18,6 +18,7 @@
 	"bk_firewall_property_group_default": "default",
 	"bk_biz_set_obj_property_group_default": "default",
 	"bk_biz_set_obj_property_group_role": "role",
+	"bk_project_property_group_default": "default",
 	
 	"biz_property_group_bizdefault": "bizdefault",
 	"set_property_group_bizdefault": "bizdefault",
@@ -29,5 +30,6 @@
     "bk_router_property_group_bizdefault": "bizdefault",
     "bk_load_balance_property_group_bizdefault": "bizdefault",
     "bk_firewall_property_group_bizdefault": "bizdefault",
+    "bk_project_property_group_bizdefault": "bizdefault",
     "": ""
 }

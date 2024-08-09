@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	errutil "configcenter/src/common/util/errors"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
 	"configcenter/src/storage/driver/mongodb"
@@ -131,7 +132,7 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 
 	if err = mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
 		blog.Errorf("create pod failed, db insert failed, pods: %+v, err: %+v, rid: %s", pods, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
 		return
 	}
 
@@ -149,7 +150,7 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 	if err != nil {
 		blog.Errorf("create container failed, db insert failed, containers: %+v, err: %+v, rid: %s",
 			containers, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
 		return
 	}
 

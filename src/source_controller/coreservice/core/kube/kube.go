@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/util/errors"
 	"configcenter/src/kube/types"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/table"
@@ -423,7 +424,7 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreat
 		}
 		if err := mongodb.Client().Table(types.BKTableNameBaseNode).Insert(kit.Ctx, node); err != nil {
 			blog.Errorf("create node failed, db insert failed, node: %+v, err: %+v, rid: %s", node, err, kit.Rid)
-			return nil, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+			return nil, errors.ConvDBInsertError(kit, mongodb.Client(), err)
 		}
 		result = append(result, node)
 	}

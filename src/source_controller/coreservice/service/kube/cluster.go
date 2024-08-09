@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/util/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
@@ -129,7 +130,7 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
 	if err != nil {
 		blog.Errorf("create cluster failed, db insert failed, doc: %+v, err: %+v, rid: %s", cluster, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed))
+		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
 		return
 	}
 
