@@ -132,6 +132,8 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/cache/findmany/full/sync/cond").Filter(s.CacheFilterChan).To(s.Post))
 	ws.Route(ws.POST("/cache/findmany/resource/by_full_sync_cond").Filter(s.CacheFilterChan).To(s.Post))
 	ws.Route(ws.POST("/cache/findmany/resource/by_ids").Filter(s.CacheFilterChan).To(s.Post))
+
+	ws.Route(ws.POST("/find/object/model/web").Filter(s.TopoFilterChan).To(s.Post))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

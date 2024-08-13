@@ -125,7 +125,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
-	objects, err := lgc.ApiCli.ReadModel(ctx, header, &metadata.QueryCondition{
+	objects, err := lgc.ApiCli.ReadModelForUI(ctx, header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKObjIDField: map[string]interface{}{
 				common.BKDBIN: objArray,

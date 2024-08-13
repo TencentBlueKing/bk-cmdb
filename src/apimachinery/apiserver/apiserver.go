@@ -97,6 +97,8 @@ type ApiServerClientInterface interface {
 		errors.CCErrorCoder)
 	ReadModel(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
 		errors.CCErrorCoder)
+	ReadModelForUI(ctx context.Context, h http.Header, input *metadata.QueryCondition) (*metadata.QueryModelDataResult,
+		errors.CCErrorCoder)
 	ReadInstance(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (
 		resp *metadata.QueryConditionResult, err error)
 	SearchObjectUnique(ctx context.Context, objID string, h http.Header) (resp *metadata.SearchUniqueResult, err error)
