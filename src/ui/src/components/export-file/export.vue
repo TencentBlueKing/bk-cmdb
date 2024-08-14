@@ -36,7 +36,7 @@
           class="mr10"
           theme="primary"
           :disabled="exportDisabled"
-          @click="startTask">{{$t('开始导出')}}</bk-button>
+          @click="startTask">{{confirmBtnText}}</bk-button>
       </template>
       <bk-button theme="default" @click="close" v-if="currentStep <= stepsLen">{{$t('取消')}}</bk-button>
     </div>
@@ -64,7 +64,8 @@
         presetFields,
         exportRelation: allowExportRelation,
         relations,
-        steps
+        steps,
+        confirmBtnText
       }, { setState }] = useState()
 
       const nextStep = () => setState({ step: currentStep.value + 1 })
@@ -79,12 +80,8 @@
         return map[currentStep.value - 1]
       })
       const nextStepDisabled = computed(() => fields.value.length <= presetFields.value.length)
-      const exportDisabled = computed(() => {
-        if (!allowExportRelation.value) {
-          return false
-        }
-        return Object.keys(relations.value).length === 0
-      })
+      const exportDisabled = computed(() => fields.value.length === 0
+        || (allowExportRelation.value && Object.keys(relations.value).length === 0))
       const stepsLen = computed(() => steps.value.length)
       const showSteps = computed(() => currentStep.value < stepsLen.value + 1 && stepsLen.value > 1)
 
@@ -105,7 +102,8 @@
         close,
         steps,
         showSteps,
-        stepsLen
+        stepsLen,
+        confirmBtnText
       }
     }
   }
