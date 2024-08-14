@@ -28,6 +28,7 @@ const defaultState = {
   presetFields: [],
   defaultSelectedFields: [],
   fields: [],
+  originFields: [],
   relations: {},
   exportRelation: false,
   object_unique_id: '',
