@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"time"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -52,13 +53,15 @@ const (
 var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
-		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:   DynamicGroupOperatorNE,
-		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
-		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
-		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
-		DynamicGroupOperatorGTE:  DynamicGroupOperatorGTE,
-		DynamicGroupOperatorLIKE: DynamicGroupOperatorLIKE,
+		DynamicGroupOperatorEQ:           DynamicGroupOperatorEQ,
+		DynamicGroupOperatorNE:           DynamicGroupOperatorNE,
+		DynamicGroupOperatorIN:           DynamicGroupOperatorIN,
+		DynamicGroupOperatorNIN:          DynamicGroupOperatorNIN,
+		DynamicGroupOperatorLTE:          DynamicGroupOperatorLTE,
+		DynamicGroupOperatorGTE:          DynamicGroupOperatorGTE,
+		DynamicGroupOperatorLIKE:         DynamicGroupOperatorLIKE,
+		string(filter.Contains):          string(filter.Contains),
+		string(filter.ContainsSensitive): string(filter.ContainsSensitive),
 	}
 
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
