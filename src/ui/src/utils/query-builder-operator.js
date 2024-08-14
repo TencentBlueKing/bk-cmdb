@@ -98,9 +98,16 @@ const mapping = {
   [QUERY_OPERATOR.CONTAINS_CS]: 'contains_s'
 }
 
+// 主机预览接口特殊处理
 export const TRANSFORM_SPECIAL_HANDLE_OPERATOR = {
   [QUERY_OPERATOR_SYMBOL[QUERY_OPERATOR.CONTAINS]]: QUERY_OPERATOR.LIKE,
   [QUERY_OPERATOR.LIKE]: mapping[QUERY_OPERATOR.CONTAINS_CS]
+}
+
+// 动态分组详情接口回显操作符处理
+export const OPERATOR_ECHO = {
+  [mapping[QUERY_OPERATOR.CONTAINS_CS]]: QUERY_OPERATOR.CONTAINS_CS,
+  [mapping[QUERY_OPERATOR.CONTAINS]]: QUERY_OPERATOR.CONTAINS
 }
 
 export default operator => mapping[operator]

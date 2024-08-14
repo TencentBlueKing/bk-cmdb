@@ -22,7 +22,9 @@
           <span
             v-cursor="{
               active: !isFullTextSearch,
-              onclick: showFullTip
+              onclick: showFullTip,
+              showPermissionDialog: false,
+              auth: { type: $OPERATION.R_FULLTEXT_SEARCH }
             }"
             :class="['tab-item', { 'active': activeName === 'fullText', 'disabled': !isFullTextSearch }]"
             @click="handleChangeTab('fullText')">
