@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/common/util/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal/table"
@@ -108,7 +109,7 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 	err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, namespaces)
 	if err != nil {
 		blog.Errorf("add namespace failed, data: %+v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
+		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
 		return
 	}
 
