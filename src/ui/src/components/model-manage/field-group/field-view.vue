@@ -13,7 +13,7 @@
 
 <template>
   <cmdb-sticky-layout class="field-view-layout">
-    <div class="field-view-list" ref="fieldList">
+    <div class="field-view-list" :language="$i18n.locale" ref="fieldList">
       <div class="property-item">
         <div class="property-name">
           <span>{{$t('唯一标识')}}</span>
@@ -313,6 +313,11 @@
                 right: 0;
                 content: "：";
               }
+            }
+        }
+        &[language="en"] {
+            .property-name {
+              width: 110px;
             }
         }
         .property-value {

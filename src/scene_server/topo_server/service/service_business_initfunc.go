@@ -34,6 +34,7 @@ func (s *Service) initBusinessObject(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/object/{id}", Handler: s.DeleteObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/objecttopology", Handler: s.SearchObjectTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object/model", Handler: s.SearchModel})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/object/model/web", Handler: s.SearchModelForUI})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/object/by_import",
 		Handler: s.CreateManyObject})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/object/total/info",

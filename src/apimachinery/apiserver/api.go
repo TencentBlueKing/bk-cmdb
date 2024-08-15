@@ -540,6 +540,32 @@ func (a *apiServer) ReadModel(ctx context.Context, h http.Header, cond *metadata
 	return &resp.Data, nil
 }
 
+// ReadModelForUI read object model data by obj id, NOTE: this api is only used for UI, do not authorize
+func (a *apiServer) ReadModelForUI(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (
+	*metadata.QueryModelDataResult, ccErr.CCErrorCoder) {
+
+	resp := new(metadata.ReadModelResult)
+	subPath := "/find/object/model/web"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
 // ReadInstance read instance by obj id and condition
 func (a *apiServer) ReadInstance(ctx context.Context, h http.Header, objID string,
 	cond *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {

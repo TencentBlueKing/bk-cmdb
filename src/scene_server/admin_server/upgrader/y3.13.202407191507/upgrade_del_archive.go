@@ -39,6 +39,8 @@ func upgradeDelArchive(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		return err
 	}
 
+	blog.Infof("delete expired del archive data successfully")
+
 	if err := addTimeField(ctx, db); err != nil {
 		blog.Errorf("add del archive time field failed, err: %v", err)
 		return err
@@ -53,6 +55,8 @@ func upgradeDelArchive(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		blog.Errorf("move kube data to kube del archive table failed, err: %v", err)
 		return err
 	}
+
+	blog.Infof("move kube data successfully")
 
 	return nil
 }
@@ -100,6 +104,10 @@ func delExpiredData(ctx context.Context, db dal.RDB) error {
 			return err
 		}
 
+		if len(dataArr) < common.BKMaxPageSize {
+			break
+		}
+
 		time.Sleep(time.Millisecond * 5)
 	}
 
@@ -139,6 +147,10 @@ func addTimeField(ctx context.Context, db dal.RDB) error {
 				blog.Errorf("update del archive failed, err: %v, cond: %+v, data: %+v", err, updateCond, updateData)
 				return err
 			}
+		}
+
+		if len(dataArr) < common.BKMaxPageSize {
+			break
 		}
 
 		time.Sleep(time.Millisecond * 5)
@@ -310,6 +322,10 @@ func moveKubeData(ctx context.Context, db dal.RDB) error {
 		if err := db.Table(common.BKTableNameDelArchive).Delete(ctx, delCond); err != nil {
 			blog.Errorf("delete kube del archive data failed, err: %v, cond: %+v", err, delCond)
 			return err
+		}
+
+		if len(dataArr) < common.BKMaxPageSize {
+			break
 		}
 
 		time.Sleep(time.Millisecond * 5)

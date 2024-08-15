@@ -44,6 +44,8 @@ func upgradeContainer(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
+	blog.Infof("upgrade container data successfully")
+
 	return nil
 }
 
@@ -188,6 +190,10 @@ func upgradeContainerData(ctx context.Context, db dal.RDB) error {
 				blog.Errorf("delete no pod container failed, err: %v, cond: %+v", err, delCond)
 				return err
 			}
+		}
+
+		if len(containers) < common.BKMaxPageSize {
+			break
 		}
 
 		time.Sleep(time.Millisecond * 5)

@@ -153,7 +153,7 @@
         return this.sysLangs.find(lang => lang.id === this.$i18n.locale) || {}
       },
       appName() {
-        return this.config.site.name ?? this.$t('蓝鲸配置平台')
+        return this.config.publicConfig?.i18n?.productName ?? this.config.site.name ?? this.$t('蓝鲸配置平台')
       },
       appLogo() {
         const src = this.config.publicConfig.appLogo || logoSvg
