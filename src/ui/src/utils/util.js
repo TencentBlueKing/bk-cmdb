@@ -81,3 +81,7 @@ export const camelize = cached((str, separator = '-') => {
   const camelizeRE = new RegExp(`${separator}(\\w)`, 'g')
   return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
 })
+
+export function isNumeric(str) {
+  return !isNaN(str) && !isNaN(parseFloat(str))
+}

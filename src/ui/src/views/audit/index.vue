@@ -84,6 +84,7 @@
   import AuditBusinessSelector from '@/components/audit-history/audit-business-selector'
   import RouterQuery from '@/router/query'
   import AuditDetails from '@/components/audit-history/details.js'
+  import { isNumeric } from '@/utils/util'
   export default {
     components: {
       [AuditBusinessOptions.name]: AuditBusinessOptions,
@@ -177,8 +178,12 @@
           this.dictionary = []
         }
       },
+      parseResourceId(id) {
+        if (isNumeric(id)) return parseInt(id, 10)
+        return id
+      },
       handleConditionChange(condition) {
-        const useCondition = function (condition) {
+        const useCondition = (condition) => {
           const usefulCondition = {}
           Object.keys(condition).forEach((key) => {
             const value = condition[key]
@@ -190,7 +195,7 @@
           if (usefulCondition.resource_id) {
             usefulCondition.resource_id = usefulCondition.resource_type === 'dynamic_group'
               ? usefulCondition.resource_id
-              : parseInt(usefulCondition.resource_id, 10)
+              : this.parseResourceId(usefulCondition.resource_id)
           }
           // 转换时间范围为start/end的形式
           if (usefulCondition.operation_time) {
@@ -237,7 +242,7 @@
           delete usefulCondition.resource_name
           delete usefulCondition.fuzzy_query
         }
-
+        console.log(usefulCondition, 'usefulCondition')
         this.condition = usefulCondition
       },
       async getAuditList(eventTrigger) {
