@@ -26,7 +26,8 @@ const state = reactive({
   bk_obj_id: null,
   bk_biz_id: null,
   fileTips: null,
-  template: null
+  template: null,
+  tips: null
 })
 const setState = (newState) => {
   Object.assign(state, newState)
@@ -46,7 +47,8 @@ const close = () => {
     bk_biz_id: null,
     bk_obj_id: null,
     fileTips: null,
-    template: null
+    template: null,
+    tips: null
   })
   setTimeout(() => {
     instance.$destroy()

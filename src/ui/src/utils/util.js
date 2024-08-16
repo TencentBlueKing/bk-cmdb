@@ -127,3 +127,7 @@ export function getHostInfoTitle(ip, ipv6, cloudId, hostId) {
   }
   return getIPInfo(ip, ipv6, cloudId)
 }
+
+export function isNumeric(str) {
+  return !isNaN(str) && !isNaN(parseFloat(str))
+}
