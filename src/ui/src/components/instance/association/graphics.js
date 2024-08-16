@@ -16,8 +16,12 @@ import popper from 'cytoscape-popper'
 import dagre from 'cytoscape-dagre'
 import { layout, style } from './graphics-config'
 import { generateObjIcon } from '@/utils/util'
-cytoscape.use(popper)
-cytoscape.use(dagre)
+if (typeof cytoscape('core', 'popper') !== 'function') {
+  cytoscape.use(popper)
+}
+if (typeof cytoscape('core', 'dagre') !== 'function') {
+  cytoscape.use(dagre)
+}
 const makeSVG = memoize((element) => {
   if (!element.isNode()) return
   return new Promise((resolve) => {
