@@ -242,7 +242,6 @@
           delete usefulCondition.resource_name
           delete usefulCondition.fuzzy_query
         }
-        console.log(usefulCondition, 'usefulCondition')
         this.condition = usefulCondition
       },
       async getAuditList(eventTrigger) {
