@@ -1,5 +1,5 @@
 specVersion: 3
-appVersion: "3.14.2-alpha2"
+appVersion: "3.14.2"
 app:
   region: "default"
   bkAppCode: "bk_cmdb_saas"
