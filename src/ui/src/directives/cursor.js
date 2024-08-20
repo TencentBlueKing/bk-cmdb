@@ -44,7 +44,8 @@ const options = {
   zIndex: 100000,
   cursor: 'pointer',
   className: 'v-cursor',
-  activeClass: 'v-cursor-active'
+  activeClass: 'v-cursor-active',
+  showPermissionDialog: true
 }
 
 const mouseenter = (event) => {

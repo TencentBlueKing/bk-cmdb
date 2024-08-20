@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.14.1-feature-layered-alpha6
+  version: 3.14.2-alpha2
   # 版本标题
-  title: "3.14.1-feature-layered-alpha6"
+  title: "3.14.2-alpha2"
   # 版本描述
-  comment: "3.14.1-feature-layered-alpha6"
+  comment: "3.14.2-alpha2"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
@@ -82,6 +82,11 @@ grant_permissions:
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
+      - list_hosts_without_biz
+      - list_biz_hosts
+  - bk_app_code: {{ environ.BK_BCS_SYNC_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
       - create_kube_cluster
       - batch_update_kube_cluster
       - update_kube_cluster_type
@@ -103,7 +108,7 @@ grant_permissions:
       - batch_update_kube_workload
       - batch_delete_kube_workload
       - list_kube_workload
-      - list_hosts_without_biz
+      - list_biz_hosts
   - bk_app_code: {{ environ.BK_HCM_APP_CODE }}
     grant_dimension: "resource"
     resource_names:

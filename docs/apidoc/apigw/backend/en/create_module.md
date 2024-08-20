@@ -4,17 +4,10 @@ Create a module (Permission: Business Topology Creation Permission)
 
 ### Parameters
 
-| Name                | Type   | Required | Description       |
-|---------------------|--------|----------|-------------------|
-| bk_supplier_account | string | No       | Developer account |
-| bk_biz_id           | int    | Yes      | Business ID       |
-| bk_set_id           | int    | Yes      | Cluster id        |
-| data                | dict   | Yes      | Business data     |
-
-#### data
-
 | Name            | Type   | Required | Description                                                                                                                                                                            |
 |-----------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id       | int    | Yes      | Business ID                                                                                                                                                                            |
+| bk_set_id       | int    | Yes      | Cluster id                                                                                                                                                                             |
 | bk_parent_id    | int    | Yes      | The ID of the parent instance node, the last level instance node of the current instance node, in the topology structure, for modules, it generally refers to the bk_set_id of the set |
 | bk_module_name  | string | Yes      | Module name                                                                                                                                                                            |
 | bk_module_type  | string | No       | Module type                                                                                                                                                                            |
@@ -33,19 +26,15 @@ configuration of the module's attribute fields.**
 
 ```json
 {
-    "bk_biz_id": 3,
-    "bk_set_id": 4,
-    "data": {
-        "bk_parent_id": 4,
-        "bk_module_name": "redis-1",
-        "bk_module_type": "2",
-        "operator": "admin",
-        "bk_bak_operator": "admin",
-        "bk_created_at": "",
-        "bk_updated_at": "",
-        "bk_created_by": "admin",
-        "bk_updated_by": "admin"
-    }
+  "bk_parent_id": 4,
+  "bk_module_name": "redis-1",
+  "bk_module_type": "2",
+  "operator": "admin",
+  "bk_bak_operator": "admin",
+  "bk_created_at": "",
+  "bk_updated_at": "",
+  "bk_created_by": "admin",
+  "bk_updated_by": "admin"
 }
 ```
 
@@ -53,31 +42,31 @@ configuration of the module's attribute fields.**
 
 ```json
 {
-    "result": true,
-    "code": 0,
-    "message": "success",
-    "permission": null,
-    "data": {
-        "bk_bak_operator": "admin",
-        "bk_biz_id": 3,
-        "bk_created_at": "2023-11-14T17:11:21.225+08:00",
-        "bk_created_by": "admin",
-        "bk_module_id": 20,
-        "bk_module_name": "redis-1",
-        "bk_module_type": "2",
-        "bk_parent_id": 4,
-        "bk_set_id": 4,
-        "bk_supplier_account": "0",
-        "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
-        "create_time": "2023-11-14T17:11:21.225+08:00",
-        "default": 0,
-        "host_apply_enabled": false,
-        "last_time": "2023-11-14T17:11:21.225+08:00",
-        "operator": "admin",
-        "service_category_id": 2,
-        "service_template_id": 0,
-        "set_template_id": 0
-    },
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": {
+    "bk_bak_operator": "admin",
+    "bk_biz_id": 3,
+    "bk_created_at": "2023-11-14T17:11:21.225+08:00",
+    "bk_created_by": "admin",
+    "bk_module_id": 20,
+    "bk_module_name": "redis-1",
+    "bk_module_type": "2",
+    "bk_parent_id": 4,
+    "bk_set_id": 4,
+    "bk_supplier_account": "0",
+    "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
+    "create_time": "2023-11-14T17:11:21.225+08:00",
+    "default": 0,
+    "host_apply_enabled": false,
+    "last_time": "2023-11-14T17:11:21.225+08:00",
+    "operator": "admin",
+    "service_category_id": 2,
+    "service_template_id": 0,
+    "set_template_id": 0
+  }
 }
 ```
 

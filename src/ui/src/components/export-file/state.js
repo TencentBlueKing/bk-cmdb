@@ -11,6 +11,7 @@
  */
 
 import { reactive, toRefs, set, del } from 'vue'
+import { t } from '@/i18n'
 import useClone from '@/hooks/utils/clone'
 const defaultState = {
   visible: false,
@@ -22,13 +23,16 @@ const defaultState = {
   count: 0,
   limit: 30000,
   step: 1,
+  steps: [{ title: t('选择字段'), icon: 1 }, { title: t('选择关联模型'), icon: 2 }],
   status: null,
   presetFields: [],
   defaultSelectedFields: [],
   fields: [],
+  originFields: [],
   relations: {},
   exportRelation: false,
-  object_unique_id: ''
+  object_unique_id: '',
+  confirmBtnText: t('开始导出')
 }
 
 const state = reactive(useClone(defaultState))

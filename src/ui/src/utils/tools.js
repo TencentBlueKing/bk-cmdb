@@ -16,6 +16,7 @@ import has from 'has'
 import { t } from '@/i18n'
 import { CONTAINER_OBJECT_INST_KEYS, CONTAINER_OBJECTS } from '@/dictionary/container'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS } from '@/dictionary/model-constants'
+import { TRANSFORM_SPECIAL_HANDLE_OPERATOR } from '@/utils/query-builder-operator'
 import { PRESET_TABLE_HEADER_MIN_WIDTH } from '@/dictionary/table-header'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
@@ -460,8 +461,12 @@ export function transformHostSearchParams(params) {
   const conditions = transformedParams.condition
   conditions.forEach((item) => {
     item.condition.forEach((field) => {
-      const { operator } = field
-      const { value } = field
+      const { bk_obj_id: objId } = item
+      const { operator, value } = field
+      if (objId !== BUILTIN_MODELS.HOST) {
+        // 主机接口参数condition特殊处理 非host情况下： 1. 操作符为$regex处理成contains_s  2. 操作符为contains处理成$regex
+        field.operator = transformNoHostOperator(operator)
+      }
       if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
         field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length)
           .map(str => str.trim())
@@ -470,6 +475,8 @@ export function transformHostSearchParams(params) {
   })
   return transformedParams
 }
+
+const transformNoHostOperator = operator => TRANSFORM_SPECIAL_HANDLE_OPERATOR?.[operator] ?? operator
 
 const defaultPaginationConfig = window.innerHeight > 750
   ? { limit: 20, 'limit-list': [20, 50, 100, 500] }
@@ -678,6 +685,22 @@ export function isContainerObjects(objId) {
   return Object.values(CONTAINER_OBJECTS).includes(objId)
 }
 
+/**
+ * 下拉框是否要展示全部选项
+ * 需要展示的： 由用户自定义数据的枚举、枚举(多选)、列表三个类型的字段
+ */
+export function getSelectAll(property = {}) {
+  if (!property) return false
+
+  const fields = [
+    PROPERTY_TYPES.ENUM,
+    PROPERTY_TYPES.ENUMMULTI,
+    PROPERTY_TYPES.LIST
+  ]
+  const { bk_property_type: type, ispre } = property
+  return !ispre && fields.includes(type)
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -712,5 +735,6 @@ export default {
   versionSort,
   isPropertySortable,
   isIconTipProperty,
-  isContainerObjects
+  isContainerObjects,
+  getSelectAll
 }

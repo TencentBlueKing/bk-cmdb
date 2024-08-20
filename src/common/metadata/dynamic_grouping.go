@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"time"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -52,13 +53,15 @@ const (
 var (
 	// DynamicGroupOperators all operators -> current newest operators.
 	DynamicGroupOperators = map[string]string{
-		DynamicGroupOperatorEQ:   DynamicGroupOperatorEQ,
-		DynamicGroupOperatorNE:   DynamicGroupOperatorNE,
-		DynamicGroupOperatorIN:   DynamicGroupOperatorIN,
-		DynamicGroupOperatorNIN:  DynamicGroupOperatorNIN,
-		DynamicGroupOperatorLTE:  DynamicGroupOperatorLTE,
-		DynamicGroupOperatorGTE:  DynamicGroupOperatorGTE,
-		DynamicGroupOperatorLIKE: DynamicGroupOperatorLIKE,
+		DynamicGroupOperatorEQ:           DynamicGroupOperatorEQ,
+		DynamicGroupOperatorNE:           DynamicGroupOperatorNE,
+		DynamicGroupOperatorIN:           DynamicGroupOperatorIN,
+		DynamicGroupOperatorNIN:          DynamicGroupOperatorNIN,
+		DynamicGroupOperatorLTE:          DynamicGroupOperatorLTE,
+		DynamicGroupOperatorGTE:          DynamicGroupOperatorGTE,
+		DynamicGroupOperatorLIKE:         DynamicGroupOperatorLIKE,
+		string(filter.Contains):          string(filter.Contains),
+		string(filter.ContainsSensitive): string(filter.ContainsSensitive),
 	}
 
 	// DynamicGroupConditionTypes all condition object types of dynamic group.
@@ -119,10 +122,28 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		}
 	}
 
+	switch attrType {
+	case boolType:
+		if operator != DynamicGroupOperatorEQ {
+			return fmt.Errorf("bool type only support $eq operator, not support operator, %s", c.Operator)
+		}
+		return validAttributeValueType(attrType, c.Value)
+	case dateType:
+		if operator != DynamicGroupOperatorGTE && operator != DynamicGroupOperatorLTE {
+			return fmt.Errorf("date type only support $gte & $lte operator, not support operator, %s", c.Operator)
+		}
+		return validAttributeValueType(attrType, c.Value)
+	}
+
 	switch operator {
-	case DynamicGroupOperatorEQ, DynamicGroupOperatorNE, DynamicGroupOperatorLTE, DynamicGroupOperatorGTE:
+	case DynamicGroupOperatorEQ, DynamicGroupOperatorNE:
 		return validAttributeValueType(attrType, c.Value)
 	case DynamicGroupOperatorIN, DynamicGroupOperatorNIN:
+		if attrType != stringType {
+			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator,
+				attributeType)
+		}
+
 		valueArr, ok := c.Value.([]interface{})
 		if !ok {
 			return fmt.Errorf("operator %s only support array value, not support value, %+v", c.Operator, c.Value)
@@ -133,6 +154,12 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 				return err
 			}
 		}
+	case DynamicGroupOperatorLTE, DynamicGroupOperatorGTE:
+		if attrType != numericType {
+			return fmt.Errorf("operator %s only support numeric value, not support attribute type, %s", c.Operator,
+				attributeType)
+		}
+		return validAttributeValueType(attrType, c.Value)
 	case DynamicGroupOperatorLIKE:
 		if attrType != stringType {
 			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator,
@@ -182,6 +209,10 @@ func validAttributeValueType(attrType string, value interface{}) error {
 		if _, ok := value.(bool); !ok {
 			return fmt.Errorf("attribute only support bool value, not support value, %+v", value)
 		}
+	case dateType:
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("date attribute only support string value, not support value, %+v", value)
+		}
 	}
 
 	return nil
@@ -191,18 +222,20 @@ const (
 	numericType = "numeric"
 	boolType    = "bool"
 	stringType  = "string"
+	dateType    = "date"
 )
 
 func getAttributeType(attributeType string) (string, error) {
 	switch attributeType {
-	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeDate,
-		common.FieldTypeEnumMulti, common.FieldTypeTime, common.FieldTypeTimeZone, common.FieldTypeUser,
-		common.FieldTypeList:
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar, common.FieldTypeEnum, common.FieldTypeEnumMulti,
+		common.FieldTypeTimeZone, common.FieldTypeUser, common.FieldTypeList:
 		return stringType, nil
 	case common.FieldTypeInt, common.FieldTypeFloat, common.FieldTypeOrganization, common.FieldTypeEnumQuote:
 		return numericType, nil
 	case common.FieldTypeBool:
 		return boolType, nil
+	case common.FieldTypeDate:
+		return dateType, nil
 	default:
 		return "", fmt.Errorf("not support attribute type, %s", attributeType)
 	}

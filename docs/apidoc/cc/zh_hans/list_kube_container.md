@@ -11,7 +11,7 @@
 | 字段        | 类型           | 必选 | 描述                                                     |
 |-----------|--------------|----|--------------------------------------------------------|
 | bk_biz_id | int          | 是  | 业务ID                                                   |
-| bk_pod_id | int          | 是  | 所属pod的ID                                               |
+| bk_pod_id | int          | 否  | 所属pod的ID                                               |
 | filter    | object       | 否  | container的查询条件                                         |
 | fields    | string array | 是  | container属性列表，控制返回结果的container里有哪些字段，能够加速接口请求和减少网络流量传输 |
 | page      | object       | 是  | 分页信息                                                   |

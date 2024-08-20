@@ -33,6 +33,11 @@
           </bk-button>
         </template>
       </cmdb-auth>
+      <cmdb-button-group
+        class="mr10"
+        :buttons="buttons"
+        :expand="false">
+      </cmdb-button-group>
       <div class="options-button fr">
         <cmdb-auth class="inline-block-middle" :auth="{ type: $OPERATION.BUSINESS_ARCHIVE }">
           <icon-button slot-scope="{ disabled }"
@@ -58,6 +63,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -228,6 +234,7 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -242,11 +249,18 @@
   import throttle from 'lodash.throttle'
   import BatchSelectionColumn from '@/components/batch-selection-column'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import cmdbModelFastLink from '@/components/model-fast-link'
+  import cmdbButtonGroup from '@/components/ui/other/button-group'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
+
   export default {
     components: {
       cmdbColumnsConfig,
       cmdbPropertySelector,
       BatchSelectionColumn,
+      cmdbModelFastLink,
+      cmdbButtonGroup
     },
     data() {
       return {
@@ -309,6 +323,9 @@
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),
+      objId() {
+        return BUILTIN_MODELS.BUSINESS
+      },
       customBusinessColumns() {
         return this.usercustom[this.columnsConfigKey] || []
       },
@@ -345,7 +362,21 @@
       },
       fastSearchProperties() {
         return this.properties.filter(item => item.bk_property_type !== PROPERTY_TYPES.INNER_TABLE)
-      }
+      },
+      buttons() {
+        const buttonConfig = [{
+          id: 'export',
+          text: this.$t('导出选中'),
+          handler: this.exportField,
+          disabled: !this.selectedRows.length
+        }, {
+          id: 'batchExport',
+          text: this.$t('导出全部'),
+          handler: () => this.exportField('all'),
+          disabled: !this.table.pagination.count
+        }]
+        return buttonConfig
+      },
     },
     watch: {
       'filter.field'() {
@@ -425,10 +456,11 @@
       genFilterCondition(filter = '', operator = '') {
         const defaultData = Utils.getDefaultData(this.filterProperty)
         const isBizName = this.filterProperty.bk_property_id === 'bk_biz_name'
+        const { LIKE } = QUERY_OPERATOR
 
         // 这里的业务名称因只支持模糊搜索，且 getDefaultData 返回的过滤方式没有命中，所以只能单独加个判断
         if (isBizName) {
-          this.filter.operator = ''
+          this.filter.operator = LIKE
           this.filter.value = filter || ''
         } else {
           this.filter.operator = operator || defaultData.operator
@@ -437,6 +469,72 @@
             defaultData.value
           )
         }
+      },
+      getCondition() {
+        // 这里先直接复用转换通用模型实例查询条件的方法
+        const condition = {
+          [this.filterProperty.id]: {
+            value: this.filter.value,
+            operator: this.filter.operator
+          }
+        }
+        const {
+          conditions,
+          time_condition
+        } = Utils.transformGeneralModelCondition(condition, this.properties)
+        return { conditions, time_condition }
+      },
+      async exportField(type = 'select') {
+        const useExport = await import('@/components/export-file')
+        const title = type === 'select' ? '导出选中' : '导出全部'
+        const count = type === 'select' ? this.selectedRows.length : this.table.pagination.count
+
+        useExport.default({
+          title: this.$t(title),
+          bk_obj_id: 'biz',
+          defaultSelectedFields: this.table.header.map(item => item.id),
+          count,
+          steps: [{ title: this.$t('选择字段'), icon: 1 }],
+          confirmBtnText: this.$t('导出'),
+          submit: (state, task) => {
+            const { fields } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+            }
+            if (type === 'select') {
+              const selected = this.selectedRows.map(e => e.bk_biz_id)
+              params.bk_biz_ids = selected
+              params.export_condition = {
+                page: {
+                  start: 0,
+                  limit: selected.length,
+                  sort: this.table.sort
+                }
+              }
+            }
+            if (type === 'all') {
+              const {
+                conditions,
+                time_condition: timeCondition
+              } = this.getCondition()
+              params.export_condition = {
+                filter: conditions,
+                time_condition: timeCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: this.table.sort
+                }
+              }
+            }
+
+            return this.$http.download({
+              url: `${window.API_HOST}biz/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
       },
       handleBatchEdit() {
         this.batchUpdateSlider.show = true

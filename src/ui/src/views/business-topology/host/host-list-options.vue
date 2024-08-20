@@ -159,13 +159,14 @@
             :auth="{ type: $OPERATION.U_HOST, relation: [bizId] }">
             <span href="javascript:void(0)"
               slot-scope="{ disabled }"
-              :class="{ disabled: disabled }"
+              :class="{ disabled: disabled || !count }"
               @click="handleExcelUpdate($event)">
               {{$t('导入excel更新')}}
             </span>
           </cmdb-auth>
         </ul>
       </bk-dropdown-menu>
+      <cmdb-refresh class="option ml10" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
     </div>
     <div class="options options-right">
       <filter-fast-search class="option-fast-search" v-test-id></filter-fast-search>
@@ -222,9 +223,11 @@
   import RouterQuery from '@/router/query'
   import { isUseComplexValueType, isEmptyPropertyValue } from '@/utils/tools'
   import { IPWithCloudSymbol, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol, IPWithCloudFields } from '@/dictionary/ip-with-cloud-symbol'
+  import cmdbRefresh from '@/components/refresh'
 
   export default {
     components: {
+      cmdbRefresh,
       FilterCollection,
       FilterFastSearch,
       EditMultipleHost,
@@ -327,6 +330,9 @@
       }
     },
     methods: {
+      handleRefresh() {
+        this.$emit('refresh')
+      },
       handleTransfer(event, type, disabled) {
         if (disabled) {
           event.stopPropagation()
@@ -441,7 +447,11 @@
           }
         }).show()
       },
-      async handleExcelUpdate() {
+      async handleExcelUpdate(event) {
+        if (!this.count) {
+          event.stopPropagation()
+          return false
+        }
         const useImport = await import('@/components/import-file')
         const [, { show: showImport, setState: setImportState }] = useImport.default()
         setImportState({

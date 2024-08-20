@@ -20,14 +20,17 @@ package auditlog
 import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
 )
 
 // kubeAuditLog provides methods to generate and save kube audit log.
 type kubeAuditLog struct {
-	audit
+	audit audit
 }
 
 // GenerateClusterAuditLog generate audit log of kube cluster.
@@ -151,14 +154,25 @@ func (c *kubeAuditLog) generateAuditLog(param *generateAuditCommonParameter, typ
 
 	return metadata.AuditLog{
 		AuditType:       metadata.KubeType,
+		SupplierAccount: param.kit.SupplierAccount,
+		User:            param.kit.User,
 		ResourceType:    typ,
 		Action:          param.action,
+		OperateFrom:     param.operateFrom,
+		OperationDetail: details,
+		OperationTime:   metadata.Time{},
 		BusinessID:      bizID,
 		ResourceID:      id,
-		OperateFrom:     param.operateFrom,
 		ResourceName:    *name,
-		OperationDetail: details,
+		AppCode:         httpheader.GetAppCode(param.kit.Header),
+		RequestID:       httpheader.GetRid(param.kit.Header),
 	}, nil
+}
+
+// SaveAuditLog save audit log
+func (a *kubeAuditLog) SaveAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) errors.CCErrorCoder {
+	blog.InfoJSON("record kube audit log: %s, rid: %s", logs, kit.Rid)
+	return nil
 }
 
 // NewKubeAudit new kube audit log utility struct

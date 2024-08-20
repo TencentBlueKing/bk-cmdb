@@ -39,6 +39,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -154,7 +155,7 @@
       @update-header="handleUpdateHeader" />
 
     <business-scope-preview v-bind="previewProps" :show.sync="previewProps.show" />
-
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -177,13 +178,16 @@
   import propertyGroupService from '@/service/property/group.js'
   import { MENU_RESOURCE_BUSINESS_SET_DETAILS } from '@/dictionary/menu-symbol.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import cmdbModelFastLink from '@/components/model-fast-link'
 
   export default defineComponent({
     components: {
       cmdbPropertySelector,
       columnsConfig,
       managementForm,
-      businessScopePreview
+      businessScopePreview,
+      cmdbModelFastLink
     },
     setup() {
       const requestId = Symbol()
@@ -231,6 +235,7 @@
         payload: {}
       })
 
+      const objId = computed(() => BUILTIN_MODELS.BUSINESS_SET)
       // 计算查询条件参数
       const searchParams = computed(() => {
         const params = {
@@ -497,6 +502,7 @@
         propertyGroups,
         fastSearchProperties,
         filterType,
+        filterProperty,
         filterPlaceholder,
         filterComponentProps,
         table,
@@ -505,6 +511,7 @@
         managementFormState,
         columnsConfigShow,
         previewProps,
+        objId,
         isBuiltin,
         handleCreate,
         handleFilterValueChange,

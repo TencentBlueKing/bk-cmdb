@@ -83,6 +83,7 @@
 
                 <condition-picker class="condition-picker"
                   :text="$t('添加')"
+                  placement="top"
                   icon="icon-plus-circle"
                   :selected="selectedProperties"
                   :property-map="propertyMap"
@@ -160,6 +161,8 @@
   import { $success } from '@/magicbox'
   import ConditionPicker from '@/components/condition-picker'
   import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
+  import { getConditionSelect, updatePropertySelect } from '@/utils/util'
+  import queryBuilderOperator, { QUERY_OPERATOR, OPERATOR_ECHO } from '@/utils/query-builder-operator'
 
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
@@ -368,6 +371,7 @@
       },
       transformDetails(details) {
         const { info } = details
+        const { CONTAINS, CONTAINS_CS } = QUERY_OPERATOR
         const transformedCondition = {
           condition: [],
           varCondition: []
@@ -378,7 +382,10 @@
               ? IMMUTABLE : VARIABLE
             const realCondition = (data.condition || []).reduce((accumulator, current) => {
               current.conditionType = conditionType
-              if (['$gte', '$lte'].includes(current.operator)) {
+              if ([queryBuilderOperator(CONTAINS), queryBuilderOperator(CONTAINS_CS)].includes(current.operator)) {
+                current.operator = OPERATOR_ECHO[current.operator]
+                accumulator.push(current)
+              } else if (['$gte', '$lte'].includes(current.operator)) {
                 // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
                 const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
 
@@ -524,35 +531,8 @@
         const { length } = selected
         if (!length) this.selectedProperties = []
 
-        const addSelect = []
-        const deleteSelect = []
-        const selectedSet = new Set()
-
-        selected.forEach(property => selectedSet.add(`${property.bk_property_id}-${property.bk_obj_id}`))
-        this.selectedProperties.forEach((property) => {
-          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
-          const key = `${propertyId}-${modelId}`
-          if (selectedSet.has(key)) {
-            selectedSet.delete(key)
-          } else {
-            deleteSelect.push(property)
-          }
-        })
-        selected.forEach((property) => {
-          const { bk_property_id: propertyId, bk_obj_id: modelId } = property
-          const key = `${propertyId}-${modelId}`
-          if (selectedSet.has(key)) {
-            addSelect.push(property)
-          }
-        })
-
-        deleteSelect.forEach(property => this.handleRemoveProperty(property))
-        let start = 0
-        const limit = 10
-        while (start < addSelect.length) {
-          setTimeout(() =>  this.selectedProperties.push(...addSelect.splice(0, limit)))
-          start += limit
-        }
+        const { addSelect, deleteSelect } = getConditionSelect(selected, this.selectedProperties)
+        updatePropertySelect(this.selectedProperties, this.handleRemoveProperty, addSelect, deleteSelect, 'unshift')
         this.setFooterCls()
       },
       handleRemoveProperty(property) {
@@ -648,6 +628,14 @@
           }
         })
       },
+      // 在动态分组保存/编辑时候，$contains和$contains_s去掉$符号
+      parseDynamicOperator(operator) {
+        const { CONTAINS, CONTAINS_CS } = QUERY_OPERATOR
+        if ([CONTAINS, CONTAINS_CS].includes(operator)) {
+          return operator.replace('$', '')
+        }
+        return operator
+      },
       getSubmitCondition() {
         const baseConditionMap = {
           [VARIABLE]: {},
@@ -687,7 +675,7 @@
           } else {
             submitCondition.push({
               field: property.bk_property_id,
-              operator,
+              operator: this.parseDynamicOperator(operator),
               value
             })
           }

@@ -82,7 +82,14 @@ func (lgc *Logics) GetObjectCount(ctx context.Context, header http.Header, cond 
 
 				objCount.InstCount = countRes.Count
 			} else {
-				count, err := lgc.ApiCli.CountObjInstByFilters(ctx, header, objID, []map[string]interface{}{{}})
+				params := make(map[string]interface{})
+				if objID == common.BKInnerObjIDApp {
+					params = map[string]interface{}{
+						common.BKDefaultField:    common.DefaultFlagDefaultValue,
+						common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
+					}
+				}
+				count, err := lgc.ApiCli.CountObjInstByFilters(ctx, header, objID, []map[string]interface{}{params})
 				if err != nil {
 					blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, rid)
 					apiErr = defErr.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
@@ -118,7 +125,7 @@ func (lgc *Logics) ProcessObjectIDArray(ctx context.Context, header http.Header,
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
 
 	objArray := util.RemoveDuplicatesAndEmpty(objectArray)
-	objects, err := lgc.ApiCli.ReadModel(ctx, header, &metadata.QueryCondition{
+	objects, err := lgc.ApiCli.ReadModelForUI(ctx, header, &metadata.QueryCondition{
 		Condition: map[string]interface{}{
 			common.BKObjIDField: map[string]interface{}{
 				common.BKDBIN: objArray,

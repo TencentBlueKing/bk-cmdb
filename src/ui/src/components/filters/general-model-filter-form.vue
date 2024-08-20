@@ -11,12 +11,41 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
+  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList" v-scroll="{
+    targetClass: 'last-item',
+    orientation: 'bottom',
+    distance: 63
+  }">
     <bk-form class="filter-form" form-type="vertical">
+      <div class="filter-operate">
+        <condition-picker
+          ref="conditionPicker"
+          class="filter-add"
+          :text="$t('添加条件')"
+          :selected="selected"
+          :property-map="propertyMap"
+          :handler="updateSelected"
+          :type="2">
+        </condition-picker>
+        <bk-popconfirm
+          :content="$t('确定清空筛选条件')"
+          width="280"
+          trigger="click"
+          :confirm-text="$t('确定')"
+          :cancel-text="$t('取消')"
+          @confirm="handleClearCondition">
+          <bk-button :text="true" class="mr10" theme="primary"
+            :disabled="!selected.length">
+            {{$t('清空条件')}}
+          </bk-button>
+        </bk-popconfirm>
+      </div>
       <bk-form-item class="filter-item"
-        v-for="property in selected"
+        v-for="(property, index) in selected"
         :key="property.id"
-        :class="`filter-item-${property.bk_property_type}`">
+        :class="[`filter-item-${property.bk_property_type}`, {
+          'last-item': index === selected.length - 1 && scrollToBottom
+        }]">
         <label class="item-label">
           {{property.bk_property_name}}
         </label>
@@ -33,6 +62,7 @@
           <component class="item-value r0"
             :is="getComponentType(property)"
             :placeholder="getPlaceholder(property)"
+            :property="property"
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
@@ -55,10 +85,6 @@
         </div>
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
-      <bk-form-item>
-        <condition-picker class="filter-add" :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
-          :handler="updateSelected" :type="2"></condition-picker>
-      </bk-form-item>
     </bk-form>
     <div class="filter-options"
       slot="footer"
@@ -79,6 +105,9 @@
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
   import ConditionPicker from '@/components/condition-picker'
+  import { getConditionSelect, updatePropertySelect } from '@/utils/util'
+  import isEqual from 'lodash/isEqual'
+  import useSideslider from '@/hooks/use-sideslider'
   import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
 
   export default {
@@ -110,8 +139,10 @@
     data() {
       const { IN, NIN, LIKE, CONTAINS_CS } = QUERY_OPERATOR
       return {
+        scrollToBottom: false,
         withoutOperator: ['date', 'time', 'bool'],
         condition: {},
+        originCondition: {},
         selected: [],
         customOperatorTypeMap: {
           longchar: [IN, NIN, LIKE, CONTAINS_CS],
@@ -131,27 +162,53 @@
         // eslint-disable-next-line max-len
         modelPropertyMap[this.objId] = modelPropertyMap[this.objId].filter(property => !ignoreProperties.includes(property.bk_property_id))
         return modelPropertyMap
+      },
+      hasChange() {
+        return !isEqual(this.condition, this.originCondition)
+      },
+      hasShow() {
+        const { isShow } = this.$refs.conditionPicker
+        return isShow
       }
     },
     watch: {
       filterSelected: {
         immediate: true,
         handler() {
-          const newCondition = this.$tools.clone(this.filterCondition)
-          Object.keys(newCondition).forEach((id) => {
-            if (has(this.condition, id)) {
-              newCondition[id] = this.condition[id]
-            }
-          })
-          this.condition = newCondition
+          this.condition = this.setCondition(this.condition)
           this.selected = [...this.filterSelected]
         }
       },
-      selected() {
+      selected(val, oldVal) {
         this.updateCondition()
+        const { addSelect, deleteSelect } = getConditionSelect(val, oldVal)
+        this.scrollToBottom = this.hasAddSelected(val, oldVal, addSelect)
+        updatePropertySelect(oldVal, this.handleRemove, addSelect, deleteSelect)
       }
     },
+    created() {
+      this.originCondition = this.setCondition(this.originCondition)
+      const { beforeClose, setChanged } = useSideslider()
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
+    },
     methods: {
+      setCondition(nowCondition) {
+        const newCondition = this.$tools.clone(this.filterCondition)
+        Object.keys(nowCondition).forEach((id) => {
+          if (has(nowCondition, id)) {
+            newCondition[id] = nowCondition[id]
+          }
+        })
+        return newCondition
+      },
+      hasAddSelected(val, oldVal, addSelect) {
+        return val[0] && oldVal[0] && addSelect.length > 0
+      },
+      handleClearCondition() {
+        this.handleReset()
+        this.selected = []
+      },
       handleClick(e) {
         const parent = this.$refs[e][0].$el
         this.target = parent.getElementsByClassName('bk-select-tag-container')[0]
@@ -177,6 +234,7 @@
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
         if (!this.target) return
+
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
           const { bottom } = this.target.getClientRects()[0]
@@ -323,6 +381,14 @@
       }
     }
   }
+  .filter-operate {
+    @include space-between;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    background: white;
+    line-height: 30px;
+  }
 
   .filter-add {
     padding-left: 10px;
@@ -330,16 +396,11 @@
   .filter-options {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 10px 24px;
     &.is-sticky {
       border-top: 1px solid $borderColor;
       background-color: #fff;
-    }
-    .option-collect,
-    .option-collect-wrapper {
-      & ~ .option-reset {
-        margin-left: auto;
-      }
     }
   }
 </style>
