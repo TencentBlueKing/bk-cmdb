@@ -12,6 +12,8 @@
   "业务快照名称": "Snapshot Business Name",
   "请输入正确的业务名称": "Please enter an existed business name",
   "快照存储的业务名需要和 GSE 的数据写入配置保持一致，修改后需要重启 datacollection 服务，否则 CMDB 将会无法正常消费到主机快照数据。": "The business name of the snapshot storage needs to be consistent with the data writing configuration of GSE, and the datacollection service needs to be restarted after modification, otherwise CMDB will not be able to consume the host snapshot data normally.",
+  "平台配置业务快照名提示": "The service name is used for snapshot data consumption. The service name of snapshot storage must be consistent with the data write configuration of the GSE.",
+  "业务快照名称切换提示": "After changing the business name, restart the datacollection service to ensure CMDB's host snapshot data is usable. ",
   "层": "Layer(s)",
   "外部主机导入流程": "Host(s) Import Process",
   "外 BG 导入主机要执行的流程": "The process when host(s) import from business portal",
