@@ -540,9 +540,6 @@ const (
 	// UseFulltextSearch use fulltext search
 	UseFulltextSearch ActionID = "use_fulltext_search"
 
-	// SynchronizeData is cmdb synchronize data action id
-	SynchronizeData ActionID = "synchronize_data"
-
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"

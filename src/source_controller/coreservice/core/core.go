@@ -17,7 +17,6 @@ import (
 	"context"
 	"net/http"
 
-	synctypes "configcenter/pkg/synchronize/types"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -271,7 +270,6 @@ type Core interface {
 	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
 	CommonOperation() CommonOperation
-	SynchronizeOperation() SynchronizeOperation
 }
 
 // ProcessOperation methods
@@ -449,11 +447,6 @@ type CommonOperation interface {
 	GetDistinctCount(kit *rest.Kit, param *metadata.DistinctFieldOption) (int64, errors.CCErrorCoder)
 }
 
-// SynchronizeOperation defines cmdb synchronize operation
-type SynchronizeOperation interface {
-	CreateData(kit *rest.Kit, opt *synctypes.CreateSyncDataOption) error
-}
-
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -472,7 +465,6 @@ type core struct {
 	cloud           CloudOperation
 	auth            AuthOperation
 	common          CommonOperation
-	synchronize     SynchronizeOperation
 }
 
 // New create core
@@ -493,7 +485,6 @@ func New(
 	cloud CloudOperation,
 	auth AuthOperation,
 	common CommonOperation,
-	synchronize SynchronizeOperation,
 ) Core {
 	return &core{
 		model:           model,
@@ -513,7 +504,6 @@ func New(
 		cloud:           cloud,
 		auth:            auth,
 		common:          common,
-		synchronize:     synchronize,
 	}
 }
 
@@ -600,9 +590,4 @@ func (m *core) AuthOperation() AuthOperation {
 // CommonOperation TODO
 func (m *core) CommonOperation() CommonOperation {
 	return m.common
-}
-
-// SynchronizeOperation is cmdb synchronize option
-func (m *core) SynchronizeOperation() SynchronizeOperation {
-	return m.synchronize
 }
