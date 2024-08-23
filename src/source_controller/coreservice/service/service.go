@@ -41,7 +41,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
-	"configcenter/src/source_controller/coreservice/core/synchronize"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -71,8 +70,7 @@ type coreService struct {
 }
 
 // SetConfig TODO
-func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
-	lang language.CCLanguageIf) error {
+func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
@@ -127,7 +125,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
 		coreCommon.New(),
-		synchronize.New(),
 	)
 	return nil
 }

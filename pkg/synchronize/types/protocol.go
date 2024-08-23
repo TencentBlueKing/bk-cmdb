@@ -19,41 +19,9 @@
 package types
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 )
-
-// CreateSyncDataOption defines create sync data option
-type CreateSyncDataOption struct {
-	ResourceType ResType           `json:"resource_type"`
-	SubResource  string            `json:"sub_resource"`
-	Data         []json.RawMessage `json:"data"`
-}
-
-// Validate create sync data option
-func (o *CreateSyncDataOption) Validate() errors.RawErrorInfo {
-	if rawErr := o.ResourceType.Validate(o.SubResource); rawErr.ErrCode != 0 {
-		return rawErr
-	}
-
-	if len(o.Data) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
-		}
-	}
-
-	if len(o.Data) > common.BKMaxLimitSize {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommXXExceedLimit,
-			Args:    []interface{}{"data", common.BKMaxLimitSize},
-		}
-	}
-
-	return errors.RawErrorInfo{}
-}
 
 // SyncCmdbDataOption defines sync cmdb data option
 type SyncCmdbDataOption struct {

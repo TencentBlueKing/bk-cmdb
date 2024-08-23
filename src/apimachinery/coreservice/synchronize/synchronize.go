@@ -17,9 +17,7 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/pkg/synchronize/types"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -37,8 +35,6 @@ type SynchronizeClientInterface interface {
 		input *metadata.SynchronizeClearDataParameter) (resp *metadata.Response, err error)
 	SetIdentifierFlag(ctx context.Context, h http.Header,
 		input *metadata.SetIdenifierFlag) (resp *metadata.SynchronizeResult, err error)
-
-	CreateSyncData(ctx context.Context, h http.Header, opt *types.CreateSyncDataOption) errors.CCErrorCoder
 }
 
 // NewSynchronizeClientInterface new public api
