@@ -16,6 +16,7 @@
  */
 import {
   getCurrentConfig,
+  getDefaultConfig,
   updateConfig,
   updateIdleSet,
   createIdleModule,
@@ -187,7 +188,7 @@ const actions = {
    * @returns {Promise}
    */
   fetchDefaultConfig({ commit, state }) {
-    return getCurrentConfig()
+    return getDefaultConfig()
       .then((config) => {
         commit('setDefaultConfig', unserializeConfig(config, state.language))
       })

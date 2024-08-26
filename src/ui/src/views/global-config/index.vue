@@ -46,7 +46,7 @@
     setup() {
       const activeTabName = ref(queryStore.get('tab') || 'business-general-config')
 
-      store.dispatch('globalConfig/fetchDefaultConfig')
+      store.dispatch('globalConfig/fetchConfig')
 
       if (!store.state.globalConfig.auth) {
         router.currentRoute.meta.view = 'permission'
