@@ -4,43 +4,34 @@ Update Business Information (Permission: Business Edit Permission)
 
 ### Parameters
 
-| Name                | Type   | Required | Description       |
-|---------------------|--------|----------|-------------------|
-| bk_supplier_account | string | No       | Developer account |
-| bk_biz_id           | int    | Yes      | Business ID       |
-| data                | dict   | Yes      | Business data     |
+| Name                | Type   | Required | Description                                             |
+|---------------------|--------|----------|---------------------------------------------------------|
+| bk_supplier_account | string | Yes      | Developer account                                       |
+| bk_biz_id           | int    | Yes      | Business ID                                             |
+| bk_biz_name         | string | No       | Business name                                           |
+| bk_biz_developer    | string | No       | Developer                                               |
+| bk_biz_maintainer   | string | No       | Maintainer                                              |
+| bk_biz_productor    | string | No       | Productor                                               |
+| bk_biz_tester       | string | No       | Tester                                                  |
+| operator            | string | No       | Operator                                                |
+| life_cycle          | string | No       | Life cycle: Testing(1), Online(2, default), Shutdown(3) |
+| language            | string | No       | Language, "1" for Chinese, "2" for English              |
 
-#### data
-
-| Name              | Type   | Required | Description                                             |
-|-------------------|--------|----------|---------------------------------------------------------|
-| bk_biz_name       | string | No       | Business name                                           |
-| bk_biz_developer  | string | No       | Developer                                               |
-| bk_biz_maintainer | string | No       | Maintainer                                              |
-| bk_biz_productor  | string | No       | Productor                                               |
-| bk_biz_tester     | string | No       | Tester                                                  |
-| operator          | string | No       | Operator                                                |
-| life_cycle        | string | No       | Life cycle: Testing(1), Online(2, default), Shutdown(3) |
-| language          | string | No       | Language, "1" for Chinese, "2" for English              |
-
-**Note: The data parameter here only explains the system-built editable parameters, and the rest of the parameters to be
+**Note: The parameter here only explains the system-built editable parameters, and the rest of the parameters to be
 filled depend on the user's own defined attribute fields.**
 
 ### Request Example
 
 ```json
 {
-    "bk_biz_id": 1,
-    "data": {
-        "bk_biz_name": "cc_app_test",
-        "bk_biz_maintainer": "admin",
-        "bk_biz_productor": "admin",
-        "bk_biz_developer": "admin",
-        "bk_biz_tester": "admin",
-        "language": "1",
-        "operator": "admin",
-        "life_cycle": "2"
-    }
+  "bk_biz_name": "cc_app_test",
+  "bk_biz_maintainer": "admin",
+  "bk_biz_productor": "admin",
+  "bk_biz_developer": "admin",
+  "bk_biz_tester": "admin",
+  "language": "1",
+  "operator": "admin",
+  "life_cycle": "2"
 }
 ```
 
@@ -48,11 +39,11 @@ filled depend on the user's own defined attribute fields.**
 
 ```json
 {
-    "result": true,
-    "code": 0,
-    "message": "success",
-    "permission": null,
-    "data": null
+  "result": true,
+  "code": 0,
+  "message": "success",
+  "permission": null,
+  "data": null
 }
 ```
 

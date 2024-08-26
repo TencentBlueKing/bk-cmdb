@@ -18,7 +18,6 @@
 package flow
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 
@@ -27,7 +26,6 @@ import (
 	"configcenter/src/common/json"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/watch"
-	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/stream/types"
@@ -180,155 +178,6 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 	}
 
 	return chainNode, detailBytes, false, nil
-}
-
-// parsePodEvent parse pod events into db chain nodes and details, pod detail includes its containers
-func parsePodEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
-	rid string) (*watch.ChainNode, []byte, bool, error) {
-
-	switch e.OperationType {
-	case types.Insert:
-		if err := key.Validate(e.DocBytes); err != nil {
-			blog.Errorf("pod event is invalid, doc: %s, oid: %s, err: %v, rid: %s", e.DocBytes, e.Oid, err, rid)
-			return nil, nil, false, nil
-		}
-
-		podID := key.InstanceID(e.DocBytes)
-
-		// get pod containers from container table and del archive for the scenario of delete right after create
-		filter := map[string]interface{}{
-			kubetypes.BKPodIDField: podID,
-		}
-
-		containers := make([]interface{}, 0)
-		err := db.Table(kubetypes.BKTableNameBaseContainer).Find(filter).All(context.Background(), &containers)
-		if err != nil {
-			blog.Errorf("get pod containers failed, pod id: %d, err: %v, rid: %s", podID, err, rid)
-			return nil, nil, true, err
-		}
-
-		delContainers, retry, err := getDeletedContainerDetail(db, podID, rid)
-		if err != nil {
-			return nil, nil, retry, err
-		}
-
-		// set container details to deleted pod detail, and update the event detail doc bytes
-		podDetail := *e.Document.(*map[string]interface{})
-		podDetail["containers"] = append(containers, delContainers...)
-
-		podDetail = event.ConvertLabel(podDetail)
-
-		byt, err := json.Marshal(podDetail)
-		if err != nil {
-			blog.Errorf("marshal pod with container detail(%+v) failed, err: %v, rid: %s", podDetail, err, rid)
-			return nil, nil, false, err
-		}
-		e.DocBytes = byt
-
-	case types.Delete:
-		doc, exist := oidDetailMap[oidCollKey{oid: e.Oid, coll: e.Collection}]
-		if !exist {
-			blog.Errorf("pod event delete doc not exists, oid: %s, rid: %s", e.Oid, rid)
-			return nil, nil, false, nil
-		}
-
-		if err := key.Validate(doc); err != nil {
-			blog.Errorf("run flow, received %s event, but got invalid event, doc: %s, oid: %s, err: %v, rid: %s",
-				key.Collection(), e.DocBytes, e.Oid, err, rid)
-			return nil, nil, false, nil
-		}
-
-		// get deleted container details, put it in deleted pod detail, and update the event detail doc bytes
-		podID := key.InstanceID(doc)
-		containers, retry, err := getDeletedContainerDetail(db, podID, rid)
-		if err != nil {
-			return nil, nil, retry, err
-		}
-		podDetail := make(map[string]interface{})
-		if err = json.Unmarshal(doc, &podDetail); err != nil {
-			blog.Errorf("unmarshal pod detail(%s) failed, err: %v, rid: %s", string(doc), err, rid)
-			return nil, nil, false, err
-		}
-		podDetail["containers"] = containers
-		podDetail = event.ConvertLabel(podDetail)
-		byt, err := json.Marshal(podDetail)
-		if err != nil {
-			blog.Errorf("marshal pod with container detail(%+v) failed, err: %v, rid: %s", podDetail, err, rid)
-			return nil, nil, false, err
-		}
-		e.DocBytes = byt
-
-	// since invalid event cannot be parsed, skip them and do not retry
-	default:
-		blog.Errorf("pod event %s op type %s is invalid, doc: %s, rid: %s", e.Oid, e.OperationType, e.DocBytes, rid)
-		return nil, nil, false, nil
-	}
-
-	return parseEventToNodeAndDetail(key, e, id, rid)
-}
-
-// getDeletedContainerDetail get deleted pod's containers details
-func getDeletedContainerDetail(db dal.DB, podID int64, rid string) ([]interface{}, bool, error) {
-	filter := map[string]interface{}{
-		"detail.bk_pod_id": podID,
-		"coll":             kubetypes.BKTableNameBaseContainer,
-	}
-
-	docs := make([]map[string]interface{}, 0)
-	err := db.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
-	if err != nil {
-		blog.Errorf("get archive deleted doc failed, filter: %+v, err: %v, rid: %s", filter, err, rid)
-		return nil, true, err
-	}
-
-	containers := make([]interface{}, len(docs))
-	for idx, doc := range docs {
-		containers[idx] = doc["detail"]
-	}
-
-	return containers, false, nil
-}
-
-// parseKubeWorkloadEvent parse kube workload event, its sub resource is its workload kind
-func parseKubeWorkloadEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
-	rid string) (*watch.ChainNode, []byte, bool, error) {
-
-	chainNode, details, retry, err := parseEvent(db, key, e, oidDetailMap, id, rid)
-	if err != nil {
-		return nil, nil, retry, err
-	}
-
-	// ignore invalid event
-	if chainNode == nil {
-		return nil, nil, false, nil
-	}
-
-	// get workload sub resource by event collection
-	switch e.Collection {
-	case kubetypes.BKTableNameBaseDeployment:
-		chainNode.SubResource = []string{string(kubetypes.KubeDeployment)}
-	case kubetypes.BKTableNameBaseStatefulSet:
-		chainNode.SubResource = []string{string(kubetypes.KubeStatefulSet)}
-	case kubetypes.BKTableNameBaseDaemonSet:
-		chainNode.SubResource = []string{string(kubetypes.KubeDaemonSet)}
-	case kubetypes.BKTableNameGameStatefulSet:
-		chainNode.SubResource = []string{string(kubetypes.KubeGameStatefulSet)}
-	case kubetypes.BKTableNameGameDeployment:
-		chainNode.SubResource = []string{string(kubetypes.KubeGameDeployment)}
-	case kubetypes.BKTableNameBaseCronJob:
-		chainNode.SubResource = []string{string(kubetypes.KubeCronJob)}
-	case kubetypes.BKTableNameBaseJob:
-		chainNode.SubResource = []string{string(kubetypes.KubeJob)}
-	case kubetypes.BKTableNameBasePodWorkload:
-		chainNode.SubResource = []string{string(kubetypes.KubePodWorkload)}
-
-	// since invalid event cannot be parsed, skip them and do not retry
-	default:
-		blog.Errorf("kube workload event coll %s is invalid, doc: %s, rid: %s", e.Collection, e.DocBytes, rid)
-		return nil, nil, false, nil
-	}
-
-	return chainNode, details, false, nil
 }
 
 // parseEventToNodeAndDetail parse validated event into db chain nodes to store in db and details to store in redis

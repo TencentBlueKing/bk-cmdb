@@ -102,7 +102,7 @@ type Reference struct {
 	Kind WorkloadType `json:"kind" bson:"kind"`
 
 	// Name workload name
-	Name string `json:"name" bson:"name"`
+	Name string `json:"name,omitempty" bson:"name,omitempty"`
 
 	// ID workload id in cc
 	ID int64 `json:"id" bson:"id"`

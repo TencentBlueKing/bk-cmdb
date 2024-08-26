@@ -17,13 +17,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/version"
 	"configcenter/src/storage/dal"
 )
 
@@ -42,56 +40,6 @@ var initConfig = `
     "backend": {
         "snapshotBizName": "蓝鲸",
         "maxBizTopoLevel": 7
-    },
-    "site": {
-        "title": {
-            "value": "SITE_TITLE_VAL",
-            "description": "网站标题",
-            "i18n": {
-                "cn": "SITE_TITLE_VAL",
-                "en": "CMDB | BlueKing"
-            }
-        },
-        "footer": {
-            "links": [
-                {
-                    "value": "http://wpa.b.qq.com/cgi/wpa.php?ln=1&key=XzgwMDgwMjAwMV80NDMwOTZfODAwODAyMDAxXzJf",
-                    "description": "QQ咨询",
-                    "i18n": {
-                        "cn": "QQ咨询(800802001)",
-                        "en": "QQ(800802001)"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "https://bk.tencent.com/s-mart/community/",
-                    "description": "蓝鲸论坛",
-                    "i18n": {
-                        "cn": "蓝鲸论坛",
-                        "en": "Blueking Forum"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "https://bk.tencent.com/index/",
-                    "description": "蓝鲸官网",
-                    "i18n": {
-                        "cn": "蓝鲸官网",
-                        "en": "BlueKing Official"
-                    },
-                    "enabled": true
-                },
-                {
-                    "value": "http://your-bk-desktop.com",
-                    "description": "蓝鲸桌面",
-                    "i18n": {
-                        "cn": "蓝鲸桌面",
-                        "en": "Blueking Desktop"
-                    },
-                    "enabled": false
-                }
-            ]
-        }
     },
     "validationRules": {
         "number": {
@@ -229,31 +177,11 @@ func AddConfigAdminChangeItem(dir string, description string, config string) {
 	})
 }
 
-// setInitConfigSiteTitle 根据版本编译参数设置网站title
-func setInitConfigSiteTitle() {
-	initConfig = SetConfigSiteTitle(initConfig)
-	configChangeHistory[0].config = initConfig
-}
-
-// SetConfigSiteTitle 根据版本编译参数设置网站title
-func SetConfigSiteTitle(config string) string {
-	switch version.CCDistro {
-	case version.CCDistrCommunity:
-		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
-	case version.CCDistrEnterprise:
-		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云企业版", -1)
-	default:
-		return strings.Replace(config, "SITE_TITLE_VAL", "配置平台 | 蓝鲸智云社区版", -1)
-	}
-}
-
 // UpgradeConfigAdmin 升级配置管理
 // 每次升级变更配置，需要在configChangeHistory最后追加一项要变更的配置
 // 将configChangeHistory里的最后一项作为当前配置项curCfg，倒数第二项作为上一次配置项preCfg
 // 需要将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
-	setInitConfigSiteTitle()
-
 	preCfg, curCfg, dbCfgStr, err := getConfigs(ctx, db, dir)
 	if err != nil {
 		blog.Errorf("upgradeConfigAdmin failed, getConfigs err: %v", err)
@@ -394,7 +322,8 @@ func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 }
 
 // getConfigs 获取preCfg, curCfg
-func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *metadata.ConfigAdmin, dbCfg string, err error) {
+func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *metadata.ConfigAdmin, dbCfg string,
+	err error) {
 	var pre string
 	for index, config := range configChangeHistory {
 		if config.dir == dir {
@@ -504,9 +433,6 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 	if preCfg.Backend.MaxBizTopoLevel != dbCfg.Backend.MaxBizTopoLevel {
 		curCfg.Backend.MaxBizTopoLevel = dbCfg.Backend.MaxBizTopoLevel
 	}
-	if preCfg.Site.Title != dbCfg.Site.Title {
-		curCfg.Site.Title = dbCfg.Site.Title
-	}
 
 	preRuleType := reflect.TypeOf(preCfg.ValidationRules)
 	preRuleVal := reflect.ValueOf(&preCfg.ValidationRules).Elem()
@@ -525,33 +451,6 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 	return curCfg
 }
 
-// getContactInfo 为了兼容老版本的footer信息,需要将原格式信息内容转化为markdown格式的字符串
-func getContactInfo(links []metadata.LinksItem) metadata.ContactInfoItem {
-	var (
-		result metadata.ContactInfoItem
-		cn, en string
-	)
-	linkLen := len(links)
-
-	if linkLen == 1 {
-		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[0].I18N.CN, links[0].Value)
-		en = fmt.Sprintf("%s[%s](%s)|", en, links[0].I18N.EN, links[0].Value)
-		result.I18N.CN = cn
-		result.I18N.EN = en
-		return result
-	}
-
-	for i := 0; i < linkLen; i++ {
-		cn = fmt.Sprintf("%s[%s](%s)|", cn, links[i].I18N.CN, links[i].Value)
-		en = fmt.Sprintf("%s[%s](%s)|", en, links[i].I18N.EN, links[i].Value)
-
-	}
-
-	result.I18N.CN = cn[:len(cn)-1]
-	result.I18N.EN = en[:len(en)-1]
-	return result
-}
-
 // getFinalPlatformConfig 获取最终需要保存的配置
 // 1、将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 // 2、如果preCfg和dbCfg如果一样的话，那么如果本次curCfg不一样，则需要升级覆盖.
@@ -565,12 +464,6 @@ func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,
 	if preCfg.Backend.MaxBizTopoLevel != dbCfg.Backend.MaxBizTopoLevel {
 		curCfg.Backend.MaxBizTopoLevel = dbCfg.Backend.MaxBizTopoLevel
 	}
-
-	if preCfg.Site.Title != dbCfg.Site.Title {
-		curCfg.SiteConfig.SiteName = dbCfg.Site.Title
-	}
-
-	curCfg.FooterConfig.ContactInfo = getContactInfo(dbCfg.Site.Footer.Links)
 
 	preRuleType := reflect.TypeOf(preCfg.ValidationRules)
 	preRule := reflect.ValueOf(&preCfg.ValidationRules).Elem()

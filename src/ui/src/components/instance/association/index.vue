@@ -83,16 +83,17 @@
         }
         // 根据作为源还是目标，设置线条名称及是否翻转箭头指向
         return {
-          label: instance.target ? define.src_des : define.dest_des,
-          arrow: !instance.target && define.direction === 'src_to_dest' ? 'dest_to_src' : define.direction }
+          label: !instance.target ? define.src_des : define.dest_des,
+          arrow: !instance.target && define.direction === 'src_to_dest' ? 'src_to_dest' : define.direction }
       },
       createNodes(instances, parentNode) {
         return instances.map((instance) => {
           const model = this.$store.getters['objectModelClassify/getModelById'](instance.bk_obj_id)
+          const name = instance?.bk_inst_name || `(${this.$t('主机ID')})${instance.bk_inst_id}`
           return {
             data: {
               id: `${instance.bk_obj_id}_${instance.bk_inst_id}`,
-              name: instance.bk_inst_name,
+              name,
               icon: model ? model.bk_obj_icon : 'icon-cc-defalut',
               parentId: parentNode && parentNode.data.id,
               loaded: !parentNode,
@@ -171,11 +172,12 @@
         const showInstanceDetails = await import('@/components/instance/details')
         const { data, instance } = this.tooltip
         const model = this.$store.getters['objectModelClassify/getModelById'](data.bk_obj_id)
+        const name = data?.bk_inst_name || `(${this.$t('主机ID')})${data.bk_inst_id}`
         showInstanceDetails.default({
           bk_biz_id: this.bizId,
           bk_obj_id: data.bk_obj_id,
           bk_inst_id: data.bk_inst_id,
-          title: `${model.bk_obj_name}-${data.bk_inst_name}`
+          title: `${model.bk_obj_name}-${name}`
         })
         instance.hide()
       },

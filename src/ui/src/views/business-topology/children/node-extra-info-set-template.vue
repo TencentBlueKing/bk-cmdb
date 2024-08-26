@@ -114,13 +114,12 @@
             return this.$error(this.$t('跳转失败，集群模板已经被删除'))
           }
 
-          this.$routerActions.redirect({
+          this.$routerActions.open({
             name: MENU_BUSINESS_SET_TEMPLATE_DETAILS,
             params: {
               templateId: this.instance.set_template_id,
               bizId: data?.bk_biz_id,
-            },
-            history: true
+            }
           })
         } catch (error) {
           console.error(error)

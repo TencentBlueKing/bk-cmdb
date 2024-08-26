@@ -19,7 +19,8 @@
           :placeholder="$t('请输入xx', { name: $t('业务') })"
           right-icon="bk-icon icon-search"
           @enter="handlePageChange(1, $event)"
-          @clear="handlePageChange(1, $event)">
+          @clear="handlePageChange(1, $event)"
+          @right-icon-click="handlePageChange(1, $event)">
         </bk-input>
       </div>
     </div>

@@ -41,6 +41,7 @@
             v-model.trim="filterName"
             :placeholder="$t('请输入集群名称搜索')"
             @enter="handleSearch"
+            @right-icon-click="handleSearch"
             @clear="handleSearch">
           </bk-input>
           <icon-button class="ml10"

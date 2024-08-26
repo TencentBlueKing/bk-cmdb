@@ -450,6 +450,7 @@
     "设置筛选项": "Set filter options",
     "主机筛选项设置": "Host filter options settings",
     "主机属性": "Host Attribute",
+    "编辑主机属性": "Edit host attribute",
     "关联Relation": "Relation",
     "主机快照提示语": "Please check whether the agent or basereport plugin is available",
     "基本值": "Basic Value",
@@ -1453,6 +1454,7 @@
     "服务模板创建成功，您可以在XXX": "The service template is created successfully, you can apply it in {link1} or use it to create a module in {link2}",
     "成功更新模板进程，您可以通过XXX": "Successfully update the template process, you can update the service instance via {link}",
     "成功更新模板，您可以通过XXX": "Successfully update the template, you can update the service instance via {link}",
+    "成功更新模板": "Successfully update the template",
     "同步功能": "Sync Feature",
     "确认修改名称": "Confirm to modify the name",
     "确认修改名称提示": "Modifying the service template name will immediately apply to all module instances. If you configure filter conditions based on the name, it may affect the query results. Do you want to confirm the modification?",
@@ -1897,5 +1899,6 @@
     "未开启全文检索功能": "Full-Text Search Function Not Enabled",
     "使用全文检索，可以对所有纳管的资源进行无差别搜索，帮助你快速定位资源。": "Using Full-Text Search, you can indiscriminately search all managed resources, helping you to quickly locate resources.",
     "如需使用该功能，您需要：": "If you need to use this function, you need to：",
-    "联系平台维护人员开启": "Contact the platform maintenance staff to enable it"
+    "联系平台维护人员开启": "Contact the platform maintenance staff to enable it",
+    "模型默认分组不可删除": "The default model group cannot be deleted"
 }

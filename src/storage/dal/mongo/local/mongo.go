@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
@@ -633,49 +633,10 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 }
 
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
-	switch c.collName {
-	case common.BKTableNameModuleHostConfig:
-	case common.BKTableNameBaseHost:
-	case common.BKTableNameBaseApp:
-	case common.BKTableNameBaseSet:
-	case common.BKTableNameBaseModule:
-	case common.BKTableNameSetTemplate:
-	case common.BKTableNameBaseProcess:
-	case common.BKTableNameProcessInstanceRelation:
-	case common.BKTableNameBaseBizSet:
-	case common.BKTableNameBasePlat:
-	case common.BKTableNameBaseProject:
-
-	case common.BKTableNameBaseInst:
-	case common.BKTableNameInstAsst:
-
-	case kubetypes.BKTableNameBaseCluster:
-	case kubetypes.BKTableNameBaseNode:
-	case kubetypes.BKTableNameBaseNamespace:
-	case kubetypes.BKTableNameBaseWorkload:
-	case kubetypes.BKTableNameBaseDeployment:
-	case kubetypes.BKTableNameBaseStatefulSet:
-	case kubetypes.BKTableNameBaseDaemonSet:
-	case kubetypes.BKTableNameGameDeployment:
-	case kubetypes.BKTableNameGameStatefulSet:
-	case kubetypes.BKTableNameBaseCronJob:
-	case kubetypes.BKTableNameBaseJob:
-	case kubetypes.BKTableNameBasePodWorkload:
-	case kubetypes.BKTableNameBaseCustom:
-	case kubetypes.BKTableNameBasePod:
-	case kubetypes.BKTableNameBaseContainer:
-	case kubetypes.BKTableNameNsSharedClusterRel:
-
-		// NOTE: should not use the table name for archive, the object instance and association
-		// was saved in sharding tables, we still case the BKTableNameBaseInst here for the archive
-		// error message in order to find the wrong table name used in logics level.
-
-		// TODO add del archive for container tables
-	default:
-		if !common.IsObjectShardingTable(c.collName) {
-			// do not archive the delete docs
-			return nil
-		}
+	delArchiveTable, exists := table.GetDelArchiveTable(c.collName)
+	if !exists {
+		// do not archive the delete docs
+		return nil
 	}
 
 	docs := make([]bsonx.Doc, 0)
@@ -697,11 +658,12 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
 			Detail: doc.Delete("_id"),
+			Time:   time.Now(),
 			Coll:   c.collName,
 		}
 	}
 
-	_, err = c.dbc.Database(c.dbname).Collection(common.BKTableNameDelArchive).InsertMany(ctx, archives)
+	_, err = c.dbc.Database(c.dbname).Collection(delArchiveTable).InsertMany(ctx, archives)
 	return err
 }
 
