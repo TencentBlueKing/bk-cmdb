@@ -65,13 +65,15 @@
       }
     },
     data() {
-      const { IN, NIN, LIKE, CONTAINS } = QUERY_OPERATOR
+      const { IN, NIN, LIKE, CONTAINS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
         localValue: null,
         active: false,
         customOperatorTypeMap: {
+          float: [EQ, NE, GTE, LTE, RANGE, IN],
+          int: [EQ, NE, GTE, LTE, RANGE, IN],
           longchar: [IN, NIN, CONTAINS, LIKE],
           singlechar: [IN, NIN, CONTAINS, LIKE],
           array: [IN, NIN, CONTAINS, LIKE],
@@ -134,6 +136,11 @@
           return `cmdb-search-${modelId}`
         }
 
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(this.property, this.operator)) {
+          return 'cmdb-search-singlechar'
+        }
+
         return normal
       },
       getBindProps() {
@@ -155,6 +162,12 @@
         // 容器对象标签属性，需要注入标签kv数据作为选项
         if (isContainerObject(modelId) && propertyType === 'map') {
           return Object.assign(props, { options: FilterStore.containerPropertyMapValue?.[modelId]?.[propertyId] })
+        }
+
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(this.property, this.operator)) {
+          props.onlyNumber = true
+          props.fuzzy = false
         }
 
         return props

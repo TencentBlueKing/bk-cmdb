@@ -97,12 +97,20 @@ export function getOperatorSideEffect(property, operator, value) {
     effectValue = []
   } else if ([QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.CONTAINS_CS].includes(operator)) {
     effectValue = Array.isArray(value) ? (value[0] || '') : value
+  } else if (numberUseIn(property, operator)) {
+    effectValue = Array.isArray(value) ? value : []
   } else {
     const defaultValue = this.getDefaultData(property).value
     const isTypeChanged = (Array.isArray(defaultValue)) !== (Array.isArray(value))
     effectValue = isTypeChanged ? defaultValue : value
   }
   return effectValue
+}
+
+// 数字类型兼容$in操作符
+export function numberUseIn(property, operator) {
+  return [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(property?.bk_property_type)
+  && operator === QUERY_OPERATOR.IN
 }
 
 export function convertValue(value, operator, property) {
@@ -547,5 +555,6 @@ export default {
   hasNormalTopoField,
   hasNodeField,
   getSelectedHostIds,
-  definePropertyGroup
+  definePropertyGroup,
+  numberUseIn
 }
