@@ -86,7 +86,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_category/with_statistics", Handler: ps.ListServiceCategoryWithStatistics})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: ps.CreateServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_category", Handler: ps.UpdateServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: ps.DeleteServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category",
+		Handler: ps.DeleteServiceCategory})
 
 	// service template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template",
