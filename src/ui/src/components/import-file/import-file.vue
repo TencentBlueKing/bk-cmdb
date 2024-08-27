@@ -15,7 +15,7 @@
     <cmdb-tips class="file-tips"
       :icon-style="{ color: '#FF9C01' }"
       :tips-style="{ background: '#fff4e2', border: '1px solid #ffdfac' }">
-      {{$t('导入更新提示')}}
+      {{importState.tips || $t('导入更新提示')}}
     </cmdb-tips>
     <div class="file-trigger" v-if="!file">
       <input type="file"

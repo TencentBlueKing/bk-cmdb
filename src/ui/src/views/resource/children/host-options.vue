@@ -695,6 +695,7 @@
           bk_obj_id: 'host',
           template: `${window.API_HOST}importtemplate/host`,
           fileTips: this.$t('导入文件大小提示'),
+          tips: this.$t('资源导入主机提示'),
           submit: (options) => {
             const params = {
               op: options.step

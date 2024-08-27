@@ -420,7 +420,8 @@
           ...nodeNameProperty,
           bk_property_id: this.nodePrimaryPropertyId,
           bk_property_name: this.$t('ID'),
-          editable: false
+          editable: false,
+          unit: ''
         })
       },
       async getModuleInstance() {
