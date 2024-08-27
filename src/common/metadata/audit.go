@@ -922,8 +922,6 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditDelete],
-			actionInfoMap[AuditPause],
-			actionInfoMap[AuditResume],
 		},
 	},
 	{
@@ -933,6 +931,8 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditPause],
+			actionInfoMap[AuditResume],
 		},
 	},
 	{
@@ -1149,8 +1149,6 @@ var auditEnDict = []resourceTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
 			actionInfoEnMap[AuditDelete],
-			actionInfoEnMap[AuditPause],
-			actionInfoEnMap[AuditResume],
 		},
 	},
 	{
@@ -1160,6 +1158,8 @@ var auditEnDict = []resourceTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
 			actionInfoEnMap[AuditDelete],
+			actionInfoEnMap[AuditPause],
+			actionInfoEnMap[AuditResume],
 		},
 	},
 	{
