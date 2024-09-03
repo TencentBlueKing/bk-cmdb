@@ -24,6 +24,11 @@
           <IdlePoolConfig v-if="activeTabName === 'idle-pool-config'"></IdlePoolConfig>
         </div>
       </bk-tab-panel>
+      <bk-tab-panel name="id-generate" :label="$t('ID生成器')">
+        <div class="config-container">
+          <IDGenerate v-if="activeTabName === 'id-generate'"></IDGenerate>
+        </div>
+      </bk-tab-panel>
     </bk-tab>
   </div>
 </template>
@@ -32,6 +37,7 @@
   import { ref, watch, onMounted } from 'vue'
   import BusinessGneralConfig from './children/business-general-config.vue'
   import IdlePoolConfig from './children/idle-pool-config.vue'
+  import IDGenerate from './children/id-generate.vue'
   import queryStore from '@/router/query'
   import store from '@/store'
   import EventBus from '@/utils/bus'
@@ -41,12 +47,13 @@
     name: 'global-config',
     components: {
       BusinessGneralConfig,
-      IdlePoolConfig
+      IdlePoolConfig,
+      IDGenerate
     },
     setup() {
       const activeTabName = ref(queryStore.get('tab') || 'business-general-config')
 
-      store.dispatch('globalConfig/fetchDefaultConfig')
+      store.dispatch('globalConfig/fetchConfig')
 
       if (!store.state.globalConfig.auth) {
         router.currentRoute.meta.view = 'permission'
