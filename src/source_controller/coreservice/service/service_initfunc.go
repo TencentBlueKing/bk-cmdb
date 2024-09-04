@@ -20,6 +20,7 @@ import (
 	fieldtmpl "configcenter/src/source_controller/coreservice/service/field_template"
 	"configcenter/src/source_controller/coreservice/service/kube"
 	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
+	"configcenter/src/source_controller/coreservice/service/synchronize"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -578,6 +579,7 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initProject(web)
 	s.initModelQuote(web)
 	fieldtmpl.InitFieldTemplate(c)
+	synchronize.Init(c)
 
 	c.Utility.AddToRestfulWebService(web)
 }

@@ -105,6 +105,7 @@ var ccIamResTypeMap = map[meta.ResourceType]TypeID{
 	meta.KubeContainer:            TypeID(""),
 	meta.FieldTemplate:            FieldGroupingTemplate,
 	meta.FulltextSearch:           TypeID(""),
+	meta.SynchronizeData:          TypeID(""),
 }
 
 // ConvertResourceType convert resource type from CMDB to IAM
@@ -592,6 +593,9 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Find:   ViewFieldGroupingTemplate,
 		meta.Update: EditFieldGroupingTemplate,
 		meta.Delete: DeleteFieldGroupingTemplate,
+	},
+	meta.SynchronizeData: {
+		meta.Create: SynchronizeData,
 	},
 }
 

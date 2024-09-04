@@ -57,6 +57,7 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.HostInstance:             genHostInstanceResource,
 	meta.ProcessServiceCategory:   genProcessServiceCategoryResource,
 	meta.FieldTemplate:            genFieldTemplateResource,
+	meta.SynchronizeData:          genSkipResource,
 }
 
 // GenIamResource TODO

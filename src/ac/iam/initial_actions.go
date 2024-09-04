@@ -154,6 +154,7 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewFieldGroupingTemplate:           "字段组合模板查看",
 	EditFieldGroupingTemplate:           "字段组合模板编辑",
 	DeleteFieldGroupingTemplate:         "字段组合模板删除",
+	SynchronizeData:                     "CMDB数据同步",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -199,6 +200,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genContainerManagementActions()...)
 	resourceActionList = append(resourceActionList, genFulltextSearchActions()...)
 	resourceActionList = append(resourceActionList, genFieldGroupingTemplateActions()...)
+	resourceActionList = append(resourceActionList, genSynchronizeDataActions()...)
 
 	return resourceActionList
 }
@@ -1743,4 +1745,14 @@ func genFieldGroupingTemplateActions() []ResourceAction {
 			Version:              1,
 		},
 	}
+}
+
+func genSynchronizeDataActions() []ResourceAction {
+	return []ResourceAction{{
+		ID:      SynchronizeData,
+		Name:    ActionIDNameMap[SynchronizeData],
+		NameEn:  "Synchronize Data",
+		Type:    Edit,
+		Version: 1,
+	}}
 }
