@@ -138,6 +138,7 @@
     const submitForm = {
       enabled,
       step,
+      init_id: {}
     }
     // 本次发生change的init_id
     const changeInitId = {}

@@ -36,8 +36,7 @@ const state = () => ({
   loading: false, // 加载中状态
   language: language === 'zh_CN' ? 'cn' : language, // 后端保存的语言代码和前端的不一致，所以需要转换一下
   config: cloneDeep(initialConfig), // 用户自定义配置，
-  defaultConfig: cloneDeep(initialConfig), // 默认配置，用于恢复初始化
-  commonConfig: cloneDeep(initialConfig) // 通用设置
+  defaultConfig: cloneDeep(initialConfig) // 默认配置，用于恢复初始化
 })
 
 const getters = {
@@ -74,19 +73,14 @@ const unserializeConfig = (remoteData, lang) => {
     },
     idGenerator: {
       enabled: remoteData?.id_generator?.enabled,
-      step: remoteData?.id_generator?.step
+      step: remoteData?.id_generator?.step,
+      origin_init_id: remoteData?.id_generator?.init_id || {},
+      init_id: Object.assign({}, remoteData?.id_generator?.current_id, remoteData?.id_generator?.init_id),
+      current_id: remoteData?.id_generator?.current_id
     },
     publicConfig: remoteData.publicConfig
   }
-  const idGeneratorState = {
-    idGenerator: {
-      enabled: remoteData?.id_generator?.enabled,
-      step: remoteData?.id_generator?.step,
-      init_id: Object.assign({}, remoteData?.id_generator?.current_id, remoteData?.id_generator?.init_id),
-      current_id: remoteData?.id_generator?.current_id
-    }
-  }
-  return { newState, idGeneratorState }
+  return newState
 }
 
 /**
@@ -108,7 +102,11 @@ const serializeState = (newConfig, lang) => {
       recycle: newConfig.idlePool.recycle,
       user_modules: serializeUserModules(newConfig.idlePool.userModules, lang) || null
     },
-    id_generator: newConfig.idGenerator
+    id_generator: {
+      enabled: newConfig?.idGenerator?.enabled,
+      step: newConfig?.idGenerator?.step,
+      init_id: parseIDGeneratorInitID(newConfig.idGenerator?.init_id),
+    }
   }
 
   return data
@@ -173,6 +171,8 @@ const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey
   module_name: moduleName
 }))
 
+const parseIDGeneratorInitID = val => (Object.keys(val).length === 0 ? undefined : val)
+
 
 const mutations = {
   setConfig(state, config) {
@@ -180,9 +180,6 @@ const mutations = {
   },
   setDefaultConfig(state, config) {
     state.defaultConfig = config
-  },
-  setCommonConfig(state, config) {
-    state.commonConfig = config
   },
   setAuth(state, auth) {
     state.auth = auth
@@ -206,9 +203,7 @@ const actions = {
   fetchDefaultConfig({ commit, state }) {
     return getDefaultConfig()
       .then((config) => {
-        const { newState, idGeneratorState } = unserializeConfig(config, state.language)
-        commit('setDefaultConfig', { ...newState, ...idGeneratorState })
-        commit('setCommonConfig', { ...newState })
+        commit('setDefaultConfig', unserializeConfig(config, state.language))
       })
       .catch((err) => {
         throw Error(`获取默认全局设置出现错误：${err.message}`)
@@ -222,9 +217,7 @@ const actions = {
     commit('setLoading', true)
     return getCurrentConfig()
       .then((config) => {
-        const { newState, idGeneratorState } = unserializeConfig(config, state.language)
-        commit('setConfig', { ...newState, ...idGeneratorState })
-        commit('setCommonConfig', { ...newState })
+        commit('setConfig', unserializeConfig(config, state.language))
       })
       .catch((err) => {
         dispatch('clearConfig')
@@ -236,14 +229,17 @@ const actions = {
   },
 
   /**
-   * 更新配置到后台，更新配置后会 fetchConfig
+   * 更新《业务通用》配置到后台，更新配置后会 fetchConfig
    * @param config 所有设置
    * @returns {Promise}
    */
   updateConfig({ state, dispatch, commit }, config) {
     return new Promise(async (resolve, reject) => {
+      const stateConfig = cloneDeep(state.config)
+      // 默认初始化ID生成器参数下的init_id，因为该参数没改动不传
+      stateConfig.idGenerator.init_id = stateConfig.idGenerator.origin_init_id
       const newConfig = {
-        ...cloneDeep(state.commonConfig),
+        ...stateConfig,
         ...cloneDeep(config)
       }
       commit('setUpdating', true)
