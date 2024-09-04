@@ -80,6 +80,7 @@ const unserializeConfig = (remoteData, lang) => {
     },
     publicConfig: remoteData.publicConfig
   }
+
   return newState
 }
 
@@ -173,7 +174,6 @@ const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey
 
 const parseIDGeneratorInitID = val => (Object.keys(val).length === 0 ? undefined : val)
 
-
 const mutations = {
   setConfig(state, config) {
     state.config = config
@@ -229,7 +229,7 @@ const actions = {
   },
 
   /**
-   * 更新《业务通用》配置到后台，更新配置后会 fetchConfig
+   * 更新配置到后台，更新配置后会 fetchConfig
    * @param config 所有设置
    * @returns {Promise}
    */
