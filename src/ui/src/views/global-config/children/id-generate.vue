@@ -164,6 +164,7 @@
 
     formRef.value.validate().then(() => {
       bkInfoBox({
+        type: 'warning',
         title: `${t('确认提交')}?`,
         subTitle: t('确认提交ID生成器配置描述'),
         okText: t('确认提交'),
