@@ -59,7 +59,7 @@
             </div>
           </bk-form-item>
         </cmdb-collapse>
-        <cmdb-collapse :label="$t('模型ID配置')" arrow-type="filled" class="form-model-config">
+        <cmdb-collapse :label="$t('起始ID配置')" arrow-type="filled" class="form-model-config">
           <bk-form-item
             v-for="property in modelFormKey"
             :key="property"
