@@ -66,7 +66,7 @@
           <bk-form-item
             v-for="property in modelFormKey"
             :key="property"
-            :label="property"
+            :label="$t(property)"
             :property="`init_id.${property}`"
             :icon-offset="-20"
             :rules="[{ trigger: 'blur', message: $t('ID必填'), required: true }]"

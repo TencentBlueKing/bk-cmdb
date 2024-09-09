@@ -91,5 +91,14 @@
   "执行删除，将在所有业务中立即生效，请谨慎操作": "",
 
   "确认保存配置？": "Are you sure to save ?",
-  "保存后将会立即生效，请谨慎操作！": "It will take effect immediately after saving, please make sure the config is correct!"
+  "保存后将会立即生效，请谨慎操作！": "It will take effect immediately after saving, please make sure the config is correct!",
+
+  "biz": "biz",
+  "host": "host",
+  "inst_asst": "inst_asst",
+  "module": "module",
+  "object_instance": "object_instance",
+  "process": "process",
+  "service_instance": "service_instance",
+  "set": "set"
 }
