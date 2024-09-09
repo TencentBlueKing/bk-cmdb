@@ -107,6 +107,7 @@
   import { computed, reactive, ref, onMounted } from 'vue'
   import { bkInfoBox } from 'bk-magic-vue'
   import { t } from '@/i18n'
+  import { $success } from '@/magicbox/index.js'
   import store from '@/store'
   import cloneDeep from 'lodash/cloneDeep'
   import isEqual from 'lodash/isEqual'
@@ -163,6 +164,7 @@
           })
             .then(() => {
               initForm()
+              $success(t('提交成功'))
             })
         }
       })
