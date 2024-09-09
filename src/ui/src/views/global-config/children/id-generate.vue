@@ -56,6 +56,7 @@
                 }]"
                 type="number"
                 :min="1"
+                :max="20"
                 v-model.number.trim="form.step">
               </bk-input>
             </div>
@@ -82,6 +83,7 @@
                   type="number"
                   :name="property"
                   :min="form.current_id[property]"
+                  :max="getMax(form.current_id[property])"
                   v-model.number.trim="form.init_id[property]">
                 </bk-input>
                 <div class="form-model-tip">{{$t('当前设置值', { value: form.current_id[property] })}}</div>
@@ -181,6 +183,11 @@
   const handleCancel = () => {
     isEdit.value = false
     initForm()
+  }
+  const getMax = (num) => {
+    const max = num + 10000
+    const safe = Number.MAX_SAFE_INTEGE
+    return max > safe ? safe : max
   }
 
   onMounted(() => {
