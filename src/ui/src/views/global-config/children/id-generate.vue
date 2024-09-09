@@ -106,7 +106,7 @@
 </template>
 
 <script setup>
-  import { computed, reactive, ref, onMounted } from 'vue'
+  import { computed, reactive, ref, onMounted, watch } from 'vue'
   import { bkInfoBox } from 'bk-magic-vue'
   import { t } from '@/i18n'
   import { $success } from '@/magicbox/index.js'
@@ -114,6 +114,8 @@
   import cloneDeep from 'lodash/cloneDeep'
   import isEqual from 'lodash/isEqual'
   import EventBus from '@/utils/bus'
+
+  const emit = defineEmits(['has-change'])
 
   const defaultIdGenerateForm = {
     enabled: false,
@@ -130,11 +132,15 @@
   const modelFormKey = computed(() => Object.keys(form.init_id))
   const hasChange = computed(() => !isEqual(originForm, form))
 
+  watch(() => hasChange.value, (val) => {
+    emit('has-change', val)
+  })
+
   const initForm = () => {
     const { idGenerator } = globalConfig.value.config
     Object.assign(form, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
     Object.assign(originForm, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
-    formRef.value.clearError()
+    formRef.value?.clearError()
   }
   const handleSubmit = () => {
     const { enabled, step, init_id: initId, current_id: currentId } = form
