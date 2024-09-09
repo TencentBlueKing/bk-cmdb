@@ -19,7 +19,8 @@
           <bk-form-item
             class="form-sync-value"
             :desc="{
-              content: $t('同步设置描述')
+              content: $t('同步设置描述'),
+              placement: 'bottom'
             }"
             :label="$t('允许数据同步')" property="enabled" required>
             <div>
@@ -40,7 +41,8 @@
             :rules="[{ trigger: 'blur', message: $t('ID自增步长必填'), required: true }]"
             :icon-offset="-20"
             :desc="{
-              content: $t('ID自增步长描述')
+              content: $t('ID自增步长描述'),
+              placement: 'bottom'
             }"
             :label="$t('ID自增步长')" property="step" required>
             <div>
