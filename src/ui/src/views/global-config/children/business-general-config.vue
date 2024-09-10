@@ -53,7 +53,7 @@
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount } from 'vue'
+  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount, watch } from 'vue'
   import store from '@/store'
   import SaveButton from './save-button.vue'
   import { bkMessage } from 'bk-magic-vue'
@@ -61,29 +61,37 @@
   import cloneDeep from 'lodash/cloneDeep'
   import EventBus from '@/utils/bus'
   import to from 'await-to-js'
+  import isEqual from 'lodash/isEqual'
 
   export default defineComponent({
     components: {
       SaveButton
     },
-    setup() {
+    setup(props, { emit }) {
       const globalConfig = computed(() => store.state.globalConfig)
       const defaultForm = {
         snapshotBizName: '',
         maxBizTopoLevel: ''
       }
       const bizGeneralForm = reactive(cloneDeep(defaultForm))
+      const originBizGeneralForm = reactive(cloneDeep(defaultForm))
       const bizGeneralFormRef = ref(null)
       const isExistedBiz = ref(true)
       const loading = ref(false)
       const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 230))
       const bizNameIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 30 : 10))
       const topoLevelIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 0 : -20))
+      const hasChange = computed(() => !isEqual(originBizGeneralForm, bizGeneralForm))
+
+      watch(() => hasChange.value, (val) => {
+        emit('has-change', val)
+      })
 
       const initForm = () => {
         const { backend } = globalConfig.value.config
         Object.assign(bizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
-        bizGeneralFormRef.value.clearError()
+        Object.assign(originBizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
+        bizGeneralFormRef.value?.clearError()
       }
 
       onMounted(() => {

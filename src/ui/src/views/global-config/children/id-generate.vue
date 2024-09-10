@@ -19,7 +19,8 @@
           <bk-form-item
             class="form-sync-value"
             :desc="{
-              content: $t('同步设置描述')
+              content: $t('同步设置描述'),
+              placement: 'bottom'
             }"
             :label="$t('允许数据同步')" property="enabled" required>
             <div>
@@ -40,7 +41,8 @@
             :rules="[{ trigger: 'blur', message: $t('ID自增步长必填'), required: true }]"
             :icon-offset="-20"
             :desc="{
-              content: $t('ID自增步长描述')
+              content: $t('ID自增步长描述'),
+              placement: 'bottom'
             }"
             :label="$t('ID自增步长')" property="step" required>
             <div>
@@ -54,16 +56,17 @@
                 }]"
                 type="number"
                 :min="1"
+                :max="20"
                 v-model.number.trim="form.step">
               </bk-input>
             </div>
           </bk-form-item>
         </cmdb-collapse>
-        <cmdb-collapse :label="$t('模型ID配置')" arrow-type="filled" class="form-model-config">
+        <cmdb-collapse :label="$t('起始ID配置')" arrow-type="filled" class="form-model-config">
           <bk-form-item
             v-for="property in modelFormKey"
             :key="property"
-            :label="property"
+            :label="$t(property)"
             :property="`init_id.${property}`"
             :icon-offset="-20"
             :rules="[{ trigger: 'blur', message: $t('ID必填'), required: true }]"
@@ -80,6 +83,7 @@
                   type="number"
                   :name="property"
                   :min="form.current_id[property]"
+                  :max="getMax(form.current_id[property])"
                   v-model.number.trim="form.init_id[property]">
                 </bk-input>
                 <div class="form-model-tip">{{$t('当前设置值', { value: form.current_id[property] })}}</div>
@@ -104,13 +108,16 @@
 </template>
 
 <script setup>
-  import { computed, reactive, ref, onMounted } from 'vue'
+  import { computed, reactive, ref, onMounted, watch } from 'vue'
   import { bkInfoBox } from 'bk-magic-vue'
   import { t } from '@/i18n'
+  import { $success } from '@/magicbox/index.js'
   import store from '@/store'
   import cloneDeep from 'lodash/cloneDeep'
   import isEqual from 'lodash/isEqual'
   import EventBus from '@/utils/bus'
+
+  const emit = defineEmits(['has-change'])
 
   const defaultIdGenerateForm = {
     enabled: false,
@@ -127,11 +134,15 @@
   const modelFormKey = computed(() => Object.keys(form.init_id))
   const hasChange = computed(() => !isEqual(originForm, form))
 
+  watch(() => hasChange.value, (val) => {
+    emit('has-change', val)
+  })
+
   const initForm = () => {
     const { idGenerator } = globalConfig.value.config
     Object.assign(form, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
     Object.assign(originForm, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
-    formRef.value.clearError()
+    formRef.value?.clearError()
   }
   const handleSubmit = () => {
     const { enabled, step, init_id: initId, current_id: currentId } = form
@@ -153,6 +164,7 @@
 
     formRef.value.validate().then(() => {
       bkInfoBox({
+        type: 'warning',
         title: `${t('确认提交')}?`,
         subTitle: t('确认提交ID生成器配置描述'),
         okText: t('确认提交'),
@@ -163,6 +175,7 @@
           })
             .then(() => {
               initForm()
+              $success(t('提交成功'))
             })
         }
       })
@@ -171,6 +184,11 @@
   const handleCancel = () => {
     isEdit.value = false
     initForm()
+  }
+  const getMax = (num) => {
+    const max = num + 10000
+    const safe = Number.MAX_SAFE_INTEGE
+    return max > safe ? safe : max
   }
 
   onMounted(() => {

@@ -21,7 +21,8 @@
   "确认提交ID生成器配置标题": "Submit configuration instructions",
   "确认提交ID生成器配置描述": "After submission, the coreservice background service needs to be restarted to take effect; After the page is closed, the last configuration takes effect. After the background service is restarted, the latest configuration is displayed",
   "当前设置值": "The current ID is used {value}",
-  "模型ID配置": "Model ID configuration",
+  "提交成功": "Submit successfully",
+  "起始ID配置": "Start ID configuration",
   "ID必填": "ID Required",
   "拓扑最大可建层级": "Max Topo. Layer",
   "确认重置业务通用选项？": "Are you sure to reset business setting?",
@@ -90,5 +91,14 @@
   "执行删除，将在所有业务中立即生效，请谨慎操作": "",
 
   "确认保存配置？": "Are you sure to save ?",
-  "保存后将会立即生效，请谨慎操作！": "It will take effect immediately after saving, please make sure the config is correct!"
+  "保存后将会立即生效，请谨慎操作！": "It will take effect immediately after saving, please make sure the config is correct!",
+
+  "biz": "biz",
+  "host": "host",
+  "inst_asst": "inst_asst",
+  "module": "module",
+  "object_instance": "object_instance",
+  "process": "process",
+  "service_instance": "service_instance",
+  "set": "set"
 }
