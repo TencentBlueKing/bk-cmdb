@@ -41,7 +41,7 @@ export const changeLocale = async (locale) => {
   Cookies.remove(LANG_COOKIE_NAME, { path: '' })
   const cookieValue = LANG_SET.find(lang => lang.id === locale)?.apiLocale || locale
   Cookies.set(LANG_COOKIE_NAME, cookieValue, {
-    expires: 3600,
+    expires: 366,
     domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 

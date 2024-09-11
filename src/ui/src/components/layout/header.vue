@@ -57,7 +57,7 @@
           animateFill: false,
           hideOnClick: false
         }">
-        <i class="question-icon icon-cc-default"></i>
+        <i class="question-icon icon-cc-help"></i>
         <template slot="content">
           <a class="link-item" target="_blank" :href="helpDocUrl">{{$t('产品文档')}}</a>
           <a class="link-item" target="_blank" @click="handleChangeLog()" style="cursor:pointer">{{$t('版本日志')}}</a>
@@ -223,8 +223,8 @@
       vertical-align: middle;
       height: 58px;
       line-height: 58px;
-      margin-left: 23px;
-      padding-left: 38px;
+      margin-left: 24px;
+      padding-left: 44px;
       color: #fff;
       font-size: 16px;
       background: url("../../assets/images/logo.svg") no-repeat 0 center;
@@ -241,11 +241,11 @@
         height: 58px;
         line-height: 58px;
         padding: 0 25px;
-        color: #979ba5;
+        color: #96A2B9;
         font-size: 14px;
       &:hover {
           background-color: rgba(49, 64, 94, 0.5);
-          color: #fff;
+          color: #C2CEE5;
       }
       &.router-link-active,
       &.active {
@@ -262,7 +262,7 @@
   }
   .info-item {
       @include inlineBlock;
-      margin: 0 20px 0 0;
+      margin: 0 18px 0 0;
       text-align: left;
       font-size: 0;
       cursor: pointer;
@@ -280,15 +280,23 @@
     .question-icon,
     .lang-icon {
         font-size: 16px;
-        color: #DCDEE5;
+        color: #96A2B9;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
         &:hover {
             color: #fff;
+            background: linear-gradient(270deg,#253047,#263247);
+            border-radius: 100%;
         }
     }
     .info-user {
         font-size: 14px;
         font-weight: bold;
-        color: #fff;
+        color: #96A2B9;
       .user-name {
           max-width: 150px;
           @include inlineBlock;
@@ -298,8 +306,14 @@
           margin-left: -4px;
           transition: transform .2s linear;
           font-size: 20px;
-          color: #fff;
+          color: #96A2B9;
       }
+      &:hover {
+           color: #fff;
+           .user-icon {
+              color: #fff;
+          }
+        }
     }
     .lang-icon {
         font-size: 20px;
