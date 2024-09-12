@@ -461,6 +461,7 @@ coreservice:
     logDir: /data/cmdb/cmdb_coreservice/logs
     logLevel: 3
     logToStdErr: false
+    disableInsertion: false
   ## @param podAnnotations Annotations for bk-panel pods
   ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   ##

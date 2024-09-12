@@ -113,6 +113,8 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/findmany/module_relation/bk_biz_id/{.*}").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/hosts/relation/with_topo").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.PUT("/updatemany/hosts/all/property").Filter(s.HostFilterChan).To(s.Put))
+
+	ws.Route(ws.POST("/synchronize/create/data").Filter(s.TopoFilterChan).To(s.Post))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

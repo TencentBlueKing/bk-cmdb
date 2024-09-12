@@ -23,7 +23,8 @@ import (
 
 // ServerOption define option of server in flags
 type ServerOption struct {
-	ServConf *config.CCAPIConfig
+	ServConf      *config.CCAPIConfig
+	DisableInsert bool
 }
 
 // Config export
@@ -47,4 +48,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
+	fs.BoolVar(&s.DisableInsert, "disable-insertion", false, "disable mongodb insert operation for specific types")
 }
