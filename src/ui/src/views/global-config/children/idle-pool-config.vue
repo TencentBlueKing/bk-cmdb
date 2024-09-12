@@ -81,7 +81,7 @@
 </template>
 
 <script>
-  import { ref, computed, reactive, defineComponent, onMounted } from 'vue'
+  import { ref, computed, reactive, defineComponent, onMounted, watch } from 'vue'
   import ModuleBuilder from './module-builder.vue'
   import store from '@/store'
   import { bkInfoBox, bkMessage } from 'bk-magic-vue'
@@ -89,6 +89,7 @@
   import to from 'await-to-js'
   import cloneDeep from 'lodash/cloneDeep'
   import EventBus from '@/utils/bus'
+  import isEqual from 'lodash/isEqual'
   import { Validator } from 'vee-validate'
 
   export default defineComponent({
@@ -96,7 +97,7 @@
     components: {
       ModuleBuilder,
     },
-    setup() {
+    setup(props, { emit }) {
       const globalConfig = computed(() => store.state.globalConfig)
       const nodeIndent = 40
       const iconOffset = 38
@@ -106,6 +107,7 @@
         userModules: [] // 用户自定义模块
       }
       const idleForm = reactive(cloneDeep(defaultIdleForm))
+      const originIDleForm = reactive(cloneDeep(defaultIdleForm))
       const veeVlidate = new Validator()
 
       const businessTopoInstNameRule = value => ({
@@ -130,6 +132,11 @@
       })
       const idleFormRef = ref(null)
       const addBtnDisabled = computed(() => idleForm.userModules.some(userModule => userModule.state === 'editting'))
+      const hasChange = computed(() => !isEqual(originIDleForm, idleForm))
+
+      watch(() => hasChange.value, (val) => {
+        emit('has-change', val)
+      })
 
       /**
        * 生成内置模块验证规则
@@ -189,7 +196,11 @@
           buildInModules: idlePool,
           userModules: cloneDeep(userModules)
         })
-
+        Object.assign(originIDleForm, cloneDeep(defaultIdleForm), {
+          set,
+          buildInModules: cloneDeep(idlePool),
+          userModules: cloneDeep(userModules)
+        })
         // 加入内置模块规则
         const buildInRules = {}
         Object.keys(idleForm.buildInModules).forEach((buildInModuleKey) => {
@@ -197,10 +208,10 @@
         })
         Object.assign(idleFormRules, buildInRules)
 
-        idleFormRef.value.clearError()
+        idleFormRef.value?.clearError()
       }
 
-      const clearError = () => idleFormRef.value.clearError()
+      const clearError = () => idleFormRef.value?.clearError()
 
       onMounted(() => {
         initForm()

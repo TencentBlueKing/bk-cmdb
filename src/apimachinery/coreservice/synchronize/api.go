@@ -16,6 +16,8 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/pkg/synchronize/types"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -113,4 +115,29 @@ func (sync *synchronize) SetIdentifierFlag(ctx context.Context, h http.Header,
 		Do().
 		Into(resp)
 	return
+}
+
+// CreateSyncData create sync data
+func (sync *synchronize) CreateSyncData(ctx context.Context, h http.Header,
+	opt *types.CreateSyncDataOption) errors.CCErrorCoder {
+
+	ret := new(metadata.BaseResp)
+	subPath := "/synchronize/create/data"
+
+	err := sync.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if ret.CCError() != nil {
+		return ret.CCError()
+	}
+
+	return nil
 }
