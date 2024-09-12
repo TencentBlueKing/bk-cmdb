@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 
+	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 )
 
@@ -103,6 +104,34 @@ func (s ObjectString) Validate() error {
 	return nil
 }
 
+// IDGeneratorConf is id generator config
+type IDGeneratorConf struct {
+	Enabled bool                       `json:"enabled"`
+	Step    int                        `json:"step"`
+	InitID  map[idgen.IDGenType]uint64 `json:"init_id,omitempty"`
+	// CurrentID is the current id of each resource, this is only used for ui display
+	CurrentID map[idgen.IDGenType]uint64 `json:"current_id,omitempty"`
+}
+
+// Validate id generator config
+func (c IDGeneratorConf) Validate() error {
+	if c.Step <= 0 {
+		return fmt.Errorf("step is invalid")
+	}
+
+	if len(c.InitID) == 0 {
+		return nil
+	}
+
+	for res, id := range c.InitID {
+		if id <= 0 {
+			return fmt.Errorf("%s init id %d is invalid", res, id)
+		}
+	}
+
+	return nil
+}
+
 // PlatformSettingConfig  used to admin the platform config. 结构体PlatformSettingConfig 每个成员对象都必须有"Validate"校验
 // 函数，如果没有会panic.
 type PlatformSettingConfig struct {
@@ -110,6 +139,7 @@ type PlatformSettingConfig struct {
 	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
 	BuiltInSetName      ObjectString       `json:"set"`
 	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
+	IDGenerator         IDGeneratorConf    `json:"id_generator"`
 }
 
 // Validate validate the fields of PlatformSettingReqOption is illegal .
@@ -292,6 +322,10 @@ var InitAdminConfig = `
         "idle":"空闲机",
         "fault":"故障机",
         "recycle":"待回收"
+    },
+    "id_generator": {
+        "enabled": false,
+        "step": 1
     }
 }
 `

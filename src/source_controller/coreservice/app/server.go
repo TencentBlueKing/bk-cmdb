@@ -87,7 +87,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	coreSvr.Core = engine
 	errors.SetGlobalCCError(engine.CCErr)
 
-	if err := initResource(coreSvr); err != nil {
+	if err := initResource(coreSvr, op); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-func initResource(coreSvr *CoreServer) error {
+func initResource(coreSvr *CoreServer, op *options.ServerOption) error {
 	var err error
 	coreSvr.Config.Mongo, err = coreSvr.Core.WithMongo()
 	if err != nil {
@@ -117,6 +117,7 @@ func initResource(coreSvr *CoreServer) error {
 		return err
 	}
 
+	coreSvr.Config.Mongo.DisableInsert = op.DisableInsert
 	dbErr := mongodb.InitClient("", &coreSvr.Config.Mongo)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the db server, error info is %s", dbErr.Error())

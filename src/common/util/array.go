@@ -104,6 +104,21 @@ func BoolArrayUnique(a []bool) (ret []bool) {
 	return ret
 }
 
+// ArrUnique get unique array
+func ArrUnique[T comparable](a []T) []T {
+	unique := make(map[T]struct{})
+	ret := make([]T, 0)
+	for _, val := range a {
+		if _, exists := unique[val]; exists {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
+	}
+
+	return ret
+}
+
 // RemoveDuplicatesAndEmpty TODO
 func RemoveDuplicatesAndEmpty(slice []string) (ret []string) {
 	ret = make([]string, 0)

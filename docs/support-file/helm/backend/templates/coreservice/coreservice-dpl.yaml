@@ -43,6 +43,7 @@ spec:
         {{- end }}
         - --v={{ .Values.coreservice.command.logLevel }}
         - --logtostderr={{ .Values.coreservice.command.logToStdErr }}
+        - --disable-insertion={{ .Values.coreservice.command.disableInsertion }}
         livenessProbe:
           httpGet:
             path: /healthz

@@ -21,8 +21,10 @@ import (
 	"strings"
 	"time"
 
+	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/util/table"
@@ -31,6 +33,7 @@ import (
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
 
+	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -45,6 +48,15 @@ type Mongo struct {
 	dbname string
 	sess   mongo.Session
 	tm     *TxnManager
+	conf   *mongoCliConf
+}
+
+// mongoCliConf is cmdb mongo client config
+type mongoCliConf struct {
+	// idGenStep is the step of id generator
+	idGenStep int
+	// disableInsert defines if insert operation for specific tables are disabled
+	disableInsert bool
 }
 
 var _ dal.DB = new(Mongo)
@@ -57,6 +69,7 @@ type MongoConf struct {
 	URI            string
 	RsName         string
 	SocketTimeout  int
+	DisableInsert  bool
 }
 
 // NewMgo returns new RDB
@@ -102,11 +115,95 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	// initialize mongodb related metrics
 	initMongoMetric()
 
-	return &Mongo{
+	mgo := &Mongo{
 		dbc:    client,
 		dbname: connStr.Database,
 		tm:     &TxnManager{},
-	}, nil
+		conf: &mongoCliConf{
+			disableInsert: config.DisableInsert,
+		},
+	}
+
+	mgo.conf.idGenStep, err = mgo.initIDGenerator()
+	if err != nil {
+		return nil, err
+	}
+
+	return mgo, nil
+}
+
+// initIDGenerator init id generator by config admin, returns id generator step
+func (c *Mongo) initIDGenerator() (int, error) {
+	ctx := context.Background()
+
+	cond := map[string]interface{}{"_id": common.ConfigAdminID}
+
+	confData := make(map[string]string)
+	err := c.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(ctx, &confData)
+	if err != nil {
+		// watch database & low version has no config admin field, so we use default step 1
+		if c.IsNotFoundError(err) {
+			return 1, nil
+		}
+		return 0, fmt.Errorf("init id generator but get config admin failed, err: %v", err)
+	}
+
+	// id generator config is not set, use default step 1
+	confStr := confData[common.ConfigAdminValueField]
+	if !gjson.Get(confStr, "id_generator").Exists() {
+		return 1, nil
+	}
+
+	conf := new(metadata.PlatformSettingConfig)
+	if err = json.Unmarshal([]byte(confStr), conf); err != nil {
+		return 0, fmt.Errorf("unmarshal config admin failed, err: %v, config: %s", err, confStr)
+	}
+
+	idGenConf := conf.IDGenerator
+	if err = idGenConf.Validate(); err != nil {
+		return 0, fmt.Errorf("config admin id gen config is invalid, err: %v, config: %+v", err, idGenConf)
+	}
+
+	if len(idGenConf.InitID) == 0 {
+		return idGenConf.Step, nil
+	}
+
+	// update id generator sequence id by config admin
+	for typ, id := range idGenConf.InitID {
+		sequenceName, exists := idgen.GetIDGenSequenceName(typ)
+		if !exists {
+			return 0, fmt.Errorf("id generator type %s is invalid", typ)
+		}
+
+		updateCond := map[string]interface{}{
+			"_id":        sequenceName,
+			"SequenceID": map[string]interface{}{common.BKDBLT: id},
+		}
+
+		data := map[string]interface{}{"SequenceID": id}
+
+		if err = c.Table(common.BKTableNameIDgenerator).Update(ctx, updateCond, data); err != nil {
+			return 0, fmt.Errorf("update id generator failed, err: %v, cond: %+v, data: %+v", err, updateCond, data)
+		}
+	}
+
+	// delete config admin id generator init id config to avoid updating again
+	conf.IDGenerator.InitID = nil
+	updateVal, err := json.Marshal(conf)
+	if err != nil {
+		return 0, fmt.Errorf("marshal config admin failed, err: %v, config: %+v", err, conf)
+	}
+
+	data := map[string]interface{}{
+		common.ConfigAdminValueField: string(updateVal),
+		common.LastTimeField:         time.Now(),
+	}
+
+	if err = c.Table(common.BKTableNameSystem).Update(ctx, cond, data); err != nil {
+		return 0, fmt.Errorf("update config admin failed, err: %v, data: %+v", err, data)
+	}
+
+	return idGenConf.Step, nil
 }
 
 // checkMongodbVersion TODO
@@ -692,7 +789,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
 
 	Update := bson.M{
-		"$inc":         bson.M{"SequenceID": int64(1)},
+		"$inc":         bson.M{"SequenceID": c.conf.idGenStep},
 		"$setOnInsert": bson.M{"create_time": time.Now()},
 		"$set":         bson.M{"last_time": time.Now()},
 	}
@@ -719,6 +816,10 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	}
 	sequenceName = c.redirectTable(sequenceName)
 
+	if c.conf.disableInsert && idgen.IsIDGenSeqName(sequenceName) {
+		return nil, errors.New("insertion is disabled")
+	}
+
 	rid := ctx.Value(common.ContextRequestIDField)
 	start := time.Now()
 	defer func() {
@@ -731,7 +832,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
 
 	Update := bson.M{
-		"$inc":         bson.M{"SequenceID": num},
+		"$inc":         bson.M{"SequenceID": num * c.conf.idGenStep},
 		"$setOnInsert": bson.M{"create_time": time.Now()},
 		"$set":         bson.M{"last_time": time.Now()},
 	}
@@ -751,7 +852,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 
 	sequences := make([]uint64, num)
 	for i := 0; i < num; i++ {
-		sequences[i] = uint64(i-num) + doc.SequenceID + 1
+		sequences[i] = uint64((i-num+1)*c.conf.idGenStep) + doc.SequenceID
 	}
 
 	return sequences, err

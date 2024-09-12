@@ -20,6 +20,7 @@ import (
 	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
 	"configcenter/src/scene_server/topo_server/service/id_rule"
 	"configcenter/src/scene_server/topo_server/service/kube"
+	"configcenter/src/scene_server/topo_server/service/synchronize"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -339,6 +340,8 @@ func (s *Service) initService(web *restful.WebService) {
 	fieldtmpl.InitFieldTemplate(utility, c)
 
 	idrule.InitIDRule(utility, c)
+
+	synchronize.Init(utility, c)
 
 	utility.AddToRestfulWebService(web)
 }

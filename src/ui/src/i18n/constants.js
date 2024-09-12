@@ -20,15 +20,15 @@ export const LANG_KEYS = Object.freeze({
 
 export const LANG_SET = Object.freeze([
   {
-    id: LANG_KEYS.EN,
-    name: 'English',
-    icon: 'english'
-  },
-  {
     id: LANG_KEYS.ZH_CN,
     alias: ['zh-cn'],
     name: '中文',
     apiLocale: 'zh-cn',
     icon: 'chinese'
+  },
+  {
+    id: LANG_KEYS.EN,
+    name: 'English',
+    icon: 'english'
   }
 ])

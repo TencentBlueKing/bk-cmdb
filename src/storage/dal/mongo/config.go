@@ -56,6 +56,7 @@ type Config struct {
 	MaxIdleConns  uint64
 	RsName        string
 	SocketTimeout int
+	DisableInsert bool
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -83,6 +84,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 		URI:           c.BuildURI(),
 		RsName:        c.RsName,
 		SocketTimeout: c.SocketTimeout,
+		DisableInsert: c.DisableInsert,
 	}
 }
 

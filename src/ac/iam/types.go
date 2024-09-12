@@ -558,6 +558,9 @@ const (
 	// ViewGeneralCache view general resource cache
 	ViewGeneralCache = "view_general_cache"
 
+	// SynchronizeData is cmdb synchronize data action id
+	SynchronizeData ActionID = "synchronize_data"
+
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"
