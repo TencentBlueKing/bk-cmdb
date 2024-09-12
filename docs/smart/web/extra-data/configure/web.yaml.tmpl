@@ -71,7 +71,7 @@ webServer:
   app:
     authAppCode: ${BK_IAM_APP_CODE}
     authUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_iam/apply-custom-perm
-    agentAppUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_nodeman/
+    agentAppUrl: ${BKPAAS_NODEMAN_URL}
     # 权限模式，web页面使用，可选值: internal, iam
     authscheme: ${BK_CMDB_AUTH_SCHENE}
   login:

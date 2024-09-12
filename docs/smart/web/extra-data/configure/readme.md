@@ -14,6 +14,7 @@
 | BK_HTTP_SCHEMA                         | 访问协议                            |             |
 | BKPAAS_SHARED_RES_URL                  | 蓝鲸共享资源URL                       |             |
 | BK_IAM_APP_CODE                        | 权限中心app code                    |             |
+| BKPAAS_NODEMAN_URL                     | 节点管理地址                          |             |
 | BK_NOTICE_ENABLED                      | 是否启用消息通知, true或false            |             |
 | BK_API_GATEWAY_BK_CMDB_JTW_ENABLED     | 是否通过jwt调用apigw, true或false      | true        |
 | BK_API_GATEWAY_BK_CMDB_JTW_PUBLICKEY   | cmdb API GATEWAY网关公钥            |             |
