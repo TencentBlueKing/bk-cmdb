@@ -24,6 +24,8 @@ import (
 // Interface TODO
 type Interface interface {
 	WatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*string, errors.CCErrorCoder)
+	InnerWatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (*watch.WatchResp,
+		errors.CCErrorCoder)
 }
 
 // NewCacheClient TODO

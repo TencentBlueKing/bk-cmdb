@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-transferservice-configures
+data:
+  conf.yaml: |-
+    # 所有源环境的ID生成规则配置，用于判断同步的资源ID属于哪个环境
+    idRules:
+    {{- range $rule := .Values.common.transferService.idRules }}
+      - {{ $rule }}
+    {{- end }}
+    # 系统内置数据ID信息，用于将源环境的内置数据ID转换为目标环境的内置数据ID
+    innerDataID:
+    {{- range $idInfo := .Values.common.transferService.innerDataID }}
+      - {{ $idInfo }}
+    {{- end }}

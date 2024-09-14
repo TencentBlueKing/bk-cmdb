@@ -283,6 +283,24 @@ data:
         # jwt公钥
         publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
 
+    # CMDB同步服务配置
+    transferService:
+      # 是否开启同步, 默认为false
+      enableSync: {{ .Values.common.transferService.enableSync }}
+      # 是否开启增量同步, 默认为false
+      enableIncrSync: {{ .Values.common.transferService.enableIncrSync }}
+      # 同步服务的名称
+      name: {{ .Values.common.transferService.name }}
+      # 同步角色，src表示源环境(将数据同步到目标环境)，dest表示目标环境(接收源环境的同步数据)
+      role: {{ .Values.common.transferService.role }}
+      # 全量同步周期，单位：小时，仅源环境需要配置
+      syncIntervalHours: {{ .Values.common.transferService.syncIntervalHours }}
+      # 传输介质地址
+      transferMediumAddress:
+    {{- range $addr := .Values.common.transferService.transferMediumAddress }}
+        - {{ $addr }}
+    {{- end }}
+
     # 直接调用gse服务相关配置
     gse:
       # 调用gse的apiServer服务时相关配置
