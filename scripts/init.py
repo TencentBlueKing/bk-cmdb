@@ -535,6 +535,22 @@ apiGW:
     caFile:
     # 用于解密根据RFC1423加密的证书密钥的PEM块
     password:
+
+# CMDB同步服务配置
+transferService:
+  # 是否开启同步, 默认为false
+  enableSync: false
+  # 是否开启增量同步, 默认为false
+  enableIncrSync: false
+  # 同步服务的名称
+  name:
+  # 同步角色，src表示源环境(将数据同步到目标环境)，dest表示目标环境(接收源环境的同步数据)
+  role:
+  # 全量同步周期，单位：小时，仅源环境需要配置
+  syncIntervalHours:
+  # 传输介质地址
+  transferMediumAddress:
+    - transfer.example.com
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -725,7 +741,8 @@ def main(argv):
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,
         "cmdb_authserver": 60014,
-        "cmdb_cacheservice": 50010
+        "cmdb_cacheservice": 50010,
+        "cmdb_transferservice": 50011
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",

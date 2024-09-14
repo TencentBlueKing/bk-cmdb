@@ -1,0 +1,8 @@
+FROM hub.bktencent.com/blueking/centos7-cmdb:base
+ENV container docker
+COPY cmdb_transferservice /data/cmdb/cmdb_transferservice
+RUN mkdir /data/cmdb/cmdb_transferservice/logs
+RUN chmod +x /data/cmdb/cmdb_transferservice/cmdb_transferservice
+#time zone setting
+ENV TimeZone=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /etc/timezone

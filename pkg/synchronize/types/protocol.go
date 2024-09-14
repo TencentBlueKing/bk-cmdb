@@ -54,3 +54,41 @@ func (o *CreateSyncDataOption) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// SyncCmdbDataOption defines sync cmdb data option
+type SyncCmdbDataOption struct {
+	ResType ResType          `json:"resource_type"`
+	SubRes  string           `json:"sub_resource"`
+	IsAll   bool             `json:"is_all"`
+	Start   map[string]int64 `json:"start"`
+	End     map[string]int64 `json:"end"`
+}
+
+// Validate sync cmdb data option
+func (o *SyncCmdbDataOption) Validate() errors.RawErrorInfo {
+	if rawErr := o.ResType.Validate(o.SubRes); rawErr.ErrCode != 0 {
+		return rawErr
+	}
+
+	if o.IsAll {
+		if len(o.Start) != 0 || len(o.End) != 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{"is_all", "start", "end"},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	if len(o.Start) == 0 && len(o.End) == 0 {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"start", "end"},
+		}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// InfiniteEndID represent infinity for end id of id rule info
+const InfiniteEndID int64 = -1

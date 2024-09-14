@@ -15,6 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package types defines cmdb data syncer types
 package types
 
 import (
@@ -38,30 +39,58 @@ const (
 	HostRelation ResType = "host_relation"
 	// ObjectInstance is the object instance synchronize resource type
 	ObjectInstance ResType = "object_instance"
+	// QuotedInstance is the quoted instance synchronize resource type
+	QuotedInstance ResType = "quoted_instance"
 	// InstAsst is the instance association synchronize resource type
 	InstAsst ResType = "inst_asst"
+	// ServiceInstance is the service instance synchronize resource type
+	ServiceInstance ResType = "service_instance"
+	// Process is the process synchronize resource type
+	Process ResType = "process"
+	// ProcessRelation is the process relation synchronize resource type
+	ProcessRelation ResType = "process_relation"
 )
 
-// AllResTypeMap stores all synchronize resource type
-var AllResTypeMap = map[ResType]struct{}{
-	Biz:            {},
-	Set:            {},
-	Module:         {},
-	Host:           {},
-	HostRelation:   {},
-	ObjectInstance: {},
-	InstAsst:       {},
+var (
+	// allResType is all synchronize resource type in the order of dependency
+	allResType = []ResType{Biz, ObjectInstance, Set, Module, Host, HostRelation, InstAsst, ServiceInstance, Process,
+		ProcessRelation, QuotedInstance}
+	allResTypeMap = make(map[ResType]struct{})
+)
+
+func init() {
+	for _, resType := range allResType {
+		allResTypeMap[resType] = struct{}{}
+	}
+}
+
+// ListAllResType list all synchronize resource type
+func ListAllResType() []ResType {
+	return allResType
+}
+
+// ListAllResTypeForIncrSync list all synchronize resource type for incremental sync
+func ListAllResTypeForIncrSync() []ResType {
+	incrResTypes := make([]ResType, 0)
+	for _, resType := range allResType {
+		if resType == QuotedInstance {
+			continue
+		}
+		incrResTypes = append(incrResTypes, resType)
+	}
+	return incrResTypes
 }
 
 // ResTypeWithSubResMap stores all synchronize resource type with sub resource
 var ResTypeWithSubResMap = map[ResType]struct{}{
 	ObjectInstance: {},
 	InstAsst:       {},
+	QuotedInstance: {},
 }
 
 // Validate resource type
 func (r ResType) Validate(subRes string) ccErr.RawErrorInfo {
-	_, exists := AllResTypeMap[r]
+	_, exists := allResTypeMap[r]
 	if !exists {
 		return ccErr.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsIsInvalid,

@@ -447,79 +447,89 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	return hostIDArr, nil
 }
 
-// TransferResourceDirectory TODO
-func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+// TransferResourceDirectory transfer host in resource directory
+func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit,
+	input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+
 	// validate input bk_module_id
-	existHostIDs, err := manager.validTransferResourceDirParams(kit, input)
+	module, err := manager.validTransferResourceDirParams(kit, input)
 	if err != nil {
-		blog.ErrorJSON("TransferResourceDirectory fail with validTransferResourceDirParams failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("validate input(%+v) failed, err: %v, rid: %s", input, err, kit.Rid)
 		return err
-	}
-	wrongHostIDs := make([]int64, 0)
-	if len(existHostIDs) < len(input.HostID) {
-		for _, id := range input.HostID {
-			if !util.ContainsInt64(existHostIDs, id) {
-				wrongHostIDs = append(wrongHostIDs, id)
-			}
-		}
 	}
 
 	cond := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
-			common.BKDBIN: existHostIDs,
+			common.BKDBIN: input.HostID,
 		},
 	}
-	data := map[string]interface{}{
-		common.BKModuleIDField: input.ModuleID,
-	}
-	updateErr := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Update(kit.Ctx, cond, data)
-	if updateErr != nil {
-		blog.ErrorJSON("TransferResourceDirectory fail with update table error: %v, cond: %v, data: %v, rid: %v", updateErr, cond, data, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	deleteErr := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, cond)
+	if deleteErr != nil {
+		blog.Errorf("delete host relation failed, err: %v, cond: %v, rid: %v", deleteErr, cond, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
-	if len(wrongHostIDs) > 0 {
-		return kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, wrongHostIDs)
+	data := make([]metadata.ModuleHost, 0, len(input.HostID))
+	for _, hostID := range input.HostID {
+		data = append(data, metadata.ModuleHost{
+			SetID:    module.SetID,
+			ModuleID: module.ModuleID,
+			HostID:   hostID,
+			AppID:    module.BizID,
+			OwnerID:  kit.SupplierAccount,
+		})
+	}
+	insertErr := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, data)
+	if insertErr != nil {
+		blog.Errorf("create host relation failed, err: %v, data: %v, rid: %v", insertErr, data, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 
 	return nil
 }
 
-func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) ([]int64, errors.CCErrorCoder) {
-	// valid bk_module_id,资源池目录default=4,空闲机default=1
-	cond := mapstr.MapStr{}
-	cond[common.BKModuleIDField] = input.ModuleID
-	cond[common.BKDBOR] = []mapstr.MapStr{{common.BKDefaultField: 1}, {common.BKDefaultField: 4}}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Count(kit.Ctx)
+func (manager *TransferManager) validTransferResourceDirParams(kit *rest.Kit,
+	input *metadata.TransferHostResourceDirectory) (*metadata.ModuleInst, errors.CCErrorCoder) {
+
+	biz := new(metadata.BizInst)
+	filter := mapstr.MapStr{common.BKDefaultField: 1}
+	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Fields(common.BKAppIDField).One(kit.Ctx, biz)
 	if err != nil {
-		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
+		blog.Errorf("get resource pool biz failed, err: %v, cond: %v, rid: %s", err, filter, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	if count <= 0 {
-		blog.ErrorJSON("validTransferResourceDirParams bk_module_id bind resource directory not exist")
-		return nil, kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
+
+	// valid bk_module_id,资源池目录default=4,空闲机default=1
+	cond := mapstr.MapStr{
+		common.BKAppIDField:    biz.BizID,
+		common.BKModuleIDField: input.ModuleID,
+		common.BKDefaultField:  mapstr.MapStr{common.BKDBIN: []int{1, 4}},
+	}
+	module := new(metadata.ModuleInst)
+	err = mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).One(kit.Ctx, module)
+	if err != nil {
+		if mongodb.Client().IsNotFoundError(err) {
+			return nil, kit.CCError.CCError(common.CCErrCoreServiceResourceDirectoryNotExistErr)
+		}
+		blog.Errorf("get module failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	// 确保主机在资源池目录下(default=1的业务)
-	bizInfo := &metadata.BizInst{}
-	filter := mapstr.MapStr{common.BKDefaultField: 1}
-	err = mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).One(kit.Ctx, bizInfo)
+	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID},
+		common.BKAppIDField: biz.BizID}
+	existHostIDs, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx,
+		common.BKHostIDField, opt)
 	if err != nil {
-		blog.ErrorJSON("validTransferResourceDirParams find data error, err: %s, cond:%s, rid: %s", err.Error(), cond, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	opt := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.HostID}, common.BKAppIDField: bizInfo.BizID}
-	moduleHost := make([]metadata.ModuleHost, 0)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(opt).All(kit.Ctx, &moduleHost); err != nil {
-		blog.ErrorJSON("validTransferResourceDirParams failed, find %s failed, filter: %s, err: %s, rid: %s", common.BKTableNameModuleHostConfig, opt, err.Error(), kit.Rid)
+		blog.Errorf("get host ids in resource pool failed, err: %v, cond: %v, rid: %s", err, opt, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	existHostIDs := make([]int64, 0)
-	for _, host := range moduleHost {
-		existHostIDs = append(existHostIDs, host.HostID)
+	if len(existHostIDs) < len(input.HostID) {
+		parsed, _ := util.SliceInterfaceToInt64(existHostIDs)
+		wrongHostIDs := util.IntArrDiff(input.HostID, parsed)
+		return nil, kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotUnderAnyResourceDirectory, wrongHostIDs)
 	}
 
-	return existHostIDs, nil
+	return module, nil
 }
