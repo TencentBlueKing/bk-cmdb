@@ -191,7 +191,10 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	if opType == 1 {
 		if _, exist := f.Sheet["association"]; !exist {
-			return &metadata.ResponseDataMapStr{}
+			return &metadata.ResponseDataMapStr{
+				BaseResp: metadata.BaseResp{Result: true},
+				Data:     mapstr.MapStr{"association": nil},
+			}
 		}
 		info, err := lgc.importStatisticsAssociation(ctx, header, common.BKInnerObjIDHost, f.Sheet["association"])
 		if err != nil {
@@ -216,7 +219,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, objID string,
 	asstInfoMap map[int]metadata.ExcelAssociation, asstObjectUniqueIDMap map[string]int64,
-	rid string) (map[int]metadata.ExcelAssociation, error){
+	rid string) (map[int]metadata.ExcelAssociation, error) {
 
 	var associationFlag []string
 	for _, info := range asstInfoMap {
@@ -250,7 +253,7 @@ func (lgc *Logics) handleAsstInfoMap(ctx context.Context, header http.Header, ob
 
 func (lgc *Logics) handleExcelAssociation(ctx context.Context, h http.Header, f *xlsx.File, objID string, rid string,
 	asstObjectUniqueIDMap map[string]int64, objectUniqueID int64, defLang lang.DefaultCCLanguageIf,
-	resp *metadata.ResponseDataMapStr) *metadata.ResponseDataMapStr{
+	resp *metadata.ResponseDataMapStr) *metadata.ResponseDataMapStr {
 	// if sheet name is 'association', the sheet is association data to be import
 	for _, sheet := range f.Sheets {
 		if sheet.Name != "association" {

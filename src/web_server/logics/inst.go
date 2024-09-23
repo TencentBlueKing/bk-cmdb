@@ -101,7 +101,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 
 	if opType == 1 {
 		if _, exist := f.Sheet["association"]; !exist {
-			return nil, 0, nil
+			return mapstr.MapStr{"association": nil}, 0, nil
 		}
 		info, err := lgc.importStatisticsAssociation(ctx, header, objID, f.Sheet["association"])
 		if err != nil {
