@@ -39,6 +39,7 @@
 ## Experience
 * [在线体验蓝鲸CMDB](https://cmdb-exp.bktencent.com/start) 🔥 **用户名密码：admin:admin**
 * [极速体验容器化部署蓝鲸CMDB](docs/wiki/container-support.md)
+* [helm方式极速部署和体验蓝鲸CMDB](docs/wiki/helm-support.md)
 
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)

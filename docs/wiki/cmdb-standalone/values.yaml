@@ -1,0 +1,13 @@
+image:
+  repository: ccr.ccs.tencentyun.com/bk.io/cmdb-standalone
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort  # 将服务暴露为 NodePort 以便外部访问
+  port: 30090  # 宿主机的 30090 端口
+  nodePort: 30090  # 使用固定的 NodePort（可以自定义，但需在 30000-32767 范围内）
+
+hostIP: 127.0.0.1 # 容器运行的node节点IP
+containerPort: 30090  # 容器内的 30090 端口
+
