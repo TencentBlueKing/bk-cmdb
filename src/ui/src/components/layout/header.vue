@@ -113,6 +113,7 @@
   import { gotoLoginPage } from '@/utils/login-helper'
   import versionLog from '../version-log'
   import logoSvg from '@/assets/images/logo.svg'
+  import { getDocUrl } from '@/utils/util'
 
   export default {
     components: {
@@ -131,7 +132,8 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('globalConfig', ['config']),
       helpDocUrl() {
-        return `${this.$Site.helpDocUrl}/markdown/CMDB/UserGuide/Introduce/Overview.md`
+        const { copyright } = this.config?.footer
+        return getDocUrl(copyright, 'header')
       },
       visibleMenu() {
         return menu.filter((menuItem) => {

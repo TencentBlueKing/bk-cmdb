@@ -15,7 +15,7 @@
     <cmdb-tips
       class="mb10"
       tips-key="associationTips"
-      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/ModelRelationType.md`">
+      :more-link="moreLink">
       {{$t('关联关系提示')}}
     </cmdb-tips>
     <p class="operation-box clearfix">
@@ -136,7 +136,7 @@
   import theRelation from './_detail'
   import { mapActions } from 'vuex'
   import associationService from '@/service/association'
-  import { escapeRegexChar } from '@/utils/util'
+  import { escapeRegexChar, getDocUrl } from '@/utils/util'
   export default {
     components: {
       theRelation
@@ -171,6 +171,10 @@
       }
     },
     computed: {
+      moreLink() {
+        const { copyright } = this.$store.state.globalConfig.config?.footer
+        return getDocUrl(copyright, 'modelRelation')
+      },
       searchParams() {
         const params = {
           page: {

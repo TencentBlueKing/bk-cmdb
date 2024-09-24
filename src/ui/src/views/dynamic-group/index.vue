@@ -13,7 +13,7 @@
 <template>
   <div class="dynamic-group-layout">
     <cmdb-tips class="mb10" tips-key="showCustomQuery"
-      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/CustomQuery.md`">
+      :more-link="moreLink">
       {{$t('动态分组提示')}}
     </cmdb-tips>
     <div class="dynamic-group-options">
@@ -111,7 +111,7 @@
   import RouterQuery from '@/router/query'
   import DynamicGroupForm from './form/form.js'
   import SearchSelect from './children/search-select.vue'
-  import { escapeRegexChar } from '@/utils/util'
+  import { escapeRegexChar, getDocUrl } from '@/utils/util'
 
   export default {
     components: {
@@ -140,6 +140,11 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),
+      ...mapGetters('globalConfig', ['config']),
+      moreLink() {
+        const { copyright } = this.config?.footer
+        return getDocUrl(copyright, 'dynamicGroup')
+      },
       searchParams() {
         const params = {
           condition: {},
