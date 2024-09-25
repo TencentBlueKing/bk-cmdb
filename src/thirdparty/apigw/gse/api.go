@@ -176,6 +176,11 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 		return nil, err
 	}
 
+	// special error code for streamTo not exists
+	if resp.Code == 14001 || resp.Code == 1014003 || resp.Code == 1014505 {
+		return make([]metadata.GseConfigAddStreamToParams, 0), nil
+	}
+
 	if resp.Code != 0 {
 		return nil, fmt.Errorf("gse config query streamto failed, code: %d, message: %s", resp.Code, resp.Message)
 	}
