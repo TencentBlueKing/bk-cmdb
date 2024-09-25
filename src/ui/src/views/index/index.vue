@@ -126,7 +126,7 @@
         this.showFuncDep = true
       },
       handleToMore() {
-        window.open(`${this.$Site.helpDocUrl}/markdown/ZH/CMDB/3.10/UserGuide/Feature/Fulltext.md`)
+        window.open(`${this.$helpDocUrlPrefix}/UserGuide/Feature/Fulltext.md`)
       },
       handleChangeTab(name) {
         if (name === 'fullText' && !this.isFullTextSearch) return
