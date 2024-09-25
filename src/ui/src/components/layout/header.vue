@@ -113,7 +113,6 @@
   import { gotoLoginPage } from '@/utils/login-helper'
   import versionLog from '../version-log'
   import logoSvg from '@/assets/images/logo.svg'
-  import { getDocUrl } from '@/utils/util'
 
   export default {
     components: {
@@ -132,8 +131,7 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('globalConfig', ['config']),
       helpDocUrl() {
-        const { copyright } = this.config?.footer
-        return getDocUrl(copyright, 'header')
+        return `${this.$helpDocUrlPrefix}/UserGuide/Introduce/Overview.md`
       },
       visibleMenu() {
         return menu.filter((menuItem) => {

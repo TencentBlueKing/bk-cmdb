@@ -25,7 +25,7 @@
       <cmdb-tips
         tips-key="modelTips"
         @input="isVisible => isTipsHidden = !isVisible"
-        :more-link="moreLink"
+        :more-link="`${$helpDocUrlPrefix}/UserGuide/Feature/Model.md`"
       >
         {{ $t("模型顶部提示") }}
       </cmdb-tips>
@@ -443,7 +443,6 @@
   import Bus from '@/utils/bus'
   import { isViewAuthFreeModel } from '@/service/auth'
   import workerTask from '@/setup/worker-task'
-  import { getDocUrl } from '@/utils/util'
 
   export default {
     name: 'ModelManagement',
@@ -531,11 +530,6 @@
     computed: {
       ...mapGetters(['supplierAccount', 'userName']),
       ...mapGetters('objectModelClassify', ['classifications']),
-      ...mapGetters('globalConfig', ['config']),
-      moreLink() {
-        const { copyright } = this.config?.footer
-        return getDocUrl(copyright, 'model')
-      },
       allClassifications() {
         const allClassifications = []
         this.classifications

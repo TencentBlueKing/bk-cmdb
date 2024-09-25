@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import { t, language } from '@/i18n'
+import { t } from '@/i18n'
 
 const hex2grb = (hex) => {
   const rgb = []
@@ -286,27 +286,4 @@ export function getHostInfoTitle(ip, ipv6, cloudId, hostId) {
 
 export function isNumeric(str) {
   return !isNaN(str) && !isNaN(parseFloat(str))
-}
-
-export const getDocUrl = (copyright, type) => {
-  const reg = /(([0-9]|([1-9]([0-9]*)))\.)([0-9]|([1-9]([0-9]*)))+/
-  const { helpDocUrl } = window.Site
-  const version = copyright?.match(reg)?.[0]
-  const enumType = {
-    header: 'Introduce/Overview.md',
-    fullText: 'Feature/Fulltext.md',
-    dynamicGroup: 'Feature/CustomQuery.md',
-    modelRelation: 'Feature/ModelRelationType.md',
-    model: 'Feature/Model.md'
-  }
-  const variable = {
-    version: '',
-    language: ''
-  }
-  if (version) {
-    const lang = language === 'zh_CN' ? 'ZH' : 'EN'
-    variable.version = `/${version}`
-    variable.language = `/${lang}`
-  }
-  return `${helpDocUrl}/markdown${variable.language}/CMDB${variable.version}/UserGuide/${enumType[type]}`
 }

@@ -75,7 +75,6 @@
   import theFooter from './children/footer'
   import functionalDependency from '@blueking/functional-dependency/vue2'
   import '@blueking/functional-dependency/vue2/vue2.css'
-  import { getDocUrl } from '@/utils/util'
 
   export default {
     name: 'index',
@@ -127,8 +126,7 @@
         this.showFuncDep = true
       },
       handleToMore() {
-        const { copyright } = this.$store.state.globalConfig.config?.footer
-        window.open(getDocUrl(copyright, 'fullText'))
+        window.open(`${this.$helpDocUrlPrefix}/UserGuide/Feature/Fulltext.md`)
       },
       handleChangeTab(name) {
         if (name === 'fullText' && !this.isFullTextSearch) return
