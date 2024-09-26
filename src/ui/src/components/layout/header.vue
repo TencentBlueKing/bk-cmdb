@@ -34,7 +34,8 @@
         :arrow="false"
         :tippy-options="{
           animateFill: false,
-          hideOnClick: false
+          hideOnClick: false,
+          offset: '0, 10'
         }">
         <i :class="`bk-icon icon-${currentSysLang.icon} lang-icon`"></i>
         <div slot="content">
@@ -55,7 +56,8 @@
         :arrow="false"
         :tippy-options="{
           animateFill: false,
-          hideOnClick: false
+          hideOnClick: false,
+          offset: '0, 10'
         }">
         <i class="question-icon icon-cc-help"></i>
         <template slot="content">
@@ -72,7 +74,8 @@
         :arrow="false"
         :tippy-options="{
           animateFill: false,
-          hideOnClick: false
+          hideOnClick: false,
+          offset: '0, 10'
         }">
         <span class="info-user">
           <span class="user-name">{{userName}}</span>
