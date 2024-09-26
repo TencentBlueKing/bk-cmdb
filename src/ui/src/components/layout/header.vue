@@ -258,11 +258,12 @@
       flex: 1;
       text-align: right;
       white-space: nowrap;
+      font-size: 0;
       @include middleBlockHack;
   }
   .info-item {
       @include inlineBlock;
-      margin: 0 18px 0 0;
+      margin: 0 12px 0 0;
       text-align: left;
       font-size: 0;
       cursor: pointer;
@@ -297,6 +298,9 @@
         font-size: 14px;
         font-weight: bold;
         color: #96A2B9;
+        line-height: 32px;
+        margin-left: 6px;
+        display: inline-block;
       .user-name {
           max-width: 150px;
           @include inlineBlock;
