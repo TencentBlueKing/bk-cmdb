@@ -111,8 +111,6 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, topoRoot, true
 	case kubeURLRegexp.MatchString(string(*u)):
 		from, to, isHit = rootPath, topoRoot, true
-	case topoURLRegexp.MatchString(string(*u)):
-		from, to, isHit = rootPath, topoRoot, true
 
 	default:
 		isHit = false
