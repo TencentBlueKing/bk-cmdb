@@ -61,6 +61,8 @@ func (s *cacheService) initCache(web *restful.WebService) {
 		Handler: s.ListPodLabelValue})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/kube/pod/label", Handler: s.RefreshPodLabel})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/watch/cache/event", Handler: s.WatchEvent})
+	// Note: only for inner api!!!
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inner/watch/cache/event", Handler: s.InnerWatchEvent})
 
 	utility.AddToRestfulWebService(web)
 }

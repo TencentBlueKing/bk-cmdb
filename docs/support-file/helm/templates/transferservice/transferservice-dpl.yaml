@@ -1,0 +1,111 @@
+{{- if .Values.transferservice.enabled }}
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: "{{ template "bk-cmdb.fullname" . }}-transferservice"
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    component: transferservice
+spec:
+  replicas: {{ .Values.transferservice.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: transferservice
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: transferservice
+        values-hash: "{{ toYaml .Values | sha256sum | trunc 63 }}"
+      {{- with .Values.transferservice.annotations }}
+      annotations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- if .Values.transferservice.podAnnotations }}
+        {{ toYaml .Values.transferservice.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: transferservice
+        image: {{ .Values.image.registry }}/{{ .Values.transferservice.image.repository }}:v{{ default .Chart.AppVersion .Values.transferservice.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        workingDir: {{ .Values.transferservice.workDir }}
+        command: ["./cmdb_transferservice"]
+        args:
+        - --addrport=$(POD_IP):{{ .Values.transferservice.port }}
+        {{- if .Values.transferservice.configPath }}
+        - --sync-config={{ .Values.transferservice.configPath }}/conf.yaml
+        {{- end }}
+        {{- if .Values.transferservice.configDir }}
+        - --config={{ .Values.transferservice.configDir }}
+        {{- end }}
+        - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        {{- if .Values.transferservice.command.logDir }}
+        - --log-dir={{ .Values.transferservice.command.logDir }}
+        {{- end }}
+        - --v={{ .Values.transferservice.command.logLevel }}
+        - --logtostderr={{ .Values.transferservice.command.logToStdErr }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.transferservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.transferservice.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
+
+        {{- if .Values.transferservice.resources }}
+        resources: {{ toYaml .Values.transferservice.resources | nindent 10 }}
+        {{- end }}
+
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        {{- if .Values.transferservice.env -}}
+          {{ toYaml .Values.transferservice.env | indent 10 }}
+        {{- end }}
+
+        ports:
+        - containerPort: {{ .Values.transferservice.port }}
+
+        volumeMounts:
+          {{- if .Values.transferservice.configPath }}
+          - name: configures
+            mountPath: {{ .Values.transferservice.configPath }}
+          {{- end }}
+      volumes:
+        {{- if .Values.transferservice.configPath }}
+        - name: configures
+          configMap:
+            name: {{ .Release.Name }}-transferservice-configures
+        {{- end }}
+
+      {{- with .Values.transferservice.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.transferservice.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.transferservice.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

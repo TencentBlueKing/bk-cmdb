@@ -170,20 +170,8 @@ func (c *Mongo) initIDGenerator() (int, error) {
 
 	// update id generator sequence id by config admin
 	for typ, id := range idGenConf.InitID {
-		sequenceName, exists := idgen.GetIDGenSequenceName(typ)
-		if !exists {
-			return 0, fmt.Errorf("id generator type %s is invalid", typ)
-		}
-
-		updateCond := map[string]interface{}{
-			"_id":        sequenceName,
-			"SequenceID": map[string]interface{}{common.BKDBLT: id},
-		}
-
-		data := map[string]interface{}{"SequenceID": id}
-
-		if err = c.Table(common.BKTableNameIDgenerator).Update(ctx, updateCond, data); err != nil {
-			return 0, fmt.Errorf("update id generator failed, err: %v, cond: %+v, data: %+v", err, updateCond, data)
+		if err = c.updateIDGenSeqID(ctx, typ, id); err != nil {
+			return 0, err
 		}
 	}
 
@@ -204,6 +192,42 @@ func (c *Mongo) initIDGenerator() (int, error) {
 	}
 
 	return idGenConf.Step, nil
+}
+
+func (c *Mongo) updateIDGenSeqID(ctx context.Context, typ idgen.IDGenType, id uint64) error {
+	sequenceName, exists := idgen.GetIDGenSequenceName(typ)
+	if !exists {
+		return fmt.Errorf("id generator type %s is invalid", typ)
+	}
+
+	// add id generator if not exists
+	cnt, err := c.Table(common.BKTableNameIDgenerator).Find(map[string]interface{}{"_id": sequenceName}).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("check if %s id generator exists failed, err: %v, ", sequenceName, err)
+	}
+
+	if cnt == 0 {
+		insertData := map[string]interface{}{
+			"_id":        sequenceName,
+			"SequenceID": id,
+		}
+		err = c.Table(common.BKTableNameIDgenerator).Insert(ctx, insertData)
+		if err != nil && !mongo.IsDuplicateKeyError(err) {
+			return fmt.Errorf("insert id generator failed, err: %v, data: %+v", err, insertData)
+		}
+	}
+
+	// update id generator sequence id if it is greater than current sequence id
+	updateCond := map[string]interface{}{
+		"_id":        sequenceName,
+		"SequenceID": map[string]interface{}{common.BKDBLT: id},
+	}
+
+	data := map[string]interface{}{"SequenceID": id}
+	if err = c.Table(common.BKTableNameIDgenerator).Update(ctx, updateCond, data); err != nil {
+		return fmt.Errorf("update id generator failed, err: %v, cond: %+v, data: %+v", err, updateCond, data)
+	}
+	return nil
 }
 
 // checkMongodbVersion TODO
@@ -736,8 +760,19 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		return nil
 	}
 
+	// only archive the specified fields for delete docs
+	var findOpts *options.FindOptions
+	fields := table.GetDelArchiveFields(c.collName)
+	if len(fields) > 0 {
+		projection := map[string]int{"_id": 1}
+		for _, field := range fields {
+			projection[field] = 1
+		}
+		findOpts = &options.FindOptions{Projection: projection}
+	}
+
 	docs := make([]bsonx.Doc, 0)
-	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, nil)
+	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, findOpts)
 	if err != nil {
 		return err
 	}

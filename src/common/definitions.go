@@ -169,6 +169,9 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
+	// BKDBNOR the not or db operator
+	BKDBNOR = "$nor"
+
 	// BKDBAND the db operator
 	BKDBAND = "$and"
 

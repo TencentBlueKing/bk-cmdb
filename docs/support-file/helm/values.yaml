@@ -1091,6 +1091,70 @@ webserver:
       memory: 512Mi
       cpu: 200m
 
+## @section bk-cmdb transferservice parameters
+##
+transferservice:
+  ## @param transferservice.enabled Enable transferservice deployment
+  ##
+  enabled: true
+  ## bk-cmdb transferservice image parameters
+  ## @param transferservice.image.repository bk-cmdb transferservice image repository
+  ## @param transferservice.image.rag bk-cmdb transferservice image tag
+  ##
+  image:
+    repository: blueking/cmdb_transferservice
+    tag:
+  ## @param transferservice.replicas Number of transferservice replicas to deploy
+  ##
+  replicas: 1
+  ## @param transferservice.port bk-cmdb transferservice service HTTP port
+  ##
+  port: 80
+  ## @param transferservice.workDir bk-cmdb transferservice work directory
+  ##
+  workDir: /data/cmdb/cmdb_transferservice
+  ## @param transferservice.configDir bk-cmdb transferservice config directory
+  ##
+  configPath: /data/cmdb/cmdb_transferservice/configure/conf.yaml
+  ## bk-cmdb transferservice start command parameters
+  ## @param transferservice.command.logDir bk-cmdb transferservice log directory
+  ## @param transferservice.command.logLevel bk-cmdb transferservice log level
+  ## @param transferservice.command.logLevel Enable bk-cmdb transferservice print log to stderr
+  ##
+  command:
+    logDir: /data/cmdb/cmdb_transferservice/logs
+    logLevel: 3
+    logToStdErr: false
+  ## @param podAnnotations Annotations for bk-panel pods
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+  ## @param affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+  ## @param nodeSelector Node labels for pod assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param tolerations Tolerations for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## bk-cmdb containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param resources.limits The resources limits for the bk-cmdb container
+  ## @param resources.requests [object] The requested resources for the bk-cmdb container
+  ##
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
 ## @section bk-cmdb migrate job parameters
 ##
 migrate:
@@ -1486,6 +1550,50 @@ common:
       # jwt公钥
       publicKey:
 
+  # CMDB同步服务配置
+  transferService:
+    # 是否开启同步, 默认为false
+    enableSync: false
+    # 是否开启增量同步, 默认为false
+    enableIncrSync: false
+    # 同步服务的名称
+    name:
+    # 同步角色，src表示源环境(将数据同步到目标环境)，dest表示目标环境(接收源环境的同步数据)
+    role:
+    # 全量同步周期，单位：小时，仅源环境需要配置
+    syncIntervalHours:
+    # 传输介质地址
+    transferMediumAddress:
+      - transfer.example.com
+    # 所有源环境的ID生成规则配置，用于判断同步的资源ID属于哪个环境
+    idRules:
+    -
+      # 源环境同步服务的名称
+      name:
+        - # 同步的资源类型
+          resource:
+          # 源环境该资源使用过的所有ID生成规则列表
+          rules:
+            -
+              # ID生成器生效的区间起始ID
+              startID:
+              # ID生成器生效的区间终点ID，-1表示无穷大
+              endID:
+              # ID生成器步长
+              step:
+    # 系统内置数据ID信息，用于将源环境的内置数据ID转换为目标环境的内置数据ID
+    innerDataID:
+      -
+        # 源环境同步服务的名称
+        name:
+        # 主机池ID信息
+        hostPool:
+          # 主机池业务ID
+          biz:
+          # 主机池空闲机池集群ID
+          set:
+          # 主机池空闲机模块ID
+          module:
   ## gse server config
   ##
   gse:
