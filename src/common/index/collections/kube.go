@@ -226,6 +226,13 @@ var commPodIndexes = []types.Index{
 		},
 		Background: true,
 	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "node_id",
+		Keys: bson.D{
+			{kubetypes.BKNodeIDField, 1},
+		},
+		Background: true,
+	},
 }
 
 var commNamespaceIndexes = []types.Index{
