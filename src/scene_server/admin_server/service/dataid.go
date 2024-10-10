@@ -473,14 +473,7 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 		return 0, err
 	}
 
-	bizCond := map[string]interface{}{common.BKAppNameField: configAdmin.Backend.SnapshotBizName}
-	biz := new(metadata.BizBasicInfo)
-	if err := s.db.Table(common.BKTableNameBaseApp).Find(bizCond).One(s.ctx, biz); err != nil {
-		blog.Errorf("get snap biz by name(%s) failed, err: %v, rid: %s", configAdmin.Backend.SnapshotBizName, err, rid)
-		return 0, err
-	}
-
-	return biz.BizID, nil
+	return configAdmin.Backend.SnapshotBizID, nil
 }
 
 // generateGseConfigChannel generate host snap stream to config by snap redis config
