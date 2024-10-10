@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 
@@ -132,7 +133,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
-	err := s.updatePlatformSetting(config)
+	err := s.updatePlatformSetting(config, rid)
 	if err != nil {
 		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -154,7 +155,22 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 }
 
 // updatePlatformSetting update current configuration to database.
-func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig) error {
+func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, rid string) error {
+
+	// 校验业务是否存在
+	bizCountCond := map[string]interface{}{
+		common.BKAppIDField: config.Backend.SnapshotBizID,
+	}
+	count, err := s.db.Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
+	if err != nil {
+		blog.Errorf("update config to db failed, count biz error, err: %v, condition: %v, rid: %s", err,
+			bizCountCond, rid)
+		return err
+	}
+	if count == 0 {
+		blog.Errorf("update config to db failed, can not find biz, condition: %v, rid: %s", bizCountCond, rid)
+		return errors.New(common.CCErrCommParamsIsInvalid, "snapshot_biz_id")
+	}
 
 	bytes, err := json.Marshal(config)
 	if err != nil {

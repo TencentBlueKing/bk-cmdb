@@ -112,8 +112,8 @@ type DataCollection struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	defaultAppID    string
-	snapshotBizName string
+	defaultAppID  string
+	snapshotBizID int64
 
 	// config for this DataCollection app.
 	config *DataCollectionConfig
@@ -243,8 +243,8 @@ func (c *DataCollection) initConfigs() error {
 	var err error
 	blog.Info("DataCollection| found configs to run the new datacollection server now!")
 
-	// set snapshot biz name
-	if err := c.setSnapshotBizName(); err != nil {
+	// set snapshot biz id
+	if err := c.setSnapshotBizID(); err != nil {
 		return err
 	}
 
@@ -413,7 +413,7 @@ func (c *DataCollection) initModules() error {
 // getDefaultAppID returns default appid of this DataCollection server.
 func (c *DataCollection) getDefaultAppID() (string, error) {
 	// query condition.
-	condition := map[string]interface{}{common.BKAppNameField: c.snapshotBizName}
+	condition := map[string]interface{}{common.BKAppIDField: c.snapshotBizID}
 
 	// query results.
 	results := []map[string]interface{}{}
@@ -573,30 +573,30 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	return nil
 }
 
-func (c *DataCollection) setSnapshotBizName() error {
+func (c *DataCollection) setSnapshotBizID() error {
 	tryCnt := 30
 	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
 		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
 		if err != nil {
-			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %v", i, err)
+			blog.Warnf("search config admin failed, try count: %d, err: %v", i, err)
 			continue
 		}
-		if res.Result == false {
-			blog.Warnf("setSnapshotBizName failed,  try count:%d, SearchConfigAdmin err: %s", i, res.ErrMsg)
+		if !res.Result {
+			blog.Warnf("search config admin failed, try count: %d, err: %s", i, res.ErrMsg)
 			continue
 		}
-		c.snapshotBizName = res.Data.Backend.SnapshotBizName
+		c.snapshotBizID = res.Data.Backend.SnapshotBizID
 		break
 	}
 
-	if c.snapshotBizName == "" {
-		blog.Errorf("setSnapshotBizName failed, SnapshotBizName is empty, check the coreservice and the value " +
+	if c.snapshotBizID <= 0 {
+		blog.Errorf("set snapshotBizID failed, snapshotBizID is empty, check the coreservice and the value " +
 			"in table cc_System")
-		return fmt.Errorf("setSnapshotBizName failed")
+		return fmt.Errorf("set snapshotBizID failed")
 	}
 
-	blog.Infof("setSnapshotBizName successfully, SnapshotBizName is %s", c.snapshotBizName)
+	blog.Infof("set snapshotBizID successfully, snapshotBizID is %d", c.snapshotBizID)
 	return nil
 }
