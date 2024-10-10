@@ -92,6 +92,10 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 		return s.genKubeWorkloadEventMethod(kit)
 	case iam.GeneralCache:
 		return genGeneralCacheMethod(kit)
+	case iam.Set:
+		return types.ResourcePullMethod{ListInstance: s.lgc.ListSetInstance}, nil
+	case iam.Module:
+		return types.ResourcePullMethod{ListInstance: s.lgc.ListModuleInstance}, nil
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{

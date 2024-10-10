@@ -57,7 +57,8 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 		var err error
 		processIDs, err = ps.createProcessInstances(ctx, input)
 		if err != nil {
-			blog.Errorf("create process instance failed, serviceInstanceID: %d, input: %+v, err: %+v", input.ServiceInstanceID, input, err)
+			blog.Errorf("create process instance failed, serviceInstanceID: %d, processes: %+v, err: %v, rid: %s",
+				input.ServiceInstanceID, input.Processes, err, ctx.Kit.Rid)
 			return err
 		}
 
