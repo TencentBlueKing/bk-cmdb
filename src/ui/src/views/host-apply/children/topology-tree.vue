@@ -276,6 +276,36 @@
           this.$refs.tree.setExpanded(treeNode?.parent.id, { emitEvent: true })
         }
       },
+      getDisabledIds() {
+        const disabledIds = []
+        const findIds = function (data, parent) {
+          const { length } = data
+          const disabledLength = disabledIds.length
+          let nowLength = 0
+          for (const item of data) {
+            if (item.child.length) {
+              const match = findIds(item.child, item)
+              if (match) {
+                nowLength = nowLength + 1
+              }
+            } else {
+              const { host_apply_rule_count: count } = item
+              if (count > 0) continue
+              nowLength = nowLength + 1
+              disabledIds.push(`${item.bk_obj_id}_${item.bk_inst_id}`)
+            }
+          }
+          // 该次循坏中子元素都无法进行选中操作
+          if (nowLength && parent && length === nowLength) {
+            disabledIds.splice(disabledLength, nowLength)
+            disabledIds.push(`${parent.bk_obj_id}_${parent.bk_inst_id}`)
+            return true
+          }
+          return false
+        }
+        findIds(this.treeData)
+        return disabledIds
+      },
       getTreeStat() {
         const stat = {
           firstModule: null,
@@ -319,18 +349,17 @@
       },
       setNodeDisabled() {
         const { withTemplateHostApplyIds, noRuleIds } = this.treeStat
-
+        const nodeIds = withTemplateHostApplyIds.map(id => `module_${id}`)
         // 处于批量操作状态disabled存在模板配置的节点
         if (withTemplateHostApplyIds?.length) {
-          const nodeIds = withTemplateHostApplyIds.map(id => `module_${id}`)
           this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled: Boolean(this.action) })
         }
 
         // 批量删除操作状态disabled不存在模块配置的节点
         if (noRuleIds?.length) {
           // 仅需处理未配置模板的节点
-          const nodeIds = noRuleIds.filter(id => !withTemplateHostApplyIds.includes(id)).map(id => `module_${id}`)
-          this.$refs.tree.setDisabled(nodeIds, { emitEvent: true, disabled: this.isDel })
+          const allDisabledIds = this.getDisabledIds().filter(id => !nodeIds.includes(id))
+          this.$refs.tree.setDisabled(allDisabledIds, { emitEvent: true, disabled: this.isDel })
         }
       },
       updateNodeStatus(id, { isClose, isClear }) {
