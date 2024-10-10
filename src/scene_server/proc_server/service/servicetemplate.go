@@ -13,10 +13,7 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -168,7 +165,8 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if err != nil {
-		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v",
+			common.BKServiceTemplateIDField, err)
 		return
 	}
 	template, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
@@ -185,10 +183,12 @@ func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
 	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if err != nil {
-		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v",
+			common.BKServiceTemplateIDField, err)
 		return
 	}
-	templateDetail, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateWithStatistics(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	templateDetail, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateWithStatistics(ctx.Kit.Ctx,
+		ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return
@@ -424,8 +424,9 @@ func (ps *ProcServer) ExecServiceTemplateHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (s *ProcServer) getUpdateDataStrByApplyRule(kit *rest.Kit, rules []metadata.CreateHostApplyRuleOption) (
-	string, errors.CCErrorCoder) {
+func (s *ProcServer) getUpdateDataByApplyRule(kit *rest.Kit, rules []metadata.CreateHostApplyRuleOption) (
+	map[string]interface{}, errors.CCErrorCoder) {
+
 	attributeIDs := make([]int64, 0)
 	attrIDMap := make(map[int64]struct{})
 	for _, rule := range rules {
@@ -449,7 +450,7 @@ func (s *ProcServer) getUpdateDataStrByApplyRule(kit *rest.Kit, rules []metadata
 	attrRes, err := s.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header, common.BKInnerObjIDHost, attCond)
 	if err != nil {
 		blog.Errorf("read model attr failed, err: %v, attrCond: %#v, rid: %s", err, attCond, kit.Rid)
-		return "", kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	attrMap := make(map[int64]string)
@@ -457,43 +458,53 @@ func (s *ProcServer) getUpdateDataStrByApplyRule(kit *rest.Kit, rules []metadata
 		attrMap[attr.ID] = attr.PropertyID
 	}
 
-	fields := make([]string, len(rules))
+	updateData := make(map[string]interface{})
 
-	for index, field := range rules {
-		value, _ := json.Marshal(field.PropertyValue)
-		fields[index] = fmt.Sprintf(`"%s":%s`, attrMap[field.AttributeID], string(value))
+	for _, field := range rules {
+		updateData[attrMap[field.AttributeID]] = field.PropertyValue
 	}
 
-	sort.Strings(fields)
-	return "{" + strings.Join(fields, ",") + "}", nil
+	return updateData, nil
 }
 
-func generateCondition(dataStr string, hostIDs []int64) (map[string]interface{}, map[string]interface{}) {
-	data := make(map[string]interface{})
-	_ = json.Unmarshal([]byte(dataStr), &data)
+func generateCondition(kit *rest.Kit, data map[string]interface{}, hostIDs []int64) (map[string]interface{},
+	errors.CCErrorCoder) {
 
 	cond := make([]map[string]interface{}, 0)
 
 	for key, value := range data {
+		// host special field is array type
+		if util.InArray(key, metadata.HostSpecialFields) {
+			valueStr, ok := value.(string)
+			if !ok {
+				blog.Errorf("host special field %s value %v is not string type, rid: %s", key, value, kit.Rid)
+				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedString, key)
+			}
+			value = strings.Split(valueStr, ",")
+		}
 		cond = append(cond, map[string]interface{}{
 			key: map[string]interface{}{common.BKDBNE: value},
 		})
 	}
+
 	mergeCond := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
 		common.BKDBOR:        cond,
 	}
-	return mergeCond, data
+	return mergeCond, nil
 }
 
 func (s *ProcServer) updateHostAttributes(kit *rest.Kit, planResult *metadata.HostApplyServiceTemplateOption,
 	hostIDs []int64) errors.CCErrorCoder {
 
-	dataStr, err := s.getUpdateDataStrByApplyRule(kit, planResult.AdditionalRules)
+	data, err := s.getUpdateDataByApplyRule(kit, planResult.AdditionalRules)
 	if err != nil {
 		return err
 	}
-	mergeCond, data := generateCondition(dataStr, hostIDs)
+	mergeCond, err := generateCondition(kit, data, hostIDs)
+	if err != nil {
+		return err
+	}
 	counts, cErr := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
 		common.BKTableNameBaseHost, []map[string]interface{}{mergeCond})
 	if cErr != nil {
@@ -744,7 +755,8 @@ func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	var tpl *metadata.ServiceTemplate
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		tpl, err = ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID, updateParam)
+		tpl, err = ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, option.ID,
+			updateParam)
 		if err != nil {
 			blog.Errorf("update service template failed, err: %v", err)
 			return err
@@ -988,19 +1000,18 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("FindServiceTemplateCountInfo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id error, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
 
 	input := new(metadata.FindServiceTemplateCountInfoOption)
-	if err := ctx.DecodeInto(input); nil != err {
+	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	rawErr := input.Validate()
-	if rawErr.ErrCode != 0 {
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
@@ -1015,38 +1026,44 @@ func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 	}
 
 	// process templates reference count
-	processTemplateCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameProcessTemplate, filters)
+	processTemplateCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKTableNameProcessTemplate, filters)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "count process template by filters: %+v failed.", filters)
+		blog.Errorf("count process template by filters: %+v failed, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	if len(processTemplateCounts) != len(input.ServiceTemplateIDs) {
-		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrProcGetProcessTemplatesFailed), common.CCErrProcGetProcessTemplatesFailed,
-			"the count of process must be equal with the count of service templates, filters:%#v", filters)
+		blog.Errorf("proc temp count != service temp count, filters: %#v, rid: %s", filters, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrProcGetProcessTemplatesFailed))
 		return
 	}
 
 	// module reference count
-	moduleCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameBaseModule, filters)
+	moduleCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKTableNameBaseModule, filters)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrTopoModuleSelectFailed, "count process template by filters: %+v failed.", filters)
+		blog.Errorf("count module by filters: %+v failed, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	if len(moduleCounts) != len(input.ServiceTemplateIDs) {
-		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrTopoModuleSelectFailed), common.CCErrTopoModuleSelectFailed,
-			"the count of modules must be equal with the count of service templates, filters:%#v", filters)
+		blog.Errorf("module count != service template count, filters: %#v, rid: %s", filters, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoModuleSelectFailed))
 		return
 	}
 
 	// service instance reference count
-	serviceInstanceCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, filters)
+	serviceInstanceCounts, err := ps.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKTableNameServiceInstance, filters)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "count process template by filters: %+v failed.", filters)
+		blog.Errorf("count service instance by filters: %+v failed, err: %v, rid: %s", filters, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
 		return
 	}
 	if len(serviceInstanceCounts) != len(input.ServiceTemplateIDs) {
-		ctx.RespWithError(ctx.Kit.CCError.CCError(common.CCErrProcGetServiceInstancesFailed), common.CCErrProcGetServiceInstancesFailed,
-			"the count of service instance must be equal with the count of service templates, filters:%#v", filters)
+		blog.Errorf("service instance count != service template count, filters: %#v, rid: %s", filters, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrProcGetServiceInstancesFailed))
 		return
 	}
 
@@ -1059,7 +1076,6 @@ func (ps *ProcServer) FindServiceTemplateCountInfo(ctx *rest.Contexts) {
 			ModuleCount:          moduleCounts[idx],
 		})
 	}
-
 	ctx.RespEntity(result)
 }
 
