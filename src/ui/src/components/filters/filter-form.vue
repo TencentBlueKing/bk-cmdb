@@ -256,7 +256,7 @@
       }
     },
     data() {
-      const { IN, NIN, LIKE, CONTAINS } = QUERY_OPERATOR
+      const { IN, NIN, LIKE, CONTAINS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
         scrollToBottom: false,
         isShow: false,
@@ -271,6 +271,8 @@
           error: ''
         },
         customOperatorTypeMap: {
+          float: [EQ, NE, GTE, LTE, RANGE, IN],
+          int: [EQ, NE, GTE, LTE, RANGE, IN],
           longchar: [IN, NIN, CONTAINS, LIKE],
           singlechar: [IN, NIN, CONTAINS, LIKE],
           array: [IN, NIN, CONTAINS, LIKE],
@@ -460,13 +462,23 @@
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
-          bk_property_type: propertyType
+          bk_property_type: propertyType,
+          id
         } = property
+        const {
+          operator
+        } = this.condition[id]
         const normal = `cmdb-search-${propertyType}`
+
         // 业务名在包含与非包含操作符时使用输入联想组件
         if (modelId === 'biz' && propertyId === 'bk_biz_name'
           && ![QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE].includes(this.condition[property.id].operator)) {
           return `cmdb-search-${modelId}`
+        }
+
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, operator)) {
+          return 'cmdb-search-singlechar'
         }
 
         // 资源-主机下无业务
@@ -492,8 +504,12 @@
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
-          bk_property_type: propertyType
+          bk_property_type: propertyType,
+          id
         } = property
+        const {
+          operator
+        } = this.condition[id]
 
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
@@ -504,6 +520,12 @@
         // 容器对象标签属性，需要注入标签kv数据作为选项
         if (isContainerObject(modelId) && propertyType === 'map') {
           return Object.assign(props, { options: FilterStore.containerPropertyMapValue?.[modelId]?.[propertyId] })
+        }
+
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, operator)) {
+          props.onlyNumber = true
+          props.fuzzy = false
         }
 
         return props

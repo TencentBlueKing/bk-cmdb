@@ -137,7 +137,7 @@
       }
     },
     data() {
-      const { IN, NIN, LIKE, CONTAINS_CS } = QUERY_OPERATOR
+      const { IN, NIN, LIKE, CONTAINS_CS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
         scrollToBottom: false,
         withoutOperator: ['date', 'time', 'bool'],
@@ -145,6 +145,8 @@
         originCondition: {},
         selected: [],
         customOperatorTypeMap: {
+          float: [EQ, NE, GTE, LTE, RANGE, IN],
+          int: [EQ, NE, GTE, LTE, RANGE, IN],
           longchar: [IN, NIN, LIKE, CONTAINS_CS],
           singlechar: [IN, NIN, LIKE, CONTAINS_CS],
           array: [IN, NIN, LIKE, CONTAINS_CS],
@@ -256,9 +258,18 @@
       },
       getComponentType(property) {
         const {
-          bk_property_type: propertyType
+          bk_property_type: propertyType,
+          id
         } = property
+        const {
+          operator
+        } = this.condition[id]
         const normal = `cmdb-search-${propertyType}`
+
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, operator)) {
+          return 'cmdb-search-singlechar'
+        }
 
         return normal
       },
@@ -266,7 +277,14 @@
         return Utils.getPlaceholder(property)
       },
       getBindProps(property) {
-        return Utils.getBindProps(property)
+        const props = Utils.getBindProps(property)
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, this.condition[property?.id]?.operator)) {
+          props.onlyNumber = true
+          props.fuzzy = false
+        }
+
+        return props
       },
       handleOperatorChange(property, operator) {
         const { value } = this.condition[property.id]
