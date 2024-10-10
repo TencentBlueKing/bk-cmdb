@@ -108,9 +108,8 @@ func (t *txn) AutoRunTxn(ctx context.Context, h http.Header, run func() error, o
 		// do next retry
 	}
 
-	blog.Warnf("retry transaction exceeds maximum count, **skip**, app code: %s, rid: %s", appCode, rid)
-
-	return nil
+	blog.Errorf("retry transaction exceeds maximum count, **skip**, app code: %s, rid: %s", appCode, rid)
+	return ccErr.New(common.CCErrCommCommitTransactionFailed, "retry transaction exceeds maximum count")
 }
 
 type transaction struct {
