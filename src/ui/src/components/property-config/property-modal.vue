@@ -18,7 +18,7 @@
     :mask-close="false"
     :width="730"
     header-position="left"
-    :title="$t('选择字段')"
+    :title="$t('选择模型字段')"
     @value-change="handleVisibleChange"
     @confirm="handleConfirm">
     <bk-input

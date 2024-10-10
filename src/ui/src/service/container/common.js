@@ -193,7 +193,7 @@ export const propertyNameI18n = {
       en: 'Taints'
     },
     unschedulable: {
-      zh: '是否可调度',
+      zh: '不可调度',
       en: 'Unschedulable'
     },
     internal_ip: {
