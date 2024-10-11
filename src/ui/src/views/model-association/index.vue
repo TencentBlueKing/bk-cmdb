@@ -15,7 +15,7 @@
     <cmdb-tips
       class="mb10"
       tips-key="associationTips"
-      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/ModelRelationType.md`">
+      :more-link="`${$helpDocUrlPrefix}/UserGuide/Feature/ModelRelationType.md`">
       {{$t('关联关系提示')}}
     </cmdb-tips>
     <p class="operation-box clearfix">

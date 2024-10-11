@@ -26,6 +26,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-refresh:before {
 	content: "\e3b9";
 }
+.icon-cc-help:before {
+	content: "\e3eb";
+}
 .icon-cc-remind:before {
 	content: "\e3b8";
 }
@@ -790,6 +793,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-cc-lock-line:before {
 	content: "\e3a9";
+}
+.icon-copy:before {
+	content: "\e3ea";
 }
 .icon-finger-line:before {
 	content: "\e3ab";

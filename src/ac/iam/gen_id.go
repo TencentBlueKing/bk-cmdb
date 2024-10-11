@@ -59,6 +59,7 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.FieldTemplate:            genFieldTemplateResource,
 	meta.FullSyncCond:             genSkipResource,
 	meta.GeneralCache:             genGeneralCacheResource,
+	meta.SynchronizeData:          genSkipResource,
 }
 
 // GenIamResource TODO

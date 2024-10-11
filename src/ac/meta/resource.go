@@ -68,6 +68,9 @@ const (
 	FulltextSearch           ResourceType = "fulltextSearch"
 	FieldTemplate            ResourceType = "fieldTemplate"
 	IDRuleIncrID             ResourceType = "idRuleIncrID"
+
+	// SynchronizeData is cmdb synchronize data auth resource type in CMDB
+	SynchronizeData ResourceType = "synchronize_data"
 )
 
 // kube related auth resource in CMDB

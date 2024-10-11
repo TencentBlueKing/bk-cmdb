@@ -658,6 +658,9 @@ const (
 	// ObjTemplateIDs In the context of audit logging, the tags of the
 	// binding field templates that correspond to the models
 	ObjTemplateIDs AuditType = "bk_template_ids"
+
+	// PlatformSetting is platform setting audit type
+	PlatformSetting AuditType = "platform_setting"
 )
 
 // ResourceType TODO
@@ -761,6 +764,9 @@ const (
 
 	// FieldTemplateUniqueRes is field template unique related audit resource type
 	FieldTemplateUniqueRes ResourceType = "field_template_unique"
+
+	// PlatformSettingRes is platform setting audit resource type
+	PlatformSettingRes ResourceType = "platform_setting"
 )
 
 // OperateFromType TODO
@@ -1020,8 +1026,6 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditDelete],
-			actionInfoMap[AuditPause],
-			actionInfoMap[AuditResume],
 		},
 	},
 	{
@@ -1031,6 +1035,8 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditCreate],
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditDelete],
+			actionInfoMap[AuditPause],
+			actionInfoMap[AuditResume],
 		},
 	},
 	{
@@ -1283,8 +1289,6 @@ var auditEnDict = []resourceTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
 			actionInfoEnMap[AuditDelete],
-			actionInfoEnMap[AuditPause],
-			actionInfoEnMap[AuditResume],
 		},
 	},
 	{
@@ -1294,6 +1298,8 @@ var auditEnDict = []resourceTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
 			actionInfoEnMap[AuditDelete],
+			actionInfoEnMap[AuditPause],
+			actionInfoEnMap[AuditResume],
 		},
 	},
 	{

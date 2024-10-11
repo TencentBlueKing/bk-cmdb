@@ -12,16 +12,21 @@
 
 <template>
   <div class="global-config">
-    <bk-tab :active.sync="activeTabName">
+    <bk-tab :active.sync="activeTabName" :before-toggle="hanldeBeforeToggle">
       <bk-tab-panel name="business-general-config" :label="$t('业务通用')">
         <div class="config-container">
-          <BusinessGneralConfig></BusinessGneralConfig>
+          <BusinessGneralConfig @has-change="handleHasValChange"></BusinessGneralConfig>
         </div>
       </bk-tab-panel>
       <bk-tab-panel name="idle-pool-config" :label="$t('业务空闲机池')">
         <div class="config-container">
           <!--加 v-if 是为了每次进入时初始化表单状态 -->
-          <IdlePoolConfig v-if="activeTabName === 'idle-pool-config'"></IdlePoolConfig>
+          <IdlePoolConfig v-if="activeTabName === 'idle-pool-config'" @has-change="handleHasValChange"></IdlePoolConfig>
+        </div>
+      </bk-tab-panel>
+      <bk-tab-panel name="id-generate" :label="$t('ID生成器')">
+        <div class="config-container">
+          <IDGenerate v-if="activeTabName === 'id-generate'" @has-change="handleHasValChange"></IDGenerate>
         </div>
       </bk-tab-panel>
     </bk-tab>
@@ -29,9 +34,12 @@
 </template>
 
 <script>
-  import { ref, watch, onMounted } from 'vue'
+  import { ref, watch, onMounted, h } from 'vue'
+  import { t } from '@/i18n'
+  import { $bkInfo } from '@/magicbox/index.js'
   import BusinessGneralConfig from './children/business-general-config.vue'
   import IdlePoolConfig from './children/idle-pool-config.vue'
+  import IDGenerate from './children/id-generate.vue'
   import queryStore from '@/router/query'
   import store from '@/store'
   import EventBus from '@/utils/bus'
@@ -41,10 +49,15 @@
     name: 'global-config',
     components: {
       BusinessGneralConfig,
-      IdlePoolConfig
+      IdlePoolConfig,
+      IDGenerate
     },
     setup() {
+      const subHeader = h('div', {
+        class: 'leave-confirm-content'
+      }, t('离开将会导致未保存信息丢失'))
       const activeTabName = ref(queryStore.get('tab') || 'business-general-config')
+      const hasChange = ref(false)
 
       store.dispatch('globalConfig/fetchConfig')
 
@@ -64,9 +77,50 @@
         queryStore.set('tab', activeTabName.value)
       })
 
-      return {
-        activeTabName
+      const handleHasValChange = (val) => {
+        hasChange.value = val
       }
+      const hanldeBeforeToggle = (name) => {
+        if (!hasChange.value) {
+          activeTabName.value = name
+          return
+        }
+        const confirmFn = () => {
+          activeTabName.value = name
+          hasChange.value = false
+        }
+        beforeLeave(confirmFn)
+      }
+      const beforeLeave = (comfirm, cancel) => {
+        $bkInfo({
+          title: t('确认离开当前页？'),
+          subHeader,
+          okText: t('离开'),
+          cancelText: t('取消'),
+          closeIcon: false,
+          confirmFn: () => {
+            comfirm?.()
+          },
+          cancelFn: () => {
+            cancel?.()
+          }
+        })
+      }
+
+      return {
+        activeTabName,
+        hasChange,
+        beforeLeave,
+        handleHasValChange,
+        hanldeBeforeToggle
+      }
+    },
+    beforeRouteLeave(to, from, next) {
+      if (!this.hasChange) {
+        next()
+        return
+      }
+      this.beforeLeave(() => next(), () => next(false))
     }
   }
 </script>
@@ -88,5 +142,9 @@
     justify-content: center;
     margin-top: 40px;
     padding-bottom: 50px;
+  }
+  .leave-confirm-content {
+    text-align: center;
+    font-size: 14px;
   }
 </style>
