@@ -93,9 +93,11 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	case iam.GeneralCache:
 		return genGeneralCacheMethod(kit)
 	case iam.Set:
-		return types.ResourcePullMethod{ListInstance: s.lgc.ListSetInstance}, nil
+		return types.ResourcePullMethod{
+			ListInstance: s.lgc.ListSetInstance, FetchInstanceInfo: s.lgc.FetchSetModuleNameInfo}, nil
 	case iam.Module:
-		return types.ResourcePullMethod{ListInstance: s.lgc.ListModuleInstance}, nil
+		return types.ResourcePullMethod{ListInstance: s.lgc.ListModuleInstance,
+			FetchInstanceInfo: s.lgc.FetchSetModuleNameInfo}, nil
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{
