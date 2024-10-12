@@ -35,22 +35,21 @@ webServer:
     userInfo:
   site:
     #该值表示部署完成后,输入到浏览器中访问的cmdb 网址
-    domainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
-    httpsDomainUrl: ${BK_HTTP_SCHEMA}://${BK_CMDB_PUBLIC_URL}
+    domainUrl: ${BKPAAS_CC_URL}
+    httpsDomainUrl: ${BKPAAS_CC_URL}
     # 登录地址
-    bkLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/login/?app_id=%s&c_url=%s
-    bkHttpsLoginUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/login/?app_id=%s&c_url=%s
+    bkLoginUrl: ${BKPAAS_LOGIN_URL}?app_id=%s&c_url=%s
+    bkHttpsLoginUrl: ${BKPAAS_LOGIN_URL}?app_id=%s&c_url=%s
     appCode: ${BK_CMDB_APP_CODE}
-    checkUrl: http://${BK_PAAS_PRIVATE_ADDR}/login/accounts/get_user/?bk_token=
+    checkUrl: ${BKPAAS_LOGIN_URL}/accounts/get_user/?bk_token=
     resourcesPath: /tmp/
     # 前端基础页面位置
     htmlRoot: /app/web/
     authscheme: ${BK_CMDB_AUTH_SCHENE}
-    bkDesktopUrl:  ${BK_PASS2_URL}
     bkComponentApiUrl: ${BK_COMPONENT_API_URL}
     paasDomainUrl: ${BK_COMPONENT_API_URL}
     # bkDomain 用于配置前端需要的cookie domain地址
-    bkDomain: ${BK_PAAS_BK_DOMAIN}
+    bkDomain: ${BKPAAS_BK_DOMAIN}
     # 帮助文档地址
     helpDocUrl: ${BK_DOCS_URL_PREFIX}
     # 蓝鲸共享资源URL
@@ -69,9 +68,9 @@ webServer:
         # 用于解密根据RFC1423加密的证书密钥的PEM块
         password:
   app:
-    authAppCode: ${BK_IAM_APP_CODE}
-    authUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_iam/apply-custom-perm
-    agentAppUrl: ${BK_HTTP_SCHEMA}://${BK_PAAS_PUBLIC_ADDR}/o/bk_nodeman/
+    authAppCode: ${BK_IAM_V3_APP_CODE}
+    authUrl: ${BK_HTTP_SCHEMA}://${BKPAAS_BK_DOMAIN}/o/bk_iam/apply-custom-perm
+    agentAppUrl: ${BKPAAS_NODEMAN_URL}
     # 权限模式，web页面使用，可选值: internal, iam
     authscheme: ${BK_CMDB_AUTH_SCHENE}
   login:
@@ -84,13 +83,13 @@ webServer:
     #英文版版本日志存放路径
     en: /app/changelog_user/en
   jwt:
-    enabled: ${BK_API_GATEWAY_BK_CMDB_JTW_ENABLED}
+    enabled: ${BK_CMDB_APIGW_JWT_ENABLED}
     # jwt公钥
-    publicKey: ${BK_API_GATEWAY_BK_CMDB_JTW_PUBLICKEY}
+    publicKey: ${BK_CMDB_APIGW_JWT_PUBLICKEY}
     # jwt私钥
     privateKey:
   #是否启用消息通知
-  enableNotification: ${BK_NOTICE_ENABLED}
+  enableNotification: ${BK_CMDB_ENABLE_BK_NOTICE}
 
 # cmdb服务tls配置
 tls:
@@ -134,8 +133,8 @@ openTelemetry:
 
 # 调用apigw接口相关配置
 apiGW:
-  bkNoticeApiGatewayUrl: ${BK_API_GATEWAY_BK_NOTICE_URL}
-  bkCmdbApiGatewayUrl: ${BK_API_GATEWAY_CMDB_URL}
+  bkNoticeApiGatewayUrl: ${BK_APIGW_BK_NOTICE_URL}
+  bkCmdbApiGatewayUrl: ${BK_APIGW_BK_CMDB_URL}
   appCode: ${BK_CMDB_APP_CODE}
   appSecret: ${BK_CMDB_APP_SECRET}
   username: admin

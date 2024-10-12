@@ -71,6 +71,13 @@ const unserializeConfig = (remoteData, lang) => {
       recycle: remoteData.idle_pool.recycle,
       userModules: unserializeUserModules(remoteData.idle_pool.user_modules) || []
     },
+    idGenerator: {
+      enabled: remoteData?.id_generator?.enabled,
+      step: remoteData?.id_generator?.step,
+      origin_init_id: remoteData?.id_generator?.init_id || {},
+      init_id: Object.assign({}, remoteData?.id_generator?.current_id, remoteData?.id_generator?.init_id),
+      current_id: remoteData?.id_generator?.current_id
+    },
     publicConfig: remoteData.publicConfig
   }
 
@@ -95,6 +102,11 @@ const serializeState = (newConfig, lang) => {
       fault: newConfig.idlePool.fault,
       recycle: newConfig.idlePool.recycle,
       user_modules: serializeUserModules(newConfig.idlePool.userModules, lang) || null
+    },
+    id_generator: {
+      enabled: newConfig?.idGenerator?.enabled,
+      step: newConfig?.idGenerator?.step,
+      init_id: parseIDGeneratorInitID(newConfig.idGenerator?.init_id),
     }
   }
 
@@ -160,6 +172,7 @@ const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey
   module_name: moduleName
 }))
 
+const parseIDGeneratorInitID = val => (Object.keys(val).length === 0 ? undefined : val)
 
 const mutations = {
   setConfig(state, config) {
@@ -222,8 +235,11 @@ const actions = {
    */
   updateConfig({ state, dispatch, commit }, config) {
     return new Promise(async (resolve, reject) => {
+      const stateConfig = cloneDeep(state.config)
+      // 默认初始化ID生成器参数下的init_id，因为该参数没改动不传
+      stateConfig.idGenerator.init_id = stateConfig.idGenerator.origin_init_id
       const newConfig = {
-        ...cloneDeep(state.config),
+        ...stateConfig,
         ...cloneDeep(config)
       }
       commit('setUpdating', true)

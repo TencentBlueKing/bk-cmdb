@@ -76,6 +76,7 @@ func updatePlatformConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.C
 	newCfg.BuiltInModuleConfig = dbCfg.BuiltInModuleConfig
 	newCfg.BuiltInSetName = dbCfg.BuiltInSetName
 	newCfg.ValidationRules = dbCfg.ValidationRules
+	newCfg.IDGenerator = dbCfg.IDGenerator
 
 	bytes, err := json.Marshal(newCfg)
 	if err != nil {
@@ -110,4 +111,5 @@ type platformSettingConfig struct {
 	ValidationRules     metadata.ValidationRulesCfg `json:"validation_rules"`
 	BuiltInSetName      metadata.ObjectString       `json:"set"`
 	BuiltInModuleConfig metadata.GlobalModule       `json:"idle_pool"`
+	IDGenerator         metadata.IDGeneratorConf    `json:"id_generator"`
 }

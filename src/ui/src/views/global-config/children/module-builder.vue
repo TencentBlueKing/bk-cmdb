@@ -183,6 +183,7 @@
           moduleId: this.innerModuleId,
           moduleName: this.innerModuleName
         })
+        this.$emit('update:moduleName', this.innerModuleName)
       }
     }
   }

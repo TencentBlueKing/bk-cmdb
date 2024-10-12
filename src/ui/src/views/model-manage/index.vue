@@ -25,7 +25,7 @@
       <cmdb-tips
         tips-key="modelTips"
         @input="isVisible => isTipsHidden = !isVisible"
-        :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/Model.md`"
+        :more-link="`${$helpDocUrlPrefix}/UserGuide/Feature/Model.md`"
       >
         {{ $t("模型顶部提示") }}
       </cmdb-tips>

@@ -458,6 +458,7 @@
           title: this.$t('更新主机属性'),
           bk_obj_id: 'host',
           fileTips: this.$t('导入文件大小提示'),
+          tips: this.$t('业务导入主机提示'),
           submit: (options) => {
             const params = {
               bk_biz_id: this.bizId,

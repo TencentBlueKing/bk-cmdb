@@ -142,6 +142,10 @@
       }
 
       const handleSearch = () => {
+        if (!keyword.value) {
+          searchInput.value.focus()
+          return
+        }
         store.commit('fullTextSearch/setSearchHistory', keyword.value)
         forceHide.value = true
         const query = pickQuery(route.value.query, ['tab'])

@@ -128,7 +128,7 @@
         this.showFuncDep = true
       },
       handleToMore() {
-        window.open('https://bk.tencent.com/docs/markdown/ZH/CMDB/3.10/UserGuide/Feature/Fulltext.md')
+        window.open(`${this.$helpDocUrlPrefix}/UserGuide/Feature/Fulltext.md`)
       },
       handleChangeTab(name) {
         if (name === 'fullText' && !this.isFullTextSearch) return

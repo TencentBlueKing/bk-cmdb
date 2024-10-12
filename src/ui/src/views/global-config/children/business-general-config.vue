@@ -58,13 +58,14 @@
 </template>
 
 <script>
-  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount } from 'vue'
+  import { ref, reactive, computed, defineComponent, onMounted, onBeforeUnmount, watch } from 'vue'
   import store from '@/store'
   import SaveButton from './save-button.vue'
   import { bkMessage } from 'bk-magic-vue'
   import { language, t } from '@/i18n'
   import cloneDeep from 'lodash/cloneDeep'
   import EventBus from '@/utils/bus'
+  import isEqual from 'lodash/isEqual'
   import BusinessSelector from '@/components/audit-history/audit-business-selector'
 
   export default defineComponent({
@@ -72,7 +73,7 @@
       SaveButton,
       BusinessSelector
     },
-    setup() {
+    setup(props, { emit }) {
       const globalConfig = computed(() => store.state.globalConfig)
       const defaultForm = {
         snapshotBizId: '',
@@ -82,17 +83,24 @@
         snapshotBizId: ''
       }
       const bizGeneralForm = reactive(cloneDeep(defaultForm))
+      const originBizGeneralForm = reactive(cloneDeep(defaultForm))
       const bizGeneralFormRef = ref(null)
       const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 230))
       const bizNameIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 30 : 10))
       const topoLevelIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 0 : -20))
       const showBizNameTip = computed(() => bizGeneralForm.snapshotBizId !== originForm.snapshotBizId)
+      const hasChange = computed(() => !isEqual(originBizGeneralForm, bizGeneralForm))
+
+      watch(() => hasChange.value, (val) => {
+        emit('has-change', val)
+      })
 
       const initForm = () => {
         const { backend } = globalConfig.value.config
         Object.assign(bizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
+        Object.assign(originBizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
         originForm.snapshotBizId = bizGeneralForm.snapshotBizId
-        bizGeneralFormRef.value.clearError()
+        bizGeneralFormRef.value?.clearError()
       }
 
       onMounted(() => {
