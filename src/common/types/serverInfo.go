@@ -54,6 +54,8 @@ const (
 	CC_MODULE_AUTH             = "auth"
 	// CC_MODULE_CACHE 缓存服务
 	CC_MODULE_CACHESERVICE = "cacheservice"
+	// CC_MODULE_TRANSFERSERVICE is a service to transfer data from one cmdb to another
+	CC_MODULE_TRANSFERSERVICE = "transfer_service"
 )
 
 // AllModule all cc module
@@ -68,11 +70,12 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:    true,
 	CC_MODULE_CORESERVICE:    true,
 	// CC_MODULE_SYNCHRONZESERVER: true,
-	CC_MODULE_OPERATION:    true,
-	CC_MODULE_TASK:         true,
-	CC_MODULE_CLOUD:        true,
-	CC_MODULE_AUTH:         true,
-	CC_MODULE_CACHESERVICE: true,
+	CC_MODULE_OPERATION:       true,
+	CC_MODULE_TASK:            true,
+	CC_MODULE_CLOUD:           true,
+	CC_MODULE_AUTH:            true,
+	CC_MODULE_CACHESERVICE:    true,
+	CC_MODULE_TRANSFERSERVICE: true,
 }
 
 // cc functionality define
