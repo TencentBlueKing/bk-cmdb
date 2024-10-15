@@ -109,6 +109,7 @@
   import isEqual from 'lodash/isEqual'
   import useSideslider from '@/hooks/use-sideslider'
   import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
+  import { POSITIVE_INTEGER } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -278,6 +279,10 @@
       },
       getBindProps(property) {
         const props = Utils.getBindProps(property)
+        if (POSITIVE_INTEGER.includes(property?.bk_property_id)) {
+          if (!props.options) props.options = {}
+          props.options.min = 1
+        }
         // 数字类型int 和 float支持in操作符
         if (Utils.numberUseIn(property, this.condition[property?.id]?.operator)) {
           props.onlyNumber = true

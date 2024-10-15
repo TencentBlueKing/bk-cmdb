@@ -230,6 +230,7 @@
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
   import { QUERY_OPERATOR, QUERY_OPERATOR_HOST_SYMBOL, QUERY_OPERATOR_HOST_DESC } from '@/utils/query-builder-operator'
+  import { POSITIVE_INTEGER } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -498,9 +499,6 @@
       },
       getBindProps(property) {
         const props = Utils.getBindProps(property)
-        if (!FilterStore.bizId) {
-          return props
-        }
         const {
           bk_obj_id: modelId,
           bk_property_id: propertyId,
@@ -511,6 +509,19 @@
           operator
         } = this.condition[id]
 
+        if (POSITIVE_INTEGER.includes(propertyId)) {
+          if (!props.options) props.options = {}
+          props.options.min = 1
+        }
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, operator)) {
+          props.onlyNumber = true
+          props.fuzzy = false
+        }
+        if (!FilterStore.bizId) {
+          return props
+        }
+
         const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
         const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
         if (isSetName || isModuleName) {
@@ -520,12 +531,6 @@
         // 容器对象标签属性，需要注入标签kv数据作为选项
         if (isContainerObject(modelId) && propertyType === 'map') {
           return Object.assign(props, { options: FilterStore.containerPropertyMapValue?.[modelId]?.[propertyId] })
-        }
-
-        // 数字类型int 和 float支持in操作符
-        if (Utils.numberUseIn(property, operator)) {
-          props.onlyNumber = true
-          props.fuzzy = false
         }
 
         return props
