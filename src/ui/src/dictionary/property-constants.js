@@ -154,3 +154,6 @@ export const REQUIRED_TYPES = [
   PROPERTY_TYPES.ORGANIZATION,
   PROPERTY_TYPES.INNER_TABLE
 ]
+
+// 搜索时为正整数的类型
+export const POSITIVE_INTEGER = ['bk_host_id', 'bk_inst_id']
