@@ -15,31 +15,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package synchronize defines multiple cmdb synchronize service
-package synchronize
+package main
 
 import (
-	"configcenter/pkg/synchronize/types"
-	"configcenter/src/common/http/rest"
+	"context"
+	"fmt"
+	"os"
+	"runtime"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"configcenter/src/source_controller/transfer-service/app"
+	"configcenter/src/source_controller/transfer-service/app/options"
+
+	"github.com/spf13/pflag"
 )
 
-// CreateSyncData create sync data
-func (s *service) CreateSyncData(cts *rest.Contexts) {
-	option := new(types.CreateSyncDataOption)
-	if err := cts.DecodeInto(option); err != nil {
-		cts.RespAutoError(err)
-		return
-	}
+func main() {
+	common.SetIdentification(types.CC_MODULE_TRANSFERSERVICE)
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	if err := option.Validate(); err.ErrCode != 0 {
-		cts.RespAutoError(err.ToCCError(cts.Kit.CCError))
-		return
-	}
+	blog.InitLogs()
+	defer blog.CloseLogs()
 
-	if err := s.core.SynchronizeOperation().CreateData(cts.Kit, option); err != nil {
-		cts.RespAutoError(err)
-		return
-	}
+	op := options.NewServerOption()
+	op.AddFlags(pflag.CommandLine)
 
-	cts.RespEntity(nil)
+	util.InitFlags()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := app.Run(ctx, cancel, op); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.Errorf("process stopped by %v", err)
+		blog.CloseLogs()
+		os.Exit(1)
+	}
 }

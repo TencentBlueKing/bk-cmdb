@@ -15,50 +15,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package synchronize defines multiple cmdb synchronize service
-package synchronize
+package service
 
 import (
+	"context"
+
 	"configcenter/pkg/synchronize/types"
-	acmeta "configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 )
 
-// CreateSyncData create sync data
-func (s *service) CreateSyncData(cts *rest.Contexts) {
-	option := new(types.CreateSyncDataOption)
-	if err := cts.DecodeInto(option); err != nil {
+// SyncCmdbData sync cmdb data
+func (s *Service) SyncCmdbData(cts *rest.Contexts) {
+	opt := new(types.SyncCmdbDataOption)
+	if err := cts.DecodeInto(opt); err != nil {
 		cts.RespAutoError(err)
 		return
 	}
 
-	if err := option.Validate(); err.ErrCode != 0 {
-		cts.RespAutoError(err.ToCCError(cts.Kit.CCError))
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		cts.RespAutoError(rawErr.ToCCError(cts.Kit.CCError))
 		return
 	}
 
-	// authorize
-	authRes := acmeta.ResourceAttribute{Basic: acmeta.Basic{Type: acmeta.SynchronizeData, Action: acmeta.Create}}
-	if resp, authorized := s.AuthManager.Authorize(cts.Kit, authRes); !authorized {
-		cts.RespNoAuth(resp)
-		return
-	}
+	blog.Infof("start sync cmdb data, opt: %+v, rid: %s", opt, cts.Kit.Rid)
 
-	txnErr := s.ClientSet.CoreService().Txn().AutoRunTxn(cts.Kit.Ctx, cts.Kit.Header, func() error {
-		var err error
-		err = s.ClientSet.CoreService().Synchronize().CreateSyncData(cts.Kit.Ctx, cts.Kit.Header, option)
+	cts.Kit.Ctx = context.Background()
+	go func() {
+		err := s.syncer.SyncCmdbData(cts.Kit, opt)
 		if err != nil {
-			blog.Errorf("create sync data failed, err: %v, option: %+v, rid: %s", err, *option, cts.Kit.Rid)
-			return err
+			blog.Errorf("sync cmdb data failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+			return
 		}
-		return nil
-	})
-
-	if txnErr != nil {
-		cts.RespAutoError(txnErr)
-		return
-	}
+		blog.Infof("finished sync cmdb data, opt: %+v, rid: %s", opt, cts.Kit.Rid)
+	}()
 
 	cts.RespEntity(nil)
 }

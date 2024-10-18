@@ -18,6 +18,8 @@
 package metadata
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -181,6 +183,18 @@ func (c *ListQuotedInstOption) Validate() errors.RawErrorInfo {
 // GenerateModelQuoteObjID generate the obj id referenced by the model.
 func GenerateModelQuoteObjID(srcModel, propertyID string) string {
 	return "bk_" + srcModel + modelQuoteSpecifier + propertyID
+}
+
+// GetModelQuoteSrcObjID get the src obj id by referenced obj id
+func GetModelQuoteSrcObjID(destModel string) string {
+	if !strings.HasPrefix(destModel, "bk_") {
+		return destModel
+	}
+	parts := strings.Split(strings.TrimPrefix(destModel, "bk_"), modelQuoteSpecifier)
+	if len(parts) != 2 {
+		return destModel
+	}
+	return parts[0]
 }
 
 // GenerateModelQuoteObjName generate the obj name referenced by the model.
