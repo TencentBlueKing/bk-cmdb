@@ -42,3 +42,26 @@ func (e *eventCache) WatchEvent(ctx context.Context, h http.Header, opts *watch.
 	}
 	return &resp.Data, nil
 }
+
+// InnerWatchEvent watch event for inner api
+func (e *eventCache) InnerWatchEvent(ctx context.Context, h http.Header, opts *watch.WatchEventOptions) (
+	*watch.WatchResp, errors.CCErrorCoder) {
+
+	resp := new(watch.WatchEventResp)
+	err := e.client.Post().
+		WithContext(ctx).
+		Body(opts).
+		SubResourcef("/inner/watch/cache/event").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}

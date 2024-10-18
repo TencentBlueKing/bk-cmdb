@@ -19,38 +19,44 @@
 package types
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 )
 
-// CreateSyncDataOption defines create sync data option
-type CreateSyncDataOption struct {
-	ResourceType ResType           `json:"resource_type"`
-	SubResource  string            `json:"sub_resource"`
-	Data         []json.RawMessage `json:"data"`
+// SyncCmdbDataOption defines sync cmdb data option
+type SyncCmdbDataOption struct {
+	ResType ResType          `json:"resource_type"`
+	SubRes  string           `json:"sub_resource"`
+	IsAll   bool             `json:"is_all"`
+	Start   map[string]int64 `json:"start"`
+	End     map[string]int64 `json:"end"`
 }
 
-// Validate create sync data option
-func (o *CreateSyncDataOption) Validate() errors.RawErrorInfo {
-	if rawErr := o.ResourceType.Validate(o.SubResource); rawErr.ErrCode != 0 {
+// Validate sync cmdb data option
+func (o *SyncCmdbDataOption) Validate() errors.RawErrorInfo {
+	if rawErr := o.ResType.Validate(o.SubRes); rawErr.ErrCode != 0 {
 		return rawErr
 	}
 
-	if len(o.Data) == 0 {
-		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommParamsNeedSet,
-			Args:    []interface{}{"data"},
+	if o.IsAll {
+		if len(o.Start) != 0 || len(o.End) != 0 {
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{"is_all", "start", "end"},
+			}
 		}
+		return errors.RawErrorInfo{}
 	}
 
-	if len(o.Data) > common.BKMaxLimitSize {
+	if len(o.Start) == 0 && len(o.End) == 0 {
 		return errors.RawErrorInfo{
-			ErrCode: common.CCErrCommXXExceedLimit,
-			Args:    []interface{}{"data", common.BKMaxLimitSize},
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{"start", "end"},
 		}
 	}
 
 	return errors.RawErrorInfo{}
 }
+
+// InfiniteEndID represent infinity for end id of id rule info
+const InfiniteEndID int64 = -1

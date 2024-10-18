@@ -15,27 +15,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package synchronize defines multiple cmdb synchronize service
-package synchronize
+package medium
 
 import (
-	"net/http"
-
-	"configcenter/src/common/http/rest"
-	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/service/capability"
+	"errors"
+	"sync"
 )
 
-type service struct {
-	core core.Core
+type discovery struct {
+	servers []string
+	index   int
+	sync.Mutex
 }
 
-// Init init multiple cmdb synchronize service
-func Init(c *capability.Capability) {
-	s := &service{
-		core: c.Core,
+// GetServers get servers
+func (s *discovery) GetServers() ([]string, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	num := len(s.servers)
+	if num == 0 {
+		return []string{}, errors.New("oops, there is no server can be used")
 	}
 
-	c.Utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/synchronize/create/data",
-		Handler: s.CreateSyncData})
+	if s.index < num-1 {
+		s.index = s.index + 1
+		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+	} else {
+		s.index = 0
+		return append(s.servers[num-1:], s.servers[:num-1]...), nil
+	}
+}
+
+// GetServersChan get servers chan
+func (s *discovery) GetServersChan() chan []string {
+	return nil
 }

@@ -415,8 +415,17 @@ func (s *cacheService) RefreshPodLabel(cts *rest.Contexts) {
 	cts.RespEntity(nil)
 }
 
-// WatchEvent TODO
+// InnerWatchEvent watch event for inner api
+func (s *cacheService) InnerWatchEvent(ctx *rest.Contexts) {
+	s.watchEvent(ctx, true)
+}
+
+// WatchEvent watch event
 func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
+	s.watchEvent(ctx, false)
+}
+
+func (s *cacheService) watchEvent(ctx *rest.Contexts, isInner bool) {
 	var err error
 	// sleep for a while if an error occurred to avoid others using wrong input to request too frequently
 	defer func() {
@@ -432,7 +441,7 @@ func (s *cacheService) WatchEvent(ctx *rest.Contexts) {
 		return
 	}
 
-	if err = options.Validate(); err != nil {
+	if err = options.Validate(isInner); err != nil {
 		blog.Errorf("watch event, but got invalid request options, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

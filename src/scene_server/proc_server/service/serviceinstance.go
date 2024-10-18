@@ -2508,9 +2508,11 @@ func (ps *ProcServer) updateProcessInstance(kit *rest.Kit, serviceTemplateId int
 			processTemplateID := procRelation.processInstanceWithTemplateMap[process.ProcessID]
 			template, exist := procRelation.processTemplateMap[processTemplateID]
 			if !exist || template.ServiceTemplateID != serviceTemplateId {
+				mapLock.Lock()
 				if _, exists := updatedSvcInstMap[serviceInstanceID]; !exists {
 					updatedSvcInstMap[serviceInstanceID] = serviceInst.srvInstMap[serviceInstanceID]
 				}
+				mapLock.Unlock()
 				continue
 			}
 			pipeline <- true
