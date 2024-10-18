@@ -446,15 +446,6 @@ func genResourceManageActionGroups() []ActionGroup {
 						{ID: ViewGeneralCache},
 					},
 				},
-				{
-					Name:   "CMDB数据同步",
-					NameEn: "Synchronize Data",
-					Actions: []ActionWithID{
-						{
-							ID: SynchronizeData,
-						},
-					},
-				},
 			},
 		},
 	}

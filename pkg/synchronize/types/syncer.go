@@ -15,25 +15,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package synchronize defines multiple cmdb synchronize service
-package synchronize
+package types
 
 import (
-	"net/http"
+	"encoding/json"
 
-	"configcenter/src/common/http/rest"
-	"configcenter/src/scene_server/topo_server/service/capability"
+	"configcenter/src/common/watch"
 )
 
-type service struct {
-	*capability.Capability
+// ListDataOpt is the list data option
+type ListDataOpt struct {
+	SubRes string
+	Start  map[string]int64
+	End    map[string]int64
 }
 
-// Init init multiple cmdb synchronize service
-func Init(utility *rest.RestUtility, c *capability.Capability) {
-	s := &service{
-		Capability: c,
-	}
+// ListDataRes is the list data result
+type ListDataRes struct {
+	IsAll     bool
+	Data      any
+	NextStart map[string]int64
+}
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/synchronize/create/data", Handler: s.CreateSyncData})
+// CompDataRes is the compare data result
+type CompDataRes struct {
+	Insert       any
+	Update       any
+	Delete       any
+	RemainingSrc any
+}
+
+// FullSyncLockKey is the full sync lock key
+const FullSyncLockKey = "cmdb_syncer:full_sync_lock"
+
+// EventInfo is the incremental sync event info
+type EventInfo struct {
+	EventType watch.EventType
+	ResType   ResType
+	Oid       string
+	SubRes    []string
+	Detail    json.RawMessage
 }

@@ -21,7 +21,6 @@ import (
 	"configcenter/src/source_controller/coreservice/service/id_rule"
 	"configcenter/src/source_controller/coreservice/service/kube"
 	modelquote "configcenter/src/source_controller/coreservice/service/model_quote"
-	"configcenter/src/source_controller/coreservice/service/synchronize"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -587,7 +586,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initModelQuote(web)
 	fieldtmpl.InitFieldTemplate(c)
 	idrule.InitIDRule(c)
-	synchronize.Init(c)
 
 	c.Utility.AddToRestfulWebService(web)
 }
