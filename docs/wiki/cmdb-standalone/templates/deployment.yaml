@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cmdb-standalone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cmdb-standalone
+  template:
+    metadata:
+      labels:
+        app: cmdb-standalone
+    spec:
+      containers:
+        - name: cmdb-standalone
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - "sed -i 's/ip=127.0.0.1/ip={{ .Values.hostIP }}/' /data/run.sh && sed -i 's/port=${CTNR_PORT:=8090}/port=${CTNR_PORT:={{ .Values.containerPort }}}/' /data/run.sh && /data/run.sh"
