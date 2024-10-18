@@ -74,6 +74,12 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 		if component == types.CC_MODULE_WEBSERVER && curServiceName != types.CC_MODULE_WEBSERVER {
 			continue
 		}
+
+		// other service do not need to discover transfer service
+		if component == types.CC_MODULE_TRANSFERSERVICE && curServiceName != types.CC_MODULE_TRANSFERSERVICE {
+			continue
+		}
+
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
 		svr, err := newServerDiscover(disc, path, component)
 		if err != nil {
