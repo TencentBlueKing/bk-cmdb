@@ -136,8 +136,6 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/createmany/module").Filter(s.TopoFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/find/object/model/web").Filter(s.TopoFilterChan).To(s.Post))
-
-	ws.Route(ws.POST("/synchronize/create/data").Filter(s.TopoFilterChan).To(s.Post))
 }
 
 func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors.CCErrorIf) {

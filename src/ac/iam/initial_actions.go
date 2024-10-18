@@ -160,7 +160,6 @@ var ActionIDNameMap = map[ActionID]string{
 	EditFullSyncCond:                    "全量同步缓存条件编辑",
 	DeleteFullSyncCond:                  "全量同步缓存条件删除",
 	ViewGeneralCache:                    "通用缓存查询",
-	SynchronizeData:                     "CMDB数据同步",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -209,7 +208,6 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genIDRuleActions()...)
 	resourceActionList = append(resourceActionList, genFullSyncCondActions()...)
 	resourceActionList = append(resourceActionList, genCacheActions()...)
-	resourceActionList = append(resourceActionList, genSynchronizeDataActions()...)
 
 	return resourceActionList
 }
@@ -1754,16 +1752,6 @@ func genFieldGroupingTemplateActions() []ResourceAction {
 			Version:              1,
 		},
 	}
-}
-
-func genSynchronizeDataActions() []ResourceAction {
-	return []ResourceAction{{
-		ID:      SynchronizeData,
-		Name:    ActionIDNameMap[SynchronizeData],
-		NameEn:  "Synchronize Data",
-		Type:    Edit,
-		Version: 1,
-	}}
 }
 
 func genIDRuleActions() []ResourceAction {

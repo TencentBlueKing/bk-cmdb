@@ -412,7 +412,8 @@
 
       const handleDelete = (inst) => {
         $bkInfo({
-          title: t('确认要删除', { name: inst[MODEL_NAME_KEY] }),
+          title: '确定删除',
+          subTitle: t('确认要删除', { name: inst[MODEL_NAME_KEY] }),
           confirmLoading: true,
           confirmFn: async () => {
             try {

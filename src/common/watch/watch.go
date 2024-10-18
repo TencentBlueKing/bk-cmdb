@@ -45,8 +45,8 @@ type WatchEventFilter struct {
 	SubResources []string `json:"-"`
 }
 
-// Validate TODO
-func (w *WatchEventOptions) Validate() error {
+// Validate watch event options
+func (w *WatchEventOptions) Validate(isInner bool) error {
 	if len(w.EventTypes) != 0 {
 		for _, e := range w.EventTypes {
 			if err := e.Validate(); err != nil {
@@ -55,10 +55,12 @@ func (w *WatchEventOptions) Validate() error {
 		}
 	}
 
-	switch w.Resource {
-	case Host, Biz, Set, Module:
-		if len(w.Fields) == 0 {
-			return fmt.Errorf("%s event must have fields", w.Resource)
+	if !isInner {
+		switch w.Resource {
+		case Host, Biz, Set, Module:
+			if len(w.Fields) == 0 {
+				return fmt.Errorf("%s event must have fields", w.Resource)
+			}
 		}
 	}
 

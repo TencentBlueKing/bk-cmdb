@@ -38,8 +38,11 @@ var delArchiveCollMap = map[string]string{
 	common.BKTableNameBaseProject:             common.BKTableNameDelArchive,
 	fullsynccond.BKTableNameFullSyncCond:      common.BKTableNameDelArchive,
 
-	common.BKTableNameBaseInst: common.BKTableNameDelArchive,
-	common.BKTableNameInstAsst: common.BKTableNameDelArchive,
+	common.BKTableNameBaseInst:         common.BKTableNameDelArchive,
+	common.BKTableNameMainlineInstance: common.BKTableNameDelArchive,
+	common.BKTableNameInstAsst:         common.BKTableNameDelArchive,
+
+	common.BKTableNameServiceInstance: common.BKTableNameDelArchive,
 
 	kubetypes.BKTableNameBaseCluster:        common.BKTableNameKubeDelArchive,
 	kubetypes.BKTableNameBaseNode:           common.BKTableNameKubeDelArchive,
@@ -71,4 +74,14 @@ func GetDelArchiveTable(table string) (string, bool) {
 	}
 
 	return common.BKTableNameDelArchive, true
+}
+
+// GetDelArchiveFields get delete archive fields by table
+func GetDelArchiveFields(table string) []string {
+	switch table {
+	case common.BKTableNameServiceInstance:
+		return []string{common.BKFieldID}
+	}
+
+	return make([]string, 0)
 }
