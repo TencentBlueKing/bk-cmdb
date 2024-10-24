@@ -39,8 +39,16 @@ type Interface interface {
 
 // NewStream create a list watch event stream
 func NewStream(conf local.MongoConf) (Interface, error) {
+	event, err := newEvent(conf)
+	if err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+func newEvent(conf local.MongoConf) (*event.Event, error) {
 	connStr, err := connstring.Parse(conf.URI)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 	if conf.RsName == "" {
@@ -55,11 +63,8 @@ func NewStream(conf local.MongoConf) (Interface, error) {
 		ReplicaSet:     &conf.RsName,
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)
-	if nil != err {
-		return nil, err
-	}
-	if err := client.Connect(context.TODO()); nil != err {
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(conf.URI), &conOpt)
+	if err != nil {
 		return nil, err
 	}
 
@@ -78,33 +83,9 @@ type LoopInterface interface {
 
 // NewLoopStream create a new event loop stream.
 func NewLoopStream(conf local.MongoConf, isMaster discovery.ServiceManageInterface) (LoopInterface, error) {
-	connStr, err := connstring.Parse(conf.URI)
-	if nil != err {
-		return nil, err
-	}
-	if conf.RsName == "" {
-		return nil, fmt.Errorf("rsName not set")
-	}
-
-	timeout := 15 * time.Second
-	conOpt := options.ClientOptions{
-		MaxPoolSize:    &conf.MaxOpenConns,
-		MinPoolSize:    &conf.MaxIdleConns,
-		ConnectTimeout: &timeout,
-		ReplicaSet:     &conf.RsName,
-	}
-
-	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)
-	if nil != err {
-		return nil, err
-	}
-	if err := client.Connect(context.TODO()); nil != err {
-		return nil, err
-	}
-
-	event, err := event.NewEvent(client, connStr.Database)
+	event, err := newEvent(conf)
 	if err != nil {
-		return nil, fmt.Errorf("new event failed, err: %v", err)
+		return nil, err
 	}
 
 	loop, err := loop.NewLoopWatch(event, isMaster)

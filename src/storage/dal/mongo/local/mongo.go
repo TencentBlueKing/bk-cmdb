@@ -35,10 +35,10 @@ import (
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
@@ -98,12 +98,8 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		AppName:         &appName,
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.URI), &conOpt)
 	if nil != err {
-		return nil, err
-	}
-
-	if err := client.Connect(context.TODO()); nil != err {
 		return nil, err
 	}
 
@@ -235,7 +231,7 @@ func (c *Mongo) updateIDGenSeqID(ctx context.Context, typ idgen.IDGenType, id ui
 func checkMongodbVersion(db string, client *mongo.Client) error {
 	serverStatus, err := client.Database(db).RunCommand(
 		context.Background(),
-		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
+		bson.D{{"serverStatus", 1}},
 	).DecodeBytes()
 	if err != nil {
 		return err
@@ -771,7 +767,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		findOpts = &options.FindOptions{Projection: projection}
 	}
 
-	docs := make([]bsonx.Doc, 0)
+	docs := make([]bson.D, 0)
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, findOpts)
 	if err != nil {
 		return err
@@ -787,9 +783,22 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 
 	archives := make([]interface{}, len(docs))
 	for idx, doc := range docs {
+		detail := make(bson.D, 0)
+		var oid string
+		for _, e := range doc {
+			if e.Key == "_id" {
+				rawOid, ok := e.Value.(primitive.ObjectID)
+				if !ok {
+					return errors.New("invalid object id")
+				}
+				oid = rawOid.Hex()
+				continue
+			}
+			detail = append(detail, e)
+		}
 		archives[idx] = metadata.DeleteArchive{
-			Oid:    doc.Lookup("_id").ObjectID().Hex(),
-			Detail: doc.Delete("_id"),
+			Oid:    oid,
+			Detail: detail,
 			Time:   time.Now(),
 			Coll:   c.collName,
 		}

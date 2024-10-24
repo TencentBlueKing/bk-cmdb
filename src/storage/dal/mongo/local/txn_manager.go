@@ -27,8 +27,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/redis"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 )
 
 const (
@@ -295,10 +295,11 @@ func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
 // GenSessionID TODO
 func GenSessionID() (string, error) {
 	// mongodb driver used this as it's mongodb session id, and we use it too.
-	id, err := uuid.New()
+	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", err
 	}
+
 	return base64.StdEncoding.EncodeToString(id[:]), nil
 }
 
