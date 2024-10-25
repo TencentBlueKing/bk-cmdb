@@ -935,3 +935,18 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-field-foreignkey:before {
 	content: "\e3e9";
 }
+.icon-cc-cloud-vendor-gcp:before {
+	content: "\e3ec";
+}
+.icon-cc-cloud-vendor-tcloud:before {
+	content: "\e3ed";
+}
+.icon-cc-cloud-vendor-ali:before {
+	content: "\e3ef";
+}
+.icon-cc-cloud-vendor-azure:before {
+	content: "\e3f0";
+}
+.icon-cc-cloud-vendor-aws1:before {
+	content: "\e3ee";
+}
