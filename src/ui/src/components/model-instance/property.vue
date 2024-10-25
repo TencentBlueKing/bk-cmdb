@@ -127,7 +127,7 @@
                 && property !== editState.property">
                 <div class="copy-box">
                   <i
-                    class="property-copy icon-copy bk-icon"
+                    class="property-copy icon-copy bk-cmdb-icon"
                     @click="handleCopy(property.bk_property_id)">
                   </i>
                   <transition name="fade">

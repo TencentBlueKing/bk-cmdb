@@ -236,7 +236,7 @@
       size: 'mini',
       zIndex: 999
     }
-    const copyClass = ['icon-copy', 'bk-icon', 'copy-icon', {
+    const copyClass = ['icon-copy', 'bk-cmdb-icon', 'copy-icon', {
       'no-sort': !getColumnSortable(property)
     }]
     const copy = <i class={ copyClass }
