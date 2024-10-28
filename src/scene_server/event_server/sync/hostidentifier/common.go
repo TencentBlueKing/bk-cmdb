@@ -30,11 +30,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	// maxSecondForSleep is the maximum number of seconds of sleep
-	maxSecondForSleep = 60
-)
-
 func strMd5(str string) (retMd5 string) {
 	h := md5.New()
 	h.Write([]byte(str))
@@ -43,9 +38,6 @@ func strMd5(str string) (retMd5 string) {
 
 // sleepForFail sleep due to failure
 func sleepForFail(failCount int) {
-	if failCount > maxSecondForSleep {
-		failCount = maxSecondForSleep
-	}
 	time.Sleep(time.Duration(failCount) * time.Second)
 }
 
