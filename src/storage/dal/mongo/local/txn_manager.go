@@ -38,12 +38,18 @@ const (
 
 type sessionKey string
 
-func (s sessionKey) genKey() string {
-	return transactionNumberRedisKeyNamespace + string(s)
+func (s sessionKey) genKey(tenant string) string {
+	if tenant == "" {
+		return transactionNumberRedisKeyNamespace + string(s)
+	}
+	return fmt.Sprintf("%s%s:%s", transactionNumberRedisKeyNamespace, tenant, string(s))
 }
 
-func (s sessionKey) genErrKey() string {
-	return transactionErrorRedisKeyNamespace + string(s)
+func (s sessionKey) genErrKey(tenant string) string {
+	if tenant == "" {
+		return transactionErrorRedisKeyNamespace + string(s)
+	}
+	return fmt.Sprintf("%s%s:%s", transactionErrorRedisKeyNamespace, tenant, string(s))
 }
 
 // TxnErrorType the error type of the transaction, some error type needs to do special operations like retry
@@ -56,13 +62,42 @@ const (
 	WriteConflictType TxnErrorType = "2"
 )
 
-// TxnManager TODO
-// a transaction manager
-type TxnManager struct {
+// ShardingTxnManager is the sharding transaction manager
+type ShardingTxnManager struct {
 	cache redis.Client
 }
 
 // InitTxnManager is to init txn manager, set the redis storage
+func (t *ShardingTxnManager) InitTxnManager(r redis.Client) error {
+	t.cache = r
+	return nil
+}
+
+// Tenant returns the transaction manager for tenant
+func (t *ShardingTxnManager) Tenant(ignoreTenant bool, tenant string) (*TxnManager, error) {
+	if ignoreTenant {
+		return &TxnManager{cache: t.cache}, nil
+	}
+
+	if tenant == "" {
+		return nil, errors.New("tenant is not set")
+	}
+
+	return &TxnManager{
+		tenant: tenant,
+		cache:  t.cache,
+	}, nil
+}
+
+// TxnManager is the transaction manager
+type TxnManager struct {
+	// tenant is the tenant id
+	tenant string
+	cache  redis.Client
+}
+
+// InitTxnManager is to init txn manager, set the redis storage
+// TODO remove this
 func (t *TxnManager) InitTxnManager(r redis.Client) error {
 	t.cache = r
 	return nil
@@ -70,7 +105,7 @@ func (t *TxnManager) InitTxnManager(r redis.Client) error {
 
 // GetTxnNumber TODO
 func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
-	key := sessionKey(sessionID).genKey()
+	key := sessionKey(sessionID).genKey(t.tenant)
 	v, err := t.cache.Get(context.Background(), key).Result()
 	if err != nil {
 		return 0, err
@@ -82,7 +117,7 @@ func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
 func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, error) {
 	// return txnNumber with 1 directly, when our mongodb client option's RetryWrite
 	// is set to false.
-	key := sessionKey(sessionID).genKey()
+	key := sessionKey(sessionID).genKey(t.tenant)
 
 	pip := t.cache.Pipeline()
 	defer pip.Close()
@@ -105,7 +140,7 @@ func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, e
 
 // RemoveSessionKey remove transaction session key
 func (t *TxnManager) RemoveSessionKey(sessionID string) error {
-	key := sessionKey(sessionID).genKey()
+	key := sessionKey(sessionID).genKey(t.tenant)
 	return t.cache.Del(context.Background(), key).Err()
 }
 
@@ -267,7 +302,7 @@ func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd 
 func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 	switch {
 	case strings.Contains(txnErr.Error(), "WriteConflict"):
-		key := sessionID.genErrKey()
+		key := sessionID.genErrKey(t.tenant)
 		err := t.cache.SetNX(context.Background(), key, string(WriteConflictType), time.Minute*5).Err()
 		if err != nil {
 			blog.Errorf("set txn error(%v) failed, err: %v, session id: %s", txnErr, err, sessionID)
@@ -278,7 +313,7 @@ func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 
 // GetTxnError get mongo raw error type in redis, the error may be used in scene server to retry this transaction
 func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
-	key := sessionID.genErrKey()
+	key := sessionID.genErrKey(t.tenant)
 	errorType, err := t.cache.Get(context.Background(), key).Result()
 	if err != nil && redis.IsNilErr(err) {
 		blog.Errorf("get txn error failed, err: %v, session id: %s", err, sessionID)

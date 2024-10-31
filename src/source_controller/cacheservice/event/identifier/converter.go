@@ -47,8 +47,8 @@ var needCareHostFields = []string{
 //   - bk_cloud_id
 //   - bk_host_innerip
 //     if ChangeDesc is empty, then we assume this events is need to be care.
-//     3. aggregate multiple same host's event to one event, so that we can decrease the amount of host identity. because
-//     we only care about which host is changed, one event is enough for us.
+//     3. aggregate multiple same host's event to one event, so that we can decrease the amount of host identity.
+//     because we only care about which host is changed, one event is enough for us.
 func (f *hostIdentity) rearrangeHostEvents(es []*types.Event, rid string) []*types.Event {
 
 	hitEvents := make([]*types.Event, 0)

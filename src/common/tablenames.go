@@ -13,6 +13,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -62,6 +63,7 @@ const (
 	BKTableNameHistory          = "cc_History"
 	BKTableNameHostFavorite     = "cc_HostFavourite"
 	BKTableNameAuditLog         = "cc_AuditLog"
+	BKTableNamePlatformAuditLog = "cc_PlatformAuditLog"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameDynamicGroup     = "cc_DynamicGroup"
 	BKTableNameUserCustom       = "cc_UserCustom"
@@ -106,8 +108,11 @@ const (
 	BKTableNameCloudAccount     = "cc_CloudAccount"
 	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
 
-	// BKTableNameWatchToken the table to store the latest watch token for collections
+	// BKTableNameWatchToken the table to store the latest watch token for database
 	BKTableNameWatchToken = "cc_WatchToken"
+
+	// BKTableNameLastWatchEvent is the table to store the latest watch event info for resources
+	BKTableNameLastWatchEvent = "LastWatchEvent"
 
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
 	BKTableNameMainlineInstance = "cc_MainlineInstance"
@@ -123,6 +128,12 @@ const (
 
 	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
 	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
+
+	// BKTableNameTenantDBRelation is the tenant to database relation table
+	BKTableNameTenantDBRelation = "TenantDBRelation"
+
+	// BKTableNameTenantTemplate is the tenant template(public data that needs to be initialized for all tenants) table
+	BKTableNameTenantTemplate = "TenantTemplate"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
@@ -286,4 +297,50 @@ func GetInstObjIDByTableName(collectionName, supplierAccount string) (string, er
 	default:
 		return GetObjectInstObjIDByTableName(collectionName, supplierAccount)
 	}
+}
+
+var platformTableMap = map[string]struct{}{
+	BKTableNameSystem:           {},
+	BKTableNameIDgenerator:      {},
+	BKTableNameTenantDBRelation: {},
+	BKTableNameTenantTemplate:   {},
+	BKTableNamePlatformAuditLog: {},
+	BKTableNameWatchToken:       {},
+	BKTableNameLastWatchEvent:   {},
+}
+
+// IsPlatformTable returns if the target table is a platform table
+func IsPlatformTable(tableName string) bool {
+	_, exists := platformTableMap[tableName]
+	return exists
+}
+
+// PlatformTables returns platform tables
+func PlatformTables() []string {
+	tables := make([]string, 0)
+	for tableName := range platformTableMap {
+		tables = append(tables, tableName)
+	}
+	return tables
+}
+
+// GenTenantTableName generate tenant table name by table name and tenant id
+func GenTenantTableName(tenantID, tableName string) string {
+	return fmt.Sprintf("%s_%s", tenantID, tableName)
+}
+
+// SplitTenantTableName split tenant table name to table name and tenant id
+func SplitTenantTableName(tenantTableName string) (string, string, error) {
+	if IsPlatformTable(tenantTableName) {
+		return tenantTableName, "", nil
+	}
+
+	if !strings.Contains(tenantTableName, "_") {
+		return "", "", errors.New("tenant table name is invalid")
+	}
+	sepIdx := strings.LastIndex(tenantTableName, "_")
+	if sepIdx == -1 {
+		return "", "", errors.New("tenant table name is invalid")
+	}
+	return tenantTableName[:sepIdx], tenantTableName[sepIdx+1:], nil
 }
