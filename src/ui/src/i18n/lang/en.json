@@ -1125,7 +1125,7 @@
     "全文检索": "Full Text Search",
     "自动解析IP目标": "Automatically resolve IP targets",
     "未能解析到有效的主机信息，请检查输入内容或格式": "Unable to parse host info, check input content and format.",
-    "首页主机搜索提示语": "Please enter the IP, BK-Network Area and IP, Asset ID for the search. Use Shift + Enter for a newline.",
+    "首页主机搜索提示语": "Please enter the IP, BK-Network Area:IP, Asset ID for the search. Use Shift + Enter for a newline",
     "首页主机搜索聚焦提示": "The host target has been automatically parsed, Shift + Enter line wrap",
     "首页主机搜索失焦焦提示": "Shift + Enter line wrap",
     "不支持混合搜索": "Only IP or Asset ID is supported, mixed search is not supported",
