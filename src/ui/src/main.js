@@ -36,7 +36,7 @@ import './setup/cookie'
 import './setup/permission'
 import './setup/build-in-vars'
 import '@/assets/icon/bk-icon-cmdb/style.css'
-import '@icon-cool/bk-icon-cmdb-colorful/src/index'
+import '@/assets/icon/bk-icon-cmdb-colorful/iconcool.js'
 import './assets/scss/common.scss'
 
 Vue.use(cmdbUI)

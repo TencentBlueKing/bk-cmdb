@@ -752,15 +752,6 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-global:before {
 	content: "\e39d";
 }
-.icon-cc-cloud-tencent:before {
-	content: "\e39e";
-}
-.icon-cc-cloud-aws:before {
-	content: "\e39f";
-}
-.icon-cc-cloud-ali:before {
-	content: "\e3a0";
-}
 .icon-cc-business-set:before {
 	content: "\e3a2";
 }
