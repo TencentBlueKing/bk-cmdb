@@ -36,14 +36,14 @@
       }"
       @cell-click="handleShowDetails">
       <bk-table-column prop="bk_obj_asst_id" :label="$t('唯一标识')" class-name="is-highlight">
-        <template slot-scope="{ row }">
+        <div slot-scope="{ row }" class="no-wrap-cell">
           <span
             v-if="row.ispre"
             :class="['relation-pre', $i18n.locale]">
             {{$t('内置')}}
           </span>
           <span class="relation-id" v-bk-overflow-tips>{{row['bk_obj_asst_id']}}</span>
-        </template>
+        </div>
       </bk-table-column>
       <bk-table-column prop="bk_asst_name" :label="$t('关联类型')" show-overflow-tooltip>
         <template slot-scope="{ row }">
@@ -324,10 +324,13 @@
             margin-right: -40px;
         }
     }
+    .no-wrap-cell {
+      white-space: nowrap;
+    }
     .relation-id {
         vertical-align: middle;
         line-height: 18px;
-        width: 100%;
+        width: calc(100% - 20px);
         display: inline-block;
         @include ellipsis;
     }
