@@ -29,7 +29,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
@@ -41,7 +40,6 @@ type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	db          dal.RDB
 	cache       redis.Client
 	authorizer  ac.AuthorizeInterface
 	AuthManager *extensions.AuthManager
@@ -53,11 +51,6 @@ type Service struct {
 // NewService creates a new Service object.
 func NewService(ctx context.Context, engine *backbone.Engine) *Service {
 	return &Service{ctx: ctx, engine: engine}
-}
-
-// SetDB setups database.
-func (s *Service) SetDB(db dal.RDB) {
-	s.db = db
 }
 
 // SetCache setups cc main redis.
@@ -131,9 +124,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		zkItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, zkItem)
-
-	// mongodb health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
 	meta.Items = append(meta.Items,
