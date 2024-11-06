@@ -77,7 +77,7 @@ type Table interface {
 	// DropDocsColumn remove a column by the name for doc use filter
 	DropDocsColumn(ctx context.Context, field string, filter Filter) error
 
-	// Distinct Finds the distinct values for a specified field across a single collection or view and returns the results in an
+	// Distinct Finds the distinct values for a specified field in a single coll or view and returns the result array
 	// field the field for which to return distinct values.
 	// filter query that specifies the documents from which to retrieve the distinct values.
 	Distinct(ctx context.Context, field string, filter Filter) ([]interface{}, error)

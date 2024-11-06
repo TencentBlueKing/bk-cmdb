@@ -51,6 +51,7 @@ type DB interface {
 	// RenameTable 更新集合名称
 	RenameTable(ctx context.Context, prevName, currName string) error
 
+	// TODO 这两个函数不依赖于mongo client，后续放到mongodb包里
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool
 
@@ -62,5 +63,13 @@ type DB interface {
 	AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error)
 
 	// InitTxnManager TxnID management of initial transaction
+	// TODO 后续放到TenantDB里，只用初始化一次
+	InitTxnManager(r redis.Client) error
+}
+
+// ShardingDB is the sharding db manager interface
+type ShardingDB interface {
+	Tenant(tenant string) DB
+	IgnoreTenant() DB
 	InitTxnManager(r redis.Client) error
 }

@@ -22,9 +22,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/stream/types"
+
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 var needCareHostFields = []string{
@@ -41,13 +42,13 @@ var needCareHostFields = []string{
 // host events arrange policy:
 // 1. do not care delete events, cause if the host is already dropped, then it's identifier event is meaningless.
 // 2. if event's ChangeDesc contains fields as follows, then we care about it, otherwise we can drop this events
-//    - bk_host_id
-//    - bk_os_type
-//    - bk_cloud_id
-//    - bk_host_innerip
-//    if ChangeDesc is empty, then we assume this events is need to be care.
-// 3. aggregate multiple same host's event to one event, so that we can decrease the amount of host identity. because
-//    we only care about which host is changed, one event is enough for us.
+//   - bk_host_id
+//   - bk_os_type
+//   - bk_cloud_id
+//   - bk_host_innerip
+//     if ChangeDesc is empty, then we assume this events is need to be care.
+//     3. aggregate multiple same host's event to one event, so that we can decrease the amount of host identity.
+//     because we only care about which host is changed, one event is enough for us.
 func (f *hostIdentity) rearrangeHostEvents(es []*types.Event, rid string) []*types.Event {
 
 	hitEvents := make([]*types.Event, 0)
@@ -164,7 +165,7 @@ func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string
 		"coll": common.BKTableNameModuleHostConfig,
 	}
 
-	docs := make([]bsonx.Doc, 0)
+	docs := make([]bsoncore.Document, 0)
 	err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
 	if err != nil {
 		f.metrics.CollectMongoError()
@@ -400,7 +401,7 @@ func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, ri
 		"coll": common.BKTableNameBaseProcess,
 	}
 
-	docs := make([]bsonx.Doc, 0)
+	docs := make([]bsoncore.Document, 0)
 	err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Fields("detail").All(context.Background(), &docs)
 	if err != nil {
 		f.metrics.CollectMongoError()

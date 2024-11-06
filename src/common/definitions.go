@@ -1863,3 +1863,6 @@ const (
 	// MongoMetaID is mongodb meta id field
 	MongoMetaID = "_id"
 )
+
+// ShardingDBConfID is sharding db config identifier
+const ShardingDBConfID = "sharding_db_config"

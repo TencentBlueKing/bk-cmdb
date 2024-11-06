@@ -137,6 +137,36 @@ func Healthz() []metric.HealthItem {
 	return items
 }
 
+// IsDuplicatedError check duplicated error
+func IsDuplicatedError(err error) bool {
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+		if strings.Contains(err.Error(), "E11000 duplicate") {
+			return true
+		}
+		if strings.Contains(err.Error(), "IndexOptionsConflict") {
+			return true
+		}
+		if strings.Contains(err.Error(), "all indexes already exist") {
+			return true
+		}
+		if strings.Contains(err.Error(), "already exists with a different name") {
+			return true
+		}
+	}
+	return err == dbType.ErrDuplicated
+}
+
+// IsNotFoundError check the not found error
+func IsNotFoundError(err error) bool {
+	return err == dbType.ErrDocumentNotFound
+}
+
 // GetDuplicateKey get duplicate key from error, if the error is not a duplicate error, returns the raw error message
 // mongodb raw error format example:
 // ...{E11000 duplicate key error collection: cmdb.cc_ObjectBase_... index: bkcc_unique_... dup key:

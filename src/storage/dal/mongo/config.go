@@ -90,13 +90,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 
 // GetMongoClient TODO
 func (c Config) GetMongoClient() (db dal.RDB, err error) {
-	mongoConf := local.MongoConf{
-		MaxOpenConns:  c.MaxOpenConns,
-		MaxIdleConns:  c.MaxIdleConns,
-		URI:           c.BuildURI(),
-		RsName:        c.RsName,
-		SocketTimeout: c.SocketTimeout,
-	}
+	mongoConf := c.GetMongoConf()
 	db, err = local.NewMgo(mongoConf, time.Minute)
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
