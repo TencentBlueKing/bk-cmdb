@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package app defines event server main logics
 package app
 
 import (
@@ -32,8 +33,6 @@ import (
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	eventtype "configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/gse"
@@ -43,9 +42,6 @@ import (
 const (
 	// defaultInitWaitDuration is default duration for new EventServer init.
 	defaultInitWaitDuration = time.Second
-
-	// defaultDBConnectTimeout is default connect timeout of cc db.
-	defaultDBConnectTimeout = 5 * time.Second
 
 	// defaultGoroutineCount default goroutine count
 	defaultGoroutineCount = 5
@@ -64,9 +60,6 @@ type EventServer struct {
 
 	// make host configs update action safe.
 	hostConfigUpdateMu sync.Mutex
-
-	// db is cc main database.
-	db dal.RDB
 
 	// redisCli is cc redis client.
 	redisCli redis.Client
@@ -111,11 +104,6 @@ func (es *EventServer) Engine() *backbone.Engine {
 // Service returns main service of the EventServer instance.
 func (es *EventServer) Service() *svc.Service {
 	return es.service
-}
-
-// DB returns cc database client of the EventServer instance.
-func (es *EventServer) DB() dal.RDB {
-	return es.db
 }
 
 // RedisCli returns cc redis client of the EventServer instance.
@@ -166,12 +154,6 @@ func (es *EventServer) initConfigs() error {
 	var err error
 	blog.Info("found configs to run the new eventserver now!")
 
-	// mongodb.
-	es.config.MongoDB, err = es.engine.WithMongo()
-	if err != nil {
-		return fmt.Errorf("init mongodb configs, %+v", err)
-	}
-
 	// cc redis.
 	es.config.Redis, err = es.engine.WithRedis()
 	if err != nil {
@@ -221,15 +203,6 @@ func (es *EventServer) initConfigs() error {
 
 // initModules inits modules for new EventServer.
 func (es *EventServer) initModules() error {
-	// create mongodb client.
-	db, err := local.NewMgo(es.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
-	if err != nil {
-		return fmt.Errorf("create new mongodb client, %+v", err)
-	}
-	es.db = db
-	es.service.SetDB(db)
-	blog.Info("init modules, create mongo client success[%+v]", es.config.MongoDB.GetMongoConf())
-
 	// connect to cc redis.
 	redisCli, err := redis.NewFromConfig(es.config.Redis)
 	if err != nil {

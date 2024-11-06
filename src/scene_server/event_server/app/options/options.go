@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
-	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/gse/client"
 
@@ -49,9 +48,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 // Config is configs for event server.
 type Config struct {
-	// MongoDB is mongodb configs.
-	MongoDB mongo.Config
-
 	// Redis is cc redis configs.
 	Redis redis.Config
 
