@@ -96,12 +96,10 @@ import (
 	// v3.12.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.12.202309211735"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.12.202310301633"
-	_ "configcenter/src/scene_server/admin_server/upgrader/y3.12.202310302130"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.12.202311061800"
 
 	// v3.13.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202401221600"
-	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202402181900"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202402191140"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202402281158"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202403151855"
