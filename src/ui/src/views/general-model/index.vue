@@ -769,7 +769,7 @@
       },
       handleDelete(inst) {
         this.$bkInfo({
-          title: '确定删除',
+          title: this.$t('确定删除'),
           subTitle: this.$t('确认要删除', { name: inst.bk_inst_name }),
           confirmFn: () => {
             this.deleteInst({
