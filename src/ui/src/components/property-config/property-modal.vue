@@ -51,6 +51,9 @@
           </ul>
         </dd>
       </div>
+      <cmdb-data-empty v-if="!hasField" slot="empty"
+        :stuff="dataEmpty"
+        @clear="handleClearFilter"></cmdb-data-empty>
     </dl>
   </bk-dialog>
 </template>
@@ -85,8 +88,19 @@
         localSelected: [],
         searchName: '',
         propertyGroups: [],
-        groupedPropertyList: []
+        groupedPropertyList: [],
+        dataEmpty: {
+          type: 'search',
+          payload: {
+            defaultText: this.$t('暂无数据')
+          }
+        }
       }
+    },
+    computed: {
+      hasField() {
+        return this.groupedPropertyList.some(group => group.length)
+      },
     },
     watch: {
       visible(val) {
@@ -132,6 +146,13 @@
         this.$emit('update:selectedList', this.localSelected)
       },
       hanldeFilterProperty() {
+        this.setPropertyList()
+      },
+      handleClearFilter() {
+        this.searchName = ''
+        this.setPropertyList()
+      },
+      setPropertyList() {
         const keyword = this.searchName.toLowerCase()
         if (keyword) {
           this.groupedPropertyList = this.groupedProperties
@@ -152,6 +173,9 @@
   .property-container {
     height: 264px;
     @include scrollbar-y;
+    .data-empty {
+      width: 100%;
+    }
   }
 
   .property-group {
