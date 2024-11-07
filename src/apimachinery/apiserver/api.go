@@ -17,7 +17,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/condition"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -391,78 +390,6 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 		WithContext(ctx).
 		Body(input).
 		SubResourcef(subPath, objID).
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-
-	return
-}
-
-// SearchNetCollectDevice TODO
-func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header,
-	cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-
-	subPath := "/collector/netcollect/device/action/search"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(cond).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-
-	return
-}
-
-// SearchNetDeviceProperty TODO
-func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header,
-	cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-
-	subPath := "collector/netcollect/property/action/search"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(cond).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-
-	return
-}
-
-// SearchNetCollectDeviceBatch TODO
-func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header,
-	cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-
-	subPath := "collector/netcollect/device/action/batch"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(cond).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-
-	return
-}
-
-// SearchNetDevicePropertyBatch TODO
-func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header,
-	cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
-
-	subPath := "/collector/netcollect/property/action/batch"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(cond).
-		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)

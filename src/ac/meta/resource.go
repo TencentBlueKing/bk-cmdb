@@ -131,17 +131,6 @@ const (
 	CMDBSysInstTypePrefix = "comobj_"
 )
 
-const (
-	// NetCollector TODO
-	NetCollector = "netCollector"
-	// NetDevice TODO
-	NetDevice = "netDevice"
-	// NetProperty TODO
-	NetProperty = "netProperty"
-	// NetReport TODO
-	NetReport = "netReport"
-)
-
 // ResourceDescribe TODO
 type ResourceDescribe struct {
 	Type    ResourceType

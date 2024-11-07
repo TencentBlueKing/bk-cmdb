@@ -4,8 +4,6 @@
 ## 支持的采集类型
 
 * `hostsnap`  用于采集/更新主机信息
-* `middleware` 可以录入模型/模型属性/实例
-* `netcollect` 用于录入/更新数据到 `cc_NetcollectReport` collection
 
 ## 模块设计
 
@@ -26,10 +24,6 @@
 * `analyzing.G(数据解析协程)`: 数据解析器，负责数据解析处理；
 * `fusing.G(熔断处理协程)`: 负责执行类型采集数据队列的熔断，淘汰未能及时处理的淤积数据；
 * `debug.G(内部debug信息处理协程)`: 处理内部的debug信息;
-
-## 注意事项
-
-* 实例录入必须有 `bk_inst_key` 字段, 否则实例无法录入
 
 ## 测试
 > `DataCollection` 模块提供`MockServer`服务用于测试。

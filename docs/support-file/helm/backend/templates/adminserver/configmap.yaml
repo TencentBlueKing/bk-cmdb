@@ -368,19 +368,3 @@ data:
         maxIdleConns: {{ .Values.redis.snapshotRedis.maxIdleConns }}
         sentinelPwd: {{ .Values.redis.snapshotRedis.sentinelPwd }}
         masterName: {{ .Values.redis.snapshotRedis.masterName }}
-      discover:
-        host: {{ include "cmdb.redis.discover.host" . | quote }}
-        pwd: {{ include "cmdb.redis.discover.pwd" . | quote }}
-        database: {{ .Values.redis.discoverRedis.database }}
-        maxOpenConns: {{ .Values.redis.discoverRedis.maxOpenConns }}
-        maxIdleConns: {{ .Values.redis.discoverRedis.maxIdleConns }}
-        sentinelPwd: {{ .Values.redis.discoverRedis.sentinelPwd }}
-        masterName: {{ .Values.redis.discoverRedis.masterName }}
-      netcollect:
-        host: {{ include "cmdb.redis.netcollect.host" . | quote }}
-        pwd: {{ include "cmdb.redis.netcollect.pwd" . | quote }}
-        database: {{ .Values.redis.netCollectRedis.database }}
-        maxOpenConns: {{ .Values.redis.netCollectRedis.maxOpenConns }}
-        maxIdleConns: {{ .Values.redis.netCollectRedis.maxIdleConns }}
-        sentinelPwd: {{ .Values.redis.netCollectRedis.sentinelPwd }}
-        masterName: {{ .Values.redis.netCollectRedis.masterName }}

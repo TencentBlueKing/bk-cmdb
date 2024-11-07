@@ -796,70 +796,6 @@ procserver:
     requests:
       memory: 512Mi
       cpu: 200m
-
-## @section bk-cmdb synchronizeserver parameters
-##
-synchronizeserver:
-  ## @param synchronizeserver.enabled Enable synchronizeserver deployment
-  ##
-  enabled: true
-  ## bk-cmdb synchronizeserver image parameters
-  ## @param synchronizeserver.image.repository bk-cmdb synchronizeserver image repository
-  ## @param synchronizeserver.image.rag bk-cmdb synchronizeserver image tag
-  ##
-  image:
-    repository: blueking/cmdb_synchronizeserver
-    tag:
-  ## @param synchronizeserver.replicas Number of synchronizeserver replicas to deploy
-  ##
-  replicas: 1
-  ## @param synchronizeserver.port bk-cmdb synchronizeserver service HTTP port
-  ##
-  port: 80
-  ## @param synchronizeserver.workDir bk-cmdb synchronizeserver work directory
-  ##
-  workDir: /data/cmdb/cmdb_synchronizeserver
-  ## bk-cmdb synchronizeserver start command parameters
-  ## @param synchronizeserver.command.logDir bk-cmdb synchronizeserver log directory
-  ## @param synchronizeserver.command.logLevel bk-cmdb synchronizeserver log level
-  ## @param synchronizeserver.command.logLevel Enable bk-cmdb synchronizeserver print log to stderr
-  ##
-  command:
-    logDir: /data/cmdb/cmdb_synchronizeserver/logs
-    logLevel: 3
-    logToStdErr: false
-  ## @param podAnnotations Annotations for bk-panel pods
-  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  ##
-  podAnnotations: {}
-  ## @param affinity Affinity for pod assignment
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
-  ##
-  affinity: {}
-  ## @param nodeSelector Node labels for pod assignment
-  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
-  ##
-  nodeSelector: {}
-  ## @param tolerations Tolerations for pod assignment
-  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  ##
-  tolerations: []
-  ## bk-cmdb containers' resource requests and limits
-  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  ## @param resources.limits The resources limits for the bk-cmdb container
-  ## @param resources.requests [object] The requested resources for the bk-cmdb container
-  ##
-  resources:
-    limits:
-      cpu: 200m
-      memory: 1024Mi
-    requests:
-      memory: 512Mi
-      cpu: 200m
-
-## @section bk-cmdb taskserver parameters
-##
 taskserver:
   ## @param taskserver.enabled Enable taskserver deployment
   ##
@@ -1585,54 +1521,6 @@ redis:
     ##
     maxOpenConns: 3000
     ## @param redis.snapshotRedis.maxIdleConns external redis max idle connections
-    ##
-    maxIdleConns: 100
-    ## @param redis.redis.sentinelPwd external redis sentinel password
-    ##
-    sentinelPwd:
-    ## @param redis.redis.masterName external redis master name
-    ##
-    masterName:
-  ## external redis for discover parameters
-  ##
-  discoverRedis:
-    ## @param redis.discoverRedis.host external redis host
-    ##
-    # host:
-    ## @param redis.discoverRedis.pwd external redis password
-    ##
-    # pwd:
-    ## @param redis.discoverRedis.database external redis database
-    ##
-    database: "0"
-    ## @param redis.discoverRedis.maxOpenConns external redis max open connections
-    ##
-    maxOpenConns: 3000
-    ## @param redis.discoverRedis.maxIdleConns external redis max idle connections
-    ##
-    maxIdleConns: 100
-    ## @param redis.redis.sentinelPwd external redis sentinel password
-    ##
-    sentinelPwd:
-    ## @param redis.redis.masterName external redis master name
-    ##
-    masterName:
-  ## external redis for network device collecting parameters
-  ##
-  netCollectRedis:
-    ## @param redis.netCollectRedis.host external redis host
-    ##
-    # host:
-    ## @param redis.netCollectRedis.pwd external redis password
-    ##
-    # pwd:
-    ## @param redis.netCollectRedis.database external redis database
-    ##
-    database: "0"
-    ## @param redis.netCollectRedis.maxOpenConns external redis max open connections
-    ##
-    maxOpenConns: 3000
-    ## @param redis.netCollectRedis.maxIdleConns external redis max idle connections
     ##
     maxIdleConns: 100
     ## @param redis.redis.sentinelPwd external redis sentinel password
