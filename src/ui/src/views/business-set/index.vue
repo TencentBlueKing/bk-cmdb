@@ -464,7 +464,7 @@
 
       const handleSaveSuccess = () => {
         managementFormState.show = false
-        getList()
+        RouterQuery.refresh()
       }
 
       const handleFilterValueChange = () => {
