@@ -82,14 +82,6 @@ def generate_config_file(
 #    host: 127.0.0.1:6379
 #    pwd: 123456
 #    database: "0"
-#  discover:
-#    host: 127.0.0.1:6379
-#    pwd: 123456
-#    database: "0"
-#  netcollect:
-#    host: 127.0.0.1:6379
-#    pwd: 123456
-#    database: "0"
 redis:
   #公共redis配置信息,用于存取缓存，用户信息等数据
   host: $redis_host:$redis_port
@@ -101,18 +93,6 @@ redis:
   #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
   #接收主机信息数据的redis
   snap:
-    host: $redis_host:$redis_port
-    pwd: "$redis_pass"
-    sentinelPwd: "$sentinel_pass"
-    database: "0"
-  #接收模型实例数据的redis
-  discover:
-    host: $redis_host:$redis_port
-    pwd: "$redis_pass"
-    sentinelPwd: "$sentinel_pass"
-    database: "0"
-  #接受硬件数据的redis
-  netcollect:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
     sentinelPwd: "$sentinel_pass"
@@ -849,7 +829,6 @@ def main(argv):
         "cmdb_procserver": 60003,
         "cmdb_toposerver": 60002,
         "cmdb_webserver": 8083,
-        "cmdb_synchronizeserver": 60010,
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
         "cmdb_cloudserver": 60013,

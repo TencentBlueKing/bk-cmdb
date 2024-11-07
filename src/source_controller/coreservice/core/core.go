@@ -179,18 +179,6 @@ type InstanceAssociation interface {
 	DeleteInstanceAssociation(kit *rest.Kit, objID string, param metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
-// DataSynchronizeOperation manager data synchronize interface
-type DataSynchronizeOperation interface {
-	SynchronizeInstanceAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult,
-		error)
-	SynchronizeModelAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
-	SynchronizeAssociationAdapter(kit *rest.Kit, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult,
-		error)
-	Find(kit *rest.Kit, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
-	ClearData(kit *rest.Kit, input *metadata.SynchronizeClearDataParameter) error
-	SetIdentifierFlag(kit *rest.Kit, input *metadata.SetIdenifierFlag) ([]metadata.ExceptionResult, error)
-}
-
 // TopoOperation methods
 type TopoOperation interface {
 	SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error)
@@ -258,7 +246,6 @@ type Core interface {
 	KubeOperation() KubeOperation
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
-	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
 	StatisticOperation() StatisticOperation
@@ -448,23 +435,22 @@ type CommonOperation interface {
 }
 
 type core struct {
-	model           ModelOperation
-	instance        InstanceOperation
-	container       KubeOperation
-	association     AssociationOperation
-	dataSynchronize DataSynchronizeOperation
-	topo            TopoOperation
-	host            HostOperation
-	audit           AuditOperation
-	operation       StatisticOperation
-	process         ProcessOperation
-	label           LabelOperation
-	sys             SystemOperation
-	setTemplate     SetTemplateOperation
-	hostApplyRule   HostApplyRuleOperation
-	cloud           CloudOperation
-	auth            AuthOperation
-	common          CommonOperation
+	model         ModelOperation
+	instance      InstanceOperation
+	container     KubeOperation
+	association   AssociationOperation
+	topo          TopoOperation
+	host          HostOperation
+	audit         AuditOperation
+	operation     StatisticOperation
+	process       ProcessOperation
+	label         LabelOperation
+	sys           SystemOperation
+	setTemplate   SetTemplateOperation
+	hostApplyRule HostApplyRuleOperation
+	cloud         CloudOperation
+	auth          AuthOperation
+	common        CommonOperation
 }
 
 // New create core
@@ -473,7 +459,6 @@ func New(
 	instance InstanceOperation,
 	container KubeOperation,
 	association AssociationOperation,
-	dataSynchronize DataSynchronizeOperation,
 	topo TopoOperation, host HostOperation,
 	audit AuditOperation,
 	process ProcessOperation,
@@ -487,23 +472,22 @@ func New(
 	common CommonOperation,
 ) Core {
 	return &core{
-		model:           model,
-		instance:        instance,
-		association:     association,
-		container:       container,
-		dataSynchronize: dataSynchronize,
-		topo:            topo,
-		host:            host,
-		audit:           audit,
-		operation:       operation,
-		process:         process,
-		label:           label,
-		sys:             sys,
-		setTemplate:     setTemplate,
-		hostApplyRule:   hostApplyRule,
-		cloud:           cloud,
-		auth:            auth,
-		common:          common,
+		model:         model,
+		instance:      instance,
+		association:   association,
+		container:     container,
+		topo:          topo,
+		host:          host,
+		audit:         audit,
+		operation:     operation,
+		process:       process,
+		label:         label,
+		sys:           sys,
+		setTemplate:   setTemplate,
+		hostApplyRule: hostApplyRule,
+		cloud:         cloud,
+		auth:          auth,
+		common:        common,
 	}
 }
 
@@ -530,11 +514,6 @@ func (m *core) AssociationOperation() AssociationOperation {
 // TopoOperation TODO
 func (m *core) TopoOperation() TopoOperation {
 	return m.topo
-}
-
-// DataSynchronizeOperation TODO
-func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
-	return m.dataSynchronize
 }
 
 // HostOperation TODO

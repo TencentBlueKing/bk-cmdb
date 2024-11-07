@@ -24,7 +24,6 @@ import (
 	"configcenter/src/apimachinery/transaction"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -70,15 +69,6 @@ type ApiServerClientInterface interface {
 		request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
-
-	SearchNetCollectDevice(ctx context.Context, h http.Header,
-		cond condition.Condition) (resp *metadata.ResponseInstData, err error)
-	SearchNetDeviceProperty(ctx context.Context, h http.Header,
-		cond condition.Condition) (resp *metadata.ResponseInstData, err error)
-	SearchNetCollectDeviceBatch(ctx context.Context, h http.Header,
-		cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error)
-	SearchNetDevicePropertyBatch(ctx context.Context, h http.Header,
-		cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error)
 
 	CreateBiz(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (
 		resp *metadata.CreateInstResult, err error)

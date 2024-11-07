@@ -565,7 +565,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initModelAssociation(web)
 	s.initModelInstances(web)
 	s.initInstanceAssociation(web)
-	s.initDataSynchronize(web)
 	s.initMainline(web)
 	s.host(web)
 	s.audit(web)

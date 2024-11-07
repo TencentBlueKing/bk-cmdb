@@ -99,7 +99,6 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		hostRelated().
 		topology().
 		topologyLatest().
-		netCollectorRelated().
 		processRelated().
 		eventRelated().
 		cloudRelated().

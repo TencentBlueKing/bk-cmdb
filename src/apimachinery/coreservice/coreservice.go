@@ -36,7 +36,6 @@ import (
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
-	"configcenter/src/apimachinery/coreservice/synchronize"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
@@ -49,7 +48,6 @@ type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
 	Association() association.AssociationClientInterface
-	Synchronize() synchronize.SynchronizeClientInterface
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
@@ -102,11 +100,6 @@ func (c *coreService) Association() association.AssociationClientInterface {
 // Mainline TODO
 func (c *coreService) Mainline() mainline.MainlineClientInterface {
 	return mainline.NewMainlineClientInterface(c.restCli)
-}
-
-// Synchronize TODO
-func (c *coreService) Synchronize() synchronize.SynchronizeClientInterface {
-	return synchronize.NewSynchronizeClientInterface(c.restCli)
 }
 
 // Host TODO

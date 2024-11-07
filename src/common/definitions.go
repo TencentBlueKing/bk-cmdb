@@ -743,30 +743,8 @@ const (
 	// BKProcInstNum TODO
 	BKProcInstNum = "proc_num"
 
-	// BKInstKeyField the inst key field for metric discover
-	BKInstKeyField = "bk_inst_key"
-
-	// BKDeviceIDField TODO
-	// for net collect device
-	BKDeviceIDField = "device_id"
-	// BKDeviceNameField TODO
-	BKDeviceNameField = "device_name"
-	// BKDeviceModelField TODO
-	BKDeviceModelField = "device_model"
-	// BKVendorField TODO
-	BKVendorField = "bk_vendor"
-
-	// BKNetcollectPropertyIDField TODO
-	// for net collect property of device
-	BKNetcollectPropertyIDField = "netcollect_property_id"
-	// BKOIDField TODO
-	BKOIDField = "oid"
-	// BKPeriodField TODO
-	BKPeriodField = "period"
 	// BKActionField TODO
 	BKActionField = "action"
-	// BKProcinstanceID TODO
-	BKProcinstanceID = "proc_instance_id"
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
@@ -1383,12 +1361,6 @@ const (
 	Infinite = "∞"
 )
 
-// netcollect
-const (
-	BKNetDevice   = "net_device"
-	BKNetProperty = "net_property"
-)
-
 const (
 	// BKBluekingLoginPluginVersion TODO
 	// login type
@@ -1451,31 +1423,12 @@ const BKStatusField = "status"
 const (
 	// BKProcInstanceOpUser TODO
 	BKProcInstanceOpUser = "proc instance user"
-	// BKSynchronizeDataTaskDefaultUser TODO
-	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 
 	// BKCloudSyncUser TODO
 	BKCloudSyncUser = "cloud_sync_user"
 
 	// BKIAMSyncUser TODO
 	BKIAMSyncUser = "iam_sync_user"
-)
-
-const (
-	// RedisProcSrvHostInstanceRefreshModuleKey TODO
-	RedisProcSrvHostInstanceRefreshModuleKey = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
-	// RedisProcSrvHostInstanceAllRefreshLockKey TODO
-	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
-	// RedisProcSrvQueryProcOPResultKey TODO
-	RedisProcSrvQueryProcOPResultKey = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
-	// RedisCloudSyncInstancePendingStart TODO
-	RedisCloudSyncInstancePendingStart = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
-	// RedisCloudSyncInstanceStarted TODO
-	RedisCloudSyncInstanceStarted = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
-	// RedisCloudSyncInstancePendingStop TODO
-	RedisCloudSyncInstancePendingStop = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	// RedisMongoCacheSyncKey TODO
-	RedisMongoCacheSyncKey = BKCacheKeyV3Prefix + "mongodb:cache"
 )
 
 // association fields
@@ -1508,35 +1461,8 @@ const (
 )
 
 const (
-	// MetaDataSynchronizeField Synchronous data aggregation field
-	MetaDataSynchronizeField = "sync"
 	// MetaDataSynchronizeFlagField synchronize flag
 	MetaDataSynchronizeFlagField = "flag"
-	// MetaDataSynchronizeVersionField synchronize version
-	MetaDataSynchronizeVersionField = "version"
-	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
-	MetaDataSynchronizeIdentifierField = "identifier"
-	// MetaDataSynchronIdentifierFlagSyncAllValue 数据可以被任何系统同步
-	MetaDataSynchronIdentifierFlagSyncAllValue = "__bk_cmdb__"
-
-	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
-	SynchronizeSignPrefix = "sync_blueking"
-
-	/* synchronize model description classify*/
-
-	// SynchronizeModelTypeClassification synchroneize model classification
-	SynchronizeModelTypeClassification = "model_classification"
-	// SynchronizeModelTypeAttribute synchroneize model attribute
-	SynchronizeModelTypeAttribute = "model_attribute"
-	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
-	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
-	// SynchronizeModelTypeBase synchroneize model attribute
-	SynchronizeModelTypeBase = "model"
-
-	/* synchronize instance assoication sign*/
-
-	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
-	SynchronizeAssociationTypeModelHost = "module_host"
 )
 
 const (

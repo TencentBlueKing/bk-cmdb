@@ -123,11 +123,6 @@ var deprecatedIndexName = map[string][]string{
 		"idx_oid_coll",
 		"idx_coll",
 	},
-	common.BKTableNameNetcollectDevice: {
-		"device_id_1",
-		"device_name_1",
-		"bk_supplier_account_1",
-	},
 	common.BKTableNameServiceInstance: {
 		"idx_bkBizID",
 		"idx_serviceTemplateID",
@@ -183,10 +178,6 @@ var deprecatedIndexName = map[string][]string{
 		"idx_name_status_createTime",
 		"idx_status_lastTime",
 		"idx_name_flag_createTime",
-	},
-	common.BKTableNameNetcollectProperty: {
-		"netcollect_property_id_1",
-		"bk_supplier_account_1",
 	},
 	common.BKTableNameBaseProcess: {
 		"bk_biz_id_1",

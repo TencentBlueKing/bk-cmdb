@@ -275,20 +275,6 @@ $ helm uninstall bkcmdb
 |   toposerver.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
 |         toposerver.workDir          |            工作目录             |      /data/cmdb/cmdb_toposerver    |
 
-### synchronizeserver服务配置说明
-
-|                 参数                 |              描述               |              默认值              |
-| :----------------------------------: | :-----------------------------: | :------------------------------: |
-|         synchronizeserver.enabled          | 是否在执行helm时启动 |               true               |
-|     synchronizeserver.image.repository     |        服务镜像名        | cmdb_synchronizeserver |
-|        synchronizeserver.image.tag         |          服务镜像版本           | {TAG_NAME} |
-|         synchronizeserver.replicas         |           pod副本数量           |                1                 |
-|           synchronizeserver.port           |            服务端口             |                80                |
-|      synchronizeserver.command.logDir      |          日志存放路径           |              /data/cmdb/cmdb_synchronizeserver/logs              |
-|     synchronizeserver.command.logLevel     |            日志等级             |                3                 |
-|   synchronizeserver.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
-|         synchronizeserver.workDir          |            工作目录             |      /data/cmdb/cmdb_synchronizeserver    |
-
 ### webserver服务配置说明
 
 |                 参数                 |              描述               |              默认值              |
@@ -328,9 +314,9 @@ $ helm uninstall bkcmdb
 ### redis配置
 |                 参数                 |              描述               |              默认值              |
 | :----------------------------------: | :-----------------------------: | :------------------------------: |
-|      redis.enabled      | 是否部署redis，如果需要使用外部数据库，设置为`false`并配置`redis.redis`、`redis.snapshotRedis`、`redis.discoverRedis`、`redis.netCollectRedis`下关于外部redis的配置 |               true               |
+|      redis.enabled      | 是否部署redis，如果需要使用外部数据库，设置为`false`并配置`redis.redis`、`redis.snapshotRedis`下关于外部redis的配置 |               true               |
 
-`redis.redis`、`redis.snapshotRedis`、`redis.discoverRedis`、`redis.netCollectRedis` 开头的配置，可根据原`redis.yaml`中的配置进行修改
+`redis.redis`、`redis.snapshotRedis`开头的配置，可根据原`redis.yaml`中的配置进行修改
 
 ### zookeeper配置
 |                 参数                 |              描述               |              默认值              |
@@ -447,24 +433,6 @@ redis:
     masterName: xxx
 
   snapshotRedis:
-    host: 127.0.0.1:6379
-    pwd: xxx
-    database: xxx
-    maxOpenConns: xxx
-    maxIdleConns: xxx
-    sentinelPwd: xxx
-    masterName: xxx
-
-  discoverRedis:
-    host: 127.0.0.1:6379
-    pwd: xxx
-    database: xxx
-    maxOpenConns: xxx
-    maxIdleConns: xxx
-    sentinelPwd: xxx
-    masterName: xxx
-
-  netCollectRedis:
     host: 127.0.0.1:6379
     pwd: xxx
     database: xxx

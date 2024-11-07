@@ -15,7 +15,6 @@ package x08_09_17_01
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
@@ -44,13 +43,13 @@ func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err er
 }
 
 var tables = map[string][]types.Index{
-	common.BKTableNameNetcollectDevice: []types.Index{
+	"cc_NetcollectDevice": []types.Index{
 		{Keys: bson.D{{"device_id", 1}}, Background: true},
 		{Keys: bson.D{{"device_name", 1}}, Background: true},
 		{Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 
-	common.BKTableNameNetcollectProperty: []types.Index{
+	"cc_NetcollectProperty": []types.Index{
 		{Keys: bson.D{{"netcollect_property_id", 1}}, Background: true},
 		{Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},

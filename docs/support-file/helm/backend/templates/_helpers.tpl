@@ -82,10 +82,6 @@ app: "{{ template "bk-cmdb.name" . }}"
   {{- printf "%s-core" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
 
-{{- define "bk-cmdb.synchronizeserver" -}}
-  {{- printf "%s-synchronize" (include "bk-cmdb.fullname" .) -}}
-{{- end -}}
-
 {{- define "bk-cmdb.ingress" -}}
   {{- printf "%s-ingress" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
@@ -128,38 +124,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
      {{- .Values.redis.auth.password -}}
 {{- else }}
      {{- .Values.redis.snapshotRedis.pwd -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "cmdb.redis.discover.host" -}}
-  {{- if eq .Values.redis.enabled true -}}
-    {{- template "cmdb.redis.fullname" . -}}:{{- printf "%s" "6379" -}}
-  {{- else -}}
-    {{- .Values.redis.discoverRedis.host -}}
-  {{- end -}}
-{{- end -}}
-
-{{- define "cmdb.redis.discover.pwd" -}}
-{{- if .Values.redis.enabled -}}
-     {{- .Values.redis.auth.password -}}
-{{- else }}
-     {{- .Values.redis.discoverRedis.pwd -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "cmdb.redis.netcollect.host" -}}
-  {{- if eq .Values.redis.enabled true -}}
-    {{- template "cmdb.redis.fullname" . -}}:{{- printf "%s" "6379" -}}
-  {{- else -}}
-    {{- .Values.redis.netCollectRedis.host -}}
-  {{- end -}}
-{{- end -}}
-
-{{- define "cmdb.redis.netcollect.pwd" -}}
-{{- if .Values.redis.enabled -}}
-     {{- .Values.redis.auth.password -}}
-{{- else }}
-     {{- .Values.redis.netCollectRedis.pwd -}}
 {{- end -}}
 {{- end -}}
 

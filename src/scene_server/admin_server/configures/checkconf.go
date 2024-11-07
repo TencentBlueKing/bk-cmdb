@@ -59,12 +59,6 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 		if err := cc.isRedisConfigOK("redis.snap", file, v); err != nil {
 			return err
 		}
-		if err := cc.isRedisConfigOK("redis.discover", file, v); err != nil {
-			return err
-		}
-		if err := cc.isRedisConfigOK("redis.netcollect", file, v); err != nil {
-			return err
-		}
 
 	case types.CCConfigureMongo:
 		if err := cc.isMongoConfigOK(v, file); err != nil {

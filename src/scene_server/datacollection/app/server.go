@@ -36,8 +36,6 @@ import (
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
 	"configcenter/src/scene_server/datacollection/collections/hostsnap"
-	"configcenter/src/scene_server/datacollection/collections/middleware"
-	"configcenter/src/scene_server/datacollection/collections/netcollect"
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/kafka"
@@ -57,12 +55,6 @@ const (
 
 	// snapPorterName is name of snap porter.
 	snapPorterName = "hostsnap"
-
-	// middlewarePorterName is name of middleware porter.
-	middlewarePorterName = "middleware"
-
-	// netCollectPorterName is name of netcollect porter.
-	netCollectPorterName = "netcollect"
 
 	// defaultInitWaitDuration is default duration for new DataCollection init.
 	defaultInitWaitDuration = time.Second
@@ -84,12 +76,6 @@ type DataCollectionConfig struct {
 
 	// SnapRedis snap redis configs.
 	SnapRedis redis.Config
-
-	// DiscoverRedis discover redis configs.
-	DiscoverRedis redis.Config
-
-	// NetCollectRedis net collection redis configs.
-	NetCollectRedis redis.Config
 
 	// SnapKafka snap kafka configs.
 	SnapKafka kafka.Config
@@ -266,18 +252,6 @@ func (c *DataCollection) initConfigs() error {
 		return fmt.Errorf("init snap redis configs, %+v", err)
 	}
 
-	// discover redis.
-	c.config.DiscoverRedis, err = c.engine.WithRedis("redis.discover")
-	if err != nil {
-		return fmt.Errorf("init discover redis configs, %+v", err)
-	}
-
-	// netcollect redis.
-	c.config.NetCollectRedis, err = c.engine.WithRedis("redis.netcollect")
-	if err != nil {
-		return fmt.Errorf("init netcollect redis configs, %+v", err)
-	}
-
 	c.config.SnapReportMode, _ = cc.String("datacollection.hostsnap.reportMode")
 	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		c.config.SnapKafka, _ = cc.Kafka("kafka.snap")
@@ -345,28 +319,6 @@ func (c *DataCollection) initModules() error {
 		c.snapRedisCli = snapCli
 		c.service.SetSnapCli(snapCli)
 		blog.Infof("DataCollection| init modules, connected to snap redis, %+v", c.config.SnapRedis)
-	}
-
-	// connect to discover redis.
-	if c.config.DiscoverRedis.Enable != "false" {
-		disCli, err := redis.NewFromConfig(c.config.DiscoverRedis)
-		if nil != err {
-			return fmt.Errorf("connect to discover redis, %+v", err)
-		}
-		c.disRedisCli = disCli
-		c.service.SetDiscoverCli(disCli)
-		blog.Infof("DataCollection| init modules, connected to discover redis, %+v", c.config.DiscoverRedis)
-	}
-
-	// connect to net collect redis.
-	if c.config.NetCollectRedis.Enable != "false" {
-		netCli, err := redis.NewFromConfig(c.config.NetCollectRedis)
-		if nil != err {
-			return fmt.Errorf("connect to netcollect redis, %+v", err)
-		}
-		c.netRedisCli = netCli
-		c.service.SetNetCollectCli(netCli)
-		blog.Infof("DataCollection| init modules, connected to netcollect redis, %+v", c.config.NetCollectRedis)
 	}
 
 	// connect to snap kafka.
@@ -446,20 +398,6 @@ func (c *DataCollection) snapMessageTopic(defaultAppID string) []string {
 	}
 }
 
-func (c *DataCollection) discoverMessageTopic(defaultAppID string) []string {
-	return []string{
-		// current discover topic name.
-		fmt.Sprintf("discover%s", defaultAppID),
-	}
-}
-
-func (c *DataCollection) netcollectMessageTopic(defaultAppID string) []string {
-	return []string{
-		// current netcollect topic name.
-		fmt.Sprintf("netdevice%s", defaultAppID),
-	}
-}
-
 // runCollectPorters runs porters for collections.
 func (c *DataCollection) runCollectPorters() {
 	// create porters manager.
@@ -502,28 +440,6 @@ func (c *DataCollection) runCollectPorters() {
 		c.porterManager.AddPorter(porter)
 		blog.Info("DataCollection| create redis hostsnap analyzer with target porter[%s] on topic[%s] success",
 			snapPorterName, topic)
-	}
-
-	if c.disRedisCli != nil {
-		topic := c.discoverMessageTopic(c.defaultAppID)
-		analyzer := middleware.NewDiscover(c.ctx, c.redisCli, c.engine, c.authManager)
-
-		porter := collections.NewSimplePorter(middlewarePorterName, c.engine, c.hash, analyzer, c.disRedisCli, topic,
-			c.registry)
-		c.porterManager.AddPorter(porter)
-		blog.Info("DataCollection| create kafka discover analyzer with target porter[%s] on topic[%s] success",
-			middlewarePorterName, topic)
-	}
-
-	if c.netRedisCli != nil {
-		topic := c.netcollectMessageTopic(c.defaultAppID)
-		analyzer := netcollect.NewNetCollect(c.ctx, c.db, c.authManager)
-
-		porter := collections.NewSimplePorter(netCollectPorterName, c.engine, c.hash, analyzer, c.netRedisCli, topic,
-			c.registry)
-		c.porterManager.AddPorter(porter)
-		blog.Info("DataCollection| create redis netcollect analyzer with target porter[%s] on topic[%s] success",
-			netCollectPorterName, topic)
 	}
 }
 

@@ -191,16 +191,6 @@ func Int64Join(data []int64, separator string) string {
 	return strings.Trim(ret, separator)
 }
 
-// BuildMongoField build mongodb sub item field key
-func BuildMongoField(key ...string) string {
-	return strings.Join(key, ".")
-}
-
-// BuildMongoSyncItemField build mongodb sub item synchronize field key
-func BuildMongoSyncItemField(key string) string {
-	return BuildMongoField(common.MetadataField, common.MetaDataSynchronizeField, key)
-}
-
 // GetDefaultCCError TODO
 func GetDefaultCCError(header http.Header) errors.DefaultCCErrorIf {
 	globalCCError := errors.GetGlobalCCError()
