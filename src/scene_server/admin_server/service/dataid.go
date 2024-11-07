@@ -25,6 +25,7 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -357,8 +358,8 @@ func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, versio
 	}
 
 	streamToID := new(dbStreamToID)
-	if err := s.db.Table(common.BKTableNameSystem).Find(cond).One(s.ctx, &streamToID); err != nil {
-		if s.db.IsNotFoundError(err) {
+	if err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).One(s.ctx, &streamToID); err != nil {
+		if mongodb.IsNotFoundError(err) {
 			return 0, make([]metadata.GseConfigAddStreamToParams, 0), nil
 		}
 		blog.Errorf("get stream to id from db failed, err: %v, rid: %s", err, rid)
@@ -422,7 +423,7 @@ func (s *Service) gseConfigAddStreamTo(streamTo *metadata.GseConfigStreamTo, hea
 		HostSnap: addStreamResult.StreamToID,
 	}
 
-	if err := s.db.Table(common.BKTableNameSystem).Upsert(s.ctx, cond, &streamToID); err != nil {
+	if err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Upsert(s.ctx, cond, &streamToID); err != nil {
 		blog.Errorf("upsert stream to id %d to db failed, err: %v, rid: %s", addStreamResult.StreamToID, err, rid)
 		return addStreamResult.StreamToID, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)}
 	}
@@ -461,7 +462,8 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 		"_id": common.ConfigAdminID,
 	}
 	cfg := make(map[string]string)
-	err := s.db.Table(common.BKTableNameSystem).Find(cfgCond).Fields(common.ConfigAdminValueField).One(s.ctx, &cfg)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cfgCond).Fields(common.ConfigAdminValueField).
+		One(s.ctx, &cfg)
 	if nil != err {
 		blog.Errorf("get config admin failed, err: %v, rid: %s", err, rid)
 		return 0, err

@@ -15,26 +15,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package local
+package tenant
 
-// MongoConf is mongodb config
-type MongoConf struct {
-	Name     string `bson:"name"`
-	Disabled bool   `bson:"disabled"`
-
-	MaxOpenConns  uint64 `bson:"max_open_conns"`
-	MaxIdleConns  uint64 `bson:"max_idle_conns"`
-	URI           string `bson:"uri"`
-	RsName        string `bson:"rs_name"`
-	SocketTimeout int    `bson:"socket_timeout"`
-
-	DisableInsert bool
+// Tenant is the tenant info
+type Tenant struct {
+	TenantID string `bson:"tenant_id"`
+	Status   Status `bson:"status"`
+	Database string `bson:"database"`
 }
 
-// ShardingDBConf is sharding mongodb config
-type ShardingDBConf struct {
-	ID             string               `bson:"_id"`
-	MasterDB       string               `bson:"master_db"`
-	AddNewTenantDB string               `bson:"add_new_tenant_db"`
-	SlaveDB        map[string]MongoConf `bson:"slave_db"`
-}
+// Status is the tenant status
+type Status string
+
+const (
+	// DisabledStatus is the disabled status for tenant
+	DisabledStatus Status = "disabled"
+	// EnabledStatus is the enabled status for tenant
+	EnabledStatus Status = "enabled"
+)

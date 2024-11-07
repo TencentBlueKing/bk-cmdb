@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 func encodePodLabel(ctx context.Context, db dal.RDB) error {
@@ -65,7 +64,7 @@ func encodePodLabel(ctx context.Context, db dal.RDB) error {
 
 			cond := map[string]interface{}{common.BKFieldID: pod.ID}
 			updateData := map[string]interface{}{types.LabelsField: newLabels}
-			if err := mongodb.Client().Table(types.BKTableNameBasePod).Update(ctx, cond, updateData); err != nil {
+			if err := db.Table(types.BKTableNameBasePod).Update(ctx, cond, updateData); err != nil {
 				blog.Errorf("update pod failed, cond: %+v, data: %+v, err: %v", cond, updateData, err)
 				return err
 			}

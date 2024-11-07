@@ -17,11 +17,13 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -47,7 +49,7 @@ type deleteAuditLogRsp struct {
 }
 
 // getMinObjIDAndMinDay 获取需要删除的最小日期和对应生成的objId
-func (s *Service) getMinObjIDAndMinDay(baseDay int64, rid string) (primitive.ObjectID, int64, error) {
+func (s *Service) getMinObjIDAndMinDay(db dal.DB, baseDay int64, rid string) (primitive.ObjectID, int64, error) {
 
 	// 根据指定删除的时间点(注意时间点是当天的0点，例如如果指定的是2021-08-19，指的是8月19日的0点)生成 objectId. 后续流程会将小于此
 	// 时间戳的数据全部删掉.
@@ -59,7 +61,7 @@ func (s *Service) getMinObjIDAndMinDay(baseDay int64, rid string) (primitive.Obj
 				common.BKDBLT: objId,
 			},
 		}
-		count, err := s.db.Table(common.BKTableNameAuditLog).Find(cond).Count(s.ctx)
+		count, err := db.Table(common.BKTableNameAuditLog).Find(cond).Count(s.ctx)
 		if err != nil {
 			return primitive.ObjectID{}, 0, err
 		}
@@ -78,7 +80,7 @@ func (s *Service) getMinObjIDAndMinDay(baseDay int64, rid string) (primitive.Obj
 
 // DeleteAuditLog delete user specified audit logs.
 // 删除策略: 1、首先找到最早一天的审计日志，从前向后一天一天的删除审计日志。
-//          2、每次批量删除200条日志。为了防止删除导致的cpu和磁盘io过高，每删除10000条日志需要sleep 5秒钟。
+// 2、每次批量删除200条日志。为了防止删除导致的cpu和磁盘io过高，每删除10000条日志需要sleep 5秒钟。
 func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 
 	rHeader := req.Request.Header
@@ -97,12 +99,43 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 
 	// convert string format to timestamp.
 	baseDay := util.TimeStrToUnixSecondDefault(param.BeforeDay)
-	objId, minDay, err := s.getMinObjIDAndMinDay(baseDay, rid)
+
+	total := 0
+
+	// delete audit log for platform and all tenants
+	num, err := s.deleteAuditLog(s.db.IgnoreTenant(), baseDay, rid)
 	if err != nil {
-		blog.Errorf("get the earliest date to delete failed, err: %+v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusInternalServerError, err)
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
+	num += total
+
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		num, err = s.deleteAuditLog(s.db.Tenant(tenantID), baseDay, rid)
+		if err != nil {
+			return err
+		}
+		num += total
+		return nil
+	})
+	if err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	blog.Infof("delete all completed audit logs, the num: %d, rid: %s", num, rid)
+	response.Num = total
+	_ = resp.WriteEntity(metadata.NewSuccessResp(response))
+	return
+}
+
+func (s *Service) deleteAuditLog(db dal.DB, baseDay int64, rid string) (int, error) {
+	objID, minDay, err := s.getMinObjIDAndMinDay(db, baseDay, rid)
+	if err != nil {
+		blog.Errorf("get the earliest date to delete failed, err: %v, rid: %s", err, rid)
+		return 0, err
+	}
+
 	var cnt, total int
 
 	for {
@@ -112,18 +145,17 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 		}
 		cond := map[string]interface{}{
 			"_id": map[string]interface{}{
-				common.BKDBLT: objId,
+				common.BKDBLT: objID,
 			},
 		}
 		metaIdList := make([]metaId, 0)
 
 		// find docs for the specified date.
-		err := s.db.Table(common.BKTableNameAuditLog).Find(cond).Fields("_id").
-			Limit(uint64(maxDelBatchLimit)).All(s.ctx, &metaIdList)
+		err = db.Table(common.BKTableNameAuditLog).Find(cond).Fields("_id").Limit(uint64(maxDelBatchLimit)).
+			All(s.ctx, &metaIdList)
 		if err != nil {
-			blog.Errorf("search auditLog failed, err: %+v, rid: %s", err, rid)
-			_ = resp.WriteError(http.StatusInternalServerError, err)
-			return
+			blog.Errorf("search auditLog failed, err: %v, rid: %s", err, rid)
+			return 0, err
 		}
 
 		// the document of the specified date has been deleted，Find the content of the next day.
@@ -131,7 +163,7 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 			// convert time from day to seconds.
 			minDay += 24 * 60 * 60
 			dayAgo := time.Unix(minDay, 0)
-			objId = primitive.NewObjectIDFromTimestamp(dayAgo)
+			objID = primitive.NewObjectIDFromTimestamp(dayAgo)
 			continue
 		}
 
@@ -141,11 +173,9 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 		}
 		delCond := map[string]interface{}{"_id": map[string]interface{}{common.BKDBIN: mongoIDs}}
 
-		if err := s.db.Table(common.BKTableNameAuditLog).Delete(s.ctx, delCond); err != nil {
-			blog.Errorf("search auditLog failed, objIds: %v,err: %+v, rid: %s", mongoIDs, err, rid)
-			errInfo := metadata.RespError{Msg: err}
-			_ = resp.WriteError(http.StatusBadRequest, &errInfo)
-			return
+		if err := db.Table(common.BKTableNameAuditLog).Delete(s.ctx, delCond); err != nil {
+			blog.Errorf("search auditLog failed, objIDs: %v, err: %v, rid: %s", mongoIDs, err, rid)
+			return 0, err
 		}
 
 		cnt += len(metaIdList)
@@ -156,13 +186,8 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 			t := time.Unix(minDay, 0)
 			dateStr := t.Format("2006-01-02")
 
-			blog.Infof("the delete date is: %s,the number of deleted items is: %d,rid: %s",
-				dateStr, total, rid)
+			blog.Infof("the delete date is: %s, the number of deleted items is: %d, rid: %s", dateStr, total, rid)
 		}
 	}
-	blog.Infof(" delete all completed audit logs,the num: %d,rid: %s", total, rid)
-
-	response.Num = total
-	_ = resp.WriteEntity(metadata.NewSuccessResp(response))
-	return
+	return total, err
 }

@@ -27,7 +27,6 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
-	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -76,7 +75,7 @@ func addHiddenClassification(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		return errors.New("classification conflict")
 	}
 
-	id, err := mongodb.Client().NextSequence(ctx, common.BKTableNameObjClassification)
+	id, err := db.NextSequence(ctx, common.BKTableNameObjClassification)
 	if err != nil {
 		blog.Errorf("it is failed to create a new sequence id on the table(%s) of the database, error %v",
 			common.BKTableNameObjClassification, err)
