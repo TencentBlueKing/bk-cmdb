@@ -19,7 +19,7 @@
         :title="tag">
         {{tag}}
       </li>
-      <li class="tag-item ellipsis" ref="ellipsis" v-show="tags.length" @click.stop>...</li>
+      <li class="tag-item ellipsis" ref="ellipsis" v-show="ellipsisCount" @click.stop>+{{ellipsisCount}}</li>
     </ul>
     <span class="tag-empty" v-else>--</span>
     <cmdb-auth
@@ -48,6 +48,11 @@
         default: false,
       }
     },
+    data() {
+      return {
+        ellipsisCount: 0
+      }
+    },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       tags() {
@@ -74,7 +79,6 @@
     },
     methods: {
       handleResize() {
-        if (this.readonly) return
         this.removeEllipsisTag()
         if (!this.tags.length) {
           this.updateEditPosition()
@@ -90,12 +94,13 @@
             return previousItem.offsetTop !== item.offsetTop
           })
           if (referenceItemIndex > -1) {
+            this.ellipsisCount = this.tags.length - referenceItemIndex
             this.insertEllipsisTag(items[referenceItemIndex], referenceItemIndex)
-            this.doubleCheckEllipsisPosition()
+            this.$nextTick(this.doubleCheckEllipsisPosition)
           } else {
             this.removeEllipsisTag()
           }
-          this.updateEditPosition()
+          this.$nextTick(this.updateEditPosition)
         })
       },
       insertEllipsisTag(reference) {
@@ -107,16 +112,18 @@
         const previous = ellipsis.previousElementSibling
         if (previous && ellipsis.offsetTop !== previous.offsetTop) {
           this.$refs.list.insertBefore(ellipsis, previous)
+          this.ellipsisCount += 1
         }
         this.setEllipsisTips()
       },
       updateEditPosition() {
+        if (this.readonly) return
         const { ellipsis } = this.$refs
         let lastItem = null
         if (ellipsis && ellipsis.previousElementSibling) {
           lastItem = ellipsis
         } else if (this.tags.length) {
-          const tagItems = this.$refs.list.querySelectorAll('.tag-item')
+          const tagItems = Array.from(this.$refs.list.querySelectorAll('.tag-item')).filter(el => el.clientHeight > 0)
           lastItem = tagItems[tagItems.length - 1]
         }
         this.$refs.editTrigger.$el.style.left = lastItem ? `${lastItem.offsetLeft + lastItem.offsetWidth + 10}px` : 0
@@ -216,7 +223,6 @@
                 margin-left: 6px;
             }
             &.ellipsis {
-                width: 22px;
                 height: 22px;
                 text-align: center;
                 & ~ .tag-item {
