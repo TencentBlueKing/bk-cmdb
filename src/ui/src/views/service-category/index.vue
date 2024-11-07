@@ -450,6 +450,7 @@
       },
       handleCloseEditChild() {
         this.editChildStatus = null
+        this.isMainAuthCompleted = true
       },
       handleAddBox() {
         this.showAddMianCategory = true
