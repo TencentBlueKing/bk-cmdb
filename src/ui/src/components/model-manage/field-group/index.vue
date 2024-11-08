@@ -577,15 +577,7 @@
     },
     async created() {
       this.handleFilter = debounce(this.filterField, 300)
-      const [properties, groups, uniqueList] = await Promise.all([
-        this.getProperties(),
-        this.getPropertyGroups(),
-        this.getVerification()
-      ])
-      this.properties = properties
-      this.groups = groups
-      this.uniqueList = uniqueList
-      this.init(properties, groups)
+      this.initProperies()
     },
     beforeDestroy() {
       // 通过isShow=false在划开页面时仍然会出现未关闭的情况，因此直接调用组件内部方法关闭
@@ -666,6 +658,17 @@
             this.handleSliderHidden()
           }
         }
+        this.properties = properties
+        this.groups = groups
+        this.uniqueList = uniqueList
+        this.init(properties, groups)
+      },
+      async initProperies() {
+        const [properties, groups, uniqueList] = await Promise.all([
+          this.getProperties(),
+          this.getPropertyGroups(),
+          this.getVerification()
+        ])
         this.properties = properties
         this.groups = groups
         this.uniqueList = uniqueList

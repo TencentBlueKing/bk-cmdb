@@ -86,7 +86,7 @@
                     :text="true"
                     v-show="isMainAuthCompleted"
                     :disabled="disabled"
-                    @click="handleDeleteCategory(mainCategory['id'], 'main', index)">
+                    @click="handleDeleteCategory(mainCategory['id'], 'main')">
                     <i class="bk-cmdb-icon icon-cc-del"></i>
                   </bk-button>
                   <span class="menu-btn no-allow-btn" v-else v-bk-tooltips="deleteBtnTips">
@@ -141,7 +141,7 @@
                       theme="primary"
                       :text="true"
                       :disabled="disabled"
-                      @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
+                      @click.stop="handleDeleteCategory(mainCategory['id'], 'child', childCategory['id'])">
                       <i class="icon-cc-tips-close"></i>
                     </bk-button>
                   </cmdb-auth>
@@ -400,27 +400,24 @@
             })
         }
       },
-      handleDeleteCategory(id, type, index) {
+      handleDeleteCategory(id, type, childId) {
         this.$bkInfo({
           title: this.$t('确认删除分类'),
           confirmFn: async () => {
             await this.deleteServiceCategory({
               params: {
-                data: { id, bk_biz_id: this.bizId }
+                data: { id: type === 'main' ? id : childId, bk_biz_id: this.bizId }
               },
               config: {
                 requestId: 'delete_proc_services_category'
               }
             }).then(() => {
               this.$success(this.$t('删除成功'))
+              const index = this.list.findIndex(category => category.id === id)
               if (type === 'main') {
                 this.list.splice(index, 1)
               } else {
-                let childIndex = -1
-                this.list[index].child_category_list.find((category, findIndex) => {
-                  childIndex = findIndex
-                  return category.id === id
-                })
+                const childIndex = this.list[index].child_category_list.findIndex(category => category.id === childId)
                 this.list[index].child_category_list.splice(childIndex, 1)
               }
             })
@@ -453,6 +450,7 @@
       },
       handleCloseEditChild() {
         this.editChildStatus = null
+        this.isMainAuthCompleted = true
       },
       handleAddBox() {
         this.showAddMianCategory = true

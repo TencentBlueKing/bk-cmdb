@@ -707,6 +707,7 @@
             }
             await fieldTemplateService.unbind(params)
             this.$success(this.$t('解绑成功'))
+            this.$refs?.field?.initProperies()
             this.getModelBindTemplate()
             return true
           }
