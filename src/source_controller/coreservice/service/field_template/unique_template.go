@@ -181,7 +181,6 @@ func (s *service) isTmplUniquesLegal(kit *rest.Kit, attrIDs []int64, uniques []m
 	cond := map[string]interface{}{
 		common.BKFieldID: map[string]interface{}{common.BKDBIN: attrIDs},
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	fields := []string{common.BKFieldID, common.BKPropertyTypeField}
 
 	attrs := make([]metadata.FieldTemplateAttr, 0)
@@ -234,7 +233,6 @@ func (s *service) findUniqueByTemplateID(kit *rest.Kit, id int64) ([]metadata.Fi
 	cond := map[string]interface{}{
 		common.BKTemplateID: id,
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	uniques := make([]metadata.FieldTemplateUnique, 0)
 
 	err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(kit.Ctx, &uniques)
@@ -264,8 +262,6 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-
-	filter = util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(filter).Count(ctx.Kit.Ctx)
@@ -310,7 +306,11 @@ func (s *service) DeleteFieldTemplateUniques(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+	if opt.Condition == nil {
+		opt.Condition = make(map[string]interface{})
+	}
+
+	cond := opt.Condition
 	cond[common.BKTemplateID] = templateID
 
 	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Delete(ctx.Kit.Ctx, cond); err != nil {
@@ -360,7 +360,6 @@ func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: ids},
 		common.BKTemplateID: templateID,
 	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplUniques)
 	if err != nil {

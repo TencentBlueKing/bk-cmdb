@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
@@ -96,8 +95,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 		inputParam.Attributes[0].PropertyName)
 
 	// check the model if it is exists
-	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
-	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if nil != err {
@@ -200,8 +198,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	}
 
 	// check the model if it is exists
-	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
-	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	_, exists, err := m.isExists(kit, condCheckModel)
 	if err != nil {
@@ -290,8 +287,7 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
-	condCheckModelMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
-	condCheckModel, _ := mongo.NewConditionFromMapStr(condCheckModelMap)
+	condCheckModel, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 
 	existsModel, exists, err := m.isExists(kit, condCheckModel)
@@ -304,8 +300,7 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 	inputParam.Spec.OwnerID = kit.SupplierAccount
 	// set model spec
 	if exists {
-		updateCondMap := util.SetModOwner(make(map[string]interface{}), kit.SupplierAccount)
-		updateCond, _ := mongo.NewConditionFromMapStr(updateCondMap)
+		updateCond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 
 		_, err := m.update(kit, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
@@ -353,8 +348,7 @@ func (m *modelManager) SetModel(kit *rest.Kit, inputParam metadata.SetModel) (*m
 // UpdateModel TODO
 func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
 		blog.Errorf("convert the condition from mapstr into condition object failed, err: %v, condition: %v, rid: %s",
 			err, inputParam.Condition, kit.Rid)
@@ -369,8 +363,7 @@ func (m *modelManager) UpdateModel(kit *rest.Kit, inputParam metadata.UpdateOpti
 func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all models by the deletion condition
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, "+
 			"error info is %s", kit.Rid, inputParam.Condition, err)
@@ -429,8 +422,7 @@ func (m *modelManager) DeleteModel(kit *rest.Kit, inputParam metadata.DeleteOpti
 // CascadeDeleteModel 将会删除模型/模型属性/属性分组/唯一校验/模型继承的模版相关数据
 func (m *modelManager) CascadeDeleteModel(kit *rest.Kit, modelID int64) (*metadata.DeletedCount, error) {
 	// NOTE: just single model cascade delete action now.
-	deleteCondMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
-	deleteCond, _ := mongo.NewConditionFromMapStr(deleteCondMap)
+	deleteCond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldID, Val: modelID})
 
 	// NOTE: the func logics supports cascade delete models in batch mode.
@@ -561,8 +553,7 @@ func (m *modelManager) deleteModelAndFieldTemplateRelation(kit *rest.Kit, modelI
 // CascadeDeleteTableModel delete table models in a cascading manner
 func (m *modelManager) CascadeDeleteTableModel(kit *rest.Kit, intput metadata.DeleteTableOption) error {
 	// NOTE: just single model cascade delete action now.
-	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
-	cond, _ := mongo.NewConditionFromMapStr(condMap)
+	cond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	cond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: intput.ObjID})
 
 	// NOTE: the func logics supports cascade delete models in batch mode.
@@ -592,8 +583,7 @@ func (m *modelManager) SearchModel(kit *rest.Kit, inputParam metadata.QueryCondi
 
 	dataResult := &metadata.QueryModelDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object,"+
 			" error info is %s", kit.Rid, inputParam.Condition, err)
@@ -624,8 +614,7 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 
 	dataResult := &metadata.QueryModelWithAttributeDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, "+
 			"error info is %s", kit.Rid, inputParam.Condition, err)
@@ -647,8 +636,7 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 	}
 
 	for _, modelItem := range modelItems {
-		queryAttributeCondMap := util.SetQueryOwner(make(map[string]interface{}), modelItem.OwnerID)
-		queryAttributeCond, _ := mongo.NewConditionFromMapStr(queryAttributeCondMap)
+		queryAttributeCond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelItem.ObjectID))
 		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldSupplierAccount).Eq(modelItem.OwnerID))
 		attributeItems, err := m.modelAttribute.search(kit, queryAttributeCond)
@@ -689,7 +677,6 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop 
 				metadata.APITaskStatusNew},
 		},
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	result := make([]metadata.APITaskSyncStatus, 0)
 	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).

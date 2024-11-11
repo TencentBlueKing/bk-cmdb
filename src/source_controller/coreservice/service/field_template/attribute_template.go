@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	attrvalid "configcenter/src/common/valid/attribute"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/driver/mongodb"
@@ -50,8 +49,6 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-
-	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
 
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(filter).Count(cts.Kit.Ctx)
@@ -194,8 +191,11 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKTemplateID))
 		return
 	}
+	if opt.Condition == nil {
+		opt.Condition = make(map[string]interface{})
+	}
 
-	cond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+	cond := opt.Condition
 	cond[common.BKTemplateID] = templateID
 
 	attrs := make([]metadata.FieldTemplateAttr, 0)
@@ -217,7 +217,6 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 		attrIDs = append(attrIDs, attr.ID)
 	}
 	countCond := mapstr.MapStr{common.BKObjectUniqueKeys: mapstr.MapStr{common.BKDBIN: attrIDs}}
-	countCond = util.SetModOwner(countCond, ctx.Kit.SupplierAccount)
 
 	count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -275,7 +274,6 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 		common.BKFieldID:    mapstr.MapStr{common.BKDBIN: ids},
 		common.BKTemplateID: templateID,
 	}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
 	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplAttrs)
 	if err != nil {

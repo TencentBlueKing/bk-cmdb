@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -32,23 +31,25 @@ func (m *modelClassification) isValid(kit *rest.Kit, classificationID string) (b
 	return 0 != cnt, err
 }
 
-func (m *modelClassification) isExists(kit *rest.Kit, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) isExists(kit *rest.Kit, classificationID string) (origin *metadata.Classification,
+	exists bool, err error) {
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
-	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	condMap := cond.ToMapStr()
 	err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
-	if nil != err && !mongodb.Client().IsNotFoundError(err) {
+	if err != nil && !mongodb.Client().IsNotFoundError(err) {
 		return origin, false, err
 	}
 	return origin, !mongodb.Client().IsNotFoundError(err), nil
 }
 
-func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
+func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, exists bool,
+	err error) {
 
 	clsItems, err := m.search(kit, cond)
-	if nil != err {
+	if err != nil {
 		return 0, false, err
 	}
 
@@ -58,10 +59,9 @@ func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Conditio
 	}
 
 	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
-	util.SetQueryOwner(filter, kit.SupplierAccount)
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjDes, filter, err.Error())
+	if err != nil {
+		blog.Errorf("execute database count operation failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return 0, false, err
 	}
 	exists = 0 != cnt

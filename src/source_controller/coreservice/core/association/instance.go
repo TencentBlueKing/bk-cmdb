@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 	driverRedis "configcenter/src/storage/driver/redis"
 )
@@ -58,8 +57,6 @@ func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, 
 func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID string, param metadata.QueryCondition) (
 	[]metadata.InstAsst, error) {
 
-	param.Condition = util.SetQueryOwner(param.Condition, kit.SupplierAccount)
-
 	results := make([]metadata.InstAsst, 0)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	instHandler := mongodb.Client().Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
@@ -70,7 +67,6 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64,
 	error) {
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
@@ -498,8 +494,6 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID str
 	if len(objID) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
-
-	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 
 	cnt, err := m.deleteInstanceAssociation(kit, objID, inputParam.Condition)
 	if nil != err {

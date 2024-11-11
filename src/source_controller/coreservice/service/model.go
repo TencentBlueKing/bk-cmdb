@@ -252,8 +252,6 @@ func (s *coreService) ListModel(cts *rest.Contexts) {
 		return
 	}
 
-	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
-
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(cts.Kit.Ctx)
 		if err != nil {

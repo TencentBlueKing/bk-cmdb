@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -53,7 +52,7 @@ func (k *kubeOperation) ListContainerByPod(kit *rest.Kit, input *types.GetContai
 func (k *kubeOperation) listContainerByContainerCond(kit *rest.Kit, input *types.GetContainerByPodOption) (
 	*types.GetContainerByPodResp, errors.CCErrorCoder) {
 
-	cond := util.SetQueryOwner(input.ContainerCond, kit.SupplierAccount)
+	cond := input.ContainerCond
 
 	if input.Page.EnableCount {
 		cnt, err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(cond).Count(kit.Ctx)

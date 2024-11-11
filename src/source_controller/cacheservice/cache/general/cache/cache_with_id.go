@@ -131,7 +131,6 @@ func getDBDataByID[T any](ctx context.Context, opt *getDataByKeysOpt, table, idF
 	cond := mapstr.MapStr{
 		idField: mapstr.MapStr{common.BKDBIN: ids},
 	}
-	cond = setQueryOwner(cond, opt.BasicFilter)
 
 	dataArr := make([]T, 0)
 	if err := mongodb.Client().Table(table).Find(cond).All(ctx, &dataArr); err != nil {
@@ -193,7 +192,6 @@ func listDBDataWithID[T any](ctx context.Context, opt *listDataOpt, table, idFie
 			cond[idField] = mapstr.MapStr{common.BKDBGT: opt.Page.StartID}
 		}
 	}
-	cond = setQueryOwner(cond, opt.BasicFilter)
 
 	if len(opt.Fields) > 0 {
 		opt.Fields = append(opt.Fields, idField)

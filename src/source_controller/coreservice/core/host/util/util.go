@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -33,14 +32,13 @@ func NewDBExecQuery() *DBExecQuery {
 
 // ExecQuery get info from table with condition
 func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
-	newCondMap := util.SetQueryOwner(condMap, kit.SupplierAccount)
-	dbFind := mongodb.Client().Table(tableName).Find(newCondMap)
+	dbFind := mongodb.Client().Table(tableName).Find(condMap)
 	if len(fields) > 0 {
 		dbFind = dbFind.Fields(fields...)
 	}
 	err := dbFind.All(kit.Ctx, result)
 	if err != nil {
-		blog.ErrorJSON("ExecQuery query table[%s] error. condition: %s, err:%s, rid:%s", tableName, newCondMap, err.Error(), kit.Rid)
+		blog.Errorf("query table[%s] error. condition: %+v, err: %v, rid: %s", tableName, condMap, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	return nil

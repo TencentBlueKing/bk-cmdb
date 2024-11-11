@@ -452,7 +452,6 @@ func (lgc *Logics) ListLatestSyncStatus(kit *rest.Kit, input *metadata.ListLates
 		}},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$doc"}},
 	}
-	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 
 	var err error
 	if input.TimeCondition != nil {
@@ -508,7 +507,6 @@ func (lgc *Logics) ListFieldTemplateSyncStatus(kit *rest.Kit, input mapstr.MapSt
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
 	}
 
-	input = util.SetQueryOwner(input, kit.SupplierAccount)
 	aggrCond = append([]map[string]interface{}{{common.BKDBMatch: input}}, aggrCond...)
 
 	result := make([]metadata.APITaskSyncStatus, 0)
@@ -556,8 +554,6 @@ func (lgc *Logics) ListFieldTemplateSyncResult(kit *rest.Kit, templateID int64, 
 		{common.BKDBUnwind: "$docs"},
 		{common.BKDBReplaceRoot: map[string]interface{}{"newRoot": "$docs"}},
 	}
-
-	query = util.SetQueryOwner(query, kit.SupplierAccount)
 
 	return lgc.listFieldTemplateSyncResult(kit, aggrCond, query, objIDMap)
 }
@@ -631,7 +627,6 @@ func (lgc *Logics) ListSyncStatusHistory(kit *rest.Kit, input *metadata.QueryCon
 		}
 	}
 
-	input.Condition = util.SetQueryOwner(input.Condition, kit.SupplierAccount)
 	dbQuery := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Find(input.Condition)
 
 	if input.Page.Start != 0 {

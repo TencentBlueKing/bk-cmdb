@@ -141,7 +141,6 @@ func genHostByIPCloudIDKey(ctx context.Context, opt *getDataByKeysOpt, rid strin
 		common.BKDBOR:            condArr,
 		common.BKAddressingField: common.BKAddressingStatic,
 	}
-	cond = setQueryOwner(cond, opt.BasicFilter)
 
 	hosts := make([]metadata.HostMapStr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).All(ctx, &hosts); err != nil {
@@ -181,7 +180,6 @@ func genHostByAgentIDKey(ctx context.Context, opt *getDataByKeysOpt, rid string)
 	cond := mapstr.MapStr{
 		common.BKAgentIDField: mapstr.MapStr{common.BKDBType: "string", common.BKDBIN: opt.Keys},
 	}
-	cond = setQueryOwner(cond, opt.BasicFilter)
 
 	hosts := make([]metadata.HostMapStr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).All(ctx, &hosts); err != nil {

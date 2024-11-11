@@ -31,7 +31,6 @@ import (
 
 func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadata.Attribute, error) {
 	quoteRelCond := mapstr.MapStr{common.BKDestModelField: objID}
-	quoteRelCond = util.SetQueryOwner(quoteRelCond, kit.SupplierAccount)
 	quoteRelation := new(metadata.ModelQuoteRelation)
 
 	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
@@ -45,7 +44,6 @@ func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadat
 		common.BKObjIDField:      quoteRelation.SrcModel,
 		common.BKPropertyIDField: quoteRelation.PropertyID,
 	}
-	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
 	attribute := new(metadata.Attribute)
 
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attrCond).One(kit.Ctx, attribute)

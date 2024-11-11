@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -46,7 +45,6 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 	}
 
 	table := common.BKTableNameObjFieldTemplateRelation
-	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
 
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(table).Find(filter).Count(cts.Kit.Ctx)

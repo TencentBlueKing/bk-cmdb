@@ -17,7 +17,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -30,7 +29,6 @@ func (s *coreService) GetHostModulesIDs(ctx *rest.Contexts) {
 	}
 
 	condition := map[string]interface{}{common.BKAppIDField: dat.ApplicationID, common.BKHostIDField: dat.HostID}
-	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	moduleIDs, err := s.getModuleIDsByHostID(ctx.Kit, condition)
 	if err != nil {
 		blog.Errorf("get host module id failed, err: %v, rid: %s", err, ctx.Kit.Rid)

@@ -20,7 +20,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -28,7 +27,7 @@ import (
 // CreateClassification create object's classification
 func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	selector := meta.TopoGraphics{}
-	if jsErr := ctx.DecodeInto(&selector); nil != jsErr {
+	if jsErr := ctx.DecodeInto(&selector); jsErr != nil {
 		ctx.RespAutoError(jsErr)
 		return
 	}
@@ -37,11 +36,11 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 		"scope_type": selector.ScopeType,
 		"scope_id":   selector.ScopeID,
 	}
-	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
 	results := make([]meta.TopoGraphics, 0)
-	if selErr := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx, &results); nil != selErr {
-		blog.Errorf("search topo graphics, but select data failed, error information is %s, rid: %s", selErr.Error(), ctx.Kit.Rid)
+	if selErr := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx,
+		&results); selErr != nil {
+		blog.Errorf("select data failed, err: %v, cond: %v, rid: %s", selErr, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
@@ -53,7 +52,7 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	inputBody := struct {
 		Data []meta.TopoGraphics `json:"data" field:"data" bson:"data"`
 	}{}
-	if jsErr := ctx.DecodeInto(&inputBody); nil != jsErr {
+	if jsErr := ctx.DecodeInto(&inputBody); jsErr != nil {
 		ctx.RespAutoError(jsErr)
 		return
 	}
@@ -67,24 +66,24 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 			"bk_obj_id":  inputBody.Data[index].ObjID,
 			"bk_inst_id": inputBody.Data[index].InstID,
 		}
-		cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 
 		cnt, err := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
-		if nil != err {
-			blog.Errorf("update topo graphics, search data failed, data: %+v, err: %s, rid: %s", inputBody, err.Error(), ctx.Kit.Rid)
+		if err != nil {
+			blog.Errorf("search data failed, err: %v, cond: %v, rid: %s", err, cond, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 			return
 		}
-		if 0 == cnt {
+		if cnt == 0 {
 			err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx, inputBody.Data[index])
-			if nil != err {
-				blog.Errorf("update topo graphics, but insert data failed, err:%s, rid: %s", err.Error(), ctx.Kit.Rid)
+			if err != nil {
+				blog.Errorf("insert data failed, err: %v, inputBody: %v, rid: %s", err, inputBody, ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 				return
 			}
 		} else {
-			if err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, inputBody.Data[index]); err != nil {
-				blog.Errorf("update topo graphics, but update failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
+			if err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond,
+				inputBody.Data[index]); err != nil {
+				blog.Errorf("insert data failed, err: %v, inputBody: %v, rid: %s", err, inputBody, ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 				return
 			}

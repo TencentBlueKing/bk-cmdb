@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -108,8 +107,6 @@ func ListQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
-
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(table).Find(filter).Count(cts.Kit.Ctx)
 		if err != nil {
@@ -166,8 +163,6 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
-
 	opt.Data.Set(common.LastTimeField, time.Now())
 	err = mongodb.Client().Table(table).Update(cts.Kit.Ctx, filter, opt.Data)
 	if err != nil {
@@ -208,8 +203,6 @@ func BatchDeleteQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-
-	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
 
 	err = mongodb.Client().Table(table).Delete(cts.Kit.Ctx, filter)
 	if err != nil {

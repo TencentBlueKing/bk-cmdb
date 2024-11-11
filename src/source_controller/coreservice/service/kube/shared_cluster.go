@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -41,7 +40,7 @@ func (s *service) ListNsSharedClusterRel(cts *rest.Contexts) {
 		return
 	}
 
-	filter := util.SetQueryOwner(opt.Condition, cts.Kit.SupplierAccount)
+	filter := opt.Condition
 
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(filter).Count(cts.Kit.Ctx)

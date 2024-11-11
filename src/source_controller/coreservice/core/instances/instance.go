@@ -243,7 +243,6 @@ func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
 func (m *instanceManager) UpdateModelInstance(kit *rest.Kit, objID string, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
-	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if err != nil {
 		blog.Errorf("get inst failed, err: %v, objID: %s, data: %#v, rid: %s", err, objID, inputParam.Data, kit.Rid)
@@ -487,7 +486,6 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 		}
 		inputParam.Condition[common.BKObjIDField] = objID
 	}
-	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	if inputParam.TimeCondition != nil {
 		var err error
@@ -577,7 +575,6 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
 	instIDFieldName := common.GetInstIDField(objID)
 
 	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
-	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if nil != err {
@@ -652,7 +649,6 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	}
 
 	// delete object instance data.
-	inputParam.Condition = util.SetModOwner(inputParam.Condition, kit.SupplierAccount)
 	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err

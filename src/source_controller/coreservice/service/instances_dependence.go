@@ -146,8 +146,7 @@ func (s *coreService) SelectObjectAttributes(kit *rest.Kit, objID string, bizIDs
 
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	condMap := util.SetQueryOwner(make(map[string]interface{}), kit.SupplierAccount)
-	cond, _ := mongo.NewConditionFromMapStr(condMap)
+	cond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
@@ -180,7 +179,6 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 	for _, rel := range quoteRelations {
 		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
 		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
-		delCond = util.SetModOwner(delCond, kit.SupplierAccount)
 
 		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, delCond)
 		if err != nil {
@@ -222,7 +220,6 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 		// check if all quoted instances exists
 		cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: arrVal},
 			common.BKInstIDField: mapstr.MapStr{common.BKDBEQ: 0}}
-		cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 		cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 		if err != nil {

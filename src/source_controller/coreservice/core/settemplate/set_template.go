@@ -111,7 +111,6 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		common.BKFieldName:  setTemplate.Name,
 		common.BKAppIDField: setTemplate.BizID,
 	}
-	nameFilter = util.SetModOwner(nameFilter, kit.SupplierAccount)
 	sameNameCount, err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(nameFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("create set template failed, filter same name records failed, filter: %+v, err: %+v, rid: %s", nameFilter, err, kit.Rid)
@@ -167,7 +166,6 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 	filter := map[string]interface{}{
 		common.BKFieldID: setTemplateID,
 	}
-	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx, &setTemplate); err != nil {
 		if mongodb.Client().IsNotFoundError(err) {
 			blog.Errorf("UpdateSetTemplate failed, set template not found, id: %d, rid: %s", setTemplateID, kit.Rid)
@@ -329,7 +327,6 @@ func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTem
 		common.BKFieldID:    setTemplateID,
 		common.BKAppIDField: bizID,
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx, &setTemplate); err != nil {
 		if mongodb.Client().IsNotFoundError(err) {
 			blog.Errorf("GetSetTemplate failed, db select failed, not found, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
@@ -352,7 +349,6 @@ func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, optio
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 	if option.SetTemplateIDs != nil {
 		filter[common.BKFieldID] = map[string]interface{}{
 			common.BKDBIN: option.SetTemplateIDs,
@@ -392,7 +388,6 @@ func (p *setTemplateOperation) ListSetServiceTemplateRelations(kit *rest.Kit, bi
 		common.BKAppIDField:         bizID,
 		common.BKSetTemplateIDField: setTemplateID,
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	setServiceTemplateRelations := make([]metadata.SetServiceTemplateRelation, 0)
 	if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Find(filter).All(kit.Ctx, &setServiceTemplateRelations); err != nil {

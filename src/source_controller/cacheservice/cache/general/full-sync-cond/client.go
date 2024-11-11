@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -35,7 +34,6 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 			types.ResourceField: opt.Resource,
 			types.IsAllField:    true,
 		}
-		cond = util.SetModOwner(cond, kit.SupplierAccount)
 		if opt.SubResource != "" {
 			cond[types.SubResField] = opt.SubResource
 		}
@@ -98,7 +96,6 @@ func (f *FullSyncCond) UpdateFullSyncCond(kit *rest.Kit, opt *types.UpdateFullSy
 	cond := mapstr.MapStr{
 		types.IDField: opt.ID,
 	}
-	cond = util.SetModOwner(cond, kit.SupplierAccount)
 
 	data := mapstr.MapStr{
 		types.IntervalField: opt.Data.Interval,
@@ -118,7 +115,6 @@ func (f *FullSyncCond) DeleteFullSyncCond(kit *rest.Kit, opt *types.DeleteFullSy
 	delCond := mapstr.MapStr{
 		types.IDField: opt.ID,
 	}
-	delCond = util.SetModOwner(delCond, kit.SupplierAccount)
 
 	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Delete(kit.Ctx, delCond)
 	if err != nil {
@@ -148,7 +144,6 @@ func (f *FullSyncCond) ListFullSyncCond(kit *rest.Kit, opt *types.ListFullSyncCo
 			common.BKDBIN: opt.IDs,
 		}
 	}
-	listCond = util.SetQueryOwner(listCond, kit.SupplierAccount)
 
 	result := make([]types.FullSyncCond, 0)
 	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(listCond).All(kit.Ctx, &result)
@@ -170,7 +165,6 @@ func (f *FullSyncCond) GetFullSyncCond(kit *rest.Kit, id int64) (*types.FullSync
 	cond := mapstr.MapStr{
 		types.IDField: id,
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	fullSyncCond := new(types.FullSyncCond)
 	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(cond).One(kit.Ctx, &fullSyncCond)

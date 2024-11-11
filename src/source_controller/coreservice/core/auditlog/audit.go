@@ -21,7 +21,6 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 
@@ -84,7 +83,6 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64,
 	error) {
 	condition := param.Condition
-	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 
 	// parse operation time condition, since json marshal and unmarshal will turn time to string, we need to do it here
 	if condition.Exists(common.BKOperationTimeField) {

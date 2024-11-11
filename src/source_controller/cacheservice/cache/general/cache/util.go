@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/storage/driver/redis"
@@ -67,14 +66,6 @@ func isIDListExists(ctx context.Context, key string, rid string) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// setQueryOwner set supplier account for general resource query, system resource do not need to set supplier account
-func setQueryOwner(cond map[string]interface{}, opt *types.BasicFilter) map[string]interface{} {
-	if !opt.IsSystem {
-		return util.SetQueryOwner(cond, opt.SupplierAccount)
-	}
-	return cond
 }
 
 // validateIDList check if id list is valid, returns the id list's ttl

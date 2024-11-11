@@ -244,7 +244,6 @@ func (s *service) ListPod(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	pods := make([]types.Pod, 0)
 	err := mongodb.Client().Table(types.BKTableNameBasePod).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
@@ -397,7 +396,6 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 	}
 
 	containers := make([]types.Container, 0)
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).

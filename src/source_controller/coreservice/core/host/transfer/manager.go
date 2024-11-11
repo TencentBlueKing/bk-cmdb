@@ -348,9 +348,9 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	if len(cond) == 0 {
 		return nil, nil
 	}
-	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).Count(kit.Ctx)
+	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -391,7 +391,7 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 	moduleHostCond := condition.CreateCondition()
 	moduleHostCond.Field(common.BKAppIDField).Eq(appID)
 	moduleHostCond.Field(common.BKHostIDField).In(hostIDArr)
-	cond := util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
+	cond := moduleHostCond.ToMapStr()
 
 	var dataArr []metadata.ModuleHost
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).All(kit.Ctx, &dataArr)
@@ -429,7 +429,7 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	if len(cond) == 0 {
 		return nil, nil
 	}
-	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), kit.SupplierAccount)
+	cond = moduleHostCond.ToMapStr()
 
 	// 根据约束cond,获得去重后的主机id.
 	ret, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)

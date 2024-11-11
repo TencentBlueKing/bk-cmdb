@@ -229,7 +229,6 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	if len(andCond) > 0 {
 		cond[common.BKDBAND] = andCond
 	}
-	util.SetModOwner(cond, kit.SupplierAccount)
 
 	resultAttrs := make([]metadata.Attribute, 0)
 	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
@@ -774,7 +773,7 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 	fields := []string{common.BKFieldID, common.BKPropertyIDField, common.BKPropertyTypeField,
 		common.BKObjIDField, common.BKAppIDField}
 
-	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	condMap := cond.ToMapStr()
 	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(kit.Ctx, &resultAttrs)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", kit.Rid, err.Error())
@@ -914,8 +913,6 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 				}
 			}
 
-			cond = util.SetQueryOwner(cond, kit.SupplierAccount)
-
 			collectionName := common.GetInstTableName(object, kit.SupplierAccount)
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
@@ -1046,7 +1043,6 @@ func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metada
 		cond := mapstr.MapStr{
 			common.BKAttributeIDField: mapstr.MapStr{common.BKDBIN: attrIDs},
 		}
-		cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 		switch objID {
 		case common.BKInnerObjIDSet:
 			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(kit.Ctx, cond); err != nil {
@@ -1067,7 +1063,6 @@ const pageSize = 2000
 
 func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
 	cond := mapstr.MapStr{}
-	cond = util.SetQueryOwner(cond, ownerID)
 	// biz id = 0 means all the hosts.
 	// TODO: optimize when the filed is a public filed in all the host instances. handle with page
 	if info.bizID != 0 {
@@ -1147,7 +1142,6 @@ func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string
 		return nil
 	}
 	cond := make(map[string]interface{})
-	cond = util.SetQueryOwner(cond, ownerID)
 	cond[common.BKDBOR] = orCond
 	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(ctx, cond); err != nil {
 		blog.ErrorJSON("cleanHostApplyField failed, err: %s, cond: %s", err, cond)
@@ -1213,7 +1207,6 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attr metadata.Attribute) error
 
 	dbAttrs := make([]metadata.Attribute, 0)
 	cond := mapstr.MapStr{common.BKObjIDField: attr.ObjectID}
-	util.SetQueryOwner(cond, kit.SupplierAccount)
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
 		blog.Errorf("get %s attributes failed, err: %v, rid: %s", attr.ObjectID, err, kit.Rid)
 		return err
@@ -1316,7 +1309,6 @@ func getObjectAttrTemplateID(kit *rest.Kit, attrID int64) (int64, error) {
 	cond := mapstr.MapStr{
 		common.BKFieldID: attrID,
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	attrs := make([]metadata.Attribute, 0)
 
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Fields(common.BKTemplateID).
@@ -1339,7 +1331,6 @@ func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*met
 	attrCond := mapstr.MapStr{
 		common.BKFieldID: templateID,
 	}
-	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
 
 	templateAttr := make([]metadata.FieldTemplateAttr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(fields...).
@@ -1504,7 +1495,6 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 	case common.FieldTypeIDRule:
 		dbAttrs := make([]metadata.Attribute, 0)
 		cond := mapstr.MapStr{common.BKObjIDField: dbAttributeArr[0].ObjectID}
-		util.SetQueryOwner(cond, kit.SupplierAccount)
 		if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
 			blog.Errorf("get %s attributes failed, err: %v, rid: %s", dbAttributeArr[0].ObjectID, err, kit.Rid)
 			return err
@@ -1678,7 +1668,7 @@ func (m *modelAttribute) checkAttributeInUnique(kit *rest.Kit, objIDPropertyIDAr
 	}
 
 	cond.Or(orCondArr...)
-	condMap := util.SetQueryOwner(cond.ToMapStr(), kit.SupplierAccount)
+	condMap := cond.ToMapStr()
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).Count(kit.Ctx)
 	if err != nil {
@@ -1706,7 +1696,7 @@ func (m *modelAttribute) delIDRuleUnique(kit *rest.Kit, objIDPropertyIDArr map[s
 	}
 
 	cond.Or(orCondArr...)
-	condMap := util.SetModOwner(cond.ToMapStr(), kit.SupplierAccount)
+	condMap := cond.ToMapStr()
 
 	if _, err := mongodb.Client().Table(common.BKTableNameObjUnique).DeleteMany(kit.Ctx, condMap); err != nil {
 		blog.ErrorJSON("delete unique failed, cond: %+v, err: %v, rid: %s", condMap, err, kit.Rid)
@@ -1768,7 +1758,6 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
-	opt = util.SetModOwner(opt, attribute.OwnerID)
 	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Count(kit.Ctx)
 	if err != nil {
 		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", kit.Rid, err)

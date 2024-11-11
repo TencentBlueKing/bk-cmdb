@@ -186,7 +186,6 @@ func (t *genericTransfer) validParameterInst(kit *rest.Kit) errors.CCErrorCoder 
 	}
 
 	appCond := map[string]interface{}{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}}
-	appCond = util.SetQueryOwner(appCond, kit.SupplierAccount)
 
 	cnt, err := t.countByCond(kit, appCond, common.BKTableNameBaseApp)
 	if err != nil {
@@ -277,7 +276,6 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 	if t.crossBizTransfer {
 		hostCond[common.BKCloudHostIdentifierField] = mapstr.MapStr{common.BKDBNE: true}
 	}
-	hostCond = util.SetQueryOwner(hostCond, kit.SupplierAccount)
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
 	if err != nil {
@@ -315,7 +313,6 @@ func (t *genericTransfer) validHostsBelongBiz(kit *rest.Kit, hostIDs []int64) er
 
 	relationCond := map[string]interface{}{common.BKAppIDField: map[string]interface{}{common.BKDBNIN: bizIDs},
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	relationCond = util.SetQueryOwner(relationCond, kit.SupplierAccount)
 
 	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
 	if err != nil {
@@ -344,7 +341,6 @@ func (t *genericTransfer) validHostsRelatedToKube(kit *rest.Kit, hostIDs []int64
 	}
 
 	cond := mapstr.MapStr{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	cnt, err := mongodb.Client().Table(kubetypes.BKTableNameBaseNode).Find(cond).Count(kit.Ctx)
 	if err != nil {
@@ -426,13 +422,12 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 		common.BKHostIDField:   map[string]interface{}{common.BKDBIN: hostIDs},
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: t.moduleIDArr},
 	}
-	condMap := util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	relationArr := make([]metadata.ModuleHost, 0)
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condMap).Fields(common.BKHostIDField,
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(common.BKHostIDField,
 		common.BKModuleIDField).All(kit.Ctx, &relationArr)
 	if err != nil {
-		blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap,
+		blog.Errorf("retrieve original data error. err: %v, cond: %s, rid: %s", err, cond,
 			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -629,7 +624,7 @@ func (t *genericTransfer) getInnerModuleIDArr(kit *rest.Kit) errors.CCErrorCoder
 	} else {
 		moduleCond[common.BKAppIDField] = t.bizID
 	}
-	cond := util.SetQueryOwner(moduleCond, kit.SupplierAccount)
+	cond := moduleCond
 
 	moduleIDArr, err := mongodb.Client().Table(common.BKTableNameBaseModule).Distinct(kit.Ctx, common.BKModuleIDField,
 		cond)
@@ -687,7 +682,7 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(appID)
 	moduleConds.Field(common.BKModuleIDField).In(moduleID)
-	cond := util.SetQueryOwner(moduleConds.ToMapStr(), kit.SupplierAccount)
+	cond := moduleConds.ToMapStr()
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
 	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx,
@@ -703,7 +698,6 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 
 func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableName string) (uint64,
 	errors.CCErrorCoder) {
-	conds = util.SetQueryOwner(conds, kit.SupplierAccount)
 	cnt, err := mongodb.Client().Table(tableName).Find(conds).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds,
