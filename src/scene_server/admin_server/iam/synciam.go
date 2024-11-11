@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/pkg/tenant"
 	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -31,7 +32,6 @@ import (
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 const (
@@ -46,7 +46,7 @@ type syncor struct {
 	// 同步周期
 	SyncIAMPeriodMinutes int
 	// db mongodb实例连接，用于判断是否数据库初始化已完成，防止和模型实例权限迁移的upgrader冲突
-	db dal.RDB
+	db dal.ShardingDB
 }
 
 // NewSyncor TODO
@@ -64,7 +64,7 @@ func (s *syncor) SetSyncIAMPeriod(periodMinutes int) {
 }
 
 // SetDB set db
-func (s *syncor) SetDB(db dal.RDB) {
+func (s *syncor) SetDB(db dal.ShardingDB) {
 	s.db = db
 }
 
@@ -105,7 +105,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 	rid := util.GenerateRID()
 	for dbReady := false; !dbReady; {
 		var err error
-		dbReady, err = upgrader.DBReady(context.Background(), s.db)
+		dbReady, err = upgrader.DBReady(context.Background(), s.db.IgnoreTenant())
 		if err != nil {
 			blog.Errorf("sync iam, check whether db initialization is complete failed, err: %v, rid: %s", err, rid)
 			time.Sleep(5 * time.Second)
@@ -150,7 +150,24 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 }
 
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error) {
+func GetCustomObjects(ctx context.Context, db dal.ShardingDB) ([]metadata.Object, error) {
+	allObjs := make([]metadata.Object, 0)
+
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		objects, err := GetTenantCustomObjects(ctx, db.Tenant(tenantID))
+		if err != nil {
+			blog.Errorf("get %s custom objects failed, err: %v", tenantID, err)
+			return err
+		}
+		allObjs = append(allObjs, objects...)
+		return nil
+	})
+
+	return allObjs, err
+}
+
+// GetTenantCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
+func GetTenantCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error) {
 	// get mainline objects
 	associations := make([]metadata.Association, 0)
 	filter := mapstr.MapStr{
@@ -188,7 +205,7 @@ func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error)
 	}
 
 	// 表格字段类型的object不注册到权限中心，这里需要将他们过滤出来
-	cnt, err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(nil).Count(ctx)
+	cnt, err := db.Table(common.BKTableNameModelQuoteRelation).Find(nil).Count(ctx)
 	if err != nil {
 		blog.Errorf("count cc_ModelQuoteRelation failed, err: %v", err)
 		return nil, err
@@ -200,8 +217,8 @@ func GetCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error)
 	relationObjMap := make(map[string]struct{})
 	for i := uint64(0); i < cnt; i += common.BKMaxLimitSize {
 		relations := make([]metadata.ModelQuoteRelation, 0)
-		err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(nil).Start(i).
-			Limit(common.BKMaxLimitSize).Fields(common.BKDestModelField).All(ctx, &relations)
+		err = db.Table(common.BKTableNameModelQuoteRelation).Find(nil).Start(i).Limit(common.BKMaxLimitSize).
+			Fields(common.BKDestModelField).All(ctx, &relations)
 		if err != nil {
 			blog.Errorf("list model quote relations failed, err: %v", err)
 			return nil, err

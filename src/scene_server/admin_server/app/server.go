@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package app defines admin server logics
 package app
 
 import (
@@ -57,13 +58,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.ConfigCenter = process.ConfigCenter
 	process.Service = service
 
-	if dbErr := mongodb.InitClient("", &process.Config.MongoDB); dbErr != nil {
+	if dbErr := mongodb.InitSharding("", &process.Config.MongoDB, false, process.Config.Crypto); dbErr != nil {
 		return fmt.Errorf("connect mongo server failed %s", dbErr.Error())
 	}
-	db := mongodb.Client()
+	db := mongodb.Sharding()
 	process.Service.SetDB(db)
 
-	watchDB, err := local.NewMgo(process.Config.WatchDB.GetMongoConf(), time.Minute)
+	watchDB, err := local.NewDisableDBShardingMongo(process.Config.WatchDB.GetMongoConf(), time.Minute)
 	if err != nil {
 		return fmt.Errorf("connect watch mongo server failed, err: %v", err)
 	}
@@ -112,7 +113,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	errors.SetGlobalCCError(process.Core.CCErr)
 
 	syncor := iam.NewSyncor()
-	syncor.SetDB(mongodb.Client())
+	syncor.SetDB(mongodb.Sharding())
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
 	go syncor.SyncIAM(iamCli, cache, service.Logics)
 
@@ -196,6 +197,11 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	if err != nil && auth.EnableAuthorize() {
 		blog.Errorf("parse iam error: %v", err)
 		return nil, err
+	}
+
+	process.Config.Crypto, err = cc.Crypto("crypto")
+	if err != nil {
+		return nil, fmt.Errorf("get crypto config failed, err: %v", err)
 	}
 
 	if err = parseShardingTableConfig(process); err != nil {

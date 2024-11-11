@@ -72,4 +72,5 @@ type ShardingDB interface {
 	Tenant(tenant string) DB
 	IgnoreTenant() DB
 	InitTxnManager(r redis.Client) error
+	Ping() error
 }

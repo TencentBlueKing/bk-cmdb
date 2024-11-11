@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
@@ -99,7 +100,12 @@ func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cr
 	}
 	sharding.newTenantCli = newTenantCli
 
-	if err = sharding.refreshTenantDBMap(masterMongo); err != nil {
+	err = tenant.Init(&tenant.Options{DB: sharding})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = sharding.refreshTenantDBMap(); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +113,7 @@ func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cr
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			if err = sharding.refreshTenantDBMap(masterMongo); err != nil {
+			if err = sharding.refreshTenantDBMap(); err != nil {
 				blog.Errorf("refresh tenant to db relation failed, err: %v", err)
 				continue
 			}
@@ -117,20 +123,20 @@ func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cr
 	return sharding, nil
 }
 
-func (m *ShardingMongoManager) refreshTenantDBMap(client dal.DB) error {
-	// get tenant to db map
+func (m *ShardingMongoManager) refreshTenantDBMap() error {
 	tenantDBMap := make(map[string]string)
-	relations := make([]TenantDBRelation, 0)
-	err := client.Table(common.BKTableNameTenantDBRelation).Find(nil).All(context.Background(), &relations)
-	if err != nil {
-		return fmt.Errorf("get tenant db relations failed, err: %v", err)
-	}
-	for _, relation := range relations {
+	for _, relation := range tenant.GetAllTenants() {
 		tenantDBMap[relation.TenantID] = relation.Database
 	}
 
 	tenantCli := make(map[string]*mongoClient)
 	for tenant, db := range tenantDBMap {
+		// TODO add default tenant db client for compatible, remove this later
+		if tenant == common.BKDefaultOwnerID {
+			tenantCli[tenant] = m.masterCli
+			continue
+		}
+
 		client, exists := m.dbClientMap[db]
 		if !exists {
 			return fmt.Errorf("tenant %s related db %s config not found", tenant, db)
@@ -163,11 +169,11 @@ func (m *ShardingMongoManager) Tenant(tenant string) dal.DB {
 	}
 
 	return &Mongo{
-		tenant:         tenant,
-		mongoClient:    client,
-		tm:             txnManager,
-		conf:           m.conf,
-		enableSharding: true,
+		tenant:      tenant,
+		mongoClient: client,
+		tm:          txnManager,
+		conf:        m.conf,
+		// TODO: right now enableSharding is not set for compatible
 	}
 }
 
@@ -179,15 +185,88 @@ func (m *ShardingMongoManager) IgnoreTenant() dal.DB {
 	}
 
 	return &Mongo{
-		ignoreTenant:   true,
-		mongoClient:    m.masterCli,
-		tm:             txnManager,
-		conf:           m.conf,
-		enableSharding: true,
+		ignoreTenant: true,
+		mongoClient:  m.masterCli,
+		tm:           txnManager,
+		conf:         m.conf,
 	}
 }
 
 // InitTxnManager TxnID management of initial transaction
 func (m *ShardingMongoManager) InitTxnManager(r redis.Client) error {
 	return m.tm.InitTxnManager(r)
+}
+
+// Ping all sharding db clients
+func (m *ShardingMongoManager) Ping() error {
+	for uuid, client := range m.dbClientMap {
+		err := client.dbc.Ping(context.Background(), nil)
+		if err != nil {
+			return fmt.Errorf("ping db %s failed, err: %v", uuid, err)
+		}
+	}
+	return nil
+}
+
+// DisableDBShardingMongo is the disabled db sharding mongo db manager, right now only watch db sharding is disabled
+type DisableDBShardingMongo struct {
+	client *mongoClient
+	tm     *TxnManager
+	conf   *mongoCliConf
+}
+
+// NewDisableDBShardingMongo returns new disabled db sharding mongo db manager
+func NewDisableDBShardingMongo(config MongoConf, timeout time.Duration) (dal.ShardingDB, error) {
+	client, err := newMongoClient(true, "", config, timeout)
+	if err != nil {
+		return nil, fmt.Errorf("new mongo client failed, err: %v", err)
+	}
+
+	db := &DisableDBShardingMongo{
+		client: client,
+		tm:     new(TxnManager),
+		conf:   &mongoCliConf{disableInsert: config.DisableInsert},
+	}
+
+	masterMongo := &Mongo{ignoreTenant: true, mongoClient: client}
+	db.conf.idGenStep, err = masterMongo.initIDGenerator(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// Tenant returns the db client for tenant
+func (m *DisableDBShardingMongo) Tenant(tenant string) dal.DB {
+	if tenant == "" {
+		return &errDB{err: errors.New("tenant is not set")}
+	}
+
+	return &Mongo{
+		tenant:      tenant,
+		mongoClient: m.client,
+		tm:          m.tm,
+		conf:        m.conf,
+	}
+}
+
+// IgnoreTenant returns the master db client that do not use tenant
+func (m *DisableDBShardingMongo) IgnoreTenant() dal.DB {
+	return &Mongo{
+		ignoreTenant: true,
+		mongoClient:  m.client,
+		tm:           m.tm,
+		conf:         m.conf,
+	}
+}
+
+// InitTxnManager TxnID management of initial transaction
+func (m *DisableDBShardingMongo) InitTxnManager(r redis.Client) error {
+	return m.tm.InitTxnManager(r)
+}
+
+// Ping db client
+func (m *DisableDBShardingMongo) Ping() error {
+	return m.client.dbc.Ping(context.Background(), nil)
 }

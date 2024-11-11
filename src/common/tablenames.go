@@ -122,8 +122,8 @@ const (
 	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
 	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
 
-	// BKTableNameTenantDBRelation is the tenant to database relation table
-	BKTableNameTenantDBRelation = "TenantDBRelation"
+	// BKTableNameTenant is the tenant table
+	BKTableNameTenant = "Tenant"
 
 	// BKTableNameTenantTemplate is the tenant template(public data that needs to be initialized for all tenants) table
 	BKTableNameTenantTemplate = "TenantTemplate"
@@ -290,7 +290,7 @@ func GetInstObjIDByTableName(collectionName, supplierAccount string) (string, er
 var platformTableMap = map[string]struct{}{
 	BKTableNameSystem:           {},
 	BKTableNameIDgenerator:      {},
-	BKTableNameTenantDBRelation: {},
+	BKTableNameTenant:           {},
 	BKTableNameTenantTemplate:   {},
 	BKTableNamePlatformAuditLog: {},
 	BKTableNameWatchToken:       {},

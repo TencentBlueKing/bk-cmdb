@@ -42,7 +42,8 @@ func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response
 	ret := struct {
 		Config string `json:"config"`
 	}{}
-	err := s.db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx,
+		&ret)
 	if err != nil {
 		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -95,7 +96,7 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 		common.LastTimeField:         time.Now(),
 	}
 
-	err = s.db.Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
+	err = s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if err != nil {
 		blog.Errorf("UpdateConfigAdmin failed, update err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -195,7 +196,8 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 	}
 
 	idGens := make([]local.Idgen, 0)
-	err := s.db.Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id", "SequenceID").All(s.ctx, &idGens)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
+		"SequenceID").All(s.ctx, &idGens)
 	if err != nil {
 		blog.Errorf("get id generator data failed, err: %v, cond: %+v, rid: %s", err, idGenCond, rid)
 		return err
@@ -222,7 +224,7 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.PlatformSettingConfig,
 	header http.Header, rid string) error {
 
-	id, err := s.db.NextSequence(s.ctx, common.BKTableNameAuditLog)
+	id, err := s.db.IgnoreTenant().NextSequence(s.ctx, common.BKTableNameAuditLog)
 	if err != nil {
 		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, rid)
 		return err
@@ -242,7 +244,7 @@ func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.Plat
 		RequestID:       rid,
 	}
 
-	if err = s.db.Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
+	if err = s.db.IgnoreTenant().Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
 		blog.Errorf("save audit log failed, err: %v, audit: %+v, rid: %s", err, audit, rid)
 		return err
 	}
@@ -258,7 +260,7 @@ func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, 
 	bizCountCond := map[string]interface{}{
 		common.BKAppIDField: config.Backend.SnapshotBizID,
 	}
-	count, err := s.db.Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
+	count, err := s.db.IgnoreTenant().Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
 	if err != nil {
 		blog.Errorf("update config to db failed, count biz error, err: %v, condition: %v, rid: %s", err,
 			bizCountCond, rid)
@@ -283,7 +285,7 @@ func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, 
 		common.LastTimeField:         time.Now(),
 	}
 
-	err = s.db.Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
+	err = s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
 	if err != nil {
 		return err
 	}
@@ -297,7 +299,8 @@ func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConf
 	cond := map[string]interface{}{"_id": common.ConfigAdminID}
 	ret := make(map[string]interface{})
 
-	err := s.db.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx,
+		&ret)
 	if err != nil {
 		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, rid)
 		return nil, err
@@ -335,7 +338,8 @@ func (s *Service) addIDGenInfoToConf(conf *metadata.PlatformSettingConfig, rid s
 	}
 
 	idGens := make([]local.Idgen, 0)
-	err := s.db.Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id", "SequenceID").All(s.ctx, &idGens)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
+		"SequenceID").All(s.ctx, &idGens)
 	if err != nil {
 		blog.Errorf("list id generators failed, err: %v, cond: %+v, rid: %s", err, idGenCond, rid)
 		return nil, err

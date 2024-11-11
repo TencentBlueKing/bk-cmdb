@@ -17,13 +17,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/emicklei/go-restful/v3"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 var (
@@ -50,10 +50,9 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 		common.HostCrossBizField: common.HostCrossBizValue + ownerID,
 	}
 
-	err := s.db.Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if nil != err {
-		blog.Errorf("set system configuration on table %s failed, err: %+v, rid: %s", common.BKTableNameSystem, err,
-			rid)
+		blog.Errorf("set system configuration on table %s failed, err: %v, rid: %s", common.BKTableNameSystem, err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Error(common.CCErrCommMigrateFailed),
 		}
@@ -100,9 +99,9 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 		},
 	}
 
-	err := s.db.Table(common.BKTableNameSystem).Upsert(s.ctx, cond, data)
+	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Upsert(s.ctx, cond, data)
 	if err != nil {
-		blog.ErrorJSON("UserConfigSwitch set key %s value %s error. err:%s, rid:%s", key, canModify, err, rid)
+		blog.ErrorJSON("set key %s value %s failed, err: %v, rid: %s", key, canModify, err, rid)
 		resp.WriteError(http.StatusBadGateway, defErr.Error(common.CCErrCommDBUpdateFailed))
 		return
 	}

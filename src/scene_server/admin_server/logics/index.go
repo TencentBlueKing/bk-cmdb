@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -39,8 +40,8 @@ import (
  如何展示错误给用户
 */
 
-// DBSync TODO
-func DBSync(e *backbone.Engine, db dal.RDB, options options.Config) {
+// DBSync do sync db table index background task
+func DBSync(e *backbone.Engine, db dal.ShardingDB, options options.Config) {
 	f := func() {
 		defaultDBTable = db
 		fmt.Println(defaultDBTable)
@@ -56,20 +57,23 @@ func DBSync(e *backbone.Engine, db dal.RDB, options options.Config) {
 var (
 	once sync.Once
 
-	defaultDBTable dal.RDB
+	defaultDBTable dal.ShardingDB
 )
+
+type shardingDBTable struct {
+	db                         dal.ShardingDB
+	preCleanRedundancyTableMap map[string]map[string]struct{}
+	rid                        string
+}
 
 type dbTable struct {
 	db                         dal.RDB
 	preCleanRedundancyTableMap map[string]struct{}
 	rid                        string
-	options                    options.Config
 }
 
-// RunSyncDBTableIndex TODO
-func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
-	options options.Config) {
-
+// RunSyncDBTableIndex run sync db table index task
+func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.ShardingDB, options options.Config) {
 	rid := util.GenerateRID()
 
 	// do not sync db table index if this admin-server is for ci,
@@ -81,24 +85,21 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 
 	for dbReady := false; !dbReady; {
 		// 等待数据库初始化
-		if !dbReady {
-			var err error
-			dbReady, err = upgrader.DBReady(ctx, db)
-			if err != nil {
-				blog.Errorf("Check whether the db initialization is complete error. err: %s rid: %s", err.Error(), rid)
-			}
-			if !dbReady {
-				blog.Errorf("db not initialization is complete, rid: %s", rid)
-			}
-
-			time.Sleep(20 * time.Second)
+		var err error
+		dbReady, err = upgrader.DBReady(ctx, db.IgnoreTenant())
+		if err != nil {
+			blog.Errorf("check whether the db initialization is complete failed, err: %v, rid: %s", err, rid)
 		}
+		if !dbReady {
+			blog.Errorf("db initialization is not complete, rid: %s", rid)
+		}
+		time.Sleep(20 * time.Second)
 	}
 
-	syncWorker := func(dt *dbTable, isTable bool) {
+	syncWorker := func(st *shardingDBTable, isTable bool) {
 		for {
 			rid := util.GenerateRID()
-			dt.rid = rid
+			st.rid = rid
 			blog.Infof("start sync table or index worker rid: %s", rid)
 
 			if !e.ServiceManageInterface.IsMaster() {
@@ -108,34 +109,54 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.RDB,
 			}
 
 			if isTable {
-				blog.Infof("start object sharding table rid: %s", rid)
-				// 先处理模型实例和关联关系表
-				if err := dt.syncModelShardingTable(ctx); err != nil {
-					blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
-				}
-				blog.Infof("end sync table rid: %s", rid)
-				time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
+				preCleanRedundancyTableMap := make(map[string]map[string]struct{})
+				err := tenant.ExecForAllTenants(func(tenantID string) error {
+					tenantRid := fmt.Sprintf("%s-%s", tenantID, rid)
+					blog.Infof("start object sharding table rid: %s", tenantRid)
 
-			} else {
-				blog.Infof("start table common index rid: %s", rid)
-				if err := dt.syncIndexes(ctx); err != nil {
-					blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+					// 先处理模型实例和关联关系表
+					dt := &dbTable{
+						db:                         st.db.Tenant(tenantID),
+						preCleanRedundancyTableMap: st.preCleanRedundancyTableMap[tenantID],
+						rid:                        tenantRid,
+					}
+					if err := dt.syncModelShardingTable(ctx); err != nil {
+						blog.Errorf("model table sync failed, err: %v, rid: %s", err, tenantRid)
+						return err
+					}
+					preCleanRedundancyTableMap[tenantID] = dt.preCleanRedundancyTableMap
+
+					blog.Infof("end sync table rid: %s", tenantRid)
+					return nil
+				})
+				if err != nil {
+					blog.Errorf("model table sync failed, err: %v, rid: %s", err, st.rid)
+					time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
+					continue
 				}
-				blog.Infof("end sync table index rid: %s", rid)
-				time.Sleep(time.Minute * time.Duration(options.ShardingTable.IndexesInterval))
+				st.preCleanRedundancyTableMap = preCleanRedundancyTableMap
+				time.Sleep(time.Second * time.Duration(options.ShardingTable.TableInterval))
+				continue
 			}
 
+			blog.Infof("start table common index rid: %s", rid)
+			if err := st.syncIndexes(ctx); err != nil {
+				blog.Errorf("model table sync failed, err: %v, rid: %s", err, st.rid)
+				time.Sleep(time.Minute * time.Duration(options.ShardingTable.IndexesInterval))
+				continue
+			}
+			blog.Infof("end sync table index rid: %s", rid)
+			time.Sleep(time.Minute * time.Duration(options.ShardingTable.IndexesInterval))
 		}
 	}
 
-	dtTable := &dbTable{db: db, rid: rid, options: options}
+	dtTable := &shardingDBTable{db: db, rid: rid, preCleanRedundancyTableMap: make(map[string]map[string]struct{})}
 	go syncWorker(dtTable, true)
-	dtIndex := &dbTable{db: db, rid: rid, options: options}
+	dtIndex := &shardingDBTable{db: db, rid: rid}
 	go syncWorker(dtIndex, false)
-
 }
 
-// RunSyncDBIndex TODO
+// RunSyncDBIndex run sync db index task
 func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 	ccErr := e.CCErr.CreateDefaultCCErrorIf("en")
@@ -145,9 +166,9 @@ func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 		return ccErr.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// defaultDBTable DBSync 负责在启动时候初始化
-	dbReady, err := upgrader.DBReady(ctx, defaultDBTable)
+	dbReady, err := upgrader.DBReady(ctx, defaultDBTable.IgnoreTenant())
 	if err != nil {
-		blog.Errorf("Check whether the db initialization is complete error. err: %s rid: %s", err.Error(), rid)
+		blog.Errorf("check whether the db initialization is complete failed, err: %v, rid: %s", err, rid)
 		return ccErr.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if !dbReady {
@@ -156,10 +177,10 @@ func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 
 	}
 
-	dt := &dbTable{db: defaultDBTable, rid: rid}
+	dt := &shardingDBTable{db: defaultDBTable, rid: rid}
 	blog.Infof("start table common index rid: %s", rid)
 	if err := dt.syncIndexes(ctx); err != nil {
-		blog.Errorf("model table sync error. err: %s, rid: %s", err.Error(), dt.rid)
+		blog.Errorf("model table sync failed, err: %v, rid: %s", err, dt.rid)
 	}
 	blog.Infof("end sync table index rid: %s", rid)
 
@@ -167,67 +188,75 @@ func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 }
 
 // syncIndexes 同步表中定义的索引
-func (dt *dbTable) syncIndexes(ctx context.Context) error {
-	if err := dt.syncDBTableIndexes(ctx); err != nil {
-		blog.Warnf("sync table index to db error. err: %s, rid: %s", err.Error(), dt.rid)
+func (st *shardingDBTable) syncIndexes(ctx context.Context) error {
+	if err := st.syncDBTableIndexes(ctx); err != nil {
+		blog.Warnf("sync table index to db failed, err: %v, rid: %s", err, st.rid)
 		// 不影响后需任务
 	}
 
 	return nil
-
 }
 
-func (dt *dbTable) syncDBTableIndexes(ctx context.Context) error {
+func (st *shardingDBTable) syncDBTableIndexes(ctx context.Context) error {
 	deprecatedIndexNames := index.DeprecatedIndexName()
 	tableIndexes := index.TableIndexes()
 
-	dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
+	platDBTable := &dbTable{db: st.db.IgnoreTenant(), rid: "platform-" + st.rid}
+	for _, tableName := range common.PlatformTables() {
+		indexes, exists := tableIndexes[tableName]
+		if !exists {
+			continue
+		}
+
+		blog.Infof("start sync table(%s) index, rid: %s", tableName, platDBTable.rid)
+		if err := platDBTable.syncIndexesToDB(ctx, tableName, indexes, deprecatedIndexNames[tableName]); err != nil {
+			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, platDBTable.rid)
+			continue
+		}
+	}
+
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		dt := &dbTable{db: st.db.Tenant(tenantID), rid: tenantID + "-" + st.rid}
+
+		dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
+		if err != nil {
+			blog.Errorf("find db logic unique failed, err: %v, rid: %s", err, dt.rid)
+			return err
+		}
+
+		for tableName, indexes := range tableIndexes {
+			if common.IsPlatformTable(tableName) {
+				continue
+			}
+
+			blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
+			deprecatedTableIndexNames := deprecatedIndexNames[tableName]
+
+			indexes = append(indexes, dtIndexesMap[tableName]...)
+			delete(dtIndexesMap, tableName)
+			if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
+				blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
+				continue
+			}
+		}
+
+		for tableName, indexes := range dtIndexesMap {
+			blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
+			deprecatedTableIndexNames := deprecatedIndexNames[tableName]
+
+			if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
+				blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
+				continue
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		blog.ErrorJSON("find db logic unique error. err: %s, rid: %s", err, dt.rid)
+		blog.Errorf("sync db table indexes failed, err: %v, rid: %s", err, st.rid)
 		return err
 	}
 
-	for tableName, indexes := range tableIndexes {
-		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
-		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
-
-		indexes = append(indexes, dtIndexesMap[tableName]...)
-		delete(dtIndexesMap, tableName)
-		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
-			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
-			continue
-		}
-	}
-
-	for tableName, indexes := range dtIndexesMap {
-		blog.Infof("start sync table(%s) index, rid: %s", tableName, dt.rid)
-		deprecatedTableIndexNames := deprecatedIndexNames[tableName]
-
-		if err := dt.syncIndexesToDB(ctx, tableName, indexes, deprecatedTableIndexNames); err != nil {
-			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, dt.rid)
-			continue
-		}
-	}
-
 	return nil
-}
-
-// findObjAttrs 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
-func (dt *dbTable) findObjAttrs(ctx context.Context, objID string) ([]metadata.Attribute, error) {
-	// 获取字段类型,只需要共有字段
-	attrFilter := map[string]interface{}{
-		common.BKObjIDField: objID,
-		common.BKAppIDField: 0,
-	}
-	attrs := make([]metadata.Attribute, 0)
-	fields := []string{common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID}
-	if err := dt.db.Table(common.BKTableNameObjAttDes).Find(attrFilter).Fields(fields...).All(ctx, &attrs); err != nil {
-		newErr := fmt.Errorf("get obj(%s) property error. err: %s", objID, err.Error())
-		blog.Errorf("%s, rid: %s", newErr.Error(), dt.rid)
-		return nil, newErr
-	}
-
-	return attrs, nil
 }
 
 func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
@@ -655,6 +684,24 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 	}
 
 	return indexes, nil
+}
+
+// findObjAttrs 返回的数据只有common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID 三个字段
+func (dt *dbTable) findObjAttrs(ctx context.Context, objID string) ([]metadata.Attribute, error) {
+	// 获取字段类型,只需要共有字段
+	attrFilter := map[string]interface{}{
+		common.BKObjIDField: objID,
+		common.BKAppIDField: 0,
+	}
+	attrs := make([]metadata.Attribute, 0)
+	fields := []string{common.BKPropertyIDField, common.BKPropertyTypeField, common.BKFieldID}
+	if err := dt.db.Table(common.BKTableNameObjAttDes).Find(attrFilter).Fields(fields...).All(ctx, &attrs); err != nil {
+		newErr := fmt.Errorf("get obj(%s) property failed, err: %v", objID, err)
+		blog.Errorf("%v, rid: %s", newErr, dt.rid)
+		return nil, newErr
+	}
+
+	return attrs, nil
 }
 
 // ErrDropIndexNameNotFound TODO

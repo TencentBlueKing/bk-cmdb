@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/cryptor"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/app/options"
@@ -29,17 +29,17 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
-// BackgroundTask TODO
+// BackgroundTask run sync db table index background task
 func (s *Service) BackgroundTask(options options.Config) error {
-
-	mongoConf, err := cc.Mongo("mongodb")
+	crypto, err := cryptor.NewCrypto(options.Crypto)
 	if err != nil {
-		return err
+		return fmt.Errorf("new db index mongo crypto failed, err: %v", err)
 	}
 
 	// db 语句的执行时间设置为never timeout
+	mongoConf := options.MongoDB
 	mongoConf.SocketTimeout = 0
-	db, err := local.NewMgo(mongoConf.GetMongoConf(), time.Minute)
+	db, err := local.NewShardingMongo(mongoConf.GetMongoConf(), time.Minute, crypto)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
