@@ -140,7 +140,6 @@ func (p *kubeOperation) getWlInfo(kit *rest.Kit, wlIDMap map[types.WorkloadType]
 		filter := map[string]interface{}{
 			types.BKIDField: mapstr.MapStr{common.BKDBIN: ids},
 		}
-		util.SetQueryOwner(filter, kit.SupplierAccount)
 
 		kubeField := []string{types.BKIDField, types.KubeNameField, types.BKBizIDField, types.BKClusterIDFiled,
 			types.ClusterUIDField, types.BKNamespaceIDField, types.NamespaceField}
@@ -279,7 +278,6 @@ func (p *kubeOperation) getNodeInfo(kit *rest.Kit, nodeIDs []int64) (map[int64]t
 	filter := map[string]interface{}{
 		types.BKIDField: mapstr.MapStr{common.BKDBIN: nodeIDs},
 	}
-	util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	fields := []string{types.BKIDField, types.KubeNameField, types.BKBizIDField, types.BKClusterIDFiled,
 		types.HasPodField}
@@ -319,7 +317,6 @@ func (p *kubeOperation) getNodeRelatedInfo(kit *rest.Kit, data []types.OneNodeCr
 	clusterFilter := map[string]interface{}{
 		types.BKIDField: map[string]interface{}{common.BKDBIN: clusterIDs},
 	}
-	util.SetModOwner(clusterFilter, kit.SupplierAccount)
 
 	clusters := make([]types.Cluster, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).
@@ -338,7 +335,6 @@ func (p *kubeOperation) getNodeRelatedInfo(kit *rest.Kit, data []types.OneNodeCr
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
 	}
-	util.SetModOwner(hostFilter, kit.SupplierAccount)
 
 	relations := make([]metadata.ModuleHost, 0)
 	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(hostFilter).

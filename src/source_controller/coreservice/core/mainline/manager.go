@@ -94,7 +94,6 @@ func (im *InstanceMainline) LoadSetInstances(ctx context.Context, header http.He
 	filter := map[string]interface{}{
 		common.BKAppIDField: im.bkBizID,
 	}
-	filter = util.SetQueryOwner(filter, httpheader.GetSupplierAccount(header))
 	err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).All(ctx, &im.setInstances)
 	if err != nil {
 		blog.Errorf("get set instances by business:%d failed, %+v, cond: %#v, rid: %s", im.bkBizID, err, filter, rid)
@@ -113,7 +112,6 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 	filter := map[string]interface{}{
 		common.BKAppIDField: im.bkBizID,
 	}
-	filter = util.SetQueryOwner(filter, httpheader.GetSupplierAccount(header))
 	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).All(ctx, &im.moduleInstances)
 	if err != nil {
 		blog.Errorf("get module instances by business:%d failed, err:%v, cond: %#v, rid: %s", im.bkBizID, err, filter,
@@ -141,7 +139,6 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 			common.BKObjIDField: objectID,
 			common.BKAppIDField: im.bkBizID,
 		}
-		filter = util.SetQueryOwner(filter, supplierAccount)
 
 		mainlineInstances := []mapstr.MapStr{}
 
@@ -176,7 +173,6 @@ func (im *InstanceMainline) ConstructBizTopoInstance(ctx context.Context, header
 	bizFilter := map[string]interface{}{
 		common.BKAppIDField: im.bkBizID,
 	}
-	bizFilter = util.SetQueryOwner(bizFilter, httpheader.GetSupplierAccount(header))
 	err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(bizFilter).One(ctx, &im.businessInstance)
 	if err != nil {
 		blog.Errorf("get business instances by business:%d failed, err: %+v, cond: %#v, rid: %s", im.bkBizID, err, rid)
@@ -345,7 +341,6 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 		filter := map[string]interface{}{
 			common.BKInstIDField: topoInstance.ParentInstanceID,
 		}
-		filter = util.SetQueryOwner(filter, supplierAccount)
 
 		missedInstances := make([]mapstr.MapStr, 0)
 
@@ -355,7 +350,8 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 			All(ctx, &missedInstances)
 
 		if err != nil {
-			blog.Errorf("get common instances with ID:%d failed, %+v, rid: %s", topoInstance.ParentInstanceID, err, rid)
+			blog.Errorf("get common instances with ID failed, err: %v, ID: %d, rid: %s", err,
+				topoInstance.ParentInstanceID, rid)
 			return err
 		}
 		blog.V(5).Infof("get missed instances by id:%d results: %+v, rid: %s", topoInstance.ParentInstanceID,
@@ -455,7 +451,6 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 						common.BKObjIDField:  parentObjectID,
 						common.BKInstIDField: topoInstance.ParentInstanceID,
 					}
-					cond = util.SetQueryOwner(cond, supplierAccount)
 
 					inst := mapstr.MapStr{}
 					err := mongodb.Client().

@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -43,7 +42,6 @@ func (mm *ModelMainline) loadMainlineAssociations(ctx context.Context, header ht
 	filter := map[string]interface{}{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
-	filter = util.SetQueryOwner(filter, httpheader.GetSupplierAccount(header))
 	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(filter).All(ctx, &mm.associations)
 	if err != nil {
 		blog.Errorf("query topo model mainline association from db failed, %+v, rid: %s", err, rid)

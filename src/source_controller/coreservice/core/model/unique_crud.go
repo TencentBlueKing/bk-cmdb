@@ -151,7 +151,6 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	filter := map[string]interface{}{
 		common.BKFieldID: id,
 	}
-	filter = util.SetModOwner(filter, kit.SupplierAccount)
 
 	oldUnique := metadata.ObjectUnique{}
 	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(filter).One(kit.Ctx, &oldUnique); err != nil {
@@ -202,10 +201,9 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	cond.Field(common.BKFieldID).Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	fCond := cond.ToMapStr()
-	condMap := util.SetModOwner(fCond, kit.SupplierAccount)
 
 	unique := metadata.ObjectUnique{}
-	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).One(kit.Ctx, &unique)
+	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(fCond).One(kit.Ctx, &unique)
 	if nil != err {
 		blog.Errorf("find unique index raw: %#v, err: %v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -264,7 +262,6 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	attCond.Field(common.BKObjIDField).Eq(objID)
 	attCond.Field(common.BKFieldID).In(propertyIDs)
 	fCond := attCond.ToMapStr()
-	fCond = util.SetQueryOwner(fCond, kit.SupplierAccount)
 
 	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
 	if err != nil {
@@ -384,7 +381,7 @@ func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, rule
 	// get all exist uniques
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(objID)
-	cond := util.SetQueryOwner(uniqueCond.ToMapStr(), kit.SupplierAccount)
+	cond := uniqueCond.ToMapStr()
 	existUniques := make([]metadata.ObjectUnique, 0)
 	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
 	if err != nil {

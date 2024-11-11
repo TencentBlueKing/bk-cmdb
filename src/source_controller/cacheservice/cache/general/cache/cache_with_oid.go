@@ -110,7 +110,6 @@ func getDataByOid[T any](table string) dataGetterByKeys {
 		cond := mapstr.MapStr{
 			common.MongoMetaID: mapstr.MapStr{common.BKDBIN: oids},
 		}
-		cond = setQueryOwner(cond, opt.BasicFilter)
 
 		dbOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
 
@@ -168,7 +167,6 @@ func listDataWithOid[T any](table string) dataLister {
 				cond[common.MongoMetaID] = mapstr.MapStr{common.BKDBGT: oid}
 			}
 		}
-		cond = setQueryOwner(cond, opt.BasicFilter)
 
 		dbOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
 

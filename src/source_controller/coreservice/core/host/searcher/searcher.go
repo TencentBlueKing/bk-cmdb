@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -71,7 +70,6 @@ func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadat
 	}
 
 	finalFilter := map[string]interface{}{}
-	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(kit.Ctx))
 	if len(filters) > 0 {
 		finalFilter[common.BKDBAND] = filters
 	}
@@ -227,7 +225,6 @@ func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, pag
 	finalFilter[common.BKHostIDField] = map[string]interface{}{
 		common.BKDBIN: allBizHostIDs[start:end],
 	}
-	finalFilter = util.SetQueryOwner(finalFilter, util.ExtractOwnerFromContext(ctx))
 
 	hosts := make([]metadata.HostMapStr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Fields(fields...).

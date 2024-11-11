@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	hostutil "configcenter/src/source_controller/coreservice/core/host/util"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -95,7 +94,7 @@ var identityHostFields = []string{
 // findHost query host info
 func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 	hostCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
-	condHostMap := util.SetQueryOwner(hostCond.ToMapStr(), kit.SupplierAccount)
+	condHostMap := hostCond.ToMapStr()
 	// fetch all hosts
 	i.hosts = make([]metadata.HostIdentifier, 0)
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condHostMap).Fields(identityHostFields...).
@@ -111,7 +110,7 @@ func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 // findModuleHostRelation query host and module relation
 func (i *Identifier) findModuleHostRelation(kit *rest.Kit, hostIDs []int64) error {
 	hostModuleCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
-	condModuleHostMap := util.SetQueryOwner(hostModuleCond.ToMapStr(), kit.SupplierAccount)
+	condModuleHostMap := hostModuleCond.ToMapStr()
 	// fetch  host and module relation
 	moduleHostRelation := make([]metadata.ModuleHost, 0)
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).All(kit.Ctx, &moduleHostRelation)

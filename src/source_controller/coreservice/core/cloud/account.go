@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // CreateAccount TODO
@@ -57,7 +56,6 @@ func (c *cloudOperation) CreateAccount(kit *rest.Kit, account *metadata.CloudAcc
 // SearchAccount TODO
 func (c *cloudOperation) SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount, errors.CCErrorCoder) {
 	accounts := []metadata.CloudAccount{}
-	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &accounts)
 	if err != nil {
@@ -103,7 +101,6 @@ func (c *cloudOperation) UpdateAccount(kit *rest.Kit, accountID int64, option ma
 		return err
 	}
 	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
-	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	option.Set(common.BKLastEditor, kit.User)
 	option.Set(common.LastTimeField, time.Now())
 	// 确保不会更新云厂商类型、云账户id、开发商id
@@ -125,9 +122,9 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 	}
 
 	filter := map[string]interface{}{common.BKCloudAccountID: accountID}
-	filter = util.SetModOwner(filter, kit.SupplierAccount)
 	if e := c.dbProxy.Table(common.BKTableNameCloudAccount).Delete(kit.Ctx, filter); e != nil {
-		blog.Errorf("DeleteAccount failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameCloudAccount, filter, e, kit.Rid)
+		blog.Errorf("delete account failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+			common.BKTableNameCloudAccount, filter, e, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
@@ -136,7 +133,6 @@ func (c *cloudOperation) DeleteAccount(kit *rest.Kit, accountID int64) errors.CC
 // SearchAccountConf 查询云厂商账户配置
 func (c *cloudOperation) SearchAccountConf(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf, errors.CCErrorCoder) {
 	accountconfs := []metadata.CloudAccountConf{}
-	option.Condition = util.SetQueryOwner(option.Condition, kit.SupplierAccount)
 	err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(option.Condition).Fields(option.Fields...).
 		Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(option.Page.Sort).All(kit.Ctx, &accountconfs)
 	if err != nil {
@@ -156,7 +152,6 @@ func (c *cloudOperation) SearchAccountConf(kit *rest.Kit, option *metadata.Searc
 
 // countAccount 获取账户总个数
 func (c *cloudOperation) countAccount(kit *rest.Kit, cond mapstr.MapStr) (uint64, error) {
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err := c.dbProxy.Table(common.BKTableNameCloudAccount).Find(cond).Count(kit.Ctx)
 	return count, err
 

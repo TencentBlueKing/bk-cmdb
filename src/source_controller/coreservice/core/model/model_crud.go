@@ -364,7 +364,7 @@ func (m *modelManager) updateSortNumWhenDelete(kit *rest.Kit, delCond map[string
 func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, error) {
 	delCond := mongo.NewCondition()
 	delCond.Element(mongo.Field(common.BKObjIDField).In(objIDs))
-	delCondMap := util.SetQueryOwner(delCond.ToMapStr(), kit.SupplierAccount)
+	delCondMap := delCond.ToMapStr()
 
 	// delete model property group
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
@@ -417,7 +417,6 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	modelDelCond := mapstr.MapStr{
 		common.BKFieldID: input.ID,
 	}
-	modelDelCond = util.SetQueryOwner(modelDelCond, kit.SupplierAccount)
 
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDelCond); err != nil {
 		blog.Errorf("delete model attribute failed, err: %v, cond: %v, rid: %s", err, modelDelCond, kit.Rid)
@@ -430,7 +429,6 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 		common.BKSrcModelField:   input.ObjID,
 		common.BKPropertyIDField: input.PropertyID,
 	}
-	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
 
 	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, quoteCond); err != nil {
 		blog.Errorf("delete model quote relations failed, err: %v, filter: %v, rid: %v", err, quoteCond, kit.Rid)
@@ -440,7 +438,6 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	cond := mapstr.MapStr{
 		common.BKObjIDField: obj,
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	// delete model property group.
 	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {

@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -82,8 +81,6 @@ func (s *service) SearchNodes(ctx *rest.Contexts) {
 		return
 	}
 
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
-
 	nodes := make([]types.Node, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(input.Condition).
 		Start(uint64(input.Page.Start)).
@@ -118,7 +115,6 @@ func (s *service) BatchUpdateNode(ctx *rest.Contexts) {
 			common.BKDBIN: input.IDs,
 		},
 	}
-	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateNodeFields...)
 	updateData, err := orm.GetUpdateFieldsWithOption(input.Data, opts)
 	if err != nil {
@@ -155,7 +151,6 @@ func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 	query := map[string]interface{}{
 		types.BKIDField: map[string]interface{}{common.BKDBIN: option.IDs},
 	}
-	util.SetQueryOwner(query, ctx.Kit.SupplierAccount)
 	nodes := make([]types.Node, 0)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(query).
 		Fields(common.BKHostIDField, common.BKAppIDField).All(ctx.Kit.Ctx, &nodes); err != nil {
@@ -174,7 +169,6 @@ func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 			common.BKDBIN: option.IDs,
 		},
 	}
-	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

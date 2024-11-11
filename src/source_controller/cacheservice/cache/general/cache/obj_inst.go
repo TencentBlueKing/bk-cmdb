@@ -45,7 +45,6 @@ func getObjInstTable(ctx context.Context, filter *types.BasicFilter, rid string)
 	cond := mapstr.MapStr{
 		common.BKObjIDField: filter.SubRes,
 	}
-	util.SetQueryOwner(cond, filter.SupplierAccount)
 
 	obj := new(metadata.Object)
 	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.BkSupplierAccount).One(ctx, &obj)

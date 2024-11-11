@@ -49,8 +49,6 @@ func (s *service) ListFieldTemplate(cts *rest.Contexts) {
 		return
 	}
 
-	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
-
 	if opt.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(filter).Count(cts.Kit.Ctx)
 		if err != nil {
@@ -92,7 +90,6 @@ func canObjBindingFieldTemplate(kit *rest.Kit, objIDs []string) error {
 			},
 		},
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	count, err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond).Count(kit.Ctx)
 	if err != nil {
@@ -223,7 +220,6 @@ func (s *service) dealProcessRunningTasks(kit *rest.Kit, option *metadata.FieldT
 				metadata.APITaskStatusNew},
 		},
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	result := make([]metadata.APITaskSyncStatus, 0)
 	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
@@ -334,7 +330,6 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64) error {
 				metadata.APITaskStatusNew},
 		},
 	}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 
 	result := make([]metadata.APITaskSyncStatus, 0)
 	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
@@ -389,7 +384,6 @@ func (s *service) deleteFieldTmplRelation(kit *rest.Kit, option *metadata.FieldT
 		common.BKTemplateID:  option.ID,
 		common.ObjectIDField: option.ObjectID,
 	}
-	cond = util.SetModOwner(cond, kit.SupplierAccount)
 
 	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("delete obj field template failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
@@ -406,7 +400,6 @@ func (s *service) fieldTemplateUnbindAttrAndUnique(kit *rest.Kit, id int64, objI
 	tmplCond := mapstr.MapStr{
 		common.BKTemplateID: id,
 	}
-	tmplCond = util.SetModOwner(tmplCond, kit.SupplierAccount)
 
 	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(tmplCond).Fields(common.BKFieldID).
@@ -475,7 +468,7 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	filter := util.SetQueryOwner(make(map[string]interface{}), ctx.Kit.SupplierAccount)
+	filter := make(map[string]interface{})
 	count, err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(filter).Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("count field templates failed, err: %v, filter: %+v, rid: %s", err, filter, ctx.Kit.Rid)
@@ -526,7 +519,7 @@ func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	tmplCond := util.SetModOwner(opt.Condition, ctx.Kit.SupplierAccount)
+	tmplCond := opt.Condition
 
 	templates := make([]metadata.FieldTemplate, 0)
 	err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).Fields(common.BKFieldID).
@@ -547,7 +540,6 @@ func (s *service) DeleteFieldTemplate(ctx *rest.Contexts) {
 		tmplIDs = append(tmplIDs, template.ID)
 	}
 	countCond := mapstr.MapStr{common.BKTemplateID: mapstr.MapStr{common.BKDBIN: tmplIDs}}
-	countCond = util.SetModOwner(countCond, ctx.Kit.SupplierAccount)
 
 	relationCount, err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(countCond).
 		Count(ctx.Kit.Ctx)
@@ -612,7 +604,6 @@ func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	cond := map[string]interface{}{common.BKFieldID: opt.ID}
-	cond = util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	dbTmpl := new(metadata.FieldTemplate)
 	err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(cond).One(ctx.Kit.Ctx, dbTmpl)
 	if err != nil {
@@ -661,7 +652,6 @@ func (s *service) FindFieldTmplSimplifyByAttr(ctx *rest.Contexts) {
 		common.BKFieldID:    opt.AttrID,
 		common.BKTemplateID: opt.TemplateID,
 	}
-	countCond = util.SetQueryOwner(countCond, ctx.Kit.SupplierAccount)
 
 	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(countCond).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -682,7 +672,6 @@ func (s *service) FindFieldTmplSimplifyByAttr(ctx *rest.Contexts) {
 	attrCond := mapstr.MapStr{
 		common.BKFieldID: opt.TemplateID,
 	}
-	attrCond = util.SetQueryOwner(attrCond, ctx.Kit.SupplierAccount)
 
 	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
 	if err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(common.BKTemplateID).
@@ -702,7 +691,6 @@ func (s *service) FindFieldTmplSimplifyByAttr(ctx *rest.Contexts) {
 	tmplCond := mapstr.MapStr{
 		common.BKFieldID: dbTmplAttrs[0].TemplateID,
 	}
-	tmplCond = util.SetQueryOwner(tmplCond, ctx.Kit.SupplierAccount)
 
 	templates := make([]metadata.FieldTemplate, 0)
 	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).
@@ -744,7 +732,6 @@ func (s *service) FindFieldTmplSimplifyByUnique(ctx *rest.Contexts) {
 		common.BKFieldID:    opt.UniqueID,
 		common.BKTemplateID: opt.TemplateID,
 	}
-	countCond = util.SetQueryOwner(countCond, ctx.Kit.SupplierAccount)
 
 	count, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(countCond).Count(ctx.Kit.Ctx)
 	if err != nil {
@@ -764,7 +751,6 @@ func (s *service) FindFieldTmplSimplifyByUnique(ctx *rest.Contexts) {
 	attrCond := mapstr.MapStr{
 		common.BKFieldID: opt.TemplateID,
 	}
-	attrCond = util.SetQueryOwner(attrCond, ctx.Kit.SupplierAccount)
 
 	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
 	if err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(attrCond).Fields(common.BKTemplateID).
@@ -784,7 +770,6 @@ func (s *service) FindFieldTmplSimplifyByUnique(ctx *rest.Contexts) {
 	tmplCond := mapstr.MapStr{
 		common.BKFieldID: dbTmplUniques[0].TemplateID,
 	}
-	tmplCond = util.SetQueryOwner(tmplCond, ctx.Kit.SupplierAccount)
 
 	templates := make([]metadata.FieldTemplate, 0)
 	if err := mongodb.Client().Table(common.BKTableNameFieldTemplate).Find(tmplCond).

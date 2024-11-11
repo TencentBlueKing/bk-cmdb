@@ -137,8 +137,8 @@ watch:
   usr: $mongo_user
   pwd: "$mongo_pass"
   database: $db
-  maxOpenConns: 10
-  maxIdleConns: 5
+  maxOpenConns: 50
+  maxIdleConns: 50
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
   socketTimeoutSeconds: 10

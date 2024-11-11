@@ -277,7 +277,6 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 		cond[common.BKObjIDField] = objID
 	}
 
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	count, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err

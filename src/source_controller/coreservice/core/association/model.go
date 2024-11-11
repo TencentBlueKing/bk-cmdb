@@ -111,9 +111,10 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam meta
 	inputParam.Data.Remove(metadata.AssociationFieldSupplierAccount)
 	inputParam.Data.Remove(metadata.AssociationFieldAsstID)
 
-	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is to failed to update the association by the condition (%v), error info is %s", kit.Rid, inputParam.Condition, err.Error())
+	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
+	if err != nil {
+		blog.Errorf("update association failed, err: %v, condition: %v, rid: %s", err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.UpdatedCount{}, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
@@ -135,8 +136,8 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam meta
 	}
 
 	cnt, err := m.update(kit, validData, updateCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to update the association by the condition (%#v), error info is %s", kit.Rid, updateCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("update association failed, err: %v, condition: %v, rid: %s", err, updateCond, kit.Rid)
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -146,15 +147,16 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam meta
 // SearchModelAssociation TODO
 func (m *associationModel) SearchModelAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
-	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is to convert the condition (%v) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
+	if err != nil {
+		blog.Errorf("convert the condition from mapstr failed, err: %v, condition: %v, rid: %s", err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.QueryResult{}, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	resultItems, err := m.searchReturnMapStr(kit, searchCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to search all associations by the condition (%#v), error info is %s", kit.Rid, searchCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("search all associations failed, err: %v, condition: %v, rid: %s", err, searchCond, kit.Rid)
 		return &metadata.QueryResult{}, err
 	}
 
@@ -165,17 +167,15 @@ func (m *associationModel) SearchModelAssociation(kit *rest.Kit, inputParam meta
 func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata.Condition) (
 	*metadata.CommonCountResult, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(input.Condition, kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(input.Condition)
 	if err != nil {
-		blog.Errorf("convert the condition (%v) from mapstr into condition object, err: %s, rid: %s",
-			input.Condition, err.Error(), kit.Rid)
+		blog.Errorf("convert the condition from mapstr failed, err: %v, cond: %v, rid: %s", err, input.Condition, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	count, err := m.count(kit, cond)
 	if err != nil {
-		blog.Errorf("count model associations by the condition (%#v) failed, err: %s, rid: %s", cond.ToMapStr(),
-			err.Error(), kit.Rid)
+		blog.Errorf("count model associations failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return nil, err
 	}
 
@@ -186,15 +186,16 @@ func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata
 func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
+	if err != nil {
+		blog.Errorf("convert the condition from mapstr failed, err: %v, condition: %v, rid: %s", err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	needDeleteAssocaitionItems, err := m.search(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to search all by the condition (%#v), error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("search all failed, err: %v, condition: %v, rid: %s", err, deleteCond, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -205,19 +206,21 @@ func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam meta
 	}
 
 	exists, err := m.usedInSomeInstanceAssociation(kit, associationIDS)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to check if the instances (%#v) is in used, error info is %s", kit.Rid, associationIDS, err.Error())
+	if err != nil {
+		blog.Errorf("check if the instances is in used failed, err: %v, IDs: %v, rid: %s", err, associationIDS,
+			kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is forbbiden to delete the model association by the instances (%#v)", kit.Rid, associationIDS)
+		blog.Warnf("it is forbbiden to delete the model association by the instances, IDs: %v, rid: %s",
+			associationIDS, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.Error(common.CCErrTopoAssociationHasAlreadyBeenInstantiated)
 	}
 
 	// deletion operation
 	cnt, err := m.delete(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is delete the instances by the condition (%#v), error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("delete the instances failed, err: %v, cond: %v, rid: %s", err, deleteCond, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil
@@ -227,15 +230,16 @@ func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam meta
 func (m *associationModel) CascadeDeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
-	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
+	if err != nil {
+		blog.Errorf("convert the condition from mapstr failed, err: %v, condition: %v, rid: %s", err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	needDeleteAssocaitionItems, err := m.search(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to search associations by the condition (%#v), error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("search associations failed, err: %v, condition: %v, rid: %s", err, deleteCond, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -246,15 +250,16 @@ func (m *associationModel) CascadeDeleteModelAssociation(kit *rest.Kit, inputPar
 	}
 
 	// cascade deletion operation
-	if err := m.cascadeInstanceAssociation(kit, associationIDS); nil != err {
-		blog.Errorf("request(%s): it is failed to cascade delete the assocaitions of the instances (%#v), error info is %s ", kit.Rid, associationIDS, err.Error())
+	if err := m.cascadeInstanceAssociation(kit, associationIDS); err != nil {
+		blog.Errorf("cascade delete the associations failed, err: %v, condition: %v, rid: %s", err, deleteCond,
+			kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
 	// deletion operation
 	cnt, err := m.delete(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to delete some associations by the condition (%#v), error info is %s", kit.Rid, deleteCond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("delete associations failed, err: %v, condition: %v, rid: %s", err, deleteCond, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil

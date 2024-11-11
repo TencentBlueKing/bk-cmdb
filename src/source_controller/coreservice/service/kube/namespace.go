@@ -136,7 +136,6 @@ func (s *service) getClusterMap(kit *rest.Kit, clusterIDs []int64) (map[int64]ty
 	filter := map[string]interface{}{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: clusterIDs},
 	}
-	util.SetModOwner(filter, kit.SupplierAccount)
 
 	field := []string{common.BKFieldID, types.UidField, types.TypeField, common.BKAppIDField}
 	clusters := make([]types.Cluster, 0)
@@ -178,7 +177,6 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 	filter := mapstr.MapStr{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	now := time.Now().Unix()
 	req.Data.LastTime = now
 	req.Data.Modifier = ctx.Kit.User
@@ -219,7 +217,6 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 	filter := mapstr.MapStr{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	filter = util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
@@ -246,7 +243,6 @@ func (s *service) ListNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	namespaces := make([]types.Namespace, 0)
 	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).

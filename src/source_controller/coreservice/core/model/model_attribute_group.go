@@ -150,7 +150,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID str
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -200,8 +200,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID str
 func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, err: %v",
 			kit.Rid, inputParam.Condition, err)
@@ -273,7 +272,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID str
 	// 	return dataResult, err
 	// }
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return dataResult, err
@@ -301,7 +300,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID str
 // SearchModelAttributeGroupByCondition TODO
 func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
@@ -327,7 +326,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(kit *rest.Kit
 // desperated only for old api
 func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
@@ -368,7 +367,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(kit *rest.Kit, objID str
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err

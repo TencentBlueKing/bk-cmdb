@@ -42,7 +42,6 @@ func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 		data = transformedData
 	}
 
-	data = util.SetModOwner(data, ctx.Kit.SupplierAccount)
 	err := mongodb.Client().Table(common.BKTableNameUserCustom).Insert(ctx.Kit.Ctx, data)
 	if nil != err {
 		blog.Errorf("Create  user custom fail, err: %v, ctx:%v, rid: %s", err, data, ctx.Kit.Rid)
@@ -69,7 +68,6 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 		}
 		data = transformedData
 	}
-	conditons = util.SetModOwner(conditons, ctx.Kit.SupplierAccount)
 	err := mongodb.Client().Table(common.BKTableNameUserCustom).Update(ctx.Kit.Ctx, conditons, data)
 	if nil != err {
 		blog.Errorf("update  user custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
@@ -83,7 +81,6 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
 	conds["bk_user"] = ctx.Kit.User
-	conds = util.SetModOwner(conds, ctx.Kit.SupplierAccount)
 
 	result := make(map[string]interface{})
 	err := mongodb.Client().Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
@@ -108,7 +105,6 @@ func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 	conds := make(map[string]interface{})
 	conds[common.BKDefaultField] = 1
-	conds = util.SetModOwner(conds, ctx.Kit.SupplierAccount)
 
 	result := make(map[string]interface{})
 	err := mongodb.Client().Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
@@ -125,7 +121,6 @@ func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 func (s *coreService) UpdateDefaultUserCustom(ctx *rest.Contexts) {
 	conditions := make(map[string]interface{})
 	conditions[common.BKDefaultField] = 1
-	conditions = util.SetModOwner(conditions, ctx.Kit.SupplierAccount)
 	data := make(map[string]interface{})
 	if err := ctx.DecodeInto(&data); nil != err {
 		ctx.RespAutoError(err)

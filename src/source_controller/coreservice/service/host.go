@@ -154,7 +154,6 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 
 	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
-	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
 	// TODO: return error for not found and deal error with all callers
 	if err != nil && !mongodb.Client().IsNotFoundError(err) {
@@ -193,7 +192,6 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		}
 	}
 
-	condition = util.SetModOwner(condition, ctx.Kit.SupplierAccount)
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
 	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).

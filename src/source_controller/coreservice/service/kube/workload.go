@@ -139,7 +139,6 @@ func (s *service) GetNamespaceSpec(kit *rest.Kit, nsIDs []int64) (map[int64]type
 	filter := map[string]interface{}{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: nsIDs},
 	}
-	filter = util.SetQueryOwner(filter, kit.SupplierAccount)
 
 	field := []string{common.BKFieldID, common.BKFieldName, common.BKAppIDField, types.BKClusterIDFiled,
 		types.ClusterUIDField}
@@ -194,7 +193,6 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 	cond := map[string]interface{}{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	util.SetModOwner(cond, ctx.Kit.SupplierAccount)
 	updateData, err := req.Data.BuildUpdateData(ctx.Kit.User)
 	if err != nil {
 		blog.Errorf("get update data failed, kind: %s, info: %v, err: %v, rid: %s", kind, req.Data, err, ctx.Kit.Rid)
@@ -236,7 +234,6 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 	filter := mapstr.MapStr{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 	if err := mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
@@ -266,7 +263,6 @@ func (s *service) ListWorkload(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, types.KindField))
 		return
 	}
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 	workloads := make([]mapstr.MapStr, 0)
 	err = mongodb.Client().Table(table).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).

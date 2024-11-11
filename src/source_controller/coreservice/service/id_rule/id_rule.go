@@ -42,7 +42,6 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 	}
 
 	cond := mapstr.MapStr{common.BKObjIDField: opt.ObjID}
-	cond = util.SetQueryOwner(cond, ctx.Kit.SupplierAccount)
 	allAttr := make([]metadata.Attribute, 0)
 	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(ctx.Kit.Ctx, &allAttr); err != nil {
 		blog.Errorf("find attribute failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)

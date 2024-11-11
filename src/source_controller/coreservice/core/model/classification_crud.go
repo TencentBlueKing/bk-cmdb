@@ -19,13 +19,11 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 func (m *modelClassification) count(kit *rest.Kit, cond mapstr.MapStr) (cnt uint64, err error) {
-	filter := util.SetQueryOwner(cond, kit.SupplierAccount)
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(filter).Count(kit.Ctx)
+	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond).Count(kit.Ctx)
 	if nil != err {
 		blog.Errorf("execute a database count operation failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, err

@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -52,10 +51,10 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 				<-pipeline
 			}()
 
-			filter = util.SetQueryOwner(filter, ctx.Kit.SupplierAccount)
 			count, err := mongodb.Client().Table(table).Find(filter).Count(ctx.Kit.Ctx)
 			if err != nil {
-				blog.ErrorJSON("GetCountByFilter failed, error: %s, table: %s, filter: %s, rid: %s", err.Error(), table, filter, ctx.Kit.Rid)
+				blog.Errorf("GetCountByFilter failed, error: %v, table: %s, filter: %v, rid: %s", err, table, filter,
+					ctx.Kit.Rid)
 				if firstErr == nil {
 					firstErr = ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				}

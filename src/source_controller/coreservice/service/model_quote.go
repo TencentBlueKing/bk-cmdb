@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -44,8 +43,6 @@ func (s *coreService) ListModelQuoteRelation(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-
-	filter = util.SetQueryOwner(filter, cts.Kit.SupplierAccount)
 
 	if req.Page.EnableCount {
 		count, err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Count(cts.Kit.Ctx)
@@ -116,8 +113,6 @@ func (s *coreService) DeleteModelQuoteRelation(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
 	}
-
-	filter = util.SetModOwner(filter, cts.Kit.SupplierAccount)
 
 	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(cts.Kit.Ctx, filter)
 	if err != nil {

@@ -156,7 +156,6 @@ func (c *cloudOperation) validCreateSyncTask(kit *rest.Kit, task *metadata.Cloud
 
 	// task name unique check
 	cond = mapstr.MapStr{common.BKCloudSyncTaskName: task.TaskName}
-	cond = util.SetQueryOwner(cond, kit.SupplierAccount)
 	taskCount, err := c.dbProxy.Table(common.BKTableNameCloudSyncTask).Find(cond).Count(kit.Ctx)
 	if nil != err {
 		blog.ErrorJSON("[validCreateSycTask] count task error %s, condition: %s, rid: %s", err, cond, kit.Rid)

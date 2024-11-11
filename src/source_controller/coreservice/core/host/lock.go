@@ -33,7 +33,6 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 	condition := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
-	condition = util.SetQueryOwner(condition, kit.SupplierAccount)
 	hostInfos := make([]metadata.HostMapStr, 0)
 	limit := uint64(len(input.IDS))
 	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx,
@@ -56,7 +55,6 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 		conds := mapstr.MapStr{
 			common.BKHostIDField: id,
 		}
-		conds = util.SetQueryOwner(conds, kit.SupplierAccount)
 		cnt, err := mongodb.Client().Table(common.BKTableNameHostLock).Find(conds).Count(kit.Ctx)
 		if nil != err {
 			blog.Errorf("lock host, query host lock from db failed, err:%+v, rid:%s", err, kit.Rid)
@@ -87,7 +85,6 @@ func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest
 	conds := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
-	conds = util.SetModOwner(conds, kit.SupplierAccount)
 	err := mongodb.Client().Table(common.BKTableNameHostLock).Delete(kit.Ctx, conds)
 	if nil != err {
 		blog.Errorf("unlock host, delete host lock from db error, err: %+v, rid:%s", err, kit.Rid)
@@ -104,7 +101,6 @@ func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLoc
 	conds := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
-	conds = util.SetModOwner(conds, kit.SupplierAccount)
 	limit := uint64(len(input.IDS))
 	err := mongodb.Client().Table(common.BKTableNameHostLock).Find(conds).Limit(limit).All(kit.Ctx, &hostLockInfoArr)
 	if nil != err {

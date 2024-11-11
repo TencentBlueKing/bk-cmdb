@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/common/util/errors"
 	"configcenter/src/kube/orm"
 	"configcenter/src/kube/types"
@@ -41,7 +40,6 @@ func (s *service) SearchClusters(ctx *rest.Contexts) {
 	}
 
 	clusters := make([]types.Cluster, 0)
-	util.SetQueryOwner(input.Condition, ctx.Kit.SupplierAccount)
 
 	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
@@ -75,8 +73,6 @@ func (s *service) BatchUpdateCluster(ctx *rest.Contexts) {
 			common.BKDBIN: input.IDs,
 		},
 	}
-
-	util.SetModOwner(filter, ctx.Kit.SupplierAccount)
 
 	opts := orm.NewFieldOptions().AddIgnoredFields(types.IgnoredUpdateClusterFields...)
 	updateData, err := orm.GetUpdateFieldsWithOption(input.Data, opts)

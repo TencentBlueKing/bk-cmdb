@@ -307,8 +307,7 @@ func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
 		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
@@ -334,7 +333,6 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		common.BKObjIDField: objID,
 		common.BKAppIDField: input.BizID,
 	}
-	attrCond = util.SetQueryOwner(attrCond, kit.SupplierAccount)
 	cnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attrCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("check if attribute exists failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
@@ -353,7 +351,6 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		common.BKPropertyGroupField: input.PropertyGroup,
 		common.BKPropertyIndexField: input.PropertyIndex,
 	}
-	indexCond = util.SetQueryOwner(indexCond, kit.SupplierAccount)
 	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(indexCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("check if index is used failed, err: %v, cond: %+v, rid: %s", err, indexCond, kit.Rid)
@@ -397,8 +394,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 func (m *modelAttribute) UpdateModelAttributesByCondition(kit *rest.Kit, inputParam metadata.UpdateOption) (
 	*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
 		blog.Errorf("failed to convert condition, input: %+v, err: %v, rid: %s", inputParam.Condition, err, kit.Rid)
 		return &metadata.UpdatedCount{}, err
@@ -426,7 +422,7 @@ func assignmentUnchangeableFields(data mapstr.MapStr, dbAttr metadata.Attribute)
 
 // UpdateTableModelAttributes update the attribute content of the form field
 func (m *modelAttribute) UpdateTableModelAttributes(kit *rest.Kit, inputParam metadata.UpdateTableOption) error {
-	inputParamCond := util.SetModOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount)
+	inputParamCond := inputParam.Condition.ToMapInterface()
 
 	filter := metadata.QueryCondition{Condition: inputParamCond}
 	attrs, err := m.searchWithSort(kit, filter)
@@ -552,7 +548,6 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 		common.BKSrcModelField:   attr.ObjectID,
 		common.BKPropertyIDField: attr.PropertyID,
 	}
-	quoteCond = util.SetQueryOwner(quoteCond, kit.SupplierAccount)
 
 	quoteRel := new(metadata.ModelQuoteRelation)
 	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteCond).One(kit.Ctx, &quoteRel)
@@ -570,7 +565,7 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 			field: map[string]interface{}{common.BKDBExists: true},
 		}
 	}
-	instCond := util.SetModOwner(mapstr.MapStr{common.BKDBOR: existCond}, kit.SupplierAccount)
+	instCond := mapstr.MapStr{common.BKDBOR: existCond}
 
 	if err = m.dropColumns(kit, quoteRel.DestModel, instTable, instCond, deletedAttr); err != nil {
 		blog.Errorf("drop instance table attributes failed, err: %v, attr: %+v, rid: %s", err, deletedAttr, kit.Rid)
@@ -611,8 +606,7 @@ func (m *modelAttribute) DeleteModelAttributes(kit *rest.Kit, objID string,
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(),
-		kit.SupplierAccount))
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s",
 			kit.Rid, inputParam.Condition, err.Error())
@@ -633,7 +627,9 @@ func (m *modelAttribute) SearchModelAttributes(kit *rest.Kit, objID string, inpu
 		return nil, err
 	}
 
-	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
+	if inputParam.Condition == nil {
+		inputParam.Condition = make(map[string]interface{})
+	}
 	inputParam.Condition[common.BKObjIDField] = objID
 
 	attrResult, err := m.newSearch(kit, inputParam.Condition)
@@ -666,7 +662,6 @@ func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputPa
 			},
 		},
 	}
-	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	attrResult, err := m.searchWithSort(kit, inputParam)
 	if err != nil {
@@ -682,8 +677,6 @@ func (m *modelAttribute) SearchModelAttributesByCondition(kit *rest.Kit, inputPa
 // SearchModelAttrsWithTableByCondition query includes table field model properties.
 func (m *modelAttribute) SearchModelAttrsWithTableByCondition(kit *rest.Kit, inputParam metadata.QueryCondition) (
 	*metadata.QueryModelAttributeDataResult, error) {
-
-	inputParam.Condition = util.SetQueryOwner(inputParam.Condition, kit.SupplierAccount)
 
 	dataResult := &metadata.QueryModelAttributeDataResult{
 		Info: []metadata.Attribute{},
