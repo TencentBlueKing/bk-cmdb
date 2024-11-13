@@ -442,7 +442,7 @@
         this.childCategoryName = name
         this.handleCloseAddChild()
         this.handleCloseEditMain()
-        this.handleCloseAddBox() 
+        this.handleCloseAddBox()
         this.isMainAuthCompleted = false
         this.$nextTick(() => {
           this.$refs.editInput[0].$refs.categoryInput.focus()
