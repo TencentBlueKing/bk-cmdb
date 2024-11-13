@@ -208,10 +208,6 @@ const (
 	SysHostRscPoolDirectory TypeID = "sys_host_rsc_pool_directory"
 	// SysCloudArea TODO
 	SysCloudArea TypeID = "sys_cloud_area"
-	// SysCloudAccount TODO
-	SysCloudAccount TypeID = "sys_cloud_account"
-	// SysCloudResourceTask TODO
-	SysCloudResourceTask TypeID = "sys_cloud_resource_task"
 	// SysEventWatch TODO
 	SysEventWatch TypeID = "event_watch"
 	// Host TODO
@@ -438,24 +434,6 @@ const (
 	EditCloudArea ActionID = "edit_cloud_area"
 	// DeleteCloudArea TODO
 	DeleteCloudArea ActionID = "delete_cloud_area"
-
-	// CreateCloudAccount TODO
-	CreateCloudAccount ActionID = "create_cloud_account"
-	// EditCloudAccount TODO
-	EditCloudAccount ActionID = "edit_cloud_account"
-	// DeleteCloudAccount TODO
-	DeleteCloudAccount ActionID = "delete_cloud_account"
-	// FindCloudAccount TODO
-	FindCloudAccount ActionID = "find_cloud_account"
-
-	// CreateCloudResourceTask TODO
-	CreateCloudResourceTask ActionID = "create_cloud_resource_task"
-	// EditCloudResourceTask TODO
-	EditCloudResourceTask ActionID = "edit_cloud_resource_task"
-	// DeleteCloudResourceTask TODO
-	DeleteCloudResourceTask ActionID = "delete_cloud_resource_task"
-	// FindCloudResourceTask TODO
-	FindCloudResourceTask ActionID = "find_cloud_resource_task"
 
 	// ViewSysModel view system model
 	ViewSysModel ActionID = "view_sys_model"
@@ -736,10 +714,6 @@ const (
 	SysAssociationTypeSelection InstanceSelectionID = "sys_association_type"
 	// SysCloudAreaSelection TODO
 	SysCloudAreaSelection InstanceSelectionID = "sys_cloud_area"
-	// SysCloudAccountSelection TODO
-	SysCloudAccountSelection InstanceSelectionID = "sys_cloud_account"
-	// SysCloudResourceTaskSelection TODO
-	SysCloudResourceTaskSelection InstanceSelectionID = "sys_cloud_resource_task"
 	// InstAsstEventSelection TODO
 	InstAsstEventSelection InstanceSelectionID = "inst_asst_event"
 	// SysResourcePoolDirectorySelection 主机池目录的两种视图，管理的资源也相同，仅名称做区分

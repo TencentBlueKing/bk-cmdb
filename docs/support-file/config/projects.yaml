@@ -21,13 +21,6 @@
   language: golang
   version: __VERSION__
 
-- name: cloud
-  module: cmdb
-  project_dir: cmdb/server
-  alias: cmdb
-  language: golang
-  version: __VERSION__
-
 - name: cache
   module: cmdb
   project_dir: cmdb/server
@@ -71,13 +64,6 @@
   version: __VERSION__
 
 - name: proc
-  module: cmdb
-  project_dir: cmdb/server
-  alias: cmdb
-  language: golang
-  version: __VERSION__
-
-- name: synchronize
   module: cmdb
   project_dir: cmdb/server
   alias: cmdb

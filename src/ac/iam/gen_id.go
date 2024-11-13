@@ -34,8 +34,6 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.AuditLog:                 genAuditLogResource,
 	meta.CloudAreaInstance:        genPlat,
 	meta.HostApply:                genHostApplyResource,
-	meta.CloudAccount:             genCloudAccountResource,
-	meta.CloudResourceTask:        genCloudResourceTaskResource,
 	meta.ResourcePoolDirectory:    genResourcePoolDirectoryResource,
 	meta.ProcessServiceInstance:   genProcessServiceInstanceResource,
 	meta.Process:                  genProcessServiceInstanceResource,
@@ -359,38 +357,6 @@ func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
-}
-
-func genCloudAccountResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-
-	if act == CreateCloudAccount {
-		return make([]types.Resource, 0), nil
-	}
-
-	r.ID = strconv.FormatInt(att.InstanceID, 10)
-	return []types.Resource{r}, nil
-}
-
-func genCloudResourceTaskResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
-		Attribute: nil,
-	}
-
-	if act == CreateCloudResourceTask {
-		return make([]types.Resource, 0), nil
-	}
-
-	if att.InstanceID > 0 {
-		r.ID = strconv.FormatInt(att.InstanceID, 10)
-	}
 	return []types.Resource{r}, nil
 }
 

@@ -8,7 +8,6 @@
 |----------------|---------------------------------------------------|
 | 内置模型相关表        | [built-in_model](built-in_model.md)               |
 | 业务下相关资源表       | [business](business.md)                           |
-| 云资源相关功能表       | [cloud_resource](cloud_resource.md)               |
 | 容器数据纳管功能相关表    | [container_data_manage](container_data_manage.md) |
 | 字段组合模板功能相关表    | [field_template](field_template.md)               |
 | 主机属性自动应用功能相关表  | [host_apply_rule](host_apply_rule.md)             |

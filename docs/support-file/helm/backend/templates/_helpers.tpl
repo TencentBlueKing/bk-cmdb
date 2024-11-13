@@ -46,10 +46,6 @@ app: "{{ template "bk-cmdb.name" . }}"
   {{- printf "%s-cache" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
 
-{{- define "bk-cmdb.cloudserver" -}}
-  {{- printf "%s-cloud" (include "bk-cmdb.fullname" .) -}}
-{{- end -}}
-
 {{- define "bk-cmdb.datacollection" -}}
   {{- printf "%s-datacollection" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}

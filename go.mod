@@ -10,7 +10,6 @@ require (
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/apache/thrift v0.19.0
-	github.com/aws/aws-sdk-go v1.44.14
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/coccyx/timeparser v0.0.0-20161029180942-5644122b3667
 	github.com/emicklei/go-restful/v3 v3.11.0
@@ -43,9 +42,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/testify v1.8.4
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.398
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.398
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.398
 	github.com/tidwall/gjson v1.14.1
 	github.com/xdg-go/scram v1.1.2
 	github.com/xuri/excelize/v2 v2.7.1
@@ -98,7 +94,6 @@ require (
 	github.com/jcmturner/gofork v1.0.0 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/joyt/godate v0.0.0-20150226210126-7151572574a7 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect

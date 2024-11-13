@@ -124,7 +124,6 @@
 	"1101102": "Only resource pool directory name can be update",
 	"1101103": "Fail to %s resource pool directory, directory not exist",
 	"1101104": "Idle machine directory is not allowed to delete",
-	"1101105": "Resource dir is being used in cloud sync task",
 	"1101106": "model not found",
 	"1101107": "the same attribute unique id exist",
 	"1101108": "the same set name exist",

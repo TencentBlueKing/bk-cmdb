@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/kube/types"
@@ -254,7 +253,6 @@ type Core interface {
 	SetTemplateOperation() SetTemplateOperation
 	HostApplyRuleOperation() HostApplyRuleOperation
 	SystemOperation() SystemOperation
-	CloudOperation() CloudOperation
 	AuthOperation() AuthOperation
 	CommonOperation() CommonOperation
 }
@@ -393,27 +391,6 @@ type HostApplyRuleOperation interface {
 		[]metadata.SrvTemplate, errors.CCErrorCoder)
 }
 
-// CloudOperation TODO
-type CloudOperation interface {
-	CreateAccount(kit *rest.Kit, account *metadata.CloudAccount) (*metadata.CloudAccount, errors.CCErrorCoder)
-	SearchAccount(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccount,
-		errors.CCErrorCoder)
-	UpdateAccount(kit *rest.Kit, accountID int64, option mapstr.MapStr) errors.CCErrorCoder
-	DeleteAccount(kit *rest.Kit, accountID int64) errors.CCErrorCoder
-	SearchAccountConf(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudAccountConf,
-		errors.CCErrorCoder)
-
-	CreateSyncTask(kit *rest.Kit, account *metadata.CloudSyncTask) (*metadata.CloudSyncTask, errors.CCErrorCoder)
-	SearchSyncTask(kit *rest.Kit, option *metadata.SearchCloudOption) (*metadata.MultipleCloudSyncTask,
-		errors.CCErrorCoder)
-	UpdateSyncTask(kit *rest.Kit, taskID int64, option mapstr.MapStr) errors.CCErrorCoder
-	DeleteSyncTask(kit *rest.Kit, taskID int64) errors.CCErrorCoder
-	CreateSyncHistory(kit *rest.Kit, account *metadata.SyncHistory) (*metadata.SyncHistory, errors.CCErrorCoder)
-	SearchSyncHistory(kit *rest.Kit, option *metadata.SearchSyncHistoryOption) (*metadata.MultipleSyncHistory,
-		errors.CCErrorCoder)
-	DeleteDestroyedHostRelated(kit *rest.Kit, option *metadata.DeleteDestroyedHostRelatedOption) errors.CCErrorCoder
-}
-
 // SystemOperation TODO
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
@@ -448,7 +425,6 @@ type core struct {
 	sys           SystemOperation
 	setTemplate   SetTemplateOperation
 	hostApplyRule HostApplyRuleOperation
-	cloud         CloudOperation
 	auth          AuthOperation
 	common        CommonOperation
 }
@@ -467,7 +443,6 @@ func New(
 	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
 	sys SystemOperation,
-	cloud CloudOperation,
 	auth AuthOperation,
 	common CommonOperation,
 ) Core {
@@ -485,7 +460,6 @@ func New(
 		sys:           sys,
 		setTemplate:   setTemplate,
 		hostApplyRule: hostApplyRule,
-		cloud:         cloud,
 		auth:          auth,
 		common:        common,
 	}
@@ -554,11 +528,6 @@ func (m *core) SystemOperation() SystemOperation {
 // HostApplyRuleOperation TODO
 func (m *core) HostApplyRuleOperation() HostApplyRuleOperation {
 	return m.hostApplyRule
-}
-
-// CloudOperation TODO
-func (m *core) CloudOperation() CloudOperation {
-	return m.cloud
 }
 
 // AuthOperation TODO

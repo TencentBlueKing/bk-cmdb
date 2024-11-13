@@ -92,14 +92,6 @@ var ActionIDNameMap = map[ActionID]string{
 	CreateCloudArea:                     "管控区域创建",
 	EditCloudArea:                       "管控区域编辑",
 	DeleteCloudArea:                     "管控区域删除",
-	CreateCloudAccount:                  "云账户新建",
-	EditCloudAccount:                    "云账户编辑",
-	DeleteCloudAccount:                  "云账户删除",
-	FindCloudAccount:                    "云账户查询",
-	CreateCloudResourceTask:             "云资源任务新建",
-	EditCloudResourceTask:               "云资源任务编辑",
-	DeleteCloudResourceTask:             "云资源任务删除",
-	FindCloudResourceTask:               "云资源任务查询",
 	ViewSysModel:                        "模型查看",
 	CreateSysModel:                      "模型新建",
 	EditSysModel:                        "模型编辑",
@@ -190,8 +182,6 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genBizSetActions()...)
 	resourceActionList = append(resourceActionList, genProjectActions()...)
 	resourceActionList = append(resourceActionList, genCloudAreaActions()...)
-	resourceActionList = append(resourceActionList, genCloudAccountActions()...)
-	resourceActionList = append(resourceActionList, genCloudResourceTaskActions()...)
 	resourceActionList = append(resourceActionList, genModelActions()...)
 	resourceActionList = append(resourceActionList, genAssociationTypeActions()...)
 	resourceActionList = append(resourceActionList, genModelGroupActions()...)
@@ -942,128 +932,6 @@ func genCloudAreaActions() []ResourceAction {
 		Type:                 Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       []ActionID{ViewCloudArea},
-		Version:              1,
-	})
-
-	return actions
-}
-
-func genCloudAccountActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysCloudAccountSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysCloudAccount,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateCloudAccount,
-		Name:                 ActionIDNameMap[CreateCloudAccount],
-		NameEn:               "Create Cloud Account",
-		Type:                 Create,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditCloudAccount,
-		Name:                 ActionIDNameMap[EditCloudAccount],
-		NameEn:               "Edit Cloud Account",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindCloudAccount},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteCloudAccount,
-		Name:                 ActionIDNameMap[DeleteCloudAccount],
-		NameEn:               "Delete Cloud Account",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindCloudAccount},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   FindCloudAccount,
-		Name:                 ActionIDNameMap[FindCloudAccount],
-		NameEn:               "View Cloud Account",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	return actions
-}
-
-func genCloudResourceTaskActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysCloudResourceTaskSelection,
-	}}
-
-	relatedResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysCloudResourceTask,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: selection,
-		},
-	}
-
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateCloudResourceTask,
-		Name:                 ActionIDNameMap[CreateCloudResourceTask],
-		NameEn:               "Create Cloud Resource Task",
-		Type:                 Create,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditCloudResourceTask,
-		Name:                 ActionIDNameMap[EditCloudResourceTask],
-		NameEn:               "Edit Cloud Resource Task",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindCloudResourceTask},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteCloudResourceTask,
-		Name:                 ActionIDNameMap[DeleteCloudResourceTask],
-		NameEn:               "Delete Cloud Resource Task",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{FindCloudResourceTask},
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   FindCloudResourceTask,
-		Name:                 ActionIDNameMap[FindCloudResourceTask],
-		NameEn:               "View Cloud Resource Task",
-		Type:                 View,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       nil,
 		Version:              1,
 	})
 

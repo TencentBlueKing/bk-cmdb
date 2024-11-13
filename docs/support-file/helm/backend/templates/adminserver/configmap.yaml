@@ -68,34 +68,12 @@ data:
       # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
       # 可以配置不进行业务访问鉴权
       skipViewBizAuth: {{ .Values.common.auth.skipViewBizAuth }}
-    #cloudServer专属配置
-    cloudServer:
-      # 加密服务使用
-      cryptor:
-        enableCryptor: {{ .Values.common.cloudServer.cryptor.enableCryptor }}
-        # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
-        secretKeyUrl: {{ .Values.common.cloudServer.cryptor.secretKeyUrl }}
-        # 密钥服务的地址，必须以http://或者https://开头
-        secretsAddrs: {{ .Values.common.cloudServer.cryptor.secretsAddrs }}
-        # 密码服务的权限凭证Token
-        secretsToken: {{ .Values.common.cloudServer.cryptor.secretsToken }}
-        # 密码服务的项目名称
-        secretsProject: {{ .Values.common.cloudServer.cryptor.secretsProject }}
-        # 密码服务的环境名称
-        secretsEnv: {{ .Values.common.cloudServer.cryptor.secretsEnv }}
-      syncTask:
-        # 同步周期,最小为5分钟
-        syncPeriodMinutes: {{ .Values.common.cloudServer.syncTask.syncPeriodMinutes }}
-    # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+    # 新版加解密相关配置，包括密钥等信息
     crypto:
       # 是否开启加密
       enabled: {{ .Values.common.crypto.enabled }}
-      # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+      # 加密算法类型，枚举值：CLASSIC（国际算法）
       algorithm: {{ .Values.global.bkCryptoType }}
-      # 使用SM4算法时所需的配置
-      sm4:
-        # 密钥
-        key: {{ .Values.common.crypto.sm4.key }}
       # 使用AES-GCM算法时所需的配置
       aesGcm:
         # 密钥

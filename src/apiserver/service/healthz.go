@@ -117,13 +117,5 @@ func (s *service) checkComponentHealthz() metric.HealthMeta {
 	}
 	meta.Items = append(meta.Items, taskSrv)
 
-	// cloud server
-	cloudSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CLOUD}
-	if _, err := s.engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CLOUD); err != nil {
-		cloudSrv.IsHealthy = false
-		cloudSrv.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, cloudSrv)
-
 	return meta
 }

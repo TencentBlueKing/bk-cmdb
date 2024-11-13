@@ -48,7 +48,6 @@ const (
 	GSE_MODULE_PROCSERVER    = "gseprocserver"
 	CC_MODULE_OPERATION      = "operation"
 	CC_MODULE_TASK           = "task"
-	CC_MODULE_CLOUD          = "cloud"
 	CC_MODULE_AUTH           = "auth"
 	// CC_MODULE_CACHE 缓存服务
 	CC_MODULE_CACHESERVICE = "cacheservice"
@@ -69,7 +68,6 @@ var AllModule = map[string]bool{
 	CC_MODULE_CORESERVICE:     true,
 	CC_MODULE_OPERATION:       true,
 	CC_MODULE_TASK:            true,
-	CC_MODULE_CLOUD:           true,
 	CC_MODULE_AUTH:            true,
 	CC_MODULE_CACHESERVICE:    true,
 	CC_MODULE_TRANSFERSERVICE: true,

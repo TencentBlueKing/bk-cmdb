@@ -81,16 +81,6 @@ func (s *Service) FindManyCloudArea(ctx *rest.Contexts) {
 		return
 	}
 
-	// 查询云区域时附带云同步任务ID信息
-	if input.SyncTaskIDs {
-		err = s.addPlatSyncTaskIDs(ctx, &res.Info)
-		if err != nil {
-			blog.ErrorJSON("FindManyCloudArea failed, addPlatSyncTaskIDs err: %v, rid: %s", err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail))
-			return
-		}
-	}
-
 	ctx.RespEntity(map[string]interface{}{
 		"info":  res.Info,
 		"count": res.Count,
@@ -502,42 +492,6 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 	// response success
 	ctx.RespEntity(nil)
-}
-
-// addPlatSyncTaskIDs add sync task ids to plat info
-func (s *Service) addPlatSyncTaskIDs(ctx *rest.Contexts, data *[]mapstr.MapStr) error {
-	option := &metadata.SearchCloudOption{
-		Page: meta.BasePage{
-			Limit: common.BKNoLimit,
-		},
-		Fields: []string{common.BKCloudSyncTaskID, common.BKCloudSyncVpcs},
-	}
-	result, err := s.CoreAPI.CoreService().Cloud().SearchSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, option)
-	if err != nil {
-		blog.Errorf("addPlatSyncTaskIDs failed, rid:%s, option:%+v, err:%+v", ctx.Kit.Rid, option, err)
-		return err
-	}
-	cloudIDTasks := make(map[int64][]int64)
-	for _, task := range result.Info {
-		for _, vpc := range task.SyncVpcs {
-			cloudIDTasks[vpc.CloudID] = append(cloudIDTasks[vpc.CloudID], task.TaskID)
-		}
-	}
-
-	for i, area := range *data {
-		cloudID, err := area.Int64(common.BKCloudIDField)
-		if err != nil {
-			blog.ErrorJSON("addPlatSyncTaskIDs failed, Int64 err: %v, area:%#v, rid: %s", err, area, ctx.Kit.Rid)
-			return err
-		}
-		if _, ok := cloudIDTasks[cloudID]; ok {
-			(*data)[i]["sync_task_ids"] = cloudIDTasks[cloudID]
-		} else {
-			(*data)[i]["sync_task_ids"] = []int64{}
-		}
-	}
-
-	return nil
 }
 
 // FindCloudAreaHostCount find host count in every cloudarea

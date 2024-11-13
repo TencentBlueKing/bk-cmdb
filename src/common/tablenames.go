@@ -96,11 +96,6 @@ const (
 	// BKTableNameHostApplyRule rule for host property auto apply
 	BKTableNameHostApplyRule = "cc_HostApplyRule"
 
-	// cloud sync tables
-	BKTableNameCloudSyncTask    = "cc_CloudSyncTask"
-	BKTableNameCloudAccount     = "cc_CloudAccount"
-	BKTableNameCloudSyncHistory = "cc_CloudSyncHistory"
-
 	// BKTableNameWatchToken the table to store the latest watch token for database
 	BKTableNameWatchToken = "cc_WatchToken"
 
@@ -172,9 +167,6 @@ var AllTables = []string{
 	BKTableNameHostApplyRule,
 	BKTableNameAPITask,
 	BKTableNameAPITaskSyncHistory,
-	BKTableNameCloudSyncTask,
-	BKTableNameCloudAccount,
-	BKTableNameCloudSyncHistory,
 }
 
 // TableSpecifier is table specifier type which describes the metadata

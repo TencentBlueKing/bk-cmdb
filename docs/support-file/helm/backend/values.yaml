@@ -15,7 +15,7 @@ global:
   ##
   imagePullSecrets: []
   storageClass: ""
-  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
+  # 加密算法类型
   bkCryptoType: "CLASSIC"
 
 ## @section bk-cmdb image parameters
@@ -337,69 +337,6 @@ cacheservice:
     logDir: /data/cmdb/cmdb_cacheservice/logs
     logLevel: 3
     logToStdErr: false
-  ## @param podAnnotations Annotations for bk-panel pods
-  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  ##
-  podAnnotations: {}
-  ## @param affinity Affinity for pod assignment
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  ## NOTE: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
-  ##
-  affinity: {}
-  ## @param nodeSelector Node labels for pod assignment
-  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
-  ##
-  nodeSelector: {}
-  ## @param tolerations Tolerations for pod assignment
-  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  ##
-  tolerations: []
-  ## bk-cmdb containers' resource requests and limits
-  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  ## @param resources.limits The resources limits for the bk-cmdb container
-  ## @param resources.requests [object] The requested resources for the bk-cmdb container
-  ##
-  resources:
-    limits:
-      cpu: 200m
-      memory: 1024Mi
-    requests:
-      memory: 512Mi
-      cpu: 200m
-
-## @section bk-cmdb cloudserver parameters
-##
-cloudserver:
-  ## @param cloudserver.enabled Enable cloudserver deployment
-  ##
-  enabled: true
-  ## bk-cmdb cloudserver image parameters
-  ## @param cloudserver.image.repository bk-cmdb cloudserver image repository
-  ## @param cloudserver.image.rag bk-cmdb cloudserver image tag
-  ##
-  image:
-    repository: blueking/cmdb_cloudserver
-    tag:
-  ## @param cloudserver.replicas Number of cloudserver replicas to deploy
-  ##
-  replicas: 1
-  ## @param cloudserver.port bk-cmdb cloudserver service HTTP port
-  ##
-  port: 80
-  ## @param cloudserver.workDir bk-cmdb cloudserver work directory
-  ##
-  workDir: /data/cmdb/cmdb_cloudserver
-  ## bk-cmdb cloudserver start command parameters
-  ## @param cloudserver.command.logDir bk-cmdb cloudserver log directory
-  ## @param cloudserver.command.logLevel bk-cmdb cloudserver log level
-  ## @param cloudserver.command.logLevel Enable bk-cmdb cloudserver print log to stderr
-  ## @param cloudserver.command.enableCryptor Enable bk-cmdb cloudserver secret service
-  ##
-  command:
-    logDir: /data/cmdb/cmdb_cloudserver/logs
-    logLevel: 3
-    logToStdErr: false
-    enableCryptor: false
   ## @param podAnnotations Annotations for bk-panel pods
   ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   ##
@@ -1043,31 +980,10 @@ common:
   authServer:
     #开发商ID
     supplierID: "0"
-  #cloudServer专属配置
-  cloudServer:
-    # 加密服务使用
-    cryptor:
-      enableCryptor: false
-      # 访问密码服务来获取密钥的URL，格式如/api/v1/secrets/cloud_account
-      secretKeyUrl:
-      # 密钥服务的地址，必须以http://或者https://开头
-      secretsAddrs:
-      # 密码服务的权限凭证Token
-      secretsToken:
-      # 密码服务的项目名称
-      secretsProject:
-      # 密码服务的环境名称
-      secretsEnv:
-    syncTask:
-      syncPeriodMinutes: 5
-  # 新版加解密相关配置，包括密钥等信息，如果设置了该配置项，则cloudServer使用该配置而非cloudServer.cryptor配置进行加解密
+  # 新版加解密相关配置，包括密钥等信息
   crypto:
     # 是否开启加密
     enabled: false
-    # 使用SM4算法时所需的配置
-    sm4:
-      # 密钥
-      key:
     # 使用AES-GCM算法时所需的配置
     aesGcm:
       # 密钥

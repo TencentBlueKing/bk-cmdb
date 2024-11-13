@@ -406,20 +406,6 @@ func (s *Service) DeleteResourceDirectory(ctx *rest.Contexts) {
 		return
 	}
 
-	// 资源池目录是否在云同步任务中被使用，使用了的不能删除
-	syncDirs, err := s.GetResourceDirsInCloudSync(ctx)
-	if err != nil {
-		blog.Errorf("DeleteResourceDirectory failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if _, ok := syncDirs[intModuleID]; ok {
-		blog.Errorf("DeleteResourceDirectory failed, Resource dir is being used in cloud sync task, rid: %s",
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrorTopoResourceDirUsedInCloudSync))
-		return
-	}
-
 	language := httpheader.GetLanguage(ctx.Kit.Header)
 	query := &metadata.QueryCondition{Condition: mapstr.MapStr{common.BKModuleIDField: intModuleID}}
 	curData, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
@@ -501,28 +487,4 @@ func (s *Service) hasHost(ctx *rest.Contexts, bizID int64, setIDs, moduleIDS []i
 	}
 
 	return 0 != len(rsp.Info), nil
-}
-
-// GetResourceDirsInCloudSync 获取云同步任务有关联的所有资源池目录
-func (s *Service) GetResourceDirsInCloudSync(ctx *rest.Contexts) (map[int64]bool, error) {
-	option := &metadata.SearchCloudOption{
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	rsp, err := s.Engine.CoreAPI.CoreService().Cloud().SearchSyncTask(ctx.Kit.Ctx, ctx.Kit.Header, option)
-	if nil != err {
-		blog.Errorf("GetResourceDirsInCloudSync failed, err: %s, rid: %s", err.Error(), ctx.Kit.Rid)
-		return nil, err
-	}
-
-	result := make(map[int64]bool)
-	for _, task := range rsp.Info {
-		for _, syncInfo := range task.SyncVpcs {
-			result[syncInfo.SyncDir] = true
-		}
-	}
-
-	return result, nil
-
 }

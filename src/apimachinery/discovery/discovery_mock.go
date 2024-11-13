@@ -95,11 +95,6 @@ func (d *MockDiscovery) TaskServer() Interface {
 	return &mockServer{}
 }
 
-// CloudServer TODO
-func (d *MockDiscovery) CloudServer() Interface {
-	return &mockServer{}
-}
-
 // AuthServer TODO
 func (d *MockDiscovery) AuthServer() Interface {
 	return &mockServer{}

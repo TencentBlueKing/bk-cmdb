@@ -148,21 +148,6 @@ $ helm uninstall bkcmdb
 |   cacheservice.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
 |         cacheservice.workDir          |            工作目录             |      /data/cmdb/cmdb_cacheservice     |
 
-### cloudserver服务配置说明
-
-|                 参数                 |              描述               |              默认值              |
-| :----------------------------------: | :-----------------------------: | :------------------------------: |
-|         cloudserver.enabled          | 是否在执行helm时启动 |               true               |
-|     cloudserver.image.repository     |        服务镜像名        | cmdb_cloudserver |
-|        cloudserver.image.tag         |          服务镜像版本           | {TAG_NAME} |
-|         cloudserver.replicas         |           pod副本数量           |                1                 |
-|           cloudserver.port           |            服务端口             |                80                |
-|      cloudserver.command.logDir      |          日志存放路径           |              /data/cmdb/cmdb_cloudserver/logs              |
-|     cloudserver.command.logLevel     |            日志等级             |                3                 |
-|   cloudserver.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
-|   cloudserver.command.enableCryptor    | 是否开启加密服务 |              false               |
-|         cloudserver.workDir          |            工作目录             |      /data/cmdb/cmdb_cloudserver     |
-
 ### coreservice服务配置说明
 
 |                 参数                 |              描述               |              默认值              |

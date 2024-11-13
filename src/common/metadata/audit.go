@@ -726,10 +726,6 @@ const (
 	EventPushRes ResourceType = "event"
 	// CloudAreaRes TODO
 	CloudAreaRes ResourceType = "cloud_area"
-	// CloudAccountRes TODO
-	CloudAccountRes ResourceType = "cloud_account"
-	// CloudSyncTaskRes TODO
-	CloudSyncTaskRes ResourceType = "cloud_sync_task"
 
 	// HostRes TODO
 	// host related operation type
@@ -781,8 +777,6 @@ const (
 	FromDataCollection OperateFromType = "data_collection"
 	// FromSynchronizer means this audit is created by the data synchronizer.
 	FromSynchronizer OperateFromType = "synchronizer"
-	// FromCloudSync means this audit is created by cloud sync.
-	FromCloudSync OperateFromType = "cloud_sync"
 )
 
 // ActionType defines all the user's operation type
@@ -1058,24 +1052,6 @@ var auditDict = []resourceTypeInfo{
 		},
 	},
 	{
-		ID:   CloudAccountRes,
-		Name: "云账户",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
-		ID:   CloudSyncTaskRes,
-		Name: "云资源同步任务",
-		Operations: []actionTypeInfo{
-			actionInfoMap[AuditCreate],
-			actionInfoMap[AuditUpdate],
-			actionInfoMap[AuditDelete],
-		},
-	},
-	{
 		ID:   DynamicGroupRes,
 		Name: "动态分组",
 		Operations: []actionTypeInfo{
@@ -1314,24 +1290,6 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   ModelAttributeGroupRes,
 		Name: "Model Attribute Group",
-		Operations: []actionTypeInfo{
-			actionInfoEnMap[AuditCreate],
-			actionInfoEnMap[AuditUpdate],
-			actionInfoEnMap[AuditDelete],
-		},
-	},
-	{
-		ID:   CloudAccountRes,
-		Name: "Cloud Account",
-		Operations: []actionTypeInfo{
-			actionInfoEnMap[AuditCreate],
-			actionInfoEnMap[AuditUpdate],
-			actionInfoEnMap[AuditDelete],
-		},
-	},
-	{
-		ID:   CloudSyncTaskRes,
-		Name: "Cloud Synchronous Task",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
