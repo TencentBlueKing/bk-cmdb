@@ -84,8 +84,6 @@ var ccIamResTypeMap = map[meta.ResourceType]TypeID{
 	meta.OperationStatistic:       SysOperationStatistic,
 	meta.HostApply:                BizHostApply,
 	meta.ResourcePoolDirectory:    SysResourcePoolDirectory,
-	meta.CloudAccount:             SysCloudAccount,
-	meta.CloudResourceTask:        SysCloudResourceTask,
 	meta.EventWatch:               SysEventWatch,
 	meta.ConfigAdmin:              TypeID(""),
 	meta.SystemConfig:             TypeID(""),
@@ -362,19 +360,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create:   CreateCloudArea,
 		meta.Find:     ViewCloudArea,
 		meta.FindMany: ViewCloudArea,
-	},
-	meta.CloudAccount: {
-		meta.Delete:   DeleteCloudAccount,
-		meta.Update:   EditCloudAccount,
-		meta.Create:   CreateCloudAccount,
-		meta.Find:     FindCloudAccount,
-		meta.FindMany: FindCloudAccount,
-	},
-	meta.CloudResourceTask: {
-		meta.Delete: DeleteCloudResourceTask,
-		meta.Update: EditCloudResourceTask,
-		meta.Create: CreateCloudResourceTask,
-		meta.Find:   FindCloudResourceTask,
 	},
 	meta.Model: {
 		meta.Delete:   DeleteSysModel,

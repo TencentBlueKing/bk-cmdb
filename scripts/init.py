@@ -23,8 +23,7 @@ def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
-        auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
-        enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
+        auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
     context = dict(
@@ -58,12 +57,6 @@ def generate_config_file(
         full_text_search=full_text_search,
         rs_name=rs_name,
         user_info=user_info,
-        enable_cryptor = enable_cryptor_v,
-        secret_key_url = secret_key_url_v,
-        secrets_addrs = secrets_addrs_v,
-        secrets_token = secrets_token_v,
-        secrets_project = secrets_project_v,
-        secrets_env = secrets_env_v,
     )
     if not os.path.exists(output):
         os.mkdir(output)
@@ -229,14 +222,6 @@ elasticsearch-replica-num = "$es_replica_num"
 #  address: 127.0.0.1
 #  appCode: bk_cmdb
 #  appSecret: 123456
-#cloudServer:
-#  cryptor:
-#    enableCryptor: false
-#    secretKeyUrl:
-#    secretsAddrs:
-#    secretsToken:
-#    secretsProject:
-#    secretsEnv:
 
 #elasticsearch配置
 es:
@@ -286,21 +271,6 @@ authServer:
   # list_biz_hosts、list_biz_hosts_topo、find_host_by_topo、list_host_total_mainline_topo这几个上esb接口,
   # 可以配置不进行业务访问鉴权
   skipViewBizAuth: false
-
-#cloudServer专属配置
-cloudServer:
-  # 加密服务使用
-  cryptor:
-    enableCryptor: ${enable_cryptor}
-    secretKeyUrl: ${secret_key_url}
-    secretsAddrs: ${secrets_addrs}
-    secretsToken: ${secrets_token}
-    secretsProject: ${secrets_project}
-    secretsEnv: ${secrets_env}
-  # 云同步任务
-  syncTask:
-    # 同步周期,最小为5分钟
-    syncPeriodMinutes: 5
 
 #datacollection专属配置
 datacollection:
@@ -732,7 +702,7 @@ dataid:
     with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor):
+def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -763,11 +733,9 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
 
                 extend_flag = ''
                 if d in ['cmdb_apiserver', 'cmdb_hostserver', 'cmdb_datacollection', 'cmdb_procserver',
-                         'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver', 'cmdb_cloudserver',
+                         'cmdb_toposerver', 'cmdb_eventserver', 'cmdb_operationserver',
                          'cmdb_authserver','cmdb_adminserver','cmdb_cacheservice']:
                     extend_flag += ' --enable-auth=%s ' % enable_auth
-                if d in ['cmdb_cloudserver']:
-                     extend_flag += ' --enable_cryptor=%s ' % enable_cryptor
                 if register_ip != '':
                     extend_flag += ' --register-ip=%s ' % register_ip
                 filedata = filedata.replace('extend_flag_placeholder', extend_flag)
@@ -812,12 +780,6 @@ def main(argv):
     register_ip = ''
     rs_name = 'rs0'
     user_info = ''
-    enable_cryptor = 'false'
-    secret_key_url = ''
-    secrets_addrs = ''
-    secrets_token = ''
-    secrets_project = ''
-    secrets_env = ''
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -831,7 +793,6 @@ def main(argv):
         "cmdb_webserver": 8083,
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
-        "cmdb_cloudserver": 60013,
         "cmdb_authserver": 60014,
         "cmdb_cacheservice": 50010,
         "cmdb_transferservice": 50011
@@ -842,8 +803,7 @@ def main(argv):
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
-        "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
-        "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env="
+        "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip="
     ]
     usage = '''
     usage:
@@ -875,12 +835,6 @@ def main(argv):
       --log_level          <log_level>            log level to start cmdb process, default: 3
       --register_ip        <register_ip>          the ip address registered on zookeeper, it can be domain
       --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
-      --enable_cryptor     <enable_cryptor>       enable cryptor,true or false, default is false
-      --secret_key_url     <secret_key_url>       the url to get secret_key which used to encrypt and decrypt cloud account
-      --secrets_addrs      <secrets_addrs>        secrets_addrs, the addrs of bk-secrets service, start with http:// or https://
-      --secrets_token      <secrets_token>        secrets_token , as a header param for sending the api request to bk-secrets service
-      --secrets_project    <secrets_project>      secrets_project, as a header param for sending the api request to bk-secrets service
-      --secrets_env        <secrets_env>          secrets_env, as a header param for sending the api request to bk-secrets service
 
     demo:
     python init.py  \\
@@ -1021,24 +975,6 @@ def main(argv):
         elif opt in("--user_info",):
             user_info = arg
             print('user_info:', user_info)
-        elif opt in("--enable_cryptor",):
-            enable_cryptor = arg
-            print('enable_cryptor:', enable_cryptor)
-        elif opt in("--secret_key_url",):
-            secret_key_url = arg
-            print('secret_key_url:', secret_key_url)
-        elif opt in("--secrets_addrs",):
-            secrets_addrs = arg
-            print('secrets_addrs:', secrets_addrs)
-        elif opt in("--secrets_token",):
-            secrets_token = arg
-            print('secrets_token:', secrets_token)
-        elif opt in("--secrets_project",):
-            secrets_project = arg
-            print('secrets_project:', secrets_project)
-        elif opt in("--secrets_env",):
-            secrets_env = arg
-            print('secrets_env:', secrets_env)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
@@ -1083,11 +1019,6 @@ def main(argv):
     if full_text_search == "on":
         if not(es_url.startswith("http://") or es_url.startswith("https://")) :
             print('es url not start with http:// or https://')
-            sys.exit()
-
-    if enable_cryptor == "true":
-        if len(secret_key_url) == 0 or len(secrets_addrs) == 0 or len(secrets_token) == 0 or len(secrets_project) == 0 or len(secrets_env) == 0:
-            print('secret_key_url, secrets_addrs, secrets_token, secrets_project, secrets_env must be set when enable_cryptor is true')
             sys.exit()
 
     if auth["auth_scheme"] not in ["internal", "iam"]:
@@ -1139,15 +1070,9 @@ def main(argv):
         log_level=log_level,
         register_ip=register_ip,
         user_info=user_info,
-        enable_cryptor_v=enable_cryptor,
-        secret_key_url_v=secret_key_url,
-        secrets_addrs_v=secrets_addrs,
-        secrets_token_v = secrets_token,
-        secrets_project_v = secrets_project,
-        secrets_env_v = secrets_env,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
+    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
     print('initial monstache config success, configs could be found at monstache/etc')
 

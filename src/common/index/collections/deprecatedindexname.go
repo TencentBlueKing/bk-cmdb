@@ -107,9 +107,6 @@ var deprecatedIndexName = map[string][]string{
 		"config_id",
 		"bk_obj_id",
 	},
-	common.BKTableNameCloudSyncTask: {
-		"bk_task_id",
-	},
 	common.BKTableNameBasePlat: {
 		"bk_supplier_account_1",
 		"vpcID",
@@ -150,9 +147,6 @@ var deprecatedIndexName = map[string][]string{
 		"bk_idx_service_template_id_bk_process_name",
 		"idx_id",
 	},
-	common.BKTableNameCloudAccount: {
-		"bk_account_id",
-	},
 	common.BKTableNameObjAsst: {
 		"bk_obj_id_1",
 		"bk_asst_obj_id_1",
@@ -162,9 +156,6 @@ var deprecatedIndexName = map[string][]string{
 	},
 	common.BKTableNameChartPosition: {
 		"bk_biz_id",
-	},
-	common.BKTableNameCloudSyncHistory: {
-		"bk_history_id",
 	},
 	common.BKTableNameServiceTemplate: {
 		"id_1_bk_biz_id_1",

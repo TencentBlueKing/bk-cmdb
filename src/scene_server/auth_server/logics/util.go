@@ -42,10 +42,6 @@ func getResourceTableName(resourceType iam.TypeID) string {
 		return common.BKTableNameBaseModule
 	case iam.SysCloudArea:
 		return common.BKTableNameBasePlat
-	case iam.SysCloudAccount:
-		return common.BKTableNameCloudAccount
-	case iam.SysCloudResourceTask:
-		return common.BKTableNameCloudSyncTask
 	case iam.Business, iam.BusinessForHostTrans:
 		return common.BKTableNameBaseApp
 	case iam.BizSet:

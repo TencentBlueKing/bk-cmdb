@@ -49,42 +49,6 @@ func GenerateResourceCreatorActions() ResourceCreatorActions {
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: SysCloudAccount,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditCloudAccount,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteCloudAccount,
-						IsRequired: false,
-					},
-					{
-						ID:         FindCloudAccount,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: SysCloudResourceTask,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditCloudResourceTask,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteCloudResourceTask,
-						IsRequired: false,
-					},
-					{
-						ID:         FindCloudResourceTask,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
 				ResourceID: SysCloudArea,
 				Actions: []CreatorRelatedAction{
 					{

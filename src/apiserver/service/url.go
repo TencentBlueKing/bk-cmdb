@@ -50,8 +50,6 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return TaskType, nil
 	case u.WithAdmin(req):
 		return AdminType, nil
-	case u.WithCloud(req):
-		return CloudType, nil
 	default:
 		if server, isHit := match.FilterMatch(req); isHit {
 			return RequestType(server), nil
@@ -295,29 +293,6 @@ func (u *URLPath) WithAdmin(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/admin/"):
 		from, to, isHit = rootPath+"/admin", adminRoot, true
 
-	default:
-		isHit = false
-	}
-
-	if isHit {
-		u.revise(req, from, to)
-		return true
-	}
-	return false
-}
-
-var cloudUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/cloud/.*$", verbs))
-
-// WithCloud transform cloud's url
-func (u *URLPath) WithCloud(req *restful.Request) (isHit bool) {
-	cloudRoot := "/cloud/v3"
-	from, to := rootPath, cloudRoot
-
-	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/cloud/"):
-		from, to, isHit = rootPath, cloudRoot, true
-	case cloudUrlRegexp.MatchString(string(*u)):
-		from, to, isHit = rootPath, cloudRoot, true
 	default:
 		isHit = false
 	}

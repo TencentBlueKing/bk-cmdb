@@ -26,7 +26,6 @@ import (
 type Config struct {
 	Enabled   bool        `mapstructure:"enabled"`
 	Algorithm Algorithm   `mapstructure:"algorithm"`
-	Sm4       *Sm4Conf    `mapstructure:"sm4"`
 	AesGcm    *AesGcmConf `mapstructure:"aesGcm"`
 }
 
@@ -37,14 +36,6 @@ func (conf Config) Validate() error {
 	}
 
 	switch conf.Algorithm {
-	case Sm4:
-		if conf.Sm4 == nil {
-			return errors.New("sm4 config is not set")
-		}
-
-		if conf.Sm4.Key == "" {
-			return errors.New("sm4 key is not set")
-		}
 	case AesGcm:
 		if conf.AesGcm == nil {
 			return errors.New("aes-gcm config is not set")
@@ -64,12 +55,10 @@ func (conf Config) Validate() error {
 type Algorithm string
 
 const (
-	Sm4    Algorithm = "SHANGMI"
 	AesGcm Algorithm = "CLASSIC"
 )
 
 var algorithmRandLen = map[Algorithm]int{
-	Sm4:    16,
 	AesGcm: 12,
 }
 
@@ -87,12 +76,10 @@ type AesGcmConf struct {
 type AlgorithmPrefix string
 
 const (
-	Sm4Prefix    AlgorithmPrefix = "[Cipher:::SM4]"
 	AesGcmPrefix AlgorithmPrefix = "[Cipher:::AesGcm]"
 )
 
 var algorithmToPrefixMap = map[Algorithm]AlgorithmPrefix{
-	Sm4:    Sm4Prefix,
 	AesGcm: AesGcmPrefix,
 }
 

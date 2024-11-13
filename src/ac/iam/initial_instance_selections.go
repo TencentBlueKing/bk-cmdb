@@ -170,28 +170,6 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 			},
 		},
 		{
-			ID:     SysCloudAccountSelection,
-			Name:   "云账户列表",
-			NameEn: "Cloud Account List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudAccount,
-				},
-			},
-		},
-		{
-			ID:     SysCloudResourceTaskSelection,
-			Name:   "云资源任务列表",
-			NameEn: "Cloud Resource Task List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudResourceTask,
-				},
-			},
-		},
-		{
 			ID:     SysModelSelection,
 			Name:   "模型列表",
 			NameEn: "Model List",

@@ -319,42 +319,6 @@ func genResourceManageActionGroups() []ActionGroup {
 					},
 				},
 				{
-					Name:   "云账户",
-					NameEn: "Cloud Account",
-					Actions: []ActionWithID{
-						{
-							ID: CreateCloudAccount,
-						},
-						{
-							ID: EditCloudAccount,
-						},
-						{
-							ID: DeleteCloudAccount,
-						},
-						{
-							ID: FindCloudAccount,
-						},
-					},
-				},
-				{
-					Name:   "云资源任务",
-					NameEn: "Cloud Resource Task",
-					Actions: []ActionWithID{
-						{
-							ID: CreateCloudResourceTask,
-						},
-						{
-							ID: EditCloudResourceTask,
-						},
-						{
-							ID: DeleteCloudResourceTask,
-						},
-						{
-							ID: FindCloudResourceTask,
-						},
-					},
-				},
-				{
 					Name:   "管控区域",
 					NameEn: "Cloud Area",
 					Actions: []ActionWithID{

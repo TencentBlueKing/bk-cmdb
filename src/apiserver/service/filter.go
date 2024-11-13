@@ -55,8 +55,6 @@ const (
 	TaskType RequestType = "task"
 	// AdminType TODO
 	AdminType RequestType = "admin"
-	// CloudType TODO
-	CloudType RequestType = "cloud"
 	// CacheType TODO
 	CacheType RequestType = "cache"
 )
@@ -121,9 +119,6 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	case AdminType:
 		servers, err = s.discovery.MigrateServer().GetServers()
-
-	case CloudType:
-		servers, err = s.discovery.CloudServer().GetServers()
 
 	case CacheType:
 		servers, err = s.discovery.CacheService().GetServers()

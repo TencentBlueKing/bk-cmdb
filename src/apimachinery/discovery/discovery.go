@@ -42,7 +42,6 @@ type DiscoveryInterface interface {
 	CoreService() Interface
 	OperationServer() Interface
 	TaskServer() Interface
-	CloudServer() Interface
 	AuthServer() Interface
 	Server(name string) Interface
 	CacheService() Interface
@@ -149,11 +148,6 @@ func (d *discover) OperationServer() Interface {
 // TaskServer TODO
 func (d *discover) TaskServer() Interface {
 	return d.servers[types.CC_MODULE_TASK]
-}
-
-// CloudServer TODO
-func (d *discover) CloudServer() Interface {
-	return d.servers[types.CC_MODULE_CLOUD]
 }
 
 // AuthServer TODO

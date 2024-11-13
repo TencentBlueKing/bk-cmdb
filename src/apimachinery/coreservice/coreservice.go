@@ -19,7 +19,6 @@ import (
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/auditlog"
 	"configcenter/src/apimachinery/coreservice/auth"
-	"configcenter/src/apimachinery/coreservice/cloud"
 	"configcenter/src/apimachinery/coreservice/common"
 	"configcenter/src/apimachinery/coreservice/count"
 	fieldtmpl "configcenter/src/apimachinery/coreservice/field_template"
@@ -60,7 +59,6 @@ type CoreServiceClientInterface interface {
 	System() ccSystem.SystemClientInterface
 	Txn() transaction.Interface
 	Count() count.CountClientInterface
-	Cloud() cloud.CloudInterface
 	Auth() auth.AuthClientInterface
 	Common() common.CommonInterface
 	Kube() kube.KubeClientInterface
@@ -156,11 +154,6 @@ func (c *coreService) Txn() transaction.Interface {
 // Count TODO
 func (c *coreService) Count() count.CountClientInterface {
 	return count.NewCountClientInterface(c.restCli)
-}
-
-// Cloud TODO
-func (c *coreService) Cloud() cloud.CloudInterface {
-	return cloud.NewCloudInterfaceClient(c.restCli)
 }
 
 // Auth TODO

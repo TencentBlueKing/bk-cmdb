@@ -665,58 +665,10 @@ func (h *DistinctHostIDByTopoRelationRequest) Empty() bool {
 	return true
 }
 
-// CloudAccountResult TODO
-type CloudAccountResult struct {
-	BaseResp `json:",inline"`
-	Data     CloudAccount `json:"data"`
-}
-
-// MultipleCloudAccountResult TODO
-type MultipleCloudAccountResult struct {
-	BaseResp `json:",inline"`
-	Data     MultipleCloudAccount `json:"data"`
-}
-
 // TransferHostResourceDirectory TODO
 type TransferHostResourceDirectory struct {
 	ModuleID int64   `json:"bk_module_id"`
 	HostID   []int64 `json:"bk_host_id"`
-}
-
-// MultipleCloudAccountConfResult TODO
-type MultipleCloudAccountConfResult struct {
-	BaseResp `json:",inline"`
-	Data     MultipleCloudAccountConf `json:"data"`
-}
-
-// CreateSyncTaskResult TODO
-type CreateSyncTaskResult struct {
-	BaseResp `json:",inline"`
-	Data     CloudSyncTask `json:"data"`
-}
-
-// CreateSyncHistoryesult TODO
-type CreateSyncHistoryesult struct {
-	BaseResp `json:",inline"`
-	Data     SyncHistory `json:"data"`
-}
-
-// MultipleCloudSyncTaskResult TODO
-type MultipleCloudSyncTaskResult struct {
-	BaseResp `json:",inline"`
-	Data     MultipleCloudSyncTask `json:"data"`
-}
-
-// MultipleSyncHistoryResult TODO
-type MultipleSyncHistoryResult struct {
-	BaseResp `json:",inline"`
-	Data     MultipleSyncHistory `json:"data"`
-}
-
-// MultipleSyncRegionResult TODO
-type MultipleSyncRegionResult struct {
-	BaseResp `json:",inline"`
-	Data     []*Region `json:"data"`
 }
 
 // DistinctFieldOption TODO

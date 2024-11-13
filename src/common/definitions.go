@@ -1424,9 +1424,6 @@ const (
 	// BKProcInstanceOpUser TODO
 	BKProcInstanceOpUser = "proc instance user"
 
-	// BKCloudSyncUser TODO
-	BKCloudSyncUser = "cloud_sync_user"
-
 	// BKIAMSyncUser TODO
 	BKIAMSyncUser = "iam_sync_user"
 )
@@ -1576,50 +1573,15 @@ const (
 	English LanguageType = "en"
 )
 
-// cloud sync const
+// cloud area const
 const (
-	BKCloudAccountID             = "bk_account_id"
-	BKCloudAccountName           = "bk_account_name"
-	BKCloudVendor                = "bk_cloud_vendor"
-	BKCloudSyncTaskName          = "bk_task_name"
-	BKCloudSyncTaskID            = "bk_task_id"
-	BKCloudSyncStatus            = "bk_sync_status"
-	BKCloudSyncStatusDescription = "bk_status_description"
-	BKCloudLastSyncTime          = "bk_last_sync_time"
-	BKCreator                    = "bk_creator"
-	BKStatus                     = "bk_status"
-	BKStatusDetail               = "bk_status_detail"
-	BKLastEditor                 = "bk_last_editor"
-	BKSecretID                   = "bk_secret_id"
-	BKVpcID                      = "bk_vpc_id"
-	BKVpcName                    = "bk_vpc_name"
-	BKRegion                     = "bk_region"
-	BKCloudSyncVpcs              = "bk_sync_vpcs"
-
-	// 是否为被销毁的云主机
-	IsDestroyedCloudHost = "is_destroyed_cloud_host"
-)
-
-const (
-	// BKCloudHostStatusUnknown TODO
-	BKCloudHostStatusUnknown = "1"
-	// BKCloudHostStatusStarting TODO
-	BKCloudHostStatusStarting = "2"
-	// BKCloudHostStatusRunning TODO
-	BKCloudHostStatusRunning = "3"
-	// BKCloudHostStatusStopping TODO
-	BKCloudHostStatusStopping = "4"
-	// BKCloudHostStatusStopped TODO
-	BKCloudHostStatusStopped = "5"
-	// BKCloudHostStatusDestroyed TODO
-	BKCloudHostStatusDestroyed = "6"
-)
-
-const (
-	// BKCloudAreaStatusNormal TODO
-	BKCloudAreaStatusNormal = "1"
-	// BKCloudAreaStatusAbnormal TODO
-	BKCloudAreaStatusAbnormal = "2"
+	BKCloudVendor     = "bk_cloud_vendor"
+	BKCloudSyncTaskID = "bk_task_id"
+	BKCreator         = "bk_creator"
+	BKLastEditor      = "bk_last_editor"
+	BKVpcID           = "bk_vpc_id"
+	BKVpcName         = "bk_vpc_name"
+	BKRegion          = "bk_region"
 )
 
 // configcenter

@@ -61,8 +61,6 @@ const (
 	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 	HostApply                ResourceType = "hostApply"
 	ResourcePoolDirectory    ResourceType = "resourcePoolDirectory"
-	CloudAccount             ResourceType = "cloudAccount"
-	CloudResourceTask        ResourceType = "cloudResourceTask"
 	ConfigAdmin              ResourceType = "configAdmin"
 	Project                  ResourceType = "project"
 	FulltextSearch           ResourceType = "fulltextSearch"

@@ -28,7 +28,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/auth"
-	"configcenter/src/source_controller/coreservice/core/cloud"
 	coreCommon "configcenter/src/source_controller/coreservice/core/common"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/hostapplyrule"
@@ -120,7 +119,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		operation.New(),
 		hostApplyRuleCore,
 		dbSystem.New(),
-		cloud.New(mongodb.Client()),
 		auth.New(mongodb.Client()),
 		coreCommon.New(),
 	)
