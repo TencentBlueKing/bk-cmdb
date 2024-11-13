@@ -20,10 +20,10 @@ package mongodb
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
@@ -32,14 +32,130 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 	dbType "configcenter/src/storage/dal/types"
 )
 
-// 暂时不支持热更新，所以没有加锁
+type mongoClient interface {
+	GetDal(prefix string) dal.Dal
+	SetDal(prefix string, db dal.Dal)
+	RemoveDal(prefix string)
+	Healthz() []metric.HealthItem
+}
 
+var mongoInst mongoClient
+
+func init() {
+	mongoInst = &mongodb{
+		dalMap: make(map[string]dal.Dal),
+	}
+}
+
+type mongodb struct {
+	dalLock sync.RWMutex
+	dalMap  map[string]dal.Dal
+}
+
+// GetDal get dal by prefix
+func (m *mongodb) GetDal(prefix string) dal.Dal {
+	m.dalLock.RLock()
+	defer m.dalLock.RUnlock()
+	return m.dalMap[prefix]
+}
+
+// SetDal set dal with prefix
+func (m *mongodb) SetDal(prefix string, db dal.Dal) {
+	m.dalLock.Lock()
+	defer m.dalLock.Unlock()
+	m.dalMap[prefix] = db
+}
+
+// RemoveDal remove dal by prefix
+func (m *mongodb) RemoveDal(prefix string) {
+	m.dalLock.Lock()
+	defer m.dalLock.Unlock()
+	delete(m.dalMap, prefix)
+}
+
+// Healthz check db health status
+func (m *mongodb) Healthz() []metric.HealthItem {
+	m.dalLock.RLock()
+	defer m.dalLock.RUnlock()
+
+	items := make([]metric.HealthItem, 0)
+	for prefix, db := range m.dalMap {
+		if db == nil {
+			items = append(items, metric.HealthItem{
+				IsHealthy: false,
+				Message:   prefix + " db not initialized",
+				Name:      types.CCFunctionalityMongo,
+			})
+			continue
+		}
+
+		if err := db.Ping(); err != nil {
+			items = append(items, metric.HealthItem{
+				IsHealthy: false,
+				Message:   prefix + " db connect error. err: " + err.Error(),
+				Name:      types.CCFunctionalityMongo,
+			})
+			continue
+		}
+
+		items = append(items, metric.HealthItem{
+			IsHealthy: true,
+			Name:      types.CCFunctionalityMongo,
+		})
+	}
+	return items
+}
+
+// Dal get mongodb sharding client
+func Dal(prefix ...string) dal.Dal {
+	var pre string
+	if len(prefix) > 0 {
+		pre = prefix[0]
+	}
+	return mongoInst.GetDal(pre)
+}
+
+// Shard get sharded mongodb client
+func Shard(opt sharding.ShardOpts) local.DB {
+	return Dal().Shard(opt)
+}
+
+// SetShardingCli set mongodb sharding client with prefix
+func SetShardingCli(prefix string, config *mongo.Config, cryptoConf *cryptor.Config) error {
+	crypto, err := cryptor.NewCrypto(cryptoConf)
+	if err != nil {
+		blog.Errorf("new %s mongo crypto failed, err: %v", prefix, err)
+		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init mongo crypto failed")
+	}
+
+	shardingDB, err := sharding.NewShardingMongo(config.GetMongoConf(), time.Minute, crypto)
+	if err != nil {
+		blog.Errorf("new %s sharding mongo client failed, err: %v", prefix, err)
+		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init sharding mongo client failed")
+	}
+	mongoInst.SetDal(prefix, shardingDB)
+	return nil
+}
+
+// SetDisableDBShardingCli set mongodb client that disables db sharding with prefix
+func SetDisableDBShardingCli(prefix string, config *mongo.Config) error {
+	shardingDB, err := sharding.NewDisableDBShardingMongo(config.GetMongoConf(), time.Minute)
+	if err != nil {
+		blog.Errorf("new %s disable db sharding mongo client failed, err: %v", prefix, err)
+		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init disable db sharding mongo client failed")
+	}
+	mongoInst.SetDal(prefix, shardingDB)
+	return nil
+}
+
+// 暂时不支持热更新，所以没有加锁
+// TODO remove this after all mongodb clients use sharding
 var (
-	dbMap       = make(map[string]dal.DB)
-	shardingMap = make(map[string]dal.ShardingDB)
+	dbMap = make(map[string]dal.DB)
 
 	// 在并发的情况下，这里存在panic的问题
 	lastInitErr   errors.CCErrorCoder
@@ -55,49 +171,9 @@ func Client(prefix ...string) dal.DB {
 	return dbMap[pre]
 }
 
-// Sharding get mongodb sharding client
-func Sharding(prefix ...string) dal.ShardingDB {
-	var pre string
-	if len(prefix) > 0 {
-		pre = prefix[0]
-	}
-	return shardingMap[pre]
-}
-
 // Table 获取操作db table的对象
 func Table(name string) dbType.Table {
 	return Client().Table(name)
-}
-
-// ParseConfig parse mongodb configuration
-func ParseConfig(prefix string, configMap map[string]string) (*mongo.Config, errors.CCErrorCoder) {
-	lastConfigErr = nil
-	config, err := cc.Mongo(prefix)
-	if err != nil {
-		return nil, errors.NewCCError(common.CCErrCommConfMissItem, "can't find mongo configuration")
-	}
-	if config.Address == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
-			"Configuration file missing ["+prefix+".host] configuration item")
-		return nil, lastConfigErr
-	}
-	if config.User == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
-			"Configuration file missing ["+prefix+".usr] configuration item")
-		return nil, lastConfigErr
-	}
-	if config.Password == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
-			"Configuration file missing ["+prefix+".pwd] configuration item")
-		return nil, lastConfigErr
-	}
-	if config.Database == "" {
-		lastConfigErr = errors.NewCCError(common.CCErrCommConfMissItem,
-			"Configuration file missing ["+prefix+".database] configuration item")
-		return nil, lastConfigErr
-	}
-
-	return &config, nil
 }
 
 // InitClient init mongodb client
@@ -112,40 +188,6 @@ func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
 		return lastInitErr
 	}
 	return nil
-}
-
-// InitSharding init mongodb sharding client
-func InitSharding(prefix string, config *mongo.Config, disableDBSharding bool,
-	cryptoConf *cryptor.Config) errors.CCErrorCoder {
-
-	var err error
-	if disableDBSharding {
-		shardingMap[prefix], err = local.NewDisableDBShardingMongo(config.GetMongoConf(), time.Minute)
-		if err != nil {
-			blog.Errorf("new %s disable db sharding mongo client failed, err: %v", prefix, err)
-			return errors.NewCCError(common.CCErrCommResourceInitFailed, "init disable db sharding mongo client failed")
-		}
-		return nil
-	}
-
-	crypto, err := cryptor.NewCrypto(cryptoConf)
-	if err != nil {
-		blog.Errorf("new %s mongo crypto failed, err: %v", prefix, err)
-		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init mongo crypto failed")
-	}
-
-	shardingMap[prefix], err = local.NewShardingMongo(config.GetMongoConf(), time.Minute, crypto)
-	if err != nil {
-		blog.Errorf("new %s sharding mongo client failed, err: %v", prefix, err)
-		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init sharding mongo client failed")
-	}
-	return nil
-}
-
-// UpdateConfig update mongodb configuration
-func UpdateConfig(prefix string, config mongo.Config) {
-	// 不支持热更新
-	return
 }
 
 // Healthz check db health status
@@ -177,32 +219,7 @@ func Healthz() []metric.HealthItem {
 		})
 	}
 
-	for prefix, db := range shardingMap {
-		if db == nil {
-			items = append(items, metric.HealthItem{
-				IsHealthy: false,
-				Message:   prefix + " db not initialized",
-				Name:      types.CCFunctionalityMongo,
-			})
-			continue
-		}
-
-		if err := db.Ping(); err != nil {
-			items = append(items, metric.HealthItem{
-				IsHealthy: false,
-				Message:   prefix + " db connect error. err: " + err.Error(),
-				Name:      types.CCFunctionalityMongo,
-			})
-			continue
-		}
-
-		items = append(items, metric.HealthItem{
-			IsHealthy: true,
-			Name:      types.CCFunctionalityMongo,
-		})
-	}
-
-	return items
+	return append(items, mongoInst.Healthz()...)
 }
 
 // IsDuplicatedError check duplicated error

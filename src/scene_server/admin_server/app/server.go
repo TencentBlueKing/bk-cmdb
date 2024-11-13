@@ -31,7 +31,7 @@ import (
 	"configcenter/src/scene_server/admin_server/iam"
 	"configcenter/src/scene_server/admin_server/logics"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/monitor"
@@ -58,13 +58,13 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.ConfigCenter = process.ConfigCenter
 	process.Service = service
 
-	if dbErr := mongodb.InitSharding("", &process.Config.MongoDB, false, process.Config.Crypto); dbErr != nil {
+	if dbErr := mongodb.SetShardingCli("", &process.Config.MongoDB, process.Config.Crypto); dbErr != nil {
 		return fmt.Errorf("connect mongo server failed %s", dbErr.Error())
 	}
-	db := mongodb.Sharding()
+	db := mongodb.Dal()
 	process.Service.SetDB(db)
 
-	watchDB, err := local.NewDisableDBShardingMongo(process.Config.WatchDB.GetMongoConf(), time.Minute)
+	watchDB, err := sharding.NewDisableDBShardingMongo(process.Config.WatchDB.GetMongoConf(), time.Minute)
 	if err != nil {
 		return fmt.Errorf("connect watch mongo server failed, err: %v", err)
 	}
@@ -113,7 +113,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	errors.SetGlobalCCError(process.Core.CCErr)
 
 	syncor := iam.NewSyncor()
-	syncor.SetDB(mongodb.Sharding())
+	syncor.SetDB(mongodb.Dal())
 	syncor.SetSyncIAMPeriod(process.Config.SyncIAMPeriodMinutes)
 	go syncor.SyncIAM(iamCli, cache, service.Logics)
 

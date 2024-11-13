@@ -31,10 +31,10 @@ type MongoConf struct {
 	DisableInsert bool
 }
 
-// ShardingDBConf is sharding mongodb config
-type ShardingDBConf struct {
-	ID             string               `bson:"_id"`
-	MasterDB       string               `bson:"master_db"`
-	AddNewTenantDB string               `bson:"add_new_tenant_db"`
-	SlaveDB        map[string]MongoConf `bson:"slave_db"`
+// MongoCliConf is cmdb mongo client config
+type MongoCliConf struct {
+	// IDGenStep is the step of id generator
+	IDGenStep int
+	// DisableInsert defines if insert operation for specific tables are disabled
+	DisableInsert bool
 }

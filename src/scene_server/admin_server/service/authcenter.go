@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/iam"
 
@@ -37,6 +38,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -61,7 +63,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	}
 
 	// 由于模型实例的编辑&删除拆分为实例级别, 需要先拿到当前已存在的模型, 再进行相应的IAM注册操作
-	models, err := iam.GetCustomObjects(s.ctx, s.db)
+	models, err := iam.GetCustomObjects(kit, s.db)
 	if err != nil {
 		blog.Errorf("init iam failed, collect notPre-models failed, err: %s, rid:%s", err.Error(), rid)
 		_ = resp.WriteError(http.StatusBadRequest,

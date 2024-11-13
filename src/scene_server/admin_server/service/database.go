@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 
 	"github.com/emicklei/go-restful/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -103,7 +104,7 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 	total := 0
 
 	// delete audit log for platform and all tenants
-	num, err := s.deleteAuditLog(s.db.IgnoreTenant(), baseDay, rid)
+	num, err := s.deleteAuditLog(s.db.Shard(sharding.NewShardOpts().WithIgnoreTenant()), baseDay, rid)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
@@ -111,7 +112,7 @@ func (s *Service) DeleteAuditLog(req *restful.Request, resp *restful.Response) {
 	num += total
 
 	err = tenant.ExecForAllTenants(func(tenantID string) error {
-		num, err = s.deleteAuditLog(s.db.Tenant(tenantID), baseDay, rid)
+		num, err = s.deleteAuditLog(s.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)), baseDay, rid)
 		if err != nil {
 			return err
 		}

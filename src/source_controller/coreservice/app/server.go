@@ -136,5 +136,22 @@ func initResource(coreSvr *CoreServer, op *options.ServerOption) error {
 		return initErr
 	}
 
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		blog.Errorf("get crypto config failed, err: %v", err)
+		return err
+	}
+
+	err = mongodb.SetShardingCli("", &coreSvr.Config.Mongo, cryptoConf)
+	if err != nil {
+		blog.Errorf("new mongodb client failed, err: %v", err)
+		return dbErr
+	}
+
+	if err = mongodb.Dal().InitTxnManager(redis.Client()); err != nil {
+		blog.Errorf("init txn manager failed, err: %v", err)
+		return initErr
+	}
+
 	return nil
 }

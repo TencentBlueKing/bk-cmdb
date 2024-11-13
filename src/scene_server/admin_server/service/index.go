@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/logics"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -39,7 +39,7 @@ func (s *Service) BackgroundTask(options options.Config) error {
 	// db 语句的执行时间设置为never timeout
 	mongoConf := options.MongoDB
 	mongoConf.SocketTimeout = 0
-	db, err := local.NewShardingMongo(mongoConf.GetMongoConf(), time.Minute, crypto)
+	db, err := sharding.NewShardingMongo(mongoConf.GetMongoConf(), time.Minute, crypto)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

@@ -48,8 +48,8 @@ import (
 type Service struct {
 	*backbone.Engine
 	*logics.Logics
-	db           dal.ShardingDB
-	watchDB      dal.ShardingDB
+	db           dal.Dal
+	watchDB      dal.Dal
 	cache        redis.Client
 	ctx          context.Context
 	Config       options.Config
@@ -66,12 +66,12 @@ func NewService(ctx context.Context) *Service {
 }
 
 // SetDB set db
-func (s *Service) SetDB(db dal.ShardingDB) {
+func (s *Service) SetDB(db dal.Dal) {
 	s.db = db
 }
 
 // SetWatchDB set watch db
-func (s *Service) SetWatchDB(watchDB dal.ShardingDB) {
+func (s *Service) SetWatchDB(watchDB dal.Dal) {
 	s.watchDB = watchDB
 }
 

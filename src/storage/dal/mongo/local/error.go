@@ -29,6 +29,11 @@ type errDB struct {
 	err error
 }
 
+// NewErrDB new error db
+func NewErrDB(err error) DB {
+	return &errDB{err: err}
+}
+
 // Table return error for method chaining
 func (e *errDB) Table(_ string) types.Table {
 	return &errColl{err: e.err}

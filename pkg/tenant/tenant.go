@@ -26,18 +26,18 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
 	allTenants = make([]Tenant, 0)
-	db         dal.ShardingDB
+	db         local.DB
 	once       sync.Once
 )
 
 // Options is tenant initialize options
 type Options struct {
-	DB dal.ShardingDB
+	DB local.DB
 	// TODO add redis cache and api machinery client
 }
 
@@ -91,13 +91,12 @@ func refreshTenantInfo() error {
 func GetAllTenants() []Tenant {
 	// TODO right now only support default tenant for compatible, use actual tenants later
 	return []Tenant{{TenantID: common.BKDefaultOwnerID, Status: EnabledStatus}}
-	return allTenants
 }
 
 // GetAllTenantsFromDB get all tenants from db
-func GetAllTenantsFromDB(ctx context.Context, db dal.ShardingDB) ([]Tenant, error) {
+func GetAllTenantsFromDB(ctx context.Context, db local.DB) ([]Tenant, error) {
 	tenants := make([]Tenant, 0)
-	err := db.IgnoreTenant().Table(common.BKTableNameTenant).Find(nil).All(ctx, &tenants)
+	err := db.Table(common.BKTableNameTenant).Find(nil).All(ctx, &tenants)
 	if err != nil {
 		return nil, fmt.Errorf("get all tenants from db failed, err: %v", err)
 	}

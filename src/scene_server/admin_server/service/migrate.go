@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
@@ -48,7 +49,8 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		User:    common.CCSystemOperatorUserName,
 	}
 
-	if err := s.createWatchDBChainCollections(rid); err != nil {
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+	if err := s.createWatchDBChainCollections(kit); err != nil {
 		blog.Errorf("create watch db chain collections failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
@@ -57,7 +59,8 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db.IgnoreTenant(), s.cache, s.iam, updateCfg)
+	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam,
+		updateCfg)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -90,18 +93,18 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 // dbChainTTLTime the ttl time seconds of the db event chain, used to set the ttl index of mongodb
 const dbChainTTLTime = 5 * 24 * 60 * 60
 
-func (s *Service) createWatchDBChainCollections(rid string) error {
+func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 	// create watch token table to store the last watch token info for every collections
-	exists, err := s.watchDB.IgnoreTenant().HasTable(s.ctx, common.BKTableNameWatchToken)
+	exists, err := s.watchDB.Shard(kit.SysShardOpts()).HasTable(s.ctx, common.BKTableNameWatchToken)
 	if err != nil {
-		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, rid)
+		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
 		return err
 	}
 
 	if !exists {
-		err = s.watchDB.IgnoreTenant().CreateTable(s.ctx, common.BKTableNameWatchToken)
+		err = s.watchDB.Shard(kit.SysShardOpts()).CreateTable(s.ctx, common.BKTableNameWatchToken)
 		if err != nil && !mongodb.IsDuplicatedError(err) {
-			blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, rid)
+			blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
 			return err
 		}
 	}
@@ -111,30 +114,31 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 	for _, cursorType := range cursorTypes {
 		key, err := event.GetResourceKeyWithCursorType(cursorType)
 		if err != nil {
-			blog.Errorf("get resource key with cursor type %s failed, err: %v, rid: %s", cursorType, err, rid)
+			blog.Errorf("get resource key with cursor type %s failed, err: %v, rid: %s", cursorType, err, kit.Rid)
 			return err
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			exists, err := s.watchDB.Tenant(tenantID).HasTable(s.ctx, key.ChainCollection())
+			kit.SupplierAccount = tenantID
+			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
 			if err != nil {
-				blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+				blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
 				return err
 			}
 
 			if !exists {
-				err = s.watchDB.Tenant(tenantID).CreateTable(s.ctx, key.ChainCollection())
+				err = s.watchDB.Shard(kit.ShardOpts()).CreateTable(s.ctx, key.ChainCollection())
 				if err != nil && !mongodb.IsDuplicatedError(err) {
-					blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+					blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
 					return err
 				}
 			}
 
-			if err = s.createWatchIndexes(tenantID, cursorType, key, rid); err != nil {
+			if err = s.createWatchIndexes(kit, tenantID, cursorType, key); err != nil {
 				return err
 			}
 
-			if err = s.createWatchToken(tenantID, key); err != nil {
+			if err = s.createWatchToken(kit, tenantID, key); err != nil {
 				return err
 			}
 			return nil
@@ -146,7 +150,7 @@ func (s *Service) createWatchDBChainCollections(rid string) error {
 	return nil
 }
 
-func (s *Service) createWatchIndexes(tenantID string, cursorType watch.CursorType, key event.Key, rid string) error {
+func (s *Service) createWatchIndexes(kit *rest.Kit, tenantID string, cursorType watch.CursorType, key event.Key) error {
 	indexes := []daltypes.Index{
 		{Name: "index_id", Keys: bson.D{{common.BKFieldID, -1}}, Background: true, Unique: true},
 		{Name: "index_cursor", Keys: bson.D{{common.BKCursorField, -1}}, Background: true, Unique: true},
@@ -161,9 +165,9 @@ func (s *Service) createWatchIndexes(tenantID string, cursorType watch.CursorTyp
 		indexes = append(indexes, subResourceIndex)
 	}
 
-	existIndexArr, err := s.watchDB.Tenant(tenantID).Table(key.ChainCollection()).Indexes(s.ctx)
+	existIndexArr, err := s.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).Indexes(s.ctx)
 	if err != nil {
-		blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+		blog.Errorf("get exist indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
 		return err
 	}
 
@@ -177,21 +181,21 @@ func (s *Service) createWatchIndexes(tenantID string, cursorType watch.CursorTyp
 			continue
 		}
 
-		err = s.watchDB.Tenant(tenantID).Table(key.ChainCollection()).CreateIndex(s.ctx, index)
+		err = s.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).CreateIndex(s.ctx, index)
 		if err != nil && !mongodb.IsDuplicatedError(err) {
-			blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, rid)
+			blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *Service) createWatchToken(tenantID string, key event.Key) error {
+func (s *Service) createWatchToken(kit *rest.Kit, tenantID string, key event.Key) error {
 	filter := map[string]interface{}{
 		"_id": key.Collection(),
 	}
 
-	count, err := s.watchDB.IgnoreTenant().Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
+	count, err := s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
 	if err != nil {
 		blog.Errorf("check if last watch token exists failed, err: %v, filter: %+v", err, filter)
 		return err
@@ -210,7 +214,8 @@ func (s *Service) createWatchToken(tenantID string, key event.Key) error {
 			common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
 			common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
 		}
-		if err = s.watchDB.IgnoreTenant().Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+		err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
+		if err != nil {
 			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
 			return err
 		}
@@ -226,7 +231,8 @@ func (s *Service) createWatchToken(tenantID string, key event.Key) error {
 			common.BKFieldID:             0,
 			common.BKTokenField:          "",
 		}
-		if err = s.watchDB.IgnoreTenant().Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+		err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
+		if err != nil {
 			blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
 			return err
 		}
@@ -241,7 +247,7 @@ func (s *Service) createWatchToken(tenantID string, key event.Key) error {
 			Nano: 0,
 		},
 	}
-	if err = s.watchDB.IgnoreTenant().Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+	if err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
 		blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
 		return err
 	}
@@ -271,7 +277,9 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db.IgnoreTenant(), s.cache, s.iam, updateCfg, input.Version)
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam, updateCfg,
+		input.Version)
 	if err != nil {
 		blog.Errorf("db upgrade specify failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{

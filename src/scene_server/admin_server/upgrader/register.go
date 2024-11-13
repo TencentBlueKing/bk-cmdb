@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/util"
 	ccversion "configcenter/src/common/version"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/redis"
 )
 
@@ -273,13 +274,13 @@ func Upgrade(ctx context.Context, db dal.RDB, cache redis.Client, iam *iam.IAM, 
 }
 
 // DBReady 已经执行过init_db. 数据库初始化成功
-func DBReady(ctx context.Context, db dal.RDB) (bool, error) {
+func DBReady(ctx context.Context, db dal.Dal) (bool, error) {
 
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return VersionCmp(upgraderPool[i].version, upgraderPool[j].version) < 0
 	})
 
-	cmdbVersion, err := getVersion(ctx, db)
+	cmdbVersion, err := getVersion(ctx, db.Shard(sharding.NewShardOpts().WithIgnoreTenant()))
 	if err != nil {
 		return false, fmt.Errorf("getVersion failed, err: %s", err.Error())
 	}
