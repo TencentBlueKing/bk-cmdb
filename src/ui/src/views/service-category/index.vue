@@ -60,7 +60,7 @@
                 :auth="{ type: $OPERATION.U_SERVICE_CATEGORY, relation: [bizId] }">
                 <div slot-scope="{ disabled }" :class="['category-name-text', { disabled }]">
                   <div class="text-inner" @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
-                    <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}</span>
+                    <span class="main-name" :title="mainCategory.name">{{mainCategory.name}}333</span>
                     <span class="main-id">{{mainCategory.id}}</span>
                   </div>
                 </div>
@@ -436,14 +436,14 @@
       },
       handleCloseEditMain() {
         this.editMainStatus = null
-        this.isMainAuthCompleted = false
       },
       handleEditChild(id, name) {
         this.editChildStatus = id
         this.childCategoryName = name
         this.handleCloseAddChild()
         this.handleCloseEditMain()
-        this.handleCloseAddBox()
+        this.handleCloseAddBox() 
+        this.isMainAuthCompleted = false
         this.$nextTick(() => {
           this.$refs.editInput[0].$refs.categoryInput.focus()
         })
