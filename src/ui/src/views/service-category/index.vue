@@ -436,7 +436,6 @@
       },
       handleCloseEditMain() {
         this.editMainStatus = null
-        this.isMainAuthCompleted = false
       },
       handleEditChild(id, name) {
         this.editChildStatus = id
@@ -444,6 +443,7 @@
         this.handleCloseAddChild()
         this.handleCloseEditMain()
         this.handleCloseAddBox()
+        this.isMainAuthCompleted = false
         this.$nextTick(() => {
           this.$refs.editInput[0].$refs.categoryInput.focus()
         })
