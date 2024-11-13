@@ -25,7 +25,7 @@
       <ul class="bk-dropdown-list" slot="dropdown-content">
         <li>
           <a href="javascript:;" @click="transferToIdleModule">
-            {{$store.state.globalConfig.config.idlePool.idle}}
+            {{$t($store.state.globalConfig.config.idlePool.idle)}}
           </a>
         </li>
         <li>

@@ -40,7 +40,10 @@
           v-model="assign.curSelected"
           @selected="handleAssignHosts">
           <bk-option id="-1" :name="$t('分配到')" hidden></bk-option>
-          <bk-option id="toBusiness" :name="$t('业务空闲机', { idleSet: $store.state.globalConfig.config.set })"></bk-option>
+          <bk-option
+            id="toBusiness"
+            :name="$t('业务空闲机', { idleSet: this.$t($store.state.globalConfig.config.set) })">
+          </bk-option>
           <bk-option id="toDirs" :name="$t('主机池其他目录')"></bk-option>
         </bk-select>
       </span>
