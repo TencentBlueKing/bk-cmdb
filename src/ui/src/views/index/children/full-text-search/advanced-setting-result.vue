@@ -12,9 +12,9 @@
 
 <template>
   <div class="setting-tags" v-show="customized">
-    <div class="tag-item target">检索对象：{{targetScopes}}</div>
+    <div class="tag-item target">{{$t('检索对象')}}:{{targetScopes}}</div>
     <div class="tag-item" v-for="(item, index) in targetModels" :key="index" v-bk-overflow-tips>
-      {{item.targetName}}：{{item.models}}
+      {{$t(item.targetName)}}：{{$t(item.models)}}
     </div>
     <bk-button class="reset" text size="small"
       @click="handleClear">
@@ -45,7 +45,7 @@
           const modelIds = finalSetting.value[`${target}s`]
           targetModels.push({
             targetName: targetMap[target],
-            models: modelIds.length ? modelIds.map(id => getModelName(id)).join(' | ') : t('全部')
+            models: modelIds.length ? modelIds.map(id => t(getModelName(id))).join(' | ') : t('全部')
           })
         })
         return targetModels
@@ -60,7 +60,7 @@
         return changedModels.some(changed => changed)
       })
 
-      const targetScopes = computed(() => finalSetting.value.targets.map(target => targetMap[target]).join(' | '))
+      const targetScopes = computed(() => finalSetting.value.targets.map(target => t(targetMap[target])).join(' | '))
 
       const handleClear = () => {
         handleReset()

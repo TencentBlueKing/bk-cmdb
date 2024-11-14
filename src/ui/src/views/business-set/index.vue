@@ -407,7 +407,7 @@
 
       const handleDelete = (inst) => {
         $bkInfo({
-          title: '确定删除',
+          title: t('确定删除'),
           subTitle: t('确认要删除', { name: inst[MODEL_NAME_KEY] }),
           confirmLoading: true,
           confirmFn: async () => {
@@ -464,7 +464,7 @@
 
       const handleSaveSuccess = () => {
         managementFormState.show = false
-        getList()
+        RouterQuery.refresh()
       }
 
       const handleFilterValueChange = () => {

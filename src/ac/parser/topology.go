@@ -1342,7 +1342,7 @@ func (ps *parseStream) audit() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
-					Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
