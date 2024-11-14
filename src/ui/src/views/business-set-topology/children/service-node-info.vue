@@ -288,6 +288,7 @@
         const nodeNameProperty = properties.find(property => property.bk_property_id === this.nodeNamePropertyId)
         properties.unshift({
           ...nodeNameProperty,
+          id: Date.now(),
           bk_property_id: this.nodePrimaryPropertyId,
           bk_property_name: this.$t('ID'),
           unit: ''
