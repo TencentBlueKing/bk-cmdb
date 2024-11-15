@@ -19,11 +19,12 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 )
 
-func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID string, modelBizID int64) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID string,
+	modelBizID int64) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: groupID})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 	if modelBizID > 0 {
 		cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: modelBizID})
@@ -46,7 +47,7 @@ func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName 
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupName, Val: groupName})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
 	if modelBizID > 0 {
@@ -69,7 +70,7 @@ func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupID
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: kit.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Element(&mongo.In{Key: metadata.AttributeFieldPropertyGroup, Val: groupIDS})
 
 	attrs, err := g.model.SearchModelAttributes(kit, objID, metadata.QueryCondition{

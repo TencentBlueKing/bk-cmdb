@@ -74,7 +74,7 @@ func changeHostIpv4RequireAttr(ctx context.Context, db dal.RDB) error {
 func addHostAddressingAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	now := time.Now()
 	addressingAttr := attribute{
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		ObjectID:      common.BKInnerObjIDHost,
 		PropertyID:    "bk_addressing",
 		PropertyName:  "寻址方式",
@@ -120,7 +120,8 @@ func addHostAddressingAttr(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		}
 		sort := common.BKPropertyIndexField + ":-1"
 		maxIdxAttr := new(attribute)
-		if err := db.Table(common.BKTableNameObjAttDes).Find(attrIdxFilter).Sort(sort).One(ctx, maxIdxAttr); err != nil {
+		if err := db.Table(common.BKTableNameObjAttDes).Find(attrIdxFilter).Sort(sort).One(ctx,
+			maxIdxAttr); err != nil {
 			blog.Errorf("get max host attribute index failed, filter: %v, err: %v", attrIdxFilter, err)
 			return err
 		}
@@ -285,7 +286,7 @@ func adjustHostUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		},
 		ObjID:    common.BKInnerObjIDHost,
 		IsPre:    true,
-		OwnerID:  conf.OwnerID,
+		OwnerID:  conf.TenantID,
 		LastTime: time.Now(),
 	}
 

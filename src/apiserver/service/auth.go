@@ -33,7 +33,7 @@ import (
 func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
-	ownerID := httpheader.GetSupplierAccount(pheader)
+	tenantID := httpheader.GetTenantID(pheader)
 	rid := httpheader.GetRid(pheader)
 
 	if auth.EnableAuthorize() == false {
@@ -51,8 +51,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	user := meta.UserInfo{
-		UserName:        httpheader.GetUser(pheader),
-		SupplierAccount: ownerID,
+		UserName: httpheader.GetUser(pheader),
+		TenantID: tenantID,
 	}
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
@@ -70,8 +70,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 				InstanceID:   res.ResourceID,
 				InstanceIDEx: res.ResourceIDEx,
 			},
-			SupplierAccount: ownerID,
-			BusinessID:      res.BizID,
+			TenantID:   tenantID,
+			BusinessID: res.BizID,
 		}
 		for _, item := range res.ParentLayers {
 			attr.Layers = append(attr.Layers, meta.Item{Type: meta.ResourceType(item.ResourceType),
@@ -141,8 +141,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	}
 
 	userInfo := meta.UserInfo{
-		UserName:        httpheader.GetUser(pheader),
-		SupplierAccount: httpheader.GetSupplierAccount(pheader),
+		UserName: httpheader.GetUser(pheader),
+		TenantID: httpheader.GetTenantID(pheader),
 	}
 
 	authInput := meta.ListAuthorizedResourcesParam{
@@ -183,7 +183,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		}
 	}
 
-	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount,
+	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.TenantID,
 		req.Request.Header, &input)
 	if err != nil {
 		blog.Errorf("get authorized business list, auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",

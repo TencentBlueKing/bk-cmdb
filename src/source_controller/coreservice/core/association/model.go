@@ -25,14 +25,16 @@ type associationModel struct {
 }
 
 // CreateModelAssociation TODO
-func (m *associationModel) CreateModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+func (m *associationModel) CreateModelAssociation(kit *rest.Kit,
+	inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 	enableMainlineAssociationType := false
 	return m.createModelAssociation(kit, inputParam, enableMainlineAssociationType)
 }
 
 // CreateMainlineModelAssociation used for create association of type bk_mainline, as it can only create by special method,
 // for example add a level to business modle
-func (m *associationModel) CreateMainlineModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+func (m *associationModel) CreateMainlineModelAssociation(kit *rest.Kit,
+	inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 	enableMainlineAssociationType := true
 	return m.createModelAssociation(kit, inputParam, enableMainlineAssociationType)
 }
@@ -41,34 +43,40 @@ var forbiddenCreateAssociationObjList = []string{
 	common.BKInnerObjIDProject,
 }
 
-func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation, enableMainlineAssociationType bool) (*metadata.CreateOneDataResult, error) {
+func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam metadata.CreateModelAssociation,
+	enableMainlineAssociationType bool) (*metadata.CreateOneDataResult, error) {
 	// enableMainlineAssociationType used for distinguish two creation mode
 	// when enableMainlineAssociationType enabled, only bk_mainline type could be create
 	// when enableMainlineAssociationType disabled, all type except bk_mainline could be create
 
-	inputParam.Spec.OwnerID = kit.SupplierAccount
+	inputParam.Spec.TenantID = kit.TenantID
 	if err := m.isValid(kit, inputParam); nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}
 
 	exists, err := m.isExistsAssociationID(kit, inputParam.Spec.AssociationName)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the association ID (%s) is exists, error info is %s", kit.Rid, inputParam.Spec.AssociationName, err.Error())
+		blog.Errorf("failed to check whether the association ID (%s) is exists, error: %v, rid: %s",
+			inputParam.Spec.AssociationName, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is failed create a new association, because of the association ID (%s) is exists", kit.Rid, inputParam.Spec.AsstKindID)
-		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrCommDuplicateItem, inputParam.Spec.AssociationName)
+		blog.Errorf("the association ID (%s) is exists, rid: %s", inputParam.Spec.AsstKindID, kit.Rid)
+		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrCommDuplicateItem,
+			inputParam.Spec.AssociationName)
 	}
 
-	exists, err = m.isExistsAssociationObjectWithAnotherObject(kit, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, inputParam.Spec.AsstKindID)
+	exists, err = m.isExistsAssociationObjectWithAnotherObject(kit, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID,
+		inputParam.Spec.AsstKindID)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to create a new association, because of it is failed to check if the association (%s=>%s) is exists, error info is %s", kit.Rid, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
+		blog.Errorf("failed to check if the association (%s=>%s) is exists, error: %v, rid: %s",
+			inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is failed to create a new association, because of it (%s=>%s) is exists", kit.Rid, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
-		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrTopoAssociationAlreadyExist, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
+		blog.Errorf("(%s=>%s) is exists, rid: %s", inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, kit.Rid)
+		return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrTopoAssociationAlreadyExist,
+			inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
 	}
 
 	asstKindID := inputParam.Spec.AsstKindID
@@ -76,26 +84,31 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 		// AsstKindID shouldn't be use bk_mainline
 		if asstKindID == common.AssociationKindMainline {
 			blog.Errorf("use inner association type: %v is forbidden, rid: %s", common.AssociationKindMainline, kit.Rid)
-			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, asstKindID)
+			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable,
+				asstKindID)
 		}
 	} else {
 		// AsstKindID could only be bk_mainline
 		if asstKindID != common.AssociationKindMainline {
-			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s, rid: %s", asstKindID, kit.Rid)
-			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrorTopoAssociationKindInconsistent, asstKindID)
+			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s, rid: %s", asstKindID,
+				kit.Rid)
+			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrorTopoAssociationKindInconsistent,
+				asstKindID)
 		}
 	}
 
 	id, err := m.save(kit, &inputParam.Spec)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to create a new association (%s=>%s), error info is %s", kit.Rid, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
+		blog.Errorf("failed to create a new association (%s=>%s), error: %v", inputParam.Spec.ObjectID,
+			inputParam.Spec.AsstObjID, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err
 	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 
 // SetModelAssociation TODO
-func (m *associationModel) SetModelAssociation(kit *rest.Kit, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error) {
+func (m *associationModel) SetModelAssociation(kit *rest.Kit,
+	inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error) {
 
 	// TODO: need to care instance association, which used this model association
 
@@ -103,12 +116,13 @@ func (m *associationModel) SetModelAssociation(kit *rest.Kit, inputParam metadat
 }
 
 // UpdateModelAssociation TODO
-func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (m *associationModel) UpdateModelAssociation(kit *rest.Kit,
+	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	// ATTENTION: only to update the fields except bk_obj_asst_id, bk_obj_id, bk_asst_obj_id
 	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldAssociationObjectID)
-	inputParam.Data.Remove(metadata.AssociationFieldSupplierAccount)
+	inputParam.Data.Remove(common.TenantID)
 	inputParam.Data.Remove(metadata.AssociationFieldAsstID)
 
 	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
@@ -144,8 +158,9 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit, inputParam meta
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-// SearchModelAssociation TODO
-func (m *associationModel) SearchModelAssociation(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+// SearchModelAssociation search model associations
+func (m *associationModel) SearchModelAssociation(kit *rest.Kit,
+	inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
 	if err != nil {
@@ -169,7 +184,8 @@ func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata
 
 	cond, err := mongo.NewConditionFromMapStr(input.Condition)
 	if err != nil {
-		blog.Errorf("convert the condition from mapstr failed, err: %v, cond: %v, rid: %s", err, input.Condition, kit.Rid)
+		blog.Errorf("convert the condition from mapstr failed, err: %v, cond: %v, rid: %s", err, input.Condition,
+			kit.Rid)
 		return nil, kit.CCError.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
@@ -183,7 +199,8 @@ func (m *associationModel) CountModelAssociations(kit *rest.Kit, input *metadata
 }
 
 // DeleteModelAssociation TODO
-func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *associationModel) DeleteModelAssociation(kit *rest.Kit,
+	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
@@ -227,7 +244,8 @@ func (m *associationModel) DeleteModelAssociation(kit *rest.Kit, inputParam meta
 }
 
 // CascadeDeleteModelAssociation TODO
-func (m *associationModel) CascadeDeleteModelAssociation(kit *rest.Kit, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *associationModel) CascadeDeleteModelAssociation(kit *rest.Kit,
+	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())

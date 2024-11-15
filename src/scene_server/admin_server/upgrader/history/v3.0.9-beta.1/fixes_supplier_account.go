@@ -15,7 +15,6 @@ package v3v0v9beta1
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
@@ -23,12 +22,12 @@ import (
 func fixesSupplierAccount(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for _, tablename := range shouldAddSupplierAccountFieldTables {
 		condition := map[string]interface{}{
-			common.BKOwnerIDField: map[string]interface{}{
+			"bk_supplier_account": map[string]interface{}{
 				"$in": []interface{}{nil, ""},
 			},
 		}
 		data := map[string]interface{}{
-			common.BKOwnerIDField: common.BKDefaultOwnerID,
+			"bk_supplier_account": "0",
 		}
 		err := db.Table(tablename).Update(ctx, condition, data)
 		if nil != err {

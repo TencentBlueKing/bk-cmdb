@@ -141,19 +141,19 @@ func getBkTokens(c *gin.Context) (bkTokens []string) {
 func setUser(resultData loginResult, bkToken string) (user *metadata.LoginUserInfo) {
 	userDetail := resultData.Data
 	if len(userDetail.OwnerUin) == 0 {
-		userDetail.OwnerUin = common.BKDefaultOwnerID
+		userDetail.OwnerUin = common.BKDefaultTenantID
 	}
 
 	user = &metadata.LoginUserInfo{
-		UserName: userDetail.UserName,
-		ChName:   userDetail.ChName,
-		Phone:    userDetail.Phone,
-		Email:    userDetail.Email,
-		Role:     userDetail.Role,
-		BkToken:  bkToken,
-		OnwerUin: userDetail.OwnerUin,
-		IsOwner:  false,
-		Language: userDetail.Language,
+		UserName:  userDetail.UserName,
+		ChName:    userDetail.ChName,
+		Phone:     userDetail.Phone,
+		Email:     userDetail.Email,
+		Role:      userDetail.Role,
+		BkToken:   bkToken,
+		TenantUin: userDetail.OwnerUin,
+		IsTenant:  false,
+		Language:  userDetail.Language,
 	}
 	return user
 }

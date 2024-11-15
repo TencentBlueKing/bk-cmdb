@@ -37,8 +37,6 @@ import (
 const (
 	// AttributeFieldID TODO
 	AttributeFieldID = "id"
-	// AttributeFieldSupplierAccount TODO
-	AttributeFieldSupplierAccount = "bk_supplier_account"
 	// AttributeFieldObjectID TODO
 	AttributeFieldObjectID = "bk_obj_id"
 	// AttributeFieldPropertyID TODO
@@ -101,7 +99,7 @@ const (
 type Attribute struct {
 	BizID             int64       `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	ID                int64       `field:"id" json:"id" bson:"id" mapstructure:"id"`
-	OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	TenantID          string      `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 	ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
 	PropertyID        string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id" mapstructure:"bk_property_id"`
 	PropertyName      string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name" mapstructure:"bk_property_name"`
@@ -131,7 +129,7 @@ type Attribute struct {
 // AttributeGroup attribute metadata definition
 type AttributeGroup struct {
 	ID         int64  `field:"id" json:"id" bson:"id"`
-	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
 	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`

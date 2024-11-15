@@ -26,10 +26,12 @@ import (
 )
 
 // CreateProcessTemplate create process template
-func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+func (p *processOperation) CreateProcessTemplate(kit *rest.Kit,
+	template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	// base attribute validate
 	if field, err := template.Validate(); err != nil {
-		blog.Errorf("CreateProcessTemplate failed, validation failed, code: %d, field: %s, err: %+v, rid: %s", common.CCErrCommParamsInvalid, field, err, kit.Rid)
+		blog.Errorf("process template validation failed, code: %d, field: %s, err: %v, rid: %s",
+			common.CCErrCommParamsInvalid, field, err, kit.Rid)
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
@@ -45,7 +47,7 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	var bizID int64
 	var err error
 	if bizID, err = p.validateBizID(kit, template.BizID); err != nil {
-		blog.Errorf("CreateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		blog.Errorf("bizID validation failed, code: %d, err: %v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
@@ -54,13 +56,14 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	// validate service template id field
 	serviceTemplate, err := p.GetServiceTemplate(kit, template.ServiceTemplateID)
 	if err != nil {
-		blog.Errorf("CreateProcessTemplate failed, template id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		blog.Errorf("get service template, code: %d, err: %v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
 	}
 
 	// make sure biz id identical with service template
 	if bizID != serviceTemplate.BizID {
-		blog.Errorf("CreateProcessTemplate failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplate.BizID, kit.Rid)
+		blog.Errorf("input bizID: %d not equal service template bizID: %d, rid: %s", bizID, serviceTemplate.BizID,
+			kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
@@ -71,7 +74,7 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	// generate id field
 	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameProcessTemplate)
 	if nil != err {
-		blog.Errorf("CreateProcessTemplate failed, generate id failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("%s generate id failed, err: %v, rid: %s", common.BKTableNameProcessTemplate, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
@@ -81,16 +84,18 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit, template metadat
 	template.Modifier = kit.User
 	template.CreateTime = time.Now()
 	template.LastTime = time.Now()
-	template.SupplierAccount = kit.SupplierAccount
+	template.TenantID = kit.TenantID
 
 	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Insert(kit.Ctx, &template); nil != err {
-		blog.ErrorJSON("CreateProcessTemplate failed, mongodb failed, table: %s, template: %s, err: %s, rid: %s", common.BKTableNameProcessTemplate, template, err, kit.Rid)
+		blog.Errorf("insert process template failed, table: %s, template: %s, err: %v, rid: %s",
+			common.BKTableNameProcessTemplate, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return &template, nil
 }
 
-func (p *processOperation) processNameUniqueValidate(kit *rest.Kit, template *metadata.ProcessTemplate) errors.CCErrorCoder {
+func (p *processOperation) processNameUniqueValidate(kit *rest.Kit,
+	template *metadata.ProcessTemplate) errors.CCErrorCoder {
 	// process name unique
 	processName := ""
 	if template.Property.ProcessName.Value != nil {
@@ -107,10 +112,11 @@ func (p *processOperation) processNameUniqueValidate(kit *rest.Kit, template *me
 	}
 	count, err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(processNameFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("CreateProcessTemplate failed, check process_name unique failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("count process template failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
+		blog.Errorf("check process_name unique failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
@@ -135,22 +141,26 @@ func (p *processOperation) processNameUniqueValidate(kit *rest.Kit, template *me
 	}
 	count, err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(funcNameFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("CreateProcessTemplate failed, check func_name unique failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("count process template failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
+		blog.Errorf("check func_name unique failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated, funcName, startRegex)
 	}
 	return nil
 }
 
-// GetProcessTemplate TODO
-func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+// GetProcessTemplate get process template
+func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (*metadata.ProcessTemplate,
+	errors.CCErrorCoder) {
 	template := metadata.ProcessTemplate{}
 
 	filter := map[string]int64{common.BKFieldID: templateID}
-	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(filter).One(kit.Ctx, &template); nil != err {
-		blog.Errorf("GetProcessTemplate failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, filter, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(filter).One(kit.Ctx,
+		&template); nil != err {
+		blog.Errorf("get process template failed, table: %s, filter: %+v, err: %v, rid: %s",
+			common.BKTableNameProcessTemplate, filter, err, kit.Rid)
 		if mongodb.Client().IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -161,7 +171,8 @@ func (p *processOperation) GetProcessTemplate(kit *rest.Kit, templateID int64) (
 }
 
 // UpdateProcessTemplate update process template
-func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64, rawProperty map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
+func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64,
+	rawProperty map[string]interface{}) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
 	template, err := p.GetProcessTemplate(kit, templateID)
 	if err != nil {
 		return nil, err
@@ -169,7 +180,7 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 
 	property := metadata.ProcessProperty{}
 	if err := mapstr.DecodeFromMapStr(&property, rawProperty); err != nil {
-		blog.ErrorJSON("UpdateProcessTemplate failed, unmarshal failed, property: %s, err: %s, rid: %s", property, err, kit.Rid)
+		blog.Errorf("unmarshal process property failed, property: %+v, err: %v, rid: %s", property, err, kit.Rid)
 		err := kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 		return nil, err
 	}
@@ -178,7 +189,8 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 	template.Property.Update(property, rawProperty)
 
 	if field, err := template.Validate(); err != nil {
-		blog.Errorf("UpdateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, kit.Rid)
+		blog.Errorf("process template validation failed, code: %d, err: %v, rid: %s", common.CCErrCommParamsInvalid,
+			err, kit.Rid)
 		err := kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
@@ -201,14 +213,16 @@ func (p *processOperation) UpdateProcessTemplate(kit *rest.Kit, templateID int64
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
 	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Update(kit.Ctx, filter, &template); nil != err {
-		blog.Errorf("UpdateProcessTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, filter, template, err, kit.Rid)
+		blog.Errorf("update process template failed, table: %s, filter: %+v, template: %+v, err: %v, rid: %s",
+			common.BKTableNameProcessTemplate, filter, template, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 	return template, nil
 }
 
 // ListProcessTemplates TODO
-func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
+func (p *processOperation) ListProcessTemplates(kit *rest.Kit,
+	option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder) {
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
 	}
@@ -228,7 +242,8 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 	var total uint64
 	var err error
 	if total, err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, filter, err, kit.Rid)
+		blog.Errorf("count process templates failed, table: %s, filter: %+v, err: %v, rid: %s",
+			common.BKTableNameProcessTemplate, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	templates := make([]metadata.ProcessTemplate, 0)
@@ -239,8 +254,10 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 		sort = option.Page.Sort
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(kit.Ctx, &templates); nil != err {
-		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, kit.Rid)
+	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(kit.Ctx,
+		&templates); nil != err {
+		blog.Errorf("list process templates failed, table: %s, err: %v, rid: %s", common.BKTableNameProcessTemplate,
+			err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -255,7 +272,7 @@ func (p *processOperation) ListProcessTemplates(kit *rest.Kit, option metadata.L
 func (p *processOperation) DeleteProcessTemplate(kit *rest.Kit, processTemplateID int64) errors.CCErrorCoder {
 	template, err := p.GetProcessTemplate(kit, processTemplateID)
 	if err != nil {
-		blog.Errorf("DeleteProcessTemplate failed, GetProcessTemplate failed, templateID: %d, err: %+v, rid: %s", processTemplateID, err, kit.Rid)
+		blog.Errorf("get process template failed, templateID: %d, err: %v, rid: %s", processTemplateID, err, kit.Rid)
 		return err
 	}
 
@@ -265,15 +282,17 @@ func (p *processOperation) DeleteProcessTemplate(kit *rest.Kit, processTemplateI
 	updateDoc := map[string]interface{}{
 		common.BKProcessTemplateIDField: common.ServiceTemplateIDNotSet,
 	}
-	e := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, updateFilter, updateDoc)
-	if nil != e {
-		blog.Errorf("DeleteProcessTemplate failed, clear process instance templateID field failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, updateFilter, e, kit.Rid)
+	ccErr := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx, updateFilter, updateDoc)
+	if ccErr != nil {
+		blog.Errorf(" clear process instance templateID field failed, table: %s, filter: %+v, err: %v, rid: %s",
+			common.BKTableNameProcessInstanceRelation, updateFilter, ccErr, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}
 	if err := mongodb.Client().Table(common.BKTableNameProcessTemplate).Delete(kit.Ctx, deleteFilter); nil != err {
-		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, deleteFilter, err, kit.Rid)
+		blog.Errorf("delete process template failed, table: %s, filter: %+v, err: %v, rid: %s",
+			common.BKTableNameProcessTemplate, deleteFilter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	return nil

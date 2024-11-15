@@ -72,7 +72,7 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 				Name:       plat.BKCloudNameField,
 				InstanceID: plat.BKCloudIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		resources = append(resources, resource)

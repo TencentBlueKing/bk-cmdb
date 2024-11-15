@@ -196,7 +196,7 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		rows = append(rows, metadata.ObjFieldTemplateRelation{
 			ObjectID:   id,
 			TemplateID: opt.ID,
-			OwnerID:    kit.SupplierAccount,
+			TenantID:   kit.TenantID,
 		})
 	}
 
@@ -492,7 +492,7 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	template.ID = int64(id)
-	template.OwnerID = ctx.Kit.SupplierAccount
+	template.TenantID = ctx.Kit.TenantID
 	template.Creator = ctx.Kit.User
 	template.Modifier = ctx.Kit.User
 	now := time.Now()
@@ -617,7 +617,7 @@ func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	opt.OwnerID = dbTmpl.OwnerID
+	opt.TenantID = dbTmpl.TenantID
 	opt.Creator = dbTmpl.Creator
 	opt.CreateTime = dbTmpl.CreateTime
 	opt.Modifier = ctx.Kit.User

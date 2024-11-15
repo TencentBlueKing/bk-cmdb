@@ -160,14 +160,14 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 	}
 
 	chainNode := &watch.ChainNode{
-		ID:              id,
-		Oid:             oid,
-		ClusterTime:     e.ClusterTime,
-		EventType:       watch.ConvertOperateType(e.OperationType),
-		Token:           e.Token.Data,
-		Cursor:          currentCursor,
-		InstanceID:      instAsstID,
-		SupplierAccount: key.SupplierAccount(e.DocBytes),
+		ID:          id,
+		Oid:         oid,
+		ClusterTime: e.ClusterTime,
+		EventType:   watch.ConvertOperateType(e.OperationType),
+		Token:       e.Token.Data,
+		Cursor:      currentCursor,
+		InstanceID:  instAsstID,
+		TenantID:    key.SupplierAccount(e.DocBytes),
 	}
 
 	chainNode.SubResource = []string{gjson.GetBytes(e.DocBytes, common.BKObjIDField).String(),
@@ -211,13 +211,13 @@ func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid str
 	}
 
 	chainNode := &watch.ChainNode{
-		ID:              id,
-		ClusterTime:     e.ClusterTime,
-		Oid:             e.Oid,
-		EventType:       watch.ConvertOperateType(e.OperationType),
-		Token:           e.Token.Data,
-		Cursor:          currentCursor,
-		SupplierAccount: key.SupplierAccount(e.DocBytes),
+		ID:          id,
+		ClusterTime: e.ClusterTime,
+		Oid:         e.Oid,
+		EventType:   watch.ConvertOperateType(e.OperationType),
+		Token:       e.Token.Data,
+		Cursor:      currentCursor,
+		TenantID:    key.SupplierAccount(e.DocBytes),
 	}
 
 	if instID > 0 {

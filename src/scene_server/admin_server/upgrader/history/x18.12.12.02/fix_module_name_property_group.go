@@ -25,7 +25,7 @@ import (
 func fixModuleNamePropertyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
+	cond.Field("bk_supplier_account").Eq("0")
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
 	cond.Field(common.BKPropertyIDField).Eq(common.BKModuleNameField)
 

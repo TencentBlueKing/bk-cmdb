@@ -39,20 +39,20 @@ func init() {
 		[]string{common.BKObjIDField}, getObjInstTable, parseObjInstData))
 }
 
-// getObjInstTable get object instance table by objID and supplier account
-// NOTE: obj with "0" supplier can have inst with other suppliers, so we need to search the obj for its actual supplier
+// getObjInstTable get object instance table by objID and tenant account
+// NOTE: obj with "0" tenant can have inst with other suppliers, so we need to search the obj for its actual tenant
 func getObjInstTable(ctx context.Context, filter *types.BasicFilter, rid string) (string, error) {
 	cond := mapstr.MapStr{
 		common.BKObjIDField: filter.SubRes,
 	}
 
 	obj := new(metadata.Object)
-	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.BkSupplierAccount).One(ctx, &obj)
+	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.TenantID).One(ctx, &obj)
 	if err != nil {
-		blog.Errorf("get object supplier account by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
+		blog.Errorf("get object tenant account by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
 		return "", err
 	}
-	return common.GetInstTableName(filter.SubRes, obj.OwnerID), nil
+	return common.GetInstTableName(filter.SubRes, obj.TenantID), nil
 }
 
 func parseObjInstData(data dataWithTable[mapstr.MapStr]) (*basicInfo, error) {
@@ -71,8 +71,8 @@ func parseObjInstData(data dataWithTable[mapstr.MapStr]) (*basicInfo, error) {
 	}
 
 	return &basicInfo{
-		id:       instID,
-		subRes:   []string{instObjMappings[0].ObjectID},
-		supplier: instObjMappings[0].OwnerID,
+		id:     instID,
+		subRes: []string{instObjMappings[0].ObjectID},
+		tenant: instObjMappings[0].TenantID,
 	}, nil
 }

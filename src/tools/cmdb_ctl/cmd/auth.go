@@ -61,16 +61,16 @@ func NewAuthCommand() *cobra.Command {
 	subCmds := make([]*cobra.Command, 0)
 
 	userName := new(string)
-	supplierAccount := new(string)
+	tenantID := new(string)
 	checkCmd := &cobra.Command{
 		Use:   "check",
 		Short: "check if user has the authority to operate resources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAuthCheckCmd(conf, *userName, *supplierAccount)
+			return runAuthCheckCmd(conf, *userName, *tenantID)
 		},
 	}
 	checkCmd.Flags().StringVar(userName, "user", "", "the name of the user")
-	checkCmd.Flags().StringVar(supplierAccount, "supplier-account", "0", "the supplier id that this user belongs to")
+	checkCmd.Flags().StringVar(tenantID, "tenant-id", "0", "the tenant id that this user belongs to")
 	subCmds = append(subCmds, checkCmd)
 
 	for _, subCmd := range subCmds {
@@ -147,16 +147,16 @@ func newAuthService(c *authConf) (*authService, error) {
 	return service, nil
 }
 
-func runAuthCheckCmd(c *authConf, userName string, supplierAccount string) error {
+func runAuthCheckCmd(c *authConf, userName string, tenantID string) error {
 	srv, err := newAuthService(c)
 	if err != nil {
 		return err
 	}
-	header := headerutil.BuildHeader("admin", common.BKDefaultOwnerID)
+	header := headerutil.BuildHeader("admin", common.BKDefaultTenantID)
 
 	userInfo := meta.UserInfo{
-		UserName:        userName,
-		SupplierAccount: supplierAccount,
+		UserName: userName,
+		TenantID: tenantID,
 	}
 	decisions, err := srv.authorizer.AuthorizeBatch(context.Background(), header, userInfo, srv.resource...)
 	if err != nil {

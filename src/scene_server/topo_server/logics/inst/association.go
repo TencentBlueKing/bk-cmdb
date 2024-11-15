@@ -199,7 +199,7 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 func (assoc *association) CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
 
-	tableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 	switch mapping {
 	case metadata.OneToOneMapping:
 		// search instances belongs to this association.

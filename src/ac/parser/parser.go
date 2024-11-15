@@ -79,11 +79,11 @@ func ParseUserInfo(requestHeader http.Header) (*meta.UserInfo, error) {
 		return nil, errors.New("parse user info failed, miss user header in your request header")
 	}
 	userInfo.UserName = user
-	supplierID := httpheader.GetSupplierAccount(requestHeader)
-	if len(supplierID) == 0 {
-		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
+	tenantID := httpheader.GetTenantID(requestHeader)
+	if len(tenantID) == 0 {
+		return nil, errors.New("parse user info failed, miss bk_tenant_id in your request header")
 	}
-	userInfo.SupplierAccount = supplierID
+	userInfo.TenantID = tenantID
 	return userInfo, nil
 }
 

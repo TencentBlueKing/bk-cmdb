@@ -36,7 +36,7 @@ type ProcInstanceModel struct {
 	HostID         int64  `json:"bk_host_id" bson:"bk_host_id"`
 	HostInstanID   uint64 `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 	HostProcID     uint64 `json:"host_proc_id" bson:"host_proc_id"`
-	OwnerID        string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID       string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // MatchProcInstParam TODO
@@ -102,7 +102,7 @@ type GseProcRequest struct {
 // ProcInstanceDetail TODO
 type ProcInstanceDetail struct {
 	GseProcRequest `json:",inline" bson:",inline"`
-	OwnerID        string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID       string                   `json:"tenant_id" bson:"tenant_id"`
 	HostID         int64                    `json:"bk_host_id" bson:"bk_host_id"`
 	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` // 1 register gse sucess, 2 register error need retry 3 unregister error need retry
 }
@@ -221,7 +221,7 @@ type ProcessOperateTask struct {
 	Namespace   string                              `json:"namespace" bson:"namespace"`
 	Status      ProcOpTaskStatus                    `json:"status" bson:"status"`
 	CreateTime  time.Time                           `json:"create_time" bson:"create_time"`
-	OwnerID     string                              `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID    string                              `json:"tenant_id" bson:"tenant_id"`
 	User        string                              `json:"user,omitempty" bson:"user,omitempty"`
 	Detail      map[string]ProcessOperateTaskDetail `json:"detail" bson:"detail"`
 	Host        []GseHost                           `json:"host_info" bson:"host_info"`
@@ -368,7 +368,7 @@ type ProcessModule struct {
 	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
 	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id"`
-	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // TemplateVersion TODO

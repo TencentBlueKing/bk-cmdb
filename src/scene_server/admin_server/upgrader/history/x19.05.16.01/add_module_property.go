@@ -52,7 +52,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	now := time.Now()
 	serviceCategoryIDProperty := Attribute{
 		ID:                0,
-		OwnerID:           conf.OwnerID,
+		OwnerID:           conf.TenantID,
 		ObjectID:          common.BKInnerObjIDModule,
 		PropertyID:        "service_category_id",
 		PropertyName:      "服务分类ID",
@@ -76,8 +76,9 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		LastTime:          &now,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields, []string{})
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
+	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields,
+		[]string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] addModuleProperty service_category_id failed, err: %+v", err)
 		return err
@@ -85,7 +86,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 
 	serviceTemplateIDProperty := Attribute{
 		ID:                0,
-		OwnerID:           conf.OwnerID,
+		OwnerID:           conf.TenantID,
 		ObjectID:          common.BKInnerObjIDModule,
 		PropertyID:        "service_template_id",
 		PropertyName:      "服务模板ID",
@@ -109,7 +110,8 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		LastTime:          &now,
 	}
 
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceTemplateIDProperty, "id", uniqueFields, []string{}); err != nil {
+	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceTemplateIDProperty, "id", uniqueFields,
+		[]string{}); err != nil {
 		blog.Errorf("[upgrade v19.05.16.01] addModuleProperty service_template_id failed, err: %+v", err)
 		return err
 	}

@@ -33,7 +33,7 @@ func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		innerChart := InnerChartsMap[chart]
 		innerChart.ConfigID = idArr[index]
 		innerChart.CreateTime.Time = time.Now()
-		innerChart.OwnerID = conf.OwnerID
+		innerChart.OwnerID = conf.TenantID
 		if err := db.Table(BKTableNameChartConfig).Insert(ctx, innerChart); err != nil {
 			return fmt.Errorf("insert chart config failed, tableName: %s, chart: %+v, err: %+v",
 				BKTableNameChartConfig, innerChart, err)

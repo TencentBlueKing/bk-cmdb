@@ -40,7 +40,8 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	})
 
 	objStrMapArr := make([]map[string]string, 0)
-	err := db.Table(common.BKTableNameObjDes).Find(attrCond.ToMapStr()).Fields(common.BKObjIDField).All(ctx, &objStrMapArr)
+	err := db.Table(common.BKTableNameObjDes).Find(attrCond.ToMapStr()).Fields(common.BKObjIDField).All(ctx,
+		&objStrMapArr)
 	if err != nil {
 		return err
 	}
@@ -62,19 +63,23 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		switch objID {
 		case common.BKInnerObjIDSwitch:
 			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDSwitch, common.BKAssetIDField))
-			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDSwitch, common.BKAssetIDField))
+			uniques = append(uniques,
+				buildUnique(propertyIDToProperty, common.BKInnerObjIDSwitch, common.BKAssetIDField))
 
 		case common.BKInnerObjIDRouter:
 			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDRouter, common.BKAssetIDField))
-			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDRouter, common.BKAssetIDField))
+			uniques = append(uniques,
+				buildUnique(propertyIDToProperty, common.BKInnerObjIDRouter, common.BKAssetIDField))
 
 		case common.BKInnerObjIDBlance:
 			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDBlance, common.BKAssetIDField))
-			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDBlance, common.BKAssetIDField))
+			uniques = append(uniques,
+				buildUnique(propertyIDToProperty, common.BKInnerObjIDBlance, common.BKAssetIDField))
 
 		case common.BKInnerObjIDFirewall:
 			shouldCheck = append(shouldCheck, keyfunc(common.BKInnerObjIDFirewall, common.BKAssetIDField))
-			uniques = append(uniques, buildUnique(propertyIDToProperty, common.BKInnerObjIDFirewall, common.BKAssetIDField))
+			uniques = append(uniques,
+				buildUnique(propertyIDToProperty, common.BKInnerObjIDFirewall, common.BKAssetIDField))
 		}
 	}
 
@@ -116,7 +121,7 @@ func buildUnique(propertyIDToProperty map[string]metadata.Attribute, model, fiel
 			},
 		},
 		Ispre:    false,
-		OwnerID:  common.BKDefaultOwnerID,
+		OwnerID:  "0",
 		LastTime: Now(),
 	}
 }
@@ -135,7 +140,7 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
-	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	uniqueCond.Field("bk_supplier_account").Eq(conf.TenantID)
 	existUniques := []objectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)

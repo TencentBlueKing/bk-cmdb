@@ -63,27 +63,30 @@ func (m *associationModel) isExistsAssociationID(kit *rest.Kit, associationID st
 
 	existsCheckCond := mongo.NewCondition()
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAsstID, Val: associationID})
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
+	existsCheckCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 
 	cnt, err := m.count(kit, existsCheckCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the associationID (%s) is exists, error info is %s", kit.Rid, associationID, err.Error())
+	if err != nil {
+		blog.Errorf("failed to check whether the associationID (%s) is exists, error: %v, rid: %s", associationID,
+			err, kit.Rid)
 		return false, err
 	}
 	return 0 != cnt, err
 }
 
-func (m *associationModel) isExistsAssociationObjectWithAnotherObject(kit *rest.Kit, targetObjectID, anotherObjectID string, AssociationKind string) (bool, error) {
+func (m *associationModel) isExistsAssociationObjectWithAnotherObject(kit *rest.Kit,
+	targetObjectID, anotherObjectID string, associationKind string) (bool, error) {
 
 	existsCheckCond := mongo.NewCondition()
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
+	existsCheckCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldObjectID, Val: targetObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
-	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationKind, Val: AssociationKind})
+	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationKind, Val: associationKind})
 
 	cnt, err := m.count(kit, existsCheckCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", kit.Rid, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error: %v",
+			kit.Rid, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err)
 		return false, err
 	}
 	return 0 != cnt, err

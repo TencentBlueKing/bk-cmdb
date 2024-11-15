@@ -93,7 +93,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 	ps.validateAPI().
 		validateVersion().
 		validateResourceAction().
-		validateUserAndSupplier().
+		validateUserAndTenant().
 		cacheRelated().
 		adminRelated().
 		hostRelated().
@@ -111,7 +111,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 	}
 
 	for index := range ps.Attribute.Resources {
-		ps.Attribute.Resources[index].SupplierAccount = ps.Attribute.User.SupplierAccount
+		ps.Attribute.Resources[index].TenantID = ps.Attribute.User.TenantID
 	}
 
 	return &ps.Attribute, nil
@@ -184,10 +184,10 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 	return ps
 }
 
-// validateUserAndSupplier TODO
-// user and supplier account must be set in the http
+// validateUserAndTenant TODO
+// user and tenant account must be set in the http
 // request header, otherwise, an error will be occur.
-func (ps *parseStream) validateUserAndSupplier() *parseStream {
+func (ps *parseStream) validateUserAndTenant() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
@@ -200,13 +200,13 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 	}
 	ps.Attribute.User.UserName = user
 
-	// validate the supplier account now.
-	supplier := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
-	if len(supplier) == 0 {
-		ps.err = fmt.Errorf("request lost supplier account header")
+	// validate the tenantID account now.
+	tenantID := httpheader.GetTenantID(ps.RequestCtx.Header)
+	if len(tenantID) == 0 {
+		ps.err = fmt.Errorf("request lost tenantID account header")
 		return ps
 	}
-	ps.Attribute.User.SupplierAccount = supplier
+	ps.Attribute.User.TenantID = tenantID
 
 	return ps
 }

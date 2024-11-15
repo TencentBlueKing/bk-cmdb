@@ -53,7 +53,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	}
 
 	// get all custom objects(without inner and mainline objects that authorize separately)
-	associations := make([]metadata.Association, 0)
+	associations := make([]Association, 0)
 	filter := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
@@ -74,7 +74,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		}
 	}
 
-	objects := make([]metadata.Object, 0)
+	objects := make([]Object, 0)
 	condition := map[string]interface{}{
 		common.BKIsPre: false,
 		common.BKObjIDField: map[string]interface{}{
@@ -87,7 +87,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	}
 
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(ctx, cache, objects); err != nil {
+	if err := iam.SyncIAMSysInstances(ctx, cache, convertTenantObject(objects)); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}
@@ -129,11 +129,11 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		InstanceSelectionIDs: []iamtype.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
 		TypeIDs:              []iamtype.TypeID{"sys_instance", "sys_event_pushing"},
 	}
-	return iam.DeleteCMDBResource(ctx, param, objects)
+	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(objects))
 }
 
 func migrateModelInstancePermission(ctx context.Context, action iamtype.ActionID, db dal.DB, iam *iamtype.IAM,
-	objects []metadata.Object) error {
+	objects []Object) error {
 
 	var timestamp, pageSize int64 = 0, 500
 
@@ -176,10 +176,10 @@ func migrateModelInstancePermission(ctx context.Context, action iamtype.ActionID
 }
 
 func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db dal.DB,
-	policyRes iamtype.PolicyResult, objects []metadata.Object) error {
+	policyRes iamtype.PolicyResult, objects []Object) error {
 
 	objectIDs := make([]int64, len(objects))
-	objMap := make(map[int64]metadata.Object)
+	objMap := make(map[int64]Object)
 	for index, object := range objects {
 		objectIDs[index] = object.ID
 		objMap[object.ID] = object
@@ -251,7 +251,7 @@ func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db
 }
 
 func grantAuthForInstances(ctx context.Context, objInstIDs []int64, db dal.DB,
-	policyRes iamtype.PolicyResult, action iamtype.ActionID, object metadata.Object) error {
+	policyRes iamtype.PolicyResult, action iamtype.ActionID, object Object) error {
 
 	instanceFilter := map[string]interface{}{
 		common.BKInstIDField: map[string]interface{}{common.BKDBIN: objInstIDs},
@@ -361,4 +361,86 @@ func convertOldInstanceAction(actionID iamtype.ActionID, id int64) string {
 		return string(iamtype.GenDynamicActionID(iamtype.Delete, id))
 	}
 	return ""
+}
+
+// Object object metadata definition
+type Object struct {
+	ID         int64  `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	ObjCls     string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id" mapstructure:"bk_classification_id"`
+	ObjIcon    string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon" mapstructure:"bk_obj_icon"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
+	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name" mapstructure:"bk_obj_name"`
+
+	// IsHidden front-end don't display the object if IsHidden is true
+	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
+
+	IsPre         bool           `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsPaused      bool           `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
+	Position      string         `field:"position" json:"position" bson:"position" mapstructure:"position"`
+	OwnerID       string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Description   string         `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	Creator       string         `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	Modifier      string         `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
+	CreateTime    *metadata.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime      *metadata.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	ObjSortNumber int64          `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
+}
+
+// Association defines the association between two objects.
+type Association struct {
+	ID      int64  `field:"id" json:"id" bson:"id"`
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+
+	// the unique id belongs to  this association, should be generated with rules as follows:
+	// "$ObjectID"_"$AsstID"_"$AsstObjID"
+	AssociationName string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	// the alias name of this association, which is a substitute name in the association kind $AsstKindID
+	AssociationAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
+
+	// describe which object this association is defined for.
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	// describe where the Object associate with.
+	AsstObjID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	// the association kind used by this association.
+	AsstKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// defined which kind of association can be used between the source object and destination object.
+	Mapping AssociationMapping `field:"mapping" json:"mapping" bson:"mapping"`
+	// describe the action when this association is deleted.
+	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// describe whether this association is a pre-defined association or not,
+	// if true, it means this association is used by cmdb itself.
+	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
+}
+
+// AssociationOnDeleteAction TODO
+type AssociationOnDeleteAction string
+
+// AssociationMapping TODO
+type AssociationMapping string
+
+func convertTenantObject(objs []Object) []metadata.Object {
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		metaObj := metadata.Object{
+			ID:            obj.ID,
+			ObjCls:        obj.ObjCls,
+			ObjIcon:       obj.ObjIcon,
+			ObjectID:      obj.ObjectID,
+			ObjectName:    obj.ObjectName,
+			IsHidden:      obj.IsHidden,
+			IsPre:         obj.IsPre,
+			IsPaused:      obj.IsPaused,
+			Position:      obj.Position,
+			TenantID:      obj.OwnerID,
+			Description:   obj.Description,
+			Creator:       obj.Creator,
+			Modifier:      obj.Modifier,
+			CreateTime:    obj.CreateTime,
+			LastTime:      obj.LastTime,
+			ObjSortNumber: obj.ObjSortNumber,
+		}
+		objects = append(objects, metaObj)
+	}
+	return objects
 }

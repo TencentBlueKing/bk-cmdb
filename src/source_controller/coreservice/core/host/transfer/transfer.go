@@ -450,7 +450,7 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 				ModuleID: moduleID,
 				HostID:   hostID,
 				AppID:    t.bizID,
-				OwnerID:  kit.SupplierAccount,
+				TenantID: kit.TenantID,
 			})
 		}
 	}

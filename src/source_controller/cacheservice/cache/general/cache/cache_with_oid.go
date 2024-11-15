@@ -74,8 +74,8 @@ func parseDataWithOid[T any](parser func(data T) (*basicInfo, error)) dataParser
 			info.oid = val.Oid.Hex()
 		case filter.JsonString:
 			info = &basicInfo{
-				oid:      gjson.Get(string(val), common.MongoMetaID).String(),
-				supplier: gjson.Get(string(val), common.BkSupplierAccount).String(),
+				oid:    gjson.Get(string(val), common.MongoMetaID).String(),
+				tenant: gjson.Get(string(val), common.TenantID).String(),
 			}
 		default:
 			return nil, fmt.Errorf("data type %T is invalid", data)

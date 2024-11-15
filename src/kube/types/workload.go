@@ -118,10 +118,10 @@ type WorkloadSpec struct {
 // WorkloadBase define the workload common struct, k8s workload attributes are placed in their respective structures,
 // except for very public variables, please do not put them in.
 type WorkloadBase struct {
-	NamespaceSpec   `json:",inline" bson:",inline"`
-	ID              int64  `json:"id,omitempty" bson:"id"`
-	Name            string `json:"name,omitempty" bson:"name"`
-	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	NamespaceSpec `json:",inline" bson:",inline"`
+	ID            int64  `json:"id,omitempty" bson:"id"`
+	Name          string `json:"name,omitempty" bson:"name"`
+	TenantID      string `json:"tenant_id,omitempty" bson:"tenant_id"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

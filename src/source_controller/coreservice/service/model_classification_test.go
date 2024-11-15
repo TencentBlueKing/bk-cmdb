@@ -41,7 +41,8 @@ func setManyClassification(t *testing.T, client *httpclient.HttpClient, classifi
 	require.NotNil(t, inputParams)
 	t.Logf("set many classificaiton:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/setmany/model/classification", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/setmany/model/classification", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -125,7 +126,8 @@ func createManyClassification(t *testing.T, client *httpclient.HttpClient, class
 	require.NotNil(t, inputParams)
 	t.Logf("create many classificaiton:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/createmany/model/classification", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/createmany/model/classification", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -168,7 +170,8 @@ func createOneClassification(t *testing.T, client *httpclient.HttpClient, classi
 	require.NotNil(t, inputParams)
 	t.Logf("create one classificaiton:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/classification", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/classification", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -210,7 +213,7 @@ func queryClassification(t *testing.T, client *httpclient.HttpClient, classifica
 	require.Equal(t, clsResult.Data.Count, int64(len(clsResult.Data.Info)))
 	for _, item := range clsResult.Data.Info {
 		require.NotEqual(t, int64(0), item.ID)
-		require.NotEmpty(t, item.OwnerID)
+		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.ClassificationID)
 	}
 
@@ -223,7 +226,7 @@ func updateClassification(t *testing.T, client *httpclient.HttpClient, classific
 
 	cond := mongo.NewCondition()
 	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
-	cond.Element(mongo.Field(common.BKOwnerIDField).Eq("0"))
+	cond.Element(mongo.Field(common.TenantID).Eq("0"))
 	queryCond := metadata.UpdateOption{
 		Data: mapstr.MapStr{
 			metadata.ClassFieldClassificationName: "update_" + classificationID,
@@ -236,7 +239,8 @@ func updateClassification(t *testing.T, client *httpclient.HttpClient, classific
 	require.NotNil(t, inputParams)
 	t.Logf("update classificaiton:%s", inputParams)
 
-	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/classification", defaultHeader, inputParams)
+	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/classification", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -260,7 +264,8 @@ func deleteClassification(t *testing.T, client *httpclient.HttpClient, classific
 	require.NotNil(t, inputParams)
 	t.Logf("delete classificaiton:%s", inputParams)
 
-	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/classification", defaultHeader, inputParams)
+	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/classification", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 

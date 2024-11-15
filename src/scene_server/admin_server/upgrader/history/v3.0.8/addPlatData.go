@@ -27,7 +27,7 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	blog.Infof("add data for  %s table ", tableName)
 	row := map[string]interface{}{
 		common.BKCloudNameField: "default area",
-		common.BKOwnerIDField:   common.BKDefaultOwnerID,
+		"bk_supplier_account":   "0",
 		common.BKCloudIDField:   common.BKDefaultDirSubArea,
 		common.CreateTimeField:  time.Now(),
 		common.LastTimeField:    time.Now(),
@@ -39,7 +39,8 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		return err
 	}
 
-	_, _, err = upgrader.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
+	_, _, err = upgrader.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, "bk_supplier_account"},
+		[]string{common.BKCloudIDField})
 	if nil != err {
 		blog.Errorf("add data for  %s table error  %s", tableName, err)
 		return err

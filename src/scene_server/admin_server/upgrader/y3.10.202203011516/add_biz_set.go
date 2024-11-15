@@ -30,7 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var dataRows = map[string]*metadata.Attribute{
+var dataRows = map[string]*Attribute{
 	common.BKBizSetNameField: {
 		ObjectID:      common.BKInnerObjIDBizSet,
 		PropertyID:    common.BKBizSetNameField,
@@ -122,7 +122,7 @@ func addBizSetObjectRow(ctx context.Context, db dal.RDB, ownerID string) error {
 	}
 
 	t := metadata.Now()
-	dataRows := metadata.Object{
+	dataRows := Object{
 		ObjCls:      "bk_organization",
 		ObjectID:    common.BKInnerObjIDBizSet,
 		ObjectName:  "业务集",
@@ -198,11 +198,11 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 			Kind: metadata.UniqueKeyKindProperty,
 			ID:   uint64(attr.ID),
 		})
-		unique := metadata.ObjectUnique{
+		unique := ObjectUnique{
 			ObjID:    common.BKInnerObjIDBizSet,
 			Keys:     keys,
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: metadata.Now(),
 		}
 
@@ -287,7 +287,7 @@ func addBizSetCollection(ctx context.Context, db dal.RDB) error {
 // addBizSetPropertyGroup add biz set property group.
 func addBizSetPropertyGroup(ctx context.Context, db dal.RDB, ownerID string) error {
 
-	rows := []*metadata.Group{
+	rows := []*Group{
 		{
 			ObjectID:   common.BKInnerObjIDBizSet,
 			GroupID:    mCommon.BaseInfo,
@@ -348,7 +348,7 @@ func addBizSetObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) err
 		return nil
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 
 	nowTime := metadata.Now()
 	for _, row := range dataRows {
@@ -387,7 +387,7 @@ func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
 			Keys: bson.D{
 				{common.BKBizSetIDField, 1},
 				{common.BKBizSetNameField, 1},
-				{common.BKOwnerIDField, 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
@@ -429,15 +429,15 @@ func addBizSetTableIndexes(ctx context.Context, db dal.RDB) error {
 
 func addBizSetPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	if err := addBizSetObjectRow(ctx, db, conf.OwnerID); err != nil {
+	if err := addBizSetObjectRow(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
-	if err := addBizSetPropertyGroup(ctx, db, conf.OwnerID); err != nil {
+	if err := addBizSetPropertyGroup(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
-	if err := addBizSetObjectAttrRow(ctx, db, conf.OwnerID); err != nil {
+	if err := addBizSetObjectAttrRow(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
@@ -458,4 +458,83 @@ func addBizSetPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	}
 
 	return nil
+}
+
+// Group group metadata definition
+type Group struct {
+	BizID      int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsCollapse bool   `field:"is_collapse" json:"is_collapse" bson:"is_collapse"`
+}
+
+// Object object metadata definition
+type Object struct {
+	ID         int64  `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	ObjCls     string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id" mapstructure:"bk_classification_id"`
+	ObjIcon    string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon" mapstructure:"bk_obj_icon"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
+	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name" mapstructure:"bk_obj_name"`
+
+	// IsHidden front-end don't display the object if IsHidden is true
+	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
+
+	IsPre         bool           `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsPaused      bool           `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
+	Position      string         `field:"position" json:"position" bson:"position" mapstructure:"position"`
+	OwnerID       string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Description   string         `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	Creator       string         `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	Modifier      string         `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
+	CreateTime    *metadata.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime      *metadata.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	ObjSortNumber int64          `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
+}
+
+// ObjectUnique TODO
+type ObjectUnique struct {
+	ID         uint64               `json:"id" bson:"id"`
+	TemplateID int64                `json:"bk_template_id" bson:"bk_template_id"`
+	ObjID      string               `json:"bk_obj_id" bson:"bk_obj_id"`
+	Keys       []metadata.UniqueKey `json:"keys" bson:"keys"`
+	Ispre      bool                 `json:"ispre" bson:"ispre"`
+	OwnerID    string               `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   metadata.Time        `json:"last_time" bson:"last_time"`
+}
+
+// Attribute attribute metadata definition
+type Attribute struct {
+	BizID             int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	ID                int64          `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	OwnerID           string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	ObjectID          string         `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
+	PropertyID        string         `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id" mapstructure:"bk_property_id"`
+	PropertyName      string         `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name" mapstructure:"bk_property_name"`
+	PropertyGroup     string         `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group" mapstructure:"bk_property_group"`
+	PropertyGroupName string         `field:"bk_property_group_name,ignoretomap" json:"bk_property_group_name" bson:"-" mapstructure:"bk_property_group_name"`
+	PropertyIndex     int64          `field:"bk_property_index" json:"bk_property_index" bson:"bk_property_index" mapstructure:"bk_property_index"`
+	Unit              string         `field:"unit" json:"unit" bson:"unit" mapstructure:"unit"`
+	Placeholder       string         `field:"placeholder" json:"placeholder" bson:"placeholder" mapstructure:"placeholder"`
+	IsEditable        bool           `field:"editable" json:"editable" bson:"editable" mapstructure:"editable"`
+	IsPre             bool           `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsRequired        bool           `field:"isrequired" json:"isrequired" bson:"isrequired" mapstructure:"isrequired"`
+	IsReadOnly        bool           `field:"isreadonly" json:"isreadonly" bson:"isreadonly" mapstructure:"isreadonly"`
+	IsOnly            bool           `field:"isonly" json:"isonly" bson:"isonly" mapstructure:"isonly"`
+	IsSystem          bool           `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem" mapstructure:"bk_issystem"`
+	IsAPI             bool           `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
+	PropertyType      string         `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
+	Option            interface{}    `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	Default           interface{}    `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
+	IsMultiple        *bool          `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
+	Description       string         `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	TemplateID        int64          `field:"bk_template_id" json:"bk_template_id" bson:"bk_template_id" mapstructure:"bk_template_id"`
+	Creator           string         `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	CreateTime        *metadata.Time `json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime          *metadata.Time `json:"last_time" bson:"last_time" mapstructure:"last_time"`
 }

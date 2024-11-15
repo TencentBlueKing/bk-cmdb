@@ -24,8 +24,8 @@ import (
 
 func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	falseVar := false
-	switchAsst := metadata.Association{
-		OwnerID:         conf.OwnerID,
+	switchAsst := Association{
+		OwnerID:         conf.TenantID,
 		AsstKindID:      "connect",
 		ObjectID:        "bk_switch",
 		AsstObjID:       "host",
@@ -35,7 +35,8 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		IsPre:           &falseVar,
 	}
 
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, switchAsst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
+	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, switchAsst, "id",
+		[]string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 	if err != nil {
 		return err
 	}
@@ -66,4 +67,31 @@ func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		}
 	}
 	return nil
+}
+
+// Association defines the association between two objects.
+type Association struct {
+	ID      int64  `field:"id" json:"id" bson:"id"`
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+
+	// the unique id belongs to  this association, should be generated with rules as follows:
+	// "$ObjectID"_"$AsstID"_"$AsstObjID"
+	AssociationName string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	// the alias name of this association, which is a substitute name in the association kind $AsstKindID
+	AssociationAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
+
+	// describe which object this association is defined for.
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	// describe where the Object associate with.
+	AsstObjID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	// the association kind used by this association.
+	AsstKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// defined which kind of association can be used between the source object and destination object.
+	Mapping metadata.AssociationMapping `field:"mapping" json:"mapping" bson:"mapping"`
+	// describe the action when this association is deleted.
+	OnDelete metadata.AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// describe whether this association is a pre-defined association or not,
+	// if true, it means this association is used by cmdb itself.
+	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 }

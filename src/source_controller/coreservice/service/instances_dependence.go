@@ -42,7 +42,8 @@ func (s *coreService) IsInstAsstExist(kit *rest.Kit, objID string, instID uint64
 	}
 
 	cond = mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID},
+		&mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
 	countCond = &metadata.Condition{Condition: cond.ToMapStr()}
 	objAsstInstsRst, err := s.core.AssociationOperation().CountInstanceAssociations(kit, objID, countCond)
 	if err != nil {
@@ -67,7 +68,8 @@ func (s *coreService) DeleteInstAsst(kit *rest.Kit, objID string, instID uint64)
 		return err
 	}
 	cond = mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID},
+		&mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(kit, objID, deleteCond)
 	if nil != err {
@@ -156,7 +158,8 @@ func (s *coreService) SearchUnique(kit *rest.Kit, objID string) (uniqueAttr []me
 }
 
 // UpdateModelInstance TODO
-func (s *coreService) UpdateModelInstance(kit *rest.Kit, objID string, param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+func (s *coreService) UpdateModelInstance(kit *rest.Kit, objID string,
+	param metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return s.core.InstanceOperation().UpdateModelInstance(kit, objID, param)
 }
 
@@ -177,7 +180,7 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 	}
 
 	for _, rel := range quoteRelations {
-		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
+		tableName := common.GetInstTableName(rel.DestModel, kit.TenantID)
 		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
 
 		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, delCond)
@@ -207,7 +210,7 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 	}
 
 	for _, rel := range quoteRelations {
-		tableName := common.GetInstTableName(rel.DestModel, kit.SupplierAccount)
+		tableName := common.GetInstTableName(rel.DestModel, kit.TenantID)
 
 		val, exists := data[rel.PropertyID]
 		if !exists {

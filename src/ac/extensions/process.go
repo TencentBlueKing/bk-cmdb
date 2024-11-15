@@ -72,8 +72,8 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 				Name:       process.ProcessName,
 				InstanceID: process.ProcessID,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
-			BusinessID:      businessID,
+			TenantID:   httpheader.GetTenantID(header),
+			BusinessID: businessID,
 		}
 
 		resources = append(resources, resource)

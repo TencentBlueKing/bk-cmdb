@@ -26,7 +26,7 @@ import (
 func fixSetTemplateVersionTimeEmpty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: "set_template_version",
-		common.BKOwnerIDField:    conf.OwnerID,
+		"bk_supplier_account":    conf.TenantID,
 		common.BKObjIDField:      common.BKInnerObjIDSet,
 	}
 	now := metadata.Now()

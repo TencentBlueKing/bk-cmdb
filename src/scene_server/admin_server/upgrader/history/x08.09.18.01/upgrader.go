@@ -46,7 +46,8 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 		common.BKAsstInstIDField: common.BKInnerObjIDPlat,
 	}
 
-	err = db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Fields(common.BKHostIDField).All(ctx, &instAsstArr)
+	err = db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Fields(common.BKHostIDField).All(ctx,
+		&instAsstArr)
 	if nil != err && !db.IsNotFoundError(err) {
 		return err
 	}
@@ -63,13 +64,14 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 
 	hostInfoMap := make([]map[string]interface{}, 0)
 	findOpts := &options.FindOptions{}
-	findOpts.SetProjection(map[string]int{common.BKHostIDField: 1, common.BKCloudIDField: 1, common.BKOwnerIDField: 1})
+	findOpts.SetProjection(map[string]int{common.BKHostIDField: 1, common.BKCloudIDField: 1, "bk_supplier_account": 1})
 	hostCondition := make(mapstr.MapStr)
 	if 0 < len(exitsAsstHostIDArr) {
 		hostCondition[common.BKHostIDField] = mapstr.MapStr{common.BKDBNIN: exitsAsstHostIDArr}
 	}
 
-	cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, hostCondition, findOpts)
+	cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, hostCondition,
+		findOpts)
 	if err != nil && !db.IsNotFoundError(err) {
 		return err
 	}
@@ -88,7 +90,7 @@ func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrad
 		if err != nil {
 			return err
 		}
-		ownerID := util.GetStrByInterface(host[common.BkSupplierAccount])
+		ownerID := util.GetStrByInterface(host["bk_supplier_account"])
 
 		instAsstConditionMap := mapstr.MapStr{
 			common.BKObjIDField:     common.BKInnerObjIDHost,

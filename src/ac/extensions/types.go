@@ -124,7 +124,7 @@ func ParseBizIDFromMetadata(metaValue map[string]interface{}) (int64, error) {
 type BusinessSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	BKAppNameField string `field:"bk_biz_name" json:"bk_biz_name" bson:"bk_biz_name"`
-	BKOwnerIDField string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID       string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	IsDefault      int64  `field:"default" json:"default" bson:"default"`
 
 	Maintainer string `field:"bk_biz_maintainer" json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`

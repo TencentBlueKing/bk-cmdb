@@ -318,18 +318,18 @@ func (ps *parseStream) getRscPoolHostModuleRelation(hostIDs []int64) (map[int64]
 var resourcePoolBizIDMap = sync.Map{}
 
 func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
-	supplierAccount := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
+	tenantID := httpheader.GetTenantID(ps.RequestCtx.Header)
 
-	if bizID, ok := resourcePoolBizIDMap.Load(supplierAccount); ok {
+	if bizID, ok := resourcePoolBizIDMap.Load(tenantID); ok {
 		return util.GetInt64ByInterface(bizID)
 	}
 
 	opt := &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField, common.BkSupplierAccount},
+		Fields: []string{common.BKAppIDField, common.TenantID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{
-			common.BkSupplierAccount: supplierAccount,
-			"default":                1,
+			common.TenantID: tenantID,
+			"default":       1,
 		},
 	}
 
@@ -340,23 +340,23 @@ func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
 	}
 
 	for _, biz := range result.Info {
-		bizSupplierAccount, err := biz.String(common.BkSupplierAccount)
+		bizTenantID, err := biz.String(common.TenantID)
 		if err != nil {
 			return 0, err
 		}
 
-		if bizSupplierAccount == supplierAccount {
+		if bizTenantID == tenantID {
 			id, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
 			if err != nil {
 				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource biz id")
 			}
 
-			resourcePoolBizIDMap.Store(supplierAccount, id)
+			resourcePoolBizIDMap.Store(tenantID, id)
 			return id, nil
 		}
 	}
 
-	return 0, errors.New(common.CCErrCommParamsIsInvalid, "biz with the supplier account does not exist")
+	return 0, errors.New(common.CCErrCommParamsIsInvalid, "biz with the tenant account does not exist")
 }
 
 type hostPool struct {
@@ -367,9 +367,9 @@ type hostPool struct {
 var resourcePoolDefaultDirIDMap = sync.Map{}
 
 func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
-	supplierAccount := httpheader.GetSupplierAccount(ps.RequestCtx.Header)
+	tenantID := httpheader.GetTenantID(ps.RequestCtx.Header)
 
-	if dirID, ok := resourcePoolDefaultDirIDMap.Load(supplierAccount); ok {
+	if dirID, ok := resourcePoolDefaultDirIDMap.Load(tenantID); ok {
 		return util.GetInt64ByInterface(dirID)
 	}
 
@@ -379,12 +379,12 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 	}
 
 	opt := &metadata.QueryCondition{
-		Fields: []string{common.BKModuleIDField, common.BkSupplierAccount},
+		Fields: []string{common.BKModuleIDField, common.TenantID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{
-			common.BKDefaultField:    common.DefaultResModuleFlag,
-			common.BKAppIDField:      bizID,
-			common.BkSupplierAccount: supplierAccount,
+			common.BKDefaultField: common.DefaultResModuleFlag,
+			common.BKAppIDField:   bizID,
+			common.TenantID:       tenantID,
 		},
 	}
 
@@ -395,24 +395,24 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 	}
 
 	for _, directory := range result.Info {
-		dirSupplierAccount, err := directory.String(common.BkSupplierAccount)
+		dirTenantID, err := directory.String(common.TenantID)
 		if err != nil {
 			return 0, err
 		}
 
-		if dirSupplierAccount == supplierAccount {
+		if dirTenantID == tenantID {
 			id, err := util.GetInt64ByInterface(directory[common.BKModuleIDField])
 			if err != nil {
 				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError,
 					"invalid resource pool default directory id")
 			}
 
-			resourcePoolDefaultDirIDMap.Store(supplierAccount, id)
+			resourcePoolDefaultDirIDMap.Store(tenantID, id)
 			return id, nil
 		}
 	}
 	return 0, errors.New(common.CCErrCommParamsIsInvalid,
-		"directory with the supplier account does not exist")
+		"directory with the tenant account does not exist")
 }
 
 // generateUpdateInstanceResource generate update instance auth resource by their object type

@@ -92,7 +92,7 @@ func (s *service) createWorkload(kit *rest.Kit, kind types.WorkloadType, req typ
 		wlBase := req.Data[idx].GetWorkloadBase()
 		wlBase.BizID = req.BizID
 		wlBase.ID = data.IDs[idx]
-		wlBase.SupplierAccount = kit.SupplierAccount
+		wlBase.TenantID = kit.TenantID
 		req.Data[idx].SetWorkloadBase(wlBase)
 	}
 

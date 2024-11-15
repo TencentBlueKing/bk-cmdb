@@ -95,7 +95,7 @@ func addRecordedFields(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	for _, obj := range objs {
 		for _, attr := range recordedAttrs {
 			attr.ObjectID = obj.ObjectID
-			attr.OwnerID = conf.OwnerID
+			attr.OwnerID = conf.TenantID
 			attr.CreateTime = &nowTime
 			attr.LastTime = &nowTime
 

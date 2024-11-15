@@ -319,11 +319,11 @@ func TestEmbedMap(t *testing.T) {
 		ClassificationName string   `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
 		ClassificationType string   `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
 		ClassificationIcon string   `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon"`
-		OwnerID            string   `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
+		TenantID           string   `field:"tenant_id" json:"tenant_id" bson:"tenant_id"  `
 	}
 
 	testData := `{
-		"bk_supplier_account": "0",
+		"tenant_id": "0",
 		"bk_classification_id": "test",
 		"bk_classification_name": "test",
 		"metadata": {

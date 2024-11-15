@@ -65,8 +65,8 @@ type Node struct {
 	ID int64 `json:"id,omitempty" bson:"id"`
 	// BizID the business ID to which the cluster belongs
 	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	// TenantID the supplier account that this resource belongs to.
+	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs
@@ -95,7 +95,7 @@ type Node struct {
 
 // IgnoredUpdateNodeFields  update fields that need to be ignored in node scenarios
 var IgnoredUpdateNodeFields = []string{common.BKFieldID, common.BKAppIDField, ClusterUIDField,
-	common.BKFieldName, common.BKOwnerIDField, BKClusterIDFiled, common.BKHostIDField, HasPodField}
+	common.BKFieldName, common.TenantID, BKClusterIDFiled, common.BKHostIDField, HasPodField}
 
 // createValidate validate the NodeBaseFields
 func (option *Node) createValidate() ccErr.RawErrorInfo {

@@ -24,18 +24,18 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// BizSimplify TODO
+// BizSimplify simplify business model
 type BizSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" bson:"bk_biz_id"`
 	BKAppNameField string `field:"bk_biz_name" bson:"bk_biz_name"`
 }
 
-// AddRecycleModule TODO
+// AddRecycleModule add recycle module for business
 func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	defaultServiceCategoryID, err := getDefaultServiceCategoryID(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("AddRecycleModule failed, getDefaultServiceCategoryID failed, err: %s", err.Error())
-		return fmt.Errorf("getDefaultServiceCategoryID failed, err: %s", err.Error())
+		blog.Errorf("getDefaultServiceCategoryID failed, err: %v", err)
+		return fmt.Errorf("getDefaultServiceCategoryID failed, err: %v", err)
 	}
 
 	// 资源池业务也有空闲机模块
@@ -45,9 +45,10 @@ func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	start := uint64(0)
 	limit := uint64(50)
 	for {
-		if err := db.Table(common.BKTableNameBaseApp).Find(bizFilter).Start(start).Limit(limit).All(ctx, &businessList); err != nil {
-			blog.ErrorJSON("AddRecycleModule failed, find businesses failed, filter: %s, err: %s", bizFilter, err)
-			return fmt.Errorf("find businesses failed, err: %s", err.Error())
+		if err := db.Table(common.BKTableNameBaseApp).Find(bizFilter).Start(start).Limit(limit).All(ctx,
+			&businessList); err != nil {
+			blog.Errorf("find businesses failed, filter: %v, err: %v", bizFilter, err)
+			return fmt.Errorf("find businesses failed, err: %v", err)
 		}
 
 		if len(businessList) == 0 {
@@ -56,8 +57,9 @@ func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 		for _, biz := range businessList {
 			if err := ensureRecycleModuleForBiz(ctx, db, conf, biz, defaultServiceCategoryID); err != nil {
-				blog.ErrorJSON("AddRecycleModule failed, ensureRecycleModuleForBiz failed, biz: %s, defaultServiceCategoryID: %s, err: %s", biz, defaultServiceCategoryID, err)
-				return fmt.Errorf("ensureRecycleModuleForBiz failed, err: %s", err.Error())
+				blog.Errorf("ensureRecycleModuleForBiz failed, biz: %+v, defaultServiceCategoryID: %d, err: %v", biz,
+					defaultServiceCategoryID, err)
+				return fmt.Errorf("ensureRecycleModuleForBiz failed, err: %v", err)
 			}
 		}
 
@@ -77,21 +79,22 @@ func getDefaultServiceCategoryID(ctx context.Context, db dal.RDB, conf *upgrader
 		},
 	}
 	if err := db.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx, &serviceCategory); err != nil {
-		blog.ErrorJSON("getDefaultServiceCategoryID failed, find service category failed, filter: %s, err: %s", filter, err.Error())
-		return 0, fmt.Errorf("get default service category failed, err: %s", err)
+		blog.Errorf("find service category failed, filter: %v, err: %v", filter, err)
+		return 0, fmt.Errorf("get default service category failed, err: %v", err)
 	}
 	return serviceCategory.ID, nil
 }
 
-func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config, biz BizSimplify, defaultServiceCategoryID int64) error {
+func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config, biz BizSimplify,
+	defaultServiceCategoryID int64) error {
 	moduleFilter := map[string]interface{}{
 		common.BKDefaultField: common.DefaultRecycleModuleFlag,
 		common.BKAppIDField:   biz.BKAppIDField,
 	}
 	count, err := db.Table(common.BKTableNameBaseModule).Find(moduleFilter).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("ensureRecycleModuleForBiz failed, moduleFilter: %s, err: %s", moduleFilter, err.Error())
-		return fmt.Errorf("count default module failed, bizID: %d, err: %s", biz.BKAppIDField, err.Error())
+		blog.Errorf("get module failed, moduleFilter: %+v, err: %v", moduleFilter, err)
+		return fmt.Errorf("count default module failed, bizID: %d, err: %v", biz.BKAppIDField, err)
 	}
 	if count > 0 {
 		return nil
@@ -99,14 +102,14 @@ func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.C
 
 	resourcePoolSetID, err := getResourceSetID(ctx, db, conf, biz)
 	if err != nil {
-		blog.Errorf("ensureRecycleModuleForBiz failed, getResourceSetID failed, bizID: %s, err: %s", biz.BKAppIDField, err.Error())
-		return fmt.Errorf("get resource pool set failed, bizID: %d, err: %s", biz.BKAppIDField, err.Error())
+		blog.Errorf("getResourceSetID failed, bizID: %s, err: %v", biz.BKAppIDField, err)
+		return fmt.Errorf("get resource pool set failed, bizID: %d, err: %v", biz.BKAppIDField, err)
 	}
 
 	newModuleID, err := db.NextSequence(ctx, common.BKTableNameBaseModule)
 	if err != nil {
-		blog.ErrorJSON("ensureRecycleModuleForBiz failed, moduleFilter: %s, err: %s", moduleFilter, err.Error())
-		return fmt.Errorf("count default module failed, bizID: %d, err: %s", biz.BKAppIDField, err.Error())
+		blog.Errorf("db get next seq failed, moduleFilter: %+v, err: %v", moduleFilter, err)
+		return fmt.Errorf("count default module failed, bizID: %d, err: %v", biz.BKAppIDField, err)
 	}
 
 	// add recycle module
@@ -114,7 +117,7 @@ func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.C
 	doc := map[string]interface{}{
 		common.BKSetIDField:             resourcePoolSetID,
 		common.BKParentIDField:          resourcePoolSetID,
-		common.BkSupplierAccount:        conf.OwnerID,
+		"bk_supplier_account":           conf.TenantID,
 		common.CreateTimeField:          now,
 		common.LastTimeField:            now,
 		"bk_childid":                    nil,
@@ -130,8 +133,8 @@ func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.C
 		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
 	}
 	if err := db.Table(common.BKTableNameBaseModule).Insert(ctx, doc); err != nil {
-		blog.ErrorJSON("ensureRecycleModuleForBiz failed, doc: %s, err: %s", doc, err.Error())
-		return fmt.Errorf("insert module failed, err: %s", err)
+		blog.Errorf("db insert failed, doc: %+v, err: %v", doc, err)
+		return fmt.Errorf("insert module failed, err: %v", err)
 	}
 	return nil
 }
@@ -148,8 +151,8 @@ func getResourceSetID(ctx context.Context, db dal.RDB, conf *upgrader.Config, bi
 	}{}
 	err := db.Table(common.BKTableNameBaseSet).Find(setFilter).One(ctx, &set)
 	if err != nil {
-		blog.ErrorJSON("getResourceSetID failed, setFilter: %s, err: %s", setFilter, err.Error())
-		return 0, fmt.Errorf("get resource pool set failed, bizID: %d, err: %s", biz.BKAppIDField, err.Error())
+		blog.Errorf("getResourceSetID failed, setFilter: %+v, err: %v", setFilter, err)
+		return 0, fmt.Errorf("get resource pool set failed, bizID: %d, err: %v", biz.BKAppIDField, err)
 	}
 	return set.SetID, nil
 }

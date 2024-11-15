@@ -72,7 +72,7 @@ func (s *service) CreateFieldTemplateUniques(ctx *rest.Contexts) {
 	now := time.Now()
 	for idx := range uniques {
 		uniques[idx].ID = int64(ids[idx])
-		uniques[idx].OwnerID = ctx.Kit.SupplierAccount
+		uniques[idx].TenantID = ctx.Kit.TenantID
 		uniques[idx].Creator = ctx.Kit.User
 		uniques[idx].Modifier = ctx.Kit.User
 		uniques[idx].CreateTime = &metadata.Time{Time: now}
@@ -381,7 +381,7 @@ func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
 
 	for idx := range uniques {
 		dbUnique := dbUniqueMap[uniques[idx].ID]
-		uniques[idx].OwnerID = dbUnique.OwnerID
+		uniques[idx].TenantID = dbUnique.TenantID
 		uniques[idx].Creator = dbUnique.Creator
 		uniques[idx].CreateTime = dbUnique.CreateTime
 	}

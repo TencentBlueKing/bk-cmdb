@@ -176,16 +176,16 @@ func (p *setTemplateOperation) CreateSetTempAttr(kit *rest.Kit, option *metadata
 	setTempAttrs := make([]metadata.SetTemplateAttr, len(option.Attributes))
 	for idx, attr := range option.Attributes {
 		setTempAttrs[idx] = metadata.SetTemplateAttr{
-			ID:              int64(ids[idx]),
-			BizID:           option.BizID,
-			SetTemplateID:   option.ID,
-			AttributeID:     attr.AttributeID,
-			PropertyValue:   attr.PropertyValue,
-			Creator:         kit.User,
-			Modifier:        kit.User,
-			CreateTime:      now,
-			LastTime:        now,
-			SupplierAccount: kit.SupplierAccount,
+			ID:            int64(ids[idx]),
+			BizID:         option.BizID,
+			SetTemplateID: option.ID,
+			AttributeID:   attr.AttributeID,
+			PropertyValue: attr.PropertyValue,
+			Creator:       kit.User,
+			Modifier:      kit.User,
+			CreateTime:    now,
+			LastTime:      now,
+			TenantID:      kit.TenantID,
 		}
 	}
 

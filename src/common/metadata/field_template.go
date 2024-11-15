@@ -32,7 +32,7 @@ type FieldTemplate struct {
 	ID          int64  `json:"id" bson:"id"`
 	Name        string `json:"name" bson:"name"`
 	Description string `json:"description" bson:"description"`
-	OwnerID     string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID    string `json:"tenant_id" bson:"tenant_id"`
 	Creator     string `json:"creator" bson:"creator"`
 	Modifier    string `json:"modifier" bson:"modifier"`
 	CreateTime  *Time  `json:"create_time" bson:"create_time"`
@@ -92,7 +92,7 @@ type FieldTemplateAttr struct {
 	Option        interface{}     `json:"option" bson:"option"`
 	Default       interface{}     `json:"default" bson:"default"`
 	IsMultiple    bool            `json:"ismultiple" bson:"ismultiple"`
-	OwnerID       string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID      string          `json:"tenant_id" bson:"tenant_id"`
 	Creator       string          `json:"creator" bson:"creator"`
 	Modifier      string          `json:"modifier" bson:"modifier"`
 	CreateTime    *Time           `json:"create_time" bson:"create_time"`
@@ -248,7 +248,7 @@ type AttrPlaceholder struct {
 type FieldTmplUniqueCommonField struct {
 	ID         int64  `json:"id" bson:"id"`
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
-	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string `json:"tenant_id" bson:"tenant_id"`
 	Creator    string `json:"creator" bson:"creator"`
 	Modifier   string `json:"modifier" bson:"modifier"`
 	CreateTime *Time  `json:"create_time" bson:"create_time"`
@@ -308,7 +308,7 @@ func (c *FieldTemplateUnique) Convert(idToPropertyIDMap map[int64]string) (*Fiel
 type ObjFieldTemplateRelation struct {
 	ObjectID   int64  `json:"object_id" bson:"object_id"`
 	TemplateID int64  `json:"bk_template_id" bson:"bk_template_id"`
-	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // FieldTemplateInfo field template info for list apis

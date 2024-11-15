@@ -188,33 +188,6 @@ func TestDeleteModelClassification(t *testing.T) {
 	return
 }
 
-func TestDeleteModelClassificationCascade(t *testing.T) {
-	mockAPI := NewMockApiMachinery()
-
-	t.Log("test with struct mock do output")
-	var resp metadata.DeletedOptionResult
-
-	err := json.Unmarshal([]byte(getDeletedResult()), &resp)
-	if err != nil {
-		t.Error("get response data error")
-		return
-	}
-
-	mockAPI.MockDo(resp).CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
-	rtn, err := mockAPI.CoreService().Model().DeleteModelClassificationCascade(nil, nil, &metadata.DeleteOption{})
-	if err != nil {
-		t.Errorf("get  logics service delete model classification cascade result failed, err: %v", err)
-		return
-	}
-
-	if !reflect.DeepEqual(*rtn, resp) {
-		t.Error("test with struct mock do output.")
-		return
-	}
-	t.Log("test with struct mock do output success.")
-	return
-}
-
 func TestReadModelClassification(t *testing.T) {
 	mockAPI := NewMockApiMachinery()
 
@@ -592,7 +565,7 @@ func getReadModelResult() string {
 						"position" : "{\"bk_host_manage\":{\"x\":-600,\"y\":-650}}",
 						"bk_classification_id" : "bk_host_manage",
 						"bk_obj_name" : "主机",
-						"bk_supplier_account" : "0",
+						"tenant_id" : "0",
 						"creator" : "cc_system"
 					},
 					"attributes":[{
@@ -600,7 +573,7 @@ func getReadModelResult() string {
 						"unit" : "",
 						"ispre" : true,
 						"bk_property_type" : "singlechar",
-						"bk_supplier_account" : "0",
+						"tenant_id" : "0",
 						"bk_property_id" : "bk_biz_name",
 						"placeholder" : "",
 						"editable" : true,
@@ -637,7 +610,7 @@ func getReadModelClassificationResult() string {
 					"bk_classification_id" : "",
 					"bk_classification_name" : "",
 					"bk_classification_type" : "",
-					"bk_supplier_account" : ""
+					"tenant_id" : ""
 				}
 			 ]
 		}

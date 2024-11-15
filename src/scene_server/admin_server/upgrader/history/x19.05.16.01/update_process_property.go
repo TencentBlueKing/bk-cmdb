@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -103,7 +102,7 @@ func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader
 		Option:        `^([0-9]{1,3}\.){3}[0-9]{1,3}$`,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, bindIPProperty, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcessBindIPProperty bind_ip failed, err: %+v", err)
@@ -164,7 +163,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		CreateTime:    &now,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, ProcNameProperty, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcessNameProperty bind_ip failed, err: %+v", err)
@@ -228,7 +227,7 @@ func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		LastTime:   &now,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateAutoTimeGapProperty bind_ip failed, err: %+v", err)
@@ -292,7 +291,7 @@ func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		PropertyType:  "int",
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcNumProperty bind_ip failed, err: %+v", err)
@@ -356,7 +355,7 @@ func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		IsRequired:   false,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updatePriorityProperty bind_ip failed, err: %+v", err)
@@ -420,7 +419,7 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		Placeholder:   "",
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateTimeoutProperty bind_ip failed, err: %+v", err)
@@ -520,7 +519,7 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		LastTime:      &now,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateFuncIDProperty bk_func_id failed, err: %+v", err)
@@ -533,17 +532,32 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 // UpdateProcPortPropertyGroupName TODO
 func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// update proc_port group name
-	row := &metadata.Group{
+	row := &Group{
 		ObjectID:   common.BKInnerObjIDProc,
 		GroupID:    mCommon.ProcPort,
 		GroupName:  mCommon.ProcPortName,
 		GroupIndex: 2,
-		OwnerID:    conf.OwnerID,
+		OwnerID:    conf.TenantID,
 		IsDefault:  true,
 	}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
+	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, row, "id",
+		[]string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
 		blog.Errorf("add data for  %s table error  %s", common.BKTableNamePropertyGroup, err)
 		return err
 	}
 	return nil
+}
+
+// Group group metadata definition
+type Group struct {
+	BizID      int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsCollapse bool   `field:"is_collapse" json:"is_collapse" bson:"is_collapse"`
 }

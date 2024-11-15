@@ -60,7 +60,7 @@ func addSvcInstIDAttrInProc(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	svcInstIDFilter := mapstr.MapStr{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: common.BKServiceInstanceIDField,
-		common.BkSupplierAccount: conf.OwnerID,
+		"bk_supplier_account":    conf.TenantID,
 	}
 
 	cnt, err := db.Table(common.BKTableNameObjAttDes).Find(svcInstIDFilter).Count(ctx)
@@ -93,7 +93,7 @@ func addSvcInstIDAttrInProc(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	now := time.Now()
 	attr := &attribute{
 		ID:            int64(attrID),
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		ObjectID:      common.BKInnerObjIDProc,
 		PropertyID:    common.BKServiceInstanceIDField,
 		PropertyName:  "服务实例ID",

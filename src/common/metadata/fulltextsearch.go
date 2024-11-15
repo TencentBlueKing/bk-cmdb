@@ -79,8 +79,8 @@ const (
 	// IndexPropertyBKObjID es index property for object id.
 	IndexPropertyBKObjID = "meta_bk_obj_id"
 
-	// IndexPropertyBKSupplierAccount es index property for supplier account.
-	IndexPropertyBKSupplierAccount = "meta_bk_supplier_account"
+	// IndexPropertyTenantID es index property for supplier account.
+	IndexPropertyTenantID = "meta_tenant_id"
 
 	// IndexPropertyBKBizID es index property for business id.
 	IndexPropertyBKBizID = "meta_bk_biz_id"

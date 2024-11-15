@@ -464,9 +464,9 @@ func canUpdate(data mapstr.MapStr) (field string, can bool) {
 		}
 	}
 
-	_, exist = data.Get(common.BkSupplierAccount)
+	_, exist = data.Get(common.TenantID)
 	if exist {
-		return common.BkSupplierAccount, false
+		return common.TenantID, false
 	}
 
 	_, exist = data.Get(common.AssociationObjAsstIDField)

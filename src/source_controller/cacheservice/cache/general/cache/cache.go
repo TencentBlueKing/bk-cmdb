@@ -94,8 +94,8 @@ type basicInfo struct {
 	id     int64
 	oid    string
 	subRes []string
-	// supplier is supplier account
-	supplier string
+	// tenant is tenant account
+	tenant string
 }
 
 // dataParser parse the general resource data to basic info

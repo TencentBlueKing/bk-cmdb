@@ -73,13 +73,13 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 	}
 
 	data := &types.FullSyncCond{
-		ID:              int64(id),
-		Resource:        opt.Resource,
-		SubResource:     opt.SubResource,
-		IsAll:           opt.IsAll,
-		Interval:        opt.Interval,
-		Condition:       opt.Condition,
-		SupplierAccount: kit.SupplierAccount,
+		ID:          int64(id),
+		Resource:    opt.Resource,
+		SubResource: opt.SubResource,
+		IsAll:       opt.IsAll,
+		Interval:    opt.Interval,
+		Condition:   opt.Condition,
+		TenantID:    kit.TenantID,
 	}
 
 	err = mongodb.Client().Table(types.BKTableNameFullSyncCond).Insert(kit.Ctx, data)

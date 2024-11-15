@@ -206,7 +206,7 @@ func (s *service) combinationContainerInfo(kit *rest.Kit, containerID int64, pod
 		BizID:           pod.BizID,
 		ClusterID:       pod.ClusterID,
 		NamespaceID:     pod.NamespaceID,
-		SupplierAccount: kit.SupplierAccount,
+		TenantID:        kit.TenantID,
 		Name:            info.Name,
 		ContainerID:     info.ContainerID,
 		Image:           info.Image,

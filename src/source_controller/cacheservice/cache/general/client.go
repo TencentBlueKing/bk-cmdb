@@ -94,8 +94,8 @@ func (c *Cache) ListCacheByFullSyncCond(kit *rest.Kit, opt *fullsynccond.ListCac
 		IDListFilter: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:          cond.SubResource,
-				SupplierAccount: cond.SupplierAccount,
+				SubRes:   cond.SubResource,
+				TenantID: cond.TenantID,
 			},
 			IsAll: cond.IsAll,
 			Cond:  cond.Condition,
@@ -125,9 +125,9 @@ func (c *Cache) ListData(kit *rest.Kit, opt *general.ListDetailOpt) (int64, []st
 		IDListFilter: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:          opt.SubResource,
-				SupplierAccount: kit.SupplierAccount,
-				IsSystem:        true,
+				SubRes:   opt.SubResource,
+				TenantID: kit.TenantID,
+				IsSystem: true,
 			},
 			IsAll: true,
 		},

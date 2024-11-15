@@ -43,8 +43,8 @@ func init() {
 				return nil, fmt.Errorf("parse host id %+v failed, err: %v", data[idField], err)
 			}
 			return &basicInfo{
-				id:       id,
-				supplier: util.GetStrByInterface(data[common.BkSupplierAccount]),
+				id:     id,
+				tenant: util.GetStrByInterface(data[common.TenantID]),
 			}, nil
 		})
 

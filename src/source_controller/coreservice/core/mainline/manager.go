@@ -127,7 +127,7 @@ func (im *InstanceMainline) LoadModuleInstances(ctx context.Context, header http
 // LoadMainlineInstances TODO
 func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header http.Header) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	tenantID := httpheader.GetTenantID(header)
 
 	// load other mainline instance(except business,set,module) list of target business
 	for _, objectID := range im.modelIDs {
@@ -143,7 +143,7 @@ func (im *InstanceMainline) LoadMainlineInstances(ctx context.Context, header ht
 		mainlineInstances := []mapstr.MapStr{}
 
 		err := mongodb.Client().
-			Table(common.GetObjectInstTableName(objectID, supplierAccount)).
+			Table(common.GetObjectInstTableName(objectID, tenantID)).
 			Find(filter).
 			All(ctx, &mainlineInstances)
 
@@ -312,7 +312,7 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header,
 	withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	tenantID := httpheader.GetTenantID(header)
 
 	for _, topoInstance := range im.allTopoInstances {
 		blog.V(5).Infof("topo instance: %#v, rid: %s", topoInstance, rid)
@@ -345,7 +345,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 		missedInstances := make([]mapstr.MapStr, 0)
 
 		err := mongodb.Client().
-			Table(common.GetObjectInstTableName(topoInstance.ObjectID, supplierAccount)).
+			Table(common.GetObjectInstTableName(topoInstance.ObjectID, tenantID)).
 			Find(filter).
 			All(ctx, &missedInstances)
 
@@ -425,7 +425,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 // ConstructInstanceTopoTree TODO
 func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, header http.Header, withDetail bool) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	tenantID := httpheader.GetTenantID(header)
 
 	topoInstanceNodeMap := map[string]*metadata.TopoInstanceNode{}
 	for index := 0; index < len(im.allTopoInstances); index++ {
@@ -454,7 +454,7 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 
 					inst := mapstr.MapStr{}
 					err := mongodb.Client().
-						Table(common.GetObjectInstTableName(parentObjectID, supplierAccount)).
+						Table(common.GetObjectInstTableName(parentObjectID, tenantID)).
 						Find(cond).
 						One(context.Background(), &inst)
 

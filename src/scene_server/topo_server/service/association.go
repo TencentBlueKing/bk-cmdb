@@ -217,7 +217,7 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 			common.BKAppIDField:          bizID,
 		}}
 		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.GetInstTableName(objID, ctx.Kit.SupplierAccount), filter)
+			common.GetInstTableName(objID, ctx.Kit.TenantID), filter)
 		if err != nil {
 			blog.Errorf("count topo nodes failed, err: %v, filter: %#v, rid: %s", err, filter, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

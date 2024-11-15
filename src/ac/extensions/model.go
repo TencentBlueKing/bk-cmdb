@@ -74,8 +74,8 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 				Name:       object.ObjectName,
 				InstanceID: object.ID,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
-			BusinessID:      0,
+			TenantID:   httpheader.GetTenantID(header),
+			BusinessID: 0,
 		}
 		resources = append(resources, resource)
 	}
@@ -163,8 +163,8 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 			Type:   resourceType,
 			Action: meta.Create,
 		},
-		SupplierAccount: httpheader.GetSupplierAccount(header),
-		BusinessID:      businessID,
+		TenantID:   httpheader.GetTenantID(header),
+		BusinessID: businessID,
 	}
 
 	return am.batchAuthorize(ctx, header, resource)

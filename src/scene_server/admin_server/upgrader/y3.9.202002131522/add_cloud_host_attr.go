@@ -26,15 +26,21 @@ import (
 func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	objID := common.BKInnerObjIDHost
 	dataRows := []*Attribute{
-		{ObjectID: objID, PropertyID: "bk_cloud_inst_id", PropertyName: "云主机实例ID", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar, Option: ""},
-		{ObjectID: objID, PropertyID: "bk_cloud_host_status", PropertyName: "云主机状态", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: cloudInstStatusEnum},
-		{ObjectID: objID, PropertyID: "bk_cloud_vendor", PropertyName: "云厂商", IsRequired: false, IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum, Option: cloudVendorEnum},
+		{ObjectID: objID, PropertyID: "bk_cloud_inst_id", PropertyName: "云主机实例ID", IsRequired: false,
+			IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeSingleChar,
+			Option: ""},
+		{ObjectID: objID, PropertyID: "bk_cloud_host_status", PropertyName: "云主机状态", IsRequired: false,
+			IsOnly: false, IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum,
+			Option: cloudInstStatusEnum},
+		{ObjectID: objID, PropertyID: "bk_cloud_vendor", PropertyName: "云厂商", IsRequired: false, IsOnly: false,
+			IsEditable: false, PropertyGroup: groupBaseInfo, PropertyType: common.FieldTypeEnum,
+			Option: cloudVendorEnum},
 	}
 
 	now := time.Now()
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	for _, r := range dataRows {
-		r.OwnerID = conf.OwnerID
+		r.OwnerID = conf.TenantID
 		r.IsPre = true
 		r.IsReadOnly = false
 		r.CreateTime = &now
@@ -43,7 +49,8 @@ func addCloudHostAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields, []string{}); err != nil {
+		if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields,
+			[]string{}); err != nil {
 			blog.ErrorJSON("addCloudHostAttr failed, Upsert err: %s, attribute: %#v, ", err, r)
 			return err
 		}

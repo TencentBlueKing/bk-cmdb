@@ -23,8 +23,8 @@ type AuthAttribute struct {
 type UserInfo struct {
 	// the name of this user.
 	UserName string
-	// the supplier id that this user belongs to.
-	SupplierAccount string
+	// the tenant id that this user belongs to.
+	TenantID string
 }
 
 // Item TODO
@@ -37,8 +37,8 @@ type Layers []Item
 type ResourceAttribute struct {
 	Basic
 
-	SupplierAccount string `json:"supplier_account"`
-	BusinessID      int64  `json:"business_id"`
+	TenantID   string `json:"tenant_id"`
+	BusinessID int64  `json:"business_id"`
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
 	Layers Layers `json:"layers"`

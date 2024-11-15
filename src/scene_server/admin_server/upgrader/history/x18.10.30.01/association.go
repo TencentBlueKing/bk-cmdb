@@ -49,7 +49,7 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 
 	idxArr, err := db.Table(common.BKTableNameInstAsst).Indexes(ctx)
 	if err != nil {
-		blog.Errorf("get table %s index error. err:%s", common.BKTableNameInstAsst, err.Error())
+		blog.Errorf("get table %s index error, err: %v", common.BKTableNameInstAsst, err)
 		return err
 	}
 
@@ -71,7 +71,8 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 			continue
 		}
 		if err := db.Table(common.BKTableNameInstAsst).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
-			blog.ErrorJSON("create index to cc_InstAsst error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
+			blog.Errorf("create index to cc_InstAsst error, err: %v, current index: %+v, all create index: %+v",
+				err, idx, createIdxArr)
 			return err
 		}
 
@@ -88,7 +89,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "belong",
 			AssociationKindName:     "",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "属于",
 			DestinationToSourceNote: "包含",
 			Direction:               metadata.DestinationToSource,
@@ -97,7 +98,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "group",
 			AssociationKindName:     "",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
@@ -106,7 +107,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "bk_mainline",
 			AssociationKindName:     "",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
@@ -115,7 +116,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "run",
 			AssociationKindName:     "",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "运行于",
 			DestinationToSourceNote: "运行",
 			Direction:               metadata.DestinationToSource,
@@ -124,7 +125,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "connect",
 			AssociationKindName:     "",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "上联",
 			DestinationToSourceNote: "下联",
 			Direction:               metadata.DestinationToSource,
@@ -133,7 +134,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		{
 			AssociationKindID:       "default",
 			AssociationKindName:     "默认关联",
-			OwnerID:                 conf.OwnerID,
+			TenantID:                conf.TenantID,
 			SourceToDestinationNote: "关联",
 			DestinationToSourceNote: "被关联",
 			Direction:               metadata.DestinationToSource,
@@ -150,7 +151,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
-// Association TODO
+// Association association struct
 type Association struct {
 	metadata.Association `bson:",inline"`
 	ObjectAttID          string `bson:"bk_object_att_id"`
@@ -173,7 +174,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	properyMap := map[string]metadata.ObjAttDes{}
-	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s", objID, propertyID) }
+	buildObjPropertyMapKey := func(objID string, propertyID string) string {
+		return fmt.Sprintf("%s:%s", objID, propertyID)
+	}
 	for _, property := range propertys {
 		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
 		blog.Infof("key %s: %+v", buildObjPropertyMapKey(property.ObjectID, property.PropertyID), property)
@@ -219,7 +222,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			case "multiasst":
 				asst.Mapping = metadata.ManyToManyMapping
 			default:
-				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
+				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst,
+					buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
 				asst.Mapping = metadata.ManyToManyMapping
 			}
 			// 交换 源<->目标
@@ -229,7 +233,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			asst.IsPre = pfalse()
 			asst.AssociationName = buildObjAsstID(asst)
 
-			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
+			blog.Infof("obj: %s, att: %s to asst %+v", asst.ObjectID, asst.ObjectAttID, asst)
 			// update ObjAsst
 			updateCond := condition.CreateCondition()
 			updateCond.Field("id").Eq(asst.ID)
@@ -248,12 +252,15 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				page += 1
 				// update ObjAsst
 				instAssts := []metadata.InstAsst{}
-				blog.InfoJSON("find  data from table:%s, page:%s, cond:%s", common.BKTableNameInstAsst, page, instCond.ToMapStr())
-				if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).Limit(pageSize).All(ctx, &instAssts); err != nil {
+				blog.Infof("find data from table: %s, page: %d, cond: %+v", common.BKTableNameInstAsst, page,
+					instCond.ToMapStr())
+				if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).Limit(pageSize).All(ctx,
+					&instAssts); err != nil {
 					return err
 				}
 
-				blog.InfoJSON("find  data from table:%s, cond:%s, result count:%s", common.BKTableNameInstAsst, instCond.ToMapStr(), len(instAssts))
+				blog.Infof("find data from table: %s, cond: %+v, result count: %d", common.BKTableNameInstAsst,
+					instCond.ToMapStr(), len(instAssts))
 				if len(instAssts) == 0 {
 					break
 				}
@@ -271,7 +278,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 					updateInst.Set(flag, true)
 
 					updateInst.Set("last_time", time.Now())
-					blog.InfoJSON("update instasst, id:%s, updateInst:%s", instAsst.ID, updateInst)
+					blog.Infof("update instasst, id: %d, updateInst: %+v", instAsst.ID, updateInst)
 					if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
 						mapstr.MapStr{
 							"id": instAsst.ID,
@@ -283,7 +290,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 		}
 	}
-	blog.InfoJSON("start drop column cond:%s", flag)
+	blog.Infof("start drop column cond: %s", flag)
 	if err = dropFlagColumn(ctx, db, conf); err != nil {
 		return err
 	}
@@ -295,7 +302,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	cloudIDUpdateData := mapstr.New()
 	cloudIDUpdateData.Set(common.BKPropertyTypeField, "foreignkey")
 	cloudIDUpdateData.Set(common.BKOptionField, nil)
-	blog.InfoJSON("update host cloud association cond:%s, data:%s", cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
+	blog.Infof("update host cloud association cond: %+v, data: %+v", cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	if err != nil {
 		return err
@@ -303,13 +310,15 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	deleteHostCloudAssociation := condition.CreateCondition()
 	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
 	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
-	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAsst, deleteHostCloudAssociation.ToMapStr())
+	blog.Infof("delete host cloud association table: %s, cond: %+v", common.BKTableNameObjAsst,
+		deleteHostCloudAssociation.ToMapStr())
 	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
 	if err != nil {
 		return err
 	}
 
-	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAttDes, propertyCond.ToMapStr())
+	blog.Infof("delete host cloud association table: %s, cond: %v", common.BKTableNameObjAttDes,
+		propertyCond.ToMapStr())
 	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
 	if err != nil {
@@ -319,7 +328,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	// drop outdate column
 	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward", "bk_asst_name"}
 	for _, column := range outdateColumns {
-		blog.InfoJSON("delete field from table:%s, cond:%s", common.BKTableNameObjAsst, column)
+		blog.Infof("delete field from table: %s, cond: %+v", common.BKTableNameObjAsst, column)
 		if err = db.Table(common.BKTableNameObjAsst).DropColumn(ctx, column); err != nil {
 			return err
 		}
@@ -327,7 +336,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 	delCond := condition.CreateCondition()
 	delCond.Field(common.AssociationKindIDField).Eq(nil)
-	blog.InfoJSON("delete host cloud association table:%s, cond:%s", common.BKTableNameObjAsst, delCond.ToMapStr())
+	blog.Infof("delete host cloud association table: %s, cond: %+v", common.BKTableNameObjAsst, delCond.ToMapStr())
 	if err = db.Table(common.BKTableNameObjAsst).Delete(ctx, delCond.ToMapStr()); err != nil {
 		return err
 	}
@@ -343,7 +352,7 @@ func dropFlagColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 	cnt, err := db.Table(common.BKTableNameInstAsst).Find(flagFilter).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("dropFlagColumn failed, Find err: %s, filter: %#v, ", err, flagFilter)
+		blog.Errorf("dropFlagColumn failed, Find err: %v, filter: %#v, ", err, flagFilter)
 		return err
 	}
 
@@ -354,8 +363,9 @@ func dropFlagColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	pageSize := uint64(2000)
 	for startIdx := uint64(0); startIdx < cnt; startIdx += pageSize {
 		insts := make([]map[string]int64, 0)
-		if err := db.Table(common.BKTableNameInstAsst).Find(flagFilter).Fields(common.BKFieldID).Start(startIdx).Limit(pageSize).All(ctx, &insts); err != nil {
-			blog.Errorf("find insts failed, Find err: %s", err.Error())
+		if err := db.Table(common.BKTableNameInstAsst).Find(flagFilter).Fields(common.BKFieldID).Start(startIdx).Limit(pageSize).All(ctx,
+			&insts); err != nil {
+			blog.Errorf("find insts failed, Find err: %v", err)
 			return err
 		}
 		instIDs := make([]int64, len(insts))
@@ -369,11 +379,11 @@ func dropFlagColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 			},
 		}
 		if err := db.Table(common.BKTableNameInstAsst).DropDocsColumn(ctx, flag, filter); err != nil {
-			blog.Errorf("dropFlagColumn failed, filter:%#v, DropDocsColumn err:%v", filter, err)
+			blog.Errorf("dropFlagColumn failed, filter: %#v, err: %v", filter, err)
 			return err
 		}
 	}
-	blog.Infof("drop flag count:%d successfully", cnt)
+	blog.Infof("drop flag count: %d successfully", cnt)
 
 	return nil
 }
@@ -389,4 +399,25 @@ func ptrue() *bool {
 func pfalse() *bool {
 	tmp := false
 	return &tmp
+}
+
+// AssociationKind is the kind of the association, which is used to describe the relationship between two objects.
+type AssociationKind struct {
+	ID int64 `field:"id" json:"id" bson:"id"`
+	// a unique association id created by user.
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	// a memorable name for this association kind, could be a chinese name, a english name etc.
+	AssociationKindName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	// the owner that this association type belongs to.
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// the describe for the relationship from source object to the target(destination) object, which will be displayed
+	// when the topology is constructed between objects.
+	SourceToDestinationNote string `field:"src_des" json:"src_des" bson:"src_des"`
+	// the describe for the relationship from the target(destination) object to source object, which will be displayed
+	// when the topology is constructed between objects.
+	DestinationToSourceNote string `field:"dest_des" json:"dest_des" bson:"dest_des"`
+	// the association direction between two objects.
+	Direction metadata.AssociationDirection `field:"direction" json:"direction" bson:"direction"`
+	// whether this is a pre-defined kind.
+	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 }

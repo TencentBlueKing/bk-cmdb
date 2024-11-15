@@ -67,7 +67,7 @@ func initFullSyncCondIndex(ctx context.Context, db dal.RDB) error {
 			Keys: bson.D{
 				{fullsynccond.ResourceField, 1},
 				{fullsynccond.SubResField, 1},
-				{common.BkSupplierAccount, 1},
+				{"bk_supplier_account", 1},
 			},
 			PartialFilterExpression: map[string]interface{}{
 				fullsynccond.IsAllField: true,

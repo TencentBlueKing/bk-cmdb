@@ -137,7 +137,7 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
 	for _, item := range modelResult.Data.Info {
 		require.NotEqual(t, int64(0), item.Spec.ID)
-		require.NotEmpty(t, item.Spec.OwnerID)
+		require.NotEmpty(t, item.Spec.TenantID)
 		require.NotEmpty(t, item.Spec.ObjectID)
 		require.NotEmpty(t, item.Spec.ObjCls)
 		require.NotNil(t, item.Spec.CreateTime)
@@ -145,7 +145,7 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 		t.Logf("create time:%s", item.Spec.CreateTime.String())
 
 		for _, attr := range item.Attributes {
-			require.NotEmpty(t, attr.OwnerID)
+			require.NotEmpty(t, attr.TenantID)
 			require.NotEmpty(t, attr.PropertyID)
 			require.NotEqual(t, int64(0), attr.ID)
 			require.NotNil(t, attr.CreateTime)

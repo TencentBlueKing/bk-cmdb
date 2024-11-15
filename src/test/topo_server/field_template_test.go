@@ -465,7 +465,7 @@ var _ = Describe("field template test", func() {
 				ObjectID:   "field_tmpl_test_obj",
 				ObjectName: "字段组合模板测试模型",
 				ObjIcon:    "icon-cc-default",
-				OwnerID:    "0",
+				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(ctx, header, option)
@@ -475,7 +475,7 @@ var _ = Describe("field template test", func() {
 			Expect(rsp.Data.ObjCls).To(Equal(option.ObjCls))
 			Expect(rsp.Data.ObjectID).To(Equal(option.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(option.ObjectName))
-			Expect(rsp.Data.OwnerID).To(Equal(option.OwnerID))
+			Expect(rsp.Data.TenantID).To(Equal(option.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(option.Creator))
 			fieldTmplObject = rsp.Data
 		}()
@@ -487,7 +487,7 @@ var _ = Describe("field template test", func() {
 				ObjectID:   "field_tmpl_test_obj1",
 				ObjectName: "字段组合模板测试模型1",
 				ObjIcon:    "icon-cc-default",
-				OwnerID:    "0",
+				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(ctx, header, option)
@@ -497,7 +497,7 @@ var _ = Describe("field template test", func() {
 			Expect(rsp.Data.ObjCls).To(Equal(option.ObjCls))
 			Expect(rsp.Data.ObjectID).To(Equal(option.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(option.ObjectName))
-			Expect(rsp.Data.OwnerID).To(Equal(option.OwnerID))
+			Expect(rsp.Data.TenantID).To(Equal(option.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(option.Creator))
 			fieldTmplObject1 = rsp.Data
 		}()
@@ -509,7 +509,7 @@ var _ = Describe("field template test", func() {
 				ObjectID:   "field_tmpl_test_obj2",
 				ObjectName: "字段组合模板测试模型2",
 				ObjIcon:    "icon-cc-default",
-				OwnerID:    "0",
+				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(ctx, header, option)
@@ -519,7 +519,7 @@ var _ = Describe("field template test", func() {
 			Expect(rsp.Data.ObjCls).To(Equal(option.ObjCls))
 			Expect(rsp.Data.ObjectID).To(Equal(option.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(option.ObjectName))
-			Expect(rsp.Data.OwnerID).To(Equal(option.OwnerID))
+			Expect(rsp.Data.TenantID).To(Equal(option.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(option.Creator))
 			fieldTmplObject2 = rsp.Data
 		}()

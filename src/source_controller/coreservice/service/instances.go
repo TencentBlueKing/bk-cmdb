@@ -27,7 +27,8 @@ func (s *coreService) CreateOneModelInstance(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().CreateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateModelInstance(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // CreateManyModelInstances TODO
@@ -37,7 +38,8 @@ func (s *coreService) CreateManyModelInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit, ctx.Request.PathParameter(common.BKObjIDField), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().CreateManyModelInstance(ctx.Kit,
+		ctx.Request.PathParameter(common.BKObjIDField), inputData))
 }
 
 // BatchCreateModelInstances batch create model instance, if one of instances fails to create, an error is returned.
@@ -60,7 +62,8 @@ func (s *coreService) UpdateModelInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntityWithError(s.core.InstanceOperation().UpdateModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().UpdateModelInstance(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // SearchModelInstances TODO
@@ -123,7 +126,8 @@ func (s *coreService) DeleteModelInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().DeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().DeleteModelInstance(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // CascadeDeleteModelInstances TODO
@@ -133,7 +137,8 @@ func (s *coreService) CascadeDeleteModelInstances(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit, ctx.Request.PathParameter("bk_obj_id"), inputData))
+	ctx.RespEntityWithError(s.core.InstanceOperation().CascadeDeleteModelInstance(ctx.Kit,
+		ctx.Request.PathParameter("bk_obj_id"), inputData))
 }
 
 // GetInstanceObjectMapping TODO

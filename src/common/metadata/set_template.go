@@ -27,11 +27,11 @@ type SetTemplate struct {
 	BizID int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 
 	// 通用字段
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -48,7 +48,7 @@ type SetServiceTemplateRelation struct {
 	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
 	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	SupplierAccount   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID          string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // SetTemplateAttr set template attributes, used to generate set, should not include non-editable fields
@@ -60,11 +60,11 @@ type SetTemplateAttr struct {
 	AttributeID   int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
 	PropertyValue interface{} `json:"bk_property_value" bson:"bk_property_value"`
 
-	Creator         string    `json:"creator" bson:"creator"`
-	Modifier        string    `json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `json:"create_time" bson:"create_time"`
-	LastTime        time.Time `json:"last_time" bson:"last_time"`
-	SupplierAccount string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string    `json:"creator" bson:"creator"`
+	Modifier   string    `json:"modifier" bson:"modifier"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"last_time"`
+	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate SetTemplateAttr

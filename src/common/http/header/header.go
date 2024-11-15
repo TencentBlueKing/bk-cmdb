@@ -25,10 +25,10 @@ const (
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
-	// BKHTTPOwner ID the owner
-	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
-	// BKHTTPOwnerID the owner id
-	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
+	// BKHTTPTenant ID the tenant
+	BKHTTPTenant = "HTTP_BK_SUPPLIER_ACCOUNT"
+	// BKHTTPTenantID the tenant id
+	BKHTTPTenantID = "HTTP_BLUEKING_SUPPLIER_ID"
 	// BKHTTPRequestAppCode is the blueking app code
 	BKHTTPRequestAppCode = "Bk-App-Code"
 
@@ -62,8 +62,8 @@ const (
 	// LanguageHeader is the language http header key, its value is from common.HTTPCookieLanguage cookie
 	LanguageHeader = "X-Bkcmdb-Language"
 
-	// SupplierAccountHeader is supplier account http header key
-	SupplierAccountHeader = "X-Bkcmdb-Supplier-Account"
+	// TenantHeader is tenant http header key
+	TenantHeader = "X-Bkcmdb-Supplier-Account"
 
 	// ReqFromWebHeader is the http header key that represents if request is from web server
 	ReqFromWebHeader = "X-Bkcmdb-Request-From-Web"

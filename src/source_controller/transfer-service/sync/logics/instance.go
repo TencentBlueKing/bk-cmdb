@@ -42,7 +42,7 @@ func newObjInstLogics(conf *resLogicsConfig) *objInstLogics {
 			idField: common.BKInstIDField,
 			table: func(subRes string) string {
 				// right now only sync object instance from table of the default supplier account
-				return common.GetObjectInstTableName(subRes, common.BKDefaultOwnerID)
+				return common.GetObjectInstTableName(subRes, common.BKDefaultTenantID)
 			},
 			parseData: parseMapStr,
 			getID:     getMapStrID,
@@ -76,7 +76,7 @@ func (o *objInstLogics) InsertData(kit *util.Kit, subRes string, data any) error
 		mappings = append(mappings, metadata.ObjectMapping{
 			ID:       info.ID,
 			ObjectID: subRes,
-			OwnerID:  commonutil.GetStrByInterface(info.Data[common.BkSupplierAccount]),
+			TenantID: commonutil.GetStrByInterface(info.Data[common.TenantID]),
 		})
 	}
 
@@ -135,7 +135,7 @@ var instAsstLgc = &dataWithIDLgc[metadata.InstAsst]{
 	idField: common.BKFieldID,
 	table: func(subRes string) string {
 		// right now only sync object association from table of the default supplier account
-		return common.GetObjectInstAsstTableName(subRes, common.BKDefaultOwnerID)
+		return common.GetObjectInstAsstTableName(subRes, common.BKDefaultTenantID)
 	},
 	parseData: func(data metadata.InstAsst, _, _ *options.InnerDataIDConf) (metadata.InstAsst, error) {
 		return data, nil
@@ -155,7 +155,7 @@ var quotedInstLgc = &dataWithIDLgc[mapstr.MapStr]{
 	idField: common.BKFieldID,
 	table: func(subRes string) string {
 		// right now only sync quoted instance from table of the default supplier account
-		return common.GetInstTableName(subRes, common.BKDefaultOwnerID)
+		return common.GetInstTableName(subRes, common.BKDefaultTenantID)
 	},
 	parseData: parseMapStr,
 	getID:     getMapStrID,

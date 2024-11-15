@@ -155,7 +155,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		return fmt.Errorf("backupProcessBase failed: %v", err)
 	}
 
-	allmodules := make([]metadata.ModuleInst, 0)
+	allmodules := make([]ModuleInst, 0)
 	if err = db.Table(common.BKTableNameBaseModule).Find(condition.CreateCondition().
 		Field(common.BKDefaultField).Eq(common.DefaultFlagDefaultValue).ToMapStr()).
 		All(ctx, &allmodules); err != nil {
@@ -163,11 +163,11 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	// bizID:moduleName:modules
-	biz2Module := map[int64]map[string][]metadata.ModuleInst{}
+	biz2Module := map[int64]map[string][]ModuleInst{}
 	for _, module := range allmodules {
 		_, ok := biz2Module[module.BizID]
 		if !ok {
-			biz2Module[module.BizID] = map[string][]metadata.ModuleInst{}
+			biz2Module[module.BizID] = map[string][]ModuleInst{}
 		}
 		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
 	}
@@ -175,7 +175,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	hostMap := make(map[int64]map[string]interface{}, 0)
 
 	for bizID, bizModules := range biz2Module {
-		ownerID := common.BKDefaultOwnerID
+		ownerID := "0"
 
 		svcTemplateIDs, err := db.NextSequences(ctx, common.BKTableNameServiceTemplate, len(bizModules))
 		if err != nil {
@@ -192,9 +192,11 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				ownerID = modules[0].SupplierAccount
 			}
 
-			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
+			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID,
+				common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
-			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx,
+				&processMappingInModule); err != nil {
 				return err
 			}
 			if len(processMappingInModule) <= 0 {
@@ -337,11 +339,13 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 								if hostMap[moduleHost.HostID] == nil {
 									findOpts := &options.FindOptions{}
 									findOpts.SetLimit(1)
-									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1, common.BKHostOuterIPField: 1})
+									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1,
+										common.BKHostOuterIPField: 1})
 									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
 									host := make(map[string]interface{})
 
-									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, filter, findOpts)
+									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx,
+										filter, findOpts)
 									if err != nil {
 										blog.Errorf("find host %d failed, err: %s", moduleHost.HostID, err.Error())
 										return err
@@ -568,4 +572,22 @@ type ProcessProperty struct {
 	GatewayPort        metadata.PropertyString   `field:"bk_gateway_port" json:"bk_gateway_port" bson:"bk_gateway_port"`
 	GatewayProtocol    metadata.PropertyProtocol `field:"bk_gateway_protocol" json:"bk_gateway_protocol" bson:"bk_gateway_protocol"`
 	GatewayCity        metadata.PropertyString   `field:"bk_gateway_city" json:"bk_gateway_city" bson:"bk_gateway_city"`
+}
+
+// ModuleInst contains partial fields of a real module
+type ModuleInst struct {
+	BizID             int64         `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
+	SetID             int64         `bson:"bk_set_id" json:"bk_set_id" field:"bk_set_id" mapstructure:"bk_set_id"`
+	ModuleID          int64         `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
+	ModuleName        string        `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
+	SupplierAccount   string        `bson:"bk_supplier_account" json:"bk_supplier_account" field:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	ServiceCategoryID int64         `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
+	ServiceTemplateID int64         `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
+	ParentID          int64         `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
+	SetTemplateID     int64         `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
+	Default           int64         `bson:"default" json:"default" field:"default" mapstructure:"default"`
+	HostApplyEnabled  bool          `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
+	Creator           string        `bson:"creator" json:"creator" field:"creator" mapstructure:"creator"`
+	CreateTime        metadata.Time `bson:"create_time" json:"create_time"`
+	LastTime          metadata.Time `bson:"last_time" json:"last_time"`
 }

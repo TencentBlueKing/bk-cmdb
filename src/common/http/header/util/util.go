@@ -35,7 +35,7 @@ func CCHeader(header http.Header) http.Header {
 	httpheader.SetUserToken(newHeader, httpheader.GetUserToken(header))
 	httpheader.SetUserTicket(newHeader, httpheader.GetUserTicket(header))
 	httpheader.SetLanguage(newHeader, httpheader.GetLanguage(header))
-	httpheader.SetSupplierAccount(newHeader, httpheader.GetSupplierAccount(header))
+	httpheader.SetTenantID(newHeader, httpheader.GetTenantID(header))
 	httpheader.SetAppCode(newHeader, httpheader.GetAppCode(header))
 	httpheader.SetReqRealIP(newHeader, httpheader.GetReqRealIP(header))
 	if httpheader.IsReqFromWeb(header) {
@@ -47,7 +47,7 @@ func CCHeader(header http.Header) http.Header {
 }
 
 // GenCommonHeader generate common cmdb http header, use default value if parameter is not set
-func GenCommonHeader(user, supplierAccount, rid string) http.Header {
+func GenCommonHeader(user, tenantID, rid string) http.Header {
 	header := make(http.Header)
 	header.Set("Content-Type", "application/json")
 
@@ -55,8 +55,8 @@ func GenCommonHeader(user, supplierAccount, rid string) http.Header {
 		user = common.CCSystemOperatorUserName
 	}
 
-	if supplierAccount == "" {
-		supplierAccount = common.BKDefaultOwnerID
+	if tenantID == "" {
+		tenantID = common.BKDefaultTenantID
 	}
 
 	if rid == "" {
@@ -64,7 +64,7 @@ func GenCommonHeader(user, supplierAccount, rid string) http.Header {
 	}
 
 	httpheader.SetUser(header, user)
-	httpheader.SetSupplierAccount(header, supplierAccount)
+	httpheader.SetTenantID(header, tenantID)
 	httpheader.SetRid(header, rid)
 	return header
 }
@@ -81,7 +81,7 @@ func NewHeader(header http.Header) http.Header {
 
 	httpheader.SetUser(newHeader, httpheader.GetUser(header))
 
-	httpheader.SetSupplierAccount(newHeader, httpheader.GetSupplierAccount(header))
+	httpheader.SetTenantID(newHeader, httpheader.GetTenantID(header))
 
 	httpheader.SetRid(newHeader, httpheader.GetRid(header))
 
@@ -108,12 +108,12 @@ func ConvertLegacyHeader(header http.Header) http.Header {
 		httpheader.SetUser(newHeader, header.Get(httpheader.BKHTTPHeaderUser))
 	}
 
-	if httpheader.GetSupplierAccount(header) == "" {
-		supplierAccount := header.Get(httpheader.BKHTTPOwner)
-		if supplierAccount == "" {
-			supplierAccount = header.Get(httpheader.BKHTTPOwnerID)
+	if httpheader.GetTenantID(header) == "" {
+		tenantID := header.Get(httpheader.BKHTTPTenant)
+		if tenantID == "" {
+			tenantID = header.Get(httpheader.BKHTTPTenantID)
 		}
-		httpheader.SetSupplierAccount(newHeader, supplierAccount)
+		httpheader.SetTenantID(newHeader, tenantID)
 	}
 
 	if httpheader.GetRid(header) == "" {
@@ -139,13 +139,13 @@ func NewHeaderFromContext(ctx context.Context) http.Header {
 	user := ctx.Value(common.ContextRequestUserField)
 	userValue, _ := user.(string)
 
-	owner := ctx.Value(common.ContextRequestOwnerField)
-	ownerValue, _ := owner.(string)
+	tenant := ctx.Value(common.ContextRequestTenantField)
+	tenantValue, _ := tenant.(string)
 
-	return GenCommonHeader(userValue, ownerValue, ridValue)
+	return GenCommonHeader(userValue, tenantValue, ridValue)
 }
 
-// BuildHeader build cmdb header by user & supplier account
-func BuildHeader(user string, supplierAccount string) http.Header {
-	return GenCommonHeader(user, supplierAccount, "")
+// BuildHeader build cmdb header by user & tenant
+func BuildHeader(user string, tenantID string) http.Header {
+	return GenCommonHeader(user, tenantID, "")
 }

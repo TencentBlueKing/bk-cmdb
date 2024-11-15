@@ -60,7 +60,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 
 	model.ObjSortNumber = sortNum
 	model.ID = int64(id)
-	model.OwnerID = kit.SupplierAccount
+	model.TenantID = kit.TenantID
 
 	now := time.Now()
 	if model.LastTime == nil {
@@ -406,7 +406,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	obj := metadata.GenerateModelQuoteObjID(input.ObjID, input.PropertyID)
 
 	// delete quoted instance table
-	instTable := common.GetInstTableName(obj, kit.SupplierAccount)
+	instTable := common.GetInstTableName(obj, kit.TenantID)
 	err := mongodb.Client().DropTable(kit.Ctx, instTable)
 	if err != nil {
 		blog.Errorf("drop instance table failed, err: %v, table: %s, rid: %s", err, instTable, kit.Rid)
@@ -459,7 +459,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID string) error {
 	// table collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
+	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
 	// table collections indexes.
 	instTableIndexes := dbindex.TableInstanceIndexes()
 	// create table object instance collection.
@@ -474,8 +474,8 @@ func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID stri
 // which create new object instance and association collections, and fix missing indexes.
 func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 
 	// collections indexes.
 	instTableIndexes := dbindex.InstanceIndexes()
@@ -505,8 +505,8 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, i
 // dropObjectShardingTables drops the collections of target model.
 func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) error {
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.SupplierAccount)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
+	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 
 	// drop object instance table.
 	err := m.dropShardingTable(kit, instTableName)

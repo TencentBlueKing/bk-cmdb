@@ -66,7 +66,7 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 
 	idField := common.GetInstIDField(opt.ObjID)
 	cond = mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: mapstr.MapStr{common.BKDBIN: opt.IDs}}
-	table := common.GetInstTableName(opt.ObjID, ctx.Kit.SupplierAccount)
+	table := common.GetInstTableName(opt.ObjID, ctx.Kit.TenantID)
 	insts := make([]mapstr.MapStr, 0)
 	if err := mongodb.Client().Table(table).Find(cond).All(ctx.Kit.Ctx, &insts); err != nil {
 		blog.Errorf("find instances failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)

@@ -32,18 +32,18 @@ type GraphAsst struct {
 
 // TopoGraphics TODO
 type TopoGraphics struct {
-	ScopeType       string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
-	ScopeID         string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
-	NodeType        string                 `json:"node_type" bson:"node_type"`                       // obj inst
-	ObjID           string                 `json:"bk_obj_id" bson:"bk_obj_id"`
-	IsPre           bool                   `json:"ispre"             bson:"ispre"`
-	InstID          int                    `json:"bk_inst_id" bson:"bk_inst_id"`
-	NodeName        string                 `json:"node_name,omitempty" bson:"node_name,omitempty"`
-	Position        Position               `json:"position" bson:"position"`
-	Ext             map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
-	Icon            string                 `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
-	SupplierAccount string                 `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
-	Assts           []GraphAsst            `json:"assts,omitempty"`
+	ScopeType string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
+	ScopeID   string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
+	NodeType  string                 `json:"node_type" bson:"node_type"`                       // obj inst
+	ObjID     string                 `json:"bk_obj_id" bson:"bk_obj_id"`
+	IsPre     bool                   `json:"ispre"             bson:"ispre"`
+	InstID    int                    `json:"bk_inst_id" bson:"bk_inst_id"`
+	NodeName  string                 `json:"node_name,omitempty" bson:"node_name,omitempty"`
+	Position  Position               `json:"position" bson:"position"`
+	Ext       map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
+	Icon      string                 `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
+	TenantID  string                 `json:"tenant_id,omitempty" bson:"tenant_id,omitempty"` // tenant_id
+	Assts     []GraphAsst            `json:"assts,omitempty"`
 }
 
 // UpdateTopoGraphicsInput TODO
@@ -53,7 +53,7 @@ type UpdateTopoGraphicsInput struct {
 
 // FillBlank TODO
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
-	t.SetSupplierAccount("0")
+	t.SetTenantID("0")
 	t.SetExt(map[string]interface{}{})
 	t.SetPosition(Position{})
 	return t
@@ -91,8 +91,8 @@ func (t *TopoGraphics) SetScopeType(val string) { t.ScopeType = val }
 // SetScopeID TODO
 func (t *TopoGraphics) SetScopeID(val string) { t.ScopeID = val }
 
-// SetSupplierAccount TODO
-func (t *TopoGraphics) SetSupplierAccount(val string) { t.SupplierAccount = val }
+// SetTenantID TODO
+func (t *TopoGraphics) SetTenantID(val string) { t.TenantID = val }
 
 // SearchTopoGraphicsResult TODO
 type SearchTopoGraphicsResult struct {

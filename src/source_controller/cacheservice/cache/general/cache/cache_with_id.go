@@ -49,8 +49,8 @@ func newMapStrCacheWithID(key *general.Key, needCacheAll bool, table, idField st
 				return nil, fmt.Errorf("parse id %+v failed, err: %v", data[idField], err)
 			}
 			return &basicInfo{
-				id:       id,
-				supplier: util.GetStrByInterface(data[common.BkSupplierAccount]),
+				id:     id,
+				tenant: util.GetStrByInterface(data[common.TenantID]),
 			}, nil
 		})
 }

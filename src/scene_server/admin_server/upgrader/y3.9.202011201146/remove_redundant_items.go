@@ -15,7 +15,6 @@ package y3_9_202011201146
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -28,9 +27,9 @@ const (
 
 func removeRedundantItems(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	subscriptionFilter := map[string]interface{}{
-		subscriptionNameField:    "process instance refresh [Do not remove it]",
-		"system_name":            "cmdb",
-		common.BkSupplierAccount: common.BKDefaultOwnerID,
+		subscriptionNameField: "process instance refresh [Do not remove it]",
+		"system_name":         "cmdb",
+		"bk_supplier_account": "0",
 	}
 
 	if err := db.Table(tableNameSubscription).Delete(ctx, subscriptionFilter); err != nil {

@@ -31,7 +31,7 @@ import (
 )
 
 var updateIgnoreKeys = []string{
-	common.BKOwnerIDField,
+	common.TenantID,
 	common.BKDefaultField,
 	common.BKInstParentStr,
 	common.BKAppIDField,
@@ -40,7 +40,7 @@ var updateIgnoreKeys = []string{
 }
 
 var createIgnoreKeys = []string{
-	common.BKOwnerIDField,
+	common.TenantID,
 	common.BKDefaultField,
 	common.BKInstParentStr,
 	common.BKAppIDField,
@@ -742,7 +742,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	for valEnumID := range valEnumIDMap {
 		valEnumIDs = append(valEnumIDs, valEnumID)
 	}
-	tableName := common.GetInstTableName(quoteObjID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(quoteObjID, kit.TenantID)
 	cond := map[string]interface{}{
 		common.GetInstIDField(quoteObjID): map[string]interface{}{
 			common.BKDBIN: valEnumIDs,

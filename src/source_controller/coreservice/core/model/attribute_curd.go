@@ -82,7 +82,7 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 
 	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
-	attribute.OwnerID = kit.SupplierAccount
+	attribute.TenantID = kit.TenantID
 
 	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
@@ -123,7 +123,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 
 	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
-	attribute.OwnerID = kit.SupplierAccount
+	attribute.TenantID = kit.TenantID
 
 	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
@@ -170,7 +170,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 				attribute.PropertyID: map[string]string{common.BKDBType: "string", common.BKDBGT: ""},
 			},
 		}
-		table := common.GetInstTableName(attribute.ObjectID, kit.SupplierAccount)
+		table := common.GetInstTableName(attribute.ObjectID, kit.TenantID)
 		if err = mongodb.Client().Table(table).CreateIndex(kit.Ctx, idx); err != nil {
 			blog.Errorf("create index failed, index: %+v, err: %v, rid: %s", idx, err, kit.Rid)
 			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
@@ -181,7 +181,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			ObjID:    attribute.ObjectID,
 			Keys:     []metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attribute.ID)}},
 			Ispre:    false,
-			OwnerID:  kit.SupplierAccount,
+			TenantID: kit.TenantID,
 			LastTime: metadata.Now(),
 		}
 		err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
@@ -889,7 +889,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 				}
 
 				if object == common.BKInnerObjIDHost {
-					if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, objField); err != nil {
+					if err := m.cleanHostAttributeField(kit.Ctx, kit.TenantID, objField); err != nil {
 						return err
 					}
 					continue
@@ -903,7 +903,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 							bizID:  0,
 							fields: fields,
 						}
-						if err := m.cleanHostAttributeField(kit.Ctx, kit.SupplierAccount, ele); err != nil {
+						if err := m.cleanHostAttributeField(kit.Ctx, kit.TenantID, ele); err != nil {
 							return err
 						}
 						continue
@@ -913,7 +913,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 				}
 			}
 
-			collectionName := common.GetInstTableName(object, kit.SupplierAccount)
+			collectionName := common.GetInstTableName(object, kit.TenantID)
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
 				defer wg.Done()
@@ -935,7 +935,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 	}
 
 	// step 3: clean host apply fields
-	if err := m.cleanHostApplyField(kit.Ctx, kit.SupplierAccount, hostApplyFields); err != nil {
+	if err := m.cleanHostApplyField(kit.Ctx, kit.TenantID, hostApplyFields); err != nil {
 		return err
 	}
 
@@ -1295,7 +1295,7 @@ func (m *modelAttribute) checkTableAttrUpdate(kit *rest.Kit, data mapstr.MapStr,
 
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	data.Remove(metadata.AttributeFieldPropertyID)
-	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Remove(common.TenantID)
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)
@@ -1456,7 +1456,7 @@ func removeIrrelevantValues(data mapstr.MapStr) {
 	data.Remove(common.CreateTimeField)
 	data.Remove(common.ModifierField)
 	data.Remove(common.LastTimeField)
-	data.Remove(common.BkSupplierAccount)
+	data.Remove(common.TenantID)
 	data.Remove(common.BKTemplateID)
 	data.Remove(common.BKFieldID)
 	data.Remove(common.BKPropertyTypeField)
@@ -1610,7 +1610,7 @@ func (m *modelAttribute) checkUpdate(kit *rest.Kit, data mapstr.MapStr, cond uni
 	// 删除不可更新字段， 避免由于传入数据，修改字段
 	// TODO: 改成白名单方式
 	data.Remove(metadata.AttributeFieldPropertyID)
-	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Remove(common.TenantID)
 	data.Remove(metadata.AttributeFieldPropertyType)
 	data.Remove(metadata.AttributeFieldCreateTime)
 	data.Remove(metadata.AttributeFieldIsPre)

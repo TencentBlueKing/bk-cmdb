@@ -52,7 +52,7 @@ func addSetProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	now := time.Now()
 	serviceCategoryIDProperty := Attribute{
 		ID:                0,
-		OwnerID:           conf.OwnerID,
+		OwnerID:           conf.TenantID,
 		ObjectID:          common.BKInnerObjIDSet,
 		PropertyID:        "set_template_id",
 		PropertyName:      "集群模板ID",
@@ -76,8 +76,9 @@ func addSetProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		LastTime:          &now,
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields, []string{})
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
+	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields,
+		[]string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.08.24.01] addSetProperty set_template_id failed, err: %+v", err)
 		return err

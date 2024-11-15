@@ -29,7 +29,7 @@ func addHostBkCPUArchitectureAttr(ctx context.Context, db dal.RDB, conf *upgrade
 	attrFilter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDHost,
 		common.BKPropertyIDField: "bk_cpu_architecture",
-		common.BkSupplierAccount: conf.OwnerID,
+		"bk_supplier_account":    conf.TenantID,
 	}
 
 	cnt, err := db.Table(common.BKTableNameObjAttDes).Find(attrFilter).Count(ctx)
@@ -77,7 +77,7 @@ func addHostBkCPUArchitectureAttr(ctx context.Context, db dal.RDB, conf *upgrade
 	now := metadata.Now()
 	attr := &Attribute{
 		ID:            int64(attrID),
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		ObjectID:      common.BKInnerObjIDHost,
 		PropertyID:    "bk_cpu_architecture",
 		PropertyName:  "CPU架构",

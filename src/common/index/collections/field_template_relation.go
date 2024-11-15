@@ -49,7 +49,7 @@ var commObjFieldTemplateRelationIndexes = []types.Index{
 				common.ObjectIDField, 1,
 			},
 			{
-				common.BKOwnerIDField, 1,
+				common.TenantID, 1,
 			},
 		},
 		Background: true,

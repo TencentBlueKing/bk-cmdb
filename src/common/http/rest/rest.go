@@ -118,11 +118,11 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		header := req.Request.Header
 		rid := httpheader.GetRid(header)
 		user := httpheader.GetUser(header)
-		owner := httpheader.GetSupplierAccount(header)
+		tenantID := httpheader.GetTenantID(header)
 		ctx := req.Request.Context()
 		ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 		ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
-		ctx = context.WithValue(ctx, common.ContextRequestOwnerField, owner)
+		ctx = context.WithValue(ctx, common.ContextRequestTenantField, tenantID)
 
 		// time out after 2 minutes, in case long request does not terminate, skip ui requests like import
 		if httpheader.IsReqFromWeb(header) {
@@ -143,12 +143,12 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 		}
 
 		restContexts.Kit = &Kit{
-			Header:          header,
-			Rid:             rid,
-			Ctx:             ctx,
-			User:            user,
-			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header)),
-			SupplierAccount: owner,
+			Header:   header,
+			Rid:      rid,
+			Ctx:      ctx,
+			User:     user,
+			CCError:  r.ErrorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header)),
+			TenantID: tenantID,
 		}
 
 		action.Handler(restContexts)

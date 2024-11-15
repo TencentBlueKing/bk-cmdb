@@ -75,7 +75,7 @@ func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResource
 				err, resourceType, kit.Rid)
 			return nil, err
 		}
-		param.Collection = common.GetObjectInstTableName(objID, kit.SupplierAccount)
+		param.Collection = common.GetObjectInstTableName(objID, kit.TenantID)
 	} else {
 		param.Collection = getResourceTableName(resourceType)
 	}

@@ -111,7 +111,7 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 	input := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
 		Page:      metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKAppIDField},
-		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
+		Fields:    []string{common.BKAppIDField, common.TenantID},
 	}
 
 	bizResp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp,
@@ -127,7 +127,7 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 	}
 
 	for _, biz := range bizResp.Info {
-		if util.GetStrByInterface(biz[common.BkSupplierAccount]) == kit.SupplierAccount {
+		if util.GetStrByInterface(biz[common.TenantID]) == kit.TenantID {
 			resourcePoolBizID, err = util.GetInt64ByInterface(biz[common.BKAppIDField])
 			if nil != err {
 				blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s",

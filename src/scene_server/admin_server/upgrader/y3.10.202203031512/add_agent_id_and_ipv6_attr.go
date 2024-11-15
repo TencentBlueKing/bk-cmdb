@@ -59,7 +59,7 @@ func addHostAgentIDAndIPv6Attr(ctx context.Context, db dal.RDB, conf *upgrader.C
 	now := time.Now()
 	attrIDs := make([]string, 0)
 	for index, attr := range agentIDAndIPv6Attrs {
-		agentIDAndIPv6Attrs[index].OwnerID = conf.OwnerID
+		agentIDAndIPv6Attrs[index].OwnerID = conf.TenantID
 		agentIDAndIPv6Attrs[index].ObjectID = common.BKInnerObjIDHost
 		agentIDAndIPv6Attrs[index].PropertyGroup = "default"
 		agentIDAndIPv6Attrs[index].IsPre = true
@@ -162,7 +162,7 @@ func addHostAgentIDAndIPv6Unique(ctx context.Context, db dal.RDB, conf *upgrader
 		},
 		ObjID:    common.BKInnerObjIDHost,
 		IsPre:    true,
-		OwnerID:  conf.OwnerID,
+		OwnerID:  conf.TenantID,
 		LastTime: time.Now(),
 	}
 

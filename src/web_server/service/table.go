@@ -39,7 +39,7 @@ import (
 func (s *Service) initModelQuote(ws *gin.Engine) {
 	// create instance api
 	ws.POST("/table/create/biz_set", s.CreateInstanceWithTable(common.BKInnerObjIDBizSet))
-	ws.POST("/table/biz/:bk_supplier_account", s.CreateInstanceWithTable(common.BKInnerObjIDApp))
+	ws.POST("/table/biz/:tenant_id", s.CreateInstanceWithTable(common.BKInnerObjIDApp))
 	ws.POST("/table/set/:bk_biz_id", s.CreateInstanceWithTable(common.BKInnerObjIDSet))
 	ws.POST("/table/module/:bk_biz_id/:bk_set_id", s.CreateInstanceWithTable(common.BKInnerObjIDModule))
 	ws.POST("/table/createmany/project", s.CreateInstanceWithTable(common.BKInnerObjIDProject))
@@ -48,7 +48,7 @@ func (s *Service) initModelQuote(ws *gin.Engine) {
 	// update instance api
 	ws.PUT("/table/hosts/batch", s.UpdateHostWithTable)
 	ws.PUT("/table/updatemany/biz_set", s.UpdateBizSetWithTable)
-	ws.PUT("/table/biz/:bk_supplier_account/:id", s.UpdateOneInstWithTable(common.BKInnerObjIDApp))
+	ws.PUT("/table/biz/:tenant_id/:id", s.UpdateOneInstWithTable(common.BKInnerObjIDApp))
 	ws.PUT("/table/set/:bk_biz_id/:id", s.UpdateOneInstWithTable(common.BKInnerObjIDSet))
 	ws.PUT("/table/module/:bk_biz_id/:bk_set_id/:id", s.UpdateOneInstWithTable(common.BKInnerObjIDModule))
 	ws.PUT("/table/updatemany/project", s.UpdateProjectWithTable)

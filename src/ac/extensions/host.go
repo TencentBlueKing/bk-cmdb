@@ -140,7 +140,7 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 					strconv.FormatInt(host.BKCloudID, 10)),
 				InstanceID: host.BKHostIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		businessID := host.BKAppIDField

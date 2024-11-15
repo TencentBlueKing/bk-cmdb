@@ -225,8 +225,8 @@ func (f *FullTextSearchFilter) Validate() error {
 
 // FullTextSearchReq is fulltext search request.
 type FullTextSearchReq struct {
-	// OwnerID supplier account.
-	OwnerID string `json:"bk_supplier_account"`
+	// TenantID supplier account.
+	TenantID string `json:"tenant_id"`
 
 	// BizID business id.
 	BizID string `json:"bk_biz_id"`
@@ -378,8 +378,8 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 	// main query.
 	query := elastic.NewBoolQuery()
 	queryConditions := make(map[string][]interface{})
-	if len(r.OwnerID) != 0 {
-		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
+	if len(r.TenantID) != 0 {
+		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, r.TenantID))
 	}
 	if len(r.BizID) != 0 {
 		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
@@ -410,8 +410,8 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 	// sub aggregations query.
 	for _, condFilter := range filterCond {
 		boolQuery := elastic.NewBoolQuery()
-		if len(r.OwnerID) != 0 {
-			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKSupplierAccount, r.OwnerID))
+		if len(r.TenantID) != 0 {
+			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, r.TenantID))
 		}
 		if len(r.BizID) != 0 {
 			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
@@ -477,7 +477,8 @@ func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextS
 
 			count, err := s.Es.Count(ctx.Kit.Ctx, esQuery.Query, []string{esQuery.Condition.IndexName})
 			if err != nil {
-				blog.Errorf("fulltext search count failed,query cond: %s err: %+v, rid: %s", esQuery.Query, err, ctx.Kit.Rid)
+				blog.Errorf("fulltext search count failed,query cond: %s err: %+v, rid: %s", esQuery.Query, err,
+					ctx.Kit.Rid)
 				pipelineErr = err
 				return
 			}

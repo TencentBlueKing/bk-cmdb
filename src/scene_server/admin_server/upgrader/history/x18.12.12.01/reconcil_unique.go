@@ -29,7 +29,8 @@ import (
 func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	oldAttributes := []Attribute{}
-	err := db.Table(common.BKTableNameObjAttDes).Find(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDProc}).All(ctx, &oldAttributes)
+	err := db.Table(common.BKTableNameObjAttDes).Find(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDProc}).All(ctx,
+		&oldAttributes)
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 	}
@@ -115,7 +116,7 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
-	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	uniqueCond.Field("bk_supplier_account").Eq(conf.TenantID)
 	existUniques := []objectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)

@@ -373,7 +373,7 @@ func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*
 	instIDIndexMap := make(map[int64]int, 0)
 	for index, e := range es {
 		objID, err := common.GetInstObjIDByTableName(e.Collection, gjson.Get(string(e.DocBytes),
-			common.BkSupplierAccount).Str)
+			common.TenantID).Str)
 		if err != nil {
 			blog.Errorf("collection name is illegal, err: %v, rid: %s", err, rid)
 			return nil, err
@@ -423,7 +423,7 @@ func (f *InstanceFlow) convertToInstEvents(es map[int]*types.Event, srcObjIDInst
 		}
 
 		tableName := common.GetInstTableName(objID, gjson.Get(string(instIDEventMap[instIDs[0]].DocBytes),
-			common.BkSupplierAccount).Str)
+			common.TenantID).Str)
 		filter := mapstr.MapStr{
 			common.GetInstIDField(objID): mapstr.MapStr{
 				common.BKDBIN: util.IntArrayUnique(instIDs),

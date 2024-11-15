@@ -36,13 +36,13 @@ const (
 
 // FullSyncCond is the full synchronization cache condition
 type FullSyncCond struct {
-	ID              int64              `json:"id" bson:"id"`
-	Resource        general.ResType    `json:"resource" bson:"resource"`
-	SubResource     string             `json:"sub_resource" bson:"sub_resource"`
-	IsAll           bool               `json:"is_all" bson:"is_all"`
-	Interval        int                `json:"interval" bson:"interval"`
-	Condition       *filter.Expression `json:"condition,omitempty" bson:"condition,omitempty"`
-	SupplierAccount string             `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ID          int64              `json:"id" bson:"id"`
+	Resource    general.ResType    `json:"resource" bson:"resource"`
+	SubResource string             `json:"sub_resource" bson:"sub_resource"`
+	IsAll       bool               `json:"is_all" bson:"is_all"`
+	Interval    int                `json:"interval" bson:"interval"`
+	Condition   *filter.Expression `json:"condition,omitempty" bson:"condition,omitempty"`
+	TenantID    string             `json:"tenant_id" bson:"tenant_id"`
 }
 
 // full sync cond field names

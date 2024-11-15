@@ -80,7 +80,7 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	dbTask.Extra = input.Extra
 	dbTask.CreateTime = time.Now()
 	dbTask.LastTime = time.Now()
-	dbTask.SupplierAccount = kit.SupplierAccount
+	dbTask.TenantID = kit.TenantID
 	for _, taskItem := range input.Data {
 		dbTask.Detail = append(dbTask.Detail, metadata.APISubTaskDetail{
 			SubTaskID: getStrTaskID("sid"),
@@ -95,15 +95,15 @@ func (lgc *Logics) Create(kit *rest.Kit, input *metadata.CreateTaskRequest) (met
 	}
 
 	taskHistory := metadata.APITaskSyncStatus{
-		TaskID:          dbTask.TaskID,
-		TaskType:        input.TaskType,
-		InstID:          input.InstID,
-		Status:          metadata.APITaskStatusNew,
-		Creator:         kit.User,
-		CreateTime:      dbTask.CreateTime,
-		LastTime:        dbTask.LastTime,
-		Extra:           input.Extra,
-		SupplierAccount: kit.SupplierAccount,
+		TaskID:     dbTask.TaskID,
+		TaskType:   input.TaskType,
+		InstID:     input.InstID,
+		Status:     metadata.APITaskStatusNew,
+		Creator:    kit.User,
+		CreateTime: dbTask.CreateTime,
+		LastTime:   dbTask.LastTime,
+		Extra:      input.Extra,
+		TenantID:   kit.TenantID,
 	}
 
 	if err := lgc.db.Table(common.BKTableNameAPITaskSyncHistory).Insert(kit.Ctx, taskHistory); err != nil {
@@ -122,20 +122,20 @@ func (lgc *Logics) CreateBatch(kit *rest.Kit, tasks []metadata.CreateTaskRequest
 
 	now := time.Now()
 	dbTask := metadata.APITaskDetail{
-		User:            kit.User,
-		Header:          GetDBHTTPHeader(kit.Header),
-		Status:          metadata.APITaskStatusNew,
-		CreateTime:      now,
-		LastTime:        now,
-		SupplierAccount: kit.SupplierAccount,
+		User:       kit.User,
+		Header:     GetDBHTTPHeader(kit.Header),
+		Status:     metadata.APITaskStatusNew,
+		CreateTime: now,
+		LastTime:   now,
+		TenantID:   kit.TenantID,
 	}
 
 	taskHistory := metadata.APITaskSyncStatus{
-		Status:          metadata.APITaskStatusNew,
-		Creator:         kit.User,
-		CreateTime:      now,
-		LastTime:        now,
-		SupplierAccount: kit.SupplierAccount,
+		Status:     metadata.APITaskStatusNew,
+		Creator:    kit.User,
+		CreateTime: now,
+		LastTime:   now,
+		TenantID:   kit.TenantID,
 	}
 
 	dbTasks := make([]metadata.APITaskDetail, len(tasks))
@@ -199,20 +199,20 @@ func (lgc *Logics) CreateFieldTemplateBatch(kit *rest.Kit, tasks []metadata.Crea
 
 	now := time.Now()
 	dbTask := metadata.APITaskDetail{
-		User:            kit.User,
-		Header:          GetDBHTTPHeader(kit.Header),
-		Status:          metadata.APITaskStatusNew,
-		CreateTime:      now,
-		LastTime:        now,
-		SupplierAccount: kit.SupplierAccount,
+		User:       kit.User,
+		Header:     GetDBHTTPHeader(kit.Header),
+		Status:     metadata.APITaskStatusNew,
+		CreateTime: now,
+		LastTime:   now,
+		TenantID:   kit.TenantID,
 	}
 
 	taskHistory := metadata.APITaskSyncStatus{
-		Status:          metadata.APITaskStatusNew,
-		Creator:         kit.User,
-		CreateTime:      now,
-		LastTime:        now,
-		SupplierAccount: kit.SupplierAccount,
+		Status:     metadata.APITaskStatusNew,
+		Creator:    kit.User,
+		CreateTime: now,
+		LastTime:   now,
+		TenantID:   kit.TenantID,
 	}
 
 	dbTasks := make([]metadata.APITaskDetail, len(tasks))

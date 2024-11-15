@@ -171,7 +171,7 @@ func addObjectUniqueTemplateIndexes(ctx context.Context, db dal.RDB) error {
 					common.BKTemplateID, 1,
 				},
 				{
-					common.BKOwnerIDField, 1,
+					"bk_supplier_account", 1,
 				},
 			},
 			Background: true,
@@ -207,7 +207,7 @@ func addObjFieldTemplateRelationIndexes(ctx context.Context, db dal.RDB) error {
 					common.ObjectIDField, 1,
 				},
 				{
-					common.BKOwnerIDField, 1,
+					"bk_supplier_account", 1,
 				},
 			},
 			Background: true,

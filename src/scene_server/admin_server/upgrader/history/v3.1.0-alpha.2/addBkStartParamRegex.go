@@ -62,7 +62,7 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		PropertyGroup: "default",
 		PropertyType:  common.FieldTypeLongChar,
 		Option:        "",
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		IsPre:         true,
 		IsReadOnly:    false,
 		CreateTime:    &now,
@@ -70,7 +70,8 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		LastTime:      &now,
 		Description:   "通过进程启动参数唯一识别进程，比如kafka和zookeeper的二进制名称为java，通过启动参数包含kafka或zookeeper来区分",
 	}
-	_, _, err = upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{})
+	_, _, err = upgrader.Upsert(ctx, db, tablename, row, "id",
+		[]string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v3.1.0-alpha.2] addBkStartParamRegex  %s", err)
 		return err

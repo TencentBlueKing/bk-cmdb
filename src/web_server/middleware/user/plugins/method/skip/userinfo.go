@@ -44,24 +44,24 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieSupplierAccount)
+	cookieOwnerID, err := c.Cookie(common.HTTPCookieTenant)
 	if "" == cookieOwnerID || nil != err {
-		c.SetCookie(common.HTTPCookieSupplierAccount, common.BKDefaultOwnerID, 0, "/", "", false, false)
-		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
-	} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
-		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
+		c.SetCookie(common.HTTPCookieTenant, common.BKDefaultTenantID, 0, "/", "", false, false)
+		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
+	} else if cookieOwnerID != session.Get(common.WEBSessionTenantUinKey) {
+		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
 	}
 
 	user = &metadata.LoginUserInfo{
-		UserName: "admin",
-		ChName:   "admin",
-		Phone:    "",
-		Email:    "blueking",
-		Role:     "",
-		BkToken:  "",
-		OnwerUin: "0",
-		IsOwner:  false,
-		Language: webCommon.GetLanguageByHTTPRequest(c),
+		UserName:  "admin",
+		ChName:    "admin",
+		Phone:     "",
+		Email:     "blueking",
+		Role:      "",
+		BkToken:   "",
+		TenantUin: "0",
+		IsTenant:  false,
+		Language:  webCommon.GetLanguageByHTTPRequest(c),
 	}
 	return user, true
 }

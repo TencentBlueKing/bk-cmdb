@@ -63,7 +63,7 @@ var _ = Describe("model quote type test", func() {
 				ObjectID:   "model_quote_test_obj",
 				ObjectName: "模型引用类型测试模型",
 				ObjIcon:    "icon-cc-default",
-				OwnerID:    "0",
+				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(ctx, header, option)
@@ -73,7 +73,7 @@ var _ = Describe("model quote type test", func() {
 			Expect(rsp.Data.ObjCls).To(Equal(option.ObjCls))
 			Expect(rsp.Data.ObjectID).To(Equal(option.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(option.ObjectName))
-			Expect(rsp.Data.OwnerID).To(Equal(option.OwnerID))
+			Expect(rsp.Data.TenantID).To(Equal(option.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(option.Creator))
 			modelQuoteObj = rsp.Data
 		}()
@@ -83,7 +83,7 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      modelQuoteObj.ObjectID,
-					OwnerID:       "0",
+					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",
@@ -143,7 +143,7 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      "model_quote_test_obj_noexist",
-					OwnerID:       "0",
+					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",
@@ -185,7 +185,7 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      modelQuoteObj.ObjectID,
-					OwnerID:       "0",
+					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",

@@ -349,7 +349,7 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.SupplierAccount, instID)
+	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.TenantID, instID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v",
 			err)
@@ -380,7 +380,7 @@ func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
 
 	opt.Business = bizID
 
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt, ctx.Kit.SupplierAccount)
+	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt, ctx.Kit.TenantID)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

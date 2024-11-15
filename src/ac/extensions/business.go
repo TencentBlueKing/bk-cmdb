@@ -71,7 +71,7 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 				Name:       business.BKAppNameField,
 				InstanceID: business.BKAppIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		resources = append(resources, resource)

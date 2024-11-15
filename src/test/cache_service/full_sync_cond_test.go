@@ -66,7 +66,7 @@ var _ = Describe("full sync cond crud test", func() {
 			Expect(res.Info[0].IsAll).To(Equal(true))
 			Expect(res.Info[0].Interval).To(Equal(6))
 			Expect(res.Info[0].Condition == nil).To(Equal(true))
-			Expect(res.Info[0].SupplierAccount).To(Equal(httpheader.GetSupplierAccount(header)))
+			Expect(res.Info[0].TenantID).To(Equal(httpheader.GetTenantID(header)))
 		})
 
 		It("update full sync cond", func() {
@@ -94,7 +94,7 @@ var _ = Describe("full sync cond crud test", func() {
 			Expect(res.Info[0].IsAll).To(Equal(true))
 			Expect(res.Info[0].Interval).To(Equal(7))
 			Expect(res.Info[0].Condition == nil).To(Equal(true))
-			Expect(res.Info[0].SupplierAccount).To(Equal(httpheader.GetSupplierAccount(header)))
+			Expect(res.Info[0].TenantID).To(Equal(httpheader.GetTenantID(header)))
 		})
 
 		It("delete full sync cond", func() {
@@ -141,7 +141,7 @@ var _ = Describe("full sync cond crud test", func() {
 			Expect(res.Info[0].IsAll).To(Equal(opt.IsAll))
 			Expect(res.Info[0].Interval).To(Equal(opt.Interval))
 			Expect(res.Info[0].Condition.String()).To(Equal(opt.Condition.String()))
-			Expect(res.Info[0].SupplierAccount).To(Equal(httpheader.GetSupplierAccount(header)))
+			Expect(res.Info[0].TenantID).To(Equal(httpheader.GetTenantID(header)))
 		})
 	})
 

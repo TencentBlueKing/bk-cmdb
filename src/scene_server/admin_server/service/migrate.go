@@ -43,10 +43,10 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	ownerID := common.BKDefaultOwnerID
+	tenantID := common.BKDefaultTenantID
 	updateCfg := &upgrader.Config{
-		OwnerID: ownerID,
-		User:    common.CCSystemOperatorUserName,
+		TenantID: tenantID,
+		User:     common.CCSystemOperatorUserName,
 	}
 
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
@@ -62,7 +62,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam,
 		updateCfg)
 	if err != nil {
-		blog.Errorf("db upgrade failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("db upgrade failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}
@@ -119,7 +119,7 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			kit.SupplierAccount = tenantID
+			kit.TenantID = tenantID
 			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
 			if err != nil {
 				blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
@@ -258,15 +258,15 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	ownerID := common.BKDefaultOwnerID
+	tenantID := common.BKDefaultTenantID
 	updateCfg := &upgrader.Config{
-		OwnerID: ownerID,
-		User:    common.CCSystemOperatorUserName,
+		TenantID: tenantID,
+		User:     common.CCSystemOperatorUserName,
 	}
 
 	input := new(MigrateSpecifyVersionRequest)
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("migrateSpecifyVersion failed, decode body err: %v, body:%+v,rid:%s", err, req.Request.Body, rid)
+		blog.Errorf("migrateSpecifyVersion failed, decode body err: %v, body: %+v, rid: %s", err, req.Request.Body, rid)
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -323,7 +323,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 		ConfigName string `json:"config_name"`
 	})
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("refreshConfig failed, decode body err: %v ,body:%+v,rid:%s", err, req.Request.Body, rid)
+		blog.Errorf("refreshConfig failed, decode body err: %v, body: %+v, rid:%s", err, req.Request.Body, rid)
 		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -331,7 +331,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	configName := "all"
 	if input.ConfigName != "" {
 		if ok := allConfigNames[input.ConfigName]; !ok {
-			blog.Errorf("refreshConfig failed, config_name is wrong, %s, input:%#v, rid:%s", configHelpInfo, input, rid)
+			blog.Errorf("refreshConfig failed, configHelpInfo: %s, input: %#v, rid: %s", configHelpInfo, input, rid)
 			resp.WriteError(http.StatusOK,
 				&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
 			return
@@ -352,18 +352,19 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	case "all":
 		err = s.ConfigCenter.WriteAllConfs2Center(s.Config.Configures.Dir, s.Config.Errors.Res, s.Config.Language.Res)
 	default:
-		blog.Errorf("refreshConfig failed, config_name is wrong, %s, input:%#v, rid:%s", configHelpInfo, input, rid)
+		blog.Errorf("refreshConfig failed, config_name is wrong, configHelpInfo: %s, input: %#v, rid: %s",
+			configHelpInfo, input, rid)
 		resp.WriteError(http.StatusOK,
 			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, configHelpInfo)})
 		return
 	}
 
 	if err != nil {
-		blog.Warnf("refreshConfig failed, input:%#v, error:%v, rid:%s", input, err, rid)
+		blog.Warnf("refreshConfig failed, input: %#v, error: %v, rid: %s", input, err, rid)
 		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 	}
 
-	blog.Infof("refresh config success, input:%#v", input)
+	blog.Infof("refresh config success, input: %#v", input)
 	resp.WriteEntity(metadata.NewSuccessResp("refresh config success"))
 }
 

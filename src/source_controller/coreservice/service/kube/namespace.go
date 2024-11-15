@@ -83,7 +83,7 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 			CreateTime: now,
 			LastTime:   now,
 		}
-		data.SupplierAccount = ctx.Kit.SupplierAccount
+		data.TenantID = ctx.Kit.TenantID
 		namespaces[idx] = data
 
 		if cluster.BizID == data.BizID {
@@ -98,11 +98,11 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 		}
 
 		sharedRel = append(sharedRel, types.NsSharedClusterRel{
-			NamespaceID:     id,
-			ClusterID:       cluster.ID,
-			BizID:           data.BizID,
-			AsstBizID:       cluster.BizID,
-			SupplierAccount: ctx.Kit.SupplierAccount,
+			NamespaceID: id,
+			ClusterID:   cluster.ID,
+			BizID:       data.BizID,
+			AsstBizID:   cluster.BizID,
+			TenantID:    ctx.Kit.TenantID,
 		})
 	}
 

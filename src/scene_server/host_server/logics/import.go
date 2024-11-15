@@ -80,8 +80,8 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerI
 		var auditLog []metadata.AuditLog
 		if existInDB {
 			var updateErrInfo string
-			auditLog, errInfo, updateErrInfo = instance.updateHostInst(kit, existsHostMap[hostID], hostID, innerIP, index,
-				host, appID)
+			auditLog, errInfo, updateErrInfo = instance.updateHostInst(kit, existsHostMap[hostID], hostID, innerIP,
+				index, host, appID)
 			if errInfo != "" {
 				errMsg = append(errMsg, errInfo)
 				continue
@@ -217,7 +217,8 @@ func (i *importInstance) updateHostInst(kit *rest.Kit, existsHostInfo mapstr.Map
 }
 
 // addHostInst 新增主机
-func (i *importInstance) addHostInst(kit *rest.Kit, ccLang language.DefaultCCLanguageIf, moduleIDs []int64, cloudID int64,
+func (i *importInstance) addHostInst(kit *rest.Kit, ccLang language.DefaultCCLanguageIf, moduleIDs []int64,
+	cloudID int64,
 	innerIP string, index int64, hostInfo map[string]interface{}, appID int64, toInternalModule bool) (
 	int64, []metadata.AuditLog, string) {
 
@@ -579,7 +580,7 @@ func (lgc *Logics) updateTableData(kit *rest.Kit, tableData *metadata.TableData,
 // AddHostToResourcePool TODO
 func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHostToResourcePoolHostList) ([]int64,
 	*metadata.AddHostToResourcePoolResult, error) {
-	bizID, err := lgc.GetDefaultAppIDWithSupplier(kit)
+	bizID, err := lgc.GetDefaultAppIDWithTenant(kit)
 	if err != nil {
 		blog.ErrorJSON("add host, but get default biz id failed, err: %s, input: %s, rid: %s", err, hostList, kit.Rid)
 		return nil, nil, err
@@ -593,7 +594,7 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 
 	hostIDs := make([]int64, 0)
 	res := new(metadata.AddHostToResourcePoolResult)
-	instance := NewImportInstance(kit, kit.SupplierAccount, lgc)
+	instance := NewImportInstance(kit, kit.TenantID, lgc)
 	logContents := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 
@@ -900,7 +901,8 @@ func (h *importInstance) getAlreadyExistHosts(ctx context.Context, filter map[st
 			Start: 0,
 			Limit: common.BKNoLimit,
 		},
-		Fields: []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField, common.BKHostInnerIPv6Field},
+		Fields: []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField,
+			common.BKHostInnerIPv6Field},
 	}
 	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)
 	if err != nil {

@@ -55,7 +55,7 @@ func addContainerIndex(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "biz_id",
 			Keys: bson.D{
 				{types.BKBizIDField, 1},
-				{common.BkSupplierAccount, 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
@@ -63,7 +63,7 @@ func addContainerIndex(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "cluster_id",
 			Keys: bson.D{
 				{types.BKClusterIDFiled, 1},
-				{common.BkSupplierAccount, 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
@@ -71,7 +71,7 @@ func addContainerIndex(ctx context.Context, db dal.RDB) error {
 			Name: common.CCLogicIndexNamePrefix + "namespace_id",
 			Keys: bson.D{
 				{types.BKNamespaceIDField, 1},
-				{common.BkSupplierAccount, 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},
@@ -80,7 +80,7 @@ func addContainerIndex(ctx context.Context, db dal.RDB) error {
 			Keys: bson.D{
 				{types.RefIDField, 1},
 				{types.RefKindField, 1},
-				{common.BkSupplierAccount, 1},
+				{"bk_supplier_account", 1},
 			},
 			Background: true,
 		},

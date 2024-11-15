@@ -54,7 +54,7 @@ type Attribute struct {
 func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
+	cond.Field("bk_supplier_account").Eq("0")
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cond.Field(common.BKPropertyIDField).Eq(common.BKOSTypeField)
 

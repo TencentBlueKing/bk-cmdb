@@ -43,11 +43,11 @@ type HostApplyRule struct {
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
 
 	// 通用字段
-	Creator         string    `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Creator    string    `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 }
 
 // Validate TODO

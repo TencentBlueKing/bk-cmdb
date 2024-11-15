@@ -104,7 +104,7 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 			LastTime:   now,
 		}
 		wlBase.Revision = revision
-		wlBase.SupplierAccount = ctx.Kit.SupplierAccount
+		wlBase.TenantID = ctx.Kit.TenantID
 		data.SetWorkloadBase(wlBase)
 		createData[idx] = data
 	}

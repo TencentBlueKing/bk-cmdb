@@ -110,7 +110,7 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 	now := time.Now()
 	for idx := range attrs {
 		attrs[idx].ID = int64(ids[idx])
-		attrs[idx].OwnerID = ctx.Kit.SupplierAccount
+		attrs[idx].TenantID = ctx.Kit.TenantID
 		attrs[idx].Creator = ctx.Kit.User
 		attrs[idx].Modifier = ctx.Kit.User
 		attrs[idx].CreateTime = &metadata.Time{Time: now}
@@ -297,7 +297,7 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 		dbAttr := dbAttrMap[attrs[idx].ID]
 		attrs[idx].PropertyID = dbAttr.PropertyID
 		attrs[idx].PropertyType = dbAttr.PropertyType
-		attrs[idx].OwnerID = dbAttr.OwnerID
+		attrs[idx].TenantID = dbAttr.TenantID
 		attrs[idx].Creator = dbAttr.Creator
 		attrs[idx].CreateTime = dbAttr.CreateTime
 

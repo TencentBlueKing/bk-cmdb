@@ -41,7 +41,7 @@ type InstOperationInterface interface {
 	// CreateManyInstance batch create instance by object and create message
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
-	//BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+	// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
 	BatchCreateInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.BatchCreateInstRespData, error)
 	// CreateInstBatch batch create instance by excel
 	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*metadata.ImportInstRes, error)
@@ -132,7 +132,7 @@ func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr)
 	if metadata.IsCommon(objID) {
 		data.Set(common.BKObjIDField, objID)
 	}
-	data.Set(common.BkSupplierAccount, kit.SupplierAccount)
+	data.Set(common.TenantID, kit.TenantID)
 
 	instCond := &metadata.CreateModelInstance{Data: data}
 	rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)
@@ -1029,7 +1029,7 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	filter := []map[string]interface{}{{metadata.GetInstIDFieldByObjID(objID): instID}}
 	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, filter)
 	if ccErr != nil {

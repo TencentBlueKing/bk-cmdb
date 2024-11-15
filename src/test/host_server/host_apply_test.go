@@ -29,7 +29,7 @@ import (
 
 var _ = Describe("host abnormal test", func() {
 	ctx := context.Background()
-	supplierAccount := "0"
+	tenantID := "0"
 	responses := make(map[string]interface{})
 	Describe("test host apply", func() {
 
@@ -51,7 +51,7 @@ var _ = Describe("host abnormal test", func() {
 			err := apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
-				SubResourcef("/biz/%s", supplierAccount).
+				SubResourcef("/biz/%s", tenantID).
 				WithHeaders(header).
 				Do().Into(&rsp)
 			util.RegisterResponseWithRid(rsp, header)
@@ -65,12 +65,12 @@ var _ = Describe("host abnormal test", func() {
 		It("2. CreateAttributeGroup", func() {
 
 			input := map[string]interface{}{
-				"bk_group_id":         util.RandSeq(16),
-				"bk_group_index":      rand.Int(),
-				"bk_group_name":       util.RandSeq(16),
-				"bk_obj_id":           "host",
-				"bk_supplier_account": "0",
-				"is_collapse":         false,
+				"bk_group_id":    util.RandSeq(16),
+				"bk_group_index": rand.Int(),
+				"bk_group_name":  util.RandSeq(16),
+				"bk_obj_id":      "host",
+				"tenant_id":      "0",
+				"is_collapse":    false,
 			}
 
 			rsp := metadata.Response{}
@@ -89,19 +89,19 @@ var _ = Describe("host abnormal test", func() {
 		It("3. CreateAttribute", func() {
 
 			input := map[string]interface{}{
-				"bk_property_name":    util.RandSeq(16),
-				"bk_property_id":      util.RandSeq(16),
-				"unit":                "",
-				"placeholder":         "",
-				"bk_property_type":    "singlechar",
-				"editable":            true,
-				"isrequired":          false,
-				"option":              "",
-				"creator":             "admin",
-				"bk_property_group":   "value1",
-				"bk_property_index":   0,
-				"bk_obj_id":           "host",
-				"bk_supplier_account": "0",
+				"bk_property_name":  util.RandSeq(16),
+				"bk_property_id":    util.RandSeq(16),
+				"unit":              "",
+				"placeholder":       "",
+				"bk_property_type":  "singlechar",
+				"editable":          true,
+				"isrequired":        false,
+				"option":            "",
+				"creator":           "admin",
+				"bk_property_group": "value1",
+				"bk_property_index": 0,
+				"bk_obj_id":         "host",
+				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -121,15 +121,15 @@ var _ = Describe("host abnormal test", func() {
 			value1 := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
 				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
 			input := map[string]interface{}{
-				"bk_set_name":         util.RandSeq(16),
-				"bk_set_desc":         "",
-				"bk_set_env":          "3",
-				"bk_service_status":   "1",
-				"description":         "",
-				"bk_capacity":         nil,
-				"bk_biz_id":           value1,
-				"bk_parent_id":        value1,
-				"bk_supplier_account": "0",
+				"bk_set_name":       util.RandSeq(16),
+				"bk_set_desc":       "",
+				"bk_set_env":        "3",
+				"bk_service_status": "1",
+				"description":       "",
+				"bk_capacity":       nil,
+				"bk_biz_id":         value1,
+				"bk_parent_id":      value1,
+				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -155,7 +155,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_module_name":      util.RandSeq(16),
 				"bk_biz_id":           value1,
 				"bk_parent_id":        value2,
-				"bk_supplier_account": "0",
+				"tenant_id":           "0",
 				"service_template_id": 0,
 				"service_category_id": 2,
 			}
@@ -476,19 +476,19 @@ var _ = Describe("host abnormal test", func() {
 			urlTemplate := "/create/objectattr"
 
 			input := map[string]interface{}{
-				"bk_property_name":    util.RandSeq(16),
-				"bk_property_id":      util.RandSeq(16),
-				"unit":                "",
-				"placeholder":         "",
-				"bk_property_type":    "singlechar",
-				"editable":            true,
-				"isrequired":          false,
-				"option":              "",
-				"creator":             "admin",
-				"bk_property_group":   value1,
-				"bk_property_index":   0,
-				"bk_obj_id":           "host",
-				"bk_supplier_account": "0",
+				"bk_property_name":  util.RandSeq(16),
+				"bk_property_id":    util.RandSeq(16),
+				"unit":              "",
+				"placeholder":       "",
+				"bk_property_type":  "singlechar",
+				"editable":          true,
+				"isrequired":        false,
+				"option":            "",
+				"creator":           "admin",
+				"bk_property_group": value1,
+				"bk_property_index": 0,
+				"bk_obj_id":         "host",
+				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -620,7 +620,7 @@ var _ = Describe("host abnormal test", func() {
 				"bk_module_name":      util.RandSeq(16),
 				"bk_biz_id":           value1,
 				"bk_parent_id":        value2,
-				"bk_supplier_account": "0",
+				"tenant_id":           "0",
 				"service_template_id": 0,
 				"service_category_id": 2,
 			}

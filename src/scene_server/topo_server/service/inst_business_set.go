@@ -1008,7 +1008,7 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 	bizIDMap := make(map[interface{}]struct{})
 	for objID, instIDs := range objInstMap {
 		distinctOpt := &metadata.DistinctFieldOption{
-			TableName: common.GetInstTableName(objID, ctx.Kit.SupplierAccount),
+			TableName: common.GetInstTableName(objID, ctx.Kit.TenantID),
 			Field:     common.BKAppIDField,
 			Filter:    map[string]interface{}{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs}},
 		}

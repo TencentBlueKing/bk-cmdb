@@ -27,7 +27,7 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 
 	clouds := []map[string]interface{}{}
 
-	err = db.Table(common.BKTableNameBasePlat).Find(mapstr.New()).Sort("create_time").All(ctx, &clouds) // db.GetMutilByCondition(common.BKTableNameBasePlat, nil, mapstr.MapStr{}, &clouds, "create_time", 0, 0)
+	err = db.Table(common.BKTableNameBasePlat).Find(mapstr.New()).Sort("create_time").All(ctx, &clouds)
 	if nil != err && !db.IsNotFoundError(err) {
 		return err
 	}
@@ -41,13 +41,13 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 			existDefault = true
 		}
 		cloud[flag] = true
-		expects[fmt.Sprintf("%v:%v", cloud[common.BKOwnerIDField], cloud[common.BKCloudNameField])] = cloud
+		expects[fmt.Sprintf("%v:%v", cloud["bk_supplier_account"], cloud[common.BKCloudNameField])] = cloud
 	}
 
 	if !existDefault {
 		expects["0:"+"default area"] = map[string]interface{}{
 			common.BKCloudNameField: "default area",
-			common.BKOwnerIDField:   common.BKDefaultOwnerID,
+			"bk_supplier_account":   "0",
 			common.BKCloudIDField:   common.BKDefaultDirSubArea,
 			common.CreateTimeField:  time.Now(),
 			common.LastTimeField:    time.Now(),

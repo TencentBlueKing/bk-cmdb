@@ -218,9 +218,9 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 						Name:       instance.Name,
 						InstanceID: instance.InstanceID,
 					},
-					SupplierAccount: httpheader.GetSupplierAccount(header),
-					BusinessID:      businessIDMap[instance.InstanceID],
-					Layers:          layers,
+					TenantID:   httpheader.GetTenantID(header),
+					BusinessID: businessIDMap[instance.InstanceID],
+					Layers:     layers,
 				}
 
 				resources = append(resources, resource)
@@ -236,8 +236,8 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 						Name:       instance.Name,
 						InstanceID: instance.InstanceID,
 					},
-					SupplierAccount: httpheader.GetSupplierAccount(header),
-					BusinessID:      businessIDMap[instance.InstanceID],
+					TenantID:   httpheader.GetTenantID(header),
+					BusinessID: businessIDMap[instance.InstanceID],
 				}
 
 				resources = append(resources, resource)

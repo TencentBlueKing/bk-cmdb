@@ -31,16 +31,16 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := httpheader.GetRid(header)
 	user := httpheader.GetUser(header)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	tenantID := httpheader.GetTenantID(header)
 	defaultCCError := util.GetDefaultCCError(header)
 
 	kit := &rest.Kit{
-		Rid:             rid,
-		Header:          header,
-		Ctx:             ctx,
-		CCError:         defaultCCError,
-		User:            user,
-		SupplierAccount: supplierAccount,
+		Rid:      rid,
+		Header:   header,
+		Ctx:      ctx,
+		CCError:  defaultCCError,
+		User:     user,
+		TenantID: tenantID,
 	}
 
 	bizID := set.BizID

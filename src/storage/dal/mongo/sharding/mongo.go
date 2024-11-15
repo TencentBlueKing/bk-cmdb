@@ -166,7 +166,7 @@ func (m *ShardingMongoManager) refreshTenantDBMap() error {
 	tenantCli := make(map[string]*local.MongoClient)
 	for tenant, db := range tenantDBMap {
 		// TODO add default tenant db client for compatible, remove this later
-		if tenant == common.BKDefaultOwnerID {
+		if tenant == common.BKDefaultTenantID {
 			tenantCli[tenant] = m.masterCli
 			continue
 		}

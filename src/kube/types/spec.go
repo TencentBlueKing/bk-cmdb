@@ -35,7 +35,7 @@ const (
 // CommonSpecFieldsDescriptor public field properties
 var CommonSpecFieldsDescriptor = table.FieldsDescriptors{
 	{Field: BKIDField, Type: enumor.Numeric, IsRequired: true, IsEditable: false},
-	{Field: BKSupplierAccountField, Type: enumor.String, IsRequired: true, IsEditable: false},
+	{Field: BKTenantIDField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: CreatorField, Type: enumor.String, IsRequired: true, IsEditable: false},
 	{Field: ModifierField, Type: enumor.String, IsRequired: true, IsEditable: true},
 	{Field: CreateTimeField, Type: enumor.Timestamp, IsRequired: true, IsEditable: false},
