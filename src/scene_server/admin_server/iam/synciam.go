@@ -46,7 +46,7 @@ type syncor struct {
 	// 同步周期
 	SyncIAMPeriodMinutes int
 	// db mongodb实例连接，用于判断是否数据库初始化已完成，防止和模型实例权限迁移的upgrader冲突
-	db dal.ShardingDB
+	db dal.Dal
 }
 
 // NewSyncor TODO
@@ -64,7 +64,7 @@ func (s *syncor) SetSyncIAMPeriod(periodMinutes int) {
 }
 
 // SetDB set db
-func (s *syncor) SetDB(db dal.ShardingDB) {
+func (s *syncor) SetDB(db dal.Dal) {
 	s.db = db
 }
 
@@ -105,7 +105,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 	rid := util.GenerateRID()
 	for dbReady := false; !dbReady; {
 		var err error
-		dbReady, err = upgrader.DBReady(context.Background(), s.db.IgnoreTenant())
+		dbReady, err = upgrader.DBReady(context.Background(), s.db)
 		if err != nil {
 			blog.Errorf("sync iam, check whether db initialization is complete failed, err: %v, rid: %s", err, rid)
 			time.Sleep(5 * time.Second)
@@ -131,7 +131,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 
 		blog.Infof("start sync iam, rid: %s", kit.Rid)
 
-		objects, err := GetCustomObjects(kit.Ctx, s.db)
+		objects, err := GetCustomObjects(kit, s.db)
 		if err != nil {
 			blog.Errorf("sync iam failed, get custom objects err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
@@ -150,11 +150,11 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 }
 
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func GetCustomObjects(ctx context.Context, db dal.ShardingDB) ([]metadata.Object, error) {
+func GetCustomObjects(kit *rest.Kit, db dal.Dal) ([]metadata.Object, error) {
 	allObjs := make([]metadata.Object, 0)
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
-		objects, err := GetTenantCustomObjects(ctx, db.Tenant(tenantID))
+		objects, err := GetTenantCustomObjects(kit.Ctx, db.Shard(kit.ShardOpts()))
 		if err != nil {
 			blog.Errorf("get %s custom objects failed, err: %v", tenantID, err)
 			return err

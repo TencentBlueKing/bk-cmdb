@@ -31,6 +31,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
@@ -41,7 +42,7 @@ import (
 */
 
 // DBSync do sync db table index background task
-func DBSync(e *backbone.Engine, db dal.ShardingDB, options options.Config) {
+func DBSync(e *backbone.Engine, db dal.Dal, options options.Config) {
 	f := func() {
 		defaultDBTable = db
 		fmt.Println(defaultDBTable)
@@ -57,11 +58,11 @@ func DBSync(e *backbone.Engine, db dal.ShardingDB, options options.Config) {
 var (
 	once sync.Once
 
-	defaultDBTable dal.ShardingDB
+	defaultDBTable dal.Dal
 )
 
 type shardingDBTable struct {
-	db                         dal.ShardingDB
+	db                         dal.Dal
 	preCleanRedundancyTableMap map[string]map[string]struct{}
 	rid                        string
 }
@@ -73,7 +74,7 @@ type dbTable struct {
 }
 
 // RunSyncDBTableIndex run sync db table index task
-func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.ShardingDB, options options.Config) {
+func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Dal, options options.Config) {
 	rid := util.GenerateRID()
 
 	// do not sync db table index if this admin-server is for ci,
@@ -86,7 +87,7 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Shardin
 	for dbReady := false; !dbReady; {
 		// 等待数据库初始化
 		var err error
-		dbReady, err = upgrader.DBReady(ctx, db.IgnoreTenant())
+		dbReady, err = upgrader.DBReady(ctx, db)
 		if err != nil {
 			blog.Errorf("check whether the db initialization is complete failed, err: %v, rid: %s", err, rid)
 		}
@@ -116,7 +117,7 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Shardin
 
 					// 先处理模型实例和关联关系表
 					dt := &dbTable{
-						db:                         st.db.Tenant(tenantID),
+						db:                         st.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)),
 						preCleanRedundancyTableMap: st.preCleanRedundancyTableMap[tenantID],
 						rid:                        tenantRid,
 					}
@@ -166,7 +167,7 @@ func RunSyncDBIndex(ctx context.Context, e *backbone.Engine) error {
 		return ccErr.CCError(common.CCErrCommDBSelectFailed)
 	}
 	// defaultDBTable DBSync 负责在启动时候初始化
-	dbReady, err := upgrader.DBReady(ctx, defaultDBTable.IgnoreTenant())
+	dbReady, err := upgrader.DBReady(ctx, defaultDBTable)
 	if err != nil {
 		blog.Errorf("check whether the db initialization is complete failed, err: %v, rid: %s", err, rid)
 		return ccErr.CCError(common.CCErrCommDBSelectFailed)
@@ -201,7 +202,7 @@ func (st *shardingDBTable) syncDBTableIndexes(ctx context.Context) error {
 	deprecatedIndexNames := index.DeprecatedIndexName()
 	tableIndexes := index.TableIndexes()
 
-	platDBTable := &dbTable{db: st.db.IgnoreTenant(), rid: "platform-" + st.rid}
+	platDBTable := &dbTable{db: st.db.Shard(sharding.NewShardOpts().WithIgnoreTenant()), rid: "platform-" + st.rid}
 	for _, tableName := range common.PlatformTables() {
 		indexes, exists := tableIndexes[tableName]
 		if !exists {
@@ -216,7 +217,7 @@ func (st *shardingDBTable) syncDBTableIndexes(ctx context.Context) error {
 	}
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
-		dt := &dbTable{db: st.db.Tenant(tenantID), rid: tenantID + "-" + st.rid}
+		dt := &dbTable{db: st.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)), rid: tenantID + "-" + st.rid}
 
 		dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
 		if err != nil {

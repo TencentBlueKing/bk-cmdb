@@ -126,8 +126,8 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 	opt := getCollectionOption(ctx)
 
-	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
+	return f.tm.AutoRunWithTxn(ctx, f.cli.Client(), func(ctx context.Context) error {
+		cursor, err := f.cli.Database().Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
 			mtc.collectErrorCount(f.collName, findOper)
 			return err
@@ -160,15 +160,15 @@ func (f *Find) List(ctx context.Context, result interface{}) (int64, error) {
 	opt := getCollectionOption(ctx)
 
 	var total int64
-	err = f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
+	err = f.tm.AutoRunWithTxn(ctx, f.cli.Client(), func(ctx context.Context) error {
 		if f.start == 0 || (f.option.WithCount != nil && *f.option.WithCount) {
 			var cntErr error
-			total, cntErr = f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
+			total, cntErr = f.cli.Database().Collection(f.collName, opt).CountDocuments(ctx, f.filter)
 			if cntErr != nil {
 				return cntErr
 			}
 		}
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
+		cursor, err := f.cli.Database().Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
 			mtc.collectErrorCount(f.collName, findOper)
 			return err
@@ -202,8 +202,8 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	}
 
 	opt := getCollectionOption(ctx)
-	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
-		cursor, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
+	return f.tm.AutoRunWithTxn(ctx, f.cli.Client(), func(ctx context.Context) error {
+		cursor, err := f.cli.Database().Collection(f.collName, opt).Find(ctx, f.filter, findOpts)
 		if err != nil {
 			mtc.collectErrorCount(f.collName, findOper)
 			return err
@@ -233,13 +233,13 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 	opt := getCollectionOption(ctx)
 
-	sessCtx, _, useTxn, err := f.tm.GetTxnContext(ctx, f.dbc)
+	sessCtx, _, useTxn, err := f.tm.GetTxnContext(ctx, f.cli.Client())
 	if err != nil {
 		return 0, err
 	}
 	if !useTxn {
 		// not use transaction.
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(ctx, f.filter)
+		cnt, err := f.cli.Database().Collection(f.collName, opt).CountDocuments(ctx, f.filter)
 		if err != nil {
 			mtc.collectErrorCount(f.collName, countOper)
 			return 0, err
@@ -248,7 +248,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 		return uint64(cnt), err
 	} else {
 		// use transaction
-		cnt, err := f.dbc.Database(f.dbname).Collection(f.collName, opt).CountDocuments(sessCtx, f.filter)
+		cnt, err := f.cli.Database().Collection(f.collName, opt).CountDocuments(sessCtx, f.filter)
 		// do not release th session, otherwise, the session will be returned to the
 		// session pool and will be reused. then mongodb driver will increase the transaction number
 		// automatically and do read/write retry if policy is set.

@@ -68,8 +68,8 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 
 	rows := util.ConvertToInterfaceSlice(docs)
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).InsertMany(ctx, rows)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).InsertMany(ctx, rows)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, insertOper)
 			return err
@@ -92,8 +92,8 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	}
 
 	data := bson.M{"$set": doc}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, data)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, updateOper)
 			return err
@@ -117,8 +117,8 @@ func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc in
 
 	data := bson.M{"$set": doc}
 	var modifiedCount uint64
-	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		updateRet, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		updateRet, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, data)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, updateOper)
 			return err
@@ -145,8 +145,8 @@ func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interf
 		Upsert: &doUpsert,
 	}
 	data := bson.M{"$set": doc}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateOne(ctx, filter, data, replaceOpt)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, upsertOper)
 			return err
@@ -173,8 +173,8 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 		data["$"+item.Op] = item.Doc
 	}
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, data)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, data)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, updateOper)
 			return err
@@ -201,12 +201,12 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	}()
 
 	var deleteCount uint64
-	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
 		}
-		deleteRet, err := c.dbc.Database(c.dbname).Collection(c.collName).DeleteMany(ctx, filter)
+		deleteRet, err := c.cli.Database().Collection(c.collName).DeleteMany(ctx, filter)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
@@ -238,7 +238,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	}
 
 	docs := make([]bson.D, 0)
-	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, findOpts)
+	cursor, err := c.cli.Database().Collection(c.collName).Find(ctx, filter, findOpts)
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		}
 	}
 
-	_, err = c.dbc.Database(c.dbname).Collection(delArchiveTable).InsertMany(ctx, archives)
+	_, err = c.cli.Database().Collection(delArchiveTable).InsertMany(ctx, archives)
 	return err
 }
 
@@ -292,7 +292,7 @@ func (c *Collection) BatchCreateIndexes(ctx context.Context, indexes []types.Ind
 		createIndexInfos[idx] = createIndexInfo
 	}
 
-	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	indexView := c.cli.Database().Collection(c.collName).Indexes()
 	_, err := indexView.CreateMany(ctx, createIndexInfos)
 	if err != nil {
 		mtc.collectErrorCount(c.collName, indexCreateOper)
@@ -317,7 +317,7 @@ func (c *Collection) CreateIndex(ctx context.Context, index types.Index) error {
 		return err
 	}
 
-	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	indexView := c.cli.Database().Collection(c.collName).Indexes()
 	_, err = indexView.CreateOne(ctx, createIndexInfo)
 	if err != nil {
 		mtc.collectErrorCount(c.collName, indexCreateOper)
@@ -366,7 +366,7 @@ func buildIndex(index types.Index) (mongo.IndexModel, error) {
 // DropIndex remove index by name
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 	mtc.collectOperCount(c.collName, indexDropOper)
-	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	indexView := c.cli.Database().Collection(c.collName).Indexes()
 	_, err := indexView.DropOne(ctx, indexName)
 	if err != nil {
 		if strings.Contains(err.Error(), "IndexNotFound") {
@@ -380,7 +380,7 @@ func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 
 // Indexes get all indexes for the collection
 func (c *Collection) Indexes(ctx context.Context) ([]types.Index, error) {
-	indexView := c.dbc.Database(c.dbname).Collection(c.collName).Indexes()
+	indexView := c.cli.Database().Collection(c.collName).Indexes()
 	cursor, err := indexView.List(ctx)
 	if nil != err {
 		return nil, err
@@ -407,8 +407,8 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, selector, datac)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, selector, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -430,8 +430,8 @@ func (c *Collection) RenameColumn(ctx context.Context, filter types.Filter, oldN
 	}()
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -451,8 +451,8 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	}()
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -477,8 +477,8 @@ func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, field
 	}
 
 	datac := dtype.Document{"$unset": unsetFields}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -503,8 +503,8 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter ty
 	}
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		_, err := c.dbc.Database(c.dbname).Collection(c.collName).UpdateMany(ctx, filter, datac)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -537,8 +537,8 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 
 	opt := getCollectionOption(ctx)
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline, aggregateOption)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		cursor, err := c.cli.Database().Collection(c.collName, opt).Aggregate(ctx, pipeline, aggregateOption)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
@@ -560,8 +560,8 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 
 	opt := getCollectionOption(ctx)
 
-	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
-		cursor, err := c.dbc.Database(c.dbname).Collection(c.collName, opt).Aggregate(ctx, pipeline)
+	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+		cursor, err := c.cli.Database().Collection(c.collName, opt).Aggregate(ctx, pipeline)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, aggregateOper)
 			return err
@@ -593,9 +593,9 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 
 	opt := getCollectionOption(ctx)
 	var results []interface{} = nil
-	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
+	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		var err error
-		results, err = c.dbc.Database(c.dbname).Collection(c.collName, opt).Distinct(ctx, field, filter)
+		results, err = c.cli.Database().Collection(c.collName, opt).Distinct(ctx, field, filter)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, distinctOper)
 			return err

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 
 	"github.com/emicklei/go-restful/v3"
@@ -41,6 +42,7 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
 	cond := map[string]interface{}{
@@ -50,7 +52,7 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 		common.HostCrossBizField: common.HostCrossBizValue + ownerID,
 	}
 
-	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if nil != err {
 		blog.Errorf("set system configuration on table %s failed, err: %v, rid: %s", common.BKTableNameSystem, err, rid)
 		result := &metadata.RespError{
@@ -62,9 +64,9 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 	resp.WriteEntity(metadata.NewSuccessResp("modify system config success"))
 }
 
-// UserConfigSwitch TODO
+// UserConfigSwitch update blueking modify flag
 func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response) {
-	rid, _, defErr := s.getCommObject(req.Request.Header)
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
 	canModify := strings.ToLower(req.PathParameter("can"))
 	key := req.PathParameter("key")
@@ -72,7 +74,7 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 
 	if _, ok := userConfigKeyMap[key]; !ok {
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, key),
+			Msg: kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, key),
 		}
 		resp.WriteError(http.StatusBadRequest, result)
 		return
@@ -84,7 +86,7 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 		blCanModify = false
 	default:
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommParamsNeedBool, "can"),
+			Msg: kit.CCError.Errorf(common.CCErrCommParamsNeedBool, "can"),
 		}
 		resp.WriteError(http.StatusBadRequest, result)
 		return
@@ -99,10 +101,10 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 		},
 	}
 
-	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Upsert(s.ctx, cond, data)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Upsert(s.ctx, cond, data)
 	if err != nil {
-		blog.ErrorJSON("set key %s value %s failed, err: %v, rid: %s", key, canModify, err, rid)
-		resp.WriteError(http.StatusBadGateway, defErr.Error(common.CCErrCommDBUpdateFailed))
+		blog.ErrorJSON("set key %s value %s failed, err: %v, rid: %s", key, canModify, err, kit.Rid)
+		resp.WriteError(http.StatusBadGateway, kit.CCError.Error(common.CCErrCommDBUpdateFailed))
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp("modify system user config success"))

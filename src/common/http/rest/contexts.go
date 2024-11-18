@@ -14,7 +14,6 @@ package rest
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -32,16 +31,6 @@ import (
 
 	"github.com/emicklei/go-restful/v3"
 )
-
-// Kit TODO
-type Kit struct {
-	Rid             string
-	Header          http.Header
-	Ctx             context.Context
-	CCError         errors.DefaultCCErrorIf
-	User            string
-	SupplierAccount string
-}
 
 // Contexts TODO
 type Contexts struct {
@@ -484,29 +473,4 @@ func (c *Contexts) NewHeader() http.Header {
 // SetReadPreference TODO
 func (c *Contexts) SetReadPreference(mode common.ReadPreferenceMode) {
 	c.Kit.Ctx, c.Kit.Header = util.SetReadPreference(c.Kit.Ctx, c.Kit.Header, mode)
-}
-
-// NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
-func (kit *Kit) NewKit() *Kit {
-	newHeader := headerutil.CCHeader(kit.Header)
-	newKit := *kit
-	newKit.Header = newHeader
-	return &newKit
-}
-
-// NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
-func (kit *Kit) NewHeader() http.Header {
-	return headerutil.CCHeader(kit.Header)
-}
-
-// NewKitFromHeader generate a new kit from http header.
-func NewKitFromHeader(header http.Header, errorIf errors.CCErrorIf) *Kit {
-	return &Kit{
-		Rid:             httpheader.GetRid(header),
-		Header:          header,
-		Ctx:             util.NewContextFromHTTPHeader(header),
-		CCError:         errorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
-		User:            httpheader.GetUser(header),
-		SupplierAccount: httpheader.GetSupplierAccount(header),
-	}
 }

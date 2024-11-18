@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
@@ -49,8 +50,8 @@ const (
 func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 	header := req.Request.Header
 	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	kit := rest.NewKitFromHeader(header, s.CCErr)
 
 	if s.Config.SnapDataID == 0 {
 		blog.Errorf("host snap data id not set in configuration, rid: %s", rid)
@@ -60,27 +61,27 @@ func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 	}
 
 	// upsert stream to config to gse
-	streamToID, err := s.UpsertGseConfigStreamTo(header, user, defErr, rid, newVersion)
+	streamToID, err := s.UpsertGseConfigStreamTo(kit, newVersion)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, err)
 		return
 	}
 
 	// upsert config channel to gse
-	channel, err := s.generateGseConfigChannel(streamToID, s.Config.SnapDataID, rid, newVersion)
+	channel, err := s.generateGseConfigChannel(kit, streamToID, s.Config.SnapDataID, newVersion)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, err)
 		return
 	}
 
-	channels, exists, err := s.gseConfigQueryRoute(header, user, defErr, rid)
+	channels, exists, err := s.gseConfigQueryRoute(kit)
 	if err != nil {
 		// gse returns a common error for not exist case before ee1.7.18/ce3.6.18, so we ignore it for compatibility
 		blog.Errorf("query gse channel failed, ** skip this error for not exist case **, err: %v, rid: %s", err, rid)
 	}
 
 	if !exists {
-		if err := s.gseConfigAddRoute(channel, header, user, defErr, rid); err != nil {
+		if err := s.gseConfigAddRoute(kit, channel); err != nil {
 			_ = resp.WriteError(http.StatusOK, err)
 			return
 		}
@@ -91,7 +92,7 @@ func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 		return
 	} else {
 		if !reflect.DeepEqual(channels[0], *channel) {
-			if err := s.gseConfigUpdateRoute(channel, header, user, defErr, rid); err != nil {
+			if err := s.gseConfigUpdateRoute(kit, channel); err != nil {
 				_ = resp.WriteError(http.StatusOK, err)
 				return
 			}
@@ -103,12 +104,9 @@ func (s *Service) migrateDataID(req *restful.Request, resp *restful.Response) {
 
 // migrateOldDataID migrate old version data id, register it when it is not exist
 func (s *Service) migrateOldDataID(req *restful.Request, resp *restful.Response) {
-	header := req.Request.Header
-	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
-	if err := s.migrateOldVersionDataID(header, user, defErr, rid); err != nil {
+	if err := s.migrateOldVersionDataID(kit); err != nil {
 		_ = resp.WriteError(http.StatusOK, err)
 		return
 	}
@@ -119,19 +117,18 @@ func (s *Service) migrateOldDataID(req *restful.Request, resp *restful.Response)
 // migrateOldVersionDataID old version data id is registered using script with gse version < 3.1, but new version of gse
 // only allows registering data id by http interface, and the script can not be used, so we need to compensate by
 // registering it in cc if it is not already registered before by script in the former version
-func (s *Service) migrateOldVersionDataID(header http.Header, user string, defErr errors.DefaultCCErrorIf,
-	rid string) error {
+func (s *Service) migrateOldVersionDataID(kit *rest.Kit) error {
 
 	const oldDataID = 1001
 
-	streamToID, err := s.UpsertGseConfigStreamTo(header, user, defErr, rid, oldVersion)
+	streamToID, err := s.UpsertGseConfigStreamTo(kit, oldVersion)
 	if err != nil {
 		return err
 	}
 
 	// get already registered channel by host snap data id from gse, if not found, register it with its stream to
 	commonOperation := metadata.GseConfigOperation{
-		OperatorName: user,
+		OperatorName: kit.User,
 	}
 	queryParams := &metadata.GseConfigQueryRouteParams{
 		Condition: metadata.GseConfigRouteCondition{
@@ -141,21 +138,22 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 		Operation: commonOperation,
 	}
 
-	channels, isDataIDExists, err := s.GseClient.ConfigQueryRoute(s.ctx, header, queryParams)
+	channels, isDataIDExists, err := s.GseClient.ConfigQueryRoute(s.ctx, kit.Header, queryParams)
 	if err != nil {
 		// gse returns a common error for not exist case before ee1.7.18/ce3.6.18, so we ignore it for compatibility
-		blog.Errorf("query gse channel failed, ** skip this error for not exist case **, err: %v, rid: %s", err, rid)
+		blog.Errorf("query gse channel failed, ** skip this error for not exist case **, err: %v, rid: %s", err,
+			kit.Rid)
 	}
 
-	oldChannel, err := s.generateGseConfigChannel(streamToID, oldDataID, rid, oldVersion)
+	oldChannel, err := s.generateGseConfigChannel(kit, streamToID, oldDataID, oldVersion)
 	if err != nil {
-		blog.Errorf("generate gse channel failed, err: %v, stream to id: %d, rid: %s", err, streamToID, rid)
+		blog.Errorf("generate gse channel failed, err: %v, stream to id: %d, rid: %s", err, streamToID, kit.Rid)
 		return err
 	}
 
 	if isDataIDExists {
 		// if old data id has channels, we need to check if they are registered by cc or by other system like bk-monitor
-		exist, platName, err := s.isOldDataIDChannelExist(channels, streamToID, rid)
+		exist, platName, err := s.isOldDataIDChannelExist(kit, channels, streamToID)
 		if err != nil {
 			return err
 		}
@@ -170,7 +168,7 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 				PlatName:  platName,
 			},
 			Operation: metadata.GseConfigOperation{
-				OperatorName: user,
+				OperatorName: kit.Rid,
 			},
 			Specification: metadata.GseConfigUpdateRouteSpecification{
 				Route:         oldChannel.Route,
@@ -178,25 +176,25 @@ func (s *Service) migrateOldVersionDataID(header http.Header, user string, defEr
 			},
 		}
 
-		err = s.GseClient.ConfigUpdateRoute(s.ctx, header, params)
+		err = s.GseClient.ConfigUpdateRoute(s.ctx, kit.Header, params)
 		if err != nil {
-			blog.Errorf("update old data id route to gse failed, err: %v, params: %#v, rid: %s", err, params, rid)
-			return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
+			blog.Errorf("update old data id route to gse failed, err: %v, params: %#v, rid: %s", err, params, kit.Rid)
+			return &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed, err)}
 		}
-	} else {
-		if err := s.gseConfigAddRoute(oldChannel, header, user, defErr, rid); err != nil {
-			blog.Errorf("add route to gse failed, err: %v, channel: %v, rid: %s", err, oldChannel, rid)
-			return err
-		}
+		return nil
+	}
+	if err := s.gseConfigAddRoute(kit, oldChannel); err != nil {
+		blog.Errorf("add route to gse failed, err: %v, channel: %v, rid: %s", err, oldChannel, kit.Rid)
+		return err
 	}
 
 	return nil
 }
 
-func (s *Service) isOldDataIDChannelExist(channels []metadata.GseConfigChannel, streamToID int64, rid string) (bool,
+func (s *Service) isOldDataIDChannelExist(kit *rest.Kit, channels []metadata.GseConfigChannel, streamToID int64) (bool,
 	metadata.GseConfigPlatName, error) {
 
-	bizID, err := s.getSnapBizID(rid)
+	bizID, err := s.getSnapBizID(kit)
 	if err != nil {
 		return false, "", err
 	}
@@ -216,7 +214,7 @@ func (s *Service) isOldDataIDChannelExist(channels []metadata.GseConfigChannel, 
 
 			if route.StreamTo.Redis.ChannelName == fmt.Sprintf("snapshot%d", bizID) ||
 				(route.StreamTo.Redis.BizID == bizID && route.StreamTo.Redis.DataSet == "snapshot") {
-				blog.Infof("old gse data id is already exist, skip registering it, rid: %s", rid)
+				blog.Infof("old gse data id is already exist, skip registering it, rid: %s", kit.Rid)
 				return true, platName, nil
 			}
 		}
@@ -226,8 +224,8 @@ func (s *Service) isOldDataIDChannelExist(channels []metadata.GseConfigChannel, 
 }
 
 // generateGseConfigStreamTo generate host snap stream to config by snap redis config
-func (s *Service) generateGseConfigStreamTo(defErr errors.DefaultCCErrorIf, rid string, version snapshotVersion) (
-	*metadata.GseConfigStreamTo, error) {
+func (s *Service) generateGseConfigStreamTo(kit *rest.Kit, version snapshotVersion) (*metadata.GseConfigStreamTo,
+	error) {
 
 	var name string
 	switch version {
@@ -236,8 +234,8 @@ func (s *Service) generateGseConfigStreamTo(defErr errors.DefaultCCErrorIf, rid 
 	case newVersion:
 		name = snapStreamToName
 	default:
-		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, rid)
-		return nil, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, "version")}
+		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, kit.Rid)
+		return nil, &metadata.RespError{Msg: kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "version")}
 	}
 
 	snapStreamTo := &metadata.GseConfigStreamTo{
@@ -247,18 +245,18 @@ func (s *Service) generateGseConfigStreamTo(defErr errors.DefaultCCErrorIf, rid 
 	if version == oldVersion || s.Config.SnapReportMode == "" ||
 		metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeRedis {
 
-		return s.generateRedisStreamTo(snapStreamTo, defErr, rid)
+		return s.generateRedisStreamTo(kit, snapStreamTo)
 	}
 
 	if metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeKafka {
-		return s.generateKafkaStreamTo(snapStreamTo, defErr, rid)
+		return s.generateKafkaStreamTo(kit, snapStreamTo)
 	}
 
 	return nil, fmt.Errorf("can not support this SnapReportMode type: %s", s.Config.SnapReportMode)
 }
 
-func (s *Service) generateRedisStreamTo(snapStreamTo *metadata.GseConfigStreamTo, defErr errors.DefaultCCErrorIf,
-	rid string) (*metadata.GseConfigStreamTo, error) {
+func (s *Service) generateRedisStreamTo(kit *rest.Kit, snapStreamTo *metadata.GseConfigStreamTo) (
+	*metadata.GseConfigStreamTo, error) {
 
 	snapStreamTo.ReportMode = metadata.GseConfigReportModeRedis
 	redisStreamToAddresses := make([]metadata.GseConfigStorageAddress, 0)
@@ -266,14 +264,14 @@ func (s *Service) generateRedisStreamTo(snapStreamTo *metadata.GseConfigStreamTo
 	for _, addr := range snapRedisAddresses {
 		ipPort := strings.Split(addr, ":")
 		if len(ipPort) != 2 || ipPort[0] == "" {
-			blog.Errorf("host snap redis address is invalid, addr: %s, rid: %s", addr, rid)
-			return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
+			blog.Errorf("host snap redis address is invalid, addr: %s, rid: %s", addr, kit.Rid)
+			return nil, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
 		}
 
 		port, err := strconv.ParseInt(ipPort[1], 10, 64)
 		if err != nil {
-			blog.Errorf("parse snap redis address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, rid)
-			return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
+			blog.Errorf("parse snap redis address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, kit.Rid)
+			return nil, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "snap redis")}
 		}
 
 		redisStreamToAddresses = append(redisStreamToAddresses, metadata.GseConfigStorageAddress{
@@ -298,11 +296,11 @@ func (s *Service) generateRedisStreamTo(snapStreamTo *metadata.GseConfigStreamTo
 	return snapStreamTo, nil
 }
 
-func (s *Service) generateKafkaStreamTo(snapStreamTo *metadata.GseConfigStreamTo, defErr errors.DefaultCCErrorIf,
-	rid string) (*metadata.GseConfigStreamTo, error) {
+func (s *Service) generateKafkaStreamTo(kit *rest.Kit, snapStreamTo *metadata.GseConfigStreamTo) (
+	*metadata.GseConfigStreamTo, error) {
 
 	if err := s.Config.SnapKafka.Check(); err != nil {
-		blog.Errorf("kafka config is error, err: %v, rid: %s,", err, rid)
+		blog.Errorf("kafka config is error, err: %v, rid: %s,", err, kit.Rid)
 		return nil, err
 	}
 
@@ -311,14 +309,14 @@ func (s *Service) generateKafkaStreamTo(snapStreamTo *metadata.GseConfigStreamTo
 	for _, addr := range s.Config.SnapKafka.Brokers {
 		ipPort := strings.Split(addr, ":")
 		if len(ipPort) != 2 || ipPort[0] == "" {
-			blog.Errorf("host snap kafka address is invalid, addr: %s, rid: %s", addr, rid)
-			return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
+			blog.Errorf("host snap kafka address is invalid, addr: %s, rid: %s", addr, kit.Rid)
+			return nil, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
 		}
 
 		port, err := strconv.ParseInt(ipPort[1], 10, 64)
 		if err != nil {
-			blog.Errorf("parse snap kafka address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, rid)
-			return nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
+			blog.Errorf("parse snap kafka address port failed, port: %s, err: %v, rid: %s", ipPort[1], err, kit.Rid)
+			return nil, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "snap kafka")}
 		}
 
 		kafkaStreamToAddresses = append(kafkaStreamToAddresses, metadata.GseConfigStorageAddress{
@@ -343,8 +341,8 @@ type dbStreamToID struct {
 }
 
 // gseConfigQueryStreamTo get host snap stream to id from db, then get stream to config from gse
-func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, version snapshotVersion,
-	defErr errors.DefaultCCErrorIf, rid string) (int64, []metadata.GseConfigAddStreamToParams, error) {
+func (s *Service) gseConfigQueryStreamTo(kit *rest.Kit, version snapshotVersion) (int64,
+	[]metadata.GseConfigAddStreamToParams, error) {
 
 	cond := map[string]interface{}{}
 	switch version {
@@ -353,21 +351,22 @@ func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, versio
 	case newVersion:
 		cond = map[string]interface{}{"_id": gseStreamToIDDBKey}
 	default:
-		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, rid)
-		return 0, nil, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, "version")}
+		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, kit.Rid)
+		return 0, nil, &metadata.RespError{Msg: kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "version")}
 	}
 
 	streamToID := new(dbStreamToID)
-	if err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).One(s.ctx, &streamToID); err != nil {
+	if err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).One(s.ctx,
+		&streamToID); err != nil {
 		if mongodb.IsNotFoundError(err) {
 			return 0, make([]metadata.GseConfigAddStreamToParams, 0), nil
 		}
-		blog.Errorf("get stream to id from db failed, err: %v, rid: %s", err, rid)
-		return 0, nil, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)}
+		blog.Errorf("get stream to id from db failed, err: %v, rid: %s", err, kit.Rid)
+		return 0, nil, &metadata.RespError{Msg: kit.CCError.Error(common.CCErrCommDBSelectFailed)}
 	}
 
 	commonOperation := metadata.GseConfigOperation{
-		OperatorName: user,
+		OperatorName: kit.User,
 	}
 	params := &metadata.GseConfigQueryStreamToParams{
 		Condition: metadata.GseConfigQueryStreamToCondition{
@@ -379,10 +378,10 @@ func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, versio
 		Operation: commonOperation,
 	}
 
-	streamTos, err := s.GseClient.ConfigQueryStreamTo(s.ctx, header, params)
+	streamTos, err := s.GseClient.ConfigQueryStreamTo(s.ctx, kit.Header, params)
 	if err != nil {
-		blog.ErrorJSON("query stream to from gse failed, err: %s, params: %s, rid: %s", err, params, rid)
-		return streamToID.HostSnap, nil, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed,
+		blog.ErrorJSON("query stream to from gse failed, err: %s, params: %s, rid: %s", err, params, kit.Rid)
+		return streamToID.HostSnap, nil, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed,
 			err.Error())}
 	}
 
@@ -390,23 +389,23 @@ func (s *Service) gseConfigQueryStreamTo(header http.Header, user string, versio
 }
 
 // gseConfigAddStreamTo add host snap redis stream to config to gse, then add or update stream to id in db
-func (s *Service) gseConfigAddStreamTo(streamTo *metadata.GseConfigStreamTo, header http.Header, user string,
-	version snapshotVersion, defErr errors.DefaultCCErrorIf, rid string) (int64, error) {
+func (s *Service) gseConfigAddStreamTo(kit *rest.Kit, streamTo *metadata.GseConfigStreamTo, version snapshotVersion) (
+	int64, error) {
 
 	params := &metadata.GseConfigAddStreamToParams{
 		Metadata: metadata.GseConfigAddStreamToMetadata{
 			PlatName: metadata.GseConfigPlatBkmonitor,
 		},
 		Operation: metadata.GseConfigOperation{
-			OperatorName: user,
+			OperatorName: kit.User,
 		},
 		StreamTo: *streamTo,
 	}
 
-	addStreamResult, err := s.GseClient.ConfigAddStreamTo(s.ctx, header, params)
+	addStreamResult, err := s.GseClient.ConfigAddStreamTo(s.ctx, kit.Header, params)
 	if err != nil {
-		blog.ErrorJSON("add stream to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
-		return 0, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
+		blog.ErrorJSON("add stream to gse failed, err: %s, params: %s, rid: %s", err, params, kit.Rid)
+		return 0, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
 	}
 
 	cond := map[string]interface{}{}
@@ -416,16 +415,17 @@ func (s *Service) gseConfigAddStreamTo(streamTo *metadata.GseConfigStreamTo, hea
 	case newVersion:
 		cond = map[string]interface{}{"_id": gseStreamToIDDBKey}
 	default:
-		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, rid)
-		return 0, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsIsInvalid, "version")}
+		blog.Errorf("migrate dataid version is unknown, version: %v, rid: %s", version, kit.Rid)
+		return 0, &metadata.RespError{Msg: kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "version")}
 	}
 	streamToID := dbStreamToID{
 		HostSnap: addStreamResult.StreamToID,
 	}
 
-	if err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Upsert(s.ctx, cond, &streamToID); err != nil {
-		blog.Errorf("upsert stream to id %d to db failed, err: %v, rid: %s", addStreamResult.StreamToID, err, rid)
-		return addStreamResult.StreamToID, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)}
+	if err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Upsert(s.ctx, cond,
+		&streamToID); err != nil {
+		blog.Errorf("upsert stream to id %d to db failed, err: %v, rid: %s", addStreamResult.StreamToID, err, kit.Rid)
+		return addStreamResult.StreamToID, &metadata.RespError{Msg: kit.CCError.Error(common.CCErrCommDBSelectFailed)}
 	}
 
 	return addStreamResult.StreamToID, nil
@@ -457,21 +457,22 @@ func (s *Service) gseConfigUpdateStreamTo(streamTo *metadata.GseConfigStreamTo, 
 }
 
 // getSnapBizID get the biz id that host snap uses
-func (s *Service) getSnapBizID(rid string) (int64, error) {
+func (s *Service) getSnapBizID(kit *rest.Kit) (int64, error) {
 	cfgCond := map[string]interface{}{
 		"_id": common.ConfigAdminID,
 	}
 	cfg := make(map[string]string)
-	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cfgCond).Fields(common.ConfigAdminValueField).
-		One(s.ctx, &cfg)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cfgCond).
+		Fields(common.ConfigAdminValueField).One(s.ctx, &cfg)
 	if nil != err {
-		blog.Errorf("get config admin failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("get config admin failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, err
 	}
 
 	configAdmin := new(metadata.PlatformSettingConfig)
 	if err := json.Unmarshal([]byte(cfg[common.ConfigAdminValueField]), configAdmin); err != nil {
-		blog.Errorf("unmarshal config admin(%s) failed, err: %v, rid: %s", cfg[common.ConfigAdminValueField], err, rid)
+		blog.Errorf("unmarshal config admin(%s) failed, err: %v, rid: %s", cfg[common.ConfigAdminValueField], err,
+			kit.Rid)
 		return 0, err
 	}
 
@@ -479,10 +480,10 @@ func (s *Service) getSnapBizID(rid string) (int64, error) {
 }
 
 // generateGseConfigChannel generate host snap stream to config by snap redis config
-func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string,
-	version snapshotVersion) (*metadata.GseConfigChannel, error) {
+func (s *Service) generateGseConfigChannel(kit *rest.Kit, streamToID, dataID int64, version snapshotVersion) (
+	*metadata.GseConfigChannel, error) {
 
-	bizID, err := s.getSnapBizID(rid)
+	bizID, err := s.getSnapBizID(kit)
 	if err != nil {
 		return nil, err
 	}
@@ -527,11 +528,10 @@ func (s *Service) generateGseConfigChannel(streamToID, dataID int64, rid string,
 }
 
 // gseConfigQueryRoute get channel by host snap data id from gse
-func (s *Service) gseConfigQueryRoute(header http.Header, user string, defErr errors.DefaultCCErrorIf, rid string) (
-	[]metadata.GseConfigChannel, bool, error) {
+func (s *Service) gseConfigQueryRoute(kit *rest.Kit) ([]metadata.GseConfigChannel, bool, error) {
 
 	commonOperation := metadata.GseConfigOperation{
-		OperatorName: user,
+		OperatorName: kit.User,
 	}
 	params := &metadata.GseConfigQueryRouteParams{
 		Condition: metadata.GseConfigRouteCondition{
@@ -541,38 +541,36 @@ func (s *Service) gseConfigQueryRoute(header http.Header, user string, defErr er
 		Operation: commonOperation,
 	}
 
-	channels, exists, err := s.GseClient.ConfigQueryRoute(s.ctx, header, params)
+	channels, exists, err := s.GseClient.ConfigQueryRoute(s.ctx, kit.Header, params)
 	if err != nil {
-		blog.ErrorJSON("query route from gse failed, err: %s, params: %s, rid: %s", err, params, rid)
-		return nil, false, &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
+		blog.ErrorJSON("query route from gse failed, err: %s, params: %s, rid: %s", err, params, kit.Rid)
+		return nil, false, &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
 	}
 
 	return channels, exists, nil
 }
 
 // gseConfigAddRoute add host snap channel to gse
-func (s *Service) gseConfigAddRoute(channel *metadata.GseConfigChannel, header http.Header, user string,
-	defErr errors.DefaultCCErrorIf, rid string) error {
+func (s *Service) gseConfigAddRoute(kit *rest.Kit, channel *metadata.GseConfigChannel) error {
 
 	params := &metadata.GseConfigAddRouteParams{
 		Operation: metadata.GseConfigOperation{
-			OperatorName: user,
+			OperatorName: kit.User,
 		},
 		GseConfigChannel: *channel,
 	}
 
-	_, err := s.GseClient.ConfigAddRoute(s.ctx, header, params)
+	_, err := s.GseClient.ConfigAddRoute(s.ctx, kit.Header, params)
 	if err != nil {
-		blog.ErrorJSON("add channel to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
-		return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
+		blog.ErrorJSON("add channel to gse failed, err: %s, params: %s, rid: %s", err, params, kit.Rid)
+		return &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
 	}
 
 	return nil
 }
 
 // gseConfigUpdateRoute update host snap redis channel to gse
-func (s *Service) gseConfigUpdateRoute(channel *metadata.GseConfigChannel, header http.Header, user string,
-	defErr errors.DefaultCCErrorIf, rid string) error {
+func (s *Service) gseConfigUpdateRoute(kit *rest.Kit, channel *metadata.GseConfigChannel) error {
 
 	params := &metadata.GseConfigUpdateRouteParams{
 		Condition: metadata.GseConfigRouteCondition{
@@ -580,7 +578,7 @@ func (s *Service) gseConfigUpdateRoute(channel *metadata.GseConfigChannel, heade
 			PlatName:  metadata.GseConfigPlatBkmonitor,
 		},
 		Operation: metadata.GseConfigOperation{
-			OperatorName: user,
+			OperatorName: kit.User,
 		},
 		Specification: metadata.GseConfigUpdateRouteSpecification{
 			Route:         channel.Route,
@@ -588,38 +586,38 @@ func (s *Service) gseConfigUpdateRoute(channel *metadata.GseConfigChannel, heade
 		},
 	}
 
-	err := s.GseClient.ConfigUpdateRoute(s.ctx, header, params)
+	err := s.GseClient.ConfigUpdateRoute(s.ctx, kit.Header, params)
 	if err != nil {
-		blog.ErrorJSON("update channel to gse failed, err: %s, params: %s, rid: %s", err, params, rid)
-		return &metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
+		blog.ErrorJSON("update channel to gse failed, err: %s, params: %s, rid: %s", err, params, kit.Rid)
+		return &metadata.RespError{Msg: kit.CCError.CCErrorf(common.CCErrCommMigrateFailed, err.Error())}
 	}
 	return nil
 }
 
 // UpsertGseConfigStreamTo get stream to config by db id from gse, if not found, register it, else update it
-func (s *Service) UpsertGseConfigStreamTo(header http.Header, user string, defErr errors.DefaultCCErrorIf,
-	rid string, version snapshotVersion) (int64, error) {
+func (s *Service) UpsertGseConfigStreamTo(kit *rest.Kit, version snapshotVersion) (int64, error) {
 
-	streamTo, err := s.generateGseConfigStreamTo(defErr, rid, version)
+	streamTo, err := s.generateGseConfigStreamTo(kit, version)
 	if err != nil {
 		return 0, err
 	}
 
-	streamToID, streamTos, err := s.gseConfigQueryStreamTo(header, user, version, defErr, rid)
+	streamToID, streamTos, err := s.gseConfigQueryStreamTo(kit, version)
 	if err != nil {
 		return 0, err
 	}
 
 	if len(streamTos) == 0 {
-		if streamToID, err = s.gseConfigAddStreamTo(streamTo, header, user, version, defErr, rid); err != nil {
+		if streamToID, err = s.gseConfigAddStreamTo(kit, streamTo, version); err != nil {
 			return 0, err
 		}
 	} else if len(streamTos) != 1 {
-		blog.ErrorJSON("get multiple stream to(%s), rid: %s", streamTos, rid)
-		return 0, defErr.CCErrorf(common.CCErrCommParamsInvalid, "stream to id")
+		blog.ErrorJSON("get multiple stream to(%s), rid: %s", streamTos, kit.Rid)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "stream to id")
 	} else {
 		if !reflect.DeepEqual(streamTos[0].StreamTo, *streamTo) {
-			if err := s.gseConfigUpdateStreamTo(streamTo, streamToID, header, user, defErr, rid); err != nil {
+			if err := s.gseConfigUpdateStreamTo(streamTo, streamToID, kit.Header, kit.User, kit.CCError,
+				kit.Rid); err != nil {
 				return 0, err
 			}
 		}

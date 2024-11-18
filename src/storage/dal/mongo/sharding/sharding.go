@@ -15,22 +15,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dal is the data access layer
-package dal
+// Package sharding defines sharding db manager
+package sharding
 
 import (
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/dal/redis"
 )
 
-// RDB rename the RDB into DB
-// Compatible stock code
-// Deprecated: do not use anymore.
-type RDB DB
-
-// DB db operation interface
-// TODO remove this later
-type DB local.DB
-
-// Dal is the data access layer
-type Dal sharding.ShardingDB
+// ShardingDB is the sharding db manager interface
+type ShardingDB interface {
+	Shard(opt ShardOpts) local.DB
+	InitTxnManager(r redis.Client) error
+	Ping() error
+}

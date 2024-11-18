@@ -81,10 +81,10 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 	}
 
 	// save object instances.
-	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, params)
+	err = mongodb.Shard(kit.ShardOpts()).Table(instTableName).Insert(kit.Ctx, params)
 	if err != nil {
-		blog.Errorf("save instances failed, rid: %s, err: %v, objID: %s, instances: %v", kit.Rid, err, objID, params)
-		if mongodb.Client().IsDuplicatedError(err) {
+		blog.Errorf("save instances failed, err: %v, objID: %s, instances: %v, rid: %s", err, objID, params, kit.Rid)
+		if mongodb.IsDuplicatedError(err) {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return nil, err
@@ -137,11 +137,10 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	}
 
 	// save object instance.
-	err = mongodb.Client().Table(instTableName).Insert(kit.Ctx, inputParam)
+	err = mongodb.Shard(kit.ShardOpts()).Table(instTableName).Insert(kit.Ctx, inputParam)
 	if err != nil {
-		blog.ErrorJSON("save instance error. err: %s, objID: %s, instance: %s, rid: %s",
-			err.Error(), objID, inputParam, kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		blog.Errorf("save instance error. err: %v, objID: %s, instance: %+v, rid: %s", err, objID, inputParam, kit.Rid)
+		if mongodb.IsDuplicatedError(err) {
 			return ids[0], kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return 0, err
@@ -155,7 +154,7 @@ func getSequences(kit *rest.Kit, table string, count int) ([]uint64, error) {
 		return nil, kit.CCError.CCError(common.CCErrCommHTTPInputInvalid)
 	}
 
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, table, count)
+	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, count)
 	if err != nil {
 		return nil, err
 	}
@@ -175,12 +174,13 @@ func getSequences(kit *rest.Kit, table string, count int) ([]uint64, error) {
 	}
 
 	// 此处不要求那么准确，直接跳过保留的管控区域长度，然后再获取id即可
-	if _, err = mongodb.Client().NextSequences(kit.Ctx, table,
-		common.ReservedCloudAreaEndID-common.ReservedCloudAreaStartID); err != nil {
+	_, err = mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table,
+		common.ReservedCloudAreaEndID-common.ReservedCloudAreaStartID)
+	if err != nil {
 		return nil, err
 	}
 
-	ids, err = mongodb.Client().NextSequences(kit.Ctx, table, count)
+	ids, err = mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, count)
 	if err != nil {
 		return nil, err
 	}
@@ -206,11 +206,11 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	data.Set(common.BKUpdatedAt, ts)
 
 	data.Remove(common.BKObjIDField)
-	err := mongodb.Client().Table(tableName).Update(kit.Ctx, cond, data)
+	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Update(kit.Ctx, cond, data)
 	if err != nil {
-		blog.ErrorJSON("update instance error. err: %s, objID: %s, instance: %s, cond: %s, rid: %s",
-			err.Error(), objID, data, cond, kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		blog.Errorf("update instance error. err: %v, objID: %s, instance: %+v, cond: %+v, rid: %s", err, objID, data,
+			cond, kit.Rid)
+		if mongodb.IsDuplicatedError(err) {
 			return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
 		return kit.CCError.Error(common.CCErrCommDBUpdateFailed)
@@ -227,14 +227,14 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	}
 	if objID == common.BKInnerObjIDHost {
 		hosts := make([]metadata.HostMapStr, 0)
-		err = mongodb.Client().Table(tableName).Find(cond).All(kit.Ctx, &hosts)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).All(kit.Ctx, &hosts)
 		for _, host := range hosts {
 			origins = append(origins, mapstr.MapStr(host))
 		}
 	} else {
-		err = mongodb.Client().Table(tableName).Find(cond).All(kit.Ctx, &origins)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).All(kit.Ctx, &origins)
 	}
-	return origins, !mongodb.Client().IsNotFoundError(err), err
+	return origins, !mongodb.IsNotFoundError(err), err
 }
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
@@ -249,10 +249,10 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 
 	if objID == common.BKInnerObjIDHost {
 		host := make(metadata.HostMapStr)
-		err = mongodb.Client().Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &host)
 		origin = mapstr.MapStr(host)
 	} else {
-		err = mongodb.Client().Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
 	}
 	if nil != err {
 		return nil, err
@@ -277,7 +277,7 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 		cond[common.BKObjIDField] = objID
 	}
 
-	count, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }

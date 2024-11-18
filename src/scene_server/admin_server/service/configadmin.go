@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 
@@ -34,6 +35,7 @@ func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	cond := map[string]interface{}{
 		"_id": common.ConfigAdminID,
@@ -42,8 +44,8 @@ func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response
 	ret := struct {
 		Config string `json:"config"`
 	}{}
-	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx,
-		&ret)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
+		Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
 	if err != nil {
 		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -67,6 +69,7 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	config := new(metadata.ConfigAdmin)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -96,7 +99,7 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 		common.LastTimeField:         time.Now(),
 	}
 
-	err = s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
+	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
 	if err != nil {
 		blog.Errorf("UpdateConfigAdmin failed, update err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -113,6 +116,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	config := new(metadata.PlatformSettingConfig)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -137,18 +141,18 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
-	if err := s.validateIDGenConf(&config.IDGenerator, rid); err != nil {
+	if err := s.validateIDGenConf(kit, &config.IDGenerator); err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
 
-	preConf, err := s.searchCurrentConfig(rid)
+	preConf, err := s.searchCurrentConfig(kit)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
 
-	err = s.updatePlatformSetting(config, rid)
+	err = s.updatePlatformSetting(kit, config)
 	if err != nil {
 		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -162,7 +166,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
-	if err = s.savePlatformSettingUpdateAudit(preConf, config, rHeader, rid); err != nil {
+	if err = s.savePlatformSettingUpdateAudit(kit, preConf, config); err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
@@ -175,7 +179,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 }
 
 // validateIDGenConf validate id generator config
-func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) error {
+func (s *Service) validateIDGenConf(kit *rest.Kit, conf *metadata.IDGeneratorConf) error {
 	if len(conf.InitID) == 0 {
 		return nil
 	}
@@ -185,7 +189,7 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 	for typ := range conf.InitID {
 		seqName, exists := idgen.GetIDGenSequenceName(typ)
 		if !exists {
-			blog.Errorf("id generator config type %s is invalid, rid: %s", rid)
+			blog.Errorf("id generator config type %s is invalid, rid: %s", kit.Rid)
 			return fmt.Errorf("id generator type %s is invalid", typ)
 		}
 		seqNames = append(seqNames, seqName)
@@ -196,10 +200,10 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 	}
 
 	idGens := make([]local.Idgen, 0)
-	err := s.db.IgnoreTenant().Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
 		"SequenceID").All(s.ctx, &idGens)
 	if err != nil {
-		blog.Errorf("get id generator data failed, err: %v, cond: %+v, rid: %s", err, idGenCond, rid)
+		blog.Errorf("get id generator data failed, err: %v, cond: %+v, rid: %s", err, idGenCond, kit.Rid)
 		return err
 	}
 
@@ -213,7 +217,7 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 		seqName, _ := idgen.GetIDGenSequenceName(typ)
 
 		if id <= seqNameIDMap[seqName] {
-			blog.Errorf("id generator type %s id %d <= current id: %d, rid: %s", typ, id, seqNameIDMap[seqName], rid)
+			blog.Errorf("id gen type %s id %d <= current id: %d, rid: %s", typ, id, seqNameIDMap[seqName], kit.Rid)
 			return fmt.Errorf("id generator type %s id %d is invalid", typ, id)
 		}
 	}
@@ -221,31 +225,31 @@ func (s *Service) validateIDGenConf(conf *metadata.IDGeneratorConf, rid string) 
 	return nil
 }
 
-func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.PlatformSettingConfig,
-	header http.Header, rid string) error {
+func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
+	preConf, curConf *metadata.PlatformSettingConfig) error {
 
-	id, err := s.db.IgnoreTenant().NextSequence(s.ctx, common.BKTableNameAuditLog)
+	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(s.ctx, common.BKTableNameAuditLog)
 	if err != nil {
-		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
 	audit := metadata.AuditLog{
 		ID:              int64(id),
 		AuditType:       metadata.PlatformSetting,
-		SupplierAccount: httpheader.GetSupplierAccount(header),
-		User:            httpheader.GetUser(header),
+		SupplierAccount: kit.SupplierAccount,
+		User:            kit.User,
 		ResourceType:    metadata.PlatformSettingRes,
 		Action:          metadata.AuditUpdate,
 		OperateFrom:     metadata.FromUser,
 		OperationDetail: &metadata.GenericOpDetail{Data: preConf, UpdateFields: curConf},
 		OperationTime:   metadata.Now(),
-		AppCode:         httpheader.GetAppCode(header),
-		RequestID:       rid,
+		AppCode:         httpheader.GetAppCode(kit.Header),
+		RequestID:       kit.Rid,
 	}
 
-	if err = s.db.IgnoreTenant().Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
-		blog.Errorf("save audit log failed, err: %v, audit: %+v, rid: %s", err, audit, rid)
+	if err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
+		blog.Errorf("save audit log failed, err: %v, audit: %+v, rid: %s", err, audit, kit.Rid)
 		return err
 	}
 
@@ -253,21 +257,21 @@ func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.Plat
 }
 
 // updatePlatformSetting update current configuration to database.
-func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, rid string) error {
+func (s *Service) updatePlatformSetting(kit *rest.Kit, config *metadata.PlatformSettingConfig) error {
 	config.IDGenerator.CurrentID = nil
 
 	// 校验业务是否存在
 	bizCountCond := map[string]interface{}{
 		common.BKAppIDField: config.Backend.SnapshotBizID,
 	}
-	count, err := s.db.IgnoreTenant().Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
+	count, err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
 	if err != nil {
 		blog.Errorf("update config to db failed, count biz error, err: %v, condition: %v, rid: %s", err,
-			bizCountCond, rid)
+			bizCountCond, kit.Rid)
 		return err
 	}
 	if count == 0 {
-		blog.Errorf("update config to db failed, can not find biz, condition: %v, rid: %s", bizCountCond, rid)
+		blog.Errorf("update config to db failed, can not find biz, condition: %v, rid: %s", bizCountCond, kit.Rid)
 		return errors.New(common.CCErrCommParamsIsInvalid, "snapshot_biz_id")
 	}
 
@@ -285,7 +289,7 @@ func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, 
 		common.LastTimeField:         time.Now(),
 	}
 
-	err = s.db.IgnoreTenant().Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
+	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
 	if err != nil {
 		return err
 	}
@@ -294,34 +298,34 @@ func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, 
 }
 
 // searchCurrentConfig get the current configuration in the database.
-func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConfig, error) {
+func (s *Service) searchCurrentConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig, error) {
 
 	cond := map[string]interface{}{"_id": common.ConfigAdminID}
 	ret := make(map[string]interface{})
 
-	err := s.db.IgnoreTenant().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(s.ctx,
-		&ret)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
+		Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
 	if err != nil {
-		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 	if ret[common.ConfigAdminValueField] == nil {
-		blog.Errorf("get config failed, rid: %s", rid)
+		blog.Errorf("get config failed, rid: %s", kit.Rid)
 		return nil, err
 	}
 
 	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
-		blog.Errorf("db config type is error,rid: %s", rid)
+		blog.Errorf("db config type is error,rid: %s", kit.Rid)
 		return nil, err
 	}
 
 	conf := new(metadata.PlatformSettingConfig)
 	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
-		blog.Errorf("search platform config fail, unmarshal err: %v, config: %+v,rid: %s", err, ret, rid)
+		blog.Errorf("search platform config fail, unmarshal err: %v, config: %+v,rid: %s", err, ret, kit.Rid)
 		return nil, err
 	}
 
-	conf, err = s.addIDGenInfoToConf(conf, rid)
+	conf, err = s.addIDGenInfoToConf(kit, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -330,18 +334,18 @@ func (s *Service) searchCurrentConfig(rid string) (*metadata.PlatformSettingConf
 }
 
 // addIDGenInfoToConf add current id generator info to current config
-func (s *Service) addIDGenInfoToConf(conf *metadata.PlatformSettingConfig, rid string) (*metadata.PlatformSettingConfig,
-	error) {
+func (s *Service) addIDGenInfoToConf(kit *rest.Kit, conf *metadata.PlatformSettingConfig) (
+	*metadata.PlatformSettingConfig, error) {
 
 	idGenCond := map[string]interface{}{
 		"_id": map[string]interface{}{common.BKDBIN: idgen.GetAllIDGenSeqNames()},
 	}
 
 	idGens := make([]local.Idgen, 0)
-	err := s.db.IgnoreTenant().Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Find(idGenCond).Fields("_id",
 		"SequenceID").All(s.ctx, &idGens)
 	if err != nil {
-		blog.Errorf("list id generators failed, err: %v, cond: %+v, rid: %s", err, idGenCond, rid)
+		blog.Errorf("list id generators failed, err: %v, cond: %+v, rid: %s", err, idGenCond, kit.Rid)
 		return nil, err
 	}
 
@@ -381,13 +385,14 @@ func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restfu
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	typeId := req.PathParameter("type")
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	conf := new(metadata.PlatformSettingConfig)
 	var err error
 	switch typeId {
 
 	case "current":
-		conf, err = s.searchCurrentConfig(rid)
+		conf, err = s.searchCurrentConfig(kit)
 		if err != nil {
 			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
 				Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})

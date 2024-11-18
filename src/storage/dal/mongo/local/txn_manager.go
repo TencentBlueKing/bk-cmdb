@@ -39,6 +39,8 @@ const (
 type sessionKey string
 
 func (s sessionKey) genKey(tenant string) string {
+	// TODO this is only for compatible with old version, remove this when all db clients use ShardingDB
+	return transactionNumberRedisKeyNamespace + string(s)
 	if tenant == "" {
 		return transactionNumberRedisKeyNamespace + string(s)
 	}
@@ -46,6 +48,8 @@ func (s sessionKey) genKey(tenant string) string {
 }
 
 func (s sessionKey) genErrKey(tenant string) string {
+	// TODO this is only for compatible with old version, remove this when all db clients use ShardingDB
+	return transactionErrorRedisKeyNamespace + string(s)
 	if tenant == "" {
 		return transactionErrorRedisKeyNamespace + string(s)
 	}

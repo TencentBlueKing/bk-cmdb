@@ -42,7 +42,7 @@ func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable)
 		return nil
 	}
 
-	reloadSession, err := c.tm.PrepareTransaction(cap, c.dbc)
+	reloadSession, err := c.tm.PrepareTransaction(cap, c.cli.Client())
 	if err != nil {
 		blog.Errorf("commit transaction, but prepare transaction failed, err: %v, rid: %v", err, rid)
 		return err
@@ -63,7 +63,8 @@ func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable)
 	err = c.tm.RemoveSessionKey(cap.SessionID)
 	if err != nil {
 		// this key has ttl, it's ok if we not delete it, cause this key has a ttl.
-		blog.Errorf("commit transaction, but delete txn session: %s key failed, err: %v, rid: %v", cap.SessionID, err, rid)
+		blog.Errorf("commit transaction, but delete txn session: %s key failed, err: %v, rid: %v", cap.SessionID, err,
+			rid)
 		// do not return.
 	}
 
@@ -73,7 +74,7 @@ func (c *Mongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable)
 // AbortTransaction 取消事务
 func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) (bool, error) {
 	rid := ctx.Value(common.ContextRequestIDField)
-	reloadSession, err := c.tm.PrepareTransaction(cap, c.dbc)
+	reloadSession, err := c.tm.PrepareTransaction(cap, c.cli.Client())
 	if err != nil {
 		blog.Errorf("abort transaction, but prepare transaction failed, err: %v, rid: %v", err, rid)
 		return false, err
@@ -94,7 +95,8 @@ func (c *Mongo) AbortTransaction(ctx context.Context, cap *metadata.TxnCapable) 
 	err = c.tm.RemoveSessionKey(cap.SessionID)
 	if err != nil {
 		// this key has ttl, it's ok if we not delete it, cause this key has a ttl.
-		blog.Errorf("abort transaction, but delete txn session: %s key failed, err: %v, rid: %v", cap.SessionID, err, rid)
+		blog.Errorf("abort transaction, but delete txn session: %s key failed, err: %v, rid: %v", cap.SessionID, err,
+			rid)
 		// do not return.
 	}
 

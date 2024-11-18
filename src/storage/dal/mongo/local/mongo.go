@@ -26,11 +26,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 
-	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,41 +42,33 @@ type Mongo struct {
 	tenant string
 	// ignoreTenant is used for platform operations that do not need to specify tenant
 	ignoreTenant bool
-	*mongoClient
-	tm   *TxnManager
-	conf *mongoCliConf
+	cli          *MongoClient
+	tm           *TxnManager
+	conf         *MongoCliConf
 
 	// TODO: remove this when all db clients use ShardingDB
 	enableSharding bool
 }
 
-// mongoCliConf is cmdb mongo client config
-type mongoCliConf struct {
-	// idGenStep is the step of id generator
-	idGenStep int
-	// disableInsert defines if insert operation for specific tables are disabled
-	disableInsert bool
-}
-
-var _ dal.DB = new(Mongo)
+var _ DB = new(Mongo)
 
 // NewMgo returns new RDB
 func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
-	client, err := newMongoClient(true, "", config, timeout)
+	client, err := NewMongoClient(true, "", config, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	mgo := &Mongo{
-		mongoClient: client,
-		tm:          new(TxnManager),
-		conf: &mongoCliConf{
-			disableInsert: config.DisableInsert,
+		cli: client,
+		tm:  new(TxnManager),
+		conf: &MongoCliConf{
+			DisableInsert: config.DisableInsert,
 		},
 	}
 
 	ctx := context.Background()
-	mgo.conf.idGenStep, err = mgo.initIDGenerator(ctx)
+	mgo.conf.IDGenStep, err = mgo.InitIDGenerator(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -86,15 +76,42 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 	return mgo, nil
 }
 
-type mongoClient struct {
+// MongoOptions is the mongo options
+type MongoOptions struct {
+	Tenant       string
+	IgnoreTenant bool
+}
+
+// NewMongo new DB
+func NewMongo(cli *MongoClient, tm *TxnManager, conf *MongoCliConf, opt ...*MongoOptions) (*Mongo, error) {
+	if cli == nil || tm == nil || conf == nil {
+		return nil, errors.New("not all mongo client info is set")
+	}
+
+	m := &Mongo{
+		cli:  cli,
+		tm:   tm,
+		conf: conf,
+	}
+
+	if len(opt) > 0 {
+		m.tenant = opt[0].Tenant
+		m.ignoreTenant = opt[0].IgnoreTenant
+	}
+
+	return m, nil
+}
+
+// MongoClient is the mongodb client
+type MongoClient struct {
 	dbc      *mongo.Client
 	dbname   string
 	uuid     string
 	disabled bool
 }
 
-// newMongoClient new mongodb client
-func newMongoClient(isMaster bool, uuid string, config MongoConf, timeout time.Duration) (*mongoClient, error) {
+// NewMongoClient new mongodb client
+func NewMongoClient(isMaster bool, uuid string, config MongoConf, timeout time.Duration) (*MongoClient, error) {
 	connStr, err := connstring.Parse(config.URI)
 	if err != nil {
 		return nil, err
@@ -136,7 +153,7 @@ func newMongoClient(isMaster bool, uuid string, config MongoConf, timeout time.D
 	// initialize mongodb related metrics
 	initMongoMetric()
 
-	return &mongoClient{
+	return &MongoClient{
 		dbc:      client,
 		dbname:   connStr.Database,
 		uuid:     uuid,
@@ -144,9 +161,44 @@ func newMongoClient(isMaster bool, uuid string, config MongoConf, timeout time.D
 	}, nil
 }
 
-// convColl convert collection name by tenant
-func (m *mongoClient) convColl(ignoreTenant bool, tenant, collection string) (string, error) {
-	if ignoreTenant {
+// Client returns mongodb client
+func (m *MongoClient) Client() *mongo.Client {
+	return m.dbc
+}
+
+// DBName returns mongodb database name
+func (m *MongoClient) DBName() string {
+	return m.dbname
+}
+
+// Database returns mongodb database client
+func (m *MongoClient) Database() *mongo.Database {
+	return m.dbc.Database(m.dbname)
+}
+
+// UUID returns uuid of the mongodb client
+func (m *MongoClient) UUID() string {
+	return m.uuid
+}
+
+// SetUUID set mongodb client uuid
+func (m *MongoClient) SetUUID(uuid string) {
+	m.uuid = uuid
+}
+
+// Disabled returns whether the mongodb client is disabled
+func (m *MongoClient) Disabled() bool {
+	return m.disabled
+}
+
+// SetDisabled set mongodb client disabled status
+func (m *MongoClient) SetDisabled(disabled bool) {
+	m.disabled = disabled
+}
+
+// convColl convert collection name
+func (c *Mongo) convColl(collection string) (string, error) {
+	if c.ignoreTenant {
 		if !common.IsPlatformTable(collection) {
 			return "", fmt.Errorf("tenant table %s has no tenant", collection)
 		}
@@ -156,11 +208,11 @@ func (m *mongoClient) convColl(ignoreTenant bool, tenant, collection string) (st
 	if common.IsPlatformTable(collection) {
 		return "", fmt.Errorf("platform table %s do not need tenant", collection)
 	}
-	return common.GenTenantTableName(tenant, collection), nil
+	return common.GenTenantTableName(c.tenant, collection), nil
 }
 
-// initIDGenerator init id generator by config admin, returns id generator step
-func (c *Mongo) initIDGenerator(ctx context.Context) (int, error) {
+// InitIDGenerator init id generator by config admin, returns id generator step
+func (c *Mongo) InitIDGenerator(ctx context.Context) (int, error) {
 	cond := map[string]interface{}{"_id": common.ConfigAdminID}
 
 	confData := make(map[string]string)
@@ -287,34 +339,6 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// getShardingDBConfig get sharding db config
-func (c *Mongo) getShardingDBConfig(ctx context.Context) (*ShardingDBConf, error) {
-	cond := map[string]any{common.MongoMetaID: common.ShardingDBConfID}
-	conf := new(ShardingDBConf)
-	err := c.Table(common.BKTableNameSystem).Find(cond).One(ctx, &conf)
-	if err != nil {
-		if !c.IsNotFoundError(err) {
-			return nil, fmt.Errorf("get sharding db config failed, err: %v", err)
-		}
-
-		// generate new sharding db config and save it if not exists, new tenant will be added to master db by default
-		newUUID := uuid.NewString()
-		conf = &ShardingDBConf{
-			ID:             common.ShardingDBConfID,
-			MasterDB:       newUUID,
-			AddNewTenantDB: newUUID,
-			SlaveDB:        make(map[string]MongoConf),
-		}
-		if err = c.Table(common.BKTableNameSystem).Insert(ctx, conf); err != nil {
-			return nil, fmt.Errorf("insert new sharding db config failed, err: %v", err)
-		}
-		return conf, nil
-	}
-	blog.Infof("slave mongo config: %+v", conf.SlaveDB)
-
-	return conf, nil
-}
-
 // InitTxnManager TxnID management of initial transaction
 // TODO remove this
 func (c *Mongo) InitTxnManager(r redis.Client) error {
@@ -323,13 +347,13 @@ func (c *Mongo) InitTxnManager(r redis.Client) error {
 
 // Close replica client
 func (c *Mongo) Close() error {
-	c.dbc.Disconnect(context.TODO())
+	c.cli.Client().Disconnect(context.TODO())
 	return nil
 }
 
 // Ping replica client
 func (c *Mongo) Ping() error {
-	return c.dbc.Ping(context.TODO(), nil)
+	return c.cli.Client().Ping(context.TODO(), nil)
 }
 
 // IsDuplicatedError check duplicated error
@@ -366,7 +390,7 @@ func (c *Mongo) IsNotFoundError(err error) bool {
 func (c *Mongo) Table(collName string) types.Table {
 	if c.enableSharding {
 		var err error
-		collName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, collName)
+		collName, err = c.convColl(collName)
 		if err != nil {
 			return &errColl{err: err}
 		}
@@ -381,13 +405,13 @@ func (c *Mongo) Table(collName string) types.Table {
 // GetDBClient TODO
 // get db client
 func (c *Mongo) GetDBClient() *mongo.Client {
-	return c.dbc
+	return c.cli.Client()
 }
 
 // GetDBName TODO
 // get db name
 func (c *Mongo) GetDBName() string {
-	return c.dbname
+	return c.cli.DBName()
 }
 
 func (c *Mongo) redirectTable(tableName string) string {
@@ -416,10 +440,10 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
 
-	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
+	coll := c.cli.Database().Collection("cc_idgenerator")
 
 	Update := bson.M{
-		"$inc":         bson.M{"SequenceID": c.conf.idGenStep},
+		"$inc":         bson.M{"SequenceID": c.conf.IDGenStep},
 		"$setOnInsert": bson.M{"create_time": time.Now()},
 		"$set":         bson.M{"last_time": time.Now()},
 	}
@@ -450,7 +474,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	}
 	sequenceName = c.redirectTable(sequenceName)
 
-	if c.conf.disableInsert && idgen.IsIDGenSeqName(sequenceName) {
+	if c.conf.DisableInsert && idgen.IsIDGenSeqName(sequenceName) {
 		return nil, errors.New("insertion is disabled")
 	}
 
@@ -463,10 +487,10 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
 
-	coll := c.dbc.Database(c.dbname).Collection("cc_idgenerator")
+	coll := c.cli.Database().Collection("cc_idgenerator")
 
 	Update := bson.M{
-		"$inc":         bson.M{"SequenceID": num * c.conf.idGenStep},
+		"$inc":         bson.M{"SequenceID": num * c.conf.IDGenStep},
 		"$setOnInsert": bson.M{"create_time": time.Now()},
 		"$set":         bson.M{"last_time": time.Now()},
 	}
@@ -486,7 +510,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 
 	sequences := make([]uint64, num)
 	for i := 0; i < num; i++ {
-		sequences[i] = uint64((i-num+1)*c.conf.idGenStep) + doc.SequenceID
+		sequences[i] = uint64((i-num+1)*c.conf.IDGenStep) + doc.SequenceID
 	}
 
 	return sequences, err
@@ -502,13 +526,13 @@ type Idgen struct {
 func (c *Mongo) HasTable(ctx context.Context, collName string) (bool, error) {
 	if c.enableSharding {
 		var err error
-		collName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, collName)
+		collName, err = c.convColl(collName)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	cursor, err := c.dbc.Database(c.dbname).ListCollections(ctx, bson.M{"name": collName, "type": "collection"})
+	cursor, err := c.cli.Database().ListCollections(ctx, bson.M{"name": collName, "type": "collection"})
 	if err != nil {
 		return false, err
 	}
@@ -531,50 +555,50 @@ func (c *Mongo) ListTables(ctx context.Context) ([]string, error) {
 			filter["name"] = bson.M{common.BKDBLIKE: fmt.Sprintf("^%s_", c.tenant)}
 		}
 	}
-	return c.dbc.Database(c.dbname).ListCollectionNames(ctx, filter)
+	return c.cli.Database().ListCollectionNames(ctx, filter)
 }
 
 // DropTable 移除集合
 func (c *Mongo) DropTable(ctx context.Context, collName string) error {
 	if c.enableSharding {
 		var err error
-		collName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, collName)
+		collName, err = c.convColl(collName)
 		if err != nil {
 			return err
 		}
 	}
-	return c.dbc.Database(c.dbname).Collection(collName).Drop(ctx)
+	return c.cli.Database().Collection(collName).Drop(ctx)
 }
 
 // CreateTable 创建集合 TODO test
 func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 	if c.enableSharding {
 		var err error
-		collName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, collName)
+		collName, err = c.convColl(collName)
 		if err != nil {
 			return err
 		}
 	}
-	return c.dbc.Database(c.dbname).RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
+	return c.cli.Database().RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
 }
 
 // RenameTable 更新集合名称
 func (c *Mongo) RenameTable(ctx context.Context, prevName, currName string) error {
 	if c.enableSharding {
 		var err error
-		prevName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, prevName)
+		prevName, err = c.convColl(prevName)
 		if err != nil {
 			return err
 		}
-		currName, err = c.mongoClient.convColl(c.ignoreTenant, c.tenant, currName)
+		currName, err = c.convColl(currName)
 		if err != nil {
 			return err
 		}
 	}
 
 	cmd := bson.D{
-		{"renameCollection", c.dbname + "." + prevName},
-		{"to", c.dbname + "." + currName},
+		{"renameCollection", c.cli.DBName() + "." + prevName},
+		{"to", c.cli.DBName() + "." + currName},
 	}
-	return c.dbc.Database("admin").RunCommand(ctx, cmd).Err()
+	return c.cli.Client().Database("admin").RunCommand(ctx, cmd).Err()
 }

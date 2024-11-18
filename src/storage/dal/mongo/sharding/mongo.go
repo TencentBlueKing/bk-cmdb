@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package local
+package sharding
 
 import (
 	"context"
@@ -27,59 +27,65 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/google/uuid"
 )
 
 // ShardingMongoManager is the sharding db manager for mongo
 type ShardingMongoManager struct {
 	// masterCli is the client for master mongodb, master mongodb stores the platform data and some tenant data
-	masterCli *mongoClient
+	masterCli *local.MongoClient
 	// newTenantCli is the client for mongodb that new tenant data will be stored into
-	newTenantCli *mongoClient
+	newTenantCli *local.MongoClient
 	// tenantCli is the tenant id to mongodb client map
-	tenantCli map[string]*mongoClient
+	tenantCli map[string]*local.MongoClient
 	// dbClientMap is the db uuid to mongodb client map
-	dbClientMap map[string]*mongoClient
+	dbClientMap map[string]*local.MongoClient
 	// tm is the transaction manager
-	tm *ShardingTxnManager
+	tm *local.ShardingTxnManager
 	// conf is the mongo client config
-	conf *mongoCliConf
+	conf *local.MongoCliConf
 }
 
 // NewShardingMongo returns new sharding db manager for mongo
-func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (dal.ShardingDB, error) {
+func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (ShardingDB, error) {
 	// connect master mongodb
-	masterCli, err := newMongoClient(true, "", config, timeout)
+	masterCli, err := local.NewMongoClient(true, "", config, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("new master mongo client failed, err: %v", err)
 	}
 
 	sharding := &ShardingMongoManager{
 		masterCli: masterCli,
-		tenantCli: make(map[string]*mongoClient),
-		tm:        new(ShardingTxnManager),
-		conf:      &mongoCliConf{disableInsert: config.DisableInsert},
+		tenantCli: make(map[string]*local.MongoClient),
+		tm:        new(local.ShardingTxnManager),
+		conf:      &local.MongoCliConf{DisableInsert: config.DisableInsert},
 	}
 
-	masterMongo := &Mongo{ignoreTenant: true, mongoClient: masterCli}
+	masterMongo, err := local.NewMongo(masterCli, new(local.TxnManager), sharding.conf,
+		&local.MongoOptions{IgnoreTenant: true})
+	if err != nil {
+		return nil, fmt.Errorf("new master mongo db client failed, err: %v", err)
+	}
 
 	ctx := context.Background()
-	sharding.conf.idGenStep, err = masterMongo.initIDGenerator(ctx)
+	sharding.conf.IDGenStep, err = masterMongo.InitIDGenerator(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// get sharding db config
-	shardingConf, err := masterMongo.getShardingDBConfig(ctx)
+	shardingConf, err := getShardingDBConfig(ctx, masterMongo)
 	if err != nil {
 		return nil, err
 	}
 
 	// fill mongo client info
-	sharding.masterCli.uuid = shardingConf.MasterDB
+	sharding.masterCli.SetUUID(shardingConf.MasterDB)
 
-	sharding.dbClientMap = map[string]*mongoClient{shardingConf.MasterDB: sharding.masterCli}
+	sharding.dbClientMap = map[string]*local.MongoClient{shardingConf.MasterDB: sharding.masterCli}
 	for slaveUUID, mongoConf := range shardingConf.SlaveDB {
 		// decrypt slave mongodb uri
 		mongoConf.URI, err = crypto.Decrypt(mongoConf.URI)
@@ -87,20 +93,20 @@ func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cr
 			return nil, fmt.Errorf("decrypt %s slave mongo uri failed, err: %v", slaveUUID, err)
 		}
 
-		client, err := newMongoClient(false, slaveUUID, mongoConf, timeout)
+		client, err := local.NewMongoClient(false, slaveUUID, mongoConf, timeout)
 		if err != nil {
 			return nil, fmt.Errorf("new %s slave mongo client failed, err: %v", slaveUUID, err)
 		}
 		sharding.dbClientMap[slaveUUID] = client
 	}
 
-	newTenantCli, exists := sharding.dbClientMap[shardingConf.AddNewTenantDB]
+	newTenantCli, exists := sharding.dbClientMap[shardingConf.ForNewTenant]
 	if !exists {
-		return nil, fmt.Errorf("add new tenant db %s config not found", shardingConf.AddNewTenantDB)
+		return nil, fmt.Errorf("add new tenant db %s config not found", shardingConf.ForNewTenant)
 	}
 	sharding.newTenantCli = newTenantCli
 
-	err = tenant.Init(&tenant.Options{DB: sharding})
+	err = tenant.Init(&tenant.Options{DB: sharding.IgnoreTenant()})
 	if err != nil {
 		return nil, err
 	}
@@ -123,13 +129,41 @@ func NewShardingMongo(config MongoConf, timeout time.Duration, crypto cryptor.Cr
 	return sharding, nil
 }
 
+// getShardingDBConfig get sharding db config
+func getShardingDBConfig(ctx context.Context, c *local.Mongo) (*ShardingDBConf, error) {
+	cond := map[string]any{common.MongoMetaID: common.ShardingDBConfID}
+	conf := new(ShardingDBConf)
+	err := c.Table(common.BKTableNameSystem).Find(cond).One(ctx, &conf)
+	if err != nil {
+		if !c.IsNotFoundError(err) {
+			return nil, fmt.Errorf("get sharding db config failed, err: %v", err)
+		}
+
+		// generate new sharding db config and save it if not exists, new tenant will be added to master db by default
+		newUUID := uuid.NewString()
+		conf = &ShardingDBConf{
+			ID:           common.ShardingDBConfID,
+			MasterDB:     newUUID,
+			ForNewTenant: newUUID,
+			SlaveDB:      make(map[string]local.MongoConf),
+		}
+		if err = c.Table(common.BKTableNameSystem).Insert(ctx, conf); err != nil {
+			return nil, fmt.Errorf("insert new sharding db config failed, err: %v", err)
+		}
+		return conf, nil
+	}
+	blog.Infof("slave mongo config: %+v", conf.SlaveDB)
+
+	return conf, nil
+}
+
 func (m *ShardingMongoManager) refreshTenantDBMap() error {
 	tenantDBMap := make(map[string]string)
 	for _, relation := range tenant.GetAllTenants() {
 		tenantDBMap[relation.TenantID] = relation.Database
 	}
 
-	tenantCli := make(map[string]*mongoClient)
+	tenantCli := make(map[string]*local.MongoClient)
 	for tenant, db := range tenantDBMap {
 		// TODO add default tenant db client for compatible, remove this later
 		if tenant == common.BKDefaultOwnerID {
@@ -148,48 +182,53 @@ func (m *ShardingMongoManager) refreshTenantDBMap() error {
 	return nil
 }
 
+// Shard returns the sharded db client
+func (m *ShardingMongoManager) Shard(opt ShardOpts) local.DB {
+	if opt.IsIgnoreTenant() {
+		return m.IgnoreTenant()
+	}
+	return m.Tenant(opt.Tenant())
+}
+
 // Tenant returns the db client for tenant
-func (m *ShardingMongoManager) Tenant(tenant string) dal.DB {
+func (m *ShardingMongoManager) Tenant(tenant string) local.DB {
 	if tenant == "" {
-		return &errDB{err: errors.New("tenant is not set")}
+		return local.NewErrDB(errors.New("tenant is not set"))
 	}
 
 	client, exists := m.tenantCli[tenant]
 	if !exists {
-		return &errDB{err: fmt.Errorf("tenant %s not exists", tenant)}
+		return local.NewErrDB(fmt.Errorf("tenant %s not exists", tenant))
 	}
 
-	if client.disabled {
-		return &errDB{err: fmt.Errorf("db client %s is disabled", client.uuid)}
+	if client.Disabled() {
+		return local.NewErrDB(fmt.Errorf("db client %s is disabled", client.UUID()))
 	}
 
 	txnManager, err := m.tm.Tenant(false, tenant)
 	if err != nil {
-		return &errDB{err: err}
+		return local.NewErrDB(err)
 	}
 
-	return &Mongo{
-		tenant:      tenant,
-		mongoClient: client,
-		tm:          txnManager,
-		conf:        m.conf,
-		// TODO: right now enableSharding is not set for compatible
+	db, err := local.NewMongo(client, txnManager, m.conf, &local.MongoOptions{Tenant: tenant})
+	if err != nil {
+		return local.NewErrDB(err)
 	}
+	return db
 }
 
 // IgnoreTenant returns the master db client that do not use tenant
-func (m *ShardingMongoManager) IgnoreTenant() dal.DB {
+func (m *ShardingMongoManager) IgnoreTenant() local.DB {
 	txnManager, err := m.tm.Tenant(true, "")
 	if err != nil {
-		return &errDB{err: err}
+		return local.NewErrDB(err)
 	}
 
-	return &Mongo{
-		ignoreTenant: true,
-		mongoClient:  m.masterCli,
-		tm:           txnManager,
-		conf:         m.conf,
+	db, err := local.NewMongo(m.masterCli, txnManager, m.conf, &local.MongoOptions{IgnoreTenant: true})
+	if err != nil {
+		return local.NewErrDB(err)
 	}
+	return db
 }
 
 // InitTxnManager TxnID management of initial transaction
@@ -200,7 +239,7 @@ func (m *ShardingMongoManager) InitTxnManager(r redis.Client) error {
 // Ping all sharding db clients
 func (m *ShardingMongoManager) Ping() error {
 	for uuid, client := range m.dbClientMap {
-		err := client.dbc.Ping(context.Background(), nil)
+		err := client.Client().Ping(context.Background(), nil)
 		if err != nil {
 			return fmt.Errorf("ping db %s failed, err: %v", uuid, err)
 		}
@@ -210,26 +249,29 @@ func (m *ShardingMongoManager) Ping() error {
 
 // DisableDBShardingMongo is the disabled db sharding mongo db manager, right now only watch db sharding is disabled
 type DisableDBShardingMongo struct {
-	client *mongoClient
-	tm     *TxnManager
-	conf   *mongoCliConf
+	client *local.MongoClient
+	tm     *local.TxnManager
+	conf   *local.MongoCliConf
 }
 
 // NewDisableDBShardingMongo returns new disabled db sharding mongo db manager
-func NewDisableDBShardingMongo(config MongoConf, timeout time.Duration) (dal.ShardingDB, error) {
-	client, err := newMongoClient(true, "", config, timeout)
+func NewDisableDBShardingMongo(config local.MongoConf, timeout time.Duration) (ShardingDB, error) {
+	client, err := local.NewMongoClient(true, "", config, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
 	db := &DisableDBShardingMongo{
 		client: client,
-		tm:     new(TxnManager),
-		conf:   &mongoCliConf{disableInsert: config.DisableInsert},
+		tm:     new(local.TxnManager),
+		conf:   &local.MongoCliConf{DisableInsert: config.DisableInsert},
 	}
 
-	masterMongo := &Mongo{ignoreTenant: true, mongoClient: client}
-	db.conf.idGenStep, err = masterMongo.initIDGenerator(context.Background())
+	masterMongo, err := local.NewMongo(client, new(local.TxnManager), db.conf, &local.MongoOptions{IgnoreTenant: true})
+	if err != nil {
+		return nil, fmt.Errorf("new master mongo db client failed, err: %v", err)
+	}
+	db.conf.IDGenStep, err = masterMongo.InitIDGenerator(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -237,28 +279,34 @@ func NewDisableDBShardingMongo(config MongoConf, timeout time.Duration) (dal.Sha
 	return db, nil
 }
 
+// Shard returns the sharded db client
+func (m *DisableDBShardingMongo) Shard(opt ShardOpts) local.DB {
+	if opt.IsIgnoreTenant() {
+		return m.IgnoreTenant()
+	}
+	return m.Tenant(opt.Tenant())
+}
+
 // Tenant returns the db client for tenant
-func (m *DisableDBShardingMongo) Tenant(tenant string) dal.DB {
+func (m *DisableDBShardingMongo) Tenant(tenant string) local.DB {
 	if tenant == "" {
-		return &errDB{err: errors.New("tenant is not set")}
+		return local.NewErrDB(errors.New("tenant is not set"))
 	}
 
-	return &Mongo{
-		tenant:      tenant,
-		mongoClient: m.client,
-		tm:          m.tm,
-		conf:        m.conf,
+	db, err := local.NewMongo(m.client, m.tm, m.conf, &local.MongoOptions{Tenant: tenant})
+	if err != nil {
+		return local.NewErrDB(err)
 	}
+	return db
 }
 
 // IgnoreTenant returns the master db client that do not use tenant
-func (m *DisableDBShardingMongo) IgnoreTenant() dal.DB {
-	return &Mongo{
-		ignoreTenant: true,
-		mongoClient:  m.client,
-		tm:           m.tm,
-		conf:         m.conf,
+func (m *DisableDBShardingMongo) IgnoreTenant() local.DB {
+	db, err := local.NewMongo(m.client, m.tm, m.conf, &local.MongoOptions{IgnoreTenant: true})
+	if err != nil {
+		return local.NewErrDB(err)
 	}
+	return db
 }
 
 // InitTxnManager TxnID management of initial transaction
@@ -268,5 +316,5 @@ func (m *DisableDBShardingMongo) InitTxnManager(r redis.Client) error {
 
 // Ping db client
 func (m *DisableDBShardingMongo) Ping() error {
-	return m.client.dbc.Ping(context.Background(), nil)
+	return m.client.Client().Ping(context.Background(), nil)
 }
