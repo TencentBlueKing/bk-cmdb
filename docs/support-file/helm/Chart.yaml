@@ -1,9 +1,9 @@
 apiVersion: v2
-appVersion: 3.13.11
+appVersion: 3.13.12-alpha1
 description: BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database.
 name: bk-cmdb
 type: application
-version: 3.14.11
+version: 3.14.12-alpha1
 dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
