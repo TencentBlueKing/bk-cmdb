@@ -109,4 +109,5 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202408011044"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202408071435"
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202410091435"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.13.202410311500"
 )
