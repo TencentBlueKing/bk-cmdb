@@ -103,10 +103,6 @@ var deprecatedIndexName = map[string][]string{
 		"bk_idx_service_template_id",
 		"bk_module_id_1",
 	},
-	common.BKTableNameChartConfig: {
-		"config_id",
-		"bk_obj_id",
-	},
 	common.BKTableNameBasePlat: {
 		"bk_supplier_account_1",
 		"vpcID",
@@ -153,9 +149,6 @@ var deprecatedIndexName = map[string][]string{
 		"bk_supplier_account_1",
 		"bk_obj_id_1_bk_asst_obj_id_1_bk_asst_id_1",
 		"idx_unique_id",
-	},
-	common.BKTableNameChartPosition: {
-		"bk_biz_id",
 	},
 	common.BKTableNameServiceTemplate: {
 		"id_1_bk_biz_id_1",

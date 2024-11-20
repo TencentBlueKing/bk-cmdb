@@ -31,7 +31,6 @@ import (
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
 	modelquote "configcenter/src/apimachinery/coreservice/model_quote"
-	"configcenter/src/apimachinery/coreservice/operation"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
@@ -51,7 +50,6 @@ type CoreServiceClientInterface interface {
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
-	Operation() operation.OperationClientInterface
 	Label() label.LabelInterface
 	TopoGraphics() topographics.TopoGraphicsInterface
 	SetTemplate() settemplate.SetTemplateInterface
@@ -114,11 +112,6 @@ func (c *coreService) Audit() auditlog.AuditClientInterface {
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
 
-}
-
-// Operation TODO
-func (c *coreService) Operation() operation.OperationClientInterface {
-	return operation.NewOperationClientInterface(c.restCli)
 }
 
 // Label TODO

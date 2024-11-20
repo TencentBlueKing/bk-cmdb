@@ -39,7 +39,6 @@ var ResourceTypeIDMap = map[TypeID]string{
 	KubeWorkloadEvent:        "容器工作负载事件",
 	// SysInstance:               "实例",
 	SysAssociationType:        "关联类型",
-	SysOperationStatistic:     "运营统计",
 	SysAuditLog:               "操作审计",
 	SysEventWatch:             "事件监听",
 	Host:                      "主机",
@@ -369,18 +368,6 @@ func genPublicResources() []ResourceType {
 			NameEn:        "Association Type",
 			Description:   "关联类型是模型关联关系的分类",
 			DescriptionEn: "association type is the classification of model association",
-			Parents:       nil,
-			ProviderConfig: ResourceConfig{
-				Path: "/auth/v3/find/resource",
-			},
-			Version: 1,
-		},
-		{
-			ID:            SysOperationStatistic,
-			Name:          ResourceTypeIDMap[SysOperationStatistic],
-			NameEn:        "Operational Statistics",
-			Description:   "运营统计",
-			DescriptionEn: "operational statistics",
 			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",

@@ -30,7 +30,6 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.ProcessServiceTemplate:   genServiceTemplateResource,
 	meta.ProcessTemplate:          genServiceTemplateResource,
 	meta.SetTemplate:              genSetTemplateResource,
-	meta.OperationStatistic:       genOperationStatisticResource,
 	meta.AuditLog:                 genAuditLogResource,
 	meta.CloudAreaInstance:        genPlat,
 	meta.HostApply:                genHostApplyResource,
@@ -317,10 +316,6 @@ func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribut
 	}
 
 	return []types.Resource{r}, nil
-}
-
-func genOperationStatisticResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
 }
 
 func genAuditLogResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {

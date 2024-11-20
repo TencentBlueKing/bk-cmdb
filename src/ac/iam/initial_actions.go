@@ -105,8 +105,6 @@ var ActionIDNameMap = map[ActionID]string{
 	ViewModelTopo:                       "模型拓扑查看",
 	EditBusinessLayer:                   "业务层级编辑",
 	EditModelTopologyView:               "模型拓扑视图编辑",
-	FindOperationStatistic:              "运营统计查询",
-	EditOperationStatistic:              "运营统计编辑",
 	FindAuditLog:                        "操作审计查询",
 	WatchHostEvent:                      "主机事件监听",
 	WatchHostRelationEvent:              "主机关系事件监听",
@@ -187,7 +185,6 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genModelGroupActions()...)
 	resourceActionList = append(resourceActionList, genBusinessLayerActions()...)
 	resourceActionList = append(resourceActionList, genModelTopologyViewActions()...)
-	resourceActionList = append(resourceActionList, genOperationStatisticActions()...)
 	resourceActionList = append(resourceActionList, genAuditLogActions()...)
 	resourceActionList = append(resourceActionList, genEventWatchActions()...)
 	resourceActionList = append(resourceActionList, genKubeEventWatchActions()...)
@@ -1146,31 +1143,6 @@ func genModelTopologyViewActions() []ResourceAction {
 		RelatedActions:       []ActionID{ViewModelTopo},
 		Version:              1,
 	})
-	return actions
-}
-
-func genOperationStatisticActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   FindOperationStatistic,
-		Name:                 ActionIDNameMap[FindOperationStatistic],
-		NameEn:               "View Operational Statistics",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:                   EditOperationStatistic,
-		Name:                 ActionIDNameMap[EditOperationStatistic],
-		NameEn:               "Edit Operational Statistics",
-		Type:                 Edit,
-		RelatedResourceTypes: nil,
-		RelatedActions:       []ActionID{FindOperationStatistic},
-		Version:              1,
-	})
-
 	return actions
 }
 

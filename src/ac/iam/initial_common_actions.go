@@ -120,8 +120,6 @@ func GenerateCommonActions() []CommonAction {
 			Name:        "审计员",
 			EnglishName: "Auditor",
 			Actions: []ActionWithID{
-				{ID: FindOperationStatistic},
-				{ID: EditOperationStatistic},
 				{ID: FindAuditLog},
 			},
 		},

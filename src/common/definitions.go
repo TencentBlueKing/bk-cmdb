@@ -1509,38 +1509,6 @@ const (
 )
 
 const (
-	// OperationCustom TODO
-	OperationCustom = "custom"
-	// OperationReportType TODO
-	OperationReportType = "report_type"
-	// OperationConfigID TODO
-	OperationConfigID = "config_id"
-	// BizModuleHostChart TODO
-	BizModuleHostChart = "biz_module_host_chart"
-	// HostOSChart TODO
-	HostOSChart = "host_os_chart"
-	// HostBizChart TODO
-	HostBizChart = "host_biz_chart"
-	// HostCloudChart TODO
-	HostCloudChart = "host_cloud_chart"
-	// HostChangeBizChart TODO
-	HostChangeBizChart = "host_change_biz_chart"
-	// ModelAndInstCount TODO
-	ModelAndInstCount = "model_and_inst_count"
-	// ModelInstChart TODO
-	ModelInstChart = "model_inst_chart"
-	// ModelInstChangeChart TODO
-	ModelInstChangeChart = "model_inst_change_chart"
-	// CreateObject TODO
-	CreateObject = "create object"
-	// DeleteObject TODO
-	DeleteObject = "delete object"
-	// UpdateObject TODO
-	UpdateObject = "update object"
-	// OperationDescription TODO
-	OperationDescription = "op_desc"
-	// OptionOther TODO
-	OptionOther = "其他"
 	// TimerPattern TODO
 	TimerPattern = "^[\\d]+\\:[\\d]+$"
 	// BKTaskTypeField the api task type field

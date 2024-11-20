@@ -84,7 +84,7 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
 		return getResourcePoolDirectoryMethod(kit, s.lgc)
 
-	case iam.SysOperationStatistic, iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
+	case iam.SysAuditLog, iam.BizCustomField, iam.BizHostApply,
 		iam.BizTopology, iam.SysEventWatch, iam.BizProcessServiceCategory, iam.BizProcessServiceInstance:
 		return types.ResourcePullMethod{}, nil
 	case iam.KubeWorkloadEvent:

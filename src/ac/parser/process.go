@@ -21,8 +21,7 @@ func (ps *parseStream) processRelated() *parseStream {
 		ServiceTemplate().
 		ServiceCategory().
 		ProcessTemplate().
-		ProcessInstance().
-		OperationStatistic()
+		ProcessInstance()
 
 	return ps
 }

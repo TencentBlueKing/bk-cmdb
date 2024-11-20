@@ -215,9 +215,6 @@ elasticsearch-replica-num = "$es_replica_num"
 #    authscheme: internal
 #  login:
 #    version: opensource
-#operationServer:
-#  timer:
-#    spec: 00:30
 #authServer:
 #  address: 127.0.0.1
 #  appCode: bk_cmdb
@@ -237,14 +234,6 @@ es:
 adminServer:
   #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
   syncIAMPeriodMinutes: 5
-
-# operation_server专属配置
-operationServer:
-  timer:
-    # 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
-    spec: 00:30  # 00:00 - 23:59
-  # 禁用运营统计数据统计功能，默认false
-  disableOperationStatistic: false
 
 #auth_server专属配置
 authServer:

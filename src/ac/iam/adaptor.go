@@ -81,7 +81,6 @@ var ccIamResTypeMap = map[meta.ResourceType]TypeID{
 	meta.ProcessServiceInstance:   BizProcessServiceInstance,
 	meta.BizTopology:              BizTopology,
 	meta.SetTemplate:              BizSetTemplate,
-	meta.OperationStatistic:       SysOperationStatistic,
 	meta.HostApply:                BizHostApply,
 	meta.ResourcePoolDirectory:    SysResourcePoolDirectory,
 	meta.EventWatch:               SysEventWatch,
@@ -381,13 +380,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 		meta.Create:   CreateModelGroup,
 		meta.Find:     Skip,
 		meta.FindMany: Skip,
-	},
-	meta.OperationStatistic: {
-		meta.Create:   EditOperationStatistic,
-		meta.Delete:   EditOperationStatistic,
-		meta.Update:   EditOperationStatistic,
-		meta.Find:     FindOperationStatistic,
-		meta.FindMany: FindOperationStatistic,
 	},
 	meta.AuditLog: {
 		meta.Find:     FindAuditLog,

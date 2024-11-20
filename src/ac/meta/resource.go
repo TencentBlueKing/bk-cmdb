@@ -58,7 +58,6 @@ const (
 	InstallBK                ResourceType = "installBK"
 	SystemConfig             ResourceType = "systemConfig"
 	SetTemplate              ResourceType = "setTemplate"
-	OperationStatistic       ResourceType = "operationStatistic" // 运营统计
 	HostApply                ResourceType = "hostApply"
 	ResourcePoolDirectory    ResourceType = "resourcePoolDirectory"
 	ConfigAdmin              ResourceType = "configAdmin"

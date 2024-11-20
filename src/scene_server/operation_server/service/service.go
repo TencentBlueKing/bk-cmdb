@@ -13,72 +13,28 @@
 package service
 
 import (
-	"context"
-	goErr "errors"
-	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
-
 	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
-	"configcenter/src/scene_server/operation_server/logics"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
 )
 
-type srvComm struct {
-	header        http.Header
-	rid           string
-	ccErr         errors.DefaultCCErrorIf
-	ccLang        language.DefaultCCLanguageIf
-	ctx           context.Context
-	ctxCancelFunc context.CancelFunc
-	user          string
-	ownerID       string
-	lgc           *logics.Logics
-}
-
 // OperationServer TODO
 type OperationServer struct {
 	*backbone.Engine
 	Config      *options.Config
-	ConfigMap   map[string]string
 	AuthManager *extensions.AuthManager
-}
-
-func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
-	rid := httpheader.GetRid(header)
-	lang := httpheader.GetLanguage(header)
-	ctx, cancel := o.Engine.CCCtx.WithCancel()
-	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
-
-	return &srvComm{
-		header:        header,
-		rid:           httpheader.GetRid(header),
-		ccErr:         o.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        o.Language.CreateDefaultCCLanguageIf(lang),
-		ctx:           ctx,
-		ctxCancelFunc: cancel,
-		user:          httpheader.GetUser(header),
-		ownerID:       httpheader.GetSupplierAccount(header),
-		lgc:           logics.NewLogics(o.Engine, header, o.AuthManager, o.Config.Timer),
-	}
 }
 
 // WebService TODO
@@ -115,20 +71,6 @@ func (o *OperationServer) newOperationService(web *restful.WebService) {
 		ErrorIf:  o.Engine.CCErr,
 		Language: o.Engine.Language,
 	})
-
-	// service category
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart",
-		Handler: o.CreateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}",
-		Handler: o.DeleteOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart",
-		Handler: o.UpdateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/operation/chart",
-		Handler: o.SearchOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data",
-		Handler: o.SearchChartData})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position",
-		Handler: o.UpdateChartPosition})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -181,63 +123,5 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 
 // OnOperationConfigUpdate TODO
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
-	var err error
 	o.Config = &options.Config{}
-	o.Config.Timer, err = o.ParseTimerConfigFromKV("operationServer.timer", nil)
-	if err != nil {
-		blog.Errorf("parse timer config failed, err: %v", err)
-		return
-	}
-}
-
-// ParseTimerConfigFromKV parse timer from kv
-func (o *OperationServer) ParseTimerConfigFromKV(prefix string, configMap map[string]string) (string, error) {
-	// 若是timer没配置，或者解析失败，给一个默认的定时时间
-	defaultSpec := "30 0 * * *"
-	specStr, err := cc.String(prefix + ".spec")
-	if err != nil {
-		blog.Errorf("parse timer config failed, missing 'spec' configuration for timer, " +
-			"set timer-spec default value: 00:30")
-		return defaultSpec, nil
-	}
-	spec, err := parseTimerConfig(specStr)
-	if err != nil || spec == "" {
-		blog.Errorf("parse timer config failed, set timer-spec default value: 00:30, err: %v", err)
-		return defaultSpec, nil
-	}
-
-	return spec, nil
-}
-
-func parseTimerConfig(spec string) (string, error) {
-	matched, err := regexp.MatchString(common.TimerPattern, spec)
-	if err != nil || !matched {
-		blog.Errorf("parse timer config failed, 'spec' not match required rules, err: %v", err)
-		return "", goErr.New("'spec' not match required rules")
-	}
-
-	numArray := strings.Split(spec, ":")
-	hour := numArray[0]
-	intHour, err := strconv.Atoi(hour)
-	if err != nil {
-		blog.Errorf("parse timer config failed, got invalid hour data, err: %v", err)
-		return "", goErr.New("parse time config failed, got invalid hour data")
-	}
-	if intHour < 0 || intHour > 23 {
-		blog.Errorf("parse timer config failed, got invalid hour data, err: %v", err)
-		return "", goErr.New("'parse time config failed, got invalid hour data, should between 0-23")
-	}
-	minute := numArray[1]
-	intMinute, err := strconv.Atoi(minute)
-	if err != nil {
-		blog.Errorf("parse timer config failed, got invalid minute data, err: %v", err)
-		return "", goErr.New("parse time config failed, got invalid minute data")
-	}
-	if intMinute < 0 || intMinute > 59 {
-		blog.Errorf("parse timer config failed, got invalid minute data, err: %v", err)
-		return "", goErr.New("parse time config failed, got invalid minute data, should between 0-59")
-	}
-
-	spec = fmt.Sprintf("%d %d * * *", intMinute, intHour)
-	return spec, nil
 }

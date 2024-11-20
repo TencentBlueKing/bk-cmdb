@@ -35,7 +35,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.4.0
-	github.com/robfig/cron v1.2.0
 	github.com/rs/xid v1.4.0
 	github.com/rwynn/monstache v4.12.3+incompatible
 	github.com/spf13/cobra v1.4.0

@@ -1013,18 +1013,6 @@ common:
         # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
         # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
         windowMinutes: 15
-  ## operationserver common config parameters
-  ##
-  operationServer:
-    ## @param common.operationServer.timer.spec operation statistic collecting time
-    ## 00:00-23:59,运营统计定时收集数据时间点,默认是为00:30
-    ##
-    timer:
-      spec: 15:30
-    ## @param common.operationServer.timer
-    ## 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
-    ##
-    disableOperationStatistic: false
 
   ## monitor common config parameters
   ##

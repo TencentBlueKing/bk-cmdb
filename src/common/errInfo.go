@@ -515,6 +515,7 @@ const (
 	CCErrTopoFieldTemplateUniqueConflict               = 1101126
 	CCErrTopoBizFieldConflict                          = 1101127
 	CCErrTopoArchiveBusinessHasKube                    = 1101128
+	CCErrTopoBizModuleHostAmountFail                   = 1101129
 
 	// object controller 1102XXX
 
@@ -854,16 +855,6 @@ const (
 	CCErrCoreServiceFieldTemplateHasRelation = 1113042
 	// CCErrCoreServiceHostRelateToKube some hosts has related container resources
 	CCErrCoreServiceHostRelateToKube = 1113043
-
-	// operation_server 1116xxx
-	CCErrOperationBizModuleHostAmountFail = 1116001
-	CCErrOperationNewAddStatisticFail     = 1116002
-	CCErrOperationChartAlreadyExist       = 1116003
-	CCErrOperationDeleteChartFail         = 1116004
-	CCErrOperationSearchChartFail         = 1116005
-	CCErrOperationUpdateChartFail         = 1116006
-	CCErrOperationGetChartDataFail        = 1116007
-	CCErrOperationUpdateChartPositionFail = 1116008
 
 	// task_server 1117xxx
 	// CCErrTaskNotFound task not found
