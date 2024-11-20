@@ -147,5 +147,6 @@
 	"1101126": "Model Unique Rule (id: %d) conflicts with the field grouping template's Unique Rule (keys: %+v)",
 	"1101127": "When applying Template to Model (%s), it will conflicts with Custom Field of Business (%d). Conflicting Custom Field: (bk_property_id: %s)",
 	"1101128": "The business contains container resources, archiving is forbidden",
+	"1101129": "Failed to get the number of services, modules, and hosts",
 	"": ""
 }

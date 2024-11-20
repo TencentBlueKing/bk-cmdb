@@ -74,11 +74,6 @@ const (
 
 	BKTableNameHostLock = "cc_HostLock"
 
-	// Operation tables
-	BKTableNameChartConfig   = "cc_ChartConfig"
-	BKTableNameChartPosition = "cc_ChartPosition"
-	BKTableNameChartData     = "cc_ChartData"
-
 	// process tables
 	BKTableNameServiceCategory         = "cc_ServiceCategory"
 	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
@@ -161,9 +156,6 @@ var AllTables = []string{
 	BKTableNameProcessInstanceRelation,
 	BKTableNameSetTemplate,
 	BKTableNameSetServiceTemplateRelation,
-	BKTableNameChartConfig,
-	BKTableNameChartPosition,
-	BKTableNameChartData,
 	BKTableNameHostApplyRule,
 	BKTableNameAPITask,
 	BKTableNameAPITaskSyncHistory,

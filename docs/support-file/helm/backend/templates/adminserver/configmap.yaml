@@ -32,15 +32,6 @@ data:
       keyFile:
       caFile:
       password:
-    # operation_server专属配置
-    operationServer:
-      timer:
-        #00:00-23:59,operation_server从配置文件读取的时间,默认是为00:30
-        #定时同步的时间点
-        # 00:00 - 23:59
-        spec: {{ .Values.common.operationServer.timer.spec }}
-      # 禁用运营统计数据统计功能，默认false，如果设置为true，将无法查看定时统计的主机、模型实例等的变化数据
-      disableOperationStatistic: {{ .Values.common.operationServer.disableStatistic }}
     #auth_server专属配置
     authServer:
       #蓝鲸权限中心地址,可配置多个,用,(逗号)分割

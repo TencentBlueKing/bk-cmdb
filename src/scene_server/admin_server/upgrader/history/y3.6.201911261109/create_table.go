@@ -25,26 +25,32 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+var (
+	BKTableNameChartConfig   = "cc_ChartConfig"
+	BKTableNameChartPosition = "cc_ChartPosition"
+	BKTableNameChartData     = "cc_ChartData"
+)
+
 // CreateTableOptions TODO
 var CreateTableOptions = []struct {
 	TableName  string
 	TableIndex []types.Index
 }{
 	{
-		TableName: common.BKTableNameChartConfig,
+		TableName: BKTableNameChartConfig,
 		TableIndex: []types.Index{
 			{Keys: bson.D{{"config_id", 1}}, Name: "config_id", Unique: true, Background: true},
 			{Name: common.BKObjIDField, Keys: bson.D{{"bk_obj_id", 1}}, Background: true},
 		},
 	},
 	{
-		TableName: common.BKTableNameChartPosition,
+		TableName: BKTableNameChartPosition,
 		TableIndex: []types.Index{
 			{Name: "bk_biz_id", Keys: bson.D{{"bk_biz_id", 1}}, Background: true},
 		},
 	},
 	{
-		TableName:  common.BKTableNameChartData,
+		TableName:  BKTableNameChartData,
 		TableIndex: []types.Index{},
 	},
 }

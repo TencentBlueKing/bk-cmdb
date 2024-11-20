@@ -15,11 +15,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
-	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -48,17 +46,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-	configReady := false
-	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if operationSvr.Config.Ready() {
-			configReady = true
-			break
-		}
-		time.Sleep(time.Second)
-	}
-	if false == configReady {
-		return fmt.Errorf("waiting for configuration timeout, maybe parse configuration failed")
-	}
 	operationSvr.Config.Mongo, err = engine.WithMongo()
 	if err != nil {
 		return err
@@ -83,7 +70,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	operationSvr.Engine = engine
 
-	go operationSvr.InitFunc()
 	if err := backbone.StartServer(ctx, cancel, engine, operationSvr.WebService(), true); err != nil {
 		return err
 	}

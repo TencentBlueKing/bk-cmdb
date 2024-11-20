@@ -200,8 +200,6 @@ const (
 	SysAssociationType TypeID = "sys_association_type"
 	// SysAuditLog TODO
 	SysAuditLog TypeID = "sys_audit_log"
-	// SysOperationStatistic TODO
-	SysOperationStatistic TypeID = "sys_operation_statistic"
 	// SysResourcePoolDirectory TODO
 	SysResourcePoolDirectory TypeID = "sys_resource_pool_directory"
 	// SysHostRscPoolDirectory TODO
@@ -464,11 +462,6 @@ const (
 	EditBusinessLayer ActionID = "edit_business_layer"
 	// EditModelTopologyView TODO
 	EditModelTopologyView ActionID = "edit_model_topology_view"
-
-	// FindOperationStatistic TODO
-	FindOperationStatistic ActionID = "find_operation_statistic"
-	// EditOperationStatistic TODO
-	EditOperationStatistic ActionID = "edit_operation_statistic"
 
 	// FindAuditLog TODO
 	FindAuditLog ActionID = "find_audit_log"

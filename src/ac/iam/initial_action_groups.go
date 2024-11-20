@@ -599,18 +599,6 @@ func genOperationStatisticActionGroups() []ActionGroup {
 			NameEn: "Operation Statistic",
 			SubGroups: []ActionGroup{
 				{
-					Name:   "运营统计",
-					NameEn: "Operation Statistic",
-					Actions: []ActionWithID{
-						{
-							ID: FindOperationStatistic,
-						},
-						{
-							ID: EditOperationStatistic,
-						},
-					},
-				},
-				{
 					Name:   "操作审计",
 					NameEn: "Operation Audit",
 					Actions: []ActionWithID{

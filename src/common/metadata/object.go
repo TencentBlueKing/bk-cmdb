@@ -263,6 +263,16 @@ type ObjectTopo struct {
 	Arrows    string   `json:"arrows"`
 }
 
+// ObjectIDCount object count statistics information used for
+// group aggregate operation.
+type ObjectIDCount struct {
+	// ObjID object id.
+	ObjID string `bson:"_id" json:"bk_obj_id"`
+
+	// Count targets count.
+	Count int64 `bson:"count" json:"instance_count"`
+}
+
 // ObjectCountParams define parameter of search objects count
 type ObjectCountParams struct {
 	Condition ObjectIDArray `json:"condition"`

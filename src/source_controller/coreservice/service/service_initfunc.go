@@ -351,37 +351,6 @@ func (s *coreService) audit(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *coreService) initOperation(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart",
-		Handler: s.CreateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/operation/chart",
-		Handler: s.SearchChartWithPosition})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart",
-		Handler: s.UpdateOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}",
-		Handler: s.DeleteOperationChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/common",
-		Handler: s.SearchChartCommon})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/inst/count",
-		Handler: s.SearchInstCount})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/chart/data",
-		Handler: s.SearchChartData})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position",
-		Handler: s.UpdateChartPosition})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/operation/timer/chart/data",
-		Handler: s.SearchTimerChartData})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/start/operation/chart/timer",
-		Handler: s.TimerFreshData})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *coreService) label(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.engine.CCErr,
@@ -538,7 +507,6 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.host(web)
 	s.audit(web)
 	s.initProcess(web)
-	s.initOperation(web)
 	s.label(web)
 	s.topographics(web)
 	s.ccSystem(web)

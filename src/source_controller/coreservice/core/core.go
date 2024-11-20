@@ -225,19 +225,6 @@ type AuditOperation interface {
 	SearchAuditLog(kit *rest.Kit, param metadata.QueryCondition) ([]metadata.AuditLog, uint64, error)
 }
 
-// StatisticOperation TODO
-type StatisticOperation interface {
-	SearchInstCount(kit *rest.Kit, inputParam map[string]interface{}) (uint64, error)
-	SearchChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
-	SearchOperationChart(kit *rest.Kit, inputParam interface{}) (*metadata.ChartClassification, error)
-	CreateOperationChart(kit *rest.Kit, inputParam metadata.ChartConfig) (uint64, error)
-	UpdateChartPosition(kit *rest.Kit, inputParam interface{}) (interface{}, error)
-	DeleteOperationChart(kit *rest.Kit, id int64) (interface{}, error)
-	UpdateOperationChart(kit *rest.Kit, inputParam map[string]interface{}) (interface{}, error)
-	SearchTimerChartData(kit *rest.Kit, inputParam metadata.ChartConfig) (interface{}, error)
-	TimerFreshData(kit *rest.Kit) error
-}
-
 // Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
@@ -247,7 +234,6 @@ type Core interface {
 	TopoOperation() TopoOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
-	StatisticOperation() StatisticOperation
 	ProcessOperation() ProcessOperation
 	LabelOperation() LabelOperation
 	SetTemplateOperation() SetTemplateOperation
@@ -419,7 +405,6 @@ type core struct {
 	topo          TopoOperation
 	host          HostOperation
 	audit         AuditOperation
-	operation     StatisticOperation
 	process       ProcessOperation
 	label         LabelOperation
 	sys           SystemOperation
@@ -440,7 +425,6 @@ func New(
 	process ProcessOperation,
 	label LabelOperation,
 	setTemplate SetTemplateOperation,
-	operation StatisticOperation,
 	hostApplyRule HostApplyRuleOperation,
 	sys SystemOperation,
 	auth AuthOperation,
@@ -454,7 +438,6 @@ func New(
 		topo:          topo,
 		host:          host,
 		audit:         audit,
-		operation:     operation,
 		process:       process,
 		label:         label,
 		sys:           sys,
@@ -503,11 +486,6 @@ func (m *core) AuditOperation() AuditOperation {
 // ProcessOperation TODO
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
-}
-
-// StatisticOperation TODO
-func (m *core) StatisticOperation() StatisticOperation {
-	return m.operation
 }
 
 // LabelOperation TODO

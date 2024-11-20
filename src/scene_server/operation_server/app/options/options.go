@@ -29,22 +29,9 @@ type ServerOption struct {
 
 // Config TODO
 type Config struct {
-	ConfigMap map[string]string
-	Mongo     mongo.Config
-	Timer     string
+	Mongo mongo.Config
 	// Auth is auth config
 	Auth iam.AuthConfig
-}
-
-// Ready TODO
-func (c *Config) Ready() bool {
-	if c == nil {
-		return false
-	}
-	if len(c.Timer) == 0 {
-		return false
-	}
-	return true
 }
 
 // NewServerOption TODO

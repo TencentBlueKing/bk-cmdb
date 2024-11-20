@@ -36,7 +36,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/source_controller/coreservice/core/settemplate"
 	dbSystem "configcenter/src/source_controller/coreservice/core/system"
@@ -116,7 +115,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		process.New(s),
 		label.New(),
 		settemplate.New(),
-		operation.New(),
 		hostApplyRuleCore,
 		dbSystem.New(),
 		auth.New(mongodb.Client()),

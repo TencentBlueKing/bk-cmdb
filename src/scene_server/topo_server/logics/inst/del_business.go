@@ -94,7 +94,7 @@ func (b *business) checkHasBuiltInBiz(kit *rest.Kit, bizIDs []int64) (bool, erro
 
 	if len(rst) != 1 {
 		blog.Errorf("get biz count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
+		return false, kit.CCError.Error(common.CCErrTopoBizModuleHostAmountFail)
 	}
 
 	if rst[0] <= 0 {
@@ -126,7 +126,7 @@ func (b *business) checkHasUnarchivedBiz(kit *rest.Kit, bizIDs []int64) (bool, e
 
 	if len(rst) != 1 {
 		blog.Errorf("get biz count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
+		return false, kit.CCError.Error(common.CCErrTopoBizModuleHostAmountFail)
 	}
 
 	if rst[0] <= 0 {
@@ -155,7 +155,7 @@ func (b *business) checkHasHost(kit *rest.Kit, bizIDs []int64) (bool, error) {
 
 	if len(rst) != 1 {
 		blog.Errorf("get host count failed, for result len must be 1, filter: %+v, rid: %s", filter, kit.Rid)
-		return false, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
+		return false, kit.CCError.Error(common.CCErrTopoBizModuleHostAmountFail)
 	}
 
 	if rst[0] <= 0 {
