@@ -28,4 +28,5 @@ type ShardingDB interface {
 	Shard(opt ShardOpts) local.DB
 	InitTxnManager(r redis.Client) error
 	Ping() error
+	ExecForAllDB(handler func(db local.DB) error) error
 }

@@ -1458,11 +1458,6 @@ const (
 )
 
 const (
-	// MetaDataSynchronizeFlagField synchronize flag
-	MetaDataSynchronizeFlagField = "flag"
-)
-
-const (
 	// AttributePlaceHolderMaxLength TODO
 	AttributePlaceHolderMaxLength = 2000
 	// AttributeOptionMaxLength TODO

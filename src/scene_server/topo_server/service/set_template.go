@@ -974,11 +974,12 @@ func (s *Service) GetSetSyncDetails(ctx *rest.Contexts) {
 		InstID: option.SetIDs,
 		Fields: []string{
 			common.BKStatusField,
-			common.MetaDataSynchronizeFlagField,
+			common.BKTaskTypeField,
 			common.BKInstIDField,
+			"header",
 			"detail.status",
 			"detail.data.module_diff.bk_module_name",
-			"detail.response.baseresp.errmsg",
+			"detail.response.bk_error_msg",
 		},
 	}
 

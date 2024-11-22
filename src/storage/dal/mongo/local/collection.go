@@ -20,6 +20,7 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -46,6 +47,11 @@ type Collection struct {
 
 // Find 查询多个并反序列化到 Result
 func (c *Collection) Find(filter types.Filter, opts ...*types.FindOpts) types.Find {
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return &errFind{err: err}
+	}
+
 	find := &Find{
 		Collection: c,
 		filter:     filter,
@@ -67,6 +73,10 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	}()
 
 	rows := util.ConvertToInterfaceSlice(docs)
+	rows, err := c.addTenantIDToArr(rows)
+	if err != nil {
+		return err
+	}
 
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		_, err := c.cli.Database().Collection(c.collName).InsertMany(ctx, rows)
@@ -91,6 +101,11 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 		filter = bson.M{}
 	}
 
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
+
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, data)
@@ -102,8 +117,7 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	})
 }
 
-// UpdateMany TODO
-// Update 更新数据, 返回修改成功的条数
+// UpdateMany 更新数据, 返回修改成功的条数
 func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc interface{}) (uint64, error) {
 	mtc.collectOperCount(c.collName, updateOper)
 	start := time.Now()
@@ -115,9 +129,14 @@ func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc in
 		filter = bson.M{}
 	}
 
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return 0, err
+	}
+
 	data := bson.M{"$set": doc}
 	var modifiedCount uint64
-	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+	err = c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		updateRet, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, data)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, updateOper)
@@ -138,6 +157,16 @@ func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interf
 	defer func() {
 		mtc.collectOperDuration(c.collName, upsertOper, time.Since(start))
 	}()
+
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
+
+	doc, err = c.addTenantID(doc)
+	if err != nil {
+		return err
+	}
 
 	// set upsert option
 	doUpsert := true
@@ -165,6 +194,11 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
 
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
+
 	data := bson.M{}
 	for _, item := range updateModel {
 		if _, ok := data[item.Op]; ok {
@@ -186,7 +220,11 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
-	_, err := c.DeleteMany(ctx, filter)
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
+	_, err = c.DeleteMany(ctx, filter)
 	return err
 }
 
@@ -200,8 +238,13 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start))
 	}()
 
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return 0, err
+	}
+
 	var deleteCount uint64
-	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+	err = c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
 			return err
@@ -224,6 +267,11 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	if !exists {
 		// do not archive the delete docs
 		return nil
+	}
+
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
 	}
 
 	// only archive the specified fields for delete docs
@@ -406,9 +454,13 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 	}()
 
 	selector := dtype.Document{column: dtype.Document{"$exists": false}}
+	tenantSelector, err := c.addTenantID(selector)
+	if err != nil {
+		return err
+	}
 	datac := dtype.Document{"$set": dtype.Document{column: value}}
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
-		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, selector, datac)
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, tenantSelector, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -428,6 +480,11 @@ func (c *Collection) RenameColumn(ctx context.Context, filter types.Filter, oldN
 	defer func() {
 		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
+
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
 
 	datac := dtype.Document{"$rename": dtype.Document{oldName: newColumn}}
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
@@ -450,9 +507,14 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
 
+	filter, err := c.addTenantID(dtype.Document{})
+	if err != nil {
+		return err
+	}
+
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
-		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, dtype.Document{}, datac)
+		_, err := c.cli.Database().Collection(c.collName).UpdateMany(ctx, filter, datac)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, columnOper)
 			return err
@@ -470,6 +532,11 @@ func (c *Collection) DropColumns(ctx context.Context, filter types.Filter, field
 	defer func() {
 		mtc.collectOperDuration(c.collName, columnOper, time.Since(start))
 	}()
+
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
 
 	unsetFields := make(map[string]interface{})
 	for _, field := range fields {
@@ -501,6 +568,10 @@ func (c *Collection) DropDocsColumn(ctx context.Context, field string, filter ty
 	if filter == nil {
 		filter = bson.M{}
 	}
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return err
+	}
 
 	datac := dtype.Document{"$unset": dtype.Document{field: ""}}
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
@@ -524,6 +595,11 @@ func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, res
 	defer func() {
 		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
+
+	pipeline, err := c.addTenantIDToPipe(pipeline)
+	if err != nil {
+		return err
+	}
 
 	var aggregateOption *options.AggregateOptions
 	for _, opt := range opts {
@@ -558,6 +634,11 @@ func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, res
 		mtc.collectOperDuration(c.collName, aggregateOper, time.Since(start))
 	}()
 
+	pipeline, err := c.addTenantIDToPipe(pipeline)
+	if err != nil {
+		return err
+	}
+
 	opt := getCollectionOption(ctx)
 
 	return c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
@@ -590,10 +671,14 @@ func (c *Collection) Distinct(ctx context.Context, field string, filter types.Fi
 	if filter == nil {
 		filter = bson.M{}
 	}
+	filter, err := c.addTenantID(filter)
+	if err != nil {
+		return nil, err
+	}
 
 	opt := getCollectionOption(ctx)
 	var results []interface{} = nil
-	err := c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
+	err = c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
 		var err error
 		results, err = c.cli.Database().Collection(c.collName, opt).Distinct(ctx, field, filter)
 		if err != nil {
@@ -669,4 +754,92 @@ func getCollectionOption(ctx context.Context) *options.CollectionOptions {
 	}
 
 	return opt
+}
+
+// addTenantID add tenant id to data for platform table with tenant
+func (c *Collection) addTenantID(data interface{}) (interface{}, error) {
+	if c.ignoreTenant || !common.IsPlatformTableWithTenant(c.collName) {
+		return data, nil
+	}
+
+	if data == nil {
+		return bson.M{common.TenantID: c.tenant}, nil
+	}
+
+	data, err := addTenantID(data, c.tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// addTenantIDToArr add tenant id to data array for platform table with tenant
+func (c *Collection) addTenantIDToArr(arr []interface{}) ([]interface{}, error) {
+	if c.ignoreTenant || !common.IsPlatformTableWithTenant(c.collName) {
+		return arr, nil
+	}
+
+	var err error
+	for i, data := range arr {
+		arr[i], err = addTenantID(data, c.tenant)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return arr, nil
+}
+
+// addTenantIDToPipe add tenant id to pipeline for platform table with tenant
+func (c *Collection) addTenantIDToPipe(pipeline interface{}) (interface{}, error) {
+	if c.ignoreTenant || !common.IsPlatformTableWithTenant(c.collName) {
+		return pipeline, nil
+	}
+
+	pipeArr := util.ConvertToInterfaceSlice(pipeline)
+	return append([]interface{}{bson.M{common.BKDBMatch: bson.M{common.TenantID: c.tenant}}}, pipeArr...), nil
+}
+
+// addTenantID add tenant id to data
+func addTenantID(data interface{}, tenantID string) (interface{}, error) {
+	v := reflect.ValueOf(data)
+
+	// get pointer element recursively
+	isPtr := false
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+		isPtr = true
+	}
+
+	switch v.Kind() {
+	case reflect.Map:
+		// add tenant id to map
+		v.SetMapIndex(reflect.ValueOf(common.TenantID), reflect.ValueOf(tenantID))
+		return data, nil
+	case reflect.Struct:
+		// get struct pointer if the data is not a pointer, because struct is not addressable and cannot set value
+		if !isPtr {
+			ptr := reflect.New(v.Type())
+			ptr.Elem().Set(v)
+			v = ptr.Elem()
+		}
+
+		// get tenant id field by bson tag and set its value
+		t := v.Type()
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			if field.Tag.Get("bson") == common.TenantID {
+				fieldVal := v.FieldByIndex(field.Index)
+				if !fieldVal.IsValid() || !fieldVal.CanSet() || fieldVal.Kind() != reflect.String {
+					return nil, fmt.Errorf("data type %T tenant id field is invalid", data)
+				}
+				fieldVal.SetString(tenantID)
+				return v.Interface(), nil
+			}
+		}
+		return nil, fmt.Errorf("data type %T has no tenant id field", data)
+	default:
+		return nil, fmt.Errorf("data type %T is invalid to add tenant id", data)
+	}
 }

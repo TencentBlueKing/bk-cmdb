@@ -14,6 +14,7 @@ package collections
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,12 +25,84 @@ func init() {
 	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
 	registerIndexes(common.BKTableNameAPITask, deprecatedAPITaskIndexes)
 	registerIndexes(common.BKTableNameAPITask, commAPITaskIndexes)
+	registerIndexes(common.BKTableNameAPITaskSyncHistory, apiTaskSyncHistoryIndexes)
 
 }
 
-// TODO:
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-var commAPITaskIndexes = []types.Index{}
+var commAPITaskIndexes = []types.Index{
+	{
+		Name:       common.CCLogicIndexNamePrefix + "lastTime",
+		Keys:       bson.D{{common.LastTimeField, -1}},
+		Background: true,
+		// delete redundant tasks from 6 months ago
+		ExpireAfterSeconds: 6 * 30 * 24 * 60 * 60,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "taskType_status_createTime",
+		Keys: bson.D{
+			{common.BKTaskTypeField, 1},
+			{common.BKStatusField, 1},
+			{common.CreateTimeField, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_taskType_instID_extra",
+		Keys: bson.D{
+			{common.TenantID, 1},
+			{common.BKTaskTypeField, 1},
+			{common.BKInstIDField, 1},
+			{metadata.APITaskExtraField, 1},
+		},
+		Background: true,
+		Unique:     true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKStatusField: map[string]interface{}{
+				common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusNew, metadata.APITaskStatusWaitExecute,
+					metadata.APITaskStatusExecute},
+			},
+		},
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_instID_taskType_createTime",
+		Keys: bson.D{
+			{common.TenantID, 1},
+			{common.BKInstIDField, 1},
+			{common.BKTaskTypeField, 1},
+			{common.CreateTimeField, -1},
+		},
+		Background: true,
+	},
+}
+
+var apiTaskSyncHistoryIndexes = []types.Index{
+	{
+		Name:       common.CCLogicIndexNamePrefix + "lastTime",
+		Keys:       bson.D{{common.LastTimeField, -1}},
+		Background: true,
+		// delete redundant tasks from 6 months ago
+		ExpireAfterSeconds: 6 * 30 * 24 * 60 * 60,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_taskID_taskType",
+		Keys: bson.D{
+			{common.TenantID, 1},
+			{common.BKTaskIDField, 1},
+			{common.BKTaskTypeField, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_instID_taskType_createTime",
+		Keys: bson.D{
+			{common.TenantID, 1},
+			{common.BKInstIDField, 1},
+			{common.BKTaskTypeField, 1},
+			{common.CreateTimeField, -1},
+		},
+		Background: true,
+	},
+}
 
 // deprecated 未规范化前的索引，只允许删除不允许新加和修改，
 var deprecatedAPITaskIndexes = []types.Index{
@@ -39,32 +112,6 @@ var deprecatedAPITaskIndexes = []types.Index{
 			"task_id", 1},
 		},
 		Unique:     true,
-		Background: true,
-	},
-	{
-		Name: "idx_name_status_createTime",
-		Keys: bson.D{
-			{"create_time", 1},
-			{"name", 1},
-			{"status", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_status_lastTime",
-		Keys: bson.D{
-			{"status", 1},
-			{"last_time", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_name_flag_createTime",
-		Keys: bson.D{
-			{"name", 1},
-			{"flag", 1},
-			{"create_time", 1},
-		},
 		Background: true,
 	},
 }

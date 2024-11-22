@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package app starts task server
 package app
 
 import (
@@ -27,11 +28,12 @@ import (
 	"configcenter/src/scene_server/task_server/logics"
 	tasksvc "configcenter/src/scene_server/task_server/service"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/emicklei/go-restful/v3"
 )
 
-// Run TODO
+// Run starts task server
 func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOption) error {
 	svrInfo, err := types.NewServerInfo(op.ServConf)
 	if err != nil {
@@ -56,21 +58,18 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil != taskSrv.Config {
+		if taskSrv.Config != nil {
 			configReady = true
 			break
 		}
 		blog.Infof("waiting for config ready ...")
 		time.Sleep(time.Second)
 	}
-	if false == configReady {
+	if !configReady {
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
-	taskSrv.Config.Mongo, err = engine.WithMongo()
-	if err != nil {
-		return err
-	}
+
 	taskSrv.Config.Redis, err = engine.WithRedis()
 	if err != nil {
 		return err
@@ -80,28 +79,29 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
-	db, err := taskSrv.Config.Mongo.GetMongoClient()
+
+	taskSrv.Config.Mongo, err = engine.WithMongo()
 	if err != nil {
-		blog.Errorf("new mongo client failed, err: %s", err.Error())
-		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+		return err
+	}
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		return fmt.Errorf("get crypto config failed, err: %v", err)
 	}
 
-	initErr := db.InitTxnManager(cacheDB)
-	if initErr != nil {
-		blog.Errorf("init txn manager failed, err: %v", initErr)
-		return initErr
+	if err = mongodb.SetShardingCli("", &taskSrv.Config.Mongo, cryptoConf); err != nil {
+		return fmt.Errorf("new mongo client failed, err: %v", err)
+	}
+	if initErr := mongodb.Dal().InitTxnManager(cacheDB); initErr != nil {
+		return fmt.Errorf("init txn manager failed, err: %v", initErr)
 	}
 
 	service.Engine = engine
 	service.Config = taskSrv.Config
 	service.CacheDB = cacheDB
-	service.DB = db
 	taskSrv.Core = engine
-	service.Logics = logics.NewLogics(engine.CoreAPI, db)
+	service.Logics = logics.NewLogics(engine.CoreAPI)
 	taskSrv.Service = service
-
-	// cron job delete history task
-	go taskSrv.Service.TimerDeleteHistoryTask(ctx)
 
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)

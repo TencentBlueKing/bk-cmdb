@@ -58,7 +58,7 @@ type APITaskDetail struct {
 	// Detail 子任务详情列表
 	Detail []APISubTaskDetail `json:"detail,omitempty" bson:"detail"`
 	// TenantID 租户ID
-	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
+	TenantID string `json:"-" bson:"tenant_id"`
 	// CreateTime 任务创建时间
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time"`
 	// LastTime 任务最后更新时间
@@ -95,7 +95,7 @@ type APITaskSyncStatus struct {
 	// LastTime 任务最后更新时间
 	LastTime time.Time `json:"last_time,omitempty" bson:"last_time"`
 	// TenantID 开发商ID
-	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
+	TenantID string `json:"-" bson:"tenant_id"`
 }
 
 // APITaskStatus task status type
