@@ -24,22 +24,17 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
 const (
 	maxDeleteNum      = 1000
 	maxDeleteBatchNum = 300
-)
-const (
-	defaultClientMaxOpenConns     = 10
-	minimumClientMaxIdleOpenConns = 5
 )
 
 func init() {
@@ -60,9 +55,11 @@ type findDbConf struct {
 }
 
 type dbOperationConf struct {
-	service   *config.Service
-	delParam  delDbConf
-	findParam findDbConf
+	service      *config.Service
+	ignoreTenant bool
+	tenantID     string
+	delParam     delDbConf
+	findParam    findDbConf
 }
 type delData struct {
 	MongoID primitive.ObjectID `bson:"_id"`
@@ -86,8 +83,9 @@ func NewDbOperationCommand() *cobra.Command {
 			_ = cmd.Help()
 		},
 	}
+	cmd.PersistentFlags().BoolVar(&conf.ignoreTenant, "ignore-tenant", false, "ignore tenant for platform db operation")
+	cmd.PersistentFlags().StringVar(&conf.tenantID, "tenant-id", "", "tenant id")
 
-	findCmds := make([]*cobra.Command, 0)
 	findCmd := &cobra.Command{
 		Use:   "find",
 		Short: "find eligible data from the db",
@@ -95,6 +93,7 @@ func NewDbOperationCommand() *cobra.Command {
 			return runFindDbDataCmd(conf)
 		},
 	}
+
 	findCmd.Flags().StringVar(&conf.findParam.colName, "collection", "", "collection name,the param must be assigned")
 	findCmd.Flags().StringVar(&conf.findParam.condition, "condition", "",
 		"query conditions ,the parameter must be json format string")
@@ -103,13 +102,8 @@ func NewDbOperationCommand() *cobra.Command {
 	findCmd.Flags().Int32Var(&conf.findParam.num, "num", 5, "numbers of result to show ,default num is 5 ")
 	findCmd.Flags().BoolVar(&conf.findParam.bPretty, "pretty", false,
 		"query result are displayed in json pretty format")
+	cmd.AddCommand(findCmd)
 
-	findCmds = append(findCmds, findCmd)
-	for _, fCmd := range findCmds {
-		cmd.AddCommand(fCmd)
-	}
-
-	delCmds := make([]*cobra.Command, 0)
 	delCmd := &cobra.Command{
 		Use:   "delete",
 		Short: "delete eligible data from the db",
@@ -121,31 +115,23 @@ func NewDbOperationCommand() *cobra.Command {
 	delCmd.Flags().StringVar(&conf.delParam.colName, "collection", "", "collection name,the parameter must be assigned")
 	delCmd.Flags().StringVar(&conf.delParam.condition, "condition", "",
 		"conditions for deletion,the parameter must be json format string")
-	delCmds = append(delCmds, delCmd)
-	for _, dCmd := range delCmds {
-		cmd.AddCommand(dCmd)
-	}
+	cmd.AddCommand(delCmd)
 
-	showCmds := make([]*cobra.Command, 0)
 	showCmd := &cobra.Command{
 		Use:   "show",
 		Short: "show all collections",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runShowDbDataCmd()
+			return runShowDbDataCmd(conf)
 		},
 	}
-
-	showCmds = append(showCmds, showCmd)
-	for _, cCmd := range showCmds {
-		cmd.AddCommand(cCmd)
-	}
+	cmd.AddCommand(showCmd)
 
 	return cmd
 }
 
 func runDelDbDataCmd(conf *dbOperationConf) error {
 
-	s, err := newMongo(config.Conf.MongoURI, config.Conf.MongoRsName)
+	s, err := newMongo(config.Conf.MongoConf, conf)
 	if err != nil {
 		fmt.Printf("connect mongo db fail ,err: %v\n", err)
 		return err
@@ -228,7 +214,7 @@ func runDelDbDataCmd(conf *dbOperationConf) error {
 
 func runFindDbDataCmd(conf *dbOperationConf) error {
 
-	s, err := newMongo(config.Conf.MongoURI, config.Conf.MongoRsName)
+	s, err := newMongo(config.Conf.MongoConf, conf)
 	if err != nil {
 		fmt.Printf("connect mongo db fail ,err: %v\n", err)
 		return err
@@ -279,29 +265,18 @@ func runFindDbDataCmd(conf *dbOperationConf) error {
 	return nil
 }
 
-func runShowDbDataCmd() error {
+func runShowDbDataCmd(conf *dbOperationConf) error {
 
-	s, err := newMongo(config.Conf.MongoURI, config.Conf.MongoRsName)
+	s, err := newMongo(config.Conf.MongoConf, conf)
 	if err != nil {
 		fmt.Printf("connect mongo db fail ,err: %v\n", err)
 		return err
 	}
 	defer s.DbProxy.Close()
 
-	connStr, err := connstring.Parse(config.Conf.MongoURI)
-	if nil != err {
-		fmt.Printf("parse dbname fail ,err: %v\n", err)
-		return err
-	}
-
-	mongo, ok := s.DbProxy.(*local.Mongo)
-	if !ok {
-		return fmt.Errorf("db is not local.Mongo type")
-	}
-
-	cols, err := mongo.GetDBClient().Database(connStr.Database).ListCollectionNames(context.Background(), bson.D{})
+	cols, err := s.DbProxy.ListTables(context.Background())
 	if err != nil {
-		fmt.Printf("get collections fail ,err: %v\n", err)
+		fmt.Printf("get collections fail, err: %v\n", err)
 		return err
 	}
 	if len(cols) == 0 {
@@ -317,25 +292,23 @@ func runShowDbDataCmd() error {
 	return nil
 }
 
-func newMongo(mongoURI string, mongoRsName string) (*config.Service, error) {
+type dbOpService struct {
+	DbProxy dal.DB
+}
 
-	if mongoURI == "" {
-		return nil, errors.New("mongo-uri must set via flag or environment variable")
-	}
-
-	mongoConfig := local.MongoConf{
-		MaxOpenConns: defaultClientMaxOpenConns,
-		MaxIdleConns: minimumClientMaxIdleOpenConns,
-		URI:          mongoURI,
-		RsName:       mongoRsName,
-	}
-
-	db, err := local.NewMgo(mongoConfig, time.Minute)
+func newMongo(mongoConf *config.MongoConfig, conf *dbOperationConf) (*dbOpService, error) {
+	service, err := config.NewMongoService(mongoConf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &config.Service{
-		DbProxy: db,
+	shardOpts := sharding.NewShardOpts().WithTenant(conf.tenantID)
+
+	if conf.ignoreTenant {
+		shardOpts = shardOpts.WithIgnoreTenant()
+	}
+
+	return &dbOpService{
+		DbProxy: service.DbProxy.Shard(shardOpts),
 	}, nil
 }

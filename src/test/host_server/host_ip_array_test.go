@@ -14,13 +14,9 @@ package host_server_test
 
 import (
 	"context"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/test"
 
@@ -31,29 +27,12 @@ import (
 var _ = Describe("host ip array validation test", func() {
 	var find types.Find
 	It("test preparation", func() {
-		tConf := test.GetTestConfig()
-		mongoConfig := local.MongoConf{
-			MaxOpenConns: mongo.DefaultMaxOpenConns,
-			MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
-			URI:          tConf.MongoURI,
-			RsName:       tConf.MongoRsName,
-		}
-		db, err := local.NewMgo(mongoConfig, time.Minute)
-		Expect(err).To(BeNil())
+		test.DeleteAllHosts()
 
-		redisCfg := redis.Config{
-			Address:  tConf.RedisCfg.RedisAddress,
-			Password: tConf.RedisCfg.RedisPasswd,
-			Database: "0",
-		}
-		redisClient, err := redis.NewFromConfig(redisCfg)
+		err := test.GetDB().Table(common.BKTableNameBaseHost).Insert(context.Background(),
+			map[string]interface{}{"bk_host_innerip": []string{"127.0.0.1"}})
 		Expect(err).To(BeNil())
-
-		err = db.InitTxnManager(redisClient)
-		Expect(err).To(BeNil())
-		err = db.Table(common.BKTableNameBaseHost).Insert(context.Background(), map[string]interface{}{"bk_host_innerip": []string{"127.0.0.1"}})
-		Expect(err).To(BeNil())
-		find = db.Table(common.BKTableNameBaseHost).Find(nil).Fields(common.BKHostInnerIPField)
+		find = test.GetDB().Table(common.BKTableNameBaseHost).Find(nil).Fields(common.BKHostInnerIPField)
 	})
 
 	It("host ip array valid type test", func() {
@@ -119,6 +98,10 @@ var _ = Describe("host ip array validation test", func() {
 		By("[]invalidStruct test", func() {
 			err := find.All(context.Background(), &[]invalidStruct{})
 			Expect(err).NotTo(BeNil())
+		})
+
+		By("clean test data", func() {
+			test.DeleteAllHosts()
 		})
 	})
 })
