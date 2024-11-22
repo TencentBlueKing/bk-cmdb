@@ -39,8 +39,6 @@ const (
 	ModelFieldIsPaused = "bk_ispaused"
 	// ModelFieldPosition TODO
 	ModelFieldPosition = "position"
-	// ModelFieldOwnerID TODO
-	ModelFieldOwnerID = "bk_supplier_account"
 	// ModelFieldDescription TODO
 	ModelFieldDescription = "description"
 	// ModelFieldCreator TODO
@@ -69,7 +67,7 @@ type Object struct {
 	IsPre         bool   `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
 	IsPaused      bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
 	Position      string `field:"position" json:"position" bson:"position" mapstructure:"position"`
-	OwnerID       string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	TenantID      string `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 	Description   string `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator       string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
 	Modifier      string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
@@ -249,7 +247,7 @@ type TopoItem struct {
 	ClassificationID string `json:"bk_classification_id"`
 	Position         string `json:"position"`
 	ObjID            string `json:"bk_obj_id"`
-	OwnerID          string `json:"bk_supplier_account"`
+	TenantID         string `json:"tenant_id"`
 	ObjName          string `json:"bk_obj_name"`
 }
 

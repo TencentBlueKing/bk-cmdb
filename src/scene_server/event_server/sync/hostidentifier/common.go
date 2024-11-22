@@ -55,7 +55,7 @@ func sleepForFail(failCount int) {
 
 func newHeaderWithRid() (http.Header, string) {
 	rid := util.GenerateRID()
-	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID, rid)
+	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID, rid)
 	return header, rid
 }
 

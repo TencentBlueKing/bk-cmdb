@@ -58,7 +58,7 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 	}
 
 	for index := range inputBody.Data {
-		inputBody.Data[index].SetSupplierAccount(ctx.Kit.SupplierAccount)
+		inputBody.Data[index].SetTenantID(ctx.Kit.TenantID)
 		cond := mapstr.MapStr{
 			"scope_type": inputBody.Data[index].ScopeType,
 			"scope_id":   inputBody.Data[index].ScopeID,

@@ -28,7 +28,7 @@ type EsbConfig struct {
 
 // EsbCommParams is esb common parameters
 type EsbCommParams struct {
-	SupplierID string `json:"bk_supplier_id"`
+	TenantID string `json:"tenant_id"`
 }
 
 // SetEsbAuthHeader set esb authorization header
@@ -43,6 +43,6 @@ func SetEsbAuthHeader(esbConfig EsbConfig, header http.Header) http.Header {
 // GetEsbRequestParams get esb request parameters
 func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
 	return &EsbCommParams{
-		SupplierID: httpheader.GetSupplierAccount(header),
+		TenantID: httpheader.GetTenantID(header),
 	}
 }

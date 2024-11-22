@@ -47,12 +47,12 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieSupplierAccount)
+	cookieOwnerID, err := c.Cookie(common.HTTPCookieTenant)
 	if "" == cookieOwnerID || err != nil {
-		c.SetCookie(common.HTTPCookieSupplierAccount, common.BKDefaultOwnerID, 0, "/", "", false, false)
-		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
-	} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
-		session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
+		c.SetCookie(common.HTTPCookieTenant, common.BKDefaultTenantID, 0, "/", "", false, false)
+		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
+	} else if cookieOwnerID != session.Get(common.WEBSessionTenantUinKey) {
+		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
 	}
 	if err := session.Save(); err != nil {
 		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
@@ -71,15 +71,15 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 	if time.Now().Unix()-loginTime < 24*60*60 {
 		return &metadata.LoginUserInfo{
-			UserName: cookieUser,
-			ChName:   cookieUser,
-			Phone:    "",
-			Email:    "blueking",
-			Role:     "",
-			BkToken:  "",
-			OnwerUin: "0",
-			IsOwner:  false,
-			Language: webCommon.GetLanguageByHTTPRequest(c),
+			UserName:  cookieUser,
+			ChName:    cookieUser,
+			Phone:     "",
+			Email:     "blueking",
+			Role:      "",
+			BkToken:   "",
+			TenantUin: "0",
+			IsTenant:  false,
+			Language:  webCommon.GetLanguageByHTTPRequest(c),
 		}, true
 	}
 

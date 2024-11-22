@@ -43,12 +43,12 @@ var _ = Describe("host test", func() {
 
 		It("create set", func() {
 			input := mapstr.MapStr{
-				"bk_set_name":         "test",
-				"bk_parent_id":        bizId,
-				"bk_supplier_account": "0",
-				"bk_biz_id":           bizId,
-				"bk_service_status":   "1",
-				"bk_set_env":          "3",
+				"bk_set_name":       "test",
+				"bk_parent_id":      bizId,
+				"tenant_id":         "0",
+				"bk_biz_id":         bizId,
+				"bk_service_status": "1",
+				"bk_set_env":        "3",
 			}
 			rsp, e := instClient.CreateSet(context.Background(), bizId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1168,8 +1168,8 @@ var _ = Describe("host test", func() {
 
 		It("delete resource host", func() {
 			input := map[string]interface{}{
-				"bk_host_id":          fmt.Sprintf("%v,%v", hostId1, hostId2),
-				"bk_supplier_account": "0",
+				"bk_host_id": fmt.Sprintf("%v,%v", hostId1, hostId2),
+				"tenant_id":  "0",
 			}
 			rsp, err := hostServerClient.DeleteHostBatch(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1228,12 +1228,12 @@ var _ = Describe("list_hosts_topo test", func() {
 
 		By("create set cc_set")
 		setInput := mapstr.MapStr{
-			"bk_set_name":         "cc_set",
-			"bk_parent_id":        bizId,
-			"bk_supplier_account": "0",
-			"bk_biz_id":           bizId,
-			"bk_service_status":   "1",
-			"bk_set_env":          "3",
+			"bk_set_name":       "cc_set",
+			"bk_parent_id":      bizId,
+			"tenant_id":         "0",
+			"bk_biz_id":         bizId,
+			"bk_service_status": "1",
+			"bk_set_env":        "3",
 		}
 		setRsp, err := instClient.CreateSet(context.Background(), bizId, header, setInput)
 		util.RegisterResponse(setRsp)

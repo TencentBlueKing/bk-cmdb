@@ -47,7 +47,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	instance.Modifier = kit.User
 	instance.CreateTime = time.Now()
 	instance.LastTime = time.Now()
-	instance.SupplierAccount = kit.SupplierAccount
+	instance.TenantID = kit.TenantID
 
 	if err = mongodb.Client().Table(common.BKTableNameServiceInstance).Insert(kit.Ctx, &instance); err != nil {
 		blog.Errorf("create service instance(%+v) failed, err: %v, rid: %s", instance, err, kit.Rid)
@@ -113,7 +113,7 @@ func (p *processOperation) createSvcInstProcesses(kit *rest.Kit, instance *metad
 	templateIDs := make([]int64, len(listProcTplResult.Info))
 	for idx, processTemplate := range listProcTplResult.Info {
 		processData, err := processTemplate.NewProcess(kit.CCError, instance.BizID, instance.ID,
-			kit.SupplierAccount, host)
+			kit.TenantID, host)
 		if err != nil {
 			blog.ErrorJSON("generate process instance by template %s failed, err: %s, rid: %s", processTemplate, err,
 				kit.Rid)
@@ -136,7 +136,7 @@ func (p *processOperation) createSvcInstProcesses(kit *rest.Kit, instance *metad
 			ServiceInstanceID: instance.ID,
 			ProcessTemplateID: templateIDs[idx],
 			HostID:            instance.HostID,
-			SupplierAccount:   kit.SupplierAccount,
+			TenantID:          kit.TenantID,
 		}
 		relations[idx] = relation
 	}
@@ -317,8 +317,8 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit,
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 	filter := map[string]interface{}{
-		common.BKAppIDField:      option.BusinessID,
-		common.BkSupplierAccount: kit.SupplierAccount,
+		common.BKAppIDField: option.BusinessID,
+		common.TenantID:     kit.TenantID,
 	}
 
 	if option.ServiceTemplateID != 0 {
@@ -1011,7 +1011,7 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 				Modifier:          kit.User,
 				CreateTime:        now,
 				LastTime:          now,
-				SupplierAccount:   kit.SupplierAccount,
+				TenantID:          kit.TenantID,
 			})
 		}
 	}
@@ -1039,7 +1039,7 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 		var firstProc *metadata.Process
 		for idx, procTemp := range processTemplates {
 			processData, err := procTemp.NewProcess(kit.CCError, instance.BizID, int64(ids[i]),
-				kit.SupplierAccount, host)
+				kit.TenantID, host)
 			if err != nil {
 				blog.ErrorJSON("generate process by template %s failed, err: %s, rid: %s", procTemp, err, kit.Rid)
 				return nil, nil, nil, errors.New(common.CCErrCommParamsInvalid, err.Error())
@@ -1055,7 +1055,7 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 				ServiceInstanceID: instance.ID,
 				ProcessTemplateID: procTemp.ID,
 				HostID:            instance.HostID,
-				SupplierAccount:   kit.SupplierAccount,
+				TenantID:          kit.TenantID,
 			})
 		}
 

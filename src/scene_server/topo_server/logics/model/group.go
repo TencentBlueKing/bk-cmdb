@@ -282,7 +282,7 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 	for _, cond := range conds {
 		input := metadata.UpdateOption{
 			Condition: mapstr.MapStr{
-				common.BKOwnerIDField:    cond.Condition.OwnerID,
+				common.TenantID:          cond.Condition.TenantID,
 				common.BKObjIDField:      cond.Condition.ObjectID,
 				common.BKPropertyIDField: cond.Condition.PropertyID,
 			},

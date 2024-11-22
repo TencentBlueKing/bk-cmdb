@@ -2578,7 +2578,7 @@ func getProcessDataAndRelation(kit *rest.Kit, svcID, bizID, processTemplateID in
 	ccErr.CCErrorCoder) {
 	// we can not find this process template in all this service instance,
 	// which means that a new process template need to be added to this service instance
-	newProcess, err := processTemplate.NewProcess(kit.CCError, bizID, svcID, kit.SupplierAccount,
+	newProcess, err := processTemplate.NewProcess(kit.CCError, bizID, svcID, kit.TenantID,
 		srvInst.hostMap[srvInst.serviceInstance2HostMap[svcID]])
 	if err != nil {
 		blog.Errorf("generate process instance by template %+v failed, err: %v, rid: %s", processTemplate,

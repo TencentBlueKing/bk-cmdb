@@ -177,7 +177,7 @@ type AuditLog struct {
 	// Each kind of concept, resource must belongs to one of the resource type.
 	AuditType AuditType `json:"audit_type" bson:"audit_type"`
 	// the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID string `json:"tenant_id" bson:"tenant_id"`
 	// name of the one who triggered this operation.
 	User string `json:"user" bson:"user"`
 	// the operated resource by the user
@@ -210,7 +210,7 @@ type AuditLog struct {
 type bsonAuditLog struct {
 	ID                 int64           `json:"id" bson:"id"`
 	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	SupplierAccount    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID           string          `json:"tenant_id" bson:"tenant_id"`
 	User               string          `json:"user" bson:"user"`
 	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
 	Action             ActionType      `json:"action" bson:"action"`
@@ -228,7 +228,7 @@ type bsonAuditLog struct {
 type jsonAuditLog struct {
 	ID                 int64           `json:"id" bson:"id"`
 	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	SupplierAccount    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID           string          `json:"tenant_id" bson:"tenant_id"`
 	User               string          `json:"user" bson:"user"`
 	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
 	Action             ActionType      `json:"action" bson:"action"`
@@ -277,7 +277,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
-	auditLog.SupplierAccount = audit.SupplierAccount
+	auditLog.TenantID = audit.TenantID
 	auditLog.User = audit.User
 	auditLog.ResourceType = audit.ResourceType
 	auditLog.Action = audit.Action
@@ -341,7 +341,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
-	auditLog.SupplierAccount = audit.SupplierAccount
+	auditLog.TenantID = audit.TenantID
 	auditLog.User = audit.User
 	auditLog.ResourceType = audit.ResourceType
 	auditLog.Action = audit.Action
@@ -400,7 +400,7 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit := bsonAuditLog{}
 	audit.ID = auditLog.ID
 	audit.AuditType = auditLog.AuditType
-	audit.SupplierAccount = auditLog.SupplierAccount
+	audit.TenantID = auditLog.TenantID
 	audit.User = auditLog.User
 	audit.ResourceType = auditLog.ResourceType
 	audit.Action = auditLog.Action

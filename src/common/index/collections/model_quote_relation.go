@@ -30,19 +30,19 @@ func init() {
 
 var commModelQuoteRelationIndexes = []types.Index{
 	{
-		Name: common.CCLogicIndexNamePrefix + "destModel_bkSupplierAccount",
+		Name: common.CCLogicIndexNamePrefix + "destModel_tenantID",
 		Keys: bson.D{
 			{
 				common.BKDestModelField, 1,
 			},
 			{
-				common.BKOwnerIDField, 1,
+				common.TenantID, 1,
 			},
 		},
 		Background: true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + "srcModel_bkPropertyID_bkSupplierAccount",
+		Name: common.CCLogicIndexNamePrefix + "srcModel_bkPropertyID_tenantID",
 		Keys: bson.D{
 			{
 				common.BKSrcModelField, 1,
@@ -51,19 +51,19 @@ var commModelQuoteRelationIndexes = []types.Index{
 				common.BKPropertyIDField, 1,
 			},
 			{
-				common.BKOwnerIDField, 1,
+				common.TenantID, 1,
 			},
 		},
 		Background: true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + "srcModel_bkSupplierAccount",
+		Name: common.CCLogicIndexNamePrefix + "srcModel_tenantID",
 		Keys: bson.D{
 			{
 				common.BKSrcModelField, 1,
 			},
 			{
-				common.BKOwnerIDField, 1,
+				common.TenantID, 1,
 			},
 		},
 		Background: true,

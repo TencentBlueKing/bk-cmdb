@@ -71,7 +71,7 @@ type HistoryMeta struct {
 	User       string    `json:"user,omitempty" bson:"user,omitempty"`
 	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
 }
 
 // HistoryResult TODO
@@ -140,7 +140,7 @@ type ModuleHost struct {
 	HostID   int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	ModuleID int64  `json:"bk_module_id,omitempty" bson:"bk_module_id"`
 	SetID    int64  `json:"bk_set_id,omitempty" bson:"bk_set_id"`
-	OwnerID  string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
 }
 
 // HostConfig TODO
@@ -167,7 +167,7 @@ type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
 	ModuleID      []int64 `json:"bk_module_id"`
-	OwnerID       string  `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID      string  `json:"tenant_id" bson:"tenant_id"`
 }
 
 // GetUserCustomResult TODO
@@ -206,7 +206,7 @@ type FavouriteMeta struct {
 	Name        string        `json:"name,omitempty" bson:"name,omitempty"`
 	Count       int           `json:"count,omitempty" bson:"count,omitempty"`
 	User        string        `json:"user,omitempty" bson:"user,omitempty"`
-	OwnerID     string        `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"`
+	TenantID    string        `json:"tenant_id,omitempty" bson:"tenant_id,omitempty"`
 	Type        FavouriteType `json:"type,omitempty" bson:"type,omitempty"`
 	QueryParams string        `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time     `json:"create_time,omitempty" bson:"create_time,omitempty"`

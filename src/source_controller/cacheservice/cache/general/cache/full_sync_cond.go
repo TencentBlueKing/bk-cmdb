@@ -113,11 +113,11 @@ func (c *Cache) handleFullSyncCondEvent() {
 								continue
 							}
 							c.fullSyncCondMap.Set(idListKey, &types.FullSyncCondInfo{
-								SubResource:     cond.SubResource,
-								IsAll:           cond.IsAll,
-								Interval:        ttl,
-								Condition:       cond.Condition,
-								SupplierAccount: cond.SupplierAccount,
+								SubResource: cond.SubResource,
+								IsAll:       cond.IsAll,
+								Interval:    ttl,
+								Condition:   cond.Condition,
+								TenantID:    cond.TenantID,
 							})
 							continue
 						}
@@ -216,11 +216,11 @@ func (c *Cache) GenFullSyncCondIDListKey(cond *fullsynccond.FullSyncCond) (strin
 		if c.key.HasSubRes() {
 			return "", fmt.Errorf("do not allow sync all cond %d for %s", cond.ID, c.key.Resource())
 		}
-		return c.key.IDListKey(cond.SupplierAccount), nil
+		return c.key.IDListKey(cond.TenantID), nil
 	}
 
 	// generate id list key by sub resource and full sync cond id
-	keys := []string{cond.SupplierAccount}
+	keys := []string{cond.TenantID}
 
 	if cond.SubResource != "" {
 		keys = append(keys, cond.SubResource)
@@ -240,9 +240,9 @@ func genFullSyncCondRefreshIDListOpt(idListKey string, condInfo *types.FullSyncC
 		filterOpt: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:          condInfo.SubResource,
-				SupplierAccount: condInfo.SupplierAccount,
-				IsSystem:        false,
+				SubRes:   condInfo.SubResource,
+				TenantID: condInfo.TenantID,
+				IsSystem: false,
 			},
 			IsAll: condInfo.IsAll,
 			Cond:  condInfo.Condition,

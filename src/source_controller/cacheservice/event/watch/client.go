@@ -187,7 +187,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 				blog.Errorf("%s delete event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
 				return nil, false, nil
 			}
-			filter["coll"] = key.ShardingCollection(node.SubResource[0], node.SupplierAccount)
+			filter["coll"] = key.ShardingCollection(node.SubResource[0], node.TenantID)
 		} else {
 			filter["coll"] = key.Collection()
 		}
@@ -269,7 +269,7 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			blog.Errorf("%s event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
 			return nil, false, nil
 		}
-		collection = key.ShardingCollection(node.SubResource[0], node.SupplierAccount)
+		collection = key.ShardingCollection(node.SubResource[0], node.TenantID)
 	}
 
 	if err := c.db.Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
@@ -605,8 +605,8 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 			if _, ok := objIDOwnerIDInstIDsMap[row.ObjectID]; !ok {
 				objIDOwnerIDInstIDsMap[row.ObjectID] = make(map[string][]int64, 0)
 			}
-			objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID] =
-				append(objIDOwnerIDInstIDsMap[row.ObjectID][row.OwnerID], row.ID)
+			objIDOwnerIDInstIDsMap[row.ObjectID][row.TenantID] =
+				append(objIDOwnerIDInstIDsMap[row.ObjectID][row.TenantID], row.ID)
 		}
 
 		for objID, ownerIDInstMap := range objIDOwnerIDInstIDsMap {

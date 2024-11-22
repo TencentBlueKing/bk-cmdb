@@ -106,21 +106,6 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	checkKeysShouldExists(propertyIDToProperty, shouldCheck)
 
 	uniques := []objectUnique{
-		// host
-		// 产品调整，回撤
-		// {
-		// 	ObjID:     common.BKInnerObjIDHost,
-		// 	MustCheck: true,
-		// 	Keys: []metadata.UniqueKey{
-		// 		{
-		// 			Kind: metadata.UniqueKeyKindProperty,
-		// 			ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKAssetIDField)].ID),
-		// 		},
-		// 	},
-		// 	Ispre:    true,
-		// 	OwnerID:  conf.OwnerID,
-		// 	LastTime: metadata.Now(),
-		// },
 		{
 			ObjID:     common.BKInnerObjIDHost,
 			MustCheck: true,
@@ -135,7 +120,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		// process
@@ -153,7 +138,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		{
@@ -170,7 +155,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		// biz
@@ -184,7 +169,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		// set
@@ -206,7 +191,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		// module
@@ -228,7 +213,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 		// cloud area
@@ -242,14 +227,14 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				},
 			},
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: Now(),
 		},
 	}
 
 	for objID, oldAttrs := range obj2IsOnlyProperty {
 		keys := []UniqueKey{}
-		ownerID := conf.OwnerID
+		ownerID := conf.TenantID
 		allPreset := true
 		for _, oldAttr := range oldAttrs {
 			keys = append(keys, UniqueKey{
@@ -317,7 +302,7 @@ func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, uniq
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
-	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	uniqueCond.Field("bk_supplier_account").Eq(conf.TenantID)
 	existUniques := []objectUnique{}
 
 	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)

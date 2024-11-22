@@ -312,7 +312,7 @@ func (s *Service) authByHostIDs(kit *rest.Kit, hostIDs []int64) error {
 
 func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 	query := &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField, common.BkSupplierAccount},
+		Fields: []string{common.BKAppIDField, common.TenantID},
 		Condition: map[string]interface{}{
 			common.BKDefaultField: common.DefaultAppFlag,
 		},
@@ -326,7 +326,7 @@ func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 	}
 
 	for _, biz := range result.Info {
-		if kit.SupplierAccount != util.GetStrByInterface(biz[common.BkSupplierAccount]) {
+		if kit.TenantID != util.GetStrByInterface(biz[common.TenantID]) {
 			continue
 		}
 

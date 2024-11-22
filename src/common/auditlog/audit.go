@@ -112,12 +112,12 @@ func (a *audit) getObjNameByObjID(kit *rest.Kit, objID string) (string, error) {
 	return resp.Info[0].ObjectName, nil
 }
 
-// getDefaultAppID get default businessID under designated supplier account.
+// getDefaultAppID get default businessID under designated tenant account.
 func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
 	cond := mapstr.MapStr{
 		common.BKDefaultField: common.DefaultAppFlag,
 	}
-	fields := []string{common.BKAppIDField, common.BkSupplierAccount}
+	fields := []string{common.BKAppIDField, common.TenantID}
 
 	results, err := a.getInstByCond(kit, common.BKInnerObjIDApp, cond, fields)
 	if err != nil {
@@ -125,25 +125,16 @@ func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
 		return 0, err
 	}
 
-	for _, data := range results {
-		ownID, err := data.String(common.BkSupplierAccount)
-		if err != nil {
-			return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
-				common.BkSupplierAccount, "string", err.Error())
-		}
-
-		if kit.SupplierAccount == ownID {
-			bizID, err := data.Int64(common.BKAppIDField)
-			if err != nil {
-				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
-					common.BKAppIDField, "int64", err.Error())
-			}
-
-			return bizID, nil
-		}
-
+	if len(results) == 0 {
+		blog.Errorf("no such default business when tenant id is %s, rid: %s", kit.TenantID, kit.Rid)
+		return 0, fmt.Errorf("no such default business when tenant id is %s", kit.TenantID)
 	}
 
-	blog.Errorf("no such default business when supplier account is %s, rid: %s", kit.SupplierAccount, kit.Rid)
-	return 0, fmt.Errorf("no such default business when supplier account is %s", kit.SupplierAccount)
+	bizID, err := results[0].Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+			common.BKAppIDField, "int64", err.Error())
+	}
+
+	return bizID, nil
 }

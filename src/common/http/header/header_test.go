@@ -44,7 +44,7 @@ func TestHeader(t *testing.T) {
 	header := make(http.Header)
 	SetLanguage(header, "zh")
 	SetUser(header, "user")
-	SetSupplierAccount(header, "owner")
+	SetTenantID(header, "owner")
 	SetRid(header, "rid")
 
 	req := &http.Request{Header: header}
@@ -60,7 +60,7 @@ func TestHeader(t *testing.T) {
 		t.Fail()
 	}
 
-	if GetSupplierAccount(header) != "owner" {
+	if GetTenantID(header) != "tenant_id" {
 		t.Fail()
 	}
 

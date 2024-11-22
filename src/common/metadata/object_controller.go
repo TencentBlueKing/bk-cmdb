@@ -190,7 +190,7 @@ type InstanceObjectMappingsResult struct {
 type ObjectMapping struct {
 	ID       int64  `bson:"bk_inst_id"`
 	ObjectID string `bson:"bk_obj_id"`
-	OwnerID  string `bson:"bk_supplier_account"`
+	TenantID string `bson:"tenant_id"`
 }
 
 // QueryUniqueFieldsResult 为excel 导出实例获取关联数据实例提供的接口使用的返回数据，

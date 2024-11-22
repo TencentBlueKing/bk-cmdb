@@ -56,7 +56,7 @@ func ExtractOwnerFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
 	}
-	owner := ctx.Value(common.ContextRequestOwnerField)
+	owner := ctx.Value(common.ContextRequestTenantField)
 	ownerValue, ok := owner.(string)
 	if ok == true {
 		return ownerValue
@@ -81,7 +81,7 @@ func NewContextFromHTTPHeader(header http.Header) context.Context {
 func SetContextValueByHTTPHeader(ctx context.Context, header http.Header) context.Context {
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, httpheader.GetRid(header))
 	ctx = context.WithValue(ctx, common.ContextRequestUserField, httpheader.GetUser(header))
-	ctx = context.WithValue(ctx, common.ContextRequestOwnerField, httpheader.GetSupplierAccount(header))
+	ctx = context.WithValue(ctx, common.ContextRequestTenantField, httpheader.GetTenantID(header))
 	return ctx
 }
 

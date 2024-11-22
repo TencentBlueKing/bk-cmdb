@@ -45,10 +45,10 @@ func parseWatchChainNode(node *watch.ChainNode) (*basicInfo, error) {
 	}
 
 	return &basicInfo{
-		id:       node.InstanceID,
-		oid:      node.Oid,
-		subRes:   node.SubResource,
-		supplier: node.SupplierAccount,
+		id:     node.InstanceID,
+		oid:    node.Oid,
+		subRes: node.SubResource,
+		tenant: node.TenantID,
 	}, nil
 }
 

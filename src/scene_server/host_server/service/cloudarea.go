@@ -201,8 +201,8 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 }
 
 // CreatePlat create a plat instance
-// available fields for body are last_time, bk_cloud_name, bk_supplier_account, bk_cloud_id, create_time
-// {"bk_cloud_name": "云区域", "bk_supplier_account": 0}
+// available fields for body are last_time, bk_cloud_name, tenant_id, bk_cloud_id, create_time
+// {"bk_cloud_name": "云区域", "tenant_id": 0}
 func (s *Service) CreatePlat(ctx *rest.Contexts) {
 	input := make(map[string]interface{})
 	if err := ctx.DecodeInto(&input); nil != err {

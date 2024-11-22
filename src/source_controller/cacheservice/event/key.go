@@ -616,5 +616,5 @@ func (k Key) ShardingCollection(objID, supplierAccount string) string {
 
 // SupplierAccount get event supplier account
 func (k Key) SupplierAccount(doc []byte) string {
-	return gjson.GetBytes(doc, common.BkSupplierAccount).String()
+	return gjson.GetBytes(doc, common.TenantID).String()
 }

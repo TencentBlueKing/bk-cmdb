@@ -36,7 +36,7 @@ func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		PropertyGroup: mCommon.BaseInfo,
 		PropertyType:  common.FieldTypeInt,
 		Option:        "",
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		IsPre:         true,
 		IsReadOnly:    false,
 		IsSystem:      true,
@@ -47,7 +47,7 @@ func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		LastEditor:    common.CCSystemOperatorUserName,
 		Description:   "",
 	}
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields); err != nil {
 		blog.ErrorJSON("add module field bk_parent_id failed, Insert err: %s, attribute: %#v, ", err, row)
 		return err

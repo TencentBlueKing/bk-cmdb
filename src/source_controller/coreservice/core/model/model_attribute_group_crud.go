@@ -36,7 +36,7 @@ func (g *modelAttributeGroup) save(kit *rest.Kit, group metadata.Group) (uint64,
 	}
 
 	group.ID = int64(id)
-	group.OwnerID = kit.SupplierAccount
+	group.TenantID = kit.TenantID
 
 	err = mongodb.Client().Table(common.BKTableNamePropertyGroup).Insert(kit.Ctx, group)
 	return id, err

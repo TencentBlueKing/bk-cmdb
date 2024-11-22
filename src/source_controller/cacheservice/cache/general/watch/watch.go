@@ -151,12 +151,12 @@ func (w *Watcher) loopWatch(ctx context.Context, cursorType watch.CursorType) {
 
 func (w *Watcher) doWatch(ctx context.Context, opts *watch.WatchEventOptions) error {
 	kit := &rest.Kit{
-		Rid:             util.GenerateRID(),
-		Header:          make(http.Header),
-		Ctx:             ctx,
-		CCError:         errors.NewFromCtx(errors.EmptyErrorsSetting).CreateDefaultCCErrorIf("zh-cn"),
-		User:            common.CCSystemOperatorUserName,
-		SupplierAccount: common.BKSuperOwnerID,
+		Rid:      util.GenerateRID(),
+		Header:   make(http.Header),
+		Ctx:      ctx,
+		CCError:  errors.NewFromCtx(errors.EmptyErrorsSetting).CreateDefaultCCErrorIf("zh-cn"),
+		User:     common.CCSystemOperatorUserName,
+		TenantID: common.BKSuperTenantID,
 	}
 
 	var events []*watch.WatchEventDetail

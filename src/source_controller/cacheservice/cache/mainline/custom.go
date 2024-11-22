@@ -33,7 +33,9 @@ import (
 )
 
 // customLevel is a instance to watch custom object instance's change
-//  event and then try to refresh it to the cache.
+//
+//	event and then try to refresh it to the cache.
+//
 // it based one the event loop watch mechanism which can ensure
 // all the event can be watched safely, which also means the cache
 // can be refreshed without lost and immediately.
@@ -198,7 +200,7 @@ func (m *customLevel) runCustomWatch(rid, objID string, stopNotifier chan struct
 			WatchOpt: &types.WatchOptions{
 				Options: types.Options{
 					EventStruct: new(map[string]interface{}),
-					Collection:  common.GetInstTableName(objID, common.BKDefaultOwnerID),
+					Collection:  common.GetInstTableName(objID, common.BKDefaultTenantID),
 					// start token will be automatically set when it's running,
 					// so we do not set here.
 					StartAfterToken:         nil,

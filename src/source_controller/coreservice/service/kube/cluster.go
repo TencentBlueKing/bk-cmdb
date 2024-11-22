@@ -121,7 +121,7 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 		CreateTime: now,
 		LastTime:   now,
 	}
-	cluster.SupplierAccount = ctx.Kit.SupplierAccount
+	cluster.TenantID = ctx.Kit.TenantID
 
 	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
 	if err != nil {
@@ -147,7 +147,7 @@ func (s *service) BatchDeleteCluster(ctx *rest.Contexts) {
 	}
 
 	filter := map[string]interface{}{
-		common.BKOwnerIDField: ctx.Kit.SupplierAccount,
+		common.TenantID: ctx.Kit.TenantID,
 		types.BKIDField: map[string]interface{}{
 			common.BKDBIN: option.IDs,
 		},

@@ -491,7 +491,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 func (c *DataCollection) setSnapshotBizID() error {
 	tryCnt := 30
-	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
 	for i := 1; i <= tryCnt; i++ {
 		time.Sleep(time.Second * 2)
 		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)

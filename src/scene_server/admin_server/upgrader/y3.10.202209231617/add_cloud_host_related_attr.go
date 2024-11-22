@@ -33,7 +33,7 @@ import (
 // addCloudHostIdentifierAttr add cloud host identifier attribute, hosts with the cloud host identifier attribute set cannot be transferred across biz
 func addCloudHostIdentifierAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	identifierAttr := &attribute{
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		ObjectID:      common.BKInnerObjIDHost,
 		PropertyID:    "bk_cloud_host_identifier",
 		PropertyName:  "云主机标识",

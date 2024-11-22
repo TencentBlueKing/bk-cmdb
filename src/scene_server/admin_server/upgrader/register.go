@@ -33,8 +33,8 @@ import (
 
 // Config config for upgrader
 type Config struct {
-	OwnerID string
-	User    string
+	TenantID string
+	User     string
 }
 
 // Upgrader define a version upgrader

@@ -119,8 +119,8 @@ var _ = Describe("create normal set template test", func() {
 						"bk_biz_id": strconv.FormatInt(bizID, 10),
 					},
 				},
-				"bk_supplier_account": "0",
-				"set_template_id":     setTemplateID,
+				"tenant_id":       "0",
+				"set_template_id": setTemplateID,
 			}
 			rsp, err := topoServerClient.Instance().CreateSet(ctx, bizID, header, data)
 			Expect(err).NotTo(HaveOccurred())
@@ -1061,7 +1061,7 @@ func prepareSetTemplateData() {
 			"time_zone":         "Asia/Shanghai",
 			"language":          "1",
 		}
-		rsp, err := topoServerClient.Instance().CreateApp(ctx, common.BKDefaultOwnerID, header, data)
+		rsp, err := topoServerClient.Instance().CreateApp(ctx, common.BKDefaultTenantID, header, data)
 		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp.Result).To(Equal(true))

@@ -38,7 +38,7 @@ func migrateInnerClassification(ctx context.Context, db dal.RDB, conf *upgrader.
 
 	updateData := mapstr.MapStr{
 		common.BKClassificationTypeField: "",
-		common.BkSupplierAccount:         conf.OwnerID,
+		"bk_supplier_account":            conf.TenantID,
 	}
 
 	if err := db.Table(common.BKTableNameObjClassification).Update(ctx, cond, updateData); err != nil {

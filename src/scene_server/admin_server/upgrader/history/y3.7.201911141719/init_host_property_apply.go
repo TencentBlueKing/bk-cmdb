@@ -26,7 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// InitHostPropertyApplyDataModel TODO
+// InitHostPropertyApplyDataModel init host property apply data model
 func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// check attribute exist
 	moduleAttributeFilter := map[string]interface{}{
@@ -35,8 +35,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	}
 	count, err := db.Table(common.BKTableNameObjAttDes).Find(moduleAttributeFilter).Count(ctx)
 	if err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, count module attribute failed, filter: %+v, err: %s", moduleAttributeFilter, err.Error())
-		return fmt.Errorf("count module attribute failed, err: %s", err.Error())
+		blog.Errorf("count module attribute failed, filter: %+v, err: %v", moduleAttributeFilter, err)
+		return fmt.Errorf("count module attribute failed, err: %v", err)
 	}
 	if count > 0 {
 		return nil
@@ -45,8 +45,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	// add module attribute field
 	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, NextSequence failed, err: %s", err.Error())
-		return fmt.Errorf("NextSequence failed, err: %s", err.Error())
+		blog.Errorf("NextSequence failed, err: %v", err)
+		return fmt.Errorf("NextSequence failed, err: %v", err)
 	}
 
 	now := time.Now()
@@ -54,7 +54,7 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		"id":                  newAttributeID,
 		"bk_obj_id":           common.BKInnerObjIDModule,
 		"editable":            true,
-		"bk_supplier_account": conf.OwnerID,
+		"bk_supplier_account": conf.TenantID,
 		"ispre":               true,
 		"isreadonly":          false,
 		"bk_issystem":         false,
@@ -73,8 +73,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		"last_time":           now,
 	}
 	if err := db.Table(common.BKTableNameObjAttDes).Insert(ctx, moduleAttribute); err != nil {
-		blog.ErrorJSON("InitHostPropertyApplyDataModel failed, insert failed, attribute: %s, err: %s", moduleAttribute, err.Error())
-		return fmt.Errorf("db insert failed, err: %s", err.Error())
+		blog.Errorf("insert failed, attribute: %+v, err: %v", moduleAttribute, err)
+		return fmt.Errorf("db insert failed, err: %v", err)
 	}
 
 	// add module flag, default value false
@@ -87,15 +87,15 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		common.HostApplyEnabledField: false,
 	}
 	if err := db.Table(common.BKTableNameBaseModule).Update(ctx, filter, doc); err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, init module flag failed, doc: %+v, err: %s", doc, err.Error())
-		return fmt.Errorf("init module flag failed, err: %s", err.Error())
+		blog.Errorf("init module flag failed, doc: %+v, err: %v", doc, err)
+		return fmt.Errorf("init module flag failed, err: %v", err)
 	}
 
 	// check table exist
 	hasTable, err := db.HasTable(ctx, common.BKTableNameHostApplyRule)
 	if err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, check table exist failed, err: %s", err.Error())
-		return fmt.Errorf("check table exist failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
+		blog.Errorf("check table exist failed, err: %v", err)
+		return fmt.Errorf("check table exist failed, table: %s, err: %v", common.BKTableNameHostApplyRule, err)
 	}
 	if hasTable {
 		return nil
@@ -110,8 +110,8 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 		- value
 	*/
 	if err := db.CreateTable(ctx, common.BKTableNameHostApplyRule); err != nil {
-		blog.Errorf("InitHostPropertyApplyDataModel failed, create tabled failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
-		return fmt.Errorf("create table failed, table: %s, err: %s", common.BKTableNameHostApplyRule, err.Error())
+		blog.Errorf("create tabled failed, table: %s, err: %v", common.BKTableNameHostApplyRule, err)
+		return fmt.Errorf("create table failed, table: %s, err: %v", common.BKTableNameHostApplyRule, err)
 	}
 
 	// add index
@@ -146,8 +146,10 @@ func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgra
 	for _, index := range indexes {
 		err = db.Table(common.BKTableNameHostApplyRule).CreateIndex(ctx, index)
 		if err != nil && !db.IsDuplicatedError(err) {
-			blog.Errorf("InitHostPropertyApplyDataModel failed, add index failed, table: %s, index: %+v, err: %s", common.BKTableNameHostApplyRule, index, err.Error())
-			return fmt.Errorf("add index failed, table: %s, index: %s, err: %s", common.BKTableNameHostApplyRule, index.Name, err.Error())
+			blog.Errorf("add index failed, table: %s, index: %+v, err: %v", common.BKTableNameHostApplyRule, index,
+				err)
+			return fmt.Errorf("add index failed, table: %s, index: %+v, err: %v", common.BKTableNameHostApplyRule,
+				index.Name, err)
 		}
 	}
 	return nil

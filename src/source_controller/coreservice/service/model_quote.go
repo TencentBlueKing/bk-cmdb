@@ -82,7 +82,7 @@ func (s *coreService) CreateModelQuoteRelation(cts *rest.Contexts) {
 	}
 
 	for idx := range relations {
-		relations[idx].SupplierAccount = cts.Kit.SupplierAccount
+		relations[idx].TenantID = cts.Kit.TenantID
 	}
 
 	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Insert(cts.Kit.Ctx, relations)

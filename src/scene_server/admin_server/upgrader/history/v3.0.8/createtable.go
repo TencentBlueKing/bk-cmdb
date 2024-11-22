@@ -67,7 +67,7 @@ var tables = map[string][]types.Index{
 		types.Index{Name: "", Keys: bson.D{{common.BKModuleNameField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKDefaultField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKAppIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKSetIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKParentIDField, 1}}, Background: true},
 	},
@@ -80,11 +80,11 @@ var tables = map[string][]types.Index{
 	common.BKTableNameObjAsst: {
 		types.Index{Name: "", Keys: bson.D{{common.BKObjIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKAsstObjIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 	common.BKTableNameObjAttDes: {
 		types.Index{Name: "", Keys: bson.D{{common.BKObjIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKFieldID, 1}}, Background: true},
 	},
 	common.BKTableNameObjClassification: {
@@ -95,20 +95,20 @@ var tables = map[string][]types.Index{
 		types.Index{Name: "", Keys: bson.D{{common.BKObjIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKClassificationIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKObjNameField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 	common.BKTableNameBaseInst: {
 		types.Index{Name: "", Keys: bson.D{{common.BKObjIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKInstIDField, 1}}, Background: true},
 	},
 	common.BKTableNameAuditLog: {
-		{Name: "index_bk_supplier_account", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		{Name: "index_bk_supplier_account", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		{Name: "index_audit_type", Keys: bson.D{{common.BKAuditTypeField, 1}}, Background: true},
 		{Name: "index_action", Keys: bson.D{{common.BKActionField, 1}}, Background: true},
 	},
 	common.BKTableNameBasePlat: {
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 	"cc_Proc2Module": {
 		types.Index{Name: "", Keys: bson.D{{common.BKAppIDField, 1}}, Background: true},
@@ -117,18 +117,18 @@ var tables = map[string][]types.Index{
 	common.BKTableNameBaseProcess: {
 		types.Index{Name: "", Keys: bson.D{{common.BKProcIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKAppIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 	},
 	common.BKTableNamePropertyGroup: {
 		types.Index{Name: "", Keys: bson.D{{common.BKObjIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKPropertyGroupIDField, 1}}, Background: true},
 	},
 	common.BKTableNameBaseSet: {
 		types.Index{Name: "", Keys: bson.D{{common.BKSetIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKParentIDField, 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKAppIDField, 1}}, Background: true},
-		types.Index{Name: "", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		types.Index{Name: "", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		types.Index{Name: "", Keys: bson.D{{common.BKSetNameField, 1}}, Background: true},
 	},
 	tableNameSubscription: {

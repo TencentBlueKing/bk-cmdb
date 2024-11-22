@@ -84,8 +84,8 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 				Name:       module.BKModuleNameField,
 				InstanceID: module.BKModuleIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
-			BusinessID:      businessID,
+			TenantID:   httpheader.GetTenantID(header),
+			BusinessID: businessID,
 		}
 
 		resources = append(resources, resource)

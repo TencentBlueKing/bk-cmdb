@@ -47,7 +47,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
 				err, resourceType, kit.Rid)
 			return nil, err
 		}
-		collection = common.GetObjectInstTableName(objID, kit.SupplierAccount)
+		collection = common.GetObjectInstTableName(objID, kit.TenantID)
 	} else {
 		collection = getResourceTableName(resourceType)
 	}
@@ -178,9 +178,9 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	[]string, error) {
 	resourceType := iam.TypeID(opts.Type)
 	rid := util.ExtractRequestIDFromContext(ctx)
-	supplierAccount := util.ExtractOwnerFromContext(ctx)
-	if supplierAccount == "" {
-		supplierAccount = common.BKDefaultOwnerID
+	tenantID := util.ExtractOwnerFromContext(ctx)
+	if tenantID == "" {
+		tenantID = common.BKDefaultTenantID
 	}
 	header := headerutil.NewHeaderFromContext(ctx)
 	collection := ""
@@ -190,7 +190,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			blog.Errorf("get object id from resource type(%s) failed, err: %v, rid: %s", resourceType, err, rid)
 			return nil, err
 		}
-		collection = common.GetObjectInstTableName(objID, supplierAccount)
+		collection = common.GetObjectInstTableName(objID, tenantID)
 	} else {
 		collection = getResourceTableName(resourceType)
 	}

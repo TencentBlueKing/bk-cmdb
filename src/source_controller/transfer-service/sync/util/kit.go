@@ -42,7 +42,7 @@ func NewKit() *Kit {
 
 	httpheader.SetRid(header, rid)
 	httpheader.SetUser(header, common.CCSystemOperatorUserName)
-	httpheader.SetSupplierAccount(header, common.BKDefaultOwnerID)
+	httpheader.SetTenantID(header, common.BKDefaultTenantID)
 	header.Add("Content-Type", "application/json")
 
 	ctx := util.NewContextFromHTTPHeader(header)

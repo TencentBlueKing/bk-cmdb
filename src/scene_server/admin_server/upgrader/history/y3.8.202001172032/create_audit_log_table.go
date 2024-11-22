@@ -27,12 +27,12 @@ import (
 func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	exists, err := db.HasTable(ctx, common.BKTableNameAuditLog)
 	if err != nil {
-		blog.ErrorJSON("search audit log table error, err:%s", err.Error())
+		blog.Errorf("search audit log table error, err: %v", err)
 		return err
 	}
 	if !exists {
 		if err = db.CreateTable(ctx, common.BKTableNameAuditLog); err != nil && !db.IsDuplicatedError(err) {
-			blog.ErrorJSON("create audit log table error, err:%s", err.Error())
+			blog.Errorf("create audit log table error, err: %v", err)
 			return err
 		}
 	}
@@ -42,12 +42,12 @@ func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	idxArr, err := db.Table(common.BKTableNameAuditLog).Indexes(ctx)
 	if err != nil {
-		blog.Errorf("get table %s index error. err:%s", common.BKTableNameAuditLog, err.Error())
+		blog.Errorf("get table %s index error, err: %v", common.BKTableNameAuditLog, err)
 		return err
 	}
 
 	createIdxArr := []types.Index{
-		{Name: "index_bk_supplier_account", Keys: bson.D{{common.BkSupplierAccount, 1}}, Background: true},
+		{Name: "index_bk_supplier_account", Keys: bson.D{{"bk_supplier_account", 1}}, Background: true},
 		{Name: "index_audit_type", Keys: bson.D{{common.BKAuditTypeField, 1}}, Background: true},
 		{Name: "index_action", Keys: bson.D{{common.BKActionField, 1}}, Background: true},
 	}
@@ -63,7 +63,8 @@ func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			continue
 		}
 		if err := db.Table(common.BKTableNameAuditLog).CreateIndex(ctx, idx); err != nil && !db.IsDuplicatedError(err) {
-			blog.ErrorJSON("create index to BKTableNameAuditLog error, err:%s, current index:%s, all create index:%s", err.Error(), idx, createIdxArr)
+			blog.Errorf("create index to BKTableNameAuditLog error, err: %v, current index: %+v, all create index: %+v",
+				err, idx, createIdxArr)
 			return err
 		}
 

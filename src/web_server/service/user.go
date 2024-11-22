@@ -45,7 +45,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 	userList, rawErr := userManger.GetUserList(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 	if rawErr != nil && rawErr.ErrCode != 0 {
-		blog.Error("GetUserList failed, err: %s, rid: %s", rawErr.ToCCError(defErr).Error(), rid)
+		blog.Error("GetUserList failed, err: %v, rid: %s", rawErr.ToCCError(defErr), rid)
 		rspBody.Code = rawErr.ErrCode
 		rspBody.ErrMsg = rawErr.ToCCError(defErr).Error()
 		rspBody.Result = false
@@ -70,7 +70,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	err := session.Save()
 
 	if nil != err {
-		blog.Errorf("user update language error:%s, rid: %s", err.Error(), rid)
+		blog.Errorf("user update language error: %v, rid: %s", err, rid)
 		c.JSON(200, userDataResult{
 			Result:  false,
 			Message: "user update language error",
@@ -91,7 +91,7 @@ func (s *Service) UpdateUserLanguage(c *gin.Context) {
 	return
 }
 
-// UserInfo TODO
+// UserInfo set user info
 func (s *Service) UserInfo(c *gin.Context) {
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
@@ -105,44 +105,44 @@ func (s *Service) UserInfo(c *gin.Context) {
 	if ok {
 		resultData.Data.ChName = name
 	}
-	ownerUin, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
+	tenantUin, ok := session.Get(common.WEBSessionTenantUinKey).(string)
 	if ok {
-		resultData.Data.OnwerUin = ownerUin
+		resultData.Data.TenantUin = tenantUin
 	}
-	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
+	strTenantUinList, ok := session.Get(common.WEBSessionTenantUinListeKey).(string)
 	if ok {
-		ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
-		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
+		tenantUinList := make([]metadata.LoginUserInfoTenantUinList, 0)
+		err := json.Unmarshal([]byte(strTenantUinList), &tenantUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
+			blog.Errorf("[UserInfo] json unmarshal error: %v, rid: %s", err, rid)
 		} else {
-			resultData.Data.OwnerUinArr = ownerUinList
+			resultData.Data.TenantUinArr = tenantUinList
 		}
 	}
 	avatarUrl, ok := session.Get(common.WEBSessionAvatarUrlKey).(string)
 	if ok {
 		resultData.Data.AvatarUrl = avatarUrl
 	}
-	iultiSupplier, ok := session.Get(common.WEBSessionMultiSupplierKey).(string)
-	if ok && common.LoginSystemMultiSupplierTrue == iultiSupplier {
-		resultData.Data.MultiSupplier = true // true
+	iultiTenant, ok := session.Get(common.WEBSessionMultiTenantKey).(string)
+	if ok && common.LoginSystemMultiTenantTrue == iultiTenant {
+		resultData.Data.MultiTenant = true // true
 	} else {
-		resultData.Data.MultiSupplier = false // true
+		resultData.Data.MultiTenant = false // true
 	}
 
 	c.JSON(200, resultData)
 	return
 }
 
-// UpdateSupplier TODO
-func (s *Service) UpdateSupplier(c *gin.Context) {
+// UpdateTenant update tenant info
+func (s *Service) UpdateTenant(c *gin.Context) {
 
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 
-	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
-	if "" == strOwnerUinList {
-		blog.ErrorJSON("session not owner info, rid:%s", rid)
+	strTenantUinList, ok := session.Get(common.WEBSessionTenantUinListeKey).(string)
+	if strTenantUinList == "" {
+		blog.Errorf("session not tenant info, rid: %s", rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -150,11 +150,11 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 		})
 		return
 	}
-	ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
+	tenantUinList := make([]metadata.LoginUserInfoTenantUinList, 0)
 	if ok {
-		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
+		err := json.Unmarshal([]byte(strTenantUinList), &tenantUinList)
 		if nil != err {
-			blog.Errorf("[UserInfo] json unmarshal error:%s, rid: %s", err.Error(), rid)
+			blog.Errorf("[UserInfo] json unmarshal error: %v, rid: %s", err, rid)
 			c.JSON(http.StatusBadRequest, metadata.BaseResp{
 				Result: false,
 				Code:   common.CCErrCommJSONUnmarshalFailed,
@@ -164,16 +164,16 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 		}
 	}
 
-	ownerID := c.Param("id")
-	var supplier *metadata.LoginUserInfoOwnerUinList
-	for idx, row := range ownerUinList {
-		if row.OwnerID == ownerID {
-			supplier = &ownerUinList[idx]
+	tenantID := c.Param("id")
+	var tenant *metadata.LoginUserInfoTenantUinList
+	for idx, row := range tenantUinList {
+		if row.TenantID == tenantID {
+			tenant = &tenantUinList[idx]
 		}
 	}
 
-	if nil == supplier {
-		blog.ErrorJSON("session not owner info. owner:%s, ownerlist:%s, rid:%s", ownerID, ownerUinList, rid)
+	if tenant == nil {
+		blog.Errorf("session not tenant info, tenant: %s, tenant list: %+v, rid: %s", tenantID, tenantUinList, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result: false,
 			Code:   common.CCErrCommNotFound,
@@ -181,23 +181,23 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 		})
 		return
 	}
-	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
-	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
+	session.Set(common.WEBSessionTenantUinKey, tenant.TenantID)
+	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(tenant.Role, 10))
 	if err := session.Save(); err != nil {
-		blog.Errorf("save session failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("save session failed, err: %v, rid: %s", err, rid)
 	}
 
 	// not user, notice not privilege
 	uin, _ := session.Get(common.WEBSessionUinKey).(string)
 	language := webcom.GetLanguageByHTTPRequest(c)
 
-	ownerM := user.NewOwnerManager(uin, supplier.OwnerID, language)
-	ownerM.CacheCli = s.CacheCli
-	ownerM.Engine = s.Engine
-	ownerM.ApiCli = s.ApiCli
-	permissions, err := ownerM.InitOwner()
+	tenantM := user.NewTenantManager(uin, tenant.TenantID, language)
+	tenantM.CacheCli = s.CacheCli
+	tenantM.Engine = s.Engine
+	tenantM.ApiCli = s.ApiCli
+	permissions, err := tenantM.InitTenant()
 	if nil != err {
-		blog.Errorf("InitOwner error: %v, rid:%s", err, rid)
+		blog.Errorf("InitTenant error: %v, rid: %s", err, rid)
 		c.JSON(http.StatusBadRequest, metadata.BaseResp{
 			Result:      false,
 			Code:        err.GetCode(),
@@ -207,9 +207,9 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 		return
 	}
 
-	ret := metadata.LoginChangeSupplierResult{}
+	ret := metadata.LoginChangeTenantResult{}
 	ret.Result = true
-	ret.Data.ID = ownerID
+	ret.Data.TenantID = tenantID
 
 	c.JSON(200, ret)
 	return

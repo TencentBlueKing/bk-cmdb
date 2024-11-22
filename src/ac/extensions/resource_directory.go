@@ -70,7 +70,7 @@ func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, acti
 				Name:       directory.BKModuleNameField,
 				InstanceID: directory.BKModuleIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		resources = append(resources, resource)

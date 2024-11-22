@@ -507,7 +507,7 @@ func (s *Service) generateModuleApplyPlan(ctx *rest.Contexts, planRequest *metad
 			}
 			rules.Info = append(rules.Info, metadata.HostApplyRule{BizID: planRequest.BizID, ModuleID: item.ModuleID,
 				AttributeID: item.AttributeID, PropertyValue: item.PropertyValue, Creator: ctx.Kit.User,
-				Modifier: ctx.Kit.User, CreateTime: now, LastTime: now, SupplierAccount: ctx.Kit.SupplierAccount,
+				Modifier: ctx.Kit.User, CreateTime: now, LastTime: now, TenantID: ctx.Kit.TenantID,
 			})
 		}
 	}

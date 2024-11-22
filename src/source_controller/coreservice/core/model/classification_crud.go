@@ -34,24 +34,27 @@ func (m *modelClassification) count(kit *rest.Kit, cond mapstr.MapStr) (cnt uint
 func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classification) (id uint64, err error) {
 
 	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjClassification)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to create a new sequence id on the table(%s) of the database, error info is %s", kit.Rid, common.BKTableNameObjClassification, err.Error())
+	if err != nil {
+		blog.Errorf("failed to create a new sequence id on the table(%s) of the database, error: %v, rid: %s",
+			common.BKTableNameObjClassification, err, kit.Rid)
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
 	classification.ID = int64(id)
-	classification.OwnerID = kit.SupplierAccount
+	classification.TenantID = kit.TenantID
 
 	err = mongodb.Client().Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
 	return id, err
 }
 
-func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64,
+	err error) {
 
 	data.Remove(metadata.ClassFieldClassificationID)
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): failed to execute a database update operation on the table(%s), condition: %#v, error: %s",
+			kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err)
 		return 0, err
 	}
 	return cnt, err
@@ -61,7 +64,8 @@ func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition)
 
 	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%#v), error info is %s", kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err.Error())
+		blog.Errorf("failed to delete on the table(%s), condition: %#v, error: %v", kit.Rid,
+			common.BKTableNameObjClassification, cond.ToMapStr(), err)
 		return 0, err
 	}
 

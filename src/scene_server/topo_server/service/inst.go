@@ -803,7 +803,7 @@ func (s *Service) SearchInstsNames(ctx *rest.Contexts) {
 	}
 
 	distinctOpt := &metadata.DistinctFieldOption{
-		TableName: common.GetInstTableName(option.ObjID, ctx.Kit.SupplierAccount),
+		TableName: common.GetInstTableName(option.ObjID, ctx.Kit.TenantID),
 		Field:     metadata.GetInstNameFieldName(option.ObjID),
 		Filter:    filter,
 	}

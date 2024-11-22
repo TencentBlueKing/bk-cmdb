@@ -53,7 +53,7 @@ func (s *service) CountInstance(req *restful.Request, resp *restful.Response) {
 
 	objID := req.PathParameter("bk_obj_id")
 
-	tableName := common.GetInstTableName(objID, common.BKDefaultOwnerID)
+	tableName := common.GetInstTableName(objID, common.BKDefaultTenantID)
 	count, err := s.engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, input)
 	if err != nil {
 		blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, kit.Rid)

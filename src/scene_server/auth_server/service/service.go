@@ -100,7 +100,7 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		req.Request.Header = util.SetHTTPReadPreference(req.Request.Header, common.SecondaryPreferredMode)
 
 		// set supplierID
-		setSupplierID(req.Request)
+		setTenantID(req.Request)
 
 		user := httpheader.GetUser(req.Request.Header)
 		if len(user) == 0 {
@@ -142,15 +142,15 @@ func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (b
 	return false, nil
 }
 
-// setSupplierID set suitable supplier account for the different version type, like ee, oa version
-func setSupplierID(req *http.Request) {
-	supplierID := httpheader.GetSupplierAccount(req.Header)
-	if len(supplierID) == 0 {
-		sID, _ := cc.String("authServer.supplierID")
+// setTenantID set suitable supplier account for the different version type, like ee, oa version
+func setTenantID(req *http.Request) {
+	tenantID := httpheader.GetTenantID(req.Header)
+	if len(tenantID) == 0 {
+		sID, _ := cc.String("authServer.tenantID")
 		if len(sID) == 0 {
-			sID = common.BKDefaultOwnerID
+			sID = common.BKDefaultTenantID
 		}
-		httpheader.SetSupplierAccount(req.Header, sID)
+		httpheader.SetTenantID(req.Header, sID)
 	}
 }
 

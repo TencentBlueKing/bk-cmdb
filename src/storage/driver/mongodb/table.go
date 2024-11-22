@@ -49,13 +49,13 @@ func TBModuleBase() types.Table {
 }
 
 // TBModelInstance 模型实例数据表，TBInstance别名函数
-func TBModelInstance(objID, supplierAccount string) types.Table {
-	return Table(common.GetObjectInstTableName(objID, supplierAccount))
+func TBModelInstance(objID, tenantID string) types.Table {
+	return Table(common.GetObjectInstTableName(objID, tenantID))
 }
 
 // TBInstance 模型实例数据表, TBModelInstance 别名函数
-func TBInstance(objID, supplierAccount string) types.Table {
-	return TBModelInstance(objID, supplierAccount)
+func TBInstance(objID, tenantID string) types.Table {
+	return TBModelInstance(objID, tenantID)
 }
 
 // TBCloudArea TODO
@@ -99,13 +99,13 @@ func TBObjClassification() types.Table {
 }
 
 // TBInstanceAsst 实例关系数据， TBInstAsst别名函数
-func TBInstanceAsst(objID, supplierAccount string) types.Table {
-	return Table(common.GetObjectInstAsstTableName(objID, supplierAccount))
+func TBInstanceAsst(objID, tenantID string) types.Table {
+	return Table(common.GetObjectInstAsstTableName(objID, tenantID))
 }
 
 // TBInstAsst 实例关系数据， TBInstanceAsst别名函数
-func TBInstAsst(objID, supplierAccount string) types.Table {
-	return TBInstanceAsst(objID, supplierAccount)
+func TBInstAsst(objID, tenantID string) types.Table {
+	return TBInstanceAsst(objID, tenantID)
 }
 
 // TBModuleHostConfig TODO

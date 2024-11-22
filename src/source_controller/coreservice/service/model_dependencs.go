@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -42,7 +43,7 @@ func (s *coreService) HasAssociation(kit *rest.Kit, objIDS []string) (exists boo
 
 	// construct the model association query condition
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldObjectID, Val: objIDS})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldAsstID, Val: objIDS})
 
@@ -63,34 +64,38 @@ func (s *coreService) HasAssociation(kit *rest.Kit, objIDS []string) (exists boo
 func (s *coreService) CascadeDeleteAssociation(kit *rest.Kit, objIDS []string) error {
 
 	// cascade delete the modelIDS
-	if err := s.CascadeDeleteInstances(kit, objIDS); nil != err {
+	if err := s.CascadeDeleteInstances(kit, objIDS); err != nil {
 		return err
 	}
 
 	// construct the deletion command
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: kit.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldObjectID, Val: objIDS})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldAssociationObjectID, Val: objIDS})
 
 	// execute delete command
-	_, err := s.core.AssociationOperation().CascadeDeleteModelAssociation(kit, metadata.DeleteOption{Condition: cond.ToMapStr()})
-	if nil != err {
-		blog.Errorf("aborted to cascade the model associations by the condition (%v), err: %s, rid: %s", cond.ToMapStr(), err.Error(), kit.Rid)
+	_, err := s.core.AssociationOperation().CascadeDeleteModelAssociation(kit,
+		metadata.DeleteOption{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("aborted to cascade the model associations by the condition (%v), err: %v, rid: %s",
+			cond.ToMapStr(), err, kit.Rid)
 		return err
 	}
 
 	return err
 }
 
-// CascadeDeleteInstances cascade delete all instances(included instances, instance association) associated with modelObjID
+// CascadeDeleteInstances cascade delete all instances associated with modelObjID
+// (included instances, instance association)
 func (s *coreService) CascadeDeleteInstances(kit *rest.Kit, objIDS []string) error {
 
 	// construct the deletion command which is used to delete all instances
 	for _, objID := range objIDS {
 		_, err := s.core.InstanceOperation().CascadeDeleteModelInstance(kit, objID, metadata.DeleteOption{})
-		if nil != err {
-			blog.Errorf("aborted to cascade delete the association for the model objectID(%s), err: %s, rid: %s", objID, err.Error(), kit.Rid)
+		if err != nil {
+			blog.Errorf("aborted to cascade delete the association for the model objectID(%s), err: %v, rid: %s", objID,
+				err, kit.Rid)
 			return err
 		}
 	}

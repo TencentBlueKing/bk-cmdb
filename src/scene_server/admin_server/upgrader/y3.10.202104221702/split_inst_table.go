@@ -40,7 +40,7 @@ var (
 func splitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	objs := make([]object, 0)
 	if err = db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
-		common.BKIsPre, common.BKOwnerIDField).All(ctx, &objs); err != nil {
+		common.BKIsPre, "bk_supplier_account").All(ctx, &objs); err != nil {
 		blog.Errorf("list all object id from db error. err: %s", err.Error())
 		return
 	}
@@ -176,8 +176,8 @@ func buildInstAsstTableName(objID, supplierAccount interface{}) string {
 
 func copyInstanceAssociationToShardingTable(ctx context.Context, association map[string]interface{}, db dal.RDB) error {
 
-	objTableName := buildInstAsstTableName(association[common.BKObjIDField], association[common.BKOwnerIDField])
-	asstObjTableName := buildInstAsstTableName(association[common.BKAsstObjIDField], association[common.BKOwnerIDField])
+	objTableName := buildInstAsstTableName(association[common.BKObjIDField], association["bk_supplier_account"])
+	asstObjTableName := buildInstAsstTableName(association[common.BKAsstObjIDField], association["bk_supplier_account"])
 
 	filter := map[string]interface{}{
 		"_id": association["_id"],
@@ -248,14 +248,14 @@ func splitInstTable(ctx context.Context, db dal.RDB) error {
 func copyInstanceToShardingTable(ctx context.Context, inst map[string]interface{}, db dal.RDB) error {
 
 	objID := fmt.Sprintf("%v", inst[common.BKObjIDField])
-	tableName := buildInstTableName(objID, inst[common.BKOwnerIDField]) // instTablePrefix + objID
+	tableName := buildInstTableName(objID, inst["bk_supplier_account"]) // instTablePrefix + objID
 
 	mappingFilter := map[string]interface{}{
 		common.BKInstIDField: inst[common.BKInstIDField],
 	}
 	doc := map[string]interface{}{
 		common.BKObjIDField:   objID,
-		common.BKOwnerIDField: inst[common.BKOwnerIDField],
+		"bk_supplier_account": inst["bk_supplier_account"],
 	}
 
 	if err := db.Table(objectBaseMapping).Upsert(ctx, mappingFilter, doc); err != nil {

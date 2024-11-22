@@ -81,7 +81,7 @@ func (am *AuthManager) makeResourcesByBizSet(header http.Header, action meta.Act
 				Name:       bizSet.BKBizSetNameField,
 				InstanceID: bizSet.BKBizSetIDField,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		resources = append(resources, resource)

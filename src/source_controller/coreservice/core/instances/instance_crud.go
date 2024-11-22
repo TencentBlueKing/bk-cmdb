@@ -30,7 +30,7 @@ import (
 )
 
 func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
-	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	instTableName := common.GetInstTableName(objID, kit.TenantID)
 	instIDFieldName := common.GetInstIDField(objID)
 	ids, err := getSequences(kit, instTableName, len(params))
 	if err != nil {
@@ -53,7 +53,7 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 			params[idx][common.BKObjIDField] = objID
 		}
 		params[idx].Set(instIDFieldName, ids[idx])
-		params[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+		params[idx].Set(common.TenantID, kit.TenantID)
 		params[idx].Set(common.CreateTimeField, ts)
 		params[idx].Set(common.LastTimeField, ts)
 
@@ -68,7 +68,7 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = ids[idx]
 		mapping[common.BKObjIDField] = objID
-		mapping[common.BkSupplierAccount] = kit.SupplierAccount
+		mapping[common.TenantID] = kit.TenantID
 
 		mappings = append(mappings, mapping)
 	}
@@ -102,7 +102,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		}
 	}
 
-	instTableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	instTableName := common.GetInstTableName(objID, kit.TenantID)
 	ids, err := getSequences(kit, instTableName, 1)
 	if err != nil {
 		return 0, err
@@ -115,7 +115,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		inputParam[common.BKObjIDField] = objID
 	}
 	ts := time.Now()
-	inputParam.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	inputParam.Set(common.TenantID, kit.TenantID)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
 
@@ -128,7 +128,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = ids[0]
 		mapping[common.BKObjIDField] = objID
-		mapping[common.BkSupplierAccount] = kit.SupplierAccount
+		mapping[common.TenantID] = kit.TenantID
 
 		// save instance object type mapping.
 		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {
@@ -196,7 +196,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 			return err
 		}
 	}
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -221,7 +221,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr,
 	exists bool, err error) {
 	origins = make([]mapstr.MapStr, 0)
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -238,12 +238,12 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 }
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
 
-	if common.IsObjectInstShardingTable(common.GetInstTableName(objID, kit.SupplierAccount)) {
+	if common.IsObjectInstShardingTable(common.GetInstTableName(objID, kit.TenantID)) {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
 
@@ -261,7 +261,7 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 }
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 
 	if cond == nil {
 		cond = make(map[string]interface{})

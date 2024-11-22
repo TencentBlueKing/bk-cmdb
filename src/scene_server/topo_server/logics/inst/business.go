@@ -500,7 +500,7 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 
 	cond := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BkSupplierAccount},
+		Fields:    []string{common.BKAppIDField, common.TenantID},
 		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
 	}
 
@@ -511,13 +511,13 @@ func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 	}
 
 	for idx, biz := range rsp.Info {
-		bizSupplierAccount, err := biz.String(common.BkSupplierAccount)
+		bizTenantID, err := biz.String(common.TenantID)
 		if err != nil {
-			blog.Errorf("get business supplier account failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("get business tenant id failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
 		}
 
-		if kit.SupplierAccount == bizSupplierAccount {
+		if kit.TenantID == bizTenantID {
 			if !rsp.Info[idx].Exists(common.BKAppIDField) {
 				blog.Errorf("bk_biz_id is non-exist, rid: %s", kit.Rid)
 				// this can not be happen normally.
@@ -755,7 +755,7 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 func (b *business) validateDeleteModuleName(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) (
 	metadata.PlatformSettingConfig, error) {
 
-	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
 
 	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, header)
 	if err != nil {

@@ -220,7 +220,7 @@ func genFullSyncCondUniqueKey(cond *fullsynccond.FullSyncCond) string {
 		return strconv.FormatInt(cond.ID, 10)
 	}
 
-	return fmt.Sprintf("%s:%s:%s", cond.Resource, cond.SupplierAccount, cond.SubResource)
+	return fmt.Sprintf("%s:%s:%s", cond.Resource, cond.TenantID, cond.SubResource)
 }
 
 type delArchive struct {

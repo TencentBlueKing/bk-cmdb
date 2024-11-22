@@ -62,7 +62,7 @@ type topoCheckService struct {
 	modelIDs        []string
 	instanceMap     map[string]*topoInstance
 	// 从业务信息中取出来业务所在的租户
-	supplierAccount string
+	tenantID string
 }
 
 type topoInstance struct {
@@ -147,7 +147,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 		_, _ = fmt.Fprintf(os.Stderr, "business id: %d has too many(num = %d) business instances\n",
 			s.bizID, len(bizList))
 	} else {
-		s.supplierAccount = bizList[0].SupplierAccount
+		s.tenantID = bizList[0].TenantID
 		s.instanceMap[fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, s.bizID)] = &topoInstance{
 			ObjectID:         common.BKInnerObjIDApp,
 			InstanceID:       s.bizID,
@@ -231,7 +231,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 			common.BKAppIDField: s.bizID,
 		}
 
-		err = s.service.DbProxy.Table(common.GetInstTableName(objectID, s.supplierAccount)).
+		err = s.service.DbProxy.Table(common.GetInstTableName(objectID, s.tenantID)).
 			Find(cond).All(context.Background(), &mainlineInstances)
 		if err != nil {
 			return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
@@ -295,7 +295,7 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		parentIDField := common.GetInstIDField(parentObjectID)
 		mongoCondition.Element(&mongo.Eq{Key: parentIDField, Val: instance.ParentInstanceID})
 		missedInstances := make([]map[string]interface{}, 0)
-		parentTable := common.GetInstTableName(parentObjectID, s.supplierAccount)
+		parentTable := common.GetInstTableName(parentObjectID, s.tenantID)
 		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(),
 			&missedInstances)
 		if err != nil {

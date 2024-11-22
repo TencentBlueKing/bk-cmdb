@@ -111,7 +111,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 				Keys: bson.D{
 					{kubetypes.ClusterUIDField, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -119,7 +119,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "cluster_id",
 				Keys: bson.D{
 					{kubetypes.BKClusterIDFiled, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -127,7 +127,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "name",
 				Keys: bson.D{
 					{common.BKFieldName, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -138,7 +138,7 @@ var (
 				Keys: bson.D{
 					{kubetypes.RefNameField, 1},
 					{kubetypes.RefIDField, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -146,7 +146,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "cluster_id",
 				Keys: bson.D{
 					{kubetypes.BKClusterIDFiled, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -154,7 +154,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 				Keys: bson.D{
 					{kubetypes.ClusterUIDField, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -163,7 +163,7 @@ var (
 				Keys: bson.D{
 					{kubetypes.RefIDField, 1},
 					{kubetypes.RefKindField, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -171,7 +171,7 @@ var (
 				Name: common.CCLogicIndexNamePrefix + "name",
 				Keys: bson.D{
 					{common.BKFieldName, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -196,7 +196,7 @@ func updateBizRelatedIndex(ctx context.Context, db dal.RDB) error {
 				Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 				Keys: bson.D{
 					{kubetypes.ClusterUIDField, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -204,7 +204,7 @@ func updateBizRelatedIndex(ctx context.Context, db dal.RDB) error {
 				Name: common.CCLogicIndexNamePrefix + "cluster_id",
 				Keys: bson.D{
 					{kubetypes.BKClusterIDFiled, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},
@@ -212,7 +212,7 @@ func updateBizRelatedIndex(ctx context.Context, db dal.RDB) error {
 				Name: common.CCLogicIndexNamePrefix + "name",
 				Keys: bson.D{
 					{common.BKFieldName, 1},
-					{common.BkSupplierAccount, 1},
+					{"bk_supplier_account", 1},
 				},
 				Background: true,
 			},

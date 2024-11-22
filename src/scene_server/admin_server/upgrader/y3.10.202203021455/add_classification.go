@@ -71,12 +71,12 @@ func changeClassificationType(ctx context.Context, db dal.RDB) error {
 
 func addUncategorizedClassification(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
-	defaultClassificationRow := metadata.Classification{
+	defaultClassificationRow := Classification{
 		ClassificationID:   metadata.ClassificationUncategorizedID,
 		ClassificationName: metadata.ClassificationUncategorized,
 		ClassificationType: innerType,
 		ClassificationIcon: defaultIcon,
-		OwnerID:            conf.OwnerID,
+		OwnerID:            conf.TenantID,
 	}
 
 	// To check whether the id and name are repeated, search by "bk_classification_id" or "bk_classification_name". It
@@ -122,4 +122,14 @@ func addUncategorizedClassification(ctx context.Context, db dal.RDB, conf *upgra
 		return err
 	}
 	return nil
+}
+
+// Classification the classification metadata definition
+type Classification struct {
+	ID                 int64  `field:"id" json:"id" bson:"id" mapstructure:"id"     `
+	ClassificationID   string `field:"bk_classification_id"  json:"bk_classification_id" bson:"bk_classification_id" mapstructure:"bk_classification_id"             `
+	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name" mapstructure:"bk_classification_name"`
+	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type" mapstructure:"bk_classification_type"`
+	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon" mapstructure:"bk_classification_icon"`
+	OwnerID            string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account" `
 }

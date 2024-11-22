@@ -58,9 +58,9 @@ func GetLanguage(header http.Header) string {
 	return header.Get(LanguageHeader)
 }
 
-// GetSupplierAccount get supplier account from http header
-func GetSupplierAccount(header http.Header) string {
-	return header.Get(SupplierAccountHeader)
+// GetTenantID get supplier account from http header
+func GetTenantID(header http.Header) string {
+	return header.Get(TenantHeader)
 }
 
 // IsReqFromWeb check if request is from web server
@@ -124,9 +124,9 @@ func SetLanguage(header http.Header, value string) {
 	header.Set(LanguageHeader, value)
 }
 
-// SetSupplierAccount set supplier account to http header
-func SetSupplierAccount(header http.Header, value string) {
-	header.Set(SupplierAccountHeader, value)
+// SetTenantID set supplier account to http header
+func SetTenantID(header http.Header, value string) {
+	header.Set(TenantHeader, value)
 }
 
 // SetReqFromWeb set the request from web server flag to http header
@@ -163,10 +163,10 @@ func AddUser(header http.Header, value string) {
 	}
 }
 
-// AddSupplierAccount add supplier account to http header
-func AddSupplierAccount(header http.Header, value string) {
-	if GetSupplierAccount(header) != value {
-		header.Add(SupplierAccountHeader, value)
+// AddTenantID add supplier account to http header
+func AddTenantID(header http.Header, value string) {
+	if GetTenantID(header) != value {
+		header.Add(TenantHeader, value)
 	}
 }
 

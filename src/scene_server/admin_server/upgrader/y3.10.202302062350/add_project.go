@@ -204,7 +204,7 @@ func addProjectObjectRow(ctx context.Context, db dal.RDB, ownerID string) error 
 	}
 
 	t := metadata.Now()
-	dataRows := metadata.Object{
+	dataRows := Object{
 		ObjCls:      metadata.ClassificationOrganizationID,
 		ObjectID:    common.BKInnerObjIDProject,
 		ObjectName:  "项目",
@@ -278,11 +278,11 @@ func addObjectUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 				ID:   uint64(attr.ID),
 			},
 		}
-		unique := metadata.ObjectUnique{
+		unique := ObjectUnique{
 			ObjID:    common.BKInnerObjIDProject,
 			Keys:     keys,
 			Ispre:    true,
-			OwnerID:  conf.OwnerID,
+			OwnerID:  conf.TenantID,
 			LastTime: metadata.Now(),
 		}
 
@@ -318,7 +318,7 @@ func addProjectCollection(ctx context.Context, db dal.RDB) error {
 }
 
 func addProjectPropertyGroup(ctx context.Context, db dal.RDB, ownerID string) error {
-	rows := []*metadata.Group{
+	rows := []*Group{
 		{
 			ObjectID:   common.BKInnerObjIDProject,
 			GroupID:    mCommon.BaseInfo,
@@ -369,7 +369,7 @@ func addProjectObjectAttrRow(ctx context.Context, db dal.RDB, ownerID string) er
 		return nil
 	}
 
-	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
 	nowTime := metadata.Now()
 	for _, row := range dataRows {
 		row.OwnerID = ownerID
@@ -454,15 +454,15 @@ func addProjectTableIndexes(ctx context.Context, db dal.RDB) error {
 }
 
 func addProjectPropertyOption(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	if err := addProjectObjectRow(ctx, db, conf.OwnerID); err != nil {
+	if err := addProjectObjectRow(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
-	if err := addProjectPropertyGroup(ctx, db, conf.OwnerID); err != nil {
+	if err := addProjectPropertyGroup(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
-	if err := addProjectObjectAttrRow(ctx, db, conf.OwnerID); err != nil {
+	if err := addProjectObjectAttrRow(ctx, db, conf.TenantID); err != nil {
 		return err
 	}
 
@@ -507,4 +507,52 @@ type attribute struct {
 	Creator           string         `field:"creator" json:"creator" bson:"creator"`
 	CreateTime        *metadata.Time `json:"create_time" bson:"create_time"`
 	LastTime          *metadata.Time `json:"last_time" bson:"last_time"`
+}
+
+// Object object metadata definition
+type Object struct {
+	ID         int64  `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	ObjCls     string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id" mapstructure:"bk_classification_id"`
+	ObjIcon    string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon" mapstructure:"bk_obj_icon"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
+	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name" mapstructure:"bk_obj_name"`
+
+	// IsHidden front-end don't display the object if IsHidden is true
+	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
+
+	IsPre         bool           `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsPaused      bool           `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
+	Position      string         `field:"position" json:"position" bson:"position" mapstructure:"position"`
+	OwnerID       string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	Description   string         `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	Creator       string         `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	Modifier      string         `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
+	CreateTime    *metadata.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime      *metadata.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
+	ObjSortNumber int64          `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
+}
+
+// ObjectUnique TODO
+type ObjectUnique struct {
+	ID         uint64               `json:"id" bson:"id"`
+	TemplateID int64                `json:"bk_template_id" bson:"bk_template_id"`
+	ObjID      string               `json:"bk_obj_id" bson:"bk_obj_id"`
+	Keys       []metadata.UniqueKey `json:"keys" bson:"keys"`
+	Ispre      bool                 `json:"ispre" bson:"ispre"`
+	OwnerID    string               `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime   metadata.Time        `json:"last_time" bson:"last_time"`
+}
+
+// Group group metadata definition
+type Group struct {
+	BizID      int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsCollapse bool   `field:"is_collapse" json:"is_collapse" bson:"is_collapse"`
 }

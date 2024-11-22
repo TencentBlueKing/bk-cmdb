@@ -73,11 +73,11 @@ const (
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
-	// BKDefaultOwnerID the default owner value
-	BKDefaultOwnerID = "0"
+	// BKDefaultTenantID the default tenant value
+	BKDefaultTenantID = "0"
 
-	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "superadmin"
+	// BKSuperTenantID the super tenant value
+	BKSuperTenantID = "superadmin"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
@@ -303,8 +303,8 @@ const (
 	// BKDefaultField the default field
 	BKDefaultField = "default"
 
-	// BKOwnerIDField the owner field
-	BKOwnerIDField = "bk_supplier_account"
+	// TenantID the tenant field
+	TenantID = "tenant_id"
 
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
@@ -1382,8 +1382,8 @@ const (
 	HTTPCookieBKTicket = "bk_ticket"
 	// HTTPCookieLanguage is the blueking language cookie name
 	HTTPCookieLanguage = "blueking_language"
-	// HTTPCookieSupplierAccount is the supplier account cookie name
-	HTTPCookieSupplierAccount = "HTTP_BLUEKING_SUPPLIER_ID"
+	// HTTPCookieTenant is the tenant cookie name
+	HTTPCookieTenant = "HTTP_BLUEKING_TENANT_ID"
 
 	// WEBSessionUinKey TODO
 	WEBSessionUinKey = "username"
@@ -1395,19 +1395,19 @@ const (
 	WEBSessionEmailKey = "email"
 	// WEBSessionRoleKey TODO
 	WEBSessionRoleKey = "role"
-	// WEBSessionOwnerUinKey TODO
-	WEBSessionOwnerUinKey = "owner_uin"
-	// WEBSessionOwnerUinListeKey TODO
-	WEBSessionOwnerUinListeKey = "owner_uin_list"
+	// WEBSessionTenantUinKey is the tenant uin session key
+	WEBSessionTenantUinKey = "tenant_uin"
+	// WEBSessionTenantUinListeKey is the tenant uin list session key
+	WEBSessionTenantUinListeKey = "tenant_uin_list"
 	// WEBSessionAvatarUrlKey TODO
 	WEBSessionAvatarUrlKey = "avatar_url"
-	// WEBSessionMultiSupplierKey TODO
-	WEBSessionMultiSupplierKey = "multisupplier"
+	// WEBSessionMultiTenantKey multi tenant session key
+	WEBSessionMultiTenantKey = "multitenant"
 
-	// LoginSystemMultiSupplierTrue TODO
-	LoginSystemMultiSupplierTrue = "1"
-	// LoginSystemMultiSupplierFalse TODO
-	LoginSystemMultiSupplierFalse = "0"
+	// LoginSystemMultiTenantTrue login system multi tenant flag
+	LoginSystemMultiTenantTrue = "1"
+	// LoginSystemMultiTenantFalse TODO
+	LoginSystemMultiTenantFalse = "0"
 
 	// LogoutHTTPSchemeCookieKey TODO
 	LogoutHTTPSchemeCookieKey = "http_scheme"
@@ -1504,8 +1504,8 @@ const (
 	ContextRequestIDField = "request_id"
 	// ContextRequestUserField TODO
 	ContextRequestUserField = "request_user"
-	// ContextRequestOwnerField TODO
-	ContextRequestOwnerField = "request_owner"
+	// ContextRequestTenantField tenant request field
+	ContextRequestTenantField = "request_tenant"
 )
 
 const (

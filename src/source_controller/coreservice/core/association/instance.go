@@ -58,7 +58,7 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 	[]metadata.InstAsst, error) {
 
 	results := make([]metadata.InstAsst, 0)
-	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 	instHandler := mongodb.Client().Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
 	err := instHandler.Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).
 		Sort(param.Page.Sort).All(kit.Ctx, &results)
@@ -67,7 +67,7 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64,
 	error) {
-	asstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
@@ -145,9 +145,9 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	}
 
 	asstInst.ID = int64(id)
-	asstInst.OwnerID = kit.SupplierAccount
+	asstInst.TenantID = kit.TenantID
 
-	objInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.ObjectID, kit.SupplierAccount)
+	objInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.ObjectID, kit.TenantID)
 	err = mongodb.Client().Table(objInstAsstTableName).Insert(kit.Ctx, asstInst)
 	if err != nil {
 		return id, err
@@ -158,14 +158,14 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 		return id, nil
 	}
 
-	asstObjInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.AsstObjectID, kit.SupplierAccount)
+	asstObjInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.AsstObjectID, kit.TenantID)
 	err = mongodb.Client().Table(asstObjInstAsstTableName).Insert(kit.Ctx, asstInst)
 	return id, err
 }
 
 func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID string,
 	cond mapstr.MapStr) (uint64, error) {
-	asstInstTableName := common.GetObjectInstAsstTableName(objID, kit.SupplierAccount)
+	asstInstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 	associations := make([]metadata.InstAsst, 0)
 	if err := mongodb.Client().Table(asstInstTableName).Find(cond).Fields(common.BKObjIDField, common.BKAsstObjIDField).
 		All(kit.Ctx, &associations); err != nil {
@@ -191,7 +191,7 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 		}
 		objIDMap[asstObjID] = struct{}{}
 
-		asstTableName := common.GetObjectInstAsstTableName(asstObjID, kit.SupplierAccount)
+		asstTableName := common.GetObjectInstAsstTableName(asstObjID, kit.TenantID)
 		err := mongodb.Client().Table(asstTableName).Delete(kit.Ctx, cond)
 		if err != nil {
 			blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
@@ -301,7 +301,7 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit,
 func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (
 	metadata.AssociationMapping, error) {
 
-	inputParam.Data.OwnerID = kit.SupplierAccount
+	inputParam.Data.TenantID = kit.TenantID
 	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
 		inputParam.Data.ObjectID, inputParam.Data.BizID)
 	if err != nil {
@@ -352,7 +352,7 @@ func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam 
 
 	checkAssoCond := mongo.NewCondition()
 	checkAssoCond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
-	checkAssoCond.Element(&mongo.Eq{Key: common.BKOwnerIDField, Val: kit.SupplierAccount})
+	checkAssoCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	assoItems, err := m.search(kit, checkAssoCond)
 	if err != nil {
 		blog.ErrorJSON("search associations with condition: %s failed, err: %s, rid: %s",
@@ -377,7 +377,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit,
 	for idx, item := range inputParam.Datas {
 		itemIdx := int64(idx)
 
-		item.OwnerID = kit.SupplierAccount
+		item.TenantID = kit.TenantID
 		// check is exist
 		exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.ObjectID, item.BizID)
 		if err != nil {

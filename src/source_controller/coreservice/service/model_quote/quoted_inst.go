@@ -52,7 +52,7 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+	table := common.GetInstTableName(objID, cts.Kit.TenantID)
 	ids, err := mongodb.Client().NextSequences(cts.Kit.Ctx, table, len(instances))
 	if err != nil {
 		cts.RespAutoError(err)
@@ -62,7 +62,7 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 
 	for idx := range instances {
 		instances[idx].Set(common.BKFieldID, ids[idx])
-		instances[idx].Set(common.BkSupplierAccount, cts.Kit.SupplierAccount)
+		instances[idx].Set(common.TenantID, cts.Kit.TenantID)
 		instances[idx].Set(common.CreateTimeField, now)
 		instances[idx].Set(common.LastTimeField, now)
 	}
@@ -99,7 +99,7 @@ func ListQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
 		return
 	}
-	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+	table := common.GetInstTableName(objID, cts.Kit.TenantID)
 
 	filter, err := opt.ToMgo()
 	if err != nil {
@@ -155,7 +155,7 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+	table := common.GetInstTableName(objID, cts.Kit.TenantID)
 
 	filter, err := opt.ToMgo()
 	if err != nil {
@@ -196,7 +196,7 @@ func BatchDeleteQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
 		return
 	}
-	table := common.GetInstTableName(objID, cts.Kit.SupplierAccount)
+	table := common.GetInstTableName(objID, cts.Kit.TenantID)
 
 	filter, err := opt.ToMgo()
 	if err != nil {

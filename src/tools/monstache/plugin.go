@@ -230,7 +230,7 @@ func newESIndexMetadata(config extraConfig) *meta.ESIndexMetadata {
 				meta.IndexPropertyBKObjID: {
 					PropertyType: meta.IndexPropertyTypeKeyword,
 				},
-				meta.IndexPropertyBKSupplierAccount: {
+				meta.IndexPropertyTenantID: {
 					PropertyType: meta.IndexPropertyTypeKeyword,
 				},
 				meta.IndexPropertyBKBizID: {
@@ -369,12 +369,12 @@ func getMetaIdToStr(d interface{}) (string, error) {
 	return fmt.Sprintf("%v", d), nil
 }
 
-// baseDataCleaning  do not need to sync "_id","create_time","last_time","bk_supplier_account".
+// baseDataCleaning  do not need to sync "_id","create_time","last_time","tenant_id".
 func baseDataCleaning(document map[string]interface{}) map[string]interface{} {
 	delete(document, mongoMetaId)
 	delete(document, common.CreateTimeField)
 	delete(document, common.LastTimeField)
-	delete(document, common.BKOwnerIDField)
+	delete(document, common.TenantID)
 	return document
 }
 
@@ -573,7 +573,7 @@ func analysisDocument(document map[string]interface{}, collection string) (strin
 // outputDocument return output document
 func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.MapperPluginOutput, objID,
 	esObjID string) (map[string]interface{}, error) {
-	oId := input.Document[common.BKOwnerIDField]
+	oId := input.Document[common.TenantID]
 	metaId := input.Document[mongoMetaId]
 	bizId := input.Document[common.BKAppIDField]
 
@@ -585,12 +585,12 @@ func outputDocument(input *monstachemap.MapperPluginInput, output *monstachemap.
 
 	// build elastic document.
 	document := map[string]interface{}{
-		meta.IndexPropertyID:                id,
-		meta.IndexPropertyDataKind:          meta.DataKindInstance,
-		meta.IndexPropertyBKObjID:           objID,
-		meta.IndexPropertyBKSupplierAccount: oId,
-		meta.IndexPropertyBKBizID:           bizId,
-		meta.IndexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:       id,
+		meta.IndexPropertyDataKind: meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:  objID,
+		meta.IndexPropertyTenantID: oId,
+		meta.IndexPropertyBKBizID:  bizId,
+		meta.IndexPropertyKeywords: keywords,
 	}
 
 	documentID, ok := metaId.(primitive.ObjectID)
@@ -709,7 +709,7 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 		return fmt.Errorf("query model object[%s] failed, %v", objectID, err)
 	}
 
-	oId, bizId, metaId := model[common.BKOwnerIDField], model[common.BKAppIDField], model[mongoMetaId]
+	oId, bizId, metaId := model[common.TenantID], model[common.BKAppIDField], model[mongoMetaId]
 
 	// analysis model document.
 	_, keywords, err := analysisDocument(model, common.BKTableNameObjDes)
@@ -763,12 +763,12 @@ func indexingModel(input *monstachemap.MapperPluginInput, output *monstachemap.M
 	// build elastic document.
 	document := map[string]interface{}{
 		// model scene,we use meta_bk_obj_id to search mongo,this id set null.
-		meta.IndexPropertyID:                nullMetaId,
-		meta.IndexPropertyDataKind:          meta.DataKindModel,
-		meta.IndexPropertyBKObjID:           objectID,
-		meta.IndexPropertyBKSupplierAccount: oId,
-		meta.IndexPropertyBKBizID:           bizId,
-		meta.IndexPropertyKeywords:          compressKeywords(keywords),
+		meta.IndexPropertyID:       nullMetaId,
+		meta.IndexPropertyDataKind: meta.DataKindModel,
+		meta.IndexPropertyBKObjID:  objectID,
+		meta.IndexPropertyTenantID: oId,
+		meta.IndexPropertyBKBizID:  bizId,
+		meta.IndexPropertyKeywords: compressKeywords(keywords),
 	}
 	err = updateModelTableProperties(document, tableAttrs)
 	if err != nil {
@@ -787,7 +787,7 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 
 	objId := input.Document[common.BKObjIDField]
 	bizId := input.Document[common.BKAppIDField]
-	oId := input.Document[common.BKOwnerIDField]
+	oId := input.Document[common.TenantID]
 	metaId := input.Document[mongoMetaId]
 
 	// analysis document.
@@ -798,12 +798,12 @@ func indexingObjectInstance(input *monstachemap.MapperPluginInput, output *monst
 
 	// build elastic document.
 	document := map[string]interface{}{
-		meta.IndexPropertyID:                id,
-		meta.IndexPropertyDataKind:          meta.DataKindInstance,
-		meta.IndexPropertyBKObjID:           objId,
-		meta.IndexPropertyBKSupplierAccount: oId,
-		meta.IndexPropertyBKBizID:           bizId,
-		meta.IndexPropertyKeywords:          keywords,
+		meta.IndexPropertyID:       id,
+		meta.IndexPropertyDataKind: meta.DataKindInstance,
+		meta.IndexPropertyBKObjID:  objId,
+		meta.IndexPropertyTenantID: oId,
+		meta.IndexPropertyBKBizID:  bizId,
+		meta.IndexPropertyKeywords: keywords,
 	}
 
 	documentID, ok := metaId.(primitive.ObjectID)
@@ -1059,7 +1059,7 @@ func getTablePropertyIdAndObjId(collection string) (string, string) {
 }
 
 // getMongoCollectionByObjID get mongo collection name by objID.
-func getMongoCollectionByObjID(objID string, supplierAccount string) string {
+func getMongoCollectionByObjID(objID string, tenantID string) string {
 	var collection string
 	switch objID {
 	case common.BKInnerObjIDBizSet:
@@ -1073,7 +1073,7 @@ func getMongoCollectionByObjID(objID string, supplierAccount string) string {
 	case common.BKInnerObjIDModule:
 		collection = common.BKTableNameBaseModule
 	default:
-		collection = common.GetObjectInstTableName(objID, supplierAccount)
+		collection = common.GetObjectInstTableName(objID, tenantID)
 	}
 	return collection
 }
@@ -1162,9 +1162,9 @@ func indexingTableInst(input *monstachemap.MapperPluginInput, output *monstachem
 	}
 	tableId := documentID.Hex()
 
-	account, err := getMetaIdToStr(input.Document[common.BKOwnerIDField])
+	account, err := getMetaIdToStr(input.Document[common.TenantID])
 	if err != nil {
-		return fmt.Errorf("missing: %s, err: %v", common.BKOwnerIDField, err)
+		return fmt.Errorf("missing: %s, err: %v", common.TenantID, err)
 	}
 
 	// todo 后续需要通过引用表

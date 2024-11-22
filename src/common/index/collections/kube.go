@@ -66,7 +66,7 @@ var commWorkLoadIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 		Keys: bson.D{
 			{kubetypes.ClusterUIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -74,7 +74,7 @@ var commWorkLoadIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_id",
 		Keys: bson.D{
 			{kubetypes.BKClusterIDFiled, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -82,7 +82,7 @@ var commWorkLoadIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "name",
 		Keys: bson.D{
 			{common.BKFieldName, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -110,7 +110,7 @@ var commContainerIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "pod_id",
 		Keys: bson.D{
 			{kubetypes.BKPodIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -118,7 +118,7 @@ var commContainerIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "biz_id",
 		Keys: bson.D{
 			{kubetypes.BKBizIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -126,7 +126,7 @@ var commContainerIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_id",
 		Keys: bson.D{
 			{kubetypes.BKClusterIDFiled, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -134,7 +134,7 @@ var commContainerIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "namespace_id",
 		Keys: bson.D{
 			{kubetypes.BKNamespaceIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -143,7 +143,7 @@ var commContainerIndexes = []types.Index{
 		Keys: bson.D{
 			{kubetypes.RefIDField, 1},
 			{kubetypes.RefKindField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -173,7 +173,7 @@ var commPodIndexes = []types.Index{
 		Keys: bson.D{
 			{kubetypes.RefNameField, 1},
 			{kubetypes.RefIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -181,7 +181,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_id",
 		Keys: bson.D{
 			{kubetypes.BKClusterIDFiled, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -189,7 +189,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 		Keys: bson.D{
 			{kubetypes.ClusterUIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -197,7 +197,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "namespace_id",
 		Keys: bson.D{
 			{kubetypes.BKNamespaceIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -206,7 +206,7 @@ var commPodIndexes = []types.Index{
 		Keys: bson.D{
 			{kubetypes.RefIDField, 1},
 			{kubetypes.RefKindField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -214,7 +214,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "name",
 		Keys: bson.D{
 			{common.BKFieldName, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -222,7 +222,7 @@ var commPodIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "bk_host_id",
 		Keys: bson.D{
 			{common.BKHostIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -257,7 +257,7 @@ var commNamespaceIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_uid",
 		Keys: bson.D{
 			{kubetypes.ClusterUIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -265,7 +265,7 @@ var commNamespaceIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "cluster_id",
 		Keys: bson.D{
 			{kubetypes.BKClusterIDFiled, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -273,7 +273,7 @@ var commNamespaceIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "name",
 		Keys: bson.D{
 			{common.BKFieldName, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -302,7 +302,7 @@ var commNodeIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
 			{kubetypes.ClusterUIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -311,7 +311,7 @@ var commNodeIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
 			{kubetypes.BKClusterIDFiled, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -320,7 +320,7 @@ var commNodeIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
 			{common.BKHostIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -329,7 +329,7 @@ var commNodeIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
 			{common.BKFieldName, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -357,7 +357,7 @@ var commClusterIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
 			{common.BKFieldName, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -365,7 +365,7 @@ var commClusterIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + common.BKAppIDField,
 		Keys: bson.D{
 			{common.BKAppIDField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},
@@ -373,7 +373,7 @@ var commClusterIndexes = []types.Index{
 		Name: common.CCLogicIndexNamePrefix + "xid",
 		Keys: bson.D{
 			{kubetypes.XidField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},

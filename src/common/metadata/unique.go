@@ -27,7 +27,7 @@ type ObjectUnique struct {
 	ObjID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	Keys       []UniqueKey `json:"keys" bson:"keys"`
 	Ispre      bool        `json:"ispre" bson:"ispre"`
-	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID   string      `json:"tenant_id" bson:"tenant_id"`
 	LastTime   Time        `json:"last_time" bson:"last_time"`
 }
 

@@ -189,7 +189,7 @@ type Container struct {
 	ClusterID       int64            `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
 	NamespaceID     int64            `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
 	Ref             *Reference       `json:"ref,omitempty" bson:"ref"`
-	SupplierAccount string           `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID        string           `json:"tenant_id" bson:"tenant_id"`
 	Name            *string          `json:"name,omitempty" bson:"name"`
 	ContainerID     *string          `json:"container_uid,omitempty" bson:"container_uid"`
 	Image           *string          `json:"image,omitempty" bson:"image"`
@@ -240,10 +240,10 @@ func (option *Container) validateCreate() ccErr.RawErrorInfo {
 // SysSpec the relationship information related to the container
 // that stores the cc, all types share this structure.
 type SysSpec struct {
-	SupplierAccount string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
-	WorkloadSpec    `json:",inline" bson:",inline"`
-	HostID          int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	NodeID          int64 `json:"bk_node_id,omitempty" bson:"bk_node_id"`
+	TenantID     string `json:"tenant_id,omitempty" bson:"tenant_id"`
+	WorkloadSpec `json:",inline" bson:",inline"`
+	HostID       int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	NodeID       int64 `json:"bk_node_id,omitempty" bson:"bk_node_id"`
 	// redundant node names
 	Node string `json:"node_name,omitempty" bson:"node_name"`
 }

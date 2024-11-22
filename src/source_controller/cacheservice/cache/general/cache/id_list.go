@@ -88,10 +88,10 @@ func (c *Cache) parseAddData(data types.WatchEventData, pip ccredis.Pipeliner, i
 	// add id to system id lists
 	if c.needCacheAll {
 		if len(info.subRes) == 0 {
-			idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, "", info.supplier)
+			idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, "", info.tenant)
 		} else {
 			for _, subRes := range info.subRes {
-				idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, subRes, info.supplier)
+				idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, subRes, info.tenant)
 			}
 		}
 	}
@@ -149,9 +149,9 @@ func (c *Cache) recordIDToAddForSystem(idKeyMap map[string]*addIDToListOpt, id s
 				filterOpt: &types.IDListFilterOpt{
 					IDListKey: idListKey,
 					BasicFilter: &types.BasicFilter{
-						SubRes:          subRes,
-						SupplierAccount: supplier,
-						IsSystem:        true,
+						SubRes:   subRes,
+						TenantID: supplier,
+						IsSystem: true,
 					},
 					IsAll: true,
 				},
@@ -167,9 +167,9 @@ func (c *Cache) recordIDToAddForSystem(idKeyMap map[string]*addIDToListOpt, id s
 func (c *Cache) isFullSyncCondMatched(data filter.MatchedData, info *basicInfo, cond *types.FullSyncCondInfo,
 	rid string) bool {
 
-	if info.supplier != common.BKDefaultOwnerID && info.supplier != cond.SupplierAccount &&
-		cond.SupplierAccount != common.BKSuperOwnerID {
-		blog.V(4).Infof("%s data(%+v) supplier not matches cond(%+v), rid: %s", c.key.Resource(), data, cond, rid)
+	if info.tenant != common.BKDefaultTenantID && info.tenant != cond.TenantID &&
+		cond.TenantID != common.BKSuperTenantID {
+		blog.V(4).Infof("%s data(%+v) tenant not matches cond(%+v), rid: %s", c.key.Resource(), data, cond, rid)
 		return false
 	}
 
@@ -319,10 +319,10 @@ func (c *Cache) parseRemoveData(data types.WatchEventData, pip ccredis.Pipeliner
 	// remove id from system id lists
 	if c.needCacheAll {
 		if len(info.subRes) == 0 {
-			idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, "", info.supplier)
+			idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, "", info.tenant)
 		} else {
 			for _, subRes := range info.subRes {
-				idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, subRes, info.supplier)
+				idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, subRes, info.tenant)
 			}
 		}
 	}
@@ -377,9 +377,9 @@ func (c *Cache) recordIDToRemoveForSystem(idKeyMap map[string]*removeIDFromListO
 				filterOpt: &types.IDListFilterOpt{
 					IDListKey: idListKey,
 					BasicFilter: &types.BasicFilter{
-						SubRes:          subRes,
-						SupplierAccount: supplier,
-						IsSystem:        true,
+						SubRes:   subRes,
+						TenantID: supplier,
+						IsSystem: true,
 					},
 					IsAll: true,
 				},
@@ -748,8 +748,8 @@ func (c *Cache) RefreshIDList(kit *rest.Kit, opt *general.RefreshIDListOpt,
 	refreshOpt := &refreshIDListOpt{
 		filterOpt: &types.IDListFilterOpt{
 			BasicFilter: &types.BasicFilter{
-				SubRes:          opt.SubRes,
-				SupplierAccount: kit.SupplierAccount,
+				SubRes:   opt.SubRes,
+				TenantID: kit.TenantID,
 			},
 			IsAll: true,
 		},

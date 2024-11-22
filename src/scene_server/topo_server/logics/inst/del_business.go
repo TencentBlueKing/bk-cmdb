@@ -328,7 +328,8 @@ func (b *business) cleanProcessTemplate(kit *rest.Kit, bizID int64) error {
 			idsBatch = ids[i : i+batchSize]
 		}
 
-		if err := b.clientSet.CoreService().Process().DeleteProcessTemplateBatch(kit.Ctx, kit.Header, idsBatch); err != nil {
+		if err := b.clientSet.CoreService().Process().DeleteProcessTemplateBatch(kit.Ctx, kit.Header,
+			idsBatch); err != nil {
 			blog.Errorf("batch delete process template err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -408,7 +409,8 @@ func (b *business) cleanSetTemplate(kit *rest.Kit, bizID int64) error {
 		opt := metadata.DeleteSetTemplateOption{
 			SetTemplateIDs: idsBatch,
 		}
-		if err := b.clientSet.CoreService().SetTemplate().DeleteSetTemplate(kit.Ctx, kit.Header, bizID, opt); err != nil {
+		if err := b.clientSet.CoreService().SetTemplate().DeleteSetTemplate(kit.Ctx, kit.Header, bizID,
+			opt); err != nil {
 			blog.Errorf("batch delete set template err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
@@ -691,7 +693,7 @@ func (b *business) cleanTopo(kit *rest.Kit, bizID int64) error {
 }
 
 func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) error {
-	tableName := common.GetInstTableName(obj, kit.SupplierAccount)
+	tableName := common.GetInstTableName(obj, kit.TenantID)
 	idField := common.GetInstIDField(obj)
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: tableName,

@@ -43,8 +43,8 @@ func addProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	// add module attribute field
 	newAttributeID, err := db.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
-		blog.Errorf("addProcBindIP failed, NextSequence failed, err: %s", err.Error())
-		return fmt.Errorf("NextSequence failed, err: %s", err.Error())
+		blog.Errorf("addProcBindIP failed, NextSequence failed, err: %v", err)
+		return fmt.Errorf("NextSequence failed, err: %v", err)
 	}
 
 	bindIPAttrIdxFilter := map[string]interface{}{
@@ -52,15 +52,16 @@ func addProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	}
 	sort := common.BKPropertyIndexField + ":-1"
 	procAttr := &Attribute{}
-	if err := db.Table(common.BKTableNameObjAttDes).Find(bindIPAttrIdxFilter).Sort(sort).One(ctx, procAttr); err != nil {
-		blog.Errorf("addProcBindIP failed, find proc max property index id failed, filter: %s err: %s", bindIPAttrIdxFilter, err.Error())
+	if err := db.Table(common.BKTableNameObjAttDes).Find(bindIPAttrIdxFilter).Sort(sort).One(ctx,
+		procAttr); err != nil {
+		blog.Errorf("find proc max property index id failed, filter: %+v, err: %v", bindIPAttrIdxFilter, err)
 		return err
 	}
 
 	nowTime := metadata.Now()
 	procBindIPAttr := &Attribute{
 		ID:            int64(newAttributeID),
-		OwnerID:       conf.OwnerID,
+		OwnerID:       conf.TenantID,
 		ObjectID:      common.BKInnerObjIDProc,
 		PropertyID:    "bind_info",
 		PropertyName:  "bind_info",
@@ -93,7 +94,7 @@ func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		if err := db.Table(common.BKTableNameBaseProcess).Find(filter).Limit(500).All(ctx, &procs); err != nil {
 			return err
 		}
-		blog.InfoJSON("start process  bind info. process id start: %d, page proc count: %d", maxProcID, len(procs))
+		blog.Infof("start process bind info, process id start: %d, page proc count: %d", maxProcID, len(procs))
 
 		for _, proc := range procs {
 			if proc.ProcessID > maxProcID {
@@ -154,8 +155,8 @@ func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Con
 		if err := db.Table(common.BKTableNameProcessTemplate).Find(filter).Limit(500).All(ctx, &procTemps); err != nil {
 			return err
 		}
-		blog.InfoJSON("start process template bind info. id start: %d, page proc template count: %d",
-			maxID, len(procTemps))
+		blog.Infof("start process template bind info, id start: %d, page proc template count: %d", maxID,
+			len(procTemps))
 
 		for _, procTemp := range procTemps {
 			if procTemp.ID > maxID {
@@ -217,7 +218,8 @@ func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Con
 }
 
 func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	delPropertyID := []string{common.BKProcGatewayIP, common.BKProcGatewayPort, common.BKProcGatewayProtocol, common.BKProcGatewayCity, common.BKBindIP, common.BKPort, common.BKProtocol, common.BKProcPortEnable}
+	delPropertyID := []string{common.BKProcGatewayIP, common.BKProcGatewayPort, common.BKProcGatewayProtocol,
+		common.BKProcGatewayCity, common.BKBindIP, common.BKPort, common.BKProtocol, common.BKProcPortEnable}
 
 	delProcAttr := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
@@ -225,7 +227,7 @@ func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	if err := db.Table(common.BKTableNameObjAttDes).Delete(ctx, delProcAttr); err != nil {
-		blog.ErrorJSON("clearProcAttrAndGroup failed, delete attribute, filter:%s err: %s", delProcAttr, err.Error())
+		blog.Errorf("delete attribute failed, filter: %+v, err: %v", delProcAttr, err)
 		return err
 	}
 
@@ -235,7 +237,7 @@ func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 	cnt, err := db.Table(common.BKTableNameObjAttDes).Find(proxyGroupAttrFilter).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s", proxyGroupAttrFilter, err.Error())
+		blog.Errorf("get network proxy attribute failed, filter: %+v, err: %v", proxyGroupAttrFilter, err)
 		return err
 	}
 	if cnt > 0 {
@@ -246,7 +248,7 @@ func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		common.BKPropertyGroupField: "network_proxy",
 	}
 	if err := db.Table(common.BKTableNamePropertyGroup).Delete(ctx, delProxyGroupAttrFilter); err != nil {
-		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s", delProxyGroupAttrFilter, err.Error())
+		blog.Errorf("get network proxy attribute failed, filter: %+v, err: %v", delProxyGroupAttrFilter, err)
 		return err
 	}
 
@@ -278,12 +280,13 @@ func getSubAttr() []SubAttriubte {
 			IsRequired:    true,
 		},
 		SubAttriubte{
-			PropertyID:    "protocol",
-			PropertyName:  "Protocol",
-			Placeholder:   "service use protocol,",
-			IsEditable:    true,
-			PropertyType:  common.FieldTypeEnum,
-			Option:        []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text", IsDefault: true}, {ID: "2", Name: "UDP", Type: "text"}},
+			PropertyID:   "protocol",
+			PropertyName: "Protocol",
+			Placeholder:  "service use protocol,",
+			IsEditable:   true,
+			PropertyType: common.FieldTypeEnum,
+			Option: []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text", IsDefault: true},
+				{ID: "2", Name: "UDP", Type: "text"}},
 			PropertyGroup: common.BKProcBindInfo,
 			IsRequired:    true,
 		},
@@ -298,9 +301,6 @@ func getSubAttr() []SubAttriubte {
 		},
 	}
 }
-
-// Attribute attribute metadata definition
-type Attribute metadata.Attribute
 
 // SubAttriubte TODO
 type SubAttriubte metadata.SubAttribute
@@ -376,4 +376,35 @@ type PropertyString struct {
 type PropertyBool struct {
 	Value          *bool `field:"value" json:"value" bson:"value"`
 	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
+}
+
+// Attribute attribute metadata definition
+type Attribute struct {
+	BizID             int64          `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	ID                int64          `field:"id" json:"id" bson:"id" mapstructure:"id"`
+	OwnerID           string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	ObjectID          string         `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
+	PropertyID        string         `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id" mapstructure:"bk_property_id"`
+	PropertyName      string         `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name" mapstructure:"bk_property_name"`
+	PropertyGroup     string         `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group" mapstructure:"bk_property_group"`
+	PropertyGroupName string         `field:"bk_property_group_name,ignoretomap" json:"bk_property_group_name" bson:"-" mapstructure:"bk_property_group_name"`
+	PropertyIndex     int64          `field:"bk_property_index" json:"bk_property_index" bson:"bk_property_index" mapstructure:"bk_property_index"`
+	Unit              string         `field:"unit" json:"unit" bson:"unit" mapstructure:"unit"`
+	Placeholder       string         `field:"placeholder" json:"placeholder" bson:"placeholder" mapstructure:"placeholder"`
+	IsEditable        bool           `field:"editable" json:"editable" bson:"editable" mapstructure:"editable"`
+	IsPre             bool           `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
+	IsRequired        bool           `field:"isrequired" json:"isrequired" bson:"isrequired" mapstructure:"isrequired"`
+	IsReadOnly        bool           `field:"isreadonly" json:"isreadonly" bson:"isreadonly" mapstructure:"isreadonly"`
+	IsOnly            bool           `field:"isonly" json:"isonly" bson:"isonly" mapstructure:"isonly"`
+	IsSystem          bool           `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem" mapstructure:"bk_issystem"`
+	IsAPI             bool           `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
+	PropertyType      string         `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
+	Option            interface{}    `field:"option" json:"option" bson:"option" mapstructure:"option"`
+	Default           interface{}    `field:"default" json:"default,omitempty" bson:"default" mapstructure:"default"`
+	IsMultiple        *bool          `field:"ismultiple" json:"ismultiple,omitempty" bson:"ismultiple" mapstructure:"ismultiple"`
+	Description       string         `field:"description" json:"description" bson:"description" mapstructure:"description"`
+	TemplateID        int64          `field:"bk_template_id" json:"bk_template_id" bson:"bk_template_id" mapstructure:"bk_template_id"`
+	Creator           string         `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	CreateTime        *metadata.Time `json:"create_time" bson:"create_time" mapstructure:"create_time"`
+	LastTime          *metadata.Time `json:"last_time" bson:"last_time" mapstructure:"last_time"`
 }

@@ -69,7 +69,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		common.BKObjNameField:          data.ObjectName,
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
-		common.BkSupplierAccount:       data.OwnerID,
+		common.TenantID:                data.TenantID,
 	}
 	currentObj, err := assoc.obj.CreateObject(kit, true, objData)
 	if err != nil {
@@ -235,7 +235,7 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 	}
 
 	queryCond := &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BkSupplierAccount},
+		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.TenantID},
 		Condition: mapstr.MapStr{
 			common.BKObjIDField: mapstr.MapStr{common.BKDBIN: needFind},
 		},
@@ -257,7 +257,6 @@ func (assoc *association) SearchMainlineAssociationTopo(kit *rest.Kit, targetObj
 		result = append(result, &metadata.MainlineObjectTopo{
 			ObjID:      objID,
 			ObjName:    objMap[objID].ObjectName,
-			OwnerID:    objMap[objID].OwnerID,
 			NextObj:    childMap[objID],
 			NextName:   objMap[childMap[objID]].ObjectName,
 			PreObjID:   parentMap[objID],
@@ -318,7 +317,7 @@ func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childOb
 	objAsstID := fmt.Sprintf("%s_%s_%s", childObjID, common.AssociationKindMainline, parentObjID)
 	defined := false
 	association := metadata.Association{
-		OwnerID:              kit.SupplierAccount,
+		TenantID:             kit.TenantID,
 		AssociationName:      objAsstID,
 		AssociationAliasName: objAsstID,
 		ObjectID:             childObjID,

@@ -92,7 +92,7 @@ func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []maps
 	}
 
 	srcInstIDs = util.IntArrayUnique(srcInstIDs)
-	srcTable := common.GetInstTableName(srcObj, kit.SupplierAccount)
+	srcTable := common.GetInstTableName(srcObj, kit.TenantID)
 	srcCond := mapstr.MapStr{common.GetInstIDField(srcObj): mapstr.MapStr{common.BKDBIN: srcInstIDs}}
 
 	cnt, err := mongodb.Client().Table(srcTable).Find(srcCond).Count(kit.Ctx)

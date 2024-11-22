@@ -33,7 +33,7 @@ var needCareHostFields = []string{
 	common.BKOSTypeField,
 	common.BKCloudIDField,
 	common.BKHostIDField,
-	common.BkSupplierAccount,
+	common.TenantID,
 	common.BKAgentIDField,
 	common.BKAddressingField,
 }

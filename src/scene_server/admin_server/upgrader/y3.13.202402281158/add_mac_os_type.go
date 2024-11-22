@@ -28,7 +28,7 @@ import (
 // addMacOSType add host macOS type
 func addMacOSType(ctx context.Context, db dal.RDB) error {
 	filter := map[string]interface{}{
-		common.BKOwnerIDField:    common.BKDefaultOwnerID,
+		"bk_supplier_account":    "0",
 		common.BKObjIDField:      common.BKInnerObjIDHost,
 		common.BKPropertyIDField: common.BKOSTypeField,
 		common.BKAppIDField:      0,

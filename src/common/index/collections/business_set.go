@@ -45,7 +45,7 @@ var commBizSetIndexes = []types.Index{
 		Keys: bson.D{
 			{common.BKBizSetIDField, 1},
 			{common.BKBizSetNameField, 1},
-			{common.BKOwnerIDField, 1},
+			{common.TenantID, 1},
 		},
 		Background: true,
 	},

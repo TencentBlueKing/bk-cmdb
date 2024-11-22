@@ -30,12 +30,12 @@ import (
 
 // Kit stores the metadata info of a request
 type Kit struct {
-	Rid             string
-	Header          http.Header
-	Ctx             context.Context
-	CCError         errors.DefaultCCErrorIf
-	User            string
-	SupplierAccount string
+	Rid      string
+	Header   http.Header
+	Ctx      context.Context
+	CCError  errors.DefaultCCErrorIf
+	User     string
+	TenantID string
 }
 
 // NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
@@ -54,12 +54,12 @@ func (kit *Kit) NewHeader() http.Header {
 // NewKitFromHeader generate a new kit from http header.
 func NewKitFromHeader(header http.Header, errorIf errors.CCErrorIf) *Kit {
 	return &Kit{
-		Rid:             httpheader.GetRid(header),
-		Header:          header,
-		Ctx:             util.NewContextFromHTTPHeader(header),
-		CCError:         errorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
-		User:            httpheader.GetUser(header),
-		SupplierAccount: httpheader.GetSupplierAccount(header),
+		Rid:      httpheader.GetRid(header),
+		Header:   header,
+		Ctx:      util.NewContextFromHTTPHeader(header),
+		CCError:  errorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
+		User:     httpheader.GetUser(header),
+		TenantID: httpheader.GetTenantID(header),
 	}
 }
 
@@ -70,10 +70,10 @@ func NewKit() *Kit {
 
 // ShardOpts returns sharding options
 func (kit *Kit) ShardOpts() sharding.ShardOpts {
-	return sharding.NewShardOpts().WithTenant(kit.SupplierAccount)
+	return sharding.NewShardOpts().WithTenant(kit.TenantID)
 }
 
 // SysShardOpts returns sharding options for system
 func (kit *Kit) SysShardOpts() sharding.ShardOpts {
-	return sharding.NewShardOpts().WithIgnoreTenant().WithTenant(kit.SupplierAccount)
+	return sharding.NewShardOpts().WithIgnoreTenant().WithTenant(kit.TenantID)
 }

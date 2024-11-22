@@ -237,7 +237,7 @@ func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
 	audit := metadata.AuditLog{
 		ID:              int64(id),
 		AuditType:       metadata.PlatformSetting,
-		SupplierAccount: kit.SupplierAccount,
+		TenantID:        kit.TenantID,
 		User:            kit.User,
 		ResourceType:    metadata.PlatformSettingRes,
 		Action:          metadata.AuditUpdate,

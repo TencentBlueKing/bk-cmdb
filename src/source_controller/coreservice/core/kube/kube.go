@@ -112,10 +112,10 @@ func (p *kubeOperation) GetSysSpecInfoByCond(kit *rest.Kit, podsInfos []types.Po
 					},
 					Ref: &types.Reference{Kind: spec.Ref.Kind, Name: workload.Name, ID: spec.Ref.ID},
 				},
-				SupplierAccount: kit.SupplierAccount,
-				HostID:          pod.HostID,
-				NodeID:          spec.NodeID,
-				Node:            *node.Name,
+				TenantID: kit.TenantID,
+				HostID:   pod.HostID,
+				NodeID:   spec.NodeID,
+				Node:     *node.Name,
 			})
 		}
 	}
@@ -410,7 +410,7 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreat
 			RuntimeComponent: node.RuntimeComponent,
 			KubeProxyMode:    node.KubeProxyMode,
 			PodCidr:          node.PodCidr,
-			SupplierAccount:  kit.SupplierAccount,
+			TenantID:         kit.TenantID,
 			Revision: table.Revision{
 				CreateTime: now,
 				LastTime:   now,

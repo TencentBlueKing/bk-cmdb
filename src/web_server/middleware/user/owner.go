@@ -30,38 +30,38 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
-// OwnerManager TODO
-type OwnerManager struct {
+// TenantManager TODO
+type TenantManager struct {
 	Engine   *backbone.Engine
 	CacheCli redis.Client
-	OwnerID  string
+	TenantID string
 	UserName string
 	header   http.Header
 	ApiCli   apiserver.ApiServerClientInterface
 }
 
-// NewOwnerManager TODO
-func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
-	ownerManager := new(OwnerManager)
-	ownerManager.UserName = userName
-	ownerManager.OwnerID = ownerID
+// NewTenantManager TODO
+func NewTenantManager(userName, tenantID, language string) *TenantManager {
+	tenantManager := new(TenantManager)
+	tenantManager.UserName = userName
+	tenantManager.TenantID = tenantID
 
-	header := headerutil.BuildHeader(userName, ownerID)
+	header := headerutil.BuildHeader(userName, tenantID)
 	httpheader.SetLanguage(header, language)
-	ownerManager.header = header
+	tenantManager.header = header
 
-	return ownerManager
+	return tenantManager
 }
 
 // SetHttpHeader TODO
-func (m *OwnerManager) SetHttpHeader(key, val string) {
+func (m *TenantManager) SetHttpHeader(key, val string) {
 	m.header.Set(key, val)
 }
 
-// InitOwner TODO
-func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder) {
+// InitTenant TODO
+func (m *TenantManager) InitTenant() (*metadata.IamPermission, errors.CCErrorCoder) {
 	rid := httpheader.GetRid(m.header)
-	blog.V(5).Infof("init owner %s, rid: %s", m.OwnerID, rid)
+	blog.V(5).Infof("init tenant %s, rid: %s", m.TenantID, rid)
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 
 	exist, err, permissions := m.defaultAppIsExist()
@@ -71,10 +71,10 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 	if !exist {
 		redisCli := m.CacheCli
 		for {
-			ok, err := redisCli.SetNX(context.Background(), common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID,
-				m.OwnerID, 60*time.Second).Result()
+			ok, err := redisCli.SetNX(context.Background(), common.BKCacheKeyV3Prefix+"tenant_init_lock:"+m.TenantID,
+				m.TenantID, 60*time.Second).Result()
 			if nil != err {
-				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
+				blog.Errorf("tenant_init_lock error %s, rid: %s", err.Error(), rid)
 				return nil, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if ok {
@@ -84,8 +84,8 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 		}
 		defer func() {
 			if err := redisCli.Del(context.Background(),
-				common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID).Err(); err != nil {
-				blog.Errorf("owner_init_lock error %s, rid: %s", err.Error(), rid)
+				common.BKCacheKeyV3Prefix+"tenant_init_lock:"+m.TenantID).Err(); err != nil {
+				blog.Errorf("tenant_init_lock error %s, rid: %s", err.Error(), rid)
 			}
 		}()
 		exist, err, permissions = m.defaultAppIsExist()
@@ -102,11 +102,11 @@ func (m *OwnerManager) InitOwner() (*metadata.IamPermission, errors.CCErrorCoder
 	return nil, nil
 }
 
-func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermission) {
+func (m *TenantManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermission) {
 	rid := httpheader.GetRid(m.header)
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 
-	blog.V(5).Infof("addDefaultApp %s, rid: %s", m.OwnerID, rid)
+	blog.V(5).Infof("addDefaultApp %s, rid: %s", m.TenantID, rid)
 	params, err, permissions := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {
 		return err, permissions
@@ -118,7 +118,7 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 	params[common.BKLanguageField] = "1" // 中文
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
-	result, httpDoErr := m.ApiCli.AddDefaultApp(context.Background(), m.header, m.OwnerID, params)
+	result, httpDoErr := m.ApiCli.AddDefaultApp(context.Background(), m.header, m.TenantID, params)
 	if httpDoErr != nil {
 		blog.ErrorJSON("addDefaultApp searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
@@ -131,10 +131,10 @@ func (m *OwnerManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermis
 	return nil, nil
 }
 
-func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
+func (m *TenantManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 	rid := httpheader.GetRid(m.header)
-	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header, m.OwnerID)
+	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header, m.TenantID)
 	if httpDoErr != nil {
 		blog.ErrorJSON("defaultAppIsExist searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return false, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
@@ -148,7 +148,7 @@ func (m *OwnerManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata
 	return 0 < result.Data.Count, nil, nil
 }
 
-func (m *OwnerManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder,
+func (m *TenantManager) getObjectFields(objID string) (map[string]interface{}, errors.CCErrorCoder,
 	*metadata.IamPermission) {
 
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))

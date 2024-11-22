@@ -43,7 +43,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	loginSuccess := false
 	var userInfo *metadata.LoginUserInfo
 	multipleOwner := m.config.Session.MultipleOwner
-	if common.LoginSystemMultiSupplierTrue == multipleOwner {
+	if common.LoginSystemMultiTenantTrue == multipleOwner {
 		isMultiOwner = true
 	}
 
@@ -54,19 +54,19 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		blog.Infof("login user with plugin failed, rid: %s", rid)
 		return false
 	}
-	if true == isMultiOwner || true == userInfo.MultiSupplier {
-		ownerM := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language)
+	if true == isMultiOwner || true == userInfo.MultiTenant {
+		ownerM := NewTenantManager(userInfo.UserName, userInfo.TenantUin, userInfo.Language)
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
 		// 初始化失败，不影响登录
-		_, err := ownerM.InitOwner()
+		_, err := ownerM.InitTenant()
 		if nil != err {
 			blog.ErrorJSON("init onwer resource pool failed, err:%s, user:%s, rid: %s", err, userInfo, rid)
 		}
 	}
 	strOwnerUinList := []byte("")
-	if 0 != len(userInfo.OwnerUinArr) {
-		strOwnerUinList, _ = json.Marshal(userInfo.OwnerUinArr)
+	if 0 != len(userInfo.TenantUinArr) {
+		strOwnerUinList, _ = json.Marshal(userInfo.TenantUinArr)
 	}
 
 	session := sessions.Default(c)
@@ -78,13 +78,13 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionRoleKey, userInfo.Role)
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
 	session.Set(common.HTTPCookieBKTicket, userInfo.BkTicket)
-	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
+	session.Set(common.WEBSessionTenantUinKey, userInfo.TenantUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
-	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinList))
-	if userInfo.MultiSupplier {
-		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
+	session.Set(common.WEBSessionTenantUinListeKey, string(strOwnerUinList))
+	if userInfo.MultiTenant {
+		session.Set(common.WEBSessionMultiTenantKey, common.LoginSystemMultiTenantTrue)
 	} else {
-		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierFalse)
+		session.Set(common.WEBSessionMultiTenantKey, common.LoginSystemMultiTenantFalse)
 	}
 
 	if err := session.Save(); err != nil {

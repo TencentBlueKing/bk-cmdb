@@ -77,20 +77,20 @@ func (manager *TransferManager) TransferToInnerModule(kit *rest.Kit, input *meta
 		return err
 	}
 	if !exit {
-		blog.Errorf("validate module failed, module ID is not default module. input: %v, rid:%s", input, kit.Rid)
+		blog.Errorf("module ID is not default module, input: %v, rid: %s", input, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID,
 			input.ApplicationID)
 	}
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.Errorf("valid parameter failed, input: %v, err: %v, rid:%s", input, err, kit.Rid)
+		blog.Errorf("valid parameter failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
 	transferErr := transfer.Transfer(kit, input.HostID, false)
 	if transferErr != nil {
-		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err:%v, rid:%s", input, transferErr,
-			kit.Rid)
+		blog.Errorf("transfer module host relation failed, input: %v, hostID: %s, err: %v, rid: %s", input,
+			input.HostID, transferErr, kit.Rid)
 		return transferErr
 	}
 
@@ -132,7 +132,7 @@ func (manager *TransferManager) TransferToNormalModule(kit *rest.Kit, input *met
 	}
 	err = transfer.Transfer(kit, input.HostID, input.DisableTransferHostAutoApply)
 	if err != nil {
-		blog.Errorf("transfer module host relation failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
+		blog.Errorf("transfer module host relation failed, input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
@@ -151,14 +151,16 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 		common.BKAppIDField:  input.ApplicationID,
 	}
 	hostConfigs := make([]metadata.ModuleHost, 0)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(kit.Ctx, &hostConfigs); err != nil {
-		blog.ErrorJSON("RemoveFromModule failed, find host module config failed, filter:%s, hostID:%s, err:%s, rid:%s", hostConfigFilter, common.BKTableNameModuleHostConfig, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, err.Error())
+	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(kit.Ctx, &hostConfigs)
+	if err != nil {
+		blog.Errorf("find host module config failed, filter: %+v, table: %s, err: %v, rid: %s", hostConfigFilter,
+			common.BKTableNameModuleHostConfig, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrHostModuleConfigFailed, err)
 	}
 
 	// 如果主机不在参数指定的模块中，操作失败
 	if len(hostConfigs) == 0 {
-		blog.ErrorJSON("RemoveFromModule failed, host invalid, host module config not found, input:%s, rid:%s", input, kit.Rid)
+		blog.Errorf("host module config not found, input: %+v, rid: %s", input, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrHostModuleNotExist)
 	}
 
@@ -180,11 +182,12 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	}
 	defaultModuleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("RemoveFromModule failed, filter default module failed, filter:%s, hostID:%s, err:%s, rid:%s", defaultModuleFilter, common.BKTableNameBaseModule, err, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
+		blog.Errorf("get default module failed, filter: %+v, table: %s, err: %v, rid: %s", defaultModuleFilter,
+			common.BKTableNameBaseModule, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, err)
 	}
 	if defaultModuleCount > 0 {
-		blog.ErrorJSON("RemoveFromModule failed, default module shouldn't in target modules, input:%s, rid:%s", input, kit.Rid)
+		blog.Errorf("default module shouldn't in target modules, input: %+v, rid: %v", input, kit.Rid)
 		return kit.CCError.CCError(common.CCErrHostRemoveFromDefaultModuleFailed)
 	}
 
@@ -202,9 +205,10 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 			IsIncrement:              false,
 			DisableAutoCreateSvcInst: true,
 		}
-		err := manager.TransferToNormalModule(kit, &option)
+		err = manager.TransferToNormalModule(kit, &option)
 		if err != nil {
-			blog.ErrorJSON("RemoveFromModule failed, TransferToNormalModule failed, input:%s, option:%s, err:%s, rid:%s", input, option, err.Error(), kit.Rid)
+			blog.Errorf("TransferToNormalModule failed, input: %+v, option: %+v, err: %v, rid: %s", input, option, err,
+				kit.Rid)
 			return err
 		}
 		return nil
@@ -216,8 +220,9 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 		common.BKDefaultField: common.DefaultResModuleFlag,
 	}
 	idleModule := metadata.ModuleHost{}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(idleModuleFilter).One(kit.Ctx, &idleModule); err != nil {
-		return kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
+	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(idleModuleFilter).One(kit.Ctx,
+		&idleModule); err != nil {
+		return kit.CCError.CCErrorf(common.CCErrHostGetModuleFail, err)
 	}
 	innerModuleOption := metadata.TransferHostToInnerModule{
 		ApplicationID: input.ApplicationID,
@@ -226,7 +231,8 @@ func (manager *TransferManager) RemoveFromModule(kit *rest.Kit, input *metadata.
 	}
 
 	if err := manager.TransferToInnerModule(kit, &innerModuleOption); err != nil {
-		blog.ErrorJSON("RemoveFromModule failed, TransferToInnerModule failed, filter:%s, option:%s, err:%s, rid:%s", input, innerModuleOption, err.Error(), kit.Rid)
+		blog.Errorf("TransferToInnerModule failed, filter: %+v, option: %+v, err: %v, rid: %s", input,
+			innerModuleOption, err, kit.Rid)
 		return err
 	}
 	return nil
@@ -240,8 +246,7 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	var err error
 	err = transfer.ValidParameter(kit)
 	if err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, ValidParameter failed, err:%s, input:%s, rid:%s",
-			err.Error(), input, kit.Rid)
+		blog.Errorf("validParameter failed, input: %+v, err: %v, rid: %s", input, err, kit.Rid)
 		return err
 	}
 
@@ -249,29 +254,30 @@ func (manager *TransferManager) TransferToAnotherBusiness(kit *rest.Kit,
 	legacyAttributes, err := transfer.dependent.SelectObjectAttWithParams(kit, common.BKInnerObjIDHost,
 		input.SrcApplicationIDs)
 	if err != nil {
-		blog.Errorf("select objectAtt with params failed, bizIDs: %v, err: %s, rid: %s", input.SrcApplicationIDs, err,
+		blog.Errorf("select objectAtt with params failed, bizIDs: %v, err: %v, rid: %s", input.SrcApplicationIDs, err,
 			kit.Rid)
 		return err
 	}
 
 	err = transfer.Transfer(kit, input.HostIDArr, false)
 	if err != nil {
-		blog.ErrorJSON("transfer to another business failed, transfer module host relation error. "+
-			"err: %s, input: %s, rid: %s", err.Error(), input, kit.Rid)
+		blog.Errorf("transfer to another business failed, transfer module host relation error, "+
+			"err: %v, input: %+v, rid: %s", err, input, kit.Rid)
 		return err
 	}
 
 	// reset private field in legacy business
 	if err := manager.clearLegacyPrivateField(kit, legacyAttributes, input.HostIDArr...); err != nil {
-		blog.ErrorJSON("TransferToAnotherBusiness failed, clearLegacyPrivateField failed, "+
-			"hostID:%s, attributes:%s, err:%s, rid:%s", input.HostIDArr, legacyAttributes, err.Error(), kit.Rid)
+		blog.Errorf("clearLegacyPrivateField failed, hostID: %v, attributes: %+v, err: %v, rid: %s", input.HostIDArr,
+			legacyAttributes, err, kit.Rid)
 		// we should go on setting default value for new private field
 	}
 
 	return nil
 }
 
-func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostIDs ...int64) errors.CCErrorCoder {
+func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attributes []metadata.Attribute,
+	hostIDs ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{}, 0)
 	for _, attribute := range attributes {
 		if attribute.BizID == 0 {
@@ -292,13 +298,15 @@ func (manager *TransferManager) clearLegacyPrivateField(kit *rest.Kit, attribute
 		},
 	}
 	if err := mongodb.Client().Table(common.BKTableNameBaseHost).UpdateMultiModel(kit.Ctx, filter, reset); err != nil {
-		blog.ErrorJSON("clearLegacyPrivateField failed. table: %s, filter: %s, doc: %s, err: %s, rid:%s", common.BKTableNameBaseHost, filter, doc, err.Error(), kit.Rid)
+		blog.Errorf("update host info failed, table: %s, filter: %+v, doc: %+v, err: %v, rid: %s",
+			common.BKTableNameBaseHost, filter, doc, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }
 
-func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes []metadata.Attribute, hostID ...int64) errors.CCErrorCoder {
+func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes []metadata.Attribute,
+	hostID ...int64) errors.CCErrorCoder {
 	doc := make(map[string]interface{})
 	for _, attribute := range attributes {
 		if attribute.BizID == 0 {
@@ -319,16 +327,18 @@ func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes
 	}
 	_, err := manager.dependence.UpdateModelInstance(kit, common.BKInnerObjIDHost, updateOption)
 	if err != nil {
-		blog.ErrorJSON("setDefaultPrivateField failed. UpdateModelInstance failed, option: %s, err: %s, rid:%s", common.BKTableNameBaseHost, updateOption, err.Error(), kit.Rid)
+		blog.Errorf("UpdateModelInstance failed, option: %+v, err: %v, rid: %s", common.BKTableNameBaseHost,
+			updateOption, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
 }
 
 // GetHostModuleRelation get host module relation
-func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
+func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit,
+	input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	if input.Empty() {
-		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, kit.Rid)
+		blog.Errorf("input empty, input: %#v, rid: %s", input, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "GetHostModuleRelation input")
 	}
 	moduleHostCond := condition.CreateCondition()
@@ -352,7 +362,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(input.Fields...).
 		Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("get module host config count failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("get module host config count failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -369,7 +379,7 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 
 	err = db.All(kit.Ctx, &hostModuleArr)
 	if err != nil {
-		blog.Errorf("get module host config failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("get module host config failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -380,14 +390,14 @@ func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *meta
 	}, nil
 }
 
-// DeleteFromSystem TODO
-// DeleteHost delete host module relation and host info
+// DeleteFromSystem delete host module relation and host info
 func (manager *TransferManager) DeleteFromSystem(kit *rest.Kit, input *metadata.DeleteHostRequest) error {
 	transfer := manager.NewHostModuleTransfer(kit, input.ApplicationID, nil, false, false)
 	return transfer.DeleteHosts(kit, input.HostIDArr)
 }
 
-func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
+func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID int64,
+	hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
 	moduleHostCond := condition.CreateCondition()
 	moduleHostCond.Field(common.BKAppIDField).Eq(appID)
 	moduleHostCond.Field(common.BKHostIDField).In(hostIDArr)
@@ -396,7 +406,7 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 	var dataArr []metadata.ModuleHost
 	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).All(kit.Ctx, &dataArr)
 	if err != nil {
-		blog.ErrorJSON("getHostIDModuleMapByHostID query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, kit.Rid)
+		blog.Errorf("get module host config error, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	result := make(map[int64][]metadata.ModuleHost, 0)
@@ -407,9 +417,10 @@ func (manager *TransferManager) getHostIDModuleMapByHostID(kit *rest.Kit, appID 
 }
 
 // GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
-func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit,
+	input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
 	if input.Empty() {
-		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, kit.Rid)
+		blog.Errorf("input empty, input: %#v, rid: %s", input, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
 	}
 	moduleHostCond := condition.CreateCondition()
@@ -434,14 +445,14 @@ func (manager *TransferManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, 
 	// 根据约束cond,获得去重后的主机id.
 	ret, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx, common.BKHostIDField, cond)
 	if err != nil {
-		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("get module host config failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	// 将ret转化为[]int64
 	var hostIDArr []int64
 	if hostIDArr, err = util.SliceInterfaceToInt64(ret); err != nil {
-		blog.Errorf("get module host config  failed, err: %v, cond:%#v, rid: %s", err, cond, kit.Rid)
+		blog.Errorf("slice interface to int64 failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	return hostIDArr, nil
@@ -465,7 +476,7 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit,
 	}
 	deleteErr := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, cond)
 	if deleteErr != nil {
-		blog.Errorf("delete host relation failed, err: %v, cond: %v, rid: %v", deleteErr, cond, kit.Rid)
+		blog.Errorf("delete module host config failed, err: %v, cond: %v, rid: %v", deleteErr, cond, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -476,12 +487,12 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit,
 			ModuleID: module.ModuleID,
 			HostID:   hostID,
 			AppID:    module.BizID,
-			OwnerID:  kit.SupplierAccount,
+			TenantID: kit.TenantID,
 		})
 	}
 	insertErr := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, data)
 	if insertErr != nil {
-		blog.Errorf("create host relation failed, err: %v, data: %v, rid: %v", insertErr, data, kit.Rid)
+		blog.Errorf("insert host relation failed, err: %v, data: %v, rid: %v", insertErr, data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 

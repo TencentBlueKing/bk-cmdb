@@ -1043,7 +1043,7 @@ type Process struct {
 	User              *string        `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
 	TimeoutSeconds    *int64         `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
 	Description       *string        `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
-	SupplierAccount   string         `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account" structs:"bk_supplier_account" mapstructure:"bk_supplier_account"`
+	TenantID          string         `field:"tenant_id" json:"tenant_id" bson:"tenant_id" structs:"tenant_id" mapstructure:"tenant_id"`
 	StartParamRegex   *string        `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
 	ServiceInstanceID int64          `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id" mapstructure:"service_instance_id"`
 	BindInfo          []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
@@ -1074,7 +1074,7 @@ func (p *Process) Map() map[string]interface{} {
 		common.BKUser:                   p.User,
 		common.BKProcTimeOut:            p.TimeoutSeconds,
 		common.BKDescriptionField:       p.Description,
-		common.BKOwnerIDField:           p.SupplierAccount,
+		common.TenantID:                 p.TenantID,
 		common.BKStartParamRegex:        p.StartParamRegex,
 		common.BKProcBindInfo:           bindInfoArr,
 		common.CreateTimeField:          p.CreateTime,
@@ -1092,9 +1092,9 @@ type ServiceCategory struct {
 	ID   int64  `field:"id" json:"id" bson:"id"`
 	Name string `field:"name" json:"name" bson:"name"`
 
-	RootID          int64  `field:"bk_root_id" json:"bk_root_id" bson:"bk_root_id"`
-	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id" bson:"bk_parent_id"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	RootID   int64  `field:"bk_root_id" json:"bk_root_id" bson:"bk_root_id"`
+	ParentID int64  `field:"bk_parent_id" json:"bk_parent_id" bson:"bk_parent_id"`
+	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 
 	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
 	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
@@ -1154,7 +1154,7 @@ type ServiceTemplate struct {
 	Modifier         string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime       time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime         time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount  string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	TenantID         string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
@@ -1176,11 +1176,11 @@ type ServiceTemplateAttr struct {
 	AttributeID       int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
 	PropertyValue     interface{} `json:"bk_property_value" bson:"bk_property_value"`
 
-	Creator         string    `json:"creator" bson:"creator"`
-	Modifier        string    `json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `json:"create_time" bson:"create_time"`
-	LastTime        time.Time `json:"last_time" bson:"last_time"`
-	SupplierAccount string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string    `json:"creator" bson:"creator"`
+	Modifier   string    `json:"modifier" bson:"modifier"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"last_time"`
+	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate ServiceTemplateAttr
@@ -1226,11 +1226,11 @@ type ProcessTemplate struct {
 	// properties's value.
 	Property *ProcessProperty `field:"property" json:"property" bson:"property"`
 
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -1254,15 +1254,15 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 }
 
 // NewProcess generate a new process from process template
-func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64, supplierAccount string,
+func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64, tenantID string,
 	host map[string]interface{}) (*Process, error) {
 
 	now := time.Now()
 	processInstance := &Process{
-		LastTime:        now,
-		CreateTime:      now,
-		BusinessID:      bizID,
-		SupplierAccount: supplierAccount,
+		LastTime:   now,
+		CreateTime: now,
+		BusinessID: bizID,
+		TenantID:   tenantID,
 	}
 
 	property := pt.Property
@@ -1878,7 +1878,8 @@ func (pt *ProcessProperty) validateFields() (string, error) {
 
 // Update all not nil field from input to pt
 // rawProperty allows us set property field to nil
-//  参数rawProperty，input 数据是一样的，只不过一个是map,一个struct。 因为struct 是有默认行为的。 rawProperty为了获取用户是否输入
+//
+//	参数rawProperty，input 数据是一样的，只不过一个是map,一个struct。 因为struct 是有默认行为的。 rawProperty为了获取用户是否输入
 func (pt *ProcessProperty) Update(input ProcessProperty, rawProperty map[string]interface{}) {
 	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
@@ -2114,11 +2115,11 @@ type ServiceInstance struct {
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id" bson:"bk_module_id"`
 
-	Creator         string    `field:"creator" json:"creator" bson:"creator"`
-	Modifier        string    `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime      time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime        time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Creator    string    `field:"creator" json:"creator" bson:"creator"`
+	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -2159,8 +2160,8 @@ type ProcessInstanceRelation struct {
 	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
 
 	// redundant field for accelerating processes by HostID
-	HostID          int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	HostID   int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
+	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -2202,10 +2203,10 @@ type ProcessInstanceNG struct {
 
 // Proc2Module TODO
 type Proc2Module struct {
-	BizID           int64  `json:"bk_biz_id"`
-	ModuleName      string `json:"bk_module_name"`
-	ProcessID       int64  `json:"bk_process_id"`
-	SupplierAccount string `json:"bk_supplier_account"`
+	BizID      int64  `json:"bk_biz_id"`
+	ModuleName string `json:"bk_module_name"`
+	ProcessID  int64  `json:"bk_process_id"`
+	TenantID   string `json:"tenant_id"`
 }
 
 // LabelAggregationOption TODO

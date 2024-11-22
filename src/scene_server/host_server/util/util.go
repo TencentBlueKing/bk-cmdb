@@ -53,7 +53,7 @@ func (o *operation) WithAppID(appID int64) *operation {
 
 // WithOwnerID TODO
 func (o *operation) WithOwnerID(ownerID string) *operation {
-	o.op[common.BKOwnerIDField] = ownerID
+	o.op[common.TenantID] = ownerID
 	return o
 }
 

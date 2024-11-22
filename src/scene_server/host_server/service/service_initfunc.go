@@ -116,7 +116,7 @@ func (s *Service) initHost(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/hosts/batch",
 		Handler: s.DeleteHostBatchFromResourcePool})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{bk_supplier_account}/{bk_host_id}",
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/hosts/{tenant_id}/{bk_host_id}",
 		Handler: s.GetHostInstanceProperties})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/add", Handler: s.AddHost})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/excel/add", Handler: s.AddHostByExcel})
@@ -148,7 +148,7 @@ func (s *Service) initHost(web *restful.WebService) {
 		Handler: s.UpdateHostPropertyBatch})
 	// TODO: Deprecated, delete this api, used in framework
 	// utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/sync/new/host",
-	//Handler: s.NewHostSyncAppTopo})
+	// Handler: s.NewHostSyncAppTopo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/hosts/modules/idle/set",
 		Handler: s.MoveSetHost2IdleModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/property/clone", Handler: s.CloneHostProperty})

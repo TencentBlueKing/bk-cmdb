@@ -24,102 +24,102 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LoginUserInfoOwnerUinList TODO
-type LoginUserInfoOwnerUinList struct {
-	OwnerID   string `json:"id"`
-	OwnerName string `json:"name"`
-	Role      int64  `json:"role"`
+// LoginUserInfoTenantUinList login user tenant uin list
+type LoginUserInfoTenantUinList struct {
+	TenantID   string `json:"id"`
+	TenantName string `json:"name"`
+	Role       int64  `json:"role"`
 }
 
-// LoginUserInfo TODO
+// LoginUserInfo login user info
 type LoginUserInfo struct {
-	UserName      string                      `json:"username"`
-	ChName        string                      `json:"chname"`
-	Phone         string                      `json:"phone"`
-	Email         string                      `json:"email"`
-	Role          string                      `json:"-"`
-	BkToken       string                      `json:"bk_token"`
-	BkTicket      string                      `json:"bk_ticket"`
-	OnwerUin      string                      `json:"current_supplier"`
-	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` // user all owner uin
-	IsOwner       bool                        `json:"-"`             // is master
-	Extra         map[string]interface{}      `json:"extra"`         // custom information
-	Language      string                      `json:"-"`
-	AvatarUrl     string                      `json:"avatar_url"`
-	MultiSupplier bool                        `json:"multi_supplier"`
+	UserName     string                       `json:"username"`
+	ChName       string                       `json:"chname"`
+	Phone        string                       `json:"phone"`
+	Email        string                       `json:"email"`
+	Role         string                       `json:"-"`
+	BkToken      string                       `json:"bk_token"`
+	BkTicket     string                       `json:"bk_ticket"`
+	TenantUin    string                       `json:"current_tenant"`
+	TenantUinArr []LoginUserInfoTenantUinList `json:"tenant_list"` // user all tenant uin
+	IsTenant     bool                         `json:"-"`           // is master
+	Extra        map[string]interface{}       `json:"extra"`       // custom information
+	Language     string                       `json:"-"`
+	AvatarUrl    string                       `json:"avatar_url"`
+	MultiTenant  bool                         `json:"multi_tenant"`
 }
 
-// LoginPluginInfo TODO
+// LoginPluginInfo login user plugin info
 type LoginPluginInfo struct {
 	Name       string // plugin info
 	Version    string // In what version is used
 	HandleFunc LoginUserPluginInerface
 }
 
-// LoginUserPluginParams TODO
+// LoginUserPluginParams login user plugin params
 type LoginUserPluginParams struct {
-	Url          string
-	IsMultiOwner bool
-	Cookie       []*http.Cookie // Reserved word, not used now
-	Header       http.Header    // Reserved word, not used now
+	Url           string
+	IsMultiTenant bool
+	Cookie        []*http.Cookie // Reserved word, not used now
+	Header        http.Header    // Reserved word, not used now
 }
 
-// LoginUserPluginInerface TODO
+// LoginUserPluginInerface login user plugin interface
 type LoginUserPluginInerface interface {
-	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
+	LoginUser(c *gin.Context, config map[string]string, isMultiTenant bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
 	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
 }
 
-// LoginSystemUserInfo TODO
+// LoginSystemUserInfo login system user info
 type LoginSystemUserInfo struct {
 	CnName string `json:"chinese_name"`
 	EnName string `json:"english_name"`
 }
 
-// LonginSystemUserListResult TODO
+// LonginSystemUserListResult login system user list result
 type LonginSystemUserListResult struct {
 	BaseResp `json:",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
 }
 
-// DepartmentResult TODO
+// DepartmentResult department result
 type DepartmentResult struct {
 	BaseResp `json:",inline"`
 	Data     *DepartmentData `json:"data"`
 }
 
-// DepartmentProfileResult TODO
+// DepartmentProfileResult department profile result
 type DepartmentProfileResult struct {
 	BaseResp `json:",inline"`
 	Data     *DepartmentProfileData `json:"data"`
 }
 
-// LoginUserInfoDetail TODO
+// LoginUserInfoDetail login user info detail
 type LoginUserInfoDetail struct {
-	UserName      string                      `json:"username"`
-	ChName        string                      `json:"chname"`
-	OnwerUin      string                      `json:"current_supplier"`
-	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` // user all owner uin
-	AvatarUrl     string                      `json:"avatar_url"`
-	MultiSupplier bool                        `json:"multi_supplier"`
+	UserName     string                       `json:"username"`
+	ChName       string                       `json:"chname"`
+	TenantUin    string                       `json:"current_tenant"`
+	TenantUinArr []LoginUserInfoTenantUinList `json:"tenant_list"` // user all tenant uin
+	AvatarUrl    string                       `json:"avatar_url"`
+	MultiTenant  bool                         `json:"multi_tenant"`
 }
 
-// LoginUserInfoResult TODO
+// LoginUserInfoResult login user info result
 type LoginUserInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     LoginUserInfoDetail `json:"data"`
 }
 
-// LoginChangeSupplierResult TODO
-type LoginChangeSupplierResult struct {
+// LoginChangeTenantResult login change tenant result
+type LoginChangeTenantResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
-		ID string `json:"bk_supplier_account"`
+		TenantID string `json:"tenant_id"`
 	} `json:"data"`
 }
 
-// LogoutResult TODO
+// LogoutResult logout result
 type LogoutResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
@@ -127,12 +127,12 @@ type LogoutResult struct {
 	} `json:"data"`
 }
 
-// LogoutRequestParams TODO
+// LogoutRequestParams logout request params
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
 
-// ExcelAssociationOperate TODO
+// ExcelAssociationOperate excel association operate
 type ExcelAssociationOperate int
 
 const (

@@ -74,7 +74,7 @@ func Parse(args []string) error {
 	}
 	opt := &option{
 		position: filePath,
-		OwnerID:  common.BKDefaultOwnerID,
+		OwnerID:  common.BKDefaultTenantID,
 		dryrun:   dryRunFlag,
 		mini:     miniFlag,
 		scope:    scope,

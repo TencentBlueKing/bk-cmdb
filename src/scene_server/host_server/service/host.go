@@ -318,7 +318,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	if appID == 0 {
 		// get default app id
 		var err error
-		appID, err = s.Logic.GetDefaultAppIDWithSupplier(ctx.Kit)
+		appID, err = s.Logic.GetDefaultAppIDWithTenant(ctx.Kit)
 		if err != nil {
 			blog.Errorf("add host, but get default app id failed, err: %v,input:%+v,rid:%s", err, hostList, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
@@ -339,7 +339,7 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
-			ctx.Kit.SupplierAccount, hostList.HostInfo, hostList.InputType)
+			ctx.Kit.TenantID, hostList.HostInfo, hostList.InputType)
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
 				success, updateErrRow, err, errRow, hostList, ctx.Kit.Rid)
@@ -377,7 +377,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	if appID == 0 {
 		// get default app id
 		var err error
-		appID, err = s.Logic.GetDefaultAppIDWithSupplier(ctx.Kit)
+		appID, err = s.Logic.GetDefaultAppIDWithTenant(ctx.Kit)
 		if err != nil {
 			blog.Errorf("add host, but get default app id failed, err: %v,input:%+v,rid:%s", err, hostList, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
@@ -400,7 +400,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.SupplierAccount,
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.TenantID,
 		hostList.HostInfo)
 	retData["success"] = success
 	retData["error"] = errRow
@@ -468,7 +468,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	}
 	if 0 == appID {
 		blog.Errorf("add host from agent, but got invalid default appID, err: %v,ownerID:%s,input:%#v,rid:%s", err,
-			ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
+			ctx.Kit.TenantID, agents, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrAddHostToModule, "business not found"))
 		return
 	}
@@ -477,7 +477,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, opt.MapStr())
 	if err != nil {
 		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err,
-			ctx.Kit.SupplierAccount, agents, ctx.Kit.Rid)
+			ctx.Kit.TenantID, agents, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -490,7 +490,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
-			common.BKDefaultOwnerID, addHost, "")
+			common.BKDefaultTenantID, addHost, "")
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
 				success, updateErrRow, err, errRow, agents, ctx.Kit.Rid)
@@ -880,7 +880,7 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
 		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID,
-			hostList.ModuleID, ctx.Kit.SupplierAccount, hostList.HostInfo, common.InputTypeApiNewHostSync)
+			hostList.ModuleID, ctx.Kit.TenantID, hostList.HostInfo, common.InputTypeApiNewHostSync)
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v, rid: %s",
 				success, updateErrRow, err, errRow, ctx.Kit.Rid)

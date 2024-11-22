@@ -53,11 +53,11 @@ type FullSyncCondEvent struct {
 
 // FullSyncCondInfo is the full sync condition info for the general resource cache
 type FullSyncCondInfo struct {
-	SubResource     string
-	IsAll           bool
-	Interval        time.Duration
-	Condition       *filter.Expression
-	SupplierAccount string
+	SubResource string
+	IsAll       bool
+	Interval    time.Duration
+	Condition   *filter.Expression
+	TenantID    string
 }
 
 // ListDetailByIDsOpt is list general resource detail cache by ids option
@@ -226,10 +226,10 @@ func (o *IDListFilterOpt) Validate(hasSubRes bool) ccErr.RawErrorInfo {
 
 // BasicFilter is the basic filter for getting general resource data from db
 type BasicFilter struct {
-	SubRes          string
-	SupplierAccount string
+	SubRes   string
+	TenantID string
 
-	// IsSystem defines whether id list is for system use, system resource do not need to be filtered by SupplierAccount
+	// IsSystem defines whether id list is for system use, system resource do not need to be filtered by TenantID
 	IsSystem bool
 }
 

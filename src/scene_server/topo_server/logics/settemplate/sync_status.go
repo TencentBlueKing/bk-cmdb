@@ -212,7 +212,7 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 }
 
 func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultOwnerID)
+	detail.Header = headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
 	for taskIdx := range detail.Detail {
 		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
 		if !ok {

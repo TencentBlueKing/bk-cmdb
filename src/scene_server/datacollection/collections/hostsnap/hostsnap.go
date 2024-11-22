@@ -255,9 +255,9 @@ func (h *HostSnap) getHostDetail(header http.Header, rid, agentID, msg, sourceTy
 		host, err = h.getHostByAgentID(header, rid, agentID)
 		if err != nil {
 			// todo 由于采集器会上报没有绑定agent id的主机信息，给db造成了压力，这里先把加入延迟队列的逻辑去掉
-			//if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
+			// if err := h.putDataIntoDelayQueue(rid, msg); err != nil {
 			//	blog.Errorf("put msg to delay queue failed, agentID: %, err: %v, rid: %s", agentID, err, rid)
-			//}
+			// }
 			blog.Errorf("get host detail with agentID: %v failed, err: %v, rid: %s", agentID, err, rid)
 			return "", errors.New("no host founded")
 		}
@@ -423,12 +423,12 @@ func (h *HostSnap) updateHostWithColletorMsg(header http.Header, rid string, hos
 		// get audit interface of host.
 		audit := auditlog.NewHostAudit(h.CoreAPI.CoreService())
 		kit := &rest.Kit{
-			Rid:             rid,
-			Header:          header,
-			Ctx:             h.ctx,
-			CCError:         h.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
-			User:            common.CCSystemCollectorUserName,
-			SupplierAccount: common.BKDefaultOwnerID,
+			Rid:      rid,
+			Header:   header,
+			Ctx:      h.ctx,
+			CCError:  h.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
+			User:     common.CCSystemCollectorUserName,
+			TenantID: common.BKDefaultTenantID,
 		}
 
 		// generate audit log for update host.
@@ -1250,7 +1250,7 @@ func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, host
 
 func newHeaderWithRid() (http.Header, string) {
 	rid := util.GenerateRID()
-	header := headerutil.GenCommonHeader(common.CCSystemCollectorUserName, common.BKDefaultOwnerID, rid)
+	header := headerutil.GenCommonHeader(common.CCSystemCollectorUserName, common.BKDefaultTenantID, rid)
 	return header, rid
 }
 

@@ -272,8 +272,8 @@ const (
 	// BKAsstBizIDField asst business id field
 	BKAsstBizIDField = "bk_asst_biz_id"
 
-	// BKSupplierAccountField supplier account
-	BKSupplierAccountField = "bk_supplier_account"
+	// BKTenantIDField supplier account
+	BKTenantIDField = "tenant_id"
 
 	// CreatorField the creator field
 	CreatorField = "creator"

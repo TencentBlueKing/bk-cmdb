@@ -33,7 +33,7 @@ import (
 	processhook "configcenter/src/thirdparty/hooks/process"
 )
 
-// CreateProcessInstances TODO
+// CreateProcessInstances create process instances
 func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.CreateRawProcessInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -99,18 +99,23 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(processIDs)
 }
 
-func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) ([]int64, errors.CCErrorCoder) {
-	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
+func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) (
+	[]int64, errors.CCErrorCoder) {
+
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		input.ServiceInstanceID)
 	if err != nil {
-		blog.Errorf("create process instance failed, get service instance by id failed, serviceInstanceID: %d, err: %v, rid: %s", input.ServiceInstanceID, err, ctx.Kit.Rid)
+		blog.Errorf("get service instance by id failed, serviceInstanceID: %d, err: %v, rid: %s",
+			input.ServiceInstanceID, err, ctx.Kit.Rid)
 		return nil, err
 	}
 	if serviceInstance.BizID != input.BizID {
-		blog.Errorf("create process instance with raw, biz id from input not equal with service instance, rid: %s", ctx.Kit.Rid)
+		blog.Errorf("biz id from input not equal with service instance, rid: %s", ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-		blog.Errorf("create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v, rid: %s", input.ServiceInstanceID, err, ctx.Kit.Rid)
+		blog.Errorf("initialized by template forbidden, serviceInstanceID: %d, err: %v, rid: %s",
+			input.ServiceInstanceID, err, ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden)
 	}
 
@@ -120,7 +125,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		now := time.Now()
 		item.ProcessData[common.BKProcessIDField] = int64(0)
 		item.ProcessData[common.BKAppIDField] = input.BizID
-		item.ProcessData[common.BkSupplierAccount] = ctx.Kit.SupplierAccount
+		item.ProcessData[common.TenantID] = ctx.Kit.TenantID
 		item.ProcessData[common.CreateTimeField] = now
 		item.ProcessData[common.LastTimeField] = now
 		item.ProcessData[common.BKServiceInstanceIDField] = input.ServiceInstanceID
@@ -130,7 +135,8 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 
 	processIDs, err = ps.Logic.CreateProcessInstances(ctx.Kit, processDatas)
 	if err != nil {
-		blog.Errorf("create process instance failed, create process failed, serviceInstanceID: %d, processDatas: %+v, err: %v, rid: %s", input.ServiceInstanceID, processDatas, err, ctx.Kit.Rid)
+		blog.Errorf("create process failed, serviceInstanceID: %d, processData: %+v, err: %v, rid: %s",
+			input.ServiceInstanceID, processDatas, err, ctx.Kit.Rid)
 		return nil, err
 	}
 
@@ -147,14 +153,50 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	}
 	_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelations(ctx.Kit.Ctx, ctx.Kit.Header, relations)
 	if err != nil {
-		blog.ErrorJSON("create service instance relations, CreateProcessInstanceRelations err: %s, relations:%s, rid: %s", err, relations, ctx.Kit.Rid)
+		blog.Errorf("create process instance relations failed, err: %v, relations: %+v, rid: %s", err, relations,
+			ctx.Kit.Rid)
 		return nil, err
 	}
 
 	return processIDs, nil
 }
 
-// UpdateProcessInstancesByIDs TODO
+func (ps *ProcServer) getAuditLog(ctx *rest.Contexts, audit *auditlog.SvcInstLog,
+	input metadata.UpdateProcessByIDsInput, processResult *metadata.InstDataInfo) []metadata.AuditLog {
+
+	// generate audit log before processes are updated
+	relOpt := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: input.BizID,
+		ProcessIDs: input.ProcessIDs,
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relOpt)
+	if err != nil {
+		blog.Errorf("get process relations failed, option: %+v, err: %v, rid: %s", relOpt, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return nil
+	}
+	svcInstIDs := make([]int64, 0)
+	for _, relation := range relRes.Info {
+		svcInstIDs = append(svcInstIDs, relation.ServiceInstanceID)
+	}
+
+	if err = audit.WithServiceInstanceByIDs(ctx.Kit, input.BizID, svcInstIDs, []string{common.BKFieldID}); err != nil {
+		ctx.RespAutoError(err)
+		return nil
+	}
+
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).
+		WithUpdateFields(input.UpdateData)
+	err = audit.WithProc(generateAuditParameter, processResult.Info, relRes.Info)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return nil
+	}
+	return audit.GenerateAuditLog(generateAuditParameter)
+}
+
+// UpdateProcessInstancesByIDs update process instances by ids
 func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	input := metadata.UpdateProcessByIDsInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -167,7 +209,6 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
 		return
 	}
-
 	filter := map[string]interface{}{
 		common.BKProcessIDField: map[string]interface{}{
 			common.BKDBIN: input.ProcessIDs,
@@ -179,44 +220,11 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	}
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDProc, reqParam)
-	if nil != err {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "UpdateProcessInstancesByIDs failed, "+
-			"reqParam: %#v, err: %+v", reqParam, err)
-		return
-	}
-
-	// generate audit log before processes are updated
-	relOpt := &metadata.ListProcessInstanceRelationOption{
-		BusinessID: input.BizID,
-		ProcessIDs: input.ProcessIDs,
-		Page:       metadata.BasePage{Limit: common.BKNoLimit},
-	}
-	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relOpt)
 	if err != nil {
-		blog.Errorf("get process relations failed, option: %+v, err: %v, rid: %s", relOpt, err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "readInstance failed, reqParam: %#v, err: %v",
+			reqParam, err)
 		return
 	}
-
-	svcInstIDs := make([]int64, 0)
-	for _, relation := range relRes.Info {
-		svcInstIDs = append(svcInstIDs, relation.ServiceInstanceID)
-	}
-
-	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
-	if err = audit.WithServiceInstanceByIDs(ctx.Kit, input.BizID, svcInstIDs, []string{common.BKFieldID}); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).
-		WithUpdateFields(input.UpdateData)
-	err = audit.WithProc(generateAuditParameter, processResult.Info, relRes.Info)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
 
 	// parse update data and update the processes
 	raws := make([]map[string]interface{}, 0)
@@ -231,12 +239,13 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 		ctx.RespEntity([]int64{})
 		return
 	}
-
 	updateInput := metadata.UpdateRawProcessInstanceInput{
 		BizID: input.BizID,
 		Raw:   raws,
 	}
 
+	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
+	auditLogs := ps.getAuditLog(ctx, audit, input, processResult)
 	var result []int64
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
@@ -259,7 +268,7 @@ func (ps *ProcServer) UpdateProcessInstancesByIDs(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// UpdateProcessInstances TODO
+// UpdateProcessInstances update process instances
 func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	input := metadata.UpdateRawProcessInstanceInput{}
 	if err := ctx.DecodeInto(&input); err != nil {
@@ -384,7 +393,8 @@ func (ps *ProcServer) generateUpdateProcessAudit(kit *rest.Kit, input metadata.U
 	return auditLogs, nil
 }
 
-func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.UpdateRawProcessInstanceInput) ([]int64, errors.CCErrorCoder) {
+func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.UpdateRawProcessInstanceInput) ([]int64,
+	errors.CCErrorCoder) {
 	rid := ctx.Kit.Rid
 	bizID := input.BizID
 
@@ -393,7 +403,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 	for _, pData := range input.Raw {
 		process := metadata.Process{}
 		if err := mapstr.DecodeFromMapStr(&process, pData); err != nil {
-			blog.ErrorJSON("update process instance failed, unmarshal request body failed, data: %s, err: %s, rid: %s", pData, err.Error(), rid)
+			blog.Errorf("unmarshal request body failed, data: %+v, err: %v, rid: %s", pData, err.Error(), rid)
 			return nil, ctx.Kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 		}
 		input.Processes = append(input.Processes, process)
@@ -410,9 +420,10 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		ProcessIDs: processIDs,
 		Page:       metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+		option)
 	if err != nil {
-		blog.ErrorJSON("update process instance failed, search process instance relation failed, option: %s, err: %+v, rid: %s", option, err, rid)
+		blog.Errorf("search process instance relation failed, option: %+v, err: %v, rid: %s", option, err, rid)
 		return nil, err
 	}
 
@@ -446,9 +457,11 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		if _, exist := processTemplateMap[relation.ProcessTemplateID]; exist {
 			continue
 		}
-		processTemplate, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, relation.ProcessTemplateID)
+		processTemplate, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header,
+			relation.ProcessTemplateID)
 		if err != nil {
-			blog.ErrorJSON("update process instance failed, get process template failed, processTemplateID: %d, err: %s, rid: %s", relation.ProcessTemplateID, err, rid)
+			blog.Errorf("get process template failed, processTemplateID: %d, err: %v, rid: %s",
+				relation.ProcessTemplateID, err, rid)
 			return nil, err
 		}
 		processTemplateMap[relation.ProcessTemplateID] = processTemplate
@@ -479,7 +492,7 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 		relation, exist := process2ServiceInstanceMap[process.ProcessID]
 		if !exist {
 			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
-			blog.ErrorJSON("update process instance failed, process related service instance not found, process: %s, err: %s, rid: %s", process, err, rid)
+			blog.Errorf("process related service instance not found, process: %+v, err: %v, rid: %s", process, err, rid)
 			return nil, err
 		}
 
@@ -488,8 +501,9 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			process.BusinessID = bizID
 			var err error
 			processData, err = mapstruct.Struct2Map(process)
-			if nil != err {
-				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v, rid: %s", processData, err, ctx.Kit.Rid)
+			if err != nil {
+				blog.Errorf("json Unmarshal process failed, processData: %+v, err: %v, rid: %s", processData, err,
+					ctx.Kit.Rid)
 				return nil, ctx.Kit.CCError.CCError(common.CCErrCommJsonDecode)
 			}
 			delete(processData, common.BKProcessIDField)
@@ -500,13 +514,13 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 			processTemplate, exist := processTemplateMap[relation.ProcessTemplateID]
 			if !exist {
 				err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
-				blog.Errorf("update process instance failed, process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
+				blog.Errorf("process related template not found, relation: %+v, err: %v, rid: %s", relation, err, rid)
 				return nil, err
 			}
 			var compareErr error
 			processData, compareErr = processTemplate.ExtractInstanceUpdateData(&process, hostMap[relation.HostID])
 			if compareErr != nil {
-				blog.ErrorJSON("extract process(%s) update data failed, err: %s, rid: %s", process, err, rid)
+				blog.Errorf("extract process (%+v) update data failed, err: %v, rid: %s", process, err, rid)
 				return nil, errors.New(common.CCErrCommParamsInvalid, compareErr.Error())
 			}
 			clearFields = processTemplate.GetEditableFields(clearFields)
@@ -534,7 +548,8 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input metadata.
 
 			err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, processData)
 			if err != nil {
-				blog.ErrorJSON("UpdateProcessInstance failed, processID: %s, process: %s, err: %s, rid: %s", processID, processData, err, rid)
+				blog.Errorf("UpdateProcessInstance failed, processID: %d, process: %+v, err: %v, rid: %s", processID,
+					processData, err, rid)
 				if firstErr == nil {
 					firstErr = err
 				}
@@ -563,7 +578,7 @@ func (ps *ProcServer) checkHostsInModule(kit *rest.Kit, bizID, moduleID int64, h
 
 	hitHostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostFilter)
 	if err != nil {
-		blog.ErrorJSON("check host in module failed, filter: %s, err: %s, rid: %s", hostFilter, err, kit.Rid)
+		blog.Errorf("check host in module failed, filter: %+v, err: %v, rid: %s", hostFilter, err, kit.Rid)
 		return err
 	}
 
@@ -605,7 +620,7 @@ func (ps *ProcServer) getModule(kit *rest.Kit, moduleID int64) (*metadata.Module
 	}
 
 	if len(moduleRes.Data.Info) != 1 {
-		blog.Errorf("get not one module by id $d, data: %#v, rid: %s", moduleID, moduleRes.Data.Info, kit.Rid)
+		blog.Errorf("get not one module by id %d, data: %#v, rid: %s", moduleID, moduleRes.Data.Info, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, "get none or multiple modules")
 	}
 
@@ -653,7 +668,7 @@ func (ps *ProcServer) validateProcessInstance(kit *rest.Kit, process *metadata.P
 	return nil
 }
 
-// DeleteProcessInstance TODO
+// DeleteProcessInstance delete process instance
 func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -896,7 +911,7 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 	}
 	sIDs, err := ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+		blog.Errorf("GetDistinctField failed, err: %v, option: %#v, rid: %s", err, *option, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -922,7 +937,7 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 		listRelationOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-			"ListProcessInstancesNameIDsInModule failed, list option: %+v, err: %+v", listRelationOption, err)
+			"ListProcessInstancesNameIDsInModule failed, list option: %+v, err: %v", listRelationOption, err)
 		return
 	}
 
@@ -958,7 +973,7 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 		common.BKInnerObjIDProc, reqParam)
 	if nil != ccErr {
 		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
-			"ListProcessInstancesNameIDsInModule failed, reqParam: %#v, err: %+v", reqParam, ccErr)
+			"ListProcessInstancesNameIDsInModule failed, reqParam: %#v, err: %v", reqParam, ccErr)
 		return
 	}
 
@@ -969,13 +984,13 @@ func (ps *ProcServer) ListProcessInstancesNameIDsInModule(ctx *rest.Contexts) {
 		processID, err := process.Int64(common.BKProcessIDField)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "ListProcessInstancesNameIDsInModule failed, "+
-				"process: %#v, err: %+v", process, err)
+				"process: %#v, err: %v", process, err)
 			return
 		}
 		processName, err := process.String(common.BKProcessNameField)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "ListProcessInstancesNameIDsInModule failed, "+
-				"process: %#v, err: %+v", process, err)
+				"process: %#v, err: %v", process, err)
 			return
 		}
 		if _, ok := processNameIDs[processName]; !ok {
@@ -1012,7 +1027,7 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("ListProcessRelatedInfo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id error, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
@@ -1054,9 +1069,8 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 
 		moduleResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 			common.BKInnerObjIDModule, param)
-		if nil != err {
-			blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, param: %v, err: %v, "+
-				"rid:%s", param, err, ctx.Kit.Rid)
+		if err != nil {
+			blog.Errorf("coreservice http ReadInstance fail, param: %v, err: %v, rid: %s", param, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 			return
 		}
@@ -1102,7 +1116,7 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 
 		sIDs, err := ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
-			blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+			blog.Errorf("GetDistinctField failed, err: %v, option: %#v, rid: %s", err, *option, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -1140,7 +1154,7 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 
 		pIDs, err := ps.CoreAPI.CoreService().Common().GetDistinctField(ctx.Kit.Ctx, ctx.Kit.Header, option)
 		if err != nil {
-			blog.Errorf("GetDistinctField failed, err:%s, option:%#v, rid:%s", err, *option, ctx.Kit.Rid)
+			blog.Errorf("GetDistinctField failed, err: %v, option: %#v, rid: %s", err, *option, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -1175,8 +1189,8 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 	if input.ProcessPropertyFilter != nil {
 		mgoFilter, key, err := input.ProcessPropertyFilter.ToMgo()
 		if err != nil {
-			blog.ErrorJSON("ListProcessRelatedInfo failed, ToMgo err:%s, ProcessPropertyFilter:%s, rid:%s", err,
-				input.ProcessPropertyFilter, ctx.Kit.Rid)
+			blog.Errorf("ToMgo err: %v, ProcessPropertyFilter: %+v, rid: %s", err, input.ProcessPropertyFilter,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()+fmt.Sprintf(", "+
 				"host_property_filter.%s", key)))
 			return
@@ -1217,9 +1231,8 @@ func (ps *ProcServer) ListProcessRelatedInfo(ctx *rest.Contexts) {
 
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDProc, reqParam)
-	if nil != err {
-		blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, reqParam: %v, err: %v, "+
-			"rid:%s", *reqParam, err, ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("coreservice http ReadInstance fail, reqParam: %v, err: %v, rid: %s", *reqParam, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -1274,7 +1287,7 @@ func (ps *ProcServer) listProcessRelatedInfo(ctx *rest.Contexts, bizID int64, pr
 	instOpt := &metadata.ListServiceInstanceOption{BusinessID: bizID, ServiceInstanceIDs: srvInstArr}
 	instances, ccErr := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instOpt)
 	if ccErr != nil {
-		ctx.RespWithError(ccErr, ccErr.GetCode(), "ListServiceInstance failed, instOpt:%#v, err: %v", instOpt, ccErr)
+		ctx.RespWithError(ccErr, ccErr.GetCode(), "ListServiceInstance failed, instOpt: %#v, err: %v", instOpt, ccErr)
 		return
 	}
 
@@ -1433,9 +1446,8 @@ func (ps *ProcServer) getHostAndModuleInfo(kit *rest.Kit, info hostSimpleInfo) (
 
 	moduleResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 		common.BKInnerObjIDModule, moduleParam)
-	if nil != err {
-		blog.Errorf("ListProcessRelatedInfo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-			*moduleParam, err, kit.Rid)
+	if err != nil {
+		blog.Errorf("coreservice http ReadInstance fail, param: %v, err: %v, rid: %s", *moduleParam, err, kit.Rid)
 		return nil, nil, nil, nil, err
 	}
 
@@ -1513,8 +1525,8 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	}
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDProc, reqParam)
-	if nil != err {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "reqParam: %#v, err: %+v", reqParam, err)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "reqParam: %#v, err: %v", reqParam, err)
 		return
 	}
 
@@ -1523,7 +1535,7 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	for _, process := range processResult.Info {
 		processID, err := process.Int64(common.BKProcessIDField)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "process: %#v, err: %+v", process, err)
+			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "process: %#v, err: %v", process, err)
 			return
 		}
 		processIDPropertyMap[processID] = process
@@ -1537,7 +1549,7 @@ func (ps *ProcServer) ListProcessInstancesDetailsByIDs(ctx *rest.Contexts) {
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, op)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed, "option: %+v, err: %+v", op, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed, "option: %+v, err: %v", op, err)
 		return
 	}
 
@@ -1586,7 +1598,7 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 
 	bizID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
-		blog.Errorf("ListProcessRelatedInfo failed, parse bk_biz_id error, err: %s, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse bk_biz_id error, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "bk_biz_id"))
 		return
 	}
@@ -1617,9 +1629,8 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 
 	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
 		common.BKInnerObjIDProc, reqParam)
-	if nil != err {
-		blog.Errorf("ListProcessInstancesDetails failed, coreservice http ReadInstance fail, reqParam: %v, err: %v, "+
-			"rid:%s", *reqParam, err, ctx.Kit.Rid)
+	if err != nil {
+		blog.Errorf("coreservice http ReadInstance fail, reqParam: %v, err: %v, rid: %s", *reqParam, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed))
 		return
 	}
@@ -1627,7 +1638,7 @@ func (ps *ProcServer) ListProcessInstancesDetails(ctx *rest.Contexts) {
 	ctx.RespEntity(processResult.Info)
 }
 
-// RemoveTemplateBindingOnModule TODO
+// RemoveTemplateBindingOnModule remove template binding on module
 func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 
 	input := new(metadata.RemoveTemplateBindingOnModuleOption)
@@ -1653,7 +1664,7 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 		response, err = ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header,
 			input.ModuleID)
 		if err != nil {
-			blog.Errorf("remove template binding on module failed, parse business id failed, err: %+v", err)
+			blog.Errorf("remove template binding on module failed, parse business id failed, err: %v", err)
 			return ctx.Kit.CCError.CCError(common.CCErrProcRemoveTemplateBindingOnModule)
 		}
 		return nil

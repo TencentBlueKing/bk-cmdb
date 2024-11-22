@@ -52,7 +52,7 @@ func New(dependent OperationDependences, language language.CCLanguageIf,
 
 func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool,
 	err error) {
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	cnt, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
@@ -63,7 +63,7 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
-	inputParam.Data.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	inputParam.Data.Set(common.TenantID, kit.TenantID)
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
 		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID,
@@ -127,7 +127,7 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit,
 			blog.ErrorJSON("the model instance data can't be empty, input data: %s rid: %s", inputParam.Datas, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
 		}
-		item.Set(common.BKOwnerIDField, kit.SupplierAccount)
+		item.Set(common.TenantID, kit.TenantID)
 
 		validator := instValidators[index]
 		if validator == nil {
@@ -212,7 +212,7 @@ func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
 			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
 		}
-		inputParam.Data[idx].Set(common.BKOwnerIDField, kit.SupplierAccount)
+		inputParam.Data[idx].Set(common.TenantID, kit.TenantID)
 
 		validator := instValidators[idx]
 		if validator == nil {
@@ -473,7 +473,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	if common.IsObjectInstShardingTable(tableName) {
 		if inputParam.Condition == nil {
 			inputParam.Condition = mapstr.MapStr{}
@@ -505,7 +505,7 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition,
 	fields []string, vipFields []string) (*metadata.QueryResult, error) {
 
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
 		Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort)
@@ -571,10 +571,10 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := make([]int64, 0)
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	instIDFieldName := common.GetInstIDField(objID)
 
-	inputParam.Condition.Set(common.BKOwnerIDField, kit.SupplierAccount)
+	inputParam.Condition.Set(common.TenantID, kit.TenantID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if nil != err {
@@ -626,7 +626,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := make([]int64, 0)
-	tableName := common.GetInstTableName(objID, kit.SupplierAccount)
+	tableName := common.GetInstTableName(objID, kit.TenantID)
 	instIDFieldName := common.GetInstIDField(objID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)

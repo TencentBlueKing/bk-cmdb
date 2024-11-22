@@ -25,8 +25,8 @@ import (
 	"configcenter/src/common/util"
 )
 
-// svcInstLog provides methods to generate and save svcInst audit log.
-type svcInstLog struct {
+// SvcInstLog provides methods to generate and save svcInst audit log.
+type SvcInstLog struct {
 	audit
 	*svcInstLogGenerator
 }
@@ -44,7 +44,7 @@ func (s *svcInstLogGenerator) WithServiceInstance(data []metadata.ServiceInstanc
 }
 
 // WithServiceInstanceByIDs set service instances data in audit log by ids, get data from core service
-func (s *svcInstLog) WithServiceInstanceByIDs(kit *rest.Kit, bizID int64, svcInstIDs []int64,
+func (s *SvcInstLog) WithServiceInstanceByIDs(kit *rest.Kit, bizID int64, svcInstIDs []int64,
 	fields []string) errors.CCErrorCoder {
 
 	data, err := s.GetSvcInstByIDs(kit, bizID, svcInstIDs, fields)
@@ -104,7 +104,7 @@ func (s *svcInstLogGenerator) WithProc(param *generateAuditCommonParameter, proc
 }
 
 // WithProcByRelations set process data in audit log by process relations, get proc data from core service
-func (s *svcInstLog) WithProcByRelations(param *generateAuditCommonParameter,
+func (s *SvcInstLog) WithProcByRelations(param *generateAuditCommonParameter,
 	relations []metadata.ProcessInstanceRelation, fields []string) errors.CCErrorCoder {
 
 	kit := param.kit
@@ -141,7 +141,7 @@ func (s *svcInstLog) WithProcByRelations(param *generateAuditCommonParameter,
 }
 
 // WithProcBySvcInstIDs set process data in audit log by service instance ids, get data from core service
-func (s *svcInstLog) WithProcBySvcInstIDs(param *generateAuditCommonParameter, bizID int64, svcInstIDs []int64,
+func (s *SvcInstLog) WithProcBySvcInstIDs(param *generateAuditCommonParameter, bizID int64, svcInstIDs []int64,
 	fields []string) errors.CCErrorCoder {
 
 	kit := param.kit
@@ -225,7 +225,7 @@ func (s *svcInstLogGenerator) GenerateAuditLog(param *generateAuditCommonParamet
 }
 
 // GetSvcInstByIDs get service instances data in audit log by ids
-func (s svcInstLog) GetSvcInstByIDs(kit *rest.Kit, bizID int64, svcInstIDs []int64, fields []string) (
+func (s SvcInstLog) GetSvcInstByIDs(kit *rest.Kit, bizID int64, svcInstIDs []int64, fields []string) (
 	[]metadata.ServiceInstance, errors.CCErrorCoder) {
 
 	if len(svcInstIDs) == 0 {
@@ -257,8 +257,8 @@ func (s svcInstLog) GetSvcInstByIDs(kit *rest.Kit, bizID int64, svcInstIDs []int
 }
 
 // NewSvcInstAudit create a new service instance audit log operator
-func NewSvcInstAudit(clientSet coreservice.CoreServiceClientInterface) *svcInstLog {
-	return &svcInstLog{
+func NewSvcInstAudit(clientSet coreservice.CoreServiceClientInterface) *SvcInstLog {
+	return &SvcInstLog{
 		audit: audit{
 			clientSet: clientSet,
 		},

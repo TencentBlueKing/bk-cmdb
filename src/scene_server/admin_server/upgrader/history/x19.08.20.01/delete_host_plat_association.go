@@ -25,7 +25,7 @@ func upgradeDeleteHostPlatAssociation(ctx context.Context, db dal.RDB, conf *upg
 
 	cond := map[string]interface{}{
 		"bk_obj_id":           common.BKInnerObjIDPlat,
-		"bk_supplier_account": common.BKDefaultOwnerID,
+		"bk_supplier_account": "0",
 		"bk_asst_obj_id":      common.BKInnerObjIDHost,
 		"bk_asst_id":          "default",
 		"bk_obj_asst_id":      "plat_default_host",

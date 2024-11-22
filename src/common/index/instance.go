@@ -33,26 +33,26 @@ var (
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkSupplierAccount_bkObjID",
+			Name: common.CCLogicIndexNamePrefix + "tenantID_bkObjID",
 			Keys: bson.D{
-				{"bk_supplier_account", 1},
+				{"tenant_id", 1},
 				{"bk_obj_id", 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstId_bkSupplierAccount",
+			Name: common.CCLogicIndexNamePrefix + "bkInstId_tenantID",
 			Keys: bson.D{
 				{"bk_inst_id", 1},
-				{"bk_supplier_account", 1},
+				{"tenant_id", 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstName_bkSupplierAccount",
+			Name: common.CCLogicIndexNamePrefix + "bkInstName_tenantID",
 			Keys: bson.D{
 				{"bk_inst_name", 1},
-				{"bk_supplier_account", 1},
+				{"tenant_id", 1},
 			},
 			Background: true,
 		},
@@ -69,10 +69,10 @@ var (
 	tableInstanceDefaultIndexes = []types.Index{
 
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstID_bkSupplierAccount",
+			Name: common.CCLogicIndexNamePrefix + "bkInstID_tenantID",
 			Keys: bson.D{
 				{"bk_inst_id", 1},
-				{"bk_supplier_account", 1},
+				{"tenant_id", 1},
 			},
 			Background: true,
 		},

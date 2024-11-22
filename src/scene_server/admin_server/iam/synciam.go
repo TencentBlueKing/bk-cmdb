@@ -70,7 +70,7 @@ func (s *syncor) SetDB(db dal.Dal) {
 
 // newHeader 创建IAM同步需要的header
 func newHeader() http.Header {
-	header := headerutil.BuildHeader(common.BKIAMSyncUser, common.BKSuperOwnerID)
+	header := headerutil.BuildHeader(common.BKIAMSyncUser, common.BKSuperTenantID)
 	httpheader.SetLanguage(header, "cn")
 	return header
 }
@@ -81,16 +81,16 @@ func newKit() *rest.Kit {
 	ctx := util.NewContextFromHTTPHeader(header)
 	rid := httpheader.GetRid(header)
 	user := httpheader.GetUser(header)
-	supplierAccount := httpheader.GetSupplierAccount(header)
+	tenantID := httpheader.GetTenantID(header)
 	defaultCCError := util.GetDefaultCCError(header)
 
 	return &rest.Kit{
-		Rid:             rid,
-		Header:          header,
-		Ctx:             ctx,
-		CCError:         defaultCCError,
-		User:            user,
-		SupplierAccount: supplierAccount,
+		Rid:      rid,
+		Header:   header,
+		Ctx:      ctx,
+		CCError:  defaultCCError,
+		User:     user,
+		TenantID: tenantID,
 	}
 }
 

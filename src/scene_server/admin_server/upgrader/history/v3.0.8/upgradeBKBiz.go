@@ -38,11 +38,12 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
 	appModelData[common.BKLanguageField] = "1" // "中文"
 	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
-	appModelData[common.BKOwnerIDField] = conf.OwnerID
+	appModelData["bk_supplier_account"] = conf.TenantID
 	appModelData[common.BKDefaultField] = common.DefaultFlagDefaultValue
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
-	bizID, preData, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseApp, appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField))
+	bizID, preData, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseApp, appModelData, common.BKAppIDField,
+		[]string{common.BKAppNameField, "bk_supplier_account"}, append(filled, common.BKAppIDField))
 	if err != nil {
 		blog.Error("add addBKApp error ", err.Error())
 		return err
@@ -67,10 +68,10 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		}
 	}
 
-	log := metadata.AuditLog{
+	log := AuditLog{
 		ID:              int64(id),
 		AuditType:       metadata.BusinessType,
-		SupplierAccount: conf.OwnerID,
+		SupplierAccount: conf.TenantID,
 		User:            conf.User,
 		ResourceType:    metadata.BusinessRes,
 		Action:          action,
@@ -98,9 +99,11 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputSetInfo[common.BKInstParentStr] = bizID
 	inputSetInfo[common.BKSetNameField] = common.DefaultResSetName
 	inputSetInfo[common.BKDefaultField] = common.DefaultResSetFlag
-	inputSetInfo[common.BKOwnerIDField] = conf.OwnerID
+	inputSetInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputSetInfo, SetRow())
-	setID, _, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseSet, inputSetInfo, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKAppIDField, common.BKSetNameField}, append(filled, common.BKSetIDField))
+	setID, _, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseSet, inputSetInfo, common.BKSetIDField,
+		[]string{"bk_supplier_account", common.BKAppIDField, common.BKSetNameField},
+		append(filled, common.BKSetIDField))
 	if err != nil {
 		blog.Error("add defaultSet error ", err.Error())
 		return err
@@ -113,9 +116,11 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputResModuleInfo[common.BKAppIDField] = bizID
 	inputResModuleInfo[common.BKModuleNameField] = common.DefaultResModuleName
 	inputResModuleInfo[common.BKDefaultField] = common.DefaultResModuleFlag
-	inputResModuleInfo[common.BKOwnerIDField] = conf.OwnerID
+	inputResModuleInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputResModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputResModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputResModuleInfo, common.BKModuleIDField,
+		[]string{"bk_supplier_account", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField},
+		append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultResModule error ", err.Error())
 		return err
@@ -127,13 +132,52 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputFaultModuleInfo[common.BKAppIDField] = bizID
 	inputFaultModuleInfo[common.BKModuleNameField] = common.DefaultFaultModuleName
 	inputFaultModuleInfo[common.BKDefaultField] = common.DefaultFaultModuleFlag
-	inputFaultModuleInfo[common.BKOwnerIDField] = conf.OwnerID
+	inputFaultModuleInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputFaultModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputFaultModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputFaultModuleInfo, common.BKModuleIDField,
+		[]string{"bk_supplier_account", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField},
+		append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultFaultModule error ", err.Error())
 		return err
 	}
 
 	return nil
+}
+
+// AuditLog audit log struct
+type AuditLog struct {
+	ID int64 `json:"id" bson:"id"`
+	// AuditType is a high level abstract of the resource managed by this cmdb.
+	// Each kind of concept, resource must belongs to one of the resource type.
+	AuditType metadata.AuditType `json:"audit_type" bson:"audit_type"`
+	// the supplier account that this resource belongs to.
+	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// name of the one who triggered this operation.
+	User string `json:"user" bson:"user"`
+	// the operated resource by the user
+	ResourceType metadata.ResourceType `json:"resource_type" bson:"resource_type"`
+	// ActionType represent the user's operation type, like CUD etc.
+	Action metadata.ActionType `json:"action" bson:"action"`
+	// OperateFrom describe which form does this audit come from.
+	OperateFrom metadata.OperateFromType `json:"operate_from" bson:"operate_from"`
+	// OperationDetail describe the details information by a user.
+	// Note: when the ResourceType relevant to Business, then the business id field must
+	// be bk_biz_id, otherwise the user can not search this operation log with business id.
+	OperationDetail metadata.DetailFactory `json:"operation_detail" bson:"operation_detail"`
+	// OperationTime is the time that user do the operation.
+	OperationTime metadata.Time `json:"operation_time" bson:"operation_time"`
+	// the business id of the resource if it belongs to a business.
+	BusinessID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
+	// ResourceID is the id of the resource instance. which is a unique id, dynamic grouping id is string type.
+	// for service instance audit log,
+	ResourceID interface{} `json:"resource_id" bson:"resource_id"`
+	// ResourceName is the name of the resource, such as a switch model has a name "switch"
+	ResourceName string `json:"resource_name" bson:"resource_name"`
+	// AppCode is the app code of the system where the request comes from
+	AppCode string `json:"code,omitempty" bson:"code,omitempty"`
+	// RequestID is the request id of the request
+	RequestID string `json:"rid,omitempty" bson:"rid,omitempty"`
+	// todo ExtendResourceName for the temporary solution of ipv6
+	ExtendResourceName string `json:"extend_resource_name" bson:"extend_resource_name"`
 }

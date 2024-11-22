@@ -40,7 +40,8 @@ func createModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("create model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -70,7 +71,8 @@ func setModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, modelID
 	require.NotNil(t, inputParams)
 	t.Logf("set one model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -98,7 +100,8 @@ func queryModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, model
 	require.NotNil(t, inputParams)
 	t.Logf("read some model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -108,7 +111,7 @@ func queryModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, model
 	require.NotNil(t, modelResult)
 	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
 	for _, item := range modelResult.Data.Info {
-		require.NotEmpty(t, item.OwnerID)
+		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.ObjectID)
 		require.NotEmpty(t, item.GroupID)
 		require.NotEqual(t, int64(0), item.ID)
@@ -137,7 +140,8 @@ func updateModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("update some model attribute group:%s", inputParams)
 
-	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -167,7 +171,8 @@ func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("delete some model attribute group:%s", inputParams)
 
-	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -183,7 +188,8 @@ func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	t.Logf("delete some model attribute group result:%s", resultStr)
 }
 
-func deleteCascadeModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeGroupID string) {
+func deleteCascadeModelAttributeGroup(t *testing.T, client *httpclient.HttpClient,
+	modelID, modelAttributeGroupID string) {
 	// TODO
 }
 

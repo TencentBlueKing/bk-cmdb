@@ -72,8 +72,8 @@ func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action
 				Name:       template.Name,
 				InstanceID: template.ID,
 			},
-			SupplierAccount: httpheader.GetSupplierAccount(header),
-			BusinessID:      businessID,
+			TenantID:   httpheader.GetTenantID(header),
+			BusinessID: businessID,
 		}
 
 		resources = append(resources, resource)

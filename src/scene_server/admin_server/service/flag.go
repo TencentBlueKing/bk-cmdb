@@ -41,7 +41,7 @@ func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Res
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	ownerID := common.BKDefaultOwnerID
+	ownerID := common.BKDefaultTenantID
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
@@ -114,6 +114,6 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 func (s *Service) getCommObject(header http.Header) (ownerID, rid string, defErr errors.DefaultCCErrorIf) {
 	rid = httpheader.GetRid(header)
 	defErr = s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
-	ownerID = common.BKDefaultOwnerID
+	ownerID = common.BKDefaultTenantID
 	return
 }

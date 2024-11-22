@@ -99,9 +99,9 @@ func (c *Cache) listDetailByIDs(kit *rest.Kit, opt *types.ListDetailByIDsOpt) (m
 			continue
 		}
 
-		if !opt.IsSystem && kit.SupplierAccount != common.BKSuperOwnerID {
-			supplierAccount := gjson.Get(detail, common.BkSupplierAccount).String()
-			if supplierAccount != common.BKDefaultOwnerID && supplierAccount != kit.SupplierAccount {
+		if !opt.IsSystem && kit.TenantID != common.BKSuperTenantID {
+			tenantID := gjson.Get(detail, common.TenantID).String()
+			if tenantID != common.BKDefaultTenantID && tenantID != kit.TenantID {
 				continue
 			}
 		}
@@ -120,9 +120,9 @@ func (c *Cache) listDetailByIDs(kit *rest.Kit, opt *types.ListDetailByIDsOpt) (m
 	// can not find detail in cache, need refresh the cache
 	getDataOpt := &getDataByKeysOpt{
 		BasicFilter: &types.BasicFilter{
-			SubRes:          opt.SubRes,
-			SupplierAccount: kit.SupplierAccount,
-			IsSystem:        opt.IsSystem,
+			SubRes:   opt.SubRes,
+			TenantID: kit.TenantID,
+			IsSystem: opt.IsSystem,
 		},
 		Keys: needRefreshIDs,
 	}
@@ -348,7 +348,7 @@ func (c *Cache) listDetailByUniqueKey(kit *rest.Kit, opt *types.ListDetailByUniq
 
 	// can not find detail in cache, need refresh the cache
 	getDataOpt := &getDataByKeysOpt{
-		BasicFilter: &types.BasicFilter{SubRes: opt.SubRes, SupplierAccount: kit.SupplierAccount,
+		BasicFilter: &types.BasicFilter{SubRes: opt.SubRes, TenantID: kit.TenantID,
 			IsSystem: opt.IsSystem},
 		Keys: needRefreshKeys,
 	}
@@ -460,9 +460,9 @@ func (c *Cache) RefreshDetailByIDs(kit *rest.Kit, opt *types.RefreshDetailByIDsO
 
 	getDataOpt := &getDataByKeysOpt{
 		BasicFilter: &types.BasicFilter{
-			SubRes:          opt.SubResource,
-			SupplierAccount: kit.SupplierAccount,
-			IsSystem:        true,
+			SubRes:   opt.SubResource,
+			TenantID: kit.TenantID,
+			IsSystem: true,
 		},
 		Keys: opt.IDKeys,
 	}

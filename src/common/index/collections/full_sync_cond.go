@@ -43,7 +43,7 @@ var commFullSyncCondIndexes = []types.Index{
 		Keys: bson.D{
 			{fullsynccond.ResourceField, 1},
 			{fullsynccond.SubResField, 1},
-			{common.BkSupplierAccount, 1},
+			{common.TenantID, 1},
 		},
 		PartialFilterExpression: map[string]interface{}{
 			fullsynccond.IsAllField: true,

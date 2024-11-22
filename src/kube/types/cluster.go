@@ -76,8 +76,8 @@ type Cluster struct {
 	ID int64 `json:"id" bson:"id"`
 	// BizID the business ID to which the cluster belongs
 	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// SupplierAccount the supplier account that this resource belongs to.
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// TenantID the supplier account that this resource belongs to.
+	TenantID string `json:"tenant_id" bson:"tenant_id"`
 	// Name cluster name.
 	Name *string `json:"name,omitempty" bson:"name"`
 	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
@@ -127,7 +127,7 @@ const (
 )
 
 // IgnoredUpdateClusterFields update the fields that need to be ignored in the cluster scenario.
-var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.BKOwnerIDField, BKBizIDField, ClusterUIDField}
+var IgnoredUpdateClusterFields = []string{common.BKFieldID, common.TenantID, BKBizIDField, ClusterUIDField}
 
 // CreateClusterResult create cluster result for internal call.
 type CreateClusterResult struct {
@@ -363,11 +363,11 @@ func (option UpdateClusterTypeOpt) Validate() ccErr.RawErrorInfo {
 
 // NsSharedClusterRel shared cluster and biz relationship by namespace dimension.
 type NsSharedClusterRel struct {
-	NamespaceID     int64  `json:"bk_namespace_id" bson:"bk_namespace_id"`
-	ClusterID       int64  `json:"bk_cluster_id" bson:"bk_cluster_id"`
-	BizID           int64  `json:"bk_biz_id" bson:"bk_biz_id"`
-	AsstBizID       int64  `json:"bk_asst_biz_id" bson:"bk_asst_biz_id"`
-	SupplierAccount string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	NamespaceID int64  `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	ClusterID   int64  `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	BizID       int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	AsstBizID   int64  `json:"bk_asst_biz_id" bson:"bk_asst_biz_id"`
+	TenantID    string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // NsSharedClusterRelData namespace and shared cluster relation data.

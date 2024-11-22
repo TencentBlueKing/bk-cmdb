@@ -59,7 +59,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 		if len(log.ResourceName) > common.NameFieldMaxLength {
 			log.ResourceName = log.ResourceName[:common.NameFieldMaxLength]
 		}
-		log.SupplierAccount = kit.SupplierAccount
+		log.TenantID = kit.TenantID
 		log.User = kit.User
 		if appCode := httpheader.GetAppCode(kit.Header); len(appCode) > 0 {
 			log.AppCode = appCode

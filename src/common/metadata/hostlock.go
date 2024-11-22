@@ -39,7 +39,7 @@ type HostLockData struct {
 	User       string    `json:"bk_user" bson:"bk_user"`
 	ID         int64     `json:"bk_host_id" bson:"bk_host_id"`
 	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	OwnerID    string    `json:"-" bson:"bk_supplier_account"`
+	TenantID   string    `json:"-" bson:"tenant_id"`
 }
 
 // HostLockQueryResponse TODO
