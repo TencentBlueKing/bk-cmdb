@@ -328,9 +328,15 @@ func Mongo(prefix string) (mongo.Config, error) {
 		c.MaxOpenConns = parser.getUint64(maxOpenConns)
 	}
 
-	if c.MaxIdleConns > mongo.MaximumMaxOpenConns {
+	if c.MaxOpenConns < mongo.MinimumMaxIdleOpenConns {
+		blog.Errorf("config %s less than minimum value, use minimum value %d", maxOpenConns,
+			mongo.MinimumMaxIdleOpenConns)
+		c.MaxOpenConns = mongo.MinimumMaxIdleOpenConns
+	}
+
+	if c.MaxOpenConns > mongo.MaximumMaxOpenConns {
 		blog.Errorf("config %s exceeds maximum value, use maximum value %d", maxOpenConns, mongo.MaximumMaxOpenConns)
-		c.MaxIdleConns = mongo.MaximumMaxOpenConns
+		c.MaxOpenConns = mongo.MaximumMaxOpenConns
 	}
 
 	maxIdleConns := prefix + ".maxIdleConns"

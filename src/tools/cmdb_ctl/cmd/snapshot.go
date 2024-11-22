@@ -15,7 +15,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -32,50 +31,35 @@ func init() {
 	rootCmd.AddCommand(NewSnapshotCheckCommand())
 }
 
-type snapshotCheckConf struct {
-	bizID int
-}
-
-// NewSnapshotCheckCommand TODO
+// NewSnapshotCheckCommand new host snapshot check command
 func NewSnapshotCheckCommand() *cobra.Command {
-	conf := new(snapshotCheckConf)
-
 	cmd := &cobra.Command{
 		Use:   "snapshot",
 		Short: "check host snapshot",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSnapshotCheck(conf)
+			return runSnapshotCheck()
 		},
 	}
-
-	conf.addFlags(cmd)
-
 	return cmd
-}
-
-func (c *snapshotCheckConf) addFlags(cmd *cobra.Command) {
-	cmd.Flags().IntVar(&c.bizID, "bizId", 2, "blueking business id. e.g: 2")
 }
 
 type snapshotCheckService struct {
 	service *config.Service
-	bizID   string
 	config  map[string]string
 }
 
-func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
+func newSnapshotCheckService(zkaddr string) (*snapshotCheckService, error) {
 	service, err := config.NewZkService(zkaddr)
 	if err != nil {
 		return nil, err
 	}
 	return &snapshotCheckService{
 		service: service,
-		bizID:   strconv.Itoa(bizID),
 	}, nil
 }
 
-func runSnapshotCheck(c *snapshotCheckConf) error {
-	srv, err := newSnapshotCheckService(config.Conf.ZkAddr, c.bizID)
+func runSnapshotCheck() error {
+	srv, err := newSnapshotCheckService(config.Conf.ZkAddr)
 	if err != nil {
 		return err
 	}
@@ -160,8 +144,8 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 		return fmt.Errorf("connect redis [%s] failed: %s", redisConfig.Address, err.Error())
 	}
 
-	channelArr := getSnapshotName(s.bizID)
-	sub := client.PSubscribe(context.Background(), channelArr...)
+	channel := common.SnapshotChannelName
+	sub := client.PSubscribe(context.Background(), channel)
 
 	stopChn := make(chan bool, 2)
 	receiveMsgCount := 0
@@ -171,7 +155,7 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 		for len(stopChn) == 0 {
 			received, err := sub.ReceiveTimeout(time.Minute * 1)
 			if err != nil {
-				receiveMsgErr = fmt.Errorf("receive message from channel [%#v] in redis [%s] failed: %s", channelArr,
+				receiveMsgErr = fmt.Errorf("receive message from channel [%s] in redis [%s] failed: %s", channel,
 					redisConfig.Address, err.Error())
 				return
 			}
@@ -193,20 +177,11 @@ func (s *snapshotCheckService) checkHostSnapshot() error {
 	}
 	stopChn <- true
 
-	fmt.Printf("receive message from channel [%#v] of redis [%s] count: %d(1 minute total)\n", channelArr,
+	fmt.Printf("receive message from channel [%s] of redis [%s] count: %d(1 minute total)\n", channel,
 		redisConfig.Address, receiveMsgCount)
 	if receiveMsgCount == 0 {
-		return fmt.Errorf("not receive message from channel [%#v] of redis [%s]", channelArr, redisConfig.Address)
+		return fmt.Errorf("not receive message from channel [%s] of redis [%s]", channel, redisConfig.Address)
 	}
 
 	return nil
-}
-
-func getSnapshotName(strDefaultAppID string) []string {
-	return []string{
-		// 瘦身后的通道名
-		"snapshot" + strDefaultAppID,
-		// 瘦身前的通道名，为增加向前兼容的而订阅这个老通道
-		strDefaultAppID + "_snapshot",
-	}
 }

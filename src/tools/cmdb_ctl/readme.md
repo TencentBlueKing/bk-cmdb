@@ -114,13 +114,12 @@
 
 - 命令行参数
   ```
-  --bizId=2: blueking business id. e.g: 2
   --zk-addr="": the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR
   ```
 - 示例
 
   - ```
-    ./tool_ctl snapshot --bizId=2 --zk-addr=127.0.0.1:2181
+    ./tool_ctl snapshot --zk-addr=127.0.0.1:2181
     ```
 
  ### 权限中心资源操作

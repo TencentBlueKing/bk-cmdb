@@ -21,7 +21,6 @@ import (
 	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -259,21 +258,6 @@ func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
 // updatePlatformSetting update current configuration to database.
 func (s *Service) updatePlatformSetting(kit *rest.Kit, config *metadata.PlatformSettingConfig) error {
 	config.IDGenerator.CurrentID = nil
-
-	// 校验业务是否存在
-	bizCountCond := map[string]interface{}{
-		common.BKAppIDField: config.Backend.SnapshotBizID,
-	}
-	count, err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
-	if err != nil {
-		blog.Errorf("update config to db failed, count biz error, err: %v, condition: %v, rid: %s", err,
-			bizCountCond, kit.Rid)
-		return err
-	}
-	if count == 0 {
-		blog.Errorf("update config to db failed, can not find biz, condition: %v, rid: %s", bizCountCond, kit.Rid)
-		return errors.New(common.CCErrCommParamsIsInvalid, "snapshot_biz_id")
-	}
 
 	bytes, err := json.Marshal(config)
 	if err != nil {

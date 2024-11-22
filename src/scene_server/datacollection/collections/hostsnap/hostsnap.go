@@ -38,7 +38,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 
 	goredis "github.com/go-redis/redis/v7"
@@ -80,18 +79,16 @@ type HostSnap struct {
 	rateLimit flowctrl.RateLimiter
 	filter    *filter
 	ctx       context.Context
-	db        dal.RDB
 	window    *Window
 }
 
 // NewHostSnap new hostsnap
-func NewHostSnap(ctx context.Context, redisCli redis.Client, db dal.RDB, engine *backbone.Engine,
+func NewHostSnap(ctx context.Context, redisCli redis.Client, engine *backbone.Engine,
 	authManager *extensions.AuthManager) *HostSnap {
 	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
 		redisCli:    redisCli,
 		ctx:         ctx,
-		db:          db,
 		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
 		authManager: authManager,
 		Engine:      engine,

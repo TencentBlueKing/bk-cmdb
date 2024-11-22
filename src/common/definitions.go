@@ -1722,3 +1722,6 @@ const (
 
 // ShardingDBConfID is sharding db config identifier
 const ShardingDBConfID = "sharding_db_config"
+
+// SnapshotChannelName is host snapshot channel name
+const SnapshotChannelName = "cmdb_snapshot"

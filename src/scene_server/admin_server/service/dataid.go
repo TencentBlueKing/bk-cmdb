@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
 
@@ -194,11 +193,6 @@ func (s *Service) migrateOldVersionDataID(kit *rest.Kit) error {
 func (s *Service) isOldDataIDChannelExist(kit *rest.Kit, channels []metadata.GseConfigChannel, streamToID int64) (bool,
 	metadata.GseConfigPlatName, error) {
 
-	bizID, err := s.getSnapBizID(kit)
-	if err != nil {
-		return false, "", err
-	}
-
 	var platName metadata.GseConfigPlatName
 	// check if channel name is snapshot+snap biz id to confirm if it is registered by cc, skip in this situation
 	for _, channel := range channels {
@@ -212,8 +206,7 @@ func (s *Service) isOldDataIDChannelExist(kit *rest.Kit, channels []metadata.Gse
 				continue
 			}
 
-			if route.StreamTo.Redis.ChannelName == fmt.Sprintf("snapshot%d", bizID) ||
-				(route.StreamTo.Redis.BizID == bizID && route.StreamTo.Redis.DataSet == "snapshot") {
+			if route.StreamTo.Redis.ChannelName == common.SnapshotChannelName {
 				blog.Infof("old gse data id is already exist, skip registering it, rid: %s", kit.Rid)
 				return true, platName, nil
 			}
@@ -456,37 +449,9 @@ func (s *Service) gseConfigUpdateStreamTo(streamTo *metadata.GseConfigStreamTo, 
 	return nil
 }
 
-// getSnapBizID get the biz id that host snap uses
-func (s *Service) getSnapBizID(kit *rest.Kit) (int64, error) {
-	cfgCond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
-	cfg := make(map[string]string)
-	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cfgCond).
-		Fields(common.ConfigAdminValueField).One(s.ctx, &cfg)
-	if nil != err {
-		blog.Errorf("get config admin failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, err
-	}
-
-	configAdmin := new(metadata.PlatformSettingConfig)
-	if err := json.Unmarshal([]byte(cfg[common.ConfigAdminValueField]), configAdmin); err != nil {
-		blog.Errorf("unmarshal config admin(%s) failed, err: %v, rid: %s", cfg[common.ConfigAdminValueField], err,
-			kit.Rid)
-		return 0, err
-	}
-
-	return configAdmin.Backend.SnapshotBizID, nil
-}
-
 // generateGseConfigChannel generate host snap stream to config by snap redis config
 func (s *Service) generateGseConfigChannel(kit *rest.Kit, streamToID, dataID int64, version snapshotVersion) (
 	*metadata.GseConfigChannel, error) {
-
-	bizID, err := s.getSnapBizID(kit)
-	if err != nil {
-		return nil, err
-	}
 
 	snapChannel := &metadata.GseConfigChannel{
 		Metadata: metadata.GseConfigAddRouteMetadata{
@@ -505,20 +470,14 @@ func (s *Service) generateGseConfigChannel(kit *rest.Kit, streamToID, dataID int
 		metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeRedis {
 
 		snapChannel.Route[0].StreamTo.Redis = &metadata.GseConfigRouteRedis{
-			ChannelName: fmt.Sprintf("snapshot%d", bizID),
-			// compatible for the older version of gse that uses DataSet+BizID as channel name
-			DataSet: "snapshot",
-			BizID:   bizID,
+			ChannelName: common.SnapshotChannelName,
 		}
 		return snapChannel, nil
 	}
 
 	if metadata.GseConfigReportMode(s.Config.SnapReportMode) == metadata.GseConfigReportModeKafka {
 		snapChannel.Route[0].StreamTo.Kafka = &metadata.GseConfigRouteKafka{
-			TopicName: fmt.Sprintf("snapshot%d", bizID),
-			// compatible for the older version of gse that uses DataSet+BizID as channel name
-			DataSet:   "snapshot",
-			BizID:     bizID,
+			TopicName: common.SnapshotChannelName,
 			Partition: s.Config.SnapKafka.Partition,
 		}
 		return snapChannel, nil
