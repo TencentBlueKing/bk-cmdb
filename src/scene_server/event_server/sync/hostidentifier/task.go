@@ -254,7 +254,7 @@ func (h *HostIdentifier) LaunchTaskForFailedHost() {
 		}
 
 		// 2、查询主机的agent状态
-		resp, err := h.getAgentStatus(statusReq, false, header, rid)
+		resp, err := h.getAgentStatus(statusReq, header, rid)
 		if err != nil {
 			blog.Errorf("get agent status error, hostInfo: %v, err: %v, rid: %s", hostInfoArray, err, rid)
 			continue
@@ -396,13 +396,13 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, taskInfo *
 	var err error
 	switch h.apiVersion {
 	case types.V1:
-		taskID, err = h.pushFileByV1Api(always, taskInfo.V1Task, rid)
+		taskID, err = h.pushFileByV1Api(taskInfo.V1Task, rid)
 		if err != nil {
 			return nil, err
 		}
 
 	case types.V2:
-		taskID, err = h.pushFileByV2Api(always, taskInfo.V2Task, header, rid)
+		taskID, err = h.pushFileByV2Api(taskInfo.V2Task, header, rid)
 		if err != nil {
 			return nil, err
 		}
@@ -433,7 +433,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, taskInfo *
 	return task, nil
 }
 
-func (h *HostIdentifier) pushFileByV2Api(always bool, task []*gse.Task, header http.Header, rid string) (string,
+func (h *HostIdentifier) pushFileByV2Api(task []*gse.Task, header http.Header, rid string) (string,
 	error) {
 
 	if len(task) == 0 {
@@ -450,10 +450,10 @@ func (h *HostIdentifier) pushFileByV2Api(always bool, task []*gse.Task, header h
 		TimeoutSeconds: 1000,
 	}
 
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseApiGWClient.AsyncPushFile(h.ctx, header, req)
 		if err != nil {
-			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
+			h.metric.pushFileTotal.WithLabelValues("failed").Inc()
 			failCount++
 			sleepForFail(failCount)
 			continue
@@ -461,14 +461,14 @@ func (h *HostIdentifier) pushFileByV2Api(always bool, task []*gse.Task, header h
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return "", err
 	}
 
 	return resp.Data.Result.TaskID, nil
 }
 
-func (h *HostIdentifier) pushFileByV1Api(always bool, task []*pushfile.API_FileInfoV2, rid string) (string, error) {
+func (h *HostIdentifier) pushFileByV1Api(task []*pushfile.API_FileInfoV2, rid string) (string, error) {
 	if len(task) == 0 {
 		blog.Errorf("push file error, because the task is empty, rid: %s", rid)
 		return "", errors.New("push file error, because the task is empty")
@@ -478,7 +478,7 @@ func (h *HostIdentifier) pushFileByV1Api(always bool, task []*pushfile.API_FileI
 	failCount := 0
 	resp := new(pushfile.API_CommRsp)
 
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseTaskServerClient.PushFileV2(context.Background(), task)
 		if err != nil {
 			blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
@@ -498,7 +498,7 @@ func (h *HostIdentifier) pushFileByV1Api(always bool, task []*pushfile.API_FileI
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return "", errors.New("push host identifier to gse taskServer error")
 	}
 

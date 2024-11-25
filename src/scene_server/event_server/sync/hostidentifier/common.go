@@ -32,9 +32,6 @@ import (
 )
 
 const (
-	// maxSecondForSleep is the maximum number of seconds of sleep
-	maxSecondForSleep = 60
-
 	// fileLimit 100 * 1024 字节 = 100KB
 	fileLimit = 102400
 )
@@ -47,9 +44,6 @@ func strMd5(str string) (retMd5 string) {
 
 // sleepForFail sleep due to failure
 func sleepForFail(failCount int) {
-	if failCount > maxSecondForSleep {
-		failCount = maxSecondForSleep
-	}
 	time.Sleep(time.Duration(failCount) * time.Second)
 }
 

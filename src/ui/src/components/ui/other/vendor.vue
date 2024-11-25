@@ -13,9 +13,6 @@
 <template>
   <span class="cmdb-vendor">
     <template v-if="type">
-      <svg class="icon" aria-hidden="true">
-        <use :xlink:href="icon"></use>
-      </svg>
       <slot>{{vendor ? vendor.name : emptyText }}</slot>
     </template>
     <template v-else>{{emptyText}}</template>
@@ -43,17 +40,6 @@
       vendor() {
         return this.vendors.find(vendor => vendor.id === this.type)
       },
-      icon() {
-        if (!this.vendor) {
-          return null
-        }
-        const iconMap = {
-          1: '#icon-cc-cloud-aws',
-          2: '#icon-cc-cloud-tencent',
-          3: '#icon-cc-cloud-ali'
-        }
-        return iconMap[this.vendor.id] || null
-      }
     },
     created() {
       this.getVendors()
@@ -87,10 +73,5 @@
         align-items: center;
         vertical-align: middle;
         @include ellipsis;
-        .icon {
-            width: 14px;
-            height: 14px;
-            margin-right: 4px;
-        }
     }
 </style>

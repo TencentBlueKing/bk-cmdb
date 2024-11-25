@@ -679,7 +679,7 @@
             params: values
           }).then(() => {
             this.attribute.inst.details = Object.assign({}, originalValues, values)
-            this.getTableData()
+            RouterQuery.refresh()
             this.closeCreateSlider()
             this.$success(this.$t('修改成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
@@ -689,7 +689,7 @@
           this.createBusiness({
             params: values
           }).then(() => {
-            this.getTableData()
+            RouterQuery.refresh()
             this.closeCreateSlider()
             this.$success(this.$t('创建成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
