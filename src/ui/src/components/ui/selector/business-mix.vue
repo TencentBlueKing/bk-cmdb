@@ -12,6 +12,7 @@
 
 <template>
   <bk-select style="text-align: left;"
+    ref="selectRef"
     :loading="$loading([requestIds.biz, requestIds.bizset])"
     v-model="localSelected"
     :popover-width="320"
@@ -23,8 +24,11 @@
     :popover-options="popoverOptions"
     font-size="normal"
     ext-popover-cls="cmdb-business-mix-selector-dropdown-content"
-    @toggle="handleSelectToggle">
-    <bk-option v-for="option in sortedList"
+    @toggle="handleSelectToggle"
+    enable-scroll-load
+    :remote-method="handleSearch"
+    @scroll-end="handleScrollToBottom">
+    <bk-option v-for="option in displayList"
       :key="option.id"
       :id="option.id"
       :name="option.name"
@@ -44,6 +48,10 @@
         </div>
       </cmdb-auth-mask>
     </bk-option>
+    <div class="empty" v-if="!displayList.length">
+      <div v-if="searchValue">{{ $t('搜索结果为空') }}</div>
+      <div v-else>{{ $t('暂无数据') }}</div>
+    </div>
     <div class="business-extension" slot="extension">
       <cmdb-auth :auth="{ type: $OPERATION.C_BUSINESS }" tag="div" class="extension-link"
         @click="handleCreateBusiness">
@@ -69,6 +77,7 @@
     MENU_RESOURCE_BUSINESS,
     MENU_RESOURCE_BUSINESS_SET
   } from '@/dictionary/menu-symbol'
+  import { paginateIterator } from '@/utils/util.js'
 
   export default {
     name: 'cmdb-business-mix-selector',
@@ -93,6 +102,9 @@
         useIAM: this.$Site.authscheme === 'iam',
         normalizationList: [],
         sortedList: [],
+        displayList: [],
+        displayPageSize: 10,
+        searchValue: '',
         requestIds: {
           biz: Symbol('biz'),
           bizset: Symbol('bizset'),
@@ -108,6 +120,7 @@
       },
       localSelected: {
         get() {
+          console.log(this.value, 'this.value')
           return this.value
         },
         set(value) {
@@ -119,6 +132,9 @@
     },
     async created() {
       this.getData()
+
+      // 列表展示数据迭代器，用于滚动加载下一页数据，每次列表数据更新时会重置迭代器确保数据正确性
+      this.iterator = null
     },
     methods: {
       async getData() {
@@ -171,6 +187,55 @@
 
         this.normalizationList = normalizationList
         this.sortedList = this.normalizationList
+
+        this.iterator = paginateIterator(this.sortedList, this.displayPageSize)
+
+        const { value, done } = this.iterator.next()
+        if (!done) {
+          this.displayList = value
+        }
+
+        // 由于使用了分页加载，当前选中的业务可能不在列表中select组件无法回显，通过调用registerOption解决
+        this.$nextTick(() => {
+          const selectedOption = this.normalizationList.find(item => item.id === this.localSelected)
+          this.$refs.selectRef.registerOption({
+            ...selectedOption,
+            disabled: false,
+            unmatched: false,
+            isHighlight: false
+          })
+        })
+      },
+      handleSearch(keyword) {
+        const searchValue = String(keyword).trim()
+          .toLowerCase()
+
+        let displayList = []
+        if (searchValue) {
+          this.sortedList.forEach((option) => {
+            const lowerName = option.name.toLowerCase()
+            const matched = lowerName.indexOf(searchValue) !== -1
+            if (matched) {
+              console.log(option)
+              displayList.push(option)
+            } else {
+              const pinyinList = this.$bkToPinyin(lowerName, true, '-').split('-')
+              const pinyinStr = pinyinList.reduce((res, cur) => res + cur[0], '')
+              if (pinyinList.join('').indexOf(searchValue) !== -1 || pinyinStr.indexOf(searchValue) !== -1) {
+                console.log(option, 'pppyy')
+                displayList.push(option)
+              }
+            }
+          })
+        } else {
+          displayList = this.sortedList
+        }
+
+        this.iterator = paginateIterator(displayList, this.displayPageSize)
+        const { value } = this.iterator.next()
+        this.displayList = value || []
+
+        this.searchValue = searchValue
       },
       isCollected(option) {
         return this.collection.includes(option.id)
@@ -219,6 +284,12 @@
           return 0
         })
       },
+      handleScrollToBottom() {
+        const { value, done } = this.iterator.next()
+        if (!done) {
+          this.displayList.push(...value)
+        }
+      },
       async handleCollect(option) {
         if (this.$loading(this.requestIds.collection)) {
           return
@@ -246,6 +317,13 @@
         // 每次下拉展开时重新排序数据，操作收藏时不排序防止顺序跳动
         if (isOpen) {
           this.sortedList = this.sortList(this.normalizationList)
+
+          this.iterator = paginateIterator(this.sortedList, this.displayPageSize)
+
+          const { value, done } = this.iterator.next()
+          if (!done) {
+            this.displayList = value
+          }
         }
       },
       handleCreateBusiness() {
@@ -361,6 +439,11 @@
         }
       }
     }
+  }
+
+  .empty {
+    padding: 0 10px;
+    text-align: center;
   }
 </style>
 <style lang="scss">

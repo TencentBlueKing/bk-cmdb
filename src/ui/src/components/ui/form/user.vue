@@ -144,12 +144,14 @@
           value.splice(0, value.length, this.userName)
         }
         this.localValue = value
+        // 点击了“我”之后隐藏选择框
+        this.$refs.userSelector?.reset()
       },
-      errorHandler(res) {
-        if (res.code === 1306000) {
-          showLoginModal()
-        }
-      }
+     errorHandler(res) {
+       if (res.code === 1306000) {
+         showLoginModal()
+       }
+     }
     }
   }
 </script>
