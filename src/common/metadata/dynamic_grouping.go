@@ -136,11 +136,6 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 	case DynamicGroupOperatorEQ, DynamicGroupOperatorNE:
 		return validAttributeValueType(attrType, c.Value)
 	case DynamicGroupOperatorIN, DynamicGroupOperatorNIN:
-		if attrType != stringType {
-			return fmt.Errorf("operator %s only support string value, not support attribute type, %s", c.Operator,
-				attributeType)
-		}
-
 		valueArr, ok := c.Value.([]interface{})
 		if !ok {
 			return fmt.Errorf("operator %s only support array value, not support value, %+v", c.Operator, c.Value)

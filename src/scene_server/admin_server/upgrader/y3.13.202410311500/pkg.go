@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_13_202402181900
+package y3_13_202410311500
 
 import (
 	"context"
@@ -26,17 +26,18 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.13.202402181900", upgrade)
+	upgrader.RegistUpgrader("y3.13.202410311500", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.13.202402181900")
 
-	if err = updateBizSetDescField(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.13.202402181900 update biz set description field failed, err: %v", err)
+	blog.Infof("start execute y3.13.202410311500")
+	err = updateCloudVendor(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("upgrade y3.13.202410311500 update cloud vendor failed, error: %v", err)
 		return err
 	}
+	blog.Infof("execute y3.13.202410311500, update cloud vendor success!")
 
-	blog.Infof("upgrade y3.13.202402181900 rename biz set description field success")
 	return nil
 }

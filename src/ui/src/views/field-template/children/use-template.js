@@ -23,7 +23,7 @@ export default function useTemplate(templates) {
       return
     }
     $bkInfo({
-      title: '确定删除',
+      title: t('确定删除'),
       subTitle: t('确认要删除', { name: template.name }),
       confirmLoading: true,
       confirmFn: async () => {
