@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 
@@ -140,7 +140,7 @@ type Process struct {
 	StartParamRegex *string                `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty" structs:"bk_start_param_regex"`
 }
 
-func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	mongo, ok := db.(*local.Mongo)
 	if !ok {
 		return fmt.Errorf("db is not *local.Mongo type")
@@ -428,7 +428,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	return db.Table(common.BKTableNameBaseProcess).Delete(ctx, mapstr.MapStr{"old_flag": true})
 }
 
-func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func backupProcessBase(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	start := uint64(0)
 	limit := uint64(100)
 	for {

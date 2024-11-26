@@ -21,11 +21,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcBindInfo(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	bindIPAttrFilter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
@@ -81,7 +81,7 @@ func addProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	return db.Table(common.BKTableNameObjAttDes).Insert(ctx, procBindIPAttr)
 }
 
-func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	// 已经处理过最大的进程id
 	maxProcID := int64(0)
@@ -142,7 +142,7 @@ func migrateProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	return nil
 }
 
-func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	// 已经处理过最大的id
 	maxID := int64(0)
@@ -216,7 +216,7 @@ func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	return nil
 }
 
-func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	delPropertyID := []string{common.BKProcGatewayIP, common.BKProcGatewayPort, common.BKProcGatewayProtocol,
 		common.BKProcGatewayCity, common.BKBindIP, common.BKPort, common.BKProtocol, common.BKProcPortEnable}
 

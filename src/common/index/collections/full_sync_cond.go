@@ -31,7 +31,7 @@ func init() {
 
 var commFullSyncCondIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + fullsynccond.IDField,
+		Name: common.CCLogicUniqueIdxNamePrefix + "ID",
 		Keys: bson.D{
 			{fullsynccond.IDField, 1},
 		},
@@ -43,7 +43,6 @@ var commFullSyncCondIndexes = []types.Index{
 		Keys: bson.D{
 			{fullsynccond.ResourceField, 1},
 			{fullsynccond.SubResField, 1},
-			{common.TenantID, 1},
 		},
 		PartialFilterExpression: map[string]interface{}{
 			fullsynccond.IsAllField: true,

@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -37,7 +37,7 @@ const PageSize = 200
 // common.BKTableNameProcessInstanceRelation,
 
 // RemoveMetadata TODO
-func RemoveMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func RemoveMetadata(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	for _, tableName := range tables {
 		if err := removeMetadata(ctx, db, conf, tableName); err != nil {
 			blog.Errorf("removeMetadata on table: %s failed, err: %+v", tableName, err)
@@ -47,7 +47,7 @@ func RemoveMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	return nil
 }
 
-func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string) error {
+func removeMetadata(ctx context.Context, db dal.RDB, conf *history.Config, tableName string) error {
 	type MetaDataItem struct {
 		ID       int64             `bson:"id"`
 		Metadata metadata.Metadata `bson:"metadata"`
@@ -98,7 +98,7 @@ func removeMetadata(ctx context.Context, db dal.RDB, conf *upgrader.Config, tabl
 }
 
 // RemoveMetadataProcess TODO
-func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := common.BKTableNameBaseProcess
 	type MetaDataItem struct {
 		ProcessID int64             `bson:"bk_process_id"`
@@ -150,7 +150,7 @@ func RemoveMetadataProcess(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 }
 
 // RemoveMetadataFromRelation TODO
-func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func RemoveMetadataFromRelation(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := common.BKTableNameProcessInstanceRelation
 	type MetaDataItem struct {
 		BkProcessID       int64             `bson:"bk_process_id"`

@@ -20,12 +20,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // removeMetadataOnMainlineInstance 当前仅移除Set和Module的metadata字段
-func removeMetadataOnMainlineInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func removeMetadataOnMainlineInstance(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	if err := fixBizIDFieldWithMetadataOnSet(ctx, db, conf); err != nil {
 		blog.Errorf("removeMetadataOnMainlineInstance failed, fixBizIDFieldWithMetadataOnSet failed, err: %s", err.Error())
 		return fmt.Errorf("fixBizIDFieldWithMetadataOnSet failed, err: %s", err.Error())
@@ -67,7 +67,7 @@ func removeMetadataOnMainlineInstance(ctx context.Context, db dal.RDB, conf *upg
 	return nil
 }
 
-func getCustomMainlineModels(ctx context.Context, db dal.RDB, conf *upgrader.Config) ([]string, error) {
+func getCustomMainlineModels(ctx context.Context, db dal.RDB, conf *history.Config) ([]string, error) {
 	filter := map[string]interface{}{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
@@ -110,7 +110,7 @@ func getCustomMainlineModels(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	return customMainlineModels, nil
 }
 
-func fixBizIDFieldWithMetadataOnSet(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixBizIDFieldWithMetadataOnSet(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Set struct {
 		BizID    int64             `bson:"bk_biz_id" json:"bk_biz_id" mapstructure:"bk_biz_id"`
 		SetID    int64             `bson:"bk_set_id" json:"bk_set_id" mapstructure:"bk_set_id"`
@@ -158,7 +158,7 @@ func fixBizIDFieldWithMetadataOnSet(ctx context.Context, db dal.RDB, conf *upgra
 	return nil
 }
 
-func fixBizIDFieldWithMetadataOnModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixBizIDFieldWithMetadataOnModule(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Module struct {
 		BizID      int64             `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
 		ModuleID   int64             `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
@@ -206,7 +206,7 @@ func fixBizIDFieldWithMetadataOnModule(ctx context.Context, db dal.RDB, conf *up
 	return nil
 }
 
-func fixBizIDFieldWithMetadataOnCustomMainline(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixBizIDFieldWithMetadataOnCustomMainline(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type MainlineInstance struct {
 		BizID    int64             `bson:"bk_biz_id" json:"bk_biz_id" field:"bk_biz_id" mapstructure:"bk_biz_id"`
 		InstID   int64             `bson:"bk_inst_id" json:"bk_inst_id" field:"bk_inst_id" mapstructure:"bk_inst_id"`
