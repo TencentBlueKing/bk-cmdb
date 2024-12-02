@@ -226,7 +226,7 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 		statusReq.Hosts = append(statusReq.Hosts, info...)
 	}
 
-	resp, err := h.getAgentStatus(statusReq, true, rid)
+	resp, err := h.getAgentStatus(statusReq, rid)
 	if err != nil {
 		blog.Errorf("get agent status error, host: %v, err: %v, rid: %s", events, err, rid)
 		return
@@ -263,7 +263,7 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, ri
 
 	// 3、推送主机身份信息
 	h.watchLimiter.AcceptMany(int64(len(fList)))
-	if _, err := h.pushFile(true, hostInfos, fList, rid); err != nil {
+	if _, err := h.pushFile(hostInfos, fList, rid); err != nil {
 		blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
 	}
 }
@@ -321,7 +321,7 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		statusReq.Hosts = append(statusReq.Hosts, info...)
 	}
 
-	resp, err := h.getAgentStatus(statusReq, false, rid)
+	resp, err := h.getAgentStatus(statusReq, rid)
 	if err != nil {
 		blog.Errorf("get agent status error,  hostInfo: %v, err: %v, rid: %s", hosts, err, rid)
 		return nil, err
@@ -369,15 +369,15 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 	return h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, rid, header)
 }
 
-func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
-	always bool, rid string) (*getstatus.AgentStatusResponse, error) {
+func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest, rid string) (
+	*getstatus.AgentStatusResponse, error) {
 
 	var err error
 	failCount := 0
 	resp := new(getstatus.AgentStatusResponse)
 
 	// 调用gse api server 查询agent状态
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseApiServerClient.GetAgentStatus(context.Background(), status)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
@@ -397,7 +397,7 @@ func (h *HostIdentifier) getAgentStatus(status *getstatus.AgentStatusRequest,
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return nil, errors.New("find agent status from apiServer error")
 	}
 
@@ -473,5 +473,5 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 
 	// 3、推送主机身份信息
 	h.fullLimiter.AcceptMany(int64(len(fileList)))
-	return h.pushFile(false, hostInfos, fileList, rid)
+	return h.pushFile(hostInfos, fileList, rid)
 }

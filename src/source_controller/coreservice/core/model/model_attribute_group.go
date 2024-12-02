@@ -254,7 +254,8 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 }
 
 // SearchModelAttributeGroup TODO
-func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
+func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID string,
+	inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
 	dataResult := &metadata.QueryModelAttributeGroupDataResult{
 		Info: []metadata.Group{},
@@ -267,22 +268,24 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(kit *rest.Kit, objID str
 	// 	return dataResult, err
 	// }
 
-	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), kit.SupplierAccount))
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", kit.Rid, inputParam.Condition, err.Error())
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(),
+		kit.SupplierAccount))
+	if err != nil {
+		blog.Errorf("convert the condition from mapstr failed, err: %v cond: %v, rid: %s", err, inputParam.Condition,
+			kit.Rid)
 		return dataResult, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
 	totalCount, err := g.count(kit, cond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", kit.Rid, cond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("count model failed, err: %v cond: %v, rid: %s", err, cond, kit.Rid)
 		return dataResult, err
 	}
 
 	grps, err := g.search(kit, cond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", kit.Rid, cond.ToMapStr(), err.Error())
+	if err != nil {
+		blog.Errorf("query model failed, err: %v cond: %v, rid: %s", err, cond, kit.Rid)
 		return dataResult, err
 	}
 
