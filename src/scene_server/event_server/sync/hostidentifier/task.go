@@ -202,7 +202,7 @@ func (h *HostIdentifier) LaunchTaskForFailedHost() {
 		}
 
 		// 2、查询主机的agent状态
-		resp, err := h.getAgentStatus(statusReq, false, rid)
+		resp, err := h.getAgentStatus(statusReq, rid)
 		if err != nil {
 			blog.Errorf("get agent status error, hostInfo: %v, err: %v, rid: %s", hostInfoArray, err, rid)
 			continue
@@ -288,7 +288,7 @@ func (h *HostIdentifier) collectFailHost(rid string) ([]*HostInfo, *getstatus.Ag
 }
 
 // pushFile push host identifier file to gse and create a new task to redis task_list
-func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList []*pushfile.API_FileInfoV2,
+func (h *HostIdentifier) pushFile(hostInfos []*HostInfo, fileList []*pushfile.API_FileInfoV2,
 	rid string) (*Task, error) {
 
 	var err error
@@ -296,7 +296,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList [
 	resp := new(pushfile.API_CommRsp)
 
 	// 1、调用gse taskServer接口，推送主机身份
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseTaskServerClient.PushFileV2(context.Background(), fileList)
 		if err != nil {
 			blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
@@ -316,7 +316,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, fileList [
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return nil, errors.New("push host identifier to gse taskServer error")
 	}
 

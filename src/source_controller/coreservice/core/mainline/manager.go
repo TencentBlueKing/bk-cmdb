@@ -297,7 +297,9 @@ func (im *InstanceMainline) OrganizeMainlineInstance(ctx context.Context, withDe
 }
 
 // CheckAndFillingMissingModels TODO
-func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header, withDetail bool) error {
+func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, header http.Header,
+	withDetail bool) error {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 	supplierAccount := util.GetOwnerID(header)
 
@@ -306,6 +308,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 		if topoInstance.ParentInstanceID == 0 {
 			continue
 		}
+
 		var parentKey string
 		if topoInstance.ObjectID == common.BKInnerObjIDSet && topoInstance.Default == 1 {
 			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
@@ -321,84 +324,104 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(ctx context.Context, he
 			continue
 		}
 		blog.Warnf("get parent of %+v with key=%s failed, not Found, rid: %s", topoInstance, parentKey, rid)
-		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table has no bk_biz_id field
-		// and therefore find parentInstance failed.
+		// There is a bug in legacy code that business before mainline model be created in cc_ObjectBase table
+		// has no bk_biz_id field and therefore find parentInstance failed.
 		// In this case current algorithm degenerate in to o(n) query cost.
 
-		filter := map[string]interface{}{
-			common.BKInstIDField: topoInstance.ParentInstanceID,
-		}
-		filter = util.SetQueryOwner(filter, supplierAccount)
-
-		missedInstances := make([]mapstr.MapStr, 0)
-
-		err := mongodb.Client().
-			Table(common.GetObjectInstTableName(topoInstance.ObjectID, supplierAccount)).
-			Find(filter).
-			All(ctx, &missedInstances)
-
+		topoInstance, needSkip, err := im.getMissingModelInstance(ctx, supplierAccount, *topoInstance, withDetail)
 		if err != nil {
-			blog.Errorf("get common instances with ID:%d failed, %+v, rid: %s", topoInstance.ParentInstanceID, err, rid)
+			blog.Errorf("check and filling missing models failed, topoInstance: %v, err: %v, rid: %s", topoInstance,
+				err, rid)
 			return err
 		}
-		blog.V(5).Infof("get missed instances by id:%d results: %+v, rid: %s", topoInstance.ParentInstanceID, missedInstances, rid)
-
-		if len(missedInstances) == 0 {
-			if topoInstance.ObjectID == common.BKInnerObjIDSet &&
-				im.bkBizID == topoInstance.ParentInstanceID {
-				// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
-				// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
-				continue
-			} else {
-				// parent id not found, ignore node
-				blog.Warnf("found unexpected count of missedInstances: %#v, cond: %#v, rid: %s", missedInstances, filter, rid)
-				continue
-			}
-		}
-		if len(missedInstances) > 1 {
-			blog.Errorf("found too many(%d) missedInstances: %#v by id: %d, cond: %#v, rid: %s", len(missedInstances), missedInstances, topoInstance.ParentInstanceID, filter, rid)
-			return fmt.Errorf("found too many(%d) missedInstances: %+v by id: %d", len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
-		}
-		instance := missedInstances[0]
-		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
-		if err != nil {
-			blog.Errorf("parse instanceID:%+v to int64 failed, %+v, rid: %s", instance[common.BKInstIDField], err, rid)
-			return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
+		if needSkip {
+			continue
 		}
 
-		var parentInstanceID int64
-		parentValue, existed := instance[common.BKInstParentStr]
-		if existed {
-			parentInstanceID, err = util.GetInt64ByInterface(parentValue)
-			if err != nil {
-				blog.Errorf("parse instanceID:%+v to int64 failed, %+v, rid: %s", instance[common.BKInstParentStr], err, rid)
-				return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
-			}
-		} else {
-			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
-			// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
-			if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
-				continue
-			}
-			blog.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v, rid: %s", common.BKInstParentStr, instance, err, rid)
-			return fmt.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)
-		}
-		blog.V(7).Infof("model: %s, instance: %d, parent: %d, rid: %s", topoInstance.ObjectID, topoInstance.InstanceID, parentInstanceID, rid)
-
-		topoInstance := &metadata.TopoInstance{
-			ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
-			InstanceName:     util.GetStrByInterface(instance[common.BKInstNameField]),
-			InstanceID:       instanceID,
-			ParentInstanceID: parentInstanceID,
-			Detail:           map[string]interface{}{},
-		}
-		if withDetail {
-			topoInstance.Detail = instance
-		}
-		im.allTopoInstances = append(im.allTopoInstances, topoInstance)
-		im.instanceMap[topoInstance.Key()] = topoInstance
+		im.allTopoInstances = append(im.allTopoInstances, &topoInstance)
+		im.instanceMap[topoInstance.Key()] = &topoInstance
 	}
 	return nil
+}
+
+// getMissingModelInstance get missing model instance
+func (im *InstanceMainline) getMissingModelInstance(ctx context.Context, supplierAccount string,
+	topoInstance metadata.TopoInstance, withDetail bool) (metadata.TopoInstance, bool, error) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+	filter := map[string]interface{}{common.BKInstIDField: topoInstance.ParentInstanceID}
+	filter = util.SetQueryOwner(filter, supplierAccount)
+
+	missedInstances := make([]mapstr.MapStr, 0)
+	err := mongodb.Client().Table(common.GetObjectInstTableName(topoInstance.ObjectID, supplierAccount)).Find(filter).
+		All(ctx, &missedInstances)
+	if err != nil {
+		blog.Errorf("get common instances failed, err: %v, rid: %s", topoInstance.ParentInstanceID, err, rid)
+		return topoInstance, false, err
+	}
+	blog.V(5).Infof("get missed instances by id:%d results: %+v, rid: %s", topoInstance.ParentInstanceID,
+		missedInstances, rid)
+
+	if len(missedInstances) == 0 {
+		if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
+			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+			// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
+			return topoInstance, true, nil
+		} else {
+			// parent id not found, ignore node
+			blog.Warnf("found unexpected count of missedInstances: %#v, cond: %#v, rid: %s", missedInstances,
+				filter, rid)
+			return topoInstance, true, nil
+		}
+	}
+	if len(missedInstances) > 1 {
+		blog.Errorf("found too many(%d) missedInstances: %#v by id: %d, cond: %#v, rid: %s", len(missedInstances),
+			missedInstances, topoInstance.ParentInstanceID, filter, rid)
+		return topoInstance, false, fmt.Errorf("found too many(%d) missedInstances: %+v by id: %d",
+			len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
+	}
+	instance := missedInstances[0]
+	instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
+	if err != nil {
+		blog.Errorf("parse instanceID:%+v to int64 failed, err: %v, instanceID:%v, rid: %s", err,
+			instance[common.BKInstIDField], rid)
+		return topoInstance, false, err
+	}
+
+	var parentInstanceID int64
+	parentValue, existed := instance[common.BKInstParentStr]
+	if existed {
+		parentInstanceID, err = util.GetInt64ByInterface(parentValue)
+		if err != nil {
+			blog.Errorf("parse instanceID to int64 failed, err: %v, instanceID: %v, rid: %s", err,
+				instance[common.BKInstParentStr], rid)
+			return topoInstance, false, err
+		}
+	} else {
+		// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+		// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
+		if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
+			return topoInstance, true, nil
+		}
+		blog.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, rid: %s",
+			common.BKInstParentStr, instance, rid)
+		return topoInstance, false, fmt.Errorf("construct biz topo tree, instance doesn't have field %s, "+
+			"instance: %+v", common.BKInstParentStr, instance)
+	}
+	blog.V(7).Infof("model: %s, instance: %d, parent: %d, rid: %s", topoInstance.ObjectID, topoInstance.InstanceID,
+		parentInstanceID, rid)
+
+	topoInstance = metadata.TopoInstance{
+		ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
+		InstanceName:     util.GetStrByInterface(instance[common.BKInstNameField]),
+		InstanceID:       instanceID,
+		ParentInstanceID: parentInstanceID,
+		Detail:           map[string]interface{}{},
+	}
+	if withDetail {
+		topoInstance.Detail = instance
+	}
+	return topoInstance, false, nil
 }
 
 // ConstructInstanceTopoTree TODO
@@ -417,59 +440,16 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 		parentObjectID := im.objectParentMap[topoInstance.ObjectID]
 		parentKey := fmt.Sprintf("%s:%d", parentObjectID, topoInstance.ParentInstanceID)
 		if _, exist := topoInstanceNodeMap[parentKey]; !exist {
-			parentInstance, exist := im.instanceMap[parentKey]
-			if !exist {
-				// 空闲机池 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
-				if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
-					parentObjectID = common.BKInnerObjIDApp
-					parentKey = fmt.Sprintf("%s:%d", parentObjectID, im.bkBizID)
-					parentInstance, exist = im.instanceMap[parentKey]
-				}
-				if !exist {
-					cond := map[string]interface{}{
-						common.BKObjIDField:  parentObjectID,
-						common.BKInstIDField: topoInstance.ParentInstanceID,
-					}
-					cond = util.SetQueryOwner(cond, supplierAccount)
-
-					inst := mapstr.MapStr{}
-					err := mongodb.Client().
-						Table(common.GetObjectInstTableName(parentObjectID, supplierAccount)).
-						Find(cond).
-						One(context.Background(), &inst)
-
-					if err != nil {
-						if isNotFound := mongodb.Client().IsNotFoundError(err); !isNotFound {
-							blog.Errorf("get mainline instances failed, filter: %+v, err: %+v, rid: %s", cond, err, rid)
-							return fmt.Errorf("get other mainline instances failed, filer: %+v, err: %+v", cond, err)
-						} else {
-							im.mainlineInstances = append(im.mainlineInstances, inst)
-							blog.Errorf("unexpected err, parent instance not found, instance: %+v, rid: %s", topoInstance, rid)
-							continue
-						}
-					}
-
-					parentValue, existed := inst[common.BKInstParentStr]
-					if !existed {
-						blog.Errorf("get mainline instances failed, field %s not in db data, data: %+v, rid: %s", common.BKInstParentStr, inst, rid)
-						return fmt.Errorf("get mainline instances failed, field %s not in db data, data: %+v", common.BKInstParentStr, inst)
-					}
-					parentParentID, err := util.GetInt64ByInterface(parentValue)
-					if err != nil {
-						blog.Errorf("get mainline instances failed, field %s parse into int failed, data: %+v, err: %+v, rid:  %s", common.BKInstParentStr, inst, err, rid)
-						return fmt.Errorf("get mainline instances failed, field %s parse into int failed, data: %+v, err: %+v", common.BKInstParentStr, inst, err)
-					}
-					parentInstance = &metadata.TopoInstance{
-						ObjectID:         parentObjectID,
-						InstanceID:       topoInstance.ParentInstanceID,
-						InstanceName:     util.GetStrByInterface(inst),
-						ParentInstanceID: parentParentID,
-						Detail:           inst,
-					}
-					im.instanceMap[parentKey] = parentInstance
-					im.allTopoInstances = append(im.allTopoInstances, parentInstance)
-				}
+			parentInstance, needSkip, err := im.getParentInstance(ctx, supplierAccount, parentObjectID, parentKey,
+				*topoInstance)
+			if err != nil {
+				blog.Errorf("get parent instance failed, err: %v, topoInstance: %v, rid: %s", err, topoInstance, rid)
+				return err
 			}
+			if needSkip {
+				continue
+			}
+
 			topoInstanceNode := &metadata.TopoInstanceNode{
 				ObjectID:     parentInstance.ObjectID,
 				InstanceID:   parentInstance.InstanceID,
@@ -501,6 +481,74 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(ctx context.Context, heade
 		parentInstanceNode.Children = append(parentInstanceNode.Children, childTopoInstanceNode)
 	}
 	return nil
+}
+
+// getParentInstance get parent instance
+func (im *InstanceMainline) getParentInstance(ctx context.Context, supplierAccount string, parentObjectID string,
+	parentKey string, topoInstance metadata.TopoInstance) (*metadata.TopoInstance, bool, error) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	parentInstance, exist := im.instanceMap[parentKey]
+	if !exist {
+		// 空闲机池 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+		if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
+			parentObjectID = common.BKInnerObjIDApp
+			parentKey = fmt.Sprintf("%s:%d", parentObjectID, im.bkBizID)
+			parentInstance, exist = im.instanceMap[parentKey]
+		}
+		if !exist {
+			cond := map[string]interface{}{
+				common.BKObjIDField:  parentObjectID,
+				common.BKInstIDField: topoInstance.ParentInstanceID,
+			}
+			cond = util.SetQueryOwner(cond, supplierAccount)
+
+			inst := mapstr.MapStr{}
+			err := mongodb.Client().
+				Table(common.GetObjectInstTableName(parentObjectID, supplierAccount)).
+				Find(cond).
+				One(context.Background(), &inst)
+
+			if err != nil {
+				if isNotFound := mongodb.Client().IsNotFoundError(err); !isNotFound {
+					blog.Errorf("get mainline instances failed, filter: %+v, err: %+v, rid: %s", cond, err, rid)
+					return parentInstance, false, err
+				} else {
+					im.mainlineInstances = append(im.mainlineInstances, inst)
+					blog.Errorf("unexpected err, parent instance not found, instance: %+v, rid: %s", topoInstance,
+						rid)
+					return parentInstance, true, nil
+				}
+			}
+
+			parentValue, existed := inst[common.BKInstParentStr]
+			if !existed {
+				blog.Errorf("get mainline instances failed, field %s not in db data, data: %+v, rid: %s",
+					common.BKInstParentStr, inst, rid)
+				return parentInstance, false, fmt.Errorf("get mainline instances failed, field %s not in db data,"+
+					" data: %+v", common.BKInstParentStr, inst)
+			}
+			parentParentID, err := util.GetInt64ByInterface(parentValue)
+			if err != nil {
+				blog.Errorf("get mainline instances failed, field %s parse into int failed, data: %+v, err: %+v,"+
+					" rid:  %s", common.BKInstParentStr, inst, err, rid)
+				return parentInstance, false, fmt.Errorf("get mainline instances failed, field %s parse into int"+
+					" failed, data: %+v, err: %+v", common.BKInstParentStr, inst, err)
+			}
+			parentInstance = &metadata.TopoInstance{
+				ObjectID:         parentObjectID,
+				InstanceID:       topoInstance.ParentInstanceID,
+				InstanceName:     util.GetStrByInterface(inst),
+				ParentInstanceID: parentParentID,
+				Detail:           inst,
+			}
+			im.instanceMap[parentKey] = parentInstance
+			im.allTopoInstances = append(im.allTopoInstances, parentInstance)
+		}
+	}
+
+	return parentInstance, false, nil
 }
 
 // GetInstanceMap TODO
