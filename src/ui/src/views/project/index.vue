@@ -719,7 +719,7 @@
           data: [values]
         }
         projectService.create(data).then(() => {
-          this.getTableData()
+          RouterQuery.refresh()
           this.closeCreateSlider()
           this.$success(this.$t('创建成功'))
           this.$http.cancel('post_searchrProject_$ne_disabled')

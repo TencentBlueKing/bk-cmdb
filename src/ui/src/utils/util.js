@@ -335,3 +335,11 @@ export function getHostInfoTitle(ip, ipv6, cloudId, hostId) {
 export function isNumeric(str) {
   return !isNaN(str) && !isNaN(parseFloat(str))
 }
+
+export function* paginateIterator(list, pageSize) {
+  let index = 0
+  while (index < list.length) {
+    yield list.slice(index, index + pageSize)
+    index += pageSize
+  }
+}

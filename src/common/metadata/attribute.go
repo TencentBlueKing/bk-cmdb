@@ -324,6 +324,18 @@ func (attribute *Attribute) validEnum(ctx context.Context, val interface{}, key 
 	}
 }
 
+// CheckInterfaceSliceType check whether propertyValue type is []interface{} or primitive.A
+func CheckInterfaceSliceType(propertyValue interface{}) ([]interface{}, errors.CCErrorCoder) {
+	switch t := propertyValue.(type) {
+	case []interface{}:
+		return t, nil
+	case primitive.A:
+		return t, nil
+	default:
+		return nil, errors.New(common.CCErrCommUnexpectedFieldType, "property value type error")
+	}
+}
+
 // validEnum valid object attribute that is enum multi type
 func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -353,8 +365,8 @@ func (attribute *Attribute) validEnumMulti(ctx context.Context, val interface{},
 		idMap[option.ID] = struct{}{}
 	}
 
-	valIDs, ok := val.([]interface{})
-	if !ok {
+	valIDs, ccErr := CheckInterfaceSliceType(val)
+	if ccErr != nil {
 		blog.Errorf("convert val to interface slice failed, val type: %T", val)
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrCommParamsInvalid,
