@@ -77,16 +77,10 @@ func (s GlobalModule) Validate() error {
 // AdminBackendCfg TODO
 type AdminBackendCfg struct {
 	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
-	SnapshotBizID   int64 `json:"snapshot_biz_id"`
 }
 
 // Validate validate the fields of BackendCfg.
 func (b AdminBackendCfg) Validate() error {
-
-	if b.SnapshotBizID <= 0 {
-		return fmt.Errorf("snapshot biz id can't be empty")
-	}
-
 	if b.MaxBizTopoLevel < minBizTopoLevel || b.MaxBizTopoLevel > maxBizTopoLevel {
 		return fmt.Errorf("max biz topo level value must in range [%d-%d]", minBizTopoLevel, maxBizTopoLevel)
 	}
@@ -663,15 +657,11 @@ type BusinessTopoInstNamesItem struct {
 type OldAdminBackendCfg struct {
 	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
 	SnapshotBizName string `json:"snapshot_biz_name"`
+	SnapshotBizID   int64  `json:"snapshot_biz_id"`
 }
 
 // Validate validate the fields of BackendCfg.
 func (o OldAdminBackendCfg) Validate() error {
-
-	if strings.TrimSpace(o.SnapshotBizName) == "" {
-		return fmt.Errorf("snapshot biz name can't be empty")
-	}
-
 	if o.MaxBizTopoLevel < minBizTopoLevel || o.MaxBizTopoLevel > maxBizTopoLevel {
 		return fmt.Errorf("max biz topo level value must in range [%d-%d]", minBizTopoLevel, maxBizTopoLevel)
 	}

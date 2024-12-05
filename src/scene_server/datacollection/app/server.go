@@ -15,8 +15,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strconv"
 	"sync"
 	"time"
 
@@ -29,18 +27,13 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/types"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
 	"configcenter/src/scene_server/datacollection/collections/hostsnap"
 	svc "configcenter/src/scene_server/datacollection/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/kafka"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
@@ -58,19 +51,10 @@ const (
 
 	// defaultInitWaitDuration is default duration for new DataCollection init.
 	defaultInitWaitDuration = time.Second
-
-	// defaultDBConnectTimeout is default connect timeout of cc db.
-	defaultDBConnectTimeout = 5 * time.Second
-
-	// defaultAppInitWaitDuration is default wait duration for app db init.
-	defaultAppInitWaitDuration = 10 * time.Second
 )
 
 // DataCollectionConfig is configs for DataCollection app.
 type DataCollectionConfig struct {
-	// MongoDB mongodb configs.
-	MongoDB mongo.Config
-
 	// CCRedis CC main redis configs.
 	CCRedis redis.Config
 
@@ -82,9 +66,6 @@ type DataCollectionConfig struct {
 
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
-
-	// DefaultAppName default name of this app.
-	DefaultAppName string
 
 	// Auth is auth config
 	Auth iam.AuthConfig
@@ -98,9 +79,6 @@ type DataCollection struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	defaultAppID  string
-	snapshotBizID int64
-
 	// config for this DataCollection app.
 	config *DataCollectionConfig
 
@@ -109,9 +87,6 @@ type DataCollection struct {
 
 	// make host configs update action safe.
 	hostConfigUpdateMu sync.Mutex
-
-	// db is cc main database.
-	db dal.RDB
 
 	// redisCli is cc main cache redis client.
 	redisCli redis.Client
@@ -229,17 +204,6 @@ func (c *DataCollection) initConfigs() error {
 	var err error
 	blog.Info("DataCollection| found configs to run the new datacollection server now!")
 
-	// set snapshot biz id
-	if err := c.setSnapshotBizID(); err != nil {
-		return err
-	}
-
-	// mongodb.
-	c.config.MongoDB, err = c.engine.WithMongo()
-	if err != nil {
-		return fmt.Errorf("init mongodb configs, %+v", err)
-	}
-
 	// cc main redis.
 	c.config.CCRedis, err = c.engine.WithRedis()
 	if err != nil {
@@ -271,15 +235,6 @@ func (c *DataCollection) initConfigs() error {
 
 // initModules inits modules for new DataCollection server.
 func (c *DataCollection) initModules() error {
-	// create mongodb client.
-	mgoCli, err := local.NewMgo(c.config.MongoDB.GetMongoConf(), defaultDBConnectTimeout)
-	if err != nil {
-		return fmt.Errorf("create new mongodb client, %+v", err)
-	}
-	c.db = mgoCli
-	c.service.SetDB(mgoCli)
-	blog.Info("DataCollection| init modules, create mongo client success[%+v]", c.config.MongoDB.GetMongoConf())
-
 	// create blueking ESB client.
 	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
 	if err != nil {
@@ -299,7 +254,7 @@ func (c *DataCollection) initModules() error {
 	blog.Info("DataCollection| init modules, create ESB success[%+v]", c.config.Esb)
 
 	// build logics comm.
-	c.service.SetLogics(mgoCli, esb)
+	c.service.SetLogics(esb)
 
 	// connect to cc main redis.
 	redisCli, err := redis.NewFromConfig(c.config.CCRedis)
@@ -362,40 +317,8 @@ func (c *DataCollection) initModules() error {
 	return nil
 }
 
-// getDefaultAppID returns default appid of this DataCollection server.
-func (c *DataCollection) getDefaultAppID() (string, error) {
-	// query condition.
-	condition := map[string]interface{}{common.BKAppIDField: c.snapshotBizID}
-
-	// query results.
-	results := []map[string]interface{}{}
-
-	// query appid from cc db.
-	if err := c.db.Table(common.BKTableNameBaseApp).Find(condition).All(c.ctx, &results); err != nil {
-		return "", err
-	}
-	if len(results) <= 0 {
-		return "", fmt.Errorf("target app not found")
-	}
-
-	id, err := util.GetInt64ByInterface(results[0][common.BKAppIDField])
-	if err != nil {
-		return "", fmt.Errorf("can't query default appid, unkonw id type, %+v",
-			reflect.TypeOf(results[0][common.BKAppIDField]))
-	}
-	defaultAppID := strconv.FormatInt(id, 10)
-
-	return defaultAppID, nil
-}
-
-func (c *DataCollection) snapMessageTopic(defaultAppID string) []string {
-	return []string{
-		// current snap topic name.
-		fmt.Sprintf("snapshot%s", defaultAppID),
-
-		// old snap topic name, just for compatibility.
-		fmt.Sprintf("%s_snapshot", defaultAppID),
-	}
+func (c *DataCollection) snapMessageTopic() []string {
+	return []string{common.SnapshotChannelName}
 }
 
 // runCollectPorters runs porters for collections.
@@ -404,25 +327,10 @@ func (c *DataCollection) runCollectPorters() {
 	c.porterManager = collections.NewPorterManager()
 	go c.porterManager.Run()
 
-	// default appid.
-	for {
-		defaultAppID, err := c.getDefaultAppID()
-		if err == nil {
-			// success.
-			c.defaultAppID = defaultAppID
-			break
-		}
-
-		blog.Errorf("DataCollection| get default appid failed: %+v, init database first and it would "+
-			"try again in %+v seconds later", err, defaultAppInitWaitDuration)
-		time.Sleep(defaultAppInitWaitDuration)
-	}
-	blog.Info("DataCollection| get default appid id success[%s]", c.defaultAppID)
-
 	// create and add new porters.
 	if metadata.GseConfigReportMode(c.config.SnapReportMode) == metadata.GseConfigReportModeKafka {
-		topic := c.snapMessageTopic(c.defaultAppID)
-		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
+		topic := c.snapMessageTopic()
+		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.engine, c.authManager)
 
 		kafkaPorter := collections.NewKafkaPorter(snapPorterName, c.engine, c.ctx, analyzer, c.snapConsumerGroup,
 			topic, c.registry)
@@ -432,8 +340,8 @@ func (c *DataCollection) runCollectPorters() {
 	}
 
 	if c.snapRedisCli != nil {
-		topic := c.snapMessageTopic(c.defaultAppID)
-		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.db, c.engine, c.authManager)
+		topic := c.snapMessageTopic()
+		analyzer := hostsnap.NewHostSnap(c.ctx, c.redisCli, c.engine, c.authManager)
 
 		porter := collections.NewSimplePorter(snapPorterName, c.engine, c.hash, analyzer, c.snapRedisCli, topic,
 			c.registry)
@@ -486,33 +394,5 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	<-ctx.Done()
 	blog.Info("DataCollection stopping now!")
-	return nil
-}
-
-func (c *DataCollection) setSnapshotBizID() error {
-	tryCnt := 30
-	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
-	for i := 1; i <= tryCnt; i++ {
-		time.Sleep(time.Second * 2)
-		res, err := c.engine.CoreAPI.CoreService().System().SearchPlatformSetting(context.Background(), header)
-		if err != nil {
-			blog.Warnf("search config admin failed, try count: %d, err: %v", i, err)
-			continue
-		}
-		if !res.Result {
-			blog.Warnf("search config admin failed, try count: %d, err: %s", i, res.ErrMsg)
-			continue
-		}
-		c.snapshotBizID = res.Data.Backend.SnapshotBizID
-		break
-	}
-
-	if c.snapshotBizID <= 0 {
-		blog.Errorf("set snapshotBizID failed, snapshotBizID is empty, check the coreservice and the value " +
-			"in table cc_System")
-		return fmt.Errorf("set snapshotBizID failed")
-	}
-
-	blog.Infof("set snapshotBizID successfully, snapshotBizID is %d", c.snapshotBizID)
 	return nil
 }

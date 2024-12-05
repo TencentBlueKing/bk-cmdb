@@ -70,15 +70,10 @@ func updatePlatformConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.C
 		return errors.New("can not get biz in db")
 	}
 
-	newCfg := new(metadata.PlatformSettingConfig)
-	newCfg.Backend.SnapshotBizID = bizInfo.BizID
-	newCfg.Backend.MaxBizTopoLevel = dbCfg.Backend.MaxBizTopoLevel
-	newCfg.BuiltInModuleConfig = dbCfg.BuiltInModuleConfig
-	newCfg.BuiltInSetName = dbCfg.BuiltInSetName
-	newCfg.ValidationRules = dbCfg.ValidationRules
-	newCfg.IDGenerator = dbCfg.IDGenerator
+	dbCfg.Backend.SnapshotBizID = bizInfo.BizID
+	dbCfg.Backend.SnapshotBizName = ""
 
-	bytes, err := json.Marshal(newCfg)
+	bytes, err := json.Marshal(dbCfg)
 	if err != nil {
 		return err
 	}
@@ -102,7 +97,7 @@ func updatePlatformConfigAdmin(ctx context.Context, db dal.RDB, conf *upgrader.C
 type adminBackendCfg struct {
 	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
 	SnapshotBizID   int64  `json:"snapshot_biz_id"`
-	SnapshotBizName string `json:"snapshot_biz_name"`
+	SnapshotBizName string `json:"snapshot_biz_name,omitempty"`
 }
 
 // platformSettingConfig platform setting config

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/datacollection/logics"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -37,7 +36,6 @@ type Service struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	db      dal.RDB
 	cache   redis.Client
 	snapCli redis.Client
 	disCli  redis.Client
@@ -52,13 +50,8 @@ func NewService(ctx context.Context, engine *backbone.Engine) *Service {
 }
 
 // SetLogics setups logics comm.
-func (s *Service) SetLogics(db dal.RDB, esb esbserver.EsbClientInterface) {
-	s.logics = logics.NewLogics(s.ctx, s.engine, db, esb)
-}
-
-// SetDB setups database.
-func (s *Service) SetDB(db dal.RDB) {
-	s.db = db
+func (s *Service) SetLogics(esb esbserver.EsbClientInterface) {
+	s.logics = logics.NewLogics(s.ctx, s.engine, esb)
 }
 
 // SetCache setups cc main redis.
@@ -76,10 +69,6 @@ func (s *Service) WebService() *restful.Container {
 	container := restful.NewContainer()
 
 	opentelemetry.AddOtlpFilter(container)
-
-	api := new(restful.WebService)
-
-	container.Add(api)
 
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -116,9 +105,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		topoItem.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, topoItem)
-
-	// mongodb health status info.
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	// cc main redis health status info.
 	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityRedis, s.cache.Ping(
