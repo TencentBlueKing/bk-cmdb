@@ -20,7 +20,9 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/cryptor"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
@@ -56,6 +58,7 @@ type Service struct {
 	iam          *iam.IAM
 	ConfigCenter *configures.ConfCenter
 	GseClient    dataid.DataIDInterface
+	crypto       cryptor.Cryptor
 }
 
 // NewService TODO
@@ -119,6 +122,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/sync/db/index").To(s.RunSyncDBIndex))
 	api.Route(api.GET("/healthz").To(s.Healthz))
 	api.Route(api.GET("/monitor_healthz").To(s.MonitorHealth))
+
+	s.initShardingApi(api)
 
 	container.Add(api)
 
@@ -211,4 +216,20 @@ func (s *Service) InitGseClient() error {
 	default:
 		return fmt.Errorf("init gse client failed, unknow migrate dataid way")
 	}
+}
+
+// InitCrypto init crypto
+func (s *Service) InitCrypto() error {
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		blog.Errorf("get crypto conf failed, err: %v", err)
+		return err
+	}
+
+	s.crypto, err = cryptor.NewCrypto(cryptoConf)
+	if err != nil {
+		blog.Errorf("new crypto failed, err: %v", err)
+		return err
+	}
+	return nil
 }

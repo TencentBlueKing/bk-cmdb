@@ -17,6 +17,11 @@
 
 package local
 
+import (
+	"context"
+	"time"
+)
+
 // MongoConf is mongodb config
 type MongoConf struct {
 	Name     string `bson:"name"`
@@ -28,7 +33,27 @@ type MongoConf struct {
 	RsName        string `bson:"rs_name"`
 	SocketTimeout int    `bson:"socket_timeout"`
 
-	DisableInsert bool
+	DisableInsert bool `bson:"-"`
+}
+
+// Validate mongodb config
+func (c *MongoConf) Validate(timeout time.Duration) error {
+	client, err := NewMongoClient(true, "", c, timeout)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	err = client.dbc.Ping(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	err = client.dbc.Disconnect(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MongoCliConf is cmdb mongo client config
