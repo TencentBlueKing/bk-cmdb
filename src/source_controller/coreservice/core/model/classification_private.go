@@ -38,11 +38,11 @@ func (m *modelClassification) isExists(kit *rest.Kit, classificationID string) (
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 
 	condMap := cond.ToMapStr()
-	err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Find(condMap).One(kit.Ctx, origin)
+	if err != nil && !mongodb.IsNotFoundError(err) {
 		return origin, false, err
 	}
-	return origin, !mongodb.Client().IsNotFoundError(err), nil
+	return origin, !mongodb.IsNotFoundError(err), nil
 }
 
 func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, exists bool,
@@ -59,7 +59,7 @@ func (m *modelClassification) hasModel(kit *rest.Kit, cond universalsql.Conditio
 	}
 
 	filter := mapstr.MapStr{metadata.ModelFieldObjCls: mapstr.MapStr{common.BKDBIN: clsIDS}}
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("execute database count operation failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return 0, false, err

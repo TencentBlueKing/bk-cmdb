@@ -33,7 +33,7 @@ func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadat
 	quoteRelCond := mapstr.MapStr{common.BKDestModelField: objID}
 	quoteRelation := new(metadata.ModelQuoteRelation)
 
-	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
 		Fields(common.BKSrcModelField, common.BKPropertyIDField).One(kit.Ctx, &quoteRelation)
 	if err != nil {
 		blog.Errorf("get quoted relations failed, err: %v, dest object: %s, rid: %s", err, objID, kit.Rid)
@@ -46,7 +46,7 @@ func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadat
 	}
 	attribute := new(metadata.Attribute)
 
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attrCond).One(kit.Ctx, attribute)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(attrCond).One(kit.Ctx, attribute)
 	if err != nil {
 		blog.Errorf("get quote attribute failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
 		return "", nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -95,7 +95,7 @@ func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []maps
 	srcTable := common.GetInstTableName(srcObj, kit.TenantID)
 	srcCond := mapstr.MapStr{common.GetInstIDField(srcObj): mapstr.MapStr{common.BKDBIN: srcInstIDs}}
 
-	cnt, err := mongodb.Client().Table(srcTable).Find(srcCond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(srcTable).Find(srcCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count source inst failed, err: %v, obj: %s, cond: %+v, rid: %s", err, srcObj, srcCond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)

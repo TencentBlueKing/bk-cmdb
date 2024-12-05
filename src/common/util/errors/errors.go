@@ -22,17 +22,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // ConvDBInsertError convert db insert error to
-func ConvDBInsertError(kit *rest.Kit, db dal.RDB, err error) errors.CCErrorCoder {
+func ConvDBInsertError(kit *rest.Kit, err error) errors.CCErrorCoder {
 	if err == nil {
 		return nil
 	}
 
-	if db.IsDuplicatedError(err) {
+	if mongodb.IsDuplicatedError(err) {
 		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 	}
 

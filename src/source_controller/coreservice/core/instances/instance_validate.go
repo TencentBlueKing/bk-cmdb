@@ -111,9 +111,9 @@ func (m *instanceManager) getHostRelatedBizID(kit *rest.Kit, hostID int64) (bizI
 	}
 
 	relation := new(metadata.ModuleHost)
-	if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(common.BKAppIDField).
-		One(kit.Ctx, relation); err != nil {
-		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %s, rid: %s", hostID, err.Error(), rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(filter).
+		Fields(common.BKAppIDField).One(kit.Ctx, relation); err != nil {
+		blog.Errorf("getHostRelatedBizID failed, db get failed, hostID: %d, err: %v, rid: %s", hostID, err, rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -141,7 +141,7 @@ func (m *instanceManager) validBizID(kit *rest.Kit, bizID int64) error {
 
 func (m *instanceManager) newValidator(kit *rest.Kit, objID string, bizID int64) (*validator, error) {
 	validator, err := NewValidator(kit, m.dependent, objID, bizID, m.language)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("newValidator failed , NewValidator err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (m *instanceManager) validCreateInstanceData(kit *rest.Kit, objID string, i
 			return valid.errIf.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-	if err := FillLostFieldValue(kit.Ctx, instanceData, valid.propertySlice); err != nil {
+	if err := FillLostFieldValue(kit, instanceData, valid.propertySlice); err != nil {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -321,7 +321,8 @@ func (m *instanceManager) validateModuleCreate(kit *rest.Kit, instanceData mapst
 		common.BKServiceCategoryIDField: svcCategoryID,
 		common.BKAppIDField:             bizID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx, &tpl); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Find(filter).One(kit.Ctx,
+		&tpl); err != nil {
 		return valid.errIf.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 	instanceData[common.BKModuleNameField] = tpl.Name
@@ -460,7 +461,7 @@ func (m *instanceManager) isMainlineObject(kit *rest.Kit, objID string) (bool, e
 		common.AssociationKindIDField: common.AssociationKindMainline,
 		common.BKAsstObjIDField:       objID,
 	}
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(mainlineCond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Find(mainlineCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count mainline association failed, err: %v, cond: %#v, rid: %s", err, mainlineCond, kit.Rid)
 		return false, err
@@ -603,7 +604,7 @@ func (m *instanceManager) getValidatorsFromInstances(kit *rest.Kit, objID string
 		}
 
 		relations := make([]metadata.ModuleHost, 0)
-		if err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(filter).Fields(
 			common.BKAppIDField, common.BKHostIDField).All(kit.Ctx, &relations); err != nil {
 			blog.Errorf("get hosts(%v) related bizID failed, err: %v, rid: %s", needSearchBizInstIDs, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -748,7 +749,7 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 			common.BKDBIN: valEnumIDs,
 		},
 	}
-	cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count inst failed, err: %v, cond: %#v, rid: %s", err, cond, kit.Rid)
 		return err

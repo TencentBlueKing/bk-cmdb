@@ -31,8 +31,10 @@ func NewDBExecQuery() *DBExecQuery {
 }
 
 // ExecQuery get info from table with condition
-func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
-	dbFind := mongodb.Client().Table(tableName).Find(condMap)
+func (query DBExecQuery) ExecQuery(kit *rest.Kit, tableName string, fields []string, condMap mapstr.MapStr,
+	result interface{}) error {
+
+	dbFind := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(condMap)
 	if len(fields) > 0 {
 		dbFind = dbFind.Fields(fields...)
 	}

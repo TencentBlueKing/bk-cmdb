@@ -24,48 +24,51 @@ import (
 
 func (m *associationModel) count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return 0, err
 	}
 	return cnt, err
 }
 
-func (m *associationModel) isExists(kit *rest.Kit, cond universalsql.Condition) (oneResult *metadata.Association, exists bool, err error) {
+func (m *associationModel) isExists(kit *rest.Kit, cond universalsql.Condition) (oneResult *metadata.Association,
+	exists bool, err error) {
 
 	oneResult = &metadata.Association{}
-	err = mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).One(kit.Ctx, oneResult)
-	if nil != err && !mongodb.Client().IsNotFoundError(err) {
-		blog.Errorf("request(%s): it is faield to execute database findone operation on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).One(kit.Ctx, oneResult)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("find object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return oneResult, false, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	return oneResult, !mongodb.Client().IsNotFoundError(err), nil
+	return oneResult, !mongodb.IsNotFoundError(err), nil
 }
 
 func (m *associationModel) save(kit *rest.Kit, assoParam *metadata.Association) (id uint64, err error) {
 
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAsst)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to make a sequence ID on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjAsst, err.Error())
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjAsst)
+	if err != nil {
+		blog.Errorf("get sequence ID failed, err: %v, cond: %v, rid: %s", err, kit.Rid)
 		return id, err
 	}
 
 	assoParam.ID = int64(id)
-	err = mongodb.Client().Table(common.BKTableNameObjAsst).Insert(kit.Ctx, assoParam)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database insert operation on the table (%s), error info is %s", kit.Rid, common.BKTableNameObjAsst, err.Error())
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Insert(kit.Ctx, assoParam)
+	if err != nil {
+		blog.Errorf("insert object association failed, err: %v, param: %v, rid: %s", err, assoParam, kit.Rid)
 		return 0, err
 	}
 	return id, err
 }
 
-func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64,
+	err error) {
 
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database upate some data (%v) on the table (%s) by the condition (%#v)", kit.Rid, data, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).UpdateMany(kit.Ctx,
+		cond.ToMapStr(), data)
+	if err != nil {
+		blog.Errorf("update object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return 0, err
 	}
 	return cnt, err
@@ -73,9 +76,9 @@ func (m *associationModel) update(kit *rest.Kit, data mapstr.MapStr, cond univer
 
 func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAsst).DeleteMany(kit.Ctx, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).DeleteMany(kit.Ctx, cond.ToMapStr())
+	if err != nil {
+		blog.Errorf("delete object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return 0, err
 	}
 	return cnt, err
@@ -84,9 +87,10 @@ func (m *associationModel) delete(kit *rest.Kit, cond universalsql.Condition) (c
 func (m *associationModel) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Association, error) {
 
 	dataResult := []metadata.Association{}
-	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
-	if nil != err {
-		blog.Errorf("request(%s): it is to search some data on the table (%s) by the condition (%v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx,
+		&dataResult)
+	if err != nil {
+		blog.Errorf("find object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return dataResult, err
 	}
 	return dataResult, err
@@ -94,9 +98,10 @@ func (m *associationModel) search(kit *rest.Kit, cond universalsql.Condition) ([
 
 func (m *associationModel) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 	dataResult := []mapstr.MapStr{}
-	err := mongodb.Client().Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
-	if nil != err {
-		blog.Errorf("request(%s): it is to search data on the table (%s) by the condition (%#v), error info is %s", kit.Rid, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(kit.Ctx,
+		&dataResult)
+	if err != nil {
+		blog.Errorf("find object association failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return dataResult, err
 	}
 	return dataResult, err

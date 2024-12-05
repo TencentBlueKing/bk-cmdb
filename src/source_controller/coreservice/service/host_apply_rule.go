@@ -34,14 +34,15 @@ func (s *coreService) CreateHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.CreateHostApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	result, err := s.core.HostApplyRuleOperation().CreateHostApplyRule(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("CreateHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("create host apply rule failed, bizID: %d, option: %v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -65,14 +66,15 @@ func (s *coreService) UpdateHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.UpdateHostApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	result, err := s.core.HostApplyRuleOperation().UpdateHostApplyRule(ctx.Kit, bizID, ruleID, option)
 	if err != nil {
-		blog.Errorf("UpdateHostApplyRule failed, ruleID: %d, option: %+v, err: %+v, rid: %s", ruleID, option, err, ctx.Kit.Rid)
+		blog.Errorf("update host apply rule failed, ruleID: %d, option: %v, err: %v, rid: %s", ruleID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -91,9 +93,10 @@ func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, mo
 	fields := []string{common.BKModuleIDField}
 
 	rules := make([]metadata.HostApplyRule, 0)
-	err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).All(kit.Ctx, &rules)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).
+		All(kit.Ctx, &rules)
 	if err != nil {
-		blog.Errorf("GetHostApplyRule failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("get host apply rule failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return err
 	}
 	dbModIDs := make([]int64, 0)
@@ -111,7 +114,8 @@ func (s *coreService) updateModuleHostApplyStatus(kit *rest.Kit, bizID int64, mo
 		common.BKAppIDField:    bizID,
 		common.BKModuleIDField: map[string]interface{}{common.BKDBIN: modIDs},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, option, enabledField); nil != err {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Update(kit.Ctx, option,
+		enabledField); err != nil {
 		blog.Errorf("update host apply enable status failed, table: %s, filter: %+v,  err: %+v, rid: %s",
 			common.BKTableNameBaseModule, filter, err, kit.Rid)
 		return err
@@ -131,9 +135,10 @@ func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, 
 	}
 	fields := []string{common.BKServiceTemplateIDField}
 	rules := make([]metadata.HostApplyRule, 0)
-	err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).All(kit.Ctx, &rules)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostApplyRule).Find(filter).Fields(fields...).
+		All(kit.Ctx, &rules)
 	if err != nil {
-		blog.Errorf("GetHostApplyRule failed, db select failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("find host apply rule failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return err
 	}
 
@@ -153,8 +158,8 @@ func (s *coreService) updateTemplateHostApplyStatus(kit *rest.Kit, bizID int64, 
 		common.BKFieldID:    map[string]interface{}{common.BKDBIN: templateIDs},
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, updateFilter,
-		enabledField); nil != err {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Update(kit.Ctx, updateFilter,
+		enabledField); err != nil {
 		blog.Errorf("update service template host apply enable status failed, filter: %+v,  err: %+v, rid: %s",
 			filter, err, kit.Rid)
 		return err
@@ -188,13 +193,14 @@ func (s *coreService) DeleteHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.DeleteHostApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	if err := s.core.HostApplyRuleOperation().DeleteHostApplyRule(ctx.Kit, bizID, option); err != nil {
-		blog.Errorf("DeleteHostApplyRule failed, bizID: %d, ruleID: %d, err: %+v, rid: %s", bizID, option.RuleIDs, err, ctx.Kit.Rid)
+		blog.Errorf("delete host apply rule failed, bizID: %d, ruleID: %d, err: %v, rid: %s", bizID, option.RuleIDs,
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -226,7 +232,8 @@ func (s *coreService) GetHostApplyRule(ctx *rest.Contexts) {
 
 	rule, err := s.core.HostApplyRuleOperation().GetHostApplyRule(ctx.Kit, bizID, hostApplyRuleID)
 	if err != nil {
-		blog.Errorf("GetHostApplyRule failed, bizID: %d, ruleID: %d, err: %+v, rid: %s", bizID, hostApplyRuleID, err, ctx.Kit.Rid)
+		blog.Errorf("get host apply rule failed, bizID: %d, ruleID: %d, err: %v, rid: %s", bizID, hostApplyRuleID,
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -243,14 +250,15 @@ func (s *coreService) ListHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.ListHostApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	hostApplyRuleResult, err := s.core.HostApplyRuleOperation().ListHostApplyRule(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("ListHostApplyRule failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("list host apply rule failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -267,14 +275,15 @@ func (s *coreService) GenerateApplyPlan(ctx *rest.Contexts) {
 	}
 
 	option := metadata.HostApplyPlanOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	applyPlans, err := s.core.HostApplyRuleOperation().GenerateApplyPlan(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("GenerateApplyPlan failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("generate apply plan failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -291,14 +300,15 @@ func (s *coreService) SearchRuleRelatedModules(ctx *rest.Contexts) {
 	}
 
 	option := metadata.SearchRuleRelatedModulesOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	modules, err := s.core.HostApplyRuleOperation().SearchRuleRelatedModules(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("SearchRuleRelatedModules failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("search rule related modules failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option,
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -315,7 +325,7 @@ func (s *coreService) BatchUpdateHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.BatchCreateOrUpdateApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -339,16 +349,17 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	option := metadata.UpdateHostByHostApplyRuleOption{}
-	if err := ctx.DecodeInto(&option); nil != err {
+	if err := ctx.DecodeInto(&option); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	relationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: option.HostIDs}}
 	relations := make([]metadata.ModuleHost, 0)
-	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationFilter).All(ctx.Kit.Ctx, &relations)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(relationFilter).
+		All(ctx.Kit.Ctx, &relations)
 	if err != nil {
-		blog.Errorf("find %s failed, filter: %s, err: %v, rid: %s", common.BKTableNameModuleHostConfig, relationFilter,
+		blog.Errorf("find %s failed, filter: %v, err: %v, rid: %s", common.BKTableNameModuleHostConfig, relationFilter,
 			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -356,7 +367,7 @@ func (s *coreService) UpdateHostByHostApplyRule(ctx *rest.Contexts) {
 
 	result, err := s.core.HostApplyRuleOperation().RunHostApplyOnHosts(ctx.Kit, bizID, relations)
 	if err != nil {
-		blog.Errorf("UpdateHostByHostApplyRule failed, RunHostApplyOnHosts failed, option: %+v, err: %+v, rid: %s", option, err, ctx.Kit.Rid)
+		blog.Errorf("run host apply on hosts failed, option: %+v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

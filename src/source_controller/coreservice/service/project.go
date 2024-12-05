@@ -45,7 +45,8 @@ func (s *coreService) UpdateProjectID(ctx *rest.Contexts) {
 	updateData := mapstr.MapStr{
 		common.BKProjectIDField: opt.ProjectID,
 	}
-	err := mongodb.Client().Table(common.BKTableNameBaseProject).Update(ctx.Kit.Ctx, filter, updateData)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseProject).Update(ctx.Kit.Ctx, filter,
+		updateData)
 	if err != nil {
 		blog.Errorf("update project bk_project_id failed, err: %v, filter: %v, updateData: %v, rid: %s", err, filter,
 			updateData, ctx.Kit.Rid)

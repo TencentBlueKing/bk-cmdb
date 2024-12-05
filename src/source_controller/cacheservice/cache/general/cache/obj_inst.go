@@ -24,6 +24,7 @@ import (
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -61,7 +62,8 @@ func parseObjInstData(data dataWithTable[mapstr.MapStr]) (*basicInfo, error) {
 		return nil, fmt.Errorf("parse id %+v failed, err: %v", data.Data[common.BKInstIDField], err)
 	}
 
-	instObjMappings, err := instancemapping.GetInstanceObjectMapping([]int64{instID})
+	kit := rest.NewKit()
+	instObjMappings, err := instancemapping.GetInstanceObjectMapping(kit, []int64{instID})
 	if err != nil {
 		return nil, fmt.Errorf("get object ids from instance ids(%d) failed, err: %v", instID, err)
 	}

@@ -20,7 +20,7 @@ import (
 // CreateOneAssociationKind TODO
 func (s *coreService) CreateOneAssociationKind(ctx *rest.Contexts) {
 	inputData := metadata.CreateAssociationKind{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}

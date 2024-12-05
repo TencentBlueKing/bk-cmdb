@@ -60,7 +60,8 @@ func (s *service) CreateFieldTemplateUniques(ctx *rest.Contexts) {
 		return
 	}
 
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, common.BKTableNameObjectUniqueTemplate, len(uniques))
+	ids, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, common.BKTableNameObjectUniqueTemplate,
+		len(uniques))
 	if err != nil {
 		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s",
 			common.BKTableNameObjectUniqueTemplate, err, ctx.Kit.Rid)
@@ -81,9 +82,10 @@ func (s *service) CreateFieldTemplateUniques(ctx *rest.Contexts) {
 		result[idx] = int64(ids[idx])
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Insert(ctx.Kit.Ctx, uniques); err != nil {
+	if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Insert(ctx.Kit.Ctx,
+		uniques); err != nil {
 		blog.Errorf("save field template unique failed, data: %v, err: %v, rid: %s", uniques, err, ctx.Kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
 			return
 		}
@@ -184,7 +186,8 @@ func (s *service) isTmplUniquesLegal(kit *rest.Kit, attrIDs []int64, uniques []m
 	fields := []string{common.BKFieldID, common.BKPropertyTypeField}
 
 	attrs := make([]metadata.FieldTemplateAttr, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(fields...).All(kit.Ctx, &attrs)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(fields...).
+		All(kit.Ctx, &attrs)
 	if err != nil {
 		blog.Errorf("find template attributes failed, cond: %v, err: %v, rid: %v", cond, err, kit.Rid)
 		return err
@@ -235,7 +238,8 @@ func (s *service) findUniqueByTemplateID(kit *rest.Kit, id int64) ([]metadata.Fi
 	}
 	uniques := make([]metadata.FieldTemplateUnique, 0)
 
-	err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(kit.Ctx, &uniques)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(kit.Ctx,
+		&uniques)
 	if err != nil {
 		blog.Errorf("find field template uniques failed, cond: %v, err: %v, rid: %v", cond, err, kit.Rid)
 		return nil, err
@@ -264,9 +268,11 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 	}
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(filter).Count(ctx.Kit.Ctx)
+		count, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Find(filter).
+			Count(ctx.Kit.Ctx)
 		if err != nil {
-			blog.Errorf("count field template uniques failed, err: %v, filter: %+v, rid: %v", err, filter, ctx.Kit.Rid)
+			blog.Errorf("count field template uniques failed, err: %v, filter: %+v, rid: %v", err, filter,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 			return
 		}
@@ -276,8 +282,9 @@ func (s *service) ListFieldTemplateUnique(ctx *rest.Contexts) {
 	}
 
 	uniques := make([]metadata.FieldTemplateUnique, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(ctx.Kit.Ctx, &uniques)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Find(filter).
+		Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).
+		All(ctx.Kit.Ctx, &uniques)
 	if err != nil {
 		blog.Errorf("list field template uniques failed, err: %v, filter: %+v, rid: %v", err, filter, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -313,7 +320,8 @@ func (s *service) DeleteFieldTemplateUniques(ctx *rest.Contexts) {
 	cond := opt.Condition
 	cond[common.BKTemplateID] = templateID
 
-	if err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Delete(ctx.Kit.Ctx, cond); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Delete(ctx.Kit.Ctx,
+		cond); err != nil {
 		blog.Errorf("delete field template uniques failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -361,7 +369,8 @@ func (s *service) UpdateFieldTemplateUniques(ctx *rest.Contexts) {
 		common.BKTemplateID: templateID,
 	}
 	dbTmplUniques := make([]metadata.FieldTemplateUnique, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplUniques)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Find(cond).All(ctx.Kit.Ctx,
+		&dbTmplUniques)
 	if err != nil {
 		blog.Errorf("list field template uniques failed, filter: %+v, err: %v, rid: %v", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -412,7 +421,8 @@ func (s *service) updateFieldTemplateUniques(kit *rest.Kit, templateID int64,
 			common.BKTemplateID: templateID,
 		}
 
-		err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Update(kit.Ctx, cond, unique)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Update(kit.Ctx, cond,
+			unique)
 		if err != nil {
 			blog.Errorf("update field template unique failed, data: %v, err: %v, rid: %s", unique, err, kit.Rid)
 			return err

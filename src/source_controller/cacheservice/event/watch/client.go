@@ -594,7 +594,7 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 		return oidDetailMap, nil
 
 	case common.BKTableNameBaseInst, common.BKTableNameMainlineInstance:
-		instObjMappings, err := instancemapping.GetInstanceObjectMapping(instIDs)
+		instObjMappings, err := instancemapping.GetInstanceObjectMapping(kit, instIDs)
 		if err != nil {
 			blog.Errorf("get object ids from instance ids(%+v) failed, err: %v, rid: %s", instIDs, err, kit.Rid)
 			return nil, err

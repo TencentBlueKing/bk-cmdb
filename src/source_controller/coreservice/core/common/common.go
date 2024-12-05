@@ -34,9 +34,10 @@ func New() core.CommonOperation {
 }
 
 // GetDistinctField TODO
-func (c *commonOperation) GetDistinctField(kit *rest.Kit, option *metadata.DistinctFieldOption) ([]interface{}, errors.CCErrorCoder) {
+func (c *commonOperation) GetDistinctField(kit *rest.Kit, option *metadata.DistinctFieldOption) (
+	[]interface{}, errors.CCErrorCoder) {
 
-	ret, err := mongodb.Client().Table(option.TableName).Distinct(kit.Ctx, option.Field, option.Filter)
+	ret, err := mongodb.Shard(kit.ShardOpts()).Table(option.TableName).Distinct(kit.Ctx, option.Field, option.Filter)
 	if err != nil {
 		blog.Errorf("get distinct field failed, err: %v, option:%#v, rid: %s", err, *option, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -49,7 +50,7 @@ func (c *commonOperation) GetDistinctField(kit *rest.Kit, option *metadata.Disti
 func (c *commonOperation) GetDistinctCount(kit *rest.Kit, option *metadata.DistinctFieldOption) (int64,
 	errors.CCErrorCoder) {
 	var count int64
-	ret, err := mongodb.Client().Table(option.TableName).Distinct(kit.Ctx, option.Field, option.Filter)
+	ret, err := mongodb.Shard(kit.ShardOpts()).Table(option.TableName).Distinct(kit.Ctx, option.Field, option.Filter)
 	if err != nil {
 		blog.Errorf("get distinct count failed, err: %v, option:%#v, rid: %s", err, *option, kit.Rid)
 		return count, kit.CCError.CCError(common.CCErrCommDBSelectFailed)

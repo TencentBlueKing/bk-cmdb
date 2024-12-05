@@ -59,7 +59,8 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 		return
 	}
 
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseNamespace, len(namespaces))
+	ids, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseNamespace,
+		len(namespaces))
 	if err != nil {
 		blog.Errorf("get namespace ids failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -106,17 +107,19 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 		})
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, namespaces)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNamespace).Insert(ctx.Kit.Ctx, namespaces)
 	if err != nil {
 		blog.Errorf("add namespace failed, data: %+v, err: %v, rid: %s", namespaces, err, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
+		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, err))
 		return
 	}
 
 	if len(sharedRel) > 0 {
-		err = mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Insert(ctx.Kit.Ctx, sharedRel)
+		err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Insert(ctx.Kit.Ctx,
+			sharedRel)
 		if err != nil {
-			blog.Errorf("add shared cluster relations failed, rel: %v, err: %v, rid: %s", sharedRel, err, ctx.Kit.Rid)
+			blog.Errorf("add shared cluster relations failed, rel: %v, err: %v, rid: %s", sharedRel, err,
+				ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 			return
 		}
@@ -140,8 +143,9 @@ func (s *service) getClusterMap(kit *rest.Kit, clusterIDs []int64) (map[int64]ty
 	field := []string{common.BKFieldID, types.UidField, types.TypeField, common.BKAppIDField}
 	clusters := make([]types.Cluster, 0)
 
-	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).All(kit.Ctx, &clusters)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Find(filter).Fields(field...).
+		All(kit.Ctx, &clusters)
+	if err != nil && !mongodb.IsNotFoundError(err) {
 		blog.Errorf("find cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -190,7 +194,8 @@ func (s *service) UpdateNamespace(ctx *rest.Contexts) {
 	}
 
 	// update namespace
-	err = mongodb.Client().Table(types.BKTableNameBaseNamespace).Update(ctx.Kit.Ctx, filter, updateData)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNamespace).Update(ctx.Kit.Ctx, filter,
+		updateData)
 	if err != nil {
 		blog.Errorf("update namespace failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 			err, ctx.Kit.Rid)
@@ -217,7 +222,8 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 	filter := mapstr.MapStr{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	if err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNamespace).Delete(ctx.Kit.Ctx,
+		filter); err != nil {
 		blog.Errorf("delete namespace failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
 		return
@@ -225,7 +231,8 @@ func (s *service) DeleteNamespace(ctx *rest.Contexts) {
 
 	// delete all shared cluster relations of the namespaces
 	sharedRelCond := mapstr.MapStr{types.BKNamespaceIDField: mapstr.MapStr{common.BKDBIN: req.IDs}}
-	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Delete(ctx.Kit.Ctx, sharedRelCond)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Delete(ctx.Kit.Ctx,
+		sharedRelCond)
 	if err != nil {
 		blog.Errorf("delete shared cluster rel failed, cond: %v, err: %v, rid: %s", sharedRelCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
@@ -244,7 +251,8 @@ func (s *service) ListNamespace(ctx *rest.Contexts) {
 	}
 
 	namespaces := make([]types.Namespace, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(input.Condition).Start(uint64(input.Page.Start)).
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNamespace).Find(input.Condition).
+		Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
 		Fields(input.Fields...).All(ctx.Kit.Ctx, &namespaces)

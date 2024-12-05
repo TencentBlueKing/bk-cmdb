@@ -27,7 +27,7 @@ import (
 // TransferHostToInnerModule TODO
 func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostToInnerModule{}
-	if err := ctx.DecodeInto(inputData); nil != err {
+	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -43,7 +43,7 @@ func (s *coreService) TransferHostToInnerModule(ctx *rest.Contexts) {
 // TransferHostToNormalModule TODO
 func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 	inputData := &metadata.HostsModuleRelation{}
-	if err := ctx.DecodeInto(inputData); nil != err {
+	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -59,7 +59,7 @@ func (s *coreService) TransferHostToNormalModule(ctx *rest.Contexts) {
 // TransferHostToAnotherBusiness TODO
 func (s *coreService) TransferHostToAnotherBusiness(ctx *rest.Contexts) {
 	inputData := &metadata.TransferHostsCrossBusinessRequest{}
-	if err := ctx.DecodeInto(inputData); nil != err {
+	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -154,9 +154,10 @@ func (s *coreService) GetHostByID(ctx *rest.Contexts) {
 
 	result := make(metadata.HostMapStr, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
-	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx, &result)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(condition).One(ctx.Kit.Ctx,
+		&result)
 	// TODO: return error for not found and deal error with all callers
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+	if err != nil && !mongodb.IsNotFoundError(err) {
 		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -194,7 +195,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 
-	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).
+	query := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(condition).Sort(dat.Sort).
 		Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	info, err := instances.FindInst(ctx.Kit, fieldArr, query, common.BKInnerObjIDHost)
 	if err != nil {
@@ -206,7 +207,8 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 	var finalCount uint64
 
 	if !dat.DisableCounter {
-		count, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Count(ctx.Kit.Ctx)
+		count, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(condition).
+			Count(ctx.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err,
 				ctx.Kit.Rid)

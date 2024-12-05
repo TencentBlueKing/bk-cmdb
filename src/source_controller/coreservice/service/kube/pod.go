@@ -109,7 +109,7 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 	}
 
 	// generate pod ids field
-	podIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
+	podIDs, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, types.BKTableNameBasePod, podsLen)
 	if err != nil {
 		blog.Errorf("generate %d pod ids failed, err: %v, rid: %s", podsLen, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -117,7 +117,8 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 	}
 
 	// generate container ids field
-	containerIDs, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer, containerLen)
+	containerIDs, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer,
+		containerLen)
 	if err != nil {
 		blog.Errorf("generate %d container ids failed, err: %v, rid: %s", containerLen, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -130,9 +131,9 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	if err = mongodb.Client().Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
-		blog.Errorf("create pod failed, db insert failed, pods: %+v, err: %+v, rid: %s", pods, err, ctx.Kit.Rid)
-		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
+	if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Insert(ctx.Kit.Ctx, pods); err != nil {
+		blog.Errorf("create pod failed, db insert failed, pods: %+v, err: %v, rid: %s", pods, err, ctx.Kit.Rid)
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, err))
 		return
 	}
 
@@ -146,11 +147,10 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, containers)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseContainer).Insert(ctx.Kit.Ctx, containers)
 	if err != nil {
-		blog.Errorf("create container failed, db insert failed, containers: %+v, err: %+v, rid: %s",
-			containers, err, ctx.Kit.Rid)
-		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
+		blog.Errorf("create container failed, containers: %+v, err: %v, rid: %s", containers, err, ctx.Kit.Rid)
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, err))
 		return
 	}
 
@@ -245,7 +245,8 @@ func (s *service) ListPod(ctx *rest.Contexts) {
 		return
 	}
 	pods := make([]types.Pod, 0)
-	err := mongodb.Client().Table(types.BKTableNameBasePod).Find(input.Condition).Start(uint64(input.Page.Start)).
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Find(input.Condition).
+		Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
 		Fields(input.Fields...).All(ctx.Kit.Ctx, &pods)
@@ -289,7 +290,8 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		types.BKPodIDField: mapstr.MapStr{common.BKDBIN: opt.PodIDs},
 	}
 
-	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Delete(ctx.Kit.Ctx, delContainerCond)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseContainer).Delete(ctx.Kit.Ctx,
+		delContainerCond)
 	if err != nil {
 		blog.Errorf("delete containers failed, cond: %+v, err: %v, rid: %s", delContainerCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -301,15 +303,15 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 		types.BKIDField: mapstr.MapStr{common.BKDBIN: opt.PodIDs},
 	}
 
-	nodeIDArr, err := mongodb.Client().Table(types.BKTableNameBasePod).Distinct(ctx.Kit.Ctx, types.BKNodeIDField,
-		delPodCond)
+	nodeIDArr, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Distinct(ctx.Kit.Ctx,
+		types.BKNodeIDField, delPodCond)
 	if err != nil {
 		blog.Errorf("get nodes failed, cond: %+v, err: %v, rid: %s", delPodCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameBasePod).Delete(ctx.Kit.Ctx, delPodCond)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Delete(ctx.Kit.Ctx, delPodCond)
 	if err != nil {
 		blog.Errorf("delete pods failed, cond: %+v, err: %v, rid: %s", delPodCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -353,7 +355,8 @@ func (s *service) getNodeIDsWithoutPod(ctx *rest.Contexts, nodeIDArr []interface
 			countPodCond := mapstr.MapStr{
 				types.BKNodeIDField: nodeID,
 			}
-			podCount, err := mongodb.Client().Table(types.BKTableNameBasePod).Find(countPodCond).Count(ctx.Kit.Ctx)
+			podCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Find(countPodCond).
+				Count(ctx.Kit.Ctx)
 			if err != nil {
 				blog.Errorf("count pods failed, err: %v, cond: %v, rid: %s", err, countPodCond, ctx.Kit.Rid)
 				if firstErr == nil {
@@ -396,7 +399,8 @@ func (s *service) ListContainer(ctx *rest.Contexts) {
 	}
 
 	containers := make([]types.Container, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(input.Condition).Start(uint64(input.Page.Start)).
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseContainer).Find(input.Condition).
+		Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
 		Fields(input.Fields...).All(ctx.Kit.Ctx, &containers)

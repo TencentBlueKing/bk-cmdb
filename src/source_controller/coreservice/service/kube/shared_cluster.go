@@ -43,7 +43,8 @@ func (s *service) ListNsSharedClusterRel(cts *rest.Contexts) {
 	filter := opt.Condition
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Find(filter).
+			Count(cts.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count ns shared cluster rel failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -60,8 +61,8 @@ func (s *service) ListNsSharedClusterRel(cts *rest.Contexts) {
 	}
 
 	relations := make([]types.NsSharedClusterRel, 0)
-	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
+	err := mongodb.Shard(cts.Kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Find(filter).Start(uint64(
+		opt.Page.Start)).Limit(uint64(limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("list ns shared cluster rel failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))

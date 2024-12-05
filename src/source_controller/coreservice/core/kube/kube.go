@@ -145,9 +145,10 @@ func (p *kubeOperation) getWlInfo(kit *rest.Kit, wlIDMap map[types.WorkloadType]
 			types.ClusterUIDField, types.BKNamespaceIDField, types.NamespaceField}
 
 		workloads := make([]types.WorkloadBase, 0)
-		err = mongodb.Client().Table(tableName).Find(filter).Fields(kubeField...).All(kit.Ctx, &workloads)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(filter).Fields(kubeField...).All(kit.Ctx,
+			&workloads)
 		if err != nil {
-			blog.Errorf("get workload failed, err: %v, filter: %v, rid:%s", err, filter, kit.Rid)
+			blog.Errorf("get workload failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 
@@ -229,9 +230,10 @@ func (p *kubeOperation) getSharedClusterInfoByCond(kit *rest.Kit, sharedNsCond [
 
 	sharedRelCond := mapstr.MapStr{common.BKDBOR: sharedNsCond}
 	sharedRel := make([]types.NsSharedClusterRel, 0)
-	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(sharedRelCond).All(kit.Ctx, &sharedRel)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Find(sharedRelCond).
+		All(kit.Ctx, &sharedRel)
 	if err != nil {
-		blog.Errorf("get shared cluster relations failed, err: %v, cond: %v, rid:%s", err, sharedRelCond, kit.Rid)
+		blog.Errorf("get shared cluster relations failed, err: %v, cond: %v, rid: %s", err, sharedRelCond, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -283,9 +285,10 @@ func (p *kubeOperation) getNodeInfo(kit *rest.Kit, nodeIDs []int64) (map[int64]t
 		types.HasPodField}
 
 	nodes := make([]types.Node, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(filter).Fields(fields...).All(kit.Ctx, &nodes)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseNode).Find(filter).Fields(fields...).
+		All(kit.Ctx, &nodes)
 	if err != nil {
-		blog.Errorf("get node failed, err: %v, filter: %v, rid:%s", err, filter, kit.Rid)
+		blog.Errorf("get node failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -319,10 +322,10 @@ func (p *kubeOperation) getNodeRelatedInfo(kit *rest.Kit, data []types.OneNodeCr
 	}
 
 	clusters := make([]types.Cluster, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(clusterFilter).
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Find(clusterFilter).
 		Fields(types.BKBizIDField, types.UidField, types.BKIDField).All(kit.Ctx, &clusters)
 	if err != nil {
-		blog.Errorf("query cluster failed, filter: %+v, err: %s, rid:%s", clusterFilter, err, kit.Rid)
+		blog.Errorf("query cluster failed, filter: %+v, err: %v, rid: %s", clusterFilter, err, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -337,10 +340,10 @@ func (p *kubeOperation) getNodeRelatedInfo(kit *rest.Kit, data []types.OneNodeCr
 	}
 
 	relations := make([]metadata.ModuleHost, 0)
-	err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(hostFilter).
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(hostFilter).
 		Fields(common.BKAppIDField, common.BKHostIDField).All(kit.Ctx, &relations)
 	if err != nil {
-		blog.Errorf("query host relation failed, filter: %+v, err: %s, rid:%s", hostFilter, err, kit.Rid)
+		blog.Errorf("query host relation failed, filter: %+v, err: %v, rid: %s", hostFilter, err, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -370,9 +373,9 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreat
 	}
 
 	// generate ids field
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, types.BKTableNameBaseNode, len(data))
+	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, types.BKTableNameBaseNode, len(data))
 	if err != nil {
-		blog.Errorf("create node failed, generate ids failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("create node failed, generate ids failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 
@@ -418,9 +421,9 @@ func (p *kubeOperation) BatchCreateNode(kit *rest.Kit, data []types.OneNodeCreat
 				Modifier:   kit.User,
 			},
 		}
-		if err := mongodb.Client().Table(types.BKTableNameBaseNode).Insert(kit.Ctx, node); err != nil {
-			blog.Errorf("create node failed, db insert failed, node: %+v, err: %+v, rid: %s", node, err, kit.Rid)
-			return nil, errors.ConvDBInsertError(kit, mongodb.Client(), err)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseNode).Insert(kit.Ctx, node); err != nil {
+			blog.Errorf("create node failed, db insert failed, node: %+v, err: %v, rid: %s", node, err, kit.Rid)
+			return nil, errors.ConvDBInsertError(kit, err)
 		}
 		result = append(result, node)
 	}
@@ -447,7 +450,7 @@ func (p *kubeOperation) CheckPlatBizSharedNs(kit *rest.Kit, bizNsMap map[int64][
 	}
 
 	cond := mapstr.MapStr{common.BKDBOR: conds}
-	cnt, err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(cond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count shared ns failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)

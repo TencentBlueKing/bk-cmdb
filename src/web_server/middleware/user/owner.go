@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	headerutil "configcenter/src/common/http/header/util"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	validator "configcenter/src/source_controller/coreservice/core/instances"
@@ -175,6 +176,6 @@ func (m *TenantManager) getObjectFields(objID string) (map[string]interface{}, e
 	fields := result.Data
 
 	ret := map[string]interface{}{}
-	validator.FillLostFieldValue(context.Background(), ret, fields)
+	validator.FillLostFieldValue(rest.NewKitFromHeader(m.header, m.Engine.CCErr), ret, fields)
 	return ret, nil, nil
 }

@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -29,7 +30,7 @@ import (
 )
 
 // FillLostFieldValue fill the value in inst map data
-func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties []metadata.Attribute) error {
+func FillLostFieldValue(kit *rest.Kit, valData mapstr.MapStr, properties []metadata.Attribute) error {
 	var idRuleField *metadata.Attribute
 	for idx, field := range properties {
 		val, ok := valData[field.PropertyID]
@@ -43,15 +44,15 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 				return err
 			}
 		case common.FieldTypeEnum:
-			if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
+			if err := fillLostEnumFieldValue(kit.Ctx, valData, field); err != nil {
 				return err
 			}
 		case common.FieldTypeEnumMulti:
-			if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
+			if err := fillLostEnumMultiFieldValue(kit.Ctx, valData, field); err != nil {
 				return err
 			}
 		case common.FieldTypeEnumQuote:
-			if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
+			if err := fillLostEnumQuoteFieldValue(kit.Ctx, valData, field); err != nil {
 				return err
 			}
 		case common.FieldTypeDate:
@@ -99,7 +100,7 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 
 	// 由于id规则字段可能会来自实例的其他字段，所以需要在最后进行填充
 	if idRuleField != nil {
-		if err := fillLostIDRuleFieldValue(ctx, valData, *idRuleField, properties); err != nil {
+		if err := fillLostIDRuleFieldValue(kit, valData, *idRuleField, properties); err != nil {
 			return err
 		}
 	}
@@ -401,7 +402,7 @@ func getEnumOption(ctx context.Context, val interface{}) ([]metadata.EnumVal, er
 	return defaultOptions, nil
 }
 
-func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute,
+func fillLostIDRuleFieldValue(kit *rest.Kit, valData mapstr.MapStr, field metadata.Attribute,
 	allAttr []metadata.Attribute) error {
 
 	attrTypeMap := make(map[string]string)
@@ -409,7 +410,7 @@ func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field 
 		attrTypeMap[attr.PropertyID] = attr.PropertyType
 	}
 
-	val, err := GetIDRuleVal(ctx, valData, field, attrTypeMap)
+	val, err := GetIDRuleVal(kit, valData, field, attrTypeMap)
 	if err != nil {
 		return err
 	}
@@ -419,14 +420,12 @@ func fillLostIDRuleFieldValue(ctx context.Context, valData mapstr.MapStr, field 
 }
 
 // GetIDRuleVal get id rule value
-func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute, attrTypeMap map[string]string) (
+func GetIDRuleVal(kit *rest.Kit, valData mapstr.MapStr, field metadata.Attribute, attrTypeMap map[string]string) (
 	string, error) {
-
-	rid := util.ExtractRequestIDFromContext(ctx)
 
 	rules, err := metadata.ParseSubIDRules(field.Option)
 	if err != nil {
-		blog.Errorf("parse sub id rule failed, field: %+v, err: %v, rid: %s", field, err, rid)
+		blog.Errorf("parse sub id rule failed, field: %+v, err: %v, rid: %s", field, err, kit.Rid)
 		return "", err
 	}
 
@@ -439,12 +438,12 @@ func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Att
 		case metadata.Attr:
 			attrType, exists := attrTypeMap[rule.Val]
 			if !exists {
-				blog.Errorf("attr val %s is invalid, attribute not exists, rid: %s", rule.Val, rid)
+				blog.Errorf("attr val %s is invalid, attribute not exists, rid: %s", rule.Val, kit.Rid)
 				return "", fmt.Errorf("val %s related attr not exists", rule.Val)
 			}
 
 			if !metadata.IsValidAttrRuleType(attrType) {
-				blog.Errorf("attr val %s type %s is invalid, rid: %s", rule.Val, attrType, rid)
+				blog.Errorf("attr val %s type %s is invalid, rid: %s", rule.Val, attrType, kit.Rid)
 				return "", fmt.Errorf("attr val %s type %s is invalid", rule.Val, attrType)
 			}
 
@@ -452,28 +451,28 @@ func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Att
 
 		case metadata.GlobalID:
 			seqName := metadata.GetIDRule(common.GlobalIDRule)
-			id, err := mongodb.Client().NextSequence(ctx, seqName)
+			id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, seqName)
 			if err != nil {
-				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, rid)
+				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, kit.Rid)
 				return "", err
 			}
 			idStr, err := metadata.MakeUpDigit(id, rule.Len)
 			if err != nil {
-				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, rid)
+				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, kit.Rid)
 				return "", err
 			}
 			val += idStr
 
 		case metadata.LocalID:
 			seqName := metadata.GetIDRule(field.ObjectID)
-			id, err := mongodb.Client().NextSequence(ctx, seqName)
+			id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, seqName)
 			if err != nil {
-				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, rid)
+				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, kit.Rid)
 				return "", err
 			}
 			idStr, err := metadata.MakeUpDigit(id, rule.Len)
 			if err != nil {
-				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, rid)
+				blog.Errorf("make up the id failed, id: %d, len: %d, err: %v, rid: %s", id, rule.Len, err, kit.Rid)
 				return "", err
 			}
 			val += idStr
@@ -482,7 +481,7 @@ func GetIDRuleVal(ctx context.Context, valData mapstr.MapStr, field metadata.Att
 			val += metadata.GetIDRuleRandomID(rule.Len)
 
 		default:
-			blog.Errorf("option is invalid, val: %v, rid: %s", field.Option, rid)
+			blog.Errorf("option is invalid, val: %v, rid: %s", field.Option, kit.Rid)
 			return "", fmt.Errorf("option is invalid, val: %v", field.Option)
 		}
 	}

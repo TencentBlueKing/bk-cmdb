@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
 func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
@@ -75,7 +74,7 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 	if len(mappings) != 0 {
 		// save new object mappings data for inner object instance.
-		if err := instancemapping.Create(kit.Ctx, mappings); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Insert(kit.Ctx, mappings); err != nil {
 			return nil, err
 		}
 	}
@@ -83,7 +82,8 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 	// save object instances.
 	err = mongodb.Shard(kit.ShardOpts()).Table(instTableName).Insert(kit.Ctx, params)
 	if err != nil {
-		blog.Errorf("save instances failed, err: %v, objID: %s, instances: %v, rid: %s", err, objID, params, kit.Rid)
+		blog.Errorf("save instances failed, err: %v, objID: %s, instances: %v, rid: %s", err, objID, params,
+			kit.Rid)
 		if mongodb.IsDuplicatedError(err) {
 			return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
@@ -131,7 +131,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping[common.TenantID] = kit.TenantID
 
 		// save instance object type mapping.
-		if err := instancemapping.Create(kit.Ctx, mapping); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Insert(kit.Ctx, mapping); err != nil {
 			return 0, err
 		}
 	}
@@ -139,7 +139,8 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	// save object instance.
 	err = mongodb.Shard(kit.ShardOpts()).Table(instTableName).Insert(kit.Ctx, inputParam)
 	if err != nil {
-		blog.Errorf("save instance error. err: %v, objID: %s, instance: %+v, rid: %s", err, objID, inputParam, kit.Rid)
+		blog.Errorf("save instance error. err: %v, objID: %s, instance: %+v, rid: %s", err, objID, inputParam,
+			kit.Rid)
 		if mongodb.IsDuplicatedError(err) {
 			return ids[0], kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
@@ -208,8 +209,8 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	data.Remove(common.BKObjIDField)
 	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Update(kit.Ctx, cond, data)
 	if err != nil {
-		blog.Errorf("update instance error. err: %v, objID: %s, instance: %+v, cond: %+v, rid: %s", err, objID, data,
-			cond, kit.Rid)
+		blog.Errorf("update instance error. err: %v, objID: %s, instance: %+v, cond: %+v, rid: %s", err, objID,
+			data, cond, kit.Rid)
 		if mongodb.IsDuplicatedError(err) {
 			return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
@@ -237,7 +238,8 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	return origins, !mongodb.IsNotFoundError(err), err
 }
 
-func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr, err error) {
+func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr,
+	err error) {
 	tableName := common.GetInstTableName(objID, kit.TenantID)
 
 	cond := mongo.NewCondition()
@@ -254,7 +256,7 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 	} else {
 		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond.ToMapStr()).One(kit.Ctx, &origin)
 	}
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 	return origin, nil

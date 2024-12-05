@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
@@ -223,7 +224,8 @@ func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db
 		}
 
 		// get objectID by instance IDs to judge if the instances belongs to the object specified
-		instIDObjMappings, err := instancemapping.GetInstanceObjectMapping(instanceIDs)
+		kit := rest.NewKit()
+		instIDObjMappings, err := instancemapping.GetInstanceObjectMapping(kit, instanceIDs)
 		if err != nil {
 			blog.Errorf("get instance object mapping from instance ids(%+v) failed, err: %v", instanceIDs, err)
 			return err

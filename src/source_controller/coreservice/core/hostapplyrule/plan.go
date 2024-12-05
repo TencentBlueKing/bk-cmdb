@@ -70,8 +70,9 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).All(kit.Ctx, &hosts); err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, list hosts failed, filter: %s, err: %s, rid: %s", hostFilter, err.Error(), rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
+		All(kit.Ctx, &hosts); err != nil {
+		blog.Errorf("list hosts failed, filter: %v, err: %v, rid: %s", hostFilter, err, rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -84,7 +85,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			CloudID int64 `mapstructure:"bk_cloud_id"`
 		}{}
 		if err := mapstruct.Decode2Struct(item, &host); err != nil {
-			blog.ErrorJSON("GenerateApplyPlan failed, parse hostID failed, host: %s, err: %s, rid: %s", item, err.Error(), rid)
+			blog.Errorf("parse hostID failed, host: %v, err: %v, rid: %s", item, err, rid)
 			return result, kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
 		hostMap[host.HostID] = item
@@ -101,9 +102,9 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			common.BKDBIN: util.IntArrayUnique(cloudIDs),
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudFilter).All(kit.Ctx, &clouds); err != nil {
-		blog.ErrorJSON("GenerateApplyPlan failed, read cloud failed, filter: %s, err: %s, rid: %s",
-			cloudFilter, err.Error(), rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBasePlat).Find(cloudFilter).All(kit.Ctx,
+		&clouds); err != nil {
+		blog.Errorf("find cloud failed, filter: %v, err: %v, rid: %s", cloudFilter, err.Error(), rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	cloudMap := make(map[int64]metadata.CloudInst)
@@ -128,9 +129,11 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 			continue
 		}
-		hostApplyPlan, err = p.generateOneHostApplyPlan(kit, hostModule.HostID, host, hostModule.ModuleIDs, option.Rules, attributes, option.ConflictResolvers)
+		hostApplyPlan, err = p.generateOneHostApplyPlan(kit, hostModule.HostID, host, hostModule.ModuleIDs,
+			option.Rules, attributes, option.ConflictResolvers)
 		if err != nil {
-			blog.ErrorJSON("generateOneHostApplyPlan failed, host: %s, moduleIDs: %s, rules: %s, err: %s, rid: %s", host, hostModule.ModuleIDs, option.Rules, err.Error(), rid)
+			blog.Errorf("generate one host apply plan failed, host: %v, moduleIDs: %v, rules: %v, err: %v, rid: %s",
+				host, hostModule.ModuleIDs, option.Rules, err, rid)
 			return result, err
 		}
 		if hostApplyPlan.UnresolvedConflictCount > 0 {
@@ -447,7 +450,8 @@ func getModuleIDsAndSrvTempIDs(kit *rest.Kit, modules []metadata.ModuleInst) (ma
 			common.HostApplyEnabledField: true,
 		}
 		serviceTemplates := make([]metadata.ServiceTemplate, 0)
-		if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Fields(common.BKFieldID).
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Find(filter).
+			Fields(common.BKFieldID).
 			All(kit.Ctx, &serviceTemplates); err != nil {
 			blog.Errorf("get serviceTemplate failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 			return enableModuleMap, []int64{}, srvTempModulesMap, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -538,7 +542,7 @@ func (p *hostApplyRule) RunHostApplyOnHosts(kit *rest.Kit, bizID int64, relation
 	moduleFilter := map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: moduleIDs}}
 
 	fields := []string{common.BKModuleIDField, common.BKServiceTemplateIDField, common.HostApplyEnabledField}
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(fields...).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(fields...).
 		All(kit.Ctx, &modules)
 	if err != nil {
 		blog.Errorf("search modules info failed, filter: %s, err: %v, rid: %s", moduleFilter, err, kit.Rid)

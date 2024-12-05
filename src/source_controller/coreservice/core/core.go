@@ -14,9 +14,6 @@
 package core
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -180,8 +177,8 @@ type InstanceAssociation interface {
 
 // TopoOperation methods
 type TopoOperation interface {
-	SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error)
-	SearchMainlineInstanceTopo(ctx context.Context, header http.Header, objID int64, withDetail bool) (
+	SearchMainlineModelTopo(kit *rest.Kit, withDetail bool) (*metadata.TopoModelNode, error)
+	SearchMainlineInstanceTopo(kit *rest.Kit, objID int64, withDetail bool) (
 		*metadata.TopoInstanceNode, error)
 }
 

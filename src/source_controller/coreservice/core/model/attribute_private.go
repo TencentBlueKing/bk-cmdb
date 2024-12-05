@@ -35,10 +35,10 @@ func (m *modelAttribute) isExists(kit *rest.Kit, objID, propertyID string, model
 
 	util.AddModelBizIDCondition(filter, modelBizIDs)
 	oneAttribute = &metadata.Attribute{}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
-	if nil != err && !mongodb.Client().IsNotFoundError(err) {
-		blog.Errorf("request(%s): database findOne operation is failed, error info is %s", kit.Rid, err.Error())
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(filter).One(kit.Ctx, oneAttribute)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("find object attribute failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return oneAttribute, false, err
 	}
-	return oneAttribute, !mongodb.Client().IsNotFoundError(err), nil
+	return oneAttribute, !mongodb.IsNotFoundError(err), nil
 }

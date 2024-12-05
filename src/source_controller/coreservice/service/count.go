@@ -29,7 +29,7 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 		Table   string                   `json:"table"`
 		Filters []map[string]interface{} `json:"filters"`
 	}{}
-	if err := ctx.DecodeInto(&req); nil != err {
+	if err := ctx.DecodeInto(&req); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -51,9 +51,13 @@ func (s *coreService) GetCountByFilter(ctx *rest.Contexts) {
 				<-pipeline
 			}()
 
-			count, err := mongodb.Client().Table(table).Find(filter).Count(ctx.Kit.Ctx)
+			shOpts := ctx.Kit.ShardOpts()
+			if common.IsPlatformTable(table) {
+				shOpts = ctx.Kit.SysShardOpts()
+			}
+			count, err := mongodb.Shard(shOpts).Table(table).Find(filter).Count(ctx.Kit.Ctx)
 			if err != nil {
-				blog.Errorf("GetCountByFilter failed, error: %v, table: %s, filter: %v, rid: %s", err, table, filter,
+				blog.Errorf("get count by filter failed, err: %v, table: %s, filter: %v, rid: %s", err, table, filter,
 					ctx.Kit.Rid)
 				if firstErr == nil {
 					firstErr = ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed)

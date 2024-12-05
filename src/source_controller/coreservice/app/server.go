@@ -118,22 +118,11 @@ func initResource(coreSvr *CoreServer, op *options.ServerOption) error {
 	}
 
 	coreSvr.Config.Mongo.DisableInsert = op.DisableInsert
-	dbErr := mongodb.InitClient("", &coreSvr.Config.Mongo)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the db server, error info is %s", dbErr.Error())
-		return dbErr
-	}
 
 	cacheRrr := redis.InitClient("redis", &coreSvr.Config.Redis)
 	if cacheRrr != nil {
 		blog.Errorf("new redis client failed, err: %v", cacheRrr)
 		return cacheRrr
-	}
-
-	initErr := mongodb.Client().InitTxnManager(redis.Client())
-	if initErr != nil {
-		blog.Errorf("failed to init txn manager, error info is %v", initErr)
-		return initErr
 	}
 
 	cryptoConf, err := cc.Crypto("crypto")
@@ -145,12 +134,12 @@ func initResource(coreSvr *CoreServer, op *options.ServerOption) error {
 	err = mongodb.SetShardingCli("", &coreSvr.Config.Mongo, cryptoConf)
 	if err != nil {
 		blog.Errorf("new mongodb client failed, err: %v", err)
-		return dbErr
+		return err
 	}
 
 	if err = mongodb.Dal().InitTxnManager(redis.Client()); err != nil {
 		blog.Errorf("init txn manager failed, err: %v", err)
-		return initErr
+		return err
 	}
 
 	return nil

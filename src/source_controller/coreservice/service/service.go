@@ -82,25 +82,6 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	/* db, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-		return dbErr
-	}
-
-	 cache, cacheRrr := dalredis.NewFromConfig(cfg.Redis)
-	if cacheRrr != nil {
-		blog.Errorf("new redis client failed, err: %v", cacheRrr)
-		return cacheRrr
-	}
-	initErr := db.InitTxnManager(cache)
-	if initErr != nil {
-		blog.Errorf("failed to init txn manager, error info is %v", initErr)
-		return initErr
-	}
-	mongodb.Client() = db
-	s.rds = cache */
-
 	// connect the remote mongodb
 	instance := instances.New(s, lang, engine.CoreAPI)
 	hostApplyRuleCore := hostapplyrule.New(instance, engine.CoreAPI)
@@ -117,7 +98,7 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 		settemplate.New(),
 		hostApplyRuleCore,
 		dbSystem.New(),
-		auth.New(mongodb.Client()),
+		auth.New(mongodb.Dal()),
 		coreCommon.New(),
 	)
 	return nil

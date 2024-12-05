@@ -29,25 +29,25 @@ func (m *associationKind) isExists(kit *rest.Kit, associationKindID string) (ori
 	cond := mongo.NewCondition()
 	origin = &metadata.AssociationKind{}
 	cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: associationKindID})
-	err = mongodb.Client().Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).One(kit.Ctx, origin)
-	if mongodb.Client().IsNotFoundError(err) {
-		return origin, !mongodb.Client().IsNotFoundError(err), nil
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).One(kit.Ctx, origin)
+	if mongodb.IsNotFoundError(err) {
+		return origin, !mongodb.IsNotFoundError(err), nil
 	}
-	return origin, !mongodb.Client().IsNotFoundError(err), err
+	return origin, !mongodb.IsNotFoundError(err), err
 }
 
 func (m *associationKind) hasModel(kit *rest.Kit, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Count(kit.Ctx)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
 
 func (m *associationKind) update(kit *rest.Kit, data mapstr.MapStr, cond mapstr.MapStr) (uint64, error) {
-	return mongodb.Client().Table(common.BKTableNameAsstDes).UpdateMany(kit.Ctx, cond, data)
+	return mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).UpdateMany(kit.Ctx, cond, data)
 }
 
 func (m *associationKind) countInstanceAssociation(kit *rest.Kit, cond mapstr.MapStr) (count uint64, err error) {
-	count, err = mongodb.Client().Table(common.BKTableNameAsstDes).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }
@@ -58,7 +58,7 @@ func (m *associationKind) isPreAssociationKind(kit *rest.Kit, cond metadata.Dele
 		condition[key] = val
 	}
 	condition[common.BKIsPre] = true
-	innerCnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).Find(condition).Count(kit.Ctx)
+	innerCnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Find(condition).Count(kit.Ctx)
 	exists = 0 != innerCnt
 	return exists, err
 }
@@ -66,7 +66,7 @@ func (m *associationKind) isPreAssociationKind(kit *rest.Kit, cond metadata.Dele
 func (m *associationKind) isApplyToObject(kit *rest.Kit, cond metadata.DeleteOption) (cnt uint64, exists bool,
 	err error) {
 
-	innerCnt, err := mongodb.Client().Table(common.BKTableNameAsstDes).Find(cond).Count(kit.Ctx)
+	innerCnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Find(cond).Count(kit.Ctx)
 	exists = 0 != innerCnt
 	return innerCnt, exists, err
 }
@@ -75,7 +75,7 @@ func (m *associationKind) save(kit *rest.Kit, associationKind metadata.Associati
 	if err := m.isValid(kit, associationKind.AssociationKindID); err != nil {
 		return 0, err
 	}
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameAsstDes)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameAsstDes)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -83,16 +83,17 @@ func (m *associationKind) save(kit *rest.Kit, associationKind metadata.Associati
 	associationKind.ID = int64(id)
 	associationKind.TenantID = kit.TenantID
 
-	err = mongodb.Client().Table(common.BKTableNameAsstDes).Insert(kit.Ctx, associationKind)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Insert(kit.Ctx, associationKind)
 	return id, err
 }
 
 func (m *associationKind) searchAssociationKind(kit *rest.Kit,
 	inputParam metadata.QueryCondition) (results []metadata.AssociationKind, err error) {
 	results = []metadata.AssociationKind{}
-	instHandler := mongodb.Client().Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Fields(inputParam.Fields...)
-	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort).All(kit.Ctx,
-		&results)
+	instHandler := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Find(inputParam.Condition).
+		Fields(inputParam.Fields...)
+	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).
+		Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
 	return results, err
 }
@@ -103,7 +104,7 @@ func (m *associationKind) isValid(kit *rest.Kit, asstKindID string) error {
 			common.AttributeIDMaxLength)
 	}
 	match, err := regexp.MatchString(common.FieldTypeStrictCharRegexp, asstKindID)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 	if !match {

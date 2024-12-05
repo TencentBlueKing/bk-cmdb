@@ -55,7 +55,7 @@ func (k *kubeOperation) listContainerByContainerCond(kit *rest.Kit, input *types
 	cond := input.ContainerCond
 
 	if input.Page.EnableCount {
-		cnt, err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(cond).Count(kit.Ctx)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseContainer).Find(cond).Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("count container by cond: %+v failed, err: %v, rid: %s", cond, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -65,8 +65,9 @@ func (k *kubeOperation) listContainerByContainerCond(kit *rest.Kit, input *types
 	}
 
 	containers := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseContainer).Find(cond).Start(uint64(input.Page.Start)).
-		Limit(uint64(input.Page.Limit)).Sort(input.Page.Sort).Fields(input.Fields...).All(kit.Ctx, &containers)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseContainer).Find(cond).
+		Start(uint64(input.Page.Start)).Limit(uint64(input.Page.Limit)).Sort(input.Page.Sort).Fields(input.Fields...).
+		All(kit.Ctx, &containers)
 	if err != nil {
 		blog.Errorf("list container by cond: %+v failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -133,9 +134,9 @@ func (k *kubeOperation) aggregateContainer(kit *rest.Kit, table string, input *t
 		total := "total"
 		result := map[string]int64{}
 		filter = append(filter, map[string]interface{}{common.BKDBCount: total})
-		err := mongodb.Client().Table(table).AggregateOne(kit.Ctx, filter, &result)
-		if err != nil && !mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("get container count failed, cond: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		err := mongodb.Shard(kit.ShardOpts()).Table(table).AggregateOne(kit.Ctx, filter, &result)
+		if err != nil && !mongodb.IsNotFoundError(err) {
+			blog.Errorf("get container count failed, cond: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 
@@ -161,9 +162,9 @@ func (k *kubeOperation) aggregateContainer(kit *rest.Kit, table string, input *t
 		{common.BKDBSkip: input.Page.Start}, {common.BKLimit: input.Page.Limit}}...)
 
 	containers := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(table).AggregateAll(kit.Ctx, filter, &containers)
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).AggregateAll(kit.Ctx, filter, &containers)
 	if err != nil {
-		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("get all object models failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 

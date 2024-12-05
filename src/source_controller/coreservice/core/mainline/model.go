@@ -13,22 +13,21 @@
 package mainline
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // SearchMainlineModelTopo get topo tree of model on mainline
-func (m *topoManager) SearchMainlineModelTopo(ctx context.Context, header http.Header, withDetail bool) (*metadata.TopoModelNode, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func (m *topoManager) SearchMainlineModelTopo(kit *rest.Kit, withDetail bool) (
+	*metadata.TopoModelNode, error) {
+
 	obj, err := NewModelMainline()
 	if err != nil {
-		blog.Errorf("new model mainline failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("new model mainline failed, err: %+v, rid: %s", err, kit.Rid)
 		return nil, fmt.Errorf("new model mainline failed, err: %+v", err)
 	}
-	return obj.GetRoot(ctx, header, withDetail)
+	return obj.GetRoot(kit, withDetail)
 }

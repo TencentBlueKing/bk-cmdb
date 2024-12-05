@@ -35,10 +35,11 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 	}
 	hostInfos := make([]metadata.HostMapStr, 0)
 	limit := uint64(len(input.IDS))
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condition).Fields(common.BKHostIDField).Limit(limit).All(kit.Ctx,
-		&hostInfos)
-	if nil != err {
-		blog.Errorf("lock host, query host from db error, condition: %+v, err: %+v, rid: %s", condition, err, kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(condition).Fields(
+		common.BKHostIDField).Limit(limit).All(kit.Ctx, &hostInfos)
+	if err != nil {
+		blog.Errorf("lock host, query host from db error, condition: %+v, err: %v, rid: %s", condition, err,
+			kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -55,9 +56,9 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 		conds := mapstr.MapStr{
 			common.BKHostIDField: id,
 		}
-		cnt, err := mongodb.Client().Table(common.BKTableNameHostLock).Find(conds).Count(kit.Ctx)
-		if nil != err {
-			blog.Errorf("lock host, query host lock from db failed, err:%+v, rid:%s", err, kit.Rid)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostLock).Find(conds).Count(kit.Ctx)
+		if err != nil {
+			blog.Errorf("query host lock from db failed, err: %v, rid: %s", err, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommDBSelectFailed)
 		}
 		if 0 == cnt {
@@ -71,9 +72,9 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 	}
 
 	if 0 < len(insertDataArr) {
-		err := mongodb.Client().Table(common.BKTableNameHostLock).Insert(kit.Ctx, insertDataArr)
-		if nil != err {
-			blog.Errorf("lock host, save host lock to db failed, err: %+v, rid:%s", err, kit.Rid)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostLock).Insert(kit.Ctx, insertDataArr)
+		if err != nil {
+			blog.Errorf("save host lock to db failed, err: %v, rid: %s", err, kit.Rid)
 			return kit.CCError.Errorf(common.CCErrCommDBInsertFailed)
 		}
 	}
@@ -85,9 +86,9 @@ func (hm *hostManager) UnlockHost(kit *rest.Kit, input *metadata.HostLockRequest
 	conds := mapstr.MapStr{
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
-	err := mongodb.Client().Table(common.BKTableNameHostLock).Delete(kit.Ctx, conds)
-	if nil != err {
-		blog.Errorf("unlock host, delete host lock from db error, err: %+v, rid:%s", err, kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostLock).Delete(kit.Ctx, conds)
+	if err != nil {
+		blog.Errorf("delete host lock from db failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -102,9 +103,10 @@ func (hm *hostManager) QueryHostLock(kit *rest.Kit, input *metadata.QueryHostLoc
 		common.BKHostIDField: mapstr.MapStr{common.BKDBIN: input.IDS},
 	}
 	limit := uint64(len(input.IDS))
-	err := mongodb.Client().Table(common.BKTableNameHostLock).Find(conds).Limit(limit).All(kit.Ctx, &hostLockInfoArr)
-	if nil != err {
-		blog.Errorf("query lock host, query host lock from db error, err: %+v, rid:%s", err, kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostLock).Find(conds).Limit(limit).
+		All(kit.Ctx, &hostLockInfoArr)
+	if err != nil {
+		blog.Errorf("query host lock from db failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	return hostLockInfoArr, nil
@@ -114,8 +116,8 @@ func diffHostLockID(ids []int64, hostInfos []metadata.HostMapStr, rid string) []
 	mapInnerID := make(map[int64]bool)
 	for _, hostInfo := range hostInfos {
 		id, err := util.GetInt64ByInterface(hostInfo[common.BKHostIDField])
-		if nil != err {
-			blog.ErrorJSON("different host lock ID not valid, hostInfo: %s, rid: %s", hostInfo, rid)
+		if err != nil {
+			blog.Errorf("different host lock ID not valid, hostInfo: %v, rid: %s", hostInfo, rid)
 			continue
 		}
 		mapInnerID[id] = true

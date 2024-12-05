@@ -30,7 +30,7 @@ func (s *coreService) SearchMainlineModelTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.core.TopoOperation().SearchMainlineModelTopo(ctx.Kit.Ctx, ctx.Kit.Header, detail.WithDetail)
+	result, err := s.core.TopoOperation().SearchMainlineModelTopo(ctx.Kit, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline model topo failed, %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoMainlineSelectFailed))
@@ -61,7 +61,7 @@ func (s *coreService) SearchMainlineInstanceTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(ctx.Kit.Ctx, ctx.Kit.Header, bizID, detail.WithDetail)
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(ctx.Kit, bizID, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline instance topo by business:%d failed, %+v, rid: %s", bizID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoMainlineSelectFailed))
